@@ -15,19 +15,16 @@ import play.api.Logger
 import com.typesafe.plugin.use
 import securesocial.core.providers.Token
 /**
- * Created by indiragp on 8/1/15.
+ * Registration class for overwritting securesocial.registration when necessary
  */
 class Registration @Inject()(spaces: SpaceService, users: UserService) extends SecuredController{
 
 
   def executeForToken(token: String, f: Token => Result): Result = {
     UserService.findToken(token) match {
-      case Some(t) if !t.isExpired && t.isSignUp => {
-        f(t)
-      }
-      case _ => {
-        Redirect(RoutesHelper.startSignUp()).flashing(Error -> Messages(InvalidLink))
-      }
+      case Some(t) if !t.isExpired && t.isSignUp => f(t)
+      case _ => Redirect(RoutesHelper.startSignUp()).flashing(Error -> Messages(InvalidLink))
+
     }
   }
 
@@ -37,59 +34,67 @@ class Registration @Inject()(spaces: SpaceService, users: UserService) extends S
    */
   def handleSignUp(token: String) = Action { implicit request =>
    //Minor modifications to securesocial.core.Registration.handleSignUp(token)
-  if(Registration.registrationEnabled) {
-    executeForToken(token, { t =>
-        Registration.form.bindFromRequest.fold (
-          errors => {
-            if (Logger.isDebugEnabled) {
-              Logger.debug("[securesocial] errors " + errors)
-            }
-            BadRequest(use[TemplatesPlugin].getSignUpPage(request, errors, t.uuid))
-          },
-          info => {
-            val id = if ( UsernamePasswordProvider.withUserNameSupport ) info.userName.get else t.email
-            val identityId = IdentityId(id, providerId)
-            val user = SocialUser(
-              identityId,
-              info.firstName,
-              info.lastName,
-              "%s %s".format(info.firstName, info.lastName),
-              Some(t.email),
-              GravatarHelper.avatarFor(t.email),
-              AuthenticationMethod.UserPassword,
-              passwordInfo = Some(Registry.hashers.currentHasher.hash(info.password))
-            )
-            val saved = UserService.save(user)
-            UserService.deleteToken(t.uuid)
-            if ( UsernamePasswordProvider.sendWelcomeEmail ) {
-              Mailer.sendWelcomeEmail(saved)
-            }
-            spaces.getInvitationToSpace(token) match {
-              case Some(invite) => {
-                users.findByEmail(invite.email) match {
-                  case Some(user) => {
-                    spaces.addUser(user.id, invite.role, invite.space)
-                    spaces.removeInvitationToSpace(UUID(token), invite.space)
+    if(Registration.registrationEnabled) {
+      executeForToken(token, { t =>
+          Registration.form.bindFromRequest.fold (
+            errors => {
+              if (Logger.isDebugEnabled) {
+                Logger.debug("[securesocial] errors " + errors)
+              }
+              BadRequest(use[TemplatesPlugin].getSignUpPage(request, errors, t.uuid))
+            },
+            info => {
+              val id = if ( UsernamePasswordProvider.withUserNameSupport ) info.userName.get else t.email
+              val identityId = IdentityId(id, providerId)
+              val user = SocialUser(
+                identityId,
+                info.firstName,
+                info.lastName,
+                "%s %s".format(info.firstName, info.lastName),
+                Some(t.email),
+                GravatarHelper.avatarFor(t.email),
+                AuthenticationMethod.UserPassword,
+                passwordInfo = Some(Registry.hashers.currentHasher.hash(info.password))
+              )
+              val saved = UserService.save(user)
+              UserService.deleteToken(t.uuid)
+              if ( UsernamePasswordProvider.sendWelcomeEmail ) {
+                Mailer.sendWelcomeEmail(saved)
+              }
+              spaces.getInvitationToSpace(token) match {
+                case Some(invite) => {
+                  users.findByEmail(invite.email) match {
+                    case Some(user) => {
+                     users.findRole(invite.role) match {
+                       case Some(role) => {
+                         spaces.addUser(user.id, role, invite.space)
+                         spaces.removeInvitationToSpace(UUID(token), invite.space)
+                        }
+                       case None => {
+                         Redirect(RoutesHelper.startSignUp).flashing(Registration.Error -> Messages("Error adding to the invited space. The role assigned doesn't exist"))
+                       }
+                     }
+
+                    }
                   }
                 }
+                case None => {
+                  Redirect(RoutesHelper.startSignUp).flashing(Registration.Error -> Messages("Error adding to the invited space"))
+                }
               }
-              case None => {
-                Redirect(RoutesHelper.startSignUp).flashing(Registration.Error -> Messages("Error adding to the invited space"))
-              }
-            }
 
-            val eventSession = Events.fire(new SignUpEvent(user)).getOrElse(session)
-            if ( UsernamePasswordProvider.signupSkipLogin ) {
-              ProviderController.completeAuthentication(user, eventSession).flashing(Success -> Messages(SignUpDone))
-            } else {
-              Redirect(onHandleSignUpGoTo).flashing(Success -> Messages(SignUpDone)).withSession(eventSession)
+              val eventSession = Events.fire(new SignUpEvent(user)).getOrElse(session)
+              if ( UsernamePasswordProvider.signupSkipLogin ) {
+                ProviderController.completeAuthentication(user, eventSession).flashing(Success -> Messages(SignUpDone))
+              } else {
+                Redirect(onHandleSignUpGoTo).flashing(Success -> Messages(SignUpDone)).withSession(eventSession)
+              }
             }
-          }
-        )
-      })
+          )
+        })
+      }
+
+    else NotFound(views.html.defaultpages.notFound.render(request, None))
+
     }
-
-  else NotFound(views.html.defaultpages.notFound.render(request, None))
-
   }
-}

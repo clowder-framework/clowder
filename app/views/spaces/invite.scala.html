@@ -10,7 +10,7 @@
         <fieldset class="email-new-users">
 
             @inputText(myForm("addressList"), '_label -> "Email addresses", 'type -> "Email", 'multiple -> "true")
-            @select(myForm("role"), options(roleList), '_label -> "Role", 'placeholder -> "Select a default role for all recipients")
+            @select(myForm("role"), options(roleList), 'id -> "role_list", '_label -> "Role", 'placeholder -> "Select a default role for all recipients")
             @textarea(myForm("message"), '_label -> "Message")
 
         </fieldset>

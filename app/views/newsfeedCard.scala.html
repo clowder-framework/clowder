@@ -31,7 +31,6 @@
     case "delete" => "deleted "
     case "edit" => "edited their comment to "
     case "download" => "downloaded "
-    case "update" => "updated "
   }
 }
 
@@ -41,7 +40,6 @@
     case "attach" => List("attached ", " to ")
     case "remove" => List("removed ", " from ")
     case "detach" => List("detached ", " from ")
-    case "update" => List("updated ", "to ")
   }
 }
 
@@ -51,9 +49,6 @@
   }
   case "update_dataset_information" => {
     updated information for @linkForObject("dataset", event.object_id, event.object_name)
-  }
-  case "update_collection_information" => {
-    updated information for @linkForObject("collection", event.object_id, event.object_name)
   }
   case "set_note_file" => {
     set note for @linkForObject("file", event.object_id, event.object_name)

@@ -48,7 +48,7 @@ case class SpaceInvite(
     invite_id: String,
     email: String,
     space: UUID,
-    role: Role)
+    role: String)
    
 // New way to manage metadata. Will eventually be merged with space metadata.
 case class SpaceMetadata (
