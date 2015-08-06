@@ -7,9 +7,9 @@
   collectionsInside: List[models.Collection],
   filesOutside: List[models.File],
   rdfExported: Boolean,
-  space: Option[ProjectSpace],
-  filesTags: Set[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
-
+  datasetSpaces: Option[List[ProjectSpace]],
+  filesTags: Set[String],
+  otherSpaces: List[ProjectSpace])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -91,7 +91,7 @@
                 </ul>
                 <div class="tab-content">
                     <div role="tabpanel" class="tab-pane fade in active" id="tab-home">
-                        @datasets.home(dataset, space, previews)
+                        @datasets.home(dataset, datasetSpaces, previews, otherSpaces)
                     </div>
                   <div role="tabpanel" class="tab-pane" id="tab-files">
                       <div id="add-file-btn">
@@ -116,8 +116,7 @@
                           @commentform(dataset.id.stringify, "dataset")
                       }
                       <div class="list-unstyled" id="reply_@dataset.id.toString">
-                         @comment(comments)
-                      </div>
+                         @comment(comments)</div>
                   </div>
                   <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
                     @metadata(dataset, md, usrmd, dataset.datasetXmlMetadata, rdfExported)

@@ -104,7 +104,7 @@ class Datasets @Inject()(
                           d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig())
                       }
                       else {
-                          d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig(), space = Some(UUID(space)))                 
+                          d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig(), spaces = List(UUID(space)))
                       }
                       events.addObjectEvent(request.user, d.id, d.name, "create_dataset")
                       datasets.insert(d) match {
@@ -149,13 +149,17 @@ class Datasets @Inject()(
   def createEmptyDataset() = PermissionAction(Permission.CreateDataset)(parse.json) { implicit request =>
     (request.body \ "name").asOpt[String].map { name =>
       (request.body \ "description").asOpt[String].map { description =>   
-          (request.body \ "space").asOpt[String].map { space =>              
+          (request.body \ "space").asOpt[List[String]].map { space =>
+              var spaceList: List[UUID] = List.empty;
+              space.map {
+                aSpace => spaceList = UUID(aSpace) :: spaceList
+              }
               var d : Dataset = null
               if (space == "default") {
                   d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig())
               }
               else {
-              	  d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig(), space = Some(UUID(space)))              	  
+              	  d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig(), spaces = spaceList)
               }
             events.addObjectEvent(request.user, d.id, d.name, "create_dataset")
             datasets.insert(d) match {
@@ -165,7 +169,10 @@ class Datasets @Inject()(
                   Logger.debug("About to call addDataset on spaces service")
                   //Below call is not what is needed? That already does what we are doing in the Dataset constructor... 
                   //Items from space model still missing. New API will be needed to update it most likely.
-                  if (space != "default") spaces.addDataset(UUID(id), UUID(space))
+
+                  space.map {
+                    aSpace => if(aSpace != "default") spaces.addDataset(UUID(id), UUID(aSpace))
+                  }
                   (request.body \ "existingfiles").asOpt[String].map { fileString =>
                     var idArray = fileString.split(",").map(_.trim())
                     for (anId <- idArray) {
