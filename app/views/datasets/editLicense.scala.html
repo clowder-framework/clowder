@@ -4,9 +4,9 @@
 
 <!-- If the user can edit the dataset license info, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 @if(Permission.checkPermission(Permission.EditLicense, ResourceRef(ResourceRef.dataset, dataset.id))) {
-    <a class="btn btn-default btn-xs accordion-toggle collapsed" data-toggle="collapse"
+    <a class="btn btn-default btn-xs accordion-toggle collapsed inline" data-toggle="collapse"
     data-parent="#accordion6" href="#collapseSix" id="editlicense"
-    title="Edit License Information" style="display:inline">
+    title="Edit License Information">
         <span class="glyphicon glyphicon-edit"></span>
     </a>
 

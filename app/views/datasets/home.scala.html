@@ -13,14 +13,14 @@
             </div>
             <div class="col-md-6">
                 <ul class="list-unstyled">
-                    <li  style="display:inline"><span id="licensetextdata">blank</span> <span id="rightsholderdata">blank</span></li>
+                    <li class="inline"><span id="licensetextdata">blank</span> <span id="rightsholderdata">blank</span></li>
                     @datasets.editLicense(dataset)
                 </ul>
             </div>
         </div>
     </div>
     <div class="col-md-12 box-white-space" id="aboutdesc">
-        <p id ="ds_description" style="display:inline">@Html(dataset.description)</p>
+        <p id ="ds_description" class="inline">@Html(dataset.description)</p>
         <a id="edit-description" href="javascript:updateDescription()">
             <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
         </a>
@@ -39,7 +39,7 @@
     function updateDescription() {
 		var cur_description = $('#ds_description').text().trim();
 		$('<div class="edit_desc"> </div>').insertAfter($('#ds_description'));
-		$('.edit_desc').append('<textarea id = "desc_input" style="width:100%"/>')
+		$('.edit_desc').append('<textarea id = "desc_input" class="form-control"/>');
 		$('.edit_desc').append('<br/>');
 		$('.edit_desc').append('<button id = "update_desc" class= "btn btn-sm" onclick = "saveDescription()"> Save </button>')
 		$('#desc_input').val(cur_description);

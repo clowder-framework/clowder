@@ -702,3 +702,7 @@ textarea, input[type='text'], input[type='password']{
 .space-pills a:hover {
     color: white;
 }
+
+.inline {
+    display: inline;
+}
