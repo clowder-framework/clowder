@@ -159,7 +159,6 @@ class MongoDBDatasetService @Inject() (
     } else {
       MongoDBObject("created" -> -1) ++ MongoDBObject("name" -> 1)
     }
-    println("db.datasets.count(" + MongoUtils.mongoQuery(filter ++ filterDate) + ")")
     if (date.isEmpty || nextPage) {
       Dataset.find(filter ++ filterDate).sort(sort).limit(limit).toList
     } else {
