@@ -203,6 +203,7 @@ class CassandraDataset extends DatasetService {
 
   def addToSpace(dataset: UUID, space: UUID) {}
 
+ def removeFromSpace(dataset: UUID, space: UUID) {}
  /**
   * Add follower to a dataset.
   */
