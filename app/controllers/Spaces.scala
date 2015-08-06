@@ -149,16 +149,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
           val subject: String = "Authorization Request from medici"
           val recipient:String = users.get(spaces.get(id).get.creator).get.email.get.toString
           val body = views.html.spaces.requestemail(user.get, id.toString, spaces.get(id).get.name)
-          Logger.debug("Sending registration email to %s".format(recipient))
-          Logger.debug("Registration mail = [%s]".format(body))
-          Akka.system.scheduler.scheduleOnce(1.seconds) {
-          val mail = use[MailerPlugin].email
-            mail.setSubject(subject)
-            mail.setRecipient(recipient)
-            mail.setFrom(Mailer.fromAddress)
-            mail.send("", body.body)
-          }
-          Ok(views.html.notAuthorized( "Authorization submits", null, null))
+          Users.sendEmail(subject, recipient, body )
+          Ok(views.html.notAuthorized( "Request for authorization submitted", null, null))
         }
         case None => InternalServerError("Space not found")
       }
@@ -173,9 +165,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
         events.addRequestEvent(user, users.get(UUID(requestuser)).get, id, spaces.get(id).get.name, "acceptrequest_space")
         spaces.removeRequest(id, UUID(requestuser))
         role match{
-          case "Admin" => spaces.changeUserRole(UUID(requestuser), Role.Admin, id )
-          case "Editor" => spaces.changeUserRole(UUID(requestuser), Role.Editor, id )
-          case "Viewer" => spaces.changeUserRole(UUID(requestuser), Role.Viewer, id )
+          case "Admin" => spaces.addUser(UUID(requestuser), Role.Admin, id )
+          case "Editor" => spaces.addUser(UUID(requestuser), Role.Editor, id )
+          case "Viewer" => spaces.addUser(UUID(requestuser), Role.Viewer, id )
           case _ => Logger.debug("Role cannot resolve" + role)
         }
         Ok(Json.obj("status" -> "success"))

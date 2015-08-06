@@ -145,7 +145,7 @@ function acceptSpaceRequest(id, user, role){
         console.error("The following error occured: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to accept request.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("Error posting comment : " + errorThrown, "error");
+            notify("Error accepting request from "+user);
         }
     });
     return false;
@@ -164,7 +164,7 @@ function rejectSpaceRequest(id, user){
         console.error("The following error occured: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to reject request.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("Error posting comment : " + errorThrown, "error");
+            notify("Error rejecting request from "+user);
         }
     });
     return false;
