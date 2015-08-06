@@ -174,10 +174,12 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
                 formData.addresses.map {
                   email =>
                   securesocial.core.UserService.findByEmailAndProvider(email, UsernamePasswordProvider.UsernamePassword) match {
-                    case Some(user) => {
+                    case Some(member) => {
                       //Add Person to the space
                       val usr = users.findByEmail(email)
-                      spaces.addUser(usr.get.id, role, id);
+                      spaces.addUser(usr.get.id, role, id)
+                      val theHtml = views.html.spaces.inviteNotificationEmail(id.stringify, s.name, user.get.getMiniUser, usr.get.fullName, role.name)
+                      Users.sendEmail("Added to space", email, theHtml)
                     }
                     case None => {
                       val uuid = UUID.generate()

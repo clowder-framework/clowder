@@ -5,7 +5,7 @@ import javax.inject.Inject
 import com.wordnik.swagger.annotations.{ApiOperation, Api}
 import models._
 import play.api.Logger
-import controllers.Utils
+import controllers.{Users, Utils}
 import play.api.Play._
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
@@ -221,9 +221,10 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, events: E
    *  rolesandusers -> A map that contains a role level as a key and a comma separated String of user IDs as the value
    *  
    */
-  @ApiOperation(value = "Update the information associated with a space", notes="",
+  @ApiOperation(value = "Update the users in a space", notes="",
     responseClass = "None", httpMethod = "POST")
   def updateUsers(spaceId: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId)))(parse.json) { implicit request =>
+     val user = request.user
       if (UUID.isValid(spaceId.stringify)) {
            val aResult: JsResult[Map[String, String]] = (request.body \ "rolesandusers").validate[Map[String, String]]
           
@@ -241,7 +242,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, events: E
                         case None => Logger.debug("This shouldn't happen. A user in a space should always have a role.")
                     }                    
                 }
-				                 
+				val space = spaces.get(spaceId)
 				val roleMap: Map[String, String] = aMap.get
 				for ((k, v) <- roleMap) {
 				    //The role needs to exist
@@ -266,7 +267,10 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, events: E
 							        }							            
 							        else {
 							            //New user completely to the space
-						                spaces.addUser(UUID(aUserId), aRole, spaceId)
+                          spaces.addUser(UUID(aUserId), aRole, spaceId)
+                        val newmember = userService.get(UUID(aUserId))
+                          val theHtml = views.html.spaces.inviteNotificationEmail(spaceId.stringify, space.get.name, user.get.getMiniUser, newmember.get.getMiniUser.fullName, aRole.name)
+                          controllers.Users.sendEmail("Added to Space", newmember.get.getMiniUser.email.get ,theHtml)
 						            }							        
 						        }
 						        else {
