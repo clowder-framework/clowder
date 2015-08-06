@@ -118,7 +118,7 @@ class MongoDBDatasetService @Inject() (
             if (superAdmin) {
               author
             } else {
-              author ++ $or(u.spaceandrole.map(x => MongoDBObject("space" -> new ObjectId(x.spaceId.stringify))) :+ public)
+              author ++ $or(public, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
             }
           }
           case None => {
@@ -128,12 +128,12 @@ class MongoDBDatasetService @Inject() (
       }
       case None => {
         space match {
-          case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+          case Some(s) => MongoDBObject("spaces" -> new ObjectId(s))
           case None => {
             user match {
               case Some(u) => {
-                $or(u.spaceandrole.map(x => MongoDBObject("space" -> new ObjectId(x.spaceId.stringify))) :+ public :+
-                  MongoDBObject("author.identityId.userId" -> u.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> u.identityId.providerId))
+                val author = $and(MongoDBObject("author.identityId.userId" -> u.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> u.identityId.providerId))
+                $or(author, public, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
               }
               case None => public
             }
@@ -159,6 +159,7 @@ class MongoDBDatasetService @Inject() (
     } else {
       MongoDBObject("created" -> -1) ++ MongoDBObject("name" -> 1)
     }
+    println("db.datasets.count(" + MongoUtils.mongoQuery(filter ++ filterDate) + ")")
     if (date.isEmpty || nextPage) {
       Dataset.find(filter ++ filterDate).sort(sort).limit(limit).toList
     } else {
@@ -1004,8 +1005,15 @@ class MongoDBDatasetService @Inject() (
   def addToSpace(datasetId: UUID, spaceId: UUID): Unit = {
     val result = Dataset.update(
       MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
-      $set("space" -> Some(new ObjectId(spaceId.stringify))),
+      $addToSet("spaces" -> Some(new ObjectId(spaceId.stringify))),
       false, false)
+  }
+
+  def removeFromSpace(datasetId: UUID, spaceId: UUID): Unit = {
+    val result = Dataset.update(
+    MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
+    $pull("spaces" -> Some(new ObjectId(spaceId.stringify))),
+    false, false)
   }
 
   def addFollower(id: UUID, userId: UUID) {

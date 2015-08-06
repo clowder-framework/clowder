@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, space: String, userRoleMap: scala.collection.mutable.Map[UUID,String], users: List[User])(implicit user: Option[models.User])
+@(dataset: models.Dataset, spaceMap: Map[UUID, String], userRoleMap: Map[UUID,String], users: List[User])(implicit user: Option[models.User])
 
 @main("Dataset") {
 
@@ -27,7 +27,7 @@
                                 @if(!usr.fullName.isEmpty) {
                                     @usr.fullName
                                     @if(user.get.identityId.userId.equals(dataset.author.identityId.userId)) {
-                                        -- Space: @space | Role: @userRoleMap(usr.id)
+                                        -- Space: @spaceMap(usr.id).substring(2) | Role: @userRoleMap(usr.id).substring(2)
                                     }
                                 }
                             </li>

@@ -38,7 +38,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 	                   c = Collection(name = name, description = description, created = new Date(), author=request.user)
 	              }
 	              else {
-	                   c = Collection(name = name, description = description, created = new Date(), author=request.user, space = Some(UUID(space)))
+	                   c = Collection(name = name, description = description, created = new Date(), author=request.user, spaces = List(UUID(space)))
 	              }
 	              collections.insert(c) match {
 	                case Some(id) => {

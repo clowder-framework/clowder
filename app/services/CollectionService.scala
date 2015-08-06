@@ -111,4 +111,9 @@ trait CollectionService {
    * Associate a collection with a space
    */
   def addToSpace(collection: UUID, space: UUID)
+
+  /**
+   * Remove association between a collection and a space.
+   */
+  def removeFromSpace(collection: UUID, space: UUID)
 }

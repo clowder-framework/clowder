@@ -24,11 +24,11 @@ import org.apache.commons.lang.StringEscapeUtils
 
 @Singleton
 class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService, 
-                            spaces: SpaceService, users: UserService, events: EventService) extends SecuredController {  
+                            spaceService: SpaceService, users: UserService, events: EventService) extends SecuredController {
 
   def newCollection() = PermissionAction(Permission.CreateCollection) { implicit request =>
       implicit val user = request.user
-      val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaces.get(_))
+      val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
       var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
       for (aSpace <- spacesList) {
           decodedSpaceList += Utils.decodeSpaceElements(aSpace)
@@ -180,13 +180,13 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       Logger.debug("------- in Collections.submit ---------")
       var colName = request.body.asFormUrlEncoded.getOrElse("name", null)
       var colDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
-      var colSpace = request.body.asFormUrlEncoded.getOrElse("space", null)
-        
+      var colSpace = request.body.asFormUrlEncoded.getOrElse("space", List.empty)
+
       implicit val user = request.user
       user match {
         case Some(identity) => {
           if (colName == null || colDesc == null || colSpace == null) {
-            val spacesList = spaces.list()
+            val spacesList = spaceService.list()
             var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
             for (aSpace <- spacesList) {
               decodedSpaceList += Utils.decodeSpaceElements(aSpace)
@@ -200,11 +200,13 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
               collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null)
           }
           else {
-              collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null, space = Some(UUID(colSpace(0))))
+            val stringSpaces = colSpace(0).split(",").toList
+            val colSpaces: List[UUID] = stringSpaces.map(aSpace => if(aSpace != "") UUID(aSpace) else None).filter(_ != None).asInstanceOf[List[UUID]]
+            collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null, spaces = colSpaces)
           }
 
           Logger.debug("Saving collection " + collection.name)
-          collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, created = collection.created, author = Some(identity), space = collection.space))
+          collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, created = collection.created, author = Some(identity), spaces = collection.spaces))
 
           //index collection
             val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
@@ -260,18 +262,20 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             decodedDatasetsInside += dDataset
           }
 
-          val space = collection.space.flatMap(spaces.get(_))
-          var decodedSpace: ProjectSpace = null;
-          space match {
+          var collectionSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
+          collection.spaces.map{
+            sp=> spaceService.get(sp) match {
               case Some(s) => {
-                  decodedSpace = Utils.decodeSpaceElements(s)
-                  Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, Some(decodedSpace)))
+                collectionSpaces = s :: collectionSpaces
               }
-              case None => {
-                  Logger.error("Problem in decoding the space element for this dataset: " + dCollection.name)
-                  Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, space))
-              }
+              case None => Logger.error(s"space with id $sp on collection $id doesn't exist.")
+            }
           }
+
+          val otherSpaces: List[ProjectSpace] = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!collectionSpaces.map(_.id).contains(aSpace.id)) aSpace else None).filter(_ != None).asInstanceOf[List[ProjectSpace]]
+          val decodedSpaces: List[ProjectSpace] = collectionSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
+
+          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, Some(decodedSpaces), otherSpaces))
 
         }
         case None => {
@@ -287,30 +291,38 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     implicit val user = request.user
     collections.get(id) match {
       case Some(collection) => {
-        collection.space match {
-          case Some(spaceId) => {
-            spaces.get(spaceId) match {
-              case Some(projectSpace) => {
+        var userList: List[User] = List.empty
+        var userRoleMap = Map[UUID, String]()
+        var spaceMap = Map[UUID, String]()
+        collection.spaces.map {
+          spaceId => spaceService.get(spaceId) match {
+            case Some(projectSpace) => {
+              val space_users: List[User] = spaceService.getUsersInSpace(spaceId)
+              val new_users: List[User] = space_users.map{aUser => if (!userList.contains(aUser)) aUser else None}.filter(_ != None).asInstanceOf[List[User]]
 
-                val userList: List[User] = spaces.getUsersInSpace(spaceId)
-                if(!userList.isEmpty) {
-
-                  var userRoleMap = scala.collection.mutable.Map[UUID, String]()
-                  for(usr <- userList) {
-                    spaces.getRoleForUserInSpace(spaceId, usr.id) match {
-                      case Some(role) => userRoleMap += (usr.id -> role.name)
-                      case None => Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Role not found for collection's user.")
+              userList = userList ::: new_users
+              if (!space_users.isEmpty) {
+                space_users.map {
+                  usr => spaceService.getRoleForUserInSpace(spaceId, usr.id) match {
+                    case Some(role) => {
+                      val cur_role = userRoleMap getOrElse(usr.id, "")
+                      userRoleMap += (usr.id -> (cur_role + ", " + role.name))
                     }
-                  }// for user ...
-                  Ok(views.html.collections.users(collection, projectSpace.name, userRoleMap, userList.sortBy(_.fullName.toLowerCase)))
+                    case None => Redirect(routes.Collections.collection(id)).flashing("error" -> s"Error Role not found for collection $id user $usr.")
 
-                } else { Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Collection's users not found.") }
+                  }
+                    val curSpace = spaceMap getOrElse(usr.id, "")
+                    spaceMap += (usr.id -> (curSpace + ", " + projectSpace.name))
+                }
               }
-              case None => Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Collection's space not found.")
             }
+            case None => Redirect (routes.Collections.collection(id)).flashing ("error" -> "Error: Collection's space not found.");
           }
-          case None => Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Collection's space not found.")
         }
+        if(!userList.isEmpty){
+          Ok(views.html.collections.users(collection, spaceMap, userRoleMap, userList.sortBy(_.fullName.toLowerCase)))
+
+         } else { Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Collection's users not found.") }
       }
       case None => Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Collection not found.")
     }

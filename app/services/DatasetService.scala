@@ -210,6 +210,11 @@ trait DatasetService {
   def addToSpace(dataset: UUID, space: UUID)
 
   /**
+   * Remove association between dataset and space
+   */
+  def removeFromSpace(dataset:UUID, space:UUID)
+
+  /**
    * Add follower to a dataset.
    */
   def addFollower(id: UUID, userId: UUID)
