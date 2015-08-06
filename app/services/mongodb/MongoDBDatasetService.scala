@@ -148,6 +148,7 @@ class MongoDBDatasetService @Inject() (
     // - access  == show all datasets the user can see
     // - default == public only
     val public = MongoDBObject("public" -> true)
+    val emptySpaces = MongoDBObject("spaces" -> List.empty)
     val filter = owner match {
       case Some(o) => {
         val author = MongoDBObject("author.identityId.userId" -> o.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> o.identityId.providerId)
@@ -156,7 +157,11 @@ class MongoDBDatasetService @Inject() (
             if (superAdmin) {
               author
             } else {
-              author ++ $or(public, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+              if (u == o) {
+                author ++ $or(public, emptySpaces, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+              } else {
+                author ++ $or(public, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+              }
             }
           }
           case None => {

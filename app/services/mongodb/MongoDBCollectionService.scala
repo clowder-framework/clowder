@@ -130,6 +130,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     // - access  == show all collections the user can see
     // - default == public only
     val public = MongoDBObject("public" -> true)
+    val emptySpaces = MongoDBObject("spaces" -> List.empty)
     val filter = owner match {
       case Some(o) => {
         val author = MongoDBObject("author.identityId.userId" -> o.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> o.identityId.providerId)
@@ -138,7 +139,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
             if (superAdmin) {
               author
             } else {
-              author ++ $or(u.spaceandrole.map(x => MongoDBObject("space" -> new ObjectId(x.spaceId.stringify))) :+ public)
+              if (u == o) {
+                author ++ $or(public, emptySpaces, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+              } else {
+                author ++ $or(public, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+              }
             }
           }
           case None => {
@@ -148,12 +153,12 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       }
       case None => {
         space match {
-          case Some(s) => MongoDBObject("space" -> new ObjectId(s))
+          case Some(s) => MongoDBObject("spaces" -> new ObjectId(s))
           case None => {
             user match {
               case Some(u) => {
-                $or(u.spaceandrole.map(x => MongoDBObject("space" -> new ObjectId(x.spaceId.stringify))) :+ public :+
-                  MongoDBObject("author.identityId.userId" -> u.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> u.identityId.providerId))
+                val author = $and(MongoDBObject("author.identityId.userId" -> u.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> u.identityId.providerId))
+                $or(author, public, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
               }
               case None => public
             }
@@ -294,30 +299,6 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
    */
   def get(id: UUID): Option[Collection] = {
     Collection.findOneById(new ObjectId(id.stringify))
-  }
-
-  def latest(space: Option[String]): Option[Collection] = {
-    val filter = space match {
-      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
-      case None => MongoDBObject()
-    }
-    val results = Collection.find(filter).sort(MongoDBObject("created" -> -1)).limit(1).toList
-    if (results.size > 0)
-      Some(results(0))
-    else
-      None
-  }
-
-  def first(space: Option[String]): Option[Collection] = {
-    val filter = space match {
-      case Some(s) => MongoDBObject("space" -> new ObjectId(s))
-      case None => MongoDBObject()
-    }
-    val results = Collection.find(filter).sort(MongoDBObject("created" -> 1)).limit(1).toList
-    if (results.size > 0)
-      Some(results(0))
-    else
-      None
   }
 
   def insert(collection: Collection): Option[String] = {
