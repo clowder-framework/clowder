@@ -95,6 +95,16 @@ trait SecuredController extends Controller {
     }
   }
 
+  /**
+   * Disable a route without having to comment out the entry in the routes file. Useful for when we want to keep the
+   * code around but we don't want users to have access to it.
+   */
+  def DisabledAction = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      Future.successful(Results.Redirect(routes.Authentication.notAuthorized()))
+    }
+  }
+
   /** Return user based on request object */
   def getUser[A](request: Request[A]): UserRequest[A] = {
     // controllers will check for user in the following order:

@@ -7,14 +7,21 @@
 @util.masonry()
     
 <script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
-<script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script> 
+<script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
 
-<div class="page-header">
-  <h1>Collections</h1>
-</div>
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Collections</h1>
+        </div>
+    </div>
 
 <div class="row">
-    <div class="col-md-12">
+    <div class="col-md-10">
+    </div>
+    <div class="col-md-1">
+        <a class="btn btn-primary btn-sm pull-right" href="@routes.Collections.newCollection()" title="Create a new collection">Create</a>
+    </div>
+    <div class="col-md-1">
         <div class="btn-group btn-group-sm pull-right">            
             <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
             <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>            
