@@ -5,7 +5,7 @@ import api.{Permission, UserRequest}
 import models.ResourceRef
 import play.api.mvc._
 import securesocial.core.{Authenticator, SecureSocial, UserService}
-import services.{DatasetService, CollectionService, SpaceService, DI}
+import services._
 import scala.concurrent.Future
 
 /**
@@ -79,15 +79,15 @@ trait SecuredController extends Controller {
         lazy val space: SpaceService = DI.injector.getInstance(classOf[SpaceService])
         lazy val collection: CollectionService = DI.injector.getInstance(classOf[CollectionService])
         lazy val dataset: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+        lazy val file: FileService = DI.injector.getInstance(classOf[FileService])
         val messgae = {
           resourceRef.get match {
             // TODO "Not authorized" occurs with other ResourceRef.Type or there is resourceRef.parse
+            case ResourceRef(ResourceRef.file, id) => "file " + file.get(id).get.filename
             case ResourceRef(ResourceRef.dataset, id) => "dataset " + dataset.get(id).get.name
             case ResourceRef(ResourceRef.collection, id) => "collection " + collection.get(id).get.name
             case ResourceRef(ResourceRef.space, id) => "space " + space.get(id).get.name
-            case ResourceRef(resType, id) => {
-              "error resource"
-            }
+            case ResourceRef(resType, id) => resType.toString() + " " + id
           }
         }
         Future.successful(Results.Redirect(routes.Authentication.notAuthorized(messgae)))

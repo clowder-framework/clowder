@@ -3,7 +3,7 @@ package services.mongodb
 import java.io.InputStream
 
 import com.mongodb.gridfs.GridFS
-import com.mongodb.WriteConcern
+import com.mongodb.{DBObject, WriteConcern}
 import models.UUID
 import org.bson.types.ObjectId
 import play.Logger
@@ -137,5 +137,9 @@ object MongoUtils {
         true
       }
     }
+  }
+
+  def mongoQuery(dbObject: DBObject): String = {
+    dbObject.toString.replaceAll("\\{\\s*\"\\$oid\"\\s*:\\s*(\"[^\"]+\")\\}", "ObjectId($1)").replaceAll("\\{\\s*\"\\$date\"\\s*:\\s*(\"[^\"]+\")\\}", "new Date($1)")
   }
 }

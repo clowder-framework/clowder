@@ -1,4 +1,5 @@
-@(files: List[models.File], datasetsCount: Long, filesCount: Long, collectionCount: Long, spacesCount: Long,
+@(files: List[models.File], datasetsCount: Long, datasetsCountAccess: Long, filesCount: Long,
+        collectionsCount: Long, collectionsCountAccess: Long, spacesCount: Long, spacesCountAccess: Long,
         displayedName: String, welcomeMessage: String, newsfeed: List[models.Event])(implicit user: Option[models.User])
 
 @import _root_.util.Formatters
@@ -38,15 +39,15 @@
               </div>
               <div class="panel-body">
                   <ul class="list-group">
-                      <li class="list-group-item">
+                      <li class="list-group-item" title="Access to @spacesCountAccess spaces">
                           <span class="badge">@spacesCount</span>
                           <a href="@routes.Spaces.list()">Project Spaces</a>
                       </li>
-                      <li class="list-group-item">
-                          <span class="badge">@collectionCount</span>
+                      <li class="list-group-item" title="Access to @collectionsCountAccess collections">
+                          <span class="badge">@collectionsCount</span>
                           <a href="@routes.Collections.list("")">Collections</a>
                       </li>
-                      <li class="list-group-item">
+                      <li class="list-group-item" title="Access to @datasetsCountAccess datasets">
                           <span class="badge">@datasetsCount</span>
                           <a href="@routes.Datasets.list("")">Datasets</a>
                       </li>

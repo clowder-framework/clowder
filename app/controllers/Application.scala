@@ -30,23 +30,15 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   	implicit val user = request.user
   	val latestFiles = files.latest(5)
     val datasetsCount = datasets.count()
+    val datasetsCountAccess = datasets.countAccess(user, request.superAdmin)
     val filesCount = files.count()
-    val collectionCount = collections.count()
+    val collectionsCount = collections.count()
+    val collectionsCountAccess = collections.countAccess(user, request.superAdmin)
     val spacesCount = spaces.count()
-    request.user match {
-      case Some(loggedInUser) => {
-        var newsfeedEvents = events.getEvents(
-          loggedInUser.followedEntities, Some(20)
-        ).sorted(Ordering.by((_: Event).created).reverse)
-        Ok(views.html.index(latestFiles, datasetsCount, filesCount, collectionCount, spacesCount,
+    val spacesCountAccess = spaces.countAccess(user, request.superAdmin)
+    val newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)).sorted(Ordering.by((_: Event).created).reverse))
+    Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess, spacesCount, spacesCountAccess,
           AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, newsfeedEvents))
-      }
-      case None => {
-        Ok(views.html.index(latestFiles, datasetsCount, filesCount, collectionCount, spacesCount,
-          AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, List()))
-      }
-    }
-
   }
   
   def options(path:String) = UserAction { implicit request =>
