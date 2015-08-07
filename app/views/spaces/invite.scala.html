@@ -3,7 +3,7 @@
 
 @main(space.name) {
     <div class="page-header">
-        <h1>Invite new users to @space.name<h1>
+        <h1>Invite new users to @space.name</h1>
     </div>
 
     @form(action = routes.Spaces.inviteToSpace(space.id), 'enctype -> "multipart/form-data", 'class -> "form-horizontal", 'autocomplete -> "off", 'method -> "POST") {

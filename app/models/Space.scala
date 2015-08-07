@@ -4,7 +4,6 @@ import java.net.URL
 import java.util.Date
 import play.api.libs.json.JsObject
 import util.SpaceConfig
-import securesocial.core.providers.Token
 
 /**
  * A space definines a partition of the data so that authorization can be enforced on it.

@@ -101,7 +101,7 @@ GET            /spaces/new                                                      
 GET            /spaces/:id                                                              @controllers.Spaces.getSpace(id: UUID, size: Int ?= 9, direction: String ?= "desc")
 GET            /spaces/:id/updateSpace                                                  @controllers.Spaces.updateSpace(id:UUID)
 GET            /spaces/:id/invite                                                       @controllers.Spaces.invite(id:UUID)
-POST           /space/:id/inviteToSpace                                                 @controllers.Spaces.inviteToSpace(id: UUID)
+POST           /spaces/:id/invite                                                       @controllers.Spaces.inviteToSpace(id: UUID)
 POST           /spaces/submit                                                           @controllers.Spaces.submit
 
 # Tags

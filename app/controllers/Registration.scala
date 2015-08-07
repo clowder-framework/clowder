@@ -15,7 +15,7 @@ import play.api.Logger
 import com.typesafe.plugin.use
 import securesocial.core.providers.Token
 /**
- * Registration class for overwritting securesocial.registration when necessary
+ * Registration class for overwritting securesocial.controllers.Registration when necessary
  */
 class Registration @Inject()(spaces: SpaceService, users: UserService) extends SecuredController{
 
@@ -31,9 +31,9 @@ class Registration @Inject()(spaces: SpaceService, users: UserService) extends S
   /**
    * Handles post from the sign up page. Checks if there is an invitation pending for a space. If so,
    * the person is added to the space with the assigned role in the invitation after signing up.
+   * Minor Modification of securesocial.controllers.Registration.handleSignUp(token)
    */
   def handleSignUp(token: String) = Action { implicit request =>
-   //Minor modifications to securesocial.core.Registration.handleSignUp(token)
     if(Registration.registrationEnabled) {
       executeForToken(token, { t =>
           Registration.form.bindFromRequest.fold (
@@ -61,6 +61,9 @@ class Registration @Inject()(spaces: SpaceService, users: UserService) extends S
               if ( UsernamePasswordProvider.sendWelcomeEmail ) {
                 Mailer.sendWelcomeEmail(saved)
               }
+
+              //Code from here to the end of the case is the difference between securesocial and this method. It checks
+              // for an invitation pending to the space. If it finds an invitation, it then adds the person to the space.
               spaces.getInvitationToSpace(token) match {
                 case Some(invite) => {
                   users.findByEmail(invite.email) match {
