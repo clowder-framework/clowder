@@ -83,7 +83,7 @@ class Files @Inject()(
    * List all files.
    */
   @ApiOperation(value = "List all files", notes = "Returns list of files and descriptions.", responseClass = "None", httpMethod = "GET")
-  def list = DisabledAction() { implicit request =>
+  def list = DisabledAction { implicit request =>
       val list = for (f <- files.listFilesNotIntermediate()) yield jsonFile(f)
       Ok(toJson(list))
   }
