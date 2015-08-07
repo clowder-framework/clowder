@@ -6,7 +6,9 @@
 
 <h3>Members</h3>
 
-Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)" title="@creator.get.email"> @creator.get.fullName</a>
+@if(creator.isDefined) {
+	Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)" title="@creator.get.email"> @creator.get.fullName</a>
+}
 
 <div id="userlist">    
 	@if(userRoleMap.size == 0) {
