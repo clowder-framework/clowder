@@ -1,4 +1,4 @@
-@(space: Option[ProjectSpace], resourceType: Int, resourceId: UUID)(implicit user: Option[models.User])
+@(space: Option[ProjectSpace], resourceType: Symbol, resourceId: UUID)(implicit user: Option[models.User])
 @import api.Permission
 
 @if(user.isDefined) {
@@ -6,25 +6,25 @@
         <a href="@routes.Spaces.getSpace(space.get.id)" id="space_link">
         @space.map(_.name).getOrElse("N/A")</a>
         <!-- Need to check permission by resource type. -->
-        @if(resourceType == 0) {
+        @if(resourceType == ResourceRef.dataset) {
             <!-- If the user can add resources to the space for this dataset, the link is enabled, otherwise the button is present but disabled to provide consistent UE. -->
             @if(Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.dataset, resourceId))) {
-                <a href="javascript:changeSpace('@resourceId', @resourceType)">
+                <a href="javascript:changeSpace('@resourceId', 0)">
                     <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
                 </a>
             } else {
-                <a class="btn btn-xs disabled" role="button" href="javascript:changeSpace('@resourceId', @resourceType)">
+                <a class="btn btn-xs disabled" role="button" href="javascript:changeSpace('@resourceId', 0)">
                     <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
                 </a>
             }
-        } else { @if(resourceType == 1) {
+        } else { @if(resourceType == ResourceRef.collection) {
             <!-- If the user can add resources to the space for this collection, the link is enabled, otherwise the button is present but disabled to provide consistent UE. -->
             @if(Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.collection, resourceId))) {
-                <a href="javascript:changeSpace('@resourceId', @resourceType)">
+                <a href="javascript:changeSpace('@resourceId', 1)">
                     <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
                 </a>
             } else {
-                <a class="btn btn-xs disabled" role="button"  href="javascript:changeSpace('@resourceId', @resourceType)">
+                <a class="btn btn-xs disabled" role="button"  href="javascript:changeSpace('@resourceId', 1)">
                     <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
                 </a>
             }
@@ -32,9 +32,15 @@
     }
     @if(space.isEmpty) {
         <a href="#" id="space_link">Default</a>
-        <a href="javascript:changeSpace('@resourceId', @resourceType)">
-            <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
-        </a>
+        @if(resourceType == ResourceRef.dataset) {
+            <a href="javascript:changeSpace('@resourceId', 0)">
+                <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+            </a>
+        } else { @if(resourceType == ResourceRef.collection) {
+            <a href="javascript:changeSpace('@resourceId', 1)">
+                <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+            </a>
+        }}
     }
 }
 @if(user.isEmpty) {
