@@ -3,6 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import api.Permission
+import models.User
 import play.api.Logger
 import play.api.Play.current
 import services.{CollectionService, DatasetService, FileService, SectionService}
@@ -114,13 +115,13 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
   def tagCloud() = PermissionAction(Permission.ViewTags) { implicit request =>
     implicit val user = request.user
 
-    Ok(views.html.tagCloud(computeTagWeights))
+    Ok(views.html.tagCloud(computeTagWeights(user)))
   }
 
   def tagListWeighted() = PermissionAction(Permission.ViewTags) { implicit request =>
     implicit val user = request.user
 
-    val tags = computeTagWeights
+    val tags = computeTagWeights(user)
 
     if (tags.isEmpty) {
       Ok(views.html.tagList(List.empty[(String, Double)]))
@@ -138,10 +139,10 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
   def tagListOrdered() = PermissionAction(Permission.ViewTags) { implicit request =>
     implicit val user = request.user
 
-    Ok(views.html.tagListChar(createTagList))
+    Ok(views.html.tagListChar(createTagList(user)))
   }
 
-  def createTagList() = {
+  def createTagList(user: Option[User]) = {
     val tagMap = collection.mutable.Map.empty[Char, collection.mutable.Map[String, Integer]]
 
     // TODO allow for tags in collections
@@ -149,7 +150,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     //      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.collection").getOrElse(1)
     //    }
 
-    for(dataset <- datasets.listDatasets(); tag <- dataset.tags) {
+    for(dataset <- datasets.listUser(0, user, false, user.get); tag <- dataset.tags) {
       var firstChar = if (tag.name(0).isLetter) tag.name(0).toUpper else '#'
       if (!tagMap.contains(firstChar)) tagMap(firstChar) = collection.mutable.Map.empty[String, Integer].withDefaultValue(0)
       val map = tagMap(firstChar)
@@ -173,7 +174,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     tagMap.map{ case (k, v) => (k, v.toMap)}.toMap
   }
 
-  def computeTagWeights() = {
+  def computeTagWeights(user: Option[User]) = {
     val weightedTags = collection.mutable.Map.empty[String, Integer].withDefaultValue(0)
 
     // TODO allow for tags in collections
@@ -181,7 +182,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
 //      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.collection").getOrElse(1)
 //    }
 
-    for(dataset <- datasets.listDatasets(); tag <- dataset.tags) {
+    for(dataset <- datasets.listAccess(12, user, superAdmin=false); tag <- dataset.tags) {
       weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.dataset").getOrElse(1)
     }
 

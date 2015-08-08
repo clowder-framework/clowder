@@ -64,8 +64,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
         case Some(s) => {
 	        val creator = users.findById(s.creator)
 	        var creatorActual: User = null
-	        val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(direction), Some(size))
-	        val datasetsInSpace = spaces.getDatasetsInSpace(Some(id.stringify), Some(direction), Some(size))
+	        val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(size))
+	        val datasetsInSpace = spaces.getDatasetsInSpace(Some(id.stringify), Some(size))
 	        val usersInSpace = spaces.getUsersInSpace(id)
 	        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
 	        creator match {
@@ -151,7 +151,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
                                                 created = new Date, creator = userId, homePage = formData.homePage,
                                                 logoURL = formData.logoURL, bannerURL = formData.bannerURL,
                                                 collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty,
-                                                resourceTimeToLive = formData.resourceTimeToLive, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
+                                                resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
 
                     // insert space
                     spaces.insert(newSpace)

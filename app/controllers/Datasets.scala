@@ -11,19 +11,11 @@ import models._
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.Json._
-import services.{ExtractorMessage, _}
-import util.RequiredFieldsConfig
-import views.html.defaultpages.badRequest
-import models._
-import fileutils.FilesUtils
-import api.Permission
-import javax.inject.Inject
-import scala.Some
-import scala.xml.Utility
-import services.ExtractorMessage
-import scala.collection.mutable.ListBuffer
-import util.RequiredFieldsConfig
+import services._
+import util.{Formatters, RequiredFieldsConfig}
+
 import scala.collection.immutable._
+import scala.collection.mutable.ListBuffer
 
 
 /**
@@ -40,7 +32,7 @@ class Datasets @Inject()(
   sparql: RdfSPARQLService,
   users: UserService,
   previewService: PreviewService,
-  spaces: SpaceService) extends SecuredController {
+  spaceService: SpaceService) extends SecuredController {
 
 
   object ActivityFound extends Exception {}
@@ -50,18 +42,17 @@ class Datasets @Inject()(
    * or by selecting multiple existing files.
    */
   def newDataset() = PermissionAction(Permission.CreateDataset) { implicit request =>
-    implicit val user = request.user
-    val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
-    var spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaces.get(_))
-
-    var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
-    for (aSpace <- spacesList) {
-      //For each space in the list, check if the user has permission to add something to it, if so
-      //decode it and add it to the list to pass back to the view.
-      if (Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, aSpace.id))) {
-        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
+      implicit val user = request.user
+      val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
+      val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
+      var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
+      for (aSpace <- spacesList) {
+        //For each space in the list, check if the user has permission to add something to it, if so
+        //decode it and add it to the list to pass back to the view.
+        if (Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, aSpace.id))) {
+          decodedSpaceList += Utils.decodeSpaceElements(aSpace)
+        }
       }
-    }
 
     Ok(views.html.newDataset(filesList, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired)).flashing("error" -> "Please select ONE file (upload new or existing)")
   }
@@ -75,155 +66,116 @@ class Datasets @Inject()(
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int, space: Option[String], mode: String) =
-    PrivateServerAction { implicit request =>
-      implicit val user = request.user
-      var direction = "b"
-      if (when != "") direction = when
-      val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
-      var prev, next = ""
-      var datasetList = List.empty[models.Dataset]
-      if (direction == "b") {
-        datasetList = datasets.listDatasetsBefore(date, limit, space)
-      } else if (direction == "a") {
-        datasetList = datasets.listDatasetsAfter(date, limit, space)
-      } else {
-        badRequest
-      }
-      
-      // latest object
-      val latest = datasets.latest(space)
-      // first object
-      val first = datasets.first(space)
-      var firstPage = false
-      var lastPage = false
-      if (latest.size == 1) {
-        firstPage = datasetList.exists(_.id.equals(latest.get.id))
-        lastPage = datasetList.exists(_.id.equals(first.get.id))
-        Logger.debug("latest " + latest.get.id + " first page " + firstPage)
-        Logger.debug("first " + first.get.id + " last page " + lastPage)
-      }
-      if (datasetList.size > 0) {
-        if (date != "" && !firstPage) {
-          // show prev button
-          prev = formatter.format(datasetList.head.created)
-        }
-        if (!lastPage) {
-          // show next button
-          next = formatter.format(datasetList.last.created)
-        }
-      }
+  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String]) = PrivateServerAction { implicit request =>
+    implicit val user = request.user
 
-      val commentMap = datasetList.map{dataset =>
-        var allComments = comments.findCommentsByDatasetId(dataset.id)
-        dataset.files.map { file =>
-          allComments ++= comments.findCommentsByFileId(file.id)
-          sections.findByFileId(file.id).map { section =>
-            allComments ++= comments.findCommentsBySectionId(section.id)
-          }
-        }
-        dataset.id -> allComments.size
-      }.toMap
+    val nextPage = (when == "a")
+    val person = owner.flatMap(o => users.get(UUID(o)))
 
-      //Modifications to decode HTML entities that were stored in an encoded fashion as part
-      //of the datasets names or descriptions
-      val decodedDatasetList = ListBuffer.empty[models.Dataset]
-      for (aDataset <- datasetList) {
-        decodedDatasetList += Utils.decodeDatasetElements(aDataset)
-      }
-      
-        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
-        //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
-        //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14   
-        val viewMode: Option[String] = 
-        if (mode == null || mode == "") {
-          request.cookies.get("view-mode") match {
-              case Some(cookie) => Some(cookie.value)
-              case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
-          }
+    val datasetList = person match {
+      case Some(p) => {
+        if (date != "") {
+          datasets.listUser(date, nextPage, limit, request.user, request.superAdmin, p)
         } else {
-            Some(mode)
+          datasets.listUser(limit, request.user, request.superAdmin, p)
         }
-      
-      //Pass the viewMode into the view
-      Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space))
-  }
+      }
+      case None => {
+        space match {
+          case Some(s) => {
+            if (date != "") {
+              datasets.listSpace(date, nextPage, limit, s)
+            } else {
+              datasets.listSpace(limit, s)
+            }
+          }
+          case None => {
+            if (date != "") {
+              datasets.listAccess(date, nextPage, limit, request.user, request.superAdmin)
+            } else {
+              datasets.listAccess(limit, request.user, request.superAdmin)
+            }
 
-  def userDatasets(when: String, date: String, limit: Int, space: Option[String], mode: String, email: String) = AuthenticatedAction { implicit request =>
-      implicit val user = request.user
-      var direction = "b"
-      if (when != "") direction = when
-      val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
-      var prev, next = ""
-      var datasetList = List.empty[models.Dataset]
-      if (direction == "b") {
-        datasetList = datasets.listUserDatasetsBefore(date, limit, email)
-      } else if (direction == "a") {
-        datasetList = datasets.listUserDatasetsAfter(date, limit, email)
-      } else {
-        badRequest
-      }
-      // latest object
-      val latest = datasets.latest()
-      // first object
-      val first = datasets.first()
-      var firstPage = false
-      var lastPage = false
-      if (latest.size == 1) {
-        firstPage = datasetList.exists(_.id.equals(latest.get.id))
-        lastPage = datasetList.exists(_.id.equals(first.get.id))
-        Logger.debug("latest " + latest.get.id + " first page " + firstPage)
-        Logger.debug("first " + first.get.id + " last page " + lastPage)
-      }
-      if (datasetList.size > 0) {
-        if (date != "" && !firstPage) {
-          // show prev button
-          prev = formatter.format(datasetList.head.created)
-        }
-        if (!lastPage) {
-          // show next button
-          next = formatter.format(datasetList.last.created)
-        }
-      }
-      
-
-      val commentMap = datasetList.map{dataset =>
-        var allComments = comments.findCommentsByDatasetId(dataset.id)
-        dataset.files.map { file =>
-          allComments ++= comments.findCommentsByFileId(file.id)
-          sections.findByFileId(file.id).map { section =>
-            allComments ++= comments.findCommentsBySectionId(section.id)
           }
         }
-        dataset.id -> allComments.size
-      }.toMap
+      }
+    }
 
-      //Modifications to decode HTML entities that were stored in an encoded fashion as part
-      //of the datasets names or descriptions
-      val decodedDatasetList = ListBuffer.empty[models.Dataset]
-      for (aDataset <- datasetList) {
-        decodedDatasetList += Utils.decodeDatasetElements(aDataset)
+    // check to see if there is a prev page
+    val prev = if (datasetList.nonEmpty && date != "") {
+      val first = Formatters.iso8601(datasetList.head.created)
+      val ds = person match {
+        case Some(p) => datasets.listUser(first, nextPage=false, 1, request.user, request.superAdmin, p)
+        case None => {
+          space match {
+            case Some(s) => datasets.listSpace(first, nextPage = false, 1, s)
+            case None => datasets.listAccess(first, nextPage = false, 1, request.user, request.superAdmin)
+          }
+        }
+      }
+      if (ds.nonEmpty && ds.head.id != datasetList.head.id) {
+        first
+      } else {
+        ""
+      }
+    } else {
+      ""
+    }
+
+    // check to see if there is a next page
+    val next = if (datasetList.nonEmpty) {
+      val last = Formatters.iso8601(datasetList.last.created)
+      val ds = person match {
+        case Some(p) => datasets.listUser(last, nextPage=true, 1, request.user, request.superAdmin, p)
+        case None => {
+          space match {
+            case Some(s) => datasets.listSpace(last, nextPage=true, 1, s)
+            case None => datasets.listAccess(last, nextPage=true, 1, request.user, request.superAdmin)
+          }
+        }
+      }
+      if (ds.nonEmpty && ds.head.id != datasetList.last.id) {
+        last
+      } else {
+        ""
+      }
+    } else {
+      ""
+    }
+
+    val commentMap = datasetList.map { dataset =>
+      var allComments = comments.findCommentsByDatasetId(dataset.id)
+      dataset.files.map { file =>
+        allComments ++= comments.findCommentsByFileId(file.id)
+        sections.findByFileId(file.id).map { section =>
+          allComments ++= comments.findCommentsBySectionId(section.id)
+        }
+      }
+      dataset.id -> allComments.size
+    }.toMap
+
+    //Modifications to decode HTML entities that were stored in an encoded fashion as part
+    //of the datasets names or descriptions
+    val decodedDatasetList = ListBuffer.empty[models.Dataset]
+    for (aDataset <- datasetList) {
+      decodedDatasetList += Utils.decodeDatasetElements(aDataset)
+    }
+
+    //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+    //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+    val viewMode: Option[String] =
+      if (mode == null || mode == "") {
+        request.cookies.get("view-mode") match {
+          case Some(cookie) => Some(cookie.value)
+          case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+        }
+      } else {
+        Some(mode)
       }
 
-        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
-        //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
-        //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14   
-        var viewMode: Option[String] = Some(mode);    
-        //If the mode String passed in is null or empty, use the cookie (this should be the majority of cases)
-        if (mode == null || mode == "") {
-            request.cookies.get("view-mode") match {
-                case Some(cookie) => { 
-                    viewMode = Some(cookie.value)
-                }
-                case None => {
-                    //If there is no cookie, and a mode was not passed in, default it to tile                
-                    viewMode = None
-                
-                }
-            }
-        }                       
-      
-      Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, None))
+    //Pass the viewMode into the view
+    Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space))
   }
 
   def addViewer(id: UUID, user: Option[securesocial.core.Identity]) = {
@@ -283,8 +235,8 @@ class Datasets @Inject()(
           val userMetadata = datasets.getUserMetadata(id)
           Logger.debug("User metadata: " + userMetadata.toString)
 
-          val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
-          val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
+          val collectionsOutside = collections.listOutsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
+          val collectionsInside = collections.listInsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
           val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
           var decodedCollectionsOutside = new ListBuffer[models.Collection]()
           var decodedCollectionsInside = new ListBuffer[models.Collection]()
@@ -319,8 +271,7 @@ class Datasets @Inject()(
 
           val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
-          val space = dataset.space.flatMap(spaces.get(_))
-          var decodedSpace: ProjectSpace = null
+
           filesInDataset.map
           {
             file =>
@@ -329,18 +280,22 @@ class Datasets @Inject()(
               }
           }
 
-          space match {
-            case Some(s) => {
-                decodedSpace = Utils.decodeSpaceElements(s)
-                Ok(views.html.dataset(datasetWithFiles, decodedCommentsByDataset.toList, filteredPreviewers.toList, metadata, userMetadata,
-                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpace), filesTags))
-            }
-            case None => {
-                Logger.error("Problem in decoding the space element for this dataset: " + datasetWithFiles.name)
-                Ok(views.html.dataset(datasetWithFiles, decodedCommentsByDataset.toList, filteredPreviewers.toList, metadata, userMetadata,
-                decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, space, filesTags))
-            }
+          var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
+          dataset.spaces.map{
+                  sp => spaceService.get(sp) match {
+                    case Some(s) => {
+                      datasetSpaces = s :: datasetSpaces
+                    }
+                    case None => Logger.error(s"space with id $sp on dataset $id doesn't exist.")
+                  }
           }
+
+          val otherSpaces: List[ProjectSpace] = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!datasetSpaces.map(_.id).contains(aSpace.id)) aSpace else None).filter(_ != None).asInstanceOf[List[ProjectSpace]]
+          val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
+
+          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
+          decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpaces), filesTags, otherSpaces))
+
         }
         case None => {
           Logger.error("Error getting dataset" + id);
@@ -621,41 +576,48 @@ class Datasets @Inject()(
       case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
     }
   }
-
-  /**
-   * Show all users with access to a dataset (identified by its id)
-   */
   def users(id: UUID) = PermissionAction(Permission.ViewDataset) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
-        dataset.space match {
-          case Some(spaceId) => {
-            spaces.get(spaceId) match {
-              case Some(projectSpace) => {
-
-                val userList: List[User] = spaces.getUsersInSpace(spaceId)
-                if(!userList.isEmpty) {
-
-                  var userRoleMap = scala.collection.mutable.Map[UUID, String]()
-                  for(usr <- userList) {
-                    spaces.getRoleForUserInSpace(spaceId, usr.id) match {
-                      case Some(role) => userRoleMap += (usr.id -> role.name)
-                      case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> "Error: Role not found for dataset's user.")
-                    }
-                  }// for user ...
-                  Ok(views.html.datasets.users(dataset, projectSpace.name, userRoleMap, userList.sortBy(_.fullName.toLowerCase)))
-
-                } else { Redirect(routes.Datasets.dataset(id)).flashing("error" -> "Error: Dataset's users not found.") }
+        var userList: List[User]=  List.empty
+        var userRoleMap = Map[UUID, String]()
+        var spaceMap = Map[UUID, String]()
+        dataset.spaces.map{
+          space_id => spaceService.get(space_id) match {
+            case Some(projectSpace) => {
+              val space_users: List[User] = spaceService.getUsersInSpace(space_id)
+              var new_users: List[User] = List.empty
+              space_users.map {
+                aUser => if(!userList.contains(aUser)) {
+                  new_users = aUser :: new_users
+                }
               }
-              case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> "Error: Dataset's space not found.")
+               userList = userList ::: new_users
+              if(!space_users.isEmpty) {
+                space_users.map { usr =>
+                  spaceService.getRoleForUserInSpace(space_id, usr.id) match {
+                    case Some(role) => {
+                      val cur_role = userRoleMap getOrElse(usr.id, "")
+                      userRoleMap += (usr.id -> (cur_role + ", " + role.name))
+                    }
+                    case None => Redirect(routes.Datasets.dataset(id)).flashing("error"-> s"Error: Role not found for dataset $id user $usr.")
+                  }
+                  val curSpace = spaceMap getOrElse(usr.id, "")
+                  spaceMap += (usr.id -> (curSpace + ", " + projectSpace.name))
+                }
+              }
             }
+            case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> "Error: Dataset's space not found.")
           }
-          case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> "Error: Dataset's space not found.")
         }
+        if(!userList.isEmpty) {
+          Ok(views.html.datasets.users(dataset, spaceMap, userRoleMap, userList.sortBy(_.fullName.toLowerCase)))
+        } else { Redirect(routes.Datasets.dataset(id)).flashing("error" -> "Error: Dataset's users not found.") }
       }
       case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> "Error: Dataset not found.")
     }
+
   }
 
   def metadataSearch() = PermissionAction(Permission.ViewDataset) { implicit request =>

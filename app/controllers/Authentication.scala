@@ -40,9 +40,9 @@ object Authentication extends SecuredController {
     )
   }
   
-  def notAuthorized = UserAction { implicit request =>
+  def notAuthorized(message: String) = UserAction { implicit request =>
     implicit val user = request.user
-    Ok(views.html.notAuthorized())
+    Ok(views.html.notAuthorized(message))
   }
   
 }

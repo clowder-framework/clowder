@@ -18,6 +18,9 @@ var getAjaxObj = function(jsRoutes, type) {
         case 'collection':
             ajaxObj = jsRoutes.api.Collections;
             break;
+        case 'space':
+            ajaxObj = jsRoutes.api.Spaces;
+            break;
         default:
             ajaxObj = undefined;
     }

@@ -157,7 +157,7 @@ class Files @Inject() (
   /**
    * List a specific number of files before or after a certain date.
    */
-  def list(when: String, date: String, limit: Int, mode: String) = PrivateServerAction { implicit request =>
+  def list(when: String, date: String, limit: Int, mode: String) = DisabledAction { implicit request =>
     implicit val user = request.user
     var direction = "b"
     if (when != "") direction = when

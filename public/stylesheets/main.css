@@ -557,10 +557,6 @@ textarea, input[type='text'], input[type='password']{
 .vertical-align {
     display: flex;
     flex-direction: row;
-}
-
-.vertical-align {
-    display: flex;
     align-items: center;
 }
 
@@ -684,4 +680,21 @@ textarea, input[type='text'], input[type='password']{
 }
 .galleria-fscr:active{
     color: #fff;
+}
+
+.space-pills {
+    display: inline-block;
+    border: none;
+    padding: 1px 10px 1px 10px;
+    margin: 5px;
+    background: #eeeeee;
+    border-radius: .25em;
+}
+
+.space-pills a {
+    color: white;
+}
+
+.space-pills a:hover {
+    color: white;
 }

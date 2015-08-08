@@ -74,8 +74,7 @@ POST           /uploadDragDrop                                                  
 GET            /fileThumbnail/:id/blob                                                  @controllers.Files.thumbnail(id: UUID)
 
 # Datasets
-GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "")
-GET            /datasets/userDatasets                                                   @controllers.Datasets.userDatasets(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", email: String)
+GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
 GET            /datasets/new                                                            @controllers.Datasets.newDataset
 GET            /datasets/addToDataset/:id/:name/:desc                                   @controllers.Datasets.addToDataset(id: UUID, name: String, desc: String)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
@@ -86,7 +85,7 @@ GET            /datasets_by_section/:id                                         
 POST           /dataset/submit                                                          @controllers.Datasets.submit
 
 # Collections
-GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "")
+GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
 GET            /collections/new                                                         @controllers.Collections.newCollection
 POST           /collection/submit                                                       @controllers.Collections.submit
 GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)
@@ -113,7 +112,7 @@ GET            /tags/cloud                                                      
 # Authentication
 GET            /loginTest                                                               controllers.Authentication.login
 POST           /loginTest                                                               controllers.Authentication.loginSubmit
-GET            /notAuthorized                                                           controllers.Authentication.notAuthorized
+GET            /notAuthorized                                                           controllers.Authentication.notAuthorized(msg ?= null)
 
 # Search
 GET            /search                                                                  @controllers.Search.search(query: String ?= "")
@@ -292,6 +291,10 @@ POST           /api/spaces/:id/addCollection                                    
 POST           /api/spaces/:id/addDataset                                               @api.Spaces.addDataset(id: UUID)
 POST           /api/spaces/:id/update                                                   @api.Spaces.updateSpace(id: UUID)
 POST           /api/spaces/:id/updateUsers                                              @api.Spaces.updateUsers(id: UUID)
+POST           /api/spaces/addDatasetToSpaces                                           @api.Spaces.addDatasetToSpaces(space_list: List[String] ?= List.empty, dataset_id: UUID)
+POST           /api/spaces/addCollectionToSpaces                                        @api.Spaces.addCollectionToSpaces(space_list: List[String]?= List.empty, collection_id: UUID)
+POST           /api/spaces/:id/follow                                                   @api.Spaces.follow(id: UUID, name: String)
+POST           /api/spaces/:id/unfollow                                                 @api.Spaces.unfollow(id: UUID, name: String)
 
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT

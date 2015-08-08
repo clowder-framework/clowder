@@ -81,6 +81,7 @@ object Permission extends Enumeration {
     ViewSection, ViewSpace, ViewTags, ViewUser)
 
   lazy val files: FileService = DI.injector.getInstance(classOf[FileService])
+  lazy val previews: PreviewService = DI.injector.getInstance(classOf[PreviewService])
   lazy val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
   lazy val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   lazy val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
@@ -147,24 +148,57 @@ object Permission extends Enumeration {
 
   def checkPermission(user: Identity, permission: Permission, resourceRef: ResourceRef): Boolean = {
     resourceRef match {
-      case ResourceRef(ResourceRef.file, id) => true
+      case ResourceRef(ResourceRef.preview, id) => {
+        previews.get(id) match {
+          case Some(p) => {
+            p.file_id.exists(id => checkPermission(user, permission, ResourceRef(ResourceRef.file, id))) ||
+              p.section_id.exists(id => checkPermission(user, permission, ResourceRef(ResourceRef.file, id))) ||
+              p.dataset_id.exists(id => checkPermission(user, permission, ResourceRef(ResourceRef.file, id))) ||
+              p.collection_id.exists(id => checkPermission(user, permission, ResourceRef(ResourceRef.file, id)))
+          }
+          case None => false
+        }
+      }
+      case ResourceRef(ResourceRef.file, id) => {
+        var hasPermission: Option[Boolean] = None
+        for (clowderUser <- getUserByIdentity(user)) {
+          datasets.findByFileId(id).foreach { dataset =>
+            dataset.spaces.map{
+              spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+                if(role.permissions.contains(permission.toString))
+                  hasPermission = Some(true)
+              }
+            }
+          }
+        }
+        hasPermission getOrElse files.get(id).exists(_.author.email == user.email)
+      }
       case ResourceRef(ResourceRef.dataset, id) => {
         val dataset = datasets.get(id)
-        val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
-                                                  spaceId <- dataset.get.space
-                                                  role <- users.getUserRoleInSpace(clowderUser.id, spaceId)
-                                                  if role.permissions.contains(permission.toString)
-        } yield true
+        var hasPermission: Option[Boolean] = None
 
+        for (clowderUser <- getUserByIdentity(user)) {
+          dataset.get.spaces.map{
+             spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+               if(role.permissions.contains(permission.toString))
+                 hasPermission = Some(true)
+             }
+          }
+        }
         hasPermission getOrElse dataset.exists(_.author.email == user.email)
       }
       case ResourceRef(ResourceRef.collection, id) => {
         val collection = collections.get(id)
-        val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
-                                                  spaceId <- collection.get.space
-                                                  role <- users.getUserRoleInSpace(clowderUser.id, spaceId)
-                                                  if role.permissions.contains(permission.toString)
-        } yield true
+        var hasPermission: Option[Boolean] = None
+
+        for(clowderUser <- getUserByIdentity(user)) {
+          collection.get.spaces.map {
+            spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+              if(role.permissions.contains(permission.toString))
+                hasPermission = Some(true)
+            }
+          }
+        }
         hasPermission getOrElse collection.exists(x => {
           x.author match {
             case Some(realAuthor) => {
@@ -195,14 +229,41 @@ object Permission extends Enumeration {
       }
       case ResourceRef(ResourceRef.comment, id) => {
         val comment = comments.get(id)
-        val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
-                                                  dataset <- datasets.get(comment.get.dataset_id.get)
-                                                  spaceId <- dataset.space
-                                                  role <- users.getUserRoleInSpace(clowderUser.id, spaceId)
-                                                  if role.permissions.contains(permission.toString)
-        } yield true
-        hasPermission getOrElse comment.exists(_.author.email == user.email)
+        var hasPermission: Option[Boolean] = None
+        if(comment.get.dataset_id.isDefined) {
+          for (clowderUser <- getUserByIdentity(user)) {
+            for (dataset <- datasets.get(comment.get.dataset_id.get)) {
+              dataset.spaces.map {
+                spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+                  if (role.permissions.contains(permission.toString)) {
+                    hasPermission = Some(true)
+                  }
+                }
+              }
+            }
+          }
+          hasPermission getOrElse comment.exists(_.author.email == user.email)
+        }
+        else if(comment.get.file_id.isDefined) {
+          val datasetList = datasets.findByFileId(comment.get.file_id.get)
+          for (clowderUser <- getUserByIdentity(user)) {
+            datasetList.flatMap(_.spaces).map {
+              spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+                  if(role.permissions.contains(permission.toString)) {
+                    hasPermission = Some(true)
+                  }
+                }
+
+            }
+          }
+          hasPermission getOrElse comment.exists(_.author.email == user.email)
+        }
+        else {
+          hasPermission getOrElse comment.exists(_.author.email == user.email)
+        }
       }
+
+
       case ResourceRef(resType, id) => {
         Logger.error("Resource type not recognized " + resType)
         false

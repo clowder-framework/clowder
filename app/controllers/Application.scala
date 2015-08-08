@@ -30,23 +30,15 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   	implicit val user = request.user
   	val latestFiles = files.latest(5)
     val datasetsCount = datasets.count()
+    val datasetsCountAccess = datasets.countAccess(user, request.superAdmin)
     val filesCount = files.count()
-    val collectionCount = collections.count()
+    val collectionsCount = collections.count()
+    val collectionsCountAccess = collections.countAccess(user, request.superAdmin)
     val spacesCount = spaces.count()
-    request.user match {
-      case Some(loggedInUser) => {
-        var newsfeedEvents = events.getEvents(
-          loggedInUser.followedEntities, Some(20)
-        ).sorted(Ordering.by((_: Event).created).reverse)
-        Ok(views.html.index(latestFiles, datasetsCount, filesCount, collectionCount, spacesCount,
+    val spacesCountAccess = spaces.countAccess(user, request.superAdmin)
+    val newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)).sorted(Ordering.by((_: Event).created).reverse))
+    Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess, spacesCount, spacesCountAccess,
           AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, newsfeedEvents))
-      }
-      case None => {
-        Ok(views.html.index(latestFiles, datasetsCount, filesCount, collectionCount, spacesCount,
-          AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, List()))
-      }
-    }
-
   }
   
   def options(path:String) = UserAction { implicit request =>
@@ -146,6 +138,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Spaces.addDataset,
         api.routes.javascript.Spaces.updateSpace,
         api.routes.javascript.Spaces.updateUsers,
+        api.routes.javascript.Spaces.follow,
+        api.routes.javascript.Spaces.unfollow,
         api.routes.javascript.Collections.follow,
         api.routes.javascript.Collections.unfollow,
         api.routes.javascript.Users.follow,
@@ -153,6 +147,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Projects.addproject,
         api.routes.javascript.Institutions.addinstitution,
         api.routes.javascript.Users.getUser,
+        api.routes.javascript.Spaces.addDatasetToSpaces,
+        api.routes.javascript.Spaces.addCollectionToSpaces,
         controllers.routes.javascript.Profile.viewProfileUUID,
         controllers.routes.javascript.Files.file,
         controllers.routes.javascript.Datasets.dataset,
