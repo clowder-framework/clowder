@@ -120,7 +120,7 @@ trait SecuredController extends Controller {
    */
   def DisabledAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
-      Future.successful(Results.Redirect(routes.Authentication.notAuthorized()))
+      Future.successful(Results.Redirect(routes.Authentication.notAuthorized("", null, null)))
     }
   }
 

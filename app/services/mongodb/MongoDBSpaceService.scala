@@ -17,6 +17,7 @@ import play.api.Play._
 import services._
 import MongoContext.context
 import util.Direction._
+import util.Formatters
 
 /**
  * Store Spaces in MongoDB.
