@@ -1,4 +1,6 @@
 @(resourceId: UUID, resourceType: Symbol, otherSpaces: List[ProjectSpace], resourceSpaces: Option[List[ProjectSpace]])(implicit user: Option[securesocial.core.Identity])
+@import api.Permission
+
 <div class="row">
     <select class = "chosen-select2" multiple style="..." id ="spacesAvailable">
         @for(curOption <- resourceSpaces) {
@@ -7,7 +9,10 @@
             }
         }
         @for(curSpace <-otherSpaces) {
-            <option value="@curSpace.id" id ="@curSpace.name" >@curSpace.name</option>
+            <!-- Ensure that the space options are available only if the user can actually add to them. -->
+            @if(Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, curSpace.id))) {
+                <option value="@curSpace.id" id ="@curSpace.name" >@curSpace.name</option>
+            }
         }
     </select>
 </div>

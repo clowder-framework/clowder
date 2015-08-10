@@ -13,17 +13,17 @@
         @*<a href="javascript:changeSpace('@resourceId', @resourceType)">*@
             @*<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>*@
         @*</a>*@
-        <!-- If the user can add resources to the space for this dataset, the link is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-        @if(Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.dataset, resourceId))) {
-            <a class= 'space-pills' class = "btn btn-default btn-xs accordion-toggle collapsed" data-toggle="modal"
+        <!-- If the user can add resources to the space for this resource, the link is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+        @if(Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(resourceType, resourceId))) {
+            <button class = "btn btn-link btn-xs accordion-toggle collapsed" data-toggle="modal"
             data-target="#modalSpaces" id="editSpaces" title = "Edit Spaces">
                 <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span>
-            </a>
+            </button>
         } else {
-            <a class= 'space-pills disabled' class = "btn btn-default btn-xs accordion-toggle collapsed" data-toggle="modal"
+            <button class = "btn btn-link btn-xs accordion-toggle collapsed disabled" data-toggle="modal"
             data-target="#modalSpaces" id="editSpaces" title = "Edit Spaces">
                 <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span>
-            </a>
+            </button>
         }
     }
     @if(resourceSpaces.isEmpty) {
