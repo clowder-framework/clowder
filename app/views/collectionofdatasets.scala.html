@@ -26,11 +26,17 @@
 <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
 
 <div class="page-header">
-  <h1 id ="collectiontitle" style="display:inline">@Html(collection.name)</h1>
-<h3 style="display:inline"><a id="edit-title" href="javascript:updateTitle()">
-		<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
-	</a></h3>
+  <h1 id ="collectiontitle" class="inline">@Html(collection.name)</h1>
+	@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
+		<h3 class="inline align-right">
+			<a id="edit-title" href="javascript:updateTitle()">
+				<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+			</a>
+		</h3>
+	}
+
 </div>
+
 <div class="row">
 	<div class="col-md-12">
 				<dl class="dl-horizontal">
@@ -43,10 +49,14 @@
  						@spaces.spaceLink(collectionSpaces, 1, collection.id, otherSpaces)
                     </dd>
 					<dt>Description:</dt>
-					<dd ><p id="collection_desc"  style="display:inline">@Html(collection.description)</p>
-						<a id="edit-description" href="javascript:updateDescription()">
-						<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
-					</a></dd>
+					<dd ><p id="collection_desc"  class="inline">@Html(collection.description)</p>
+						@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
+							<a id="edit-description" href="javascript:updateDescription()">
+								<span class="glyphicon glyphicon-edit edit-tab" aria-hidden="true"></span>
+							</a>
+						}
+
+						</dd>
 
 
 				</dl>
@@ -245,8 +255,8 @@
 
 	function updateTitle() {
 	 var cur_title = $('#collectiontitle').text();
-	 $('<input type = "text" id="title_input" style="width:80%"/>').insertAfter($('#collectiontitle'));
-	 $('<button id="update_title" class="btn btn-sm" onclick="saveTitle()"> Save </button>').insertAfter($('#title_input'));
+	 $('<input type = "text" id="title_input" class="form-control"/>').insertAfter($('#collectiontitle'));
+	 $('<button id="update_title" class="btn btn-sm btn-primary" onclick="saveTitle()"> Save </button>').insertAfter($('#title_input'));
 	 $('#title_input').val(cur_title);
 	 $('#collectiontitle').text("");
 	 $('#edit-title').css("display", "none");
@@ -283,9 +293,9 @@
 	function updateDescription() {
 		var cur_description = $('#collection_desc').text().trim();
 		$('<div class = "edit_desc"></div>').insertAfter($('#collection_desc'));
-		$(".edit_desc").append('<input type ="text" id = "desc_input" style="width:100%"/>')
+		$(".edit_desc").append('<textarea type ="text" id = "desc_input" class="form-control"/>')
 		$(".edit_desc").append('<br/>');
-		$(".edit_desc").append('<button id = "update_desc" class = "btn btn-sm" onclick = "saveDescription()"> Save </button>');
+		$(".edit_desc").append('<button id = "update_desc" class = "btn btn-sm btn-primary" onclick = "saveDescription()"> Save </button>');
 		$('#desc_input').val(cur_description);
 		$('#collection_desc').text("");
 		$('#edit-description').css("display", "none");
