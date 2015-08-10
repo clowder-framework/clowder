@@ -27,6 +27,7 @@ trait SecuredController extends Controller {
       block(userRequest)
     }
   }
+
   /**
    * Use when you want to require the user to be logged in on a private server or the server is public.
    */
@@ -80,24 +81,22 @@ trait SecuredController extends Controller {
         lazy val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
         lazy val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
 
-        val (messgae:String, requestid:String) = {
+        val (messgae: String, requestid: String) = {
           resourceRef.get match {
             // TODO "Not authorized" occurs with other ResourceRef.Type or there is resourceRef.parse
             case ResourceRef(ResourceRef.dataset, id) => {
               val dataset = datasets.get(id).get
-                Pair("dataset \"" + dataset.name + "\"", id.toString)
-
-          }
+              Pair("dataset \"" + dataset.name + "\"", id.toString)
+            }
             case ResourceRef(ResourceRef.collection, id) => {
               val collection = collections.get(id).get
-                Pair("collection \"" + collection.name + "\"", id.toString)
-
+              Pair("collection \"" + collection.name + "\"", id.toString)
             }
             case ResourceRef(ResourceRef.space, id) => {
               val space = spaces.get(id).get
-              if(space.requests.contains(RequestResource(userRequest.user.get.id)) ) {
-                Pair("space \"" + space.name + "\". \nAuthorization request is pending" , "")
-              } else{
+              if (space.requests.contains(RequestResource(userRequest.user.get.id))) {
+                Pair("space \"" + space.name + "\". \nAuthorization request is pending", "")
+              } else {
                 Pair("space \"" + space.name + "\"", id.toString)
               }
             }
@@ -126,10 +125,10 @@ trait SecuredController extends Controller {
     ) yield {
       Authenticator.save(authenticator.touch)
       val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
-      return UserRequest(user, superAdmin=false, request)
+      return UserRequest(user, superAdmin = false, request)
     }
 
     // 2) anonymous access
-    UserRequest(None, superAdmin=false, request)
+    UserRequest(None, superAdmin = false, request)
   }
 }
