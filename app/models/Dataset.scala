@@ -31,5 +31,3 @@ case class Dataset(
   spaces: List[UUID] = List.empty,
   lastModifiedDate: Date = new Date(),
   followers: List[UUID] = List.empty)
-
-
