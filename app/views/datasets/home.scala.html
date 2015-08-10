@@ -1,5 +1,5 @@
 @(dataset: Dataset, space: Option [List[ProjectSpace]], previewers: List[Previewer], spaceList: List[ProjectSpace])(implicit user: Option[models.User])
-
+@import api.Permission
 <div class="row">
     <div class="col-md-12 box-white-space">
         <div class="row">
@@ -21,9 +21,12 @@
     </div>
     <div class="col-md-12 box-white-space" id="aboutdesc">
         <p id ="ds_description" class="inline">@Html(dataset.description)</p>
-        <a id="edit-description" href="javascript:updateDescription()">
-            <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
-        </a>
+		@if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+			<a id="edit-description" href="javascript:updateDescription()">
+				<span class="edit-tab glyphicon glyphicon-edit" aria-hidden="true"></span>
+			</a>
+		}
+
     </div>
 
     @datasets.previews(dataset, previewers)
@@ -35,6 +38,7 @@
     </div>
 
 </div>
+<script src="/assets/javascripts/htmlEncodeDecode.js" language="javascript"></script>
 <script>
     function updateDescription() {
 		var cur_description = $('#ds_description').text().trim();

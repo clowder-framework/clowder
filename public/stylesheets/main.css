@@ -706,3 +706,11 @@ textarea, input[type='text'], input[type='password']{
 .inline {
     display: inline;
 }
+
+.edit-tab {
+    padding-left: 2em;
+}
+
+.align-right {
+    float:right;
+}
