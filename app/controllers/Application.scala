@@ -38,7 +38,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val spacesCountAccess = spaces.countAccess(user, request.superAdmin)
 
     var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)).sorted(Ordering.by((_: Event).created).reverse))
-    newsfeedEvents =  newsfeedEvents ::: events.getRequestEvents(user.get, Some(20))
+    newsfeedEvents =  newsfeedEvents ::: events.getRequestEvents(user, Some(20))
           .sorted(Ordering.by((_: Event).created).reverse)
         Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess, spacesCount, spacesCountAccess,
           AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, newsfeedEvents))

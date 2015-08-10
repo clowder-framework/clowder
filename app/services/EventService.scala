@@ -76,7 +76,7 @@ trait EventService {
 	/**
 	 * Get the request event and loginuser is targetuser
 	 */
-	def getRequestEvents( targetuser: User, limit: Option[Integer]): List[Event]
+	def getRequestEvents( targetuser: Option[User], limit: Option[Integer]): List[Event]
 
 }
 

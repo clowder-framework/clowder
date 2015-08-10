@@ -139,19 +139,25 @@ class MongoDBEventService extends EventService {
     }
 
   }
-   def getRequestEvents(targetuser: User, limit: Option[Integer]): List[Event] = {
-      val eventList = Event.find(
-        MongoDBObject(
-         // "targetuser" -> MongoDBObject( "_id" -> new ObjectId(targetuser.id.stringify))
-          "targetuser._id" -> new ObjectId(targetuser.id.stringify)
-        )
-      ).toList
-      Logger.info("find " + eventList.size + " request")
-      limit match {
-        case Some(x) => eventList.take(x)
-        case None => eventList
-      }
-  }
+   def getRequestEvents(targetuser: Option[User], limit: Option[Integer]): List[Event] = {
+     targetuser match {
+       case Some(modeluser) => {
+         val eventList = Event.find(
+           MongoDBObject(
+             // "targetuser" -> MongoDBObject( "_id" -> new ObjectId(targetuser.id.stringify))
+             "targetuser._id" -> new ObjectId(modeluser.id.stringify)
+           )
+         ).toList
+
+           Logger.info("find " + eventList.size + " request")
+          limit match {
+            case Some(x) => eventList.take(x)
+            case None => eventList
+          }
+        }
+       case None => List()
+     }
+   }
 
 
 }

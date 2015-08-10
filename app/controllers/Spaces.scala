@@ -12,7 +12,7 @@ import play.api.data.{Form, Forms}
 import play.api.libs.concurrent.Akka
 import play.api.libs.json.Json
 import securesocial.core.providers.utils.Mailer
-import services.{EventService, SpaceService, UserService}
+import services._
 import util.Direction._
 
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
@@ -142,7 +142,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
           spaces.addRequest(id, user.get.id, user.get.fullName)
 
           //sending emails to the space's creator
-          val subject: String = "Authorization Request from medici"
+          val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName;
           val recipient:String = users.get(s.creator).get.email.get.toString
           val body = views.html.spaces.requestemail(user.get, id.toString, s.name)
           Users.sendEmail(subject, recipient, body )
@@ -168,9 +168,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
               case "Viewer" => spaces.addUser(requestUser.id, Role.Viewer, id)
               case _ => Logger.debug("Role cannot resolve" + role)
             }
-            val subject: String = "Authorization Request from medici Accepted"
+            val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Accepted"
             val recipient: String = requestUser.email.get.toString
-            val body = views.html.spaces.acceptemail(user.get, id.toString, s.name, "accepted your request and assigned you as " + role + " to")
+            val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "accepted your request and assigned you as " + role + " to")
             Users.sendEmail(subject, recipient, body)
             Ok(Json.obj("status" -> "success"))
           }
@@ -191,9 +191,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
           case Some(requestUser) => {
             events.addRequestEvent(user, requestUser, id, spaces.get(id).get.name, "rejectrequest_space")
             spaces.removeRequest(id, requestUser.id)
-            val subject: String = "Authorization Request from medici Rejected"
+            val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Rejected"
             val recipient: String = requestUser.email.get.toString
-            val body = views.html.spaces.acceptemail(user.get, id.toString, s.name, "rejected your request to")
+            val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "rejected your request to")
             Users.sendEmail(subject, recipient, body)
             Ok(Json.obj("status" -> "success"))
           }
