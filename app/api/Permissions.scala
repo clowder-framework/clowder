@@ -20,7 +20,7 @@ object Permission extends Enumeration {
     CreateSpace,
     DeleteSpace,
     EditSpace,
-
+    
     // datasets
     ViewDataset,
     CreateDataset,
