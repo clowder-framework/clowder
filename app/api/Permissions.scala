@@ -20,8 +20,7 @@ object Permission extends Enumeration {
     CreateSpace,
     DeleteSpace,
     EditSpace,
-    RequestSpace,
-    
+
     // datasets
     ViewDataset,
     CreateDataset,
@@ -186,7 +185,6 @@ object Permission extends Enumeration {
         })
       }
       case ResourceRef(ResourceRef.space, id) => {
-        if ( permission.compareTo(RequestSpace) == 0 ) return true
         val space = spaces.get(id)
         val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
                                                   role <- users.getUserRoleInSpace(clowderUser.id, space.get.id)

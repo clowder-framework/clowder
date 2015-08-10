@@ -31,7 +31,6 @@ case class Dataset(
   spaces: List[UUID] = List.empty,
   lastModifiedDate: Date = new Date(),
   space: Option[UUID] = None,
-  followers: List[UUID] = List.empty,
-  requests: List[RequestResource] = List.empty)
+  followers: List[UUID] = List.empty)
 
 

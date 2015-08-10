@@ -85,26 +85,20 @@ trait SecuredController extends Controller {
             // TODO "Not authorized" occurs with other ResourceRef.Type or there is resourceRef.parse
             case ResourceRef(ResourceRef.dataset, id) => {
               val dataset = datasets.get(id).get
-              if(dataset.requests.contains(RequestResource(userRequest.user.get.id)) ) {
-                Pair("dataset " + dataset.name + ". \nAuthorization is pending" , "")
-              } else{
-                Pair("dataset " + dataset.name, id.toString)
-              }
+                Pair("dataset \"" + dataset.name + "\"", id.toString)
+
           }
             case ResourceRef(ResourceRef.collection, id) => {
               val collection = collections.get(id).get
-              if(collection.requests.contains(RequestResource(userRequest.user.get.id)) ) {
-                Pair("collection " + collection.name + ". \nAuthorization is pending" , "")
-              } else{
-                Pair("collection " + collection.name, id.toString)
-              }
+                Pair("collection \"" + collection.name + "\"", id.toString)
+
             }
             case ResourceRef(ResourceRef.space, id) => {
               val space = spaces.get(id).get
               if(space.requests.contains(RequestResource(userRequest.user.get.id)) ) {
-                Pair("space " + space.name + ". \nAuthorization is pending" , "")
+                Pair("space \"" + space.name + "\". \nAuthorization request is pending" , "")
               } else{
-                Pair("space " + space.name, id.toString)
+                Pair("space \"" + space.name + "\"", id.toString)
               }
             }
 

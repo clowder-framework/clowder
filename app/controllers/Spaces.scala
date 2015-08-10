@@ -133,18 +133,18 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       }
     }
 
-   def addRequest(id: UUID) = PermissionAction(Permission.RequestSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+   def addRequest(id: UUID) = AuthenticatedAction { implicit request =>
       implicit val user = request.user
       spaces.get(id) match {
         case Some(s) => {
-          Logger.debug("request submited in controller.Space.addRequest  " )
-          events.addRequestEvent(user, users.get(spaces.get(id).get.creator).get, id, spaces.get(id).get.name, "postrequest_space")
+          Logger.debug("request submitted in controller.Space.addRequest  " )
+          events.addRequestEvent(user, users.get(s.creator).get, id, s.name, "postrequest_space")
           spaces.addRequest(id, user.get.id, user.get.fullName)
 
           //sending emails to the space's creator
           val subject: String = "Authorization Request from medici"
-          val recipient:String = users.get(spaces.get(id).get.creator).get.email.get.toString
-          val body = views.html.spaces.requestemail(user.get, id.toString, spaces.get(id).get.name)
+          val recipient:String = users.get(s.creator).get.email.get.toString
+          val body = views.html.spaces.requestemail(user.get, id.toString, s.name)
           Users.sendEmail(subject, recipient, body )
           Ok(views.html.notAuthorized( "Request for authorization submitted", null, null))
         }
@@ -157,16 +157,25 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
-        Logger.debug("request submited in controllers.Space.addrequest ")
-        events.addRequestEvent(user, users.get(UUID(requestuser)).get, id, spaces.get(id).get.name, "acceptrequest_space")
-        spaces.removeRequest(id, UUID(requestuser))
-        role match{
-          case "Admin" => spaces.addUser(UUID(requestuser), Role.Admin, id )
-          case "Editor" => spaces.addUser(UUID(requestuser), Role.Editor, id )
-          case "Viewer" => spaces.addUser(UUID(requestuser), Role.Viewer, id )
-          case _ => Logger.debug("Role cannot resolve" + role)
+        Logger.debug("request submitted in controllers.Space.acceptrequest ")
+        users.get(UUID(requestuser)) match {
+          case Some(requestUser) => {
+            events.addRequestEvent(user, requestUser, id, s.name, "acceptrequest_space")
+            spaces.removeRequest(id, requestUser.id)
+            role match {
+              case "Admin" => spaces.addUser(requestUser.id, Role.Admin, id)
+              case "Editor" => spaces.addUser(requestUser.id, Role.Editor, id)
+              case "Viewer" => spaces.addUser(requestUser.id, Role.Viewer, id)
+              case _ => Logger.debug("Role cannot resolve" + role)
+            }
+            val subject: String = "Authorization Request from medici Accepted"
+            val recipient: String = requestUser.email.get.toString
+            val body = views.html.spaces.acceptemail(user.get, id.toString, s.name, "accepted your request and assigned you as " + role + " to")
+            Users.sendEmail(subject, recipient, body)
+            Ok(Json.obj("status" -> "success"))
+          }
+          case None => InternalServerError("Request user not found")
         }
-        Ok(Json.obj("status" -> "success"))
       }
       case None => InternalServerError("Space not found")
     }
@@ -177,10 +186,19 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
-        Logger.debug("request submited in controller.Space.rejectRequest")
-        events.addRequestEvent(user, users.get(UUID(requestuser)).get, id, spaces.get(id).get.name, "rejectrequest_space")
-        spaces.removeRequest(id, UUID(requestuser))
-        Ok(Json.obj("status" -> "success"))
+        Logger.debug("request submitted in controller.Space.rejectRequest")
+        users.get(UUID(requestuser)) match {
+          case Some(requestUser) => {
+            events.addRequestEvent(user, requestUser, id, spaces.get(id).get.name, "rejectrequest_space")
+            spaces.removeRequest(id, requestUser.id)
+            val subject: String = "Authorization Request from medici Rejected"
+            val recipient: String = requestUser.email.get.toString
+            val body = views.html.spaces.acceptemail(user.get, id.toString, s.name, "rejected your request to")
+            Users.sendEmail(subject, recipient, body)
+            Ok(Json.obj("status" -> "success"))
+          }
+          case None => InternalServerError("Request user not found")
+        }
       }
       case None => InternalServerError("Space not found")
     }
