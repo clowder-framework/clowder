@@ -138,14 +138,23 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       spaces.get(id) match {
         case Some(s) => {
           Logger.debug("request submitted in controller.Space.addRequest  " )
-          events.addRequestEvent(user, users.get(s.creator).get, id, s.name, "postrequest_space")
-          spaces.addRequest(id, user.get.id, user.get.fullName)
+          for(requestReceiver <- spaces.getUsersInSpace(s.id)){
+            spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
+              case Some(aRole) => {
+                if ( aRole.permissions.contains( "EditSpace" )){
+                    events.addRequestEvent(user, requestReceiver, id, s.name, "postrequest_space")
 
-          //sending emails to the space's creator
-          val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName;
-          val recipient:String = users.get(s.creator).get.email.get.toString
-          val body = views.html.spaces.requestemail(user.get, id.toString, s.name)
-          Users.sendEmail(subject, recipient, body )
+                    //sending emails to the space's Admin && Editor
+                    val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName;
+                    val recipient:String = requestReceiver.email.get.toString
+                    val body = views.html.spaces.requestemail(user.get, id.toString, s.name)
+                    Users.sendEmail(subject, recipient, body )
+
+                }
+              }
+            }
+          }
+          spaces.addRequest(id, user.get.id, user.get.fullName)
           Ok(views.html.notAuthorized( "Request for authorization submitted", null, null))
         }
         case None => InternalServerError("Space not found")

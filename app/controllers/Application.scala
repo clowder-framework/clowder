@@ -36,10 +36,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val collectionsCountAccess = collections.countAccess(user, request.superAdmin)
     val spacesCount = spaces.count()
     val spacesCountAccess = spaces.countAccess(user, request.superAdmin)
-
+    //newsfeedEvents is the combination of followedEntities and requestevents, then take the most recent 20 of them.
     var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)).sorted(Ordering.by((_: Event).created).reverse))
-    newsfeedEvents =  newsfeedEvents ::: events.getRequestEvents(user, Some(20))
-          .sorted(Ordering.by((_: Event).created).reverse)
+    newsfeedEvents =  (newsfeedEvents ::: events.getRequestEvents(user, Some(20)))
+          .sorted(Ordering.by((_: Event).created).reverse).take(20)
         Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess, spacesCount, spacesCountAccess,
           AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, newsfeedEvents))
   }
