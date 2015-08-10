@@ -133,11 +133,17 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       }
     }
 
+  /**
+   * Each user with EditSpace permission will see the request on index and receive an email.
+   */
    def addRequest(id: UUID) = UserAction { implicit request =>
       implicit val user = request.user
       spaces.get(id) match {
         case Some(s) => {
           Logger.debug("request submitted in controller.Space.addRequest  " )
+          val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName
+          val body = views.html.spaces.requestemail(user.get, id.toString, s.name)
+
           for(requestReceiver <- spaces.getUsersInSpace(s.id)){
             spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
               case Some(aRole) => {
@@ -145,11 +151,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                     events.addRequestEvent(user, requestReceiver, id, s.name, "postrequest_space")
 
                     //sending emails to the space's Admin && Editor
-                    val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName;
                     val recipient:String = requestReceiver.email.get.toString
-                    val body = views.html.spaces.requestemail(user.get, id.toString, s.name)
                     Users.sendEmail(subject, recipient, body )
-
                 }
               }
             }
@@ -161,7 +164,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       }
     }
 
-
+  /**
+   * accept authorization request with specific Role. Send email to request user.
+   */
   def acceptRequest( id:UUID, requestuser:String, role:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
@@ -211,6 +216,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       case None => InternalServerError("Space not found")
     }
   }
+
+
   /**
    * Submit action for new or edit space
    */
