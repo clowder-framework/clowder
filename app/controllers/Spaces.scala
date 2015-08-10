@@ -162,12 +162,11 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
           case Some(requestUser) => {
             events.addRequestEvent(user, requestUser, id, s.name, "acceptrequest_space")
             spaces.removeRequest(id, requestUser.id)
-            role match {
-              case "Admin" => spaces.addUser(requestUser.id, Role.Admin, id)
-              case "Editor" => spaces.addUser(requestUser.id, Role.Editor, id)
-              case "Viewer" => spaces.addUser(requestUser.id, Role.Viewer, id)
-              case _ => Logger.debug("Role cannot resolve" + role)
+            users.findRoleByName(role) match {
+              case Some(r) => spaces.addUser(requestUser.id, r, id)
+              case _ => Logger.debug("Role not found" + role)
             }
+
             val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Accepted"
             val recipient: String = requestUser.email.get.toString
             val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "accepted your request and assigned you as " + role + " to")

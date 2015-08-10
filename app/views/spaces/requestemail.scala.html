@@ -7,6 +7,5 @@
     <p>
             <a href="@routes.Profile.viewProfile(user.email).absoluteURL(IdentityProvider.sslEnabled)">@user.fullName</a> submitted an authorization request to your space "<a href="@routes.Spaces.getSpace(UUID(spaceid)).absoluteURL(IdentityProvider.sslEnabled)">@spacename</a>".
     </p>
-    <p>You may create a new space and assign him/her as Admin/Editor/Viewer if part of the space if allowed to edit/view.</p>
   </body>
 </html>
