@@ -5,7 +5,7 @@ import api.{Permission, UserRequest}
 import models.{RequestResource, ResourceRef}
 import play.api.mvc._
 import securesocial.core.{Authenticator, SecureSocial, UserService}
-import services.{DatasetService, CollectionService, SpaceService, DI}
+import services._
 import scala.concurrent.Future
 
 /**
@@ -88,10 +88,12 @@ trait SecuredController extends Controller {
               val dataset = datasets.get(id).get
               Pair("dataset \"" + dataset.name + "\"", id.toString)
             }
+
             case ResourceRef(ResourceRef.collection, id) => {
               val collection = collections.get(id).get
               Pair("collection \"" + collection.name + "\"", id.toString)
             }
+
             case ResourceRef(ResourceRef.space, id) => {
               val space = spaces.get(id).get
               if (space.requests.contains(RequestResource(userRequest.user.get.id))) {
@@ -109,6 +111,16 @@ trait SecuredController extends Controller {
         Future.successful(Results.Redirect(routes.Authentication.notAuthorized("You are not authorized to access "
           + messgae, requestid, resourceRef.get.resourceType.toString)))
       }
+    }
+  }
+
+  /**
+   * Disable a route without having to comment out the entry in the routes file. Useful for when we want to keep the
+   * code around but we don't want users to have access to it.
+   */
+  def DisabledAction = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      Future.successful(Results.Redirect(routes.Authentication.notAuthorized()))
     }
   }
 

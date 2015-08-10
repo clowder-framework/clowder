@@ -18,7 +18,6 @@ import services._
 import MongoContext.context
 import util.Direction._
 
-
 /**
  * Store Spaces in MongoDB.
  *
@@ -37,13 +36,124 @@ class MongoDBSpaceService @Inject() (
   }
 
   /**
-   * @see app.services.SpaceService.scala
-   *
-   * Implementation of the SpaceService trait.
-   *
+   * Count all spaces the user has access to.
    */
-  def getCollectionsInSpace(space: Option[String], order: Option[String], limit: Option[Integer]): List[Collection] = {
-      collections.listCollections(order, limit, space)
+  def countAccess(user: Option[User], superAdmin: Boolean): Long = {
+    count(None, false, user, superAdmin, None)
+  }
+
+  /**
+   * Return a list of spaces the user has access to.
+   */
+  def listAccess(limit: Integer, user: Option[User], superAdmin: Boolean): List[ProjectSpace] = {
+    list(None, false, limit, user, superAdmin, None)
+  }
+
+  /**
+   * Return a list of spaces the user has access to starting at a specific date.
+   */
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean): List[ProjectSpace] = {
+    list(Some(date), nextPage, limit, user, superAdmin, None)
+  }
+
+  /**
+   * Count all spaces the user has created.
+   */
+  def countUser(user: Option[User], superAdmin: Boolean, owner: User): Long = {
+    count(None, false, user, superAdmin, Some(owner))
+  }
+
+  /**
+   * Return a list of spaces the user has created.
+   */
+  def listUser(limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[ProjectSpace] = {
+    list(None, false, limit, user, superAdmin, Some(owner))
+  }
+
+  /**
+   * Return a list of spaces the user has created starting at a specific date.
+   */
+  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[ProjectSpace] = {
+    list(Some(date), nextPage, limit, user, superAdmin, Some(owner))
+  }
+
+  /**
+   * return count based on input
+   */
+  private def count(date: Option[String], nextPage: Boolean, user: Option[User], superAdmin: Boolean, owner: Option[User]): Long = {
+    val (filter, _) = filteredQuery(date, nextPage, user, superAdmin, owner)
+    ProjectSpaceDAO.count(filter)
+  }
+
+
+  /**
+   * return list based on input
+   */
+  private def list(date: Option[String], nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean, owner: Option[User]): List[ProjectSpace] = {
+    val (filter, sort) = filteredQuery(date, nextPage, user, superAdmin, owner)
+    if (date.isEmpty || nextPage) {
+      ProjectSpaceDAO.find(filter).sort(sort).limit(limit).toList
+    } else {
+      ProjectSpaceDAO.find(filter).sort(sort).limit(limit).toList.reverse
+    }
+  }
+
+  /**
+   * Monster function, does all the work. Will create a filters and sorts based on the given parameters
+   */
+  private def filteredQuery(date: Option[String], nextPage: Boolean, user: Option[User], superAdmin: Boolean, owner: Option[User]): (DBObject, DBObject) = {
+    // filter =
+    // - owner   == show datasets owned by owner that user can see
+    // - space   == show all datasets in space
+    // - access  == show all datasets the user can see
+    // - default == public only
+    val public = MongoDBObject("public" -> true)
+    val filter = owner match {
+      case Some(o) => {
+        val author = MongoDBObject("author.identityId.userId" -> o.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> o.identityId.providerId)
+        user match {
+          case Some(u) => {
+            if (superAdmin) {
+              author
+            } else {
+              author ++ $or(public, ("_id" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+            }
+          }
+          case None => {
+            author ++ public
+          }
+        }
+      }
+      case None => {
+        user match {
+          case Some(u) => {
+            val author = $and(MongoDBObject("author.identityId.userId" -> u.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> u.identityId.providerId))
+            $or(author, public, ("_id" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+          }
+          case None => public
+        }
+      }
+    }
+    val filterDate = date match {
+      case Some(d) => {
+        if (nextPage) {
+          ("created" $lt Formatters.iso8601(d))
+        } else {
+          ("created" $gt Formatters.iso8601(d))
+        }
+      }
+      case None => {
+        MongoDBObject()
+      }
+    }
+
+    val sort = if (date.isDefined && !nextPage) {
+      MongoDBObject("created"-> 1) ++ MongoDBObject("name" -> 1)
+    } else {
+      MongoDBObject("created" -> -1) ++ MongoDBObject("name" -> 1)
+    }
+
+    (filter ++ filterDate, sort)
   }
 
   /**
@@ -52,8 +162,18 @@ class MongoDBSpaceService @Inject() (
    * Implementation of the SpaceService trait.
    *
    */
-  def getDatasetsInSpace(space: Option[String], order: Option[String], limit: Option[Integer]): List[Dataset] = {
-      datasets.listDatasets(order, limit, space)
+  def getCollectionsInSpace(space: Option[String], limit: Option[Integer]): List[Collection] = {
+      collections.listSpace(limit.getOrElse(12), space.getOrElse(""))
+  }
+
+  /**
+   * @see app.services.SpaceService.scala
+   *
+   * Implementation of the SpaceService trait.
+   *
+   */
+  def getDatasetsInSpace(space: Option[String], limit: Option[Integer]): List[Dataset] = {
+      datasets.listSpace(limit.getOrElse(12), space.getOrElse(""))
   }
 
   def insert(dataset: ProjectSpace): Option[String] = {

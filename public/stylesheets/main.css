@@ -557,10 +557,6 @@ textarea, input[type='text'], input[type='password']{
 .vertical-align {
     display: flex;
     flex-direction: row;
-}
-
-.vertical-align {
-    display: flex;
     align-items: center;
 }
 

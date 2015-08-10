@@ -3,26 +3,24 @@ package controllers
 import models._
 import play.api.data.Form
 import play.api.data.Forms._
-import util.RequiredFieldsConfig
+import play.api.mvc.SimpleResult
+import util.{Formatters, RequiredFieldsConfig}
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.{Inject, Singleton}
 
-import api.Permission
+import api.{UserRequest, Permission}
 import org.apache.commons.lang.StringEscapeUtils
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 import services.{CollectionService, DatasetService, _}
-import util.RequiredFieldsConfig
 import views.html.defaultpages.badRequest
 
 import scala.collection.mutable.ListBuffer
 import services._
 import org.apache.commons.lang.StringEscapeUtils
-
-object ThumbnailFound extends Exception {}
 
 @Singleton
 class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService, 
@@ -54,90 +52,118 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
               							  
       decodedCollection
   }
-  
+
   /**
    * List collections.
-   */	
-  def list(when: String, date: String, limit: Int, space: Option[String] = None, mode: String) =
-    PrivateServerAction { implicit request =>
-      implicit val user = request.user
-      var direction = "b"
-      if (when != "") direction = when
-      val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
-      var prev, next = ""
-      var collectionList = List.empty[models.Collection]
-      if (direction == "b") {
-        collectionList = collections.listCollectionsBefore(date, limit, space)
-      } else if (direction == "a") {
-        collectionList = collections.listCollectionsAfter(date, limit, space)
-      } else {
-        badRequest
-      }
+   */
+  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String]) = PrivateServerAction { implicit request =>
+    implicit val user = request.user
 
-      // latest object
-      val latest = collections.latest(space)
-      // first object
-      val first = collections.first(space)
-      var firstPage = false
-      var lastPage = false
-      if (latest.size == 1) {
-        firstPage = collectionList.exists(_.id.equals(latest.get.id))
-        lastPage = collectionList.exists(_.id.equals(first.get.id))
-        Logger.debug("latest " + latest.get.id + " first page " + firstPage)
-        Logger.debug("first " + first.get.id + " last page " + lastPage)
-      }
-      if (collectionList.size > 0) {
-        if (date != "" && !firstPage) {
-          // show prev button
-          prev = formatter.format(collectionList.head.created)
-        }
-        if (!lastPage) {
-          // show next button
-          next = formatter.format(collectionList.last.created)
+    val nextPage = (when == "a")
+    val person = owner.flatMap(o => users.get(UUID(o)))
+
+    val collectionList = person match {
+      case Some(p) => {
+        if (date != "") {
+          collections.listUser(date, nextPage, limit, request.user, request.superAdmin, p)
+        } else {
+          collections.listUser(limit, request.user, request.superAdmin, p)
         }
       }
-
-      var collectionsWithThumbnails = List.empty[models.Collection]
-      for (collection <- collectionList) {
-        var collectionThumbnail: Option[String] = None
-        try {
-          for (dataset <- collection.datasets) {
-            if (!dataset.thumbnail_id.isEmpty) {
-              collectionThumbnail = dataset.thumbnail_id
-              throw ThumbnailFound
+      case None => {
+        space match {
+          case Some(s) => {
+            if (date != "") {
+              collections.listSpace(date, nextPage, limit, s)
+            } else {
+              collections.listSpace(limit, s)
             }
           }
-        } catch {
-          case ThumbnailFound =>
-        }
-        val collectionWithThumbnail = collection.copy(thumbnail_id = collectionThumbnail)
-        collectionsWithThumbnails = collectionWithThumbnail +: collectionsWithThumbnails
-      }
-      collectionsWithThumbnails = collectionsWithThumbnails.reverse
+          case None => {
+            if (date != "") {
+              collections.listAccess(date, nextPage, limit, request.user, request.superAdmin)
+            } else {
+              collections.listAccess(limit, request.user, request.superAdmin)
+            }
 
-      //Modifications to decode HTML entities that were stored in an encoded fashion as part
-      //of the collection's names or descriptions
-      val decodedCollections = ListBuffer.empty[models.Collection]
-      for (aCollection <- collectionsWithThumbnails) {
-        val dCollection = Utils.decodeCollectionElements(aCollection)
-        decodedCollections += dCollection
-      }
-
-      //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
-      //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
-      //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
-      val viewMode: Option[String] =
-        if (mode == null || mode == "") {
-          request.cookies.get("view-mode") match {
-              case Some(cookie) => Some(cookie.value)
-              case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
           }
-        } else {
-            Some(mode)
-        }    
-    
-      //Pass the viewMode into the view
-      Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space))
+        }
+      }
+    }
+
+    // check to see if there is a prev page
+    val prev = if (collectionList.nonEmpty && date != "") {
+      val first = Formatters.iso8601(collectionList.head.created)
+      val c = person match {
+        case Some(p) => collections.listUser(first, nextPage=false, 1, request.user, request.superAdmin, p)
+        case None => {
+          space match {
+            case Some(s) => collections.listSpace(first, nextPage = false, 1, s)
+            case None => collections.listAccess(first, nextPage = false, 1, request.user, request.superAdmin)
+          }
+        }
+      }
+      if (c.nonEmpty && c.head.id != collectionList.head.id) {
+        first
+      } else {
+        ""
+      }
+    } else {
+      ""
+    }
+
+    // check to see if there is a next page
+    val next = if (collectionList.nonEmpty) {
+      val last = Formatters.iso8601(collectionList.last.created)
+      val ds = person match {
+        case Some(p) => collections.listUser(last, nextPage=true, 1, request.user, request.superAdmin, p)
+        case None => {
+          space match {
+            case Some(s) => collections.listSpace(last, nextPage = true, 1, s)
+            case None => collections.listAccess(last, nextPage = true, 1, request.user, request.superAdmin)
+          }
+        }
+      }
+      if (ds.nonEmpty && ds.head.id != collectionList.last.id) {
+        last
+      } else {
+        ""
+      }
+    } else {
+      ""
+    }
+
+
+    var collectionsWithThumbnails = List.empty[models.Collection]
+    for (collection <- collectionList) {
+      val collectionThumbnail = collection.datasets.find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
+      val collectionWithThumbnail = collection.copy(thumbnail_id = collectionThumbnail)
+      collectionsWithThumbnails = collectionWithThumbnail +: collectionsWithThumbnails
+    }
+    collectionsWithThumbnails = collectionsWithThumbnails.reverse
+
+    //Modifications to decode HTML entities that were stored in an encoded fashion as part
+    //of the collection's names or descriptions
+    val decodedCollections = ListBuffer.empty[models.Collection]
+    for (aCollection <- collectionsWithThumbnails) {
+      decodedCollections += Utils.decodeCollectionElements(aCollection)
+    }
+
+    //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+    //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+    val viewMode: Option[String] =
+      if (mode == null || mode == "") {
+        request.cookies.get("view-mode") match {
+          case Some(cookie) => Some(cookie.value)
+          case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+        }
+      } else {
+        Some(mode)
+      }
+
+    //Pass the viewMode into the view
+    Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space))
   }
 
   def jsonCollection(collection: Collection): JsValue = {
