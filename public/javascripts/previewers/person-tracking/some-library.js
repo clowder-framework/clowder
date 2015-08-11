@@ -139,42 +139,70 @@
 
                         // When there is only one person in frame    
                         if(objList.object.length == undefined && objList.object["@id"]) {
-                            var id = parseInt(objList.object["@id"]);                    
+                            var id = parseInt(objList.object["@id"]);  
+                            var arrayIndex = -1;
+                            sortedFrameDataArray.filter(
+                                function (item, index){
+                                    if(item.label == ("Person_" + id)){
+                                        arrayIndex = index;
+                                        return true;
+                                    }
+                                    else {
+                                        return false;
+                                    }
+                                }
+                            );
+
                             // if array element is not existing
-                            if(sortedFrameDataArray[id-1] == undefined || sortedFrameDataArray[id-1] == null) {
+                            //if(sortedFrameDataArray[id-1] == undefined || sortedFrameDataArray[id-1] == null) {
+                            if(arrayIndex == -1) {
                                 var objPerson = new Object();
                                 objPerson.label = "Person_" + id;
                                 var personFrameData = new Array();
                                 personFrameData.push(new Array(frameIndex-1, id));
-                                objPerson.data = personFrameData;                        
-                                sortedFrameDataArray[id-1] = objPerson;                        
+                                objPerson.data = personFrameData;
+                                sortedFrameDataArray.push(objPerson);
                             }
                             // if array element is already present
                             else {                    
-                                var objPerson = sortedFrameDataArray[id-1];
+                                var objPerson = sortedFrameDataArray[arrayIndex];
                                 objPerson.data.push(new Array(frameIndex-1, id));
-                                sortedFrameDataArray[id-1] = objPerson;
+                                sortedFrameDataArray[arrayIndex] = objPerson;
                             }
                         }
                         // When there are multiple people in a frame
                         else if(objList.object.length > 0) {
 
                             for(var j=0; j< objList.object.length; j++){                            
-                                var id = parseInt(objList.object[j]["@id"]);                    
+                                var id = parseInt(objList.object[j]["@id"]);
+
+                                var arrayIndex = -1;
+                                sortedFrameDataArray.filter(
+                                    function (item, index){
+                                        if(item.label == ("Person_" + id)){
+                                            arrayIndex = index;
+                                            return true;
+                                        }
+                                        else {
+                                            return false;
+                                        }
+                                    }
+                                );
                                 // if array element is not existing
-                                if(sortedFrameDataArray[id-1] == undefined || sortedFrameDataArray[id-1] == null) {
+                                //if(sortedFrameDataArray[id-1] == undefined || sortedFrameDataArray[id-1] == null) {
+                                if(arrayIndex == -1) {
                                     var objPerson = new Object();
                                     objPerson.label = "Person_" + id;
                                     var personFrameData = new Array();
                                     personFrameData.push(new Array(frameIndex-1, id));
                                     objPerson.data = personFrameData;                        
-                                    sortedFrameDataArray[id-1] = objPerson;                        
+                                    sortedFrameDataArray.push(objPerson);
                                 }
                                 // if array element is already present
                                 else {                    
-                                    var objPerson = sortedFrameDataArray[id-1];
+                                    var objPerson = sortedFrameDataArray[arrayIndex];
                                     objPerson.data.push(new Array(frameIndex-1, id));
-                                    sortedFrameDataArray[id-1] = objPerson;
+                                    sortedFrameDataArray[arrayIndex] = objPerson;
                                 }
                             }
                         }                                    
@@ -251,8 +279,9 @@
                     }                
                 }
 
-                /* Cloning frame data arrays. These cloned arrays are used in rendering bounding boxes. 
-                   This is needed for rendering the bounding even when editing of tracks is in progress and for seeking video based on label clicks.
+                /* 
+                    Cloning frame data arrays. These cloned arrays are used in rendering bounding boxes. 
+                    This is needed for rendering the bounding even when editing of tracks is in progress and for seeking video based on label clicks.
                 */
                 frameDataArrayCopy = JSON.parse(JSON.stringify(frameDataArray));
                 sortedFrameDataArrayCopy = JSON.parse(JSON.stringify(sortedFrameDataArray));
@@ -481,11 +510,44 @@
                         isEditingInProgress = false;
                         hasTrackingDataChanged = false;
 
+                        var frameDataArrayCopyForUpdate = JSON.parse(JSON.stringify(frameDataArrayCopy));
+                        /*
+                            Removing null values from the copy.
+                            This needs to be done because cloning creates null aray elements for missing indices.
+                        */
+                        for(var i=0; i < frameDataArrayCopyForUpdate.length; i++) {
+                            if(frameDataArrayCopyForUpdate[i] == null){
+                                frameDataArrayCopyForUpdate.splice(i,1)
+                                i--;
+                            }
+                        }
+
                         // Update Person tracking metadata in the database
                         var technicalMetadataCopy = JSON.parse(JSON.stringify(technicalMetadata));
-                        technicalMetadataCopy[trackingMetadataIndex]["person-tracking-result"].frame = frameDataArrayCopy;
+                        technicalMetadataCopy[trackingMetadataIndex]["person-tracking-result"].frame = frameDataArrayCopyForUpdate;
                         var requestData = JSON.stringify(technicalMetadataCopy[trackingMetadataIndex]);
                         console.log(requestData);
+
+                        /* // Debug Code Begin 
+                        // Re-write the global array based on the current changes.
+                        sortedFrameDataArray = JSON.parse(JSON.stringify(sortedFrameDataArrayCopy));
+                        labelArray = JSON.parse(JSON.stringify(labelArrayCopy));
+                        frameDataArray = JSON.parse(JSON.stringify(frameDataArrayCopy));
+                        technicalMetadata = JSON.parse(JSON.stringify(technicalMetadataCopy));                            
+
+                        console.log("sortedFrameDataArray");
+                        console.log(sortedFrameDataArray);
+                        console.log("frameDataArray");
+                        console.log(frameDataArray);
+
+                        $("#btnSaveChanges").hide();
+                        $("#btnCancelChanges").hide();
+
+                        // Redraw graph
+                        plot.setData(sortedFrameDataArray);
+                        plot.setupGrid();
+                        plot.draw();
+                        // Debug Code end */
                         
                         var jsRoutesObject = jsRoutes.api.Files.updateMetadata(Configuration.id, extractorId);
                         var setMetadataApiUrl = jsRoutesObject.url;                        
@@ -502,7 +564,7 @@
                             sortedFrameDataArray = JSON.parse(JSON.stringify(sortedFrameDataArrayCopy));
                             labelArray = JSON.parse(JSON.stringify(labelArrayCopy));
                             frameDataArray = JSON.parse(JSON.stringify(frameDataArrayCopy));
-                            technicalMetadata = JSON.parse(JSON.stringify(technicalMetadataCopy));                            
+                            technicalMetadata = JSON.parse(JSON.stringify(technicalMetadataCopy));
 
                             $("#btnSaveChanges").hide();
                             $("#btnCancelChanges").hide();
@@ -628,6 +690,7 @@
 
                                         // Remove the current person from the sorted list
                                         sortedFrameDataArrayCopy.splice(i,1);
+                                        //sortedFrameDataArrayCopy[i] = new Object();
                                         break;
                                     }
                                 }
@@ -656,7 +719,7 @@
                     editLabel = function (label) {
 
                         if (isEditingInProgress == false) {
-                            isEditingInProgress = true;
+                            isEditingInProgress = true;                            
 
                             /*Creating copy of arrays to work with.
                             Once the changes are confirmed, the original arrays are replaced by its copies. */
@@ -722,8 +785,9 @@
                                                 // When there is only one person in frame    
                                                 if(objList.object.length == undefined && objList.object["@id"]) {
 
-                                                    if (objList.object["@id"] == oldId) {
-                                                        objList.object = null;
+                                                    if (objList.object["@id"] == oldId) {                                                        
+                                                        //objList.object = null;
+                                                        frameDataArrayCopy[frameIndex] = null;
                                                     }
                                                 }
                                                 // When there are multiple persons in frame
@@ -745,20 +809,23 @@
                                     }
 
                                     // Clean up data. Remove array items containing null values.
+                                    /*console.log(frameDataArrayCopy);
+                                    console.log("copy after remove");
                                     for(var k = 0; k < frameDataArrayCopy.length; k++) {
 
-                                        if(frameDataArrayCopy[k].objectlist.object == null) {                                        
+                                        if(frameDataArrayCopy[k] != null && frameDataArrayCopy[k].objectlist.object == null) {
                                             /*  
                                                 Remove the entire frame from the array to avoid null values from getting stored in the database
                                                 and in turn from being displayed on the page. Null values in metadata will break the user interface.
-                                            */
+                                            
                                             frameDataArrayCopy.splice(k,1);
                                             k--;
                                         }
-                                    }
+                                    }*/
 
                                     // Remove the current person from the sorted list
                                     sortedFrameDataArrayCopy.splice(i,1);
+                                    //sortedFrameDataArrayCopy[i] = new Object();
                                     break;
                                 }
                             }
@@ -887,6 +954,16 @@
                     }
 
                     var placeholder = $("#placeholder");
+
+                    // Creating a copy for display
+                    /*var sortedFrameDataArrayForDisplay = JSON.parse(JSON.stringify(sortedFrameDataArray));
+                    // Adding empty objects in place of null values to prevent jQuery Plot library from breaking.
+                    for(var i=0; i < sortedFrameDataArrayForDisplay.length; i++) {
+                        if(sortedFrameDataArrayForDisplay[i] == null){
+                            sortedFrameDataArrayForDisplay[i] = new Object();
+                        }
+                    }*/
+
                     plot = $.plot(placeholder, sortedFrameDataArray, options);
                     //$(".legendLabel").hover(labelHoverIn, labelHoverOut);                    
 
