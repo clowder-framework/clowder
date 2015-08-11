@@ -317,6 +317,8 @@ GET            /api/collections/:coll_id/getDatasets                            
 DELETE         /api/collections/:coll_id                                                @api.Collections.removeCollection(coll_id: UUID)
 POST           /api/collections/:c_id/previews/:p_id                                    @api.Collections.attachPreview(c_id: UUID, p_id: UUID)
 GET            /api/collections/:coll_id                                                @api.Collections.getCollection(coll_id: UUID)
+PUT           /api/collections/:coll_id/title                                           @api.Collections.updateCollectionName(coll_id: UUID)
+PUT           /api/collections/:coll_id/description                                     @api.Collections.updateCollectionDescription(coll_id: UUID)
 
 GET            /api/datasets                                                            @api.Datasets.list
 POST           /api/datasets                                                            @api.Datasets.createDataset

@@ -1,7 +1,6 @@
 @(resourceSpaces: Option[List[ProjectSpace]], resourceType: Int, resourceId: UUID, otherSpaces: List[ProjectSpace])(implicit user: Option[models.User])
 @import api.Permission
 <span id="spaces" >
-
 @if(user.isDefined) {
     @if(resourceSpaces.isDefined) {
         @for(sp <- resourceSpaces) {
@@ -14,15 +13,13 @@
         @*<a href="javascript:changeSpace('@resourceId', @resourceType)">*@
             @*<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>*@
         @*</a>*@
+        @if(resourceType == 0 && Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, resourceId)) || resourceType == 1
+                && Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, resourceId))) {
+            <a class="edit-tab" data-toggle="modal" data-target="#modalSpaces" id="editSpaces" title = "Edit Spaces">
+                <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span>
+            </a>
 
-       @if(resourceType == 0 && Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, resourceId)) || resourceType == 1
-       && Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, resourceId))) {
-           <a class="edit-tab" data-toggle="modal" data-target="#modalSpaces" id="editSpaces" title = "Edit Spaces">
-               <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span>
-           </a>
-
-       }
-
+        }
     }
     @if(resourceSpaces.isEmpty) {
         <a href="#" id="space_link">Default</a>
