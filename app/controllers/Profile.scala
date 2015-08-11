@@ -133,8 +133,8 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
 
             existingUser.email match {
               case Some(addr) => {
-                var userDatasets: List[Dataset] = datasets.listUserDatasetsAfter("", 12, addr.toString())
-                var userCollections: List[Collection] = collections.listUserCollectionsAfter("", 12, addr.toString())
+                var userDatasets: List[Dataset] = datasets.listUser(12, request.user, request.superAdmin, existingUser)
+                var userCollections: List[Collection] = collections.listUser(12, request.user, request.superAdmin, existingUser)
                 var userFiles : List[File] = files.listUserFilesAfter("", 12, addr.toString())
 
                 for (dset <- userDatasets) {

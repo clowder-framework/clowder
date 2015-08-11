@@ -74,8 +74,7 @@ POST           /uploadDragDrop                                                  
 GET            /fileThumbnail/:id/blob                                                  @controllers.Files.thumbnail(id: UUID)
 
 # Datasets
-GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "")
-GET            /datasets/userDatasets                                                   @controllers.Datasets.userDatasets(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", email: String)
+GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
 GET            /datasets/new                                                            @controllers.Datasets.newDataset
 GET            /datasets/addToDataset/:id/:name/:desc                                   @controllers.Datasets.addToDataset(id: UUID, name: String, desc: String)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
@@ -86,7 +85,7 @@ GET            /datasets_by_section/:id                                         
 POST           /dataset/submit                                                          @controllers.Datasets.submit
 
 # Collections
-GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "")
+GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
 GET            /collections/new                                                         @controllers.Collections.newCollection
 POST           /collection/submit                                                       @controllers.Collections.submit
 GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)
@@ -100,6 +99,9 @@ GET            /spaces                                                          
 GET            /spaces/new                                                              @controllers.Spaces.newSpace
 GET            /spaces/:id                                                              @controllers.Spaces.getSpace(id: UUID, size: Int ?= 9, direction: String ?= "desc")
 GET            /spaces/:id/updateSpace                                                  @controllers.Spaces.updateSpace(id:UUID)
+GET            /spaces/:id/addRequest                                                   @controllers.Spaces.addRequest(id:UUID)
+GET            /spaces/:id/acceptRequest                                                @controllers.Spaces.acceptRequest(id:UUID, user:String, role:String)
+GET            /spaces/:id/rejectRequest                                                @controllers.Spaces.rejectRequest(id:UUID, user:String)
 POST           /spaces/submit                                                           @controllers.Spaces.submit
 
 # Tags
@@ -113,7 +115,7 @@ GET            /tags/cloud                                                      
 # Authentication
 GET            /loginTest                                                               controllers.Authentication.login
 POST           /loginTest                                                               controllers.Authentication.loginSubmit
-GET            /notAuthorized                                                           controllers.Authentication.notAuthorized(msg ?= null)
+GET            /notAuthorized                                                           controllers.Authentication.notAuthorized(msg:String,  id:String, resourceType:String )
 
 # Search
 GET            /search                                                                  @controllers.Search.search(query: String ?= "")
@@ -348,6 +350,8 @@ POST           /api/datasets/:id/tags/remove                                    
 POST           /api/datasets/:id/tags/remove_all                                        @api.Datasets.removeAllTags(id: UUID)
 DELETE         /api/datasets/:id/tags                                                   @api.Datasets.removeTags(id: UUID)
 
+PUT            /api/datasets/:id/title                                                  @api.Datasets.updateName(id:UUID)
+PUT            /api/datasets/:id/description                                            @api.Datasets.updateDescription(id: UUID)
 POST           /api/datasets/:id/editing                                                @api.Datasets.updateInformation(id: UUID)
 POST           /api/datasets/:id/license                                                @api.Datasets.updateLicense(id: UUID)
 

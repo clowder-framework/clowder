@@ -64,7 +64,7 @@ class Datasets @Inject()(
       notes = "Returns list of datasets and descriptions.",
       responseClass = "None", httpMethod = "GET")
   def list = PrivateServerAction { implicit request =>
-      val list = datasets.listDatasets().map(datasets.toJSON(_))
+      val list = datasets.listAccess(0, request.user, request.superAdmin).map(datasets.toJSON(_))
       Ok(toJson(list))
   }
 
@@ -74,12 +74,12 @@ class Datasets @Inject()(
   def listOutsideCollection(collectionId: UUID) = PrivateServerAction { implicit request =>
       collections.get(collectionId) match {
         case Some(collection) => {
-          val list = for (dataset <- datasets.listDatasetsChronoReverse(); if (!datasets.isInCollection(dataset, collection)))
+          val list = for (dataset <- datasets.listAccess(0, request.user, request.superAdmin); if (!datasets.isInCollection(dataset, collection)))
           yield datasets.toJSON(dataset)
           Ok(toJson(list))
         }
         case None => {
-          val list = datasets.listDatasetsChronoReverse().map(datasets.toJSON(_))
+          val list = datasets.listAccess(0, request.user, request.superAdmin).map(datasets.toJSON(_))
           Ok(toJson(list))
         }
       }
@@ -558,6 +558,82 @@ class Datasets @Inject()(
         Logger.error(s"The given id $id is not a valid ObjectId.")
         BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
       }
+  }
+
+  @ApiOperation(value = "Update dataset name",
+    notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pair for name.",
+    responseClass = "None", httpMethod = "POST")
+  def updateName(id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
+    implicit val user = request.user
+    if (UUID.isValid(id.stringify)) {
+
+      //Set up the vars we are looking for
+      var name: String = null;
+
+      val aResult = (request.body \ "name").validate[String]
+
+      // Pattern matching
+      aResult match {
+        case s: JsSuccess[String] => {
+          name = s.get
+        }
+        case e: JsError => {
+          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          BadRequest(toJson(s"name data is missing."))
+        }
+      }
+      Logger.debug(s"updateInformation for dataset with id  $id. New name is: $name")
+
+      datasets.updateName(id, name)
+      datasets.get(id) match {
+        case Some(dataset) => {
+          events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
+        }
+      }
+      Ok(Json.obj("status" -> "success"))
+    }
+    else {
+      Logger.error(s"The given id $id is not a valid ObjectId.")
+      BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
+    }
+  }
+
+  @ApiOperation(value = "Update dataset description.",
+    notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pair for description.",
+    responseClass = "None", httpMethod = "POST")
+  def updateDescription(id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
+    implicit val user = request.user
+    if (UUID.isValid(id.stringify)) {
+
+      //Set up the vars we are looking for
+      var description: String = null;
+
+      var aResult: JsResult[String] = (request.body \ "description").validate[String]
+
+      // Pattern matching
+      aResult match {
+        case s: JsSuccess[String] => {
+          description = s.get
+        }
+        case e: JsError => {
+          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          BadRequest(toJson(s"description data is missing."))
+        }
+      }
+      Logger.debug(s"updateInformation for dataset with id  $id. New description is:  $description ")
+
+      datasets.updateDescription(id, description)
+      datasets.get(id) match {
+        case Some(dataset) => {
+          events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
+        }
+      }
+      Ok(Json.obj("status" -> "success"))
+    }
+    else {
+      Logger.error(s"The given id $id is not a valid ObjectId.")
+      BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
+    }
   }
   //End, Update Dataset Information code
   

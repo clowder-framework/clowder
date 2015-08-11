@@ -2,10 +2,10 @@ package controllers
 
 import api.Permission.Permission
 import api.{Permission, UserRequest}
-import models.ResourceRef
+import models.{RequestResource, ResourceRef}
 import play.api.mvc._
 import securesocial.core.{Authenticator, SecureSocial, UserService}
-import services.{DatasetService, CollectionService, SpaceService, DI}
+import services._
 import scala.concurrent.Future
 
 /**
@@ -27,6 +27,7 @@ trait SecuredController extends Controller {
       block(userRequest)
     }
   }
+
   /**
    * Use when you want to require the user to be logged in on a private server or the server is public.
    */
@@ -76,22 +77,50 @@ trait SecuredController extends Controller {
       if (p || userRequest.superAdmin) {
         block(userRequest)
       } else {
-        lazy val space: SpaceService = DI.injector.getInstance(classOf[SpaceService])
-        lazy val collection: CollectionService = DI.injector.getInstance(classOf[CollectionService])
-        lazy val dataset: DatasetService = DI.injector.getInstance(classOf[DatasetService])
-        val messgae = {
+        lazy val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
+        lazy val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
+        lazy val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+
+        val (messgae: String, requestid: String) = {
           resourceRef.get match {
             // TODO "Not authorized" occurs with other ResourceRef.Type or there is resourceRef.parse
-            case ResourceRef(ResourceRef.dataset, id) => "dataset " + dataset.get(id).get.name
-            case ResourceRef(ResourceRef.collection, id) => "collection " + collection.get(id).get.name
-            case ResourceRef(ResourceRef.space, id) => "space " + space.get(id).get.name
+            case ResourceRef(ResourceRef.dataset, id) => {
+              val dataset = datasets.get(id).get
+              Pair("dataset \"" + dataset.name + "\"", id.toString)
+            }
+
+            case ResourceRef(ResourceRef.collection, id) => {
+              val collection = collections.get(id).get
+              Pair("collection \"" + collection.name + "\"", id.toString)
+            }
+
+            case ResourceRef(ResourceRef.space, id) => {
+              val space = spaces.get(id).get
+              if (space.requests.contains(RequestResource(userRequest.user.get.id))) {
+                Pair("space \"" + space.name + "\". \nAuthorization request is pending", "")
+              } else {
+                Pair("space \"" + space.name + "\"", id.toString)
+              }
+            }
+
             case ResourceRef(resType, id) => {
-              "error resource"
+              Pair("error resource", null)
             }
           }
         }
-        Future.successful(Results.Redirect(routes.Authentication.notAuthorized(messgae)))
+        Future.successful(Results.Redirect(routes.Authentication.notAuthorized("You are not authorized to access "
+          + messgae, requestid, resourceRef.get.resourceType.toString)))
       }
+    }
+  }
+
+  /**
+   * Disable a route without having to comment out the entry in the routes file. Useful for when we want to keep the
+   * code around but we don't want users to have access to it.
+   */
+  def DisabledAction = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      Future.successful(Results.Redirect(routes.Authentication.notAuthorized("", null, null)))
     }
   }
 
@@ -108,10 +137,10 @@ trait SecuredController extends Controller {
     ) yield {
       Authenticator.save(authenticator.touch)
       val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
-      return UserRequest(user, superAdmin=false, request)
+      return UserRequest(user, superAdmin = false, request)
     }
 
     // 2) anonymous access
-    UserRequest(None, superAdmin=false, request)
+    UserRequest(None, superAdmin = false, request)
   }
 }

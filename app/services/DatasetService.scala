@@ -15,38 +15,53 @@ trait DatasetService {
   /**
    * The number of datasets
    */
-  def count(space: Option[String] = None): Long
+  def count(): Long
 
   /**
-   * List all datasets in the system.
+   * Return a count of datasets in a space, this does not check for permissions
    */
-  def listDatasets(order: Option[String] = None, limit: Option[Integer] = None, space: Option[String] = None): List[Dataset]
+  def countSpace(space: String): Long
 
   /**
-   * List all datasets in the system in reverse chronological order.
+   * Return a list of datasets in a space, this does not check for permissions
    */
-  def listDatasetsChronoReverse(limit: Option[Integer] = None, space: Option[String] = None): List[Dataset]
+  def listSpace(limit: Integer, space: String): List[Dataset]
 
   /**
-   * List datasets after a specified date.
+   * Return a list of datasets in a space starting at a specific date, this does not check for permissions
    */
-  def listDatasetsAfter(date: String, limit: Int, space: Option[String] = None): List[Dataset]
+  def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Dataset]
 
   /**
-   * List datasets before a specified date.
+   * Return a count of datasets the user has access to.
    */
-  def listDatasetsBefore(date: String, limit: Int, space: Option[String] = None): List[Dataset]
-  
+  def countAccess(user: Option[User], superAdmin: Boolean): Long
+
   /**
-   * List datasets after a specified date for a specific user.
+   * Return a list of datasets the user has access to.
    */
-  def listUserDatasetsAfter(date: String, limit: Int, email: String): List[Dataset]
-  
+  def listAccess(limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset]
+
   /**
-   * List datasets before a specified date for a specific user.
+   * Return a list of datasets the user has access to starting at a specific date.
    */
-  def listUserDatasetsBefore(date: String, limit: Int, email: String): List[Dataset]
-  
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset]
+
+  /**
+   * Return a count of datasets the user has created.
+   */
+  def countUser(user: Option[User], superAdmin: Boolean, owner: User): Long
+
+  /**
+   * Return a list of datasets the user has created.
+   */
+  def listUser(limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[Dataset]
+
+  /**
+   * Return a list of datasets the user has created starting at a specific date.
+   */
+  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[Dataset]
+
   /**
    * Get dataset.
    */
@@ -56,16 +71,6 @@ trait DatasetService {
    * Insert dataset.
    */
   def insert(dataset: Dataset): Option[String]
-
-  /**
-   * Lastest dataset in chronological order.
-   */
-  def latest(space: Option[String] = None): Option[Dataset]
-
-  /**
-   * First dataset in chronological order.
-   */
-  def first(space: Option[String] = None): Option[Dataset]
 
   /**
    *
@@ -199,6 +204,10 @@ trait DatasetService {
    * name: A String that represents the updated name for this dataset.
    */
   def updateInformation(id: UUID, description: String, name: String)
+
+  def updateName(id: UUID, name: String)
+
+  def updateDescription(id: UUID, description: String)
 
   /**
    * Update the license data that is currently associated with the dataset.

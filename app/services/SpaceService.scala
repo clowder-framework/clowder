@@ -14,6 +14,35 @@ import models.Role
  *
  */
 trait SpaceService extends CRUDService[ProjectSpace] {
+  /**
+   * Return a count of spaces the user has access to.
+   */
+  def countAccess(user: Option[User], superAdmin: Boolean): Long
+
+  /**
+   * Return a list of spaces the user has access to.
+   */
+  def listAccess(limit: Integer, user: Option[User], superAdmin: Boolean): List[ProjectSpace]
+
+  /**
+   * Return a list of spaces the user has access to starting at a specific date.
+   */
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean): List[ProjectSpace]
+
+  /**
+   * Return a count of spaces the user has created.
+   */
+  def countUser(user: Option[User], superAdmin: Boolean, owner: User): Long
+
+  /**
+   * Return a list of spaces the user has created.
+   */
+  def listUser(limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[ProjectSpace]
+
+  /**
+   * Return a list of spaces the user has created starting at a specific date.
+   */
+  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[ProjectSpace]
 
   def addCollection(collection: UUID, space: UUID)
 
@@ -54,23 +83,21 @@ trait SpaceService extends CRUDService[ProjectSpace] {
    * Service access to retrieve a list of collections in a given space, of prescribed list length.
    *
    * @param space Identifies the space.
-   * @param order Sort order (if any) by created date
    * @param limit Length of (the number of collections in) returned list.
    *
    * @return A list of collections in a space; list's length is defined by 'limit'.
    */
-  def getCollectionsInSpace(space: Option[String] = None, order: Option[String] = None, limit: Option[Integer] = None): List[Collection]
+  def getCollectionsInSpace(space: Option[String] = None, limit: Option[Integer] = None): List[Collection]
 
   /**
    * Service access to retrieve a list of datasets in a given space, of prescribed list length.
    *
    * @param space Identifies the space.
-   * @param order Sort order (if any) by created date
    * @param limit Length of (the number of datasets in) returned list.
    *
    * @return A list of datasets in a space; list's length is defined by 'limit'.
    */
-  def getDatasetsInSpace(space: Option[String] = None, order: Option[String] = None, limit: Option[Integer] = None): List[Dataset]
+  def getDatasetsInSpace(space: Option[String] = None, limit: Option[Integer] = None): List[Dataset]
 
   /**
    * Service call to update the information and configuration that are part of a space.
@@ -142,4 +169,14 @@ trait SpaceService extends CRUDService[ProjectSpace] {
    * Remove follower from a file.
    */
   def removeFollower(id: UUID, userId: UUID)
+
+  /**
+   * Add authorization request to a space.
+   */
+  def addRequest(id: UUID, userId: UUID, username: String)
+
+  /**
+   * Remove authorization request.
+   */
+  def removeRequest(id: UUID, userId: UUID)
 }

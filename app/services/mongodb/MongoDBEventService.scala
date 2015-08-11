@@ -2,6 +2,7 @@ package services.mongodb
 
 import models._
 import java.util.Date
+import org.bson.types.ObjectId
 import services.EventService
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
@@ -28,7 +29,7 @@ class MongoDBEventService extends EventService {
   def addUserEvent(user: Option[User], action_type: String) = {
     user match {
       case Some(modeluser) => {
-        Event.insert(new Event(modeluser.getMiniUser, None, None, None, None, action_type, new Date()))
+        Event.insert(new Event(modeluser.getMiniUser, None, None, None, None, None, action_type, new Date()))
       }
     }
   }
@@ -37,7 +38,7 @@ class MongoDBEventService extends EventService {
     if (object_name.toString() != "undefined"){
       user match {
         case Some(modeluser) => {
-          Event.insert(new Event(modeluser.getMiniUser, Option(object_id), Option(object_name), None, None, action_type, new Date())) 
+          Event.insert(new Event(modeluser.getMiniUser, None, Option(object_id), Option(object_name), None, None, action_type, new Date())) 
         }
       }
     }
@@ -46,7 +47,15 @@ class MongoDBEventService extends EventService {
   def addSourceEvent(user: Option[User], object_id: UUID, object_name: String, source_id: UUID, source_name: String, action_type: String) = {
     user match {
       case Some(modeluser) => {
-        Event.insert(new Event(modeluser.getMiniUser, Option(object_id), Option(object_name), Option(source_id), Option(source_name), action_type, new Date())) 
+        Event.insert(new Event(modeluser.getMiniUser, None, Option(object_id), Option(object_name), Option(source_id), Option(source_name), action_type, new Date())) 
+      }
+    }
+  }
+
+  def addRequestEvent(user: Option[User], targetuser: User, object_id: UUID, object_name: String,  action_type: String) = {
+    user match {
+      case Some(modeluser) => {
+        Event.insert(new Event(modeluser.getMiniUser, Option(targetuser.getMiniUser), Option(object_id), Option(object_name), None, None, action_type, new Date()))
       }
     }
   }
@@ -130,6 +139,26 @@ class MongoDBEventService extends EventService {
     }
 
   }
+   def getRequestEvents(targetuser: Option[User], limit: Option[Integer]): List[Event] = {
+     targetuser match {
+       case Some(modeluser) => {
+         val eventList = Event.find(
+           MongoDBObject(
+             // "targetuser" -> MongoDBObject( "_id" -> new ObjectId(targetuser.id.stringify))
+             "targetuser._id" -> new ObjectId(modeluser.id.stringify)
+           )
+         ).toList
+
+           Logger.info("find " + eventList.size + " request")
+          limit match {
+            case Some(x) => eventList.take(x)
+            case None => eventList
+          }
+        }
+       case None => List()
+     }
+   }
+
 
 }
 

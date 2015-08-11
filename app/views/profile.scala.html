@@ -6,7 +6,8 @@
       <td valign="top">
         <img src=@profile.getAvatarUrl(256) class="profilePicture">
         <div align="center">
-          <h4><a href="@routes.Datasets.userDatasets("", "", 12, None, "", profile.email.getOrElse(""))">View Datasets</a> </h4>
+            <h4><a href="@routes.Datasets.list("", "", 12, None, "", Some(profile.id.stringify))">View Datasets</a> </h4>
+            <h4><a href="@routes.Collections.list("", "", 12, None, "", Some(profile.id.stringify))">View Collections</a> </h4>
           <h4>
             Followed by
             <span id="followerSize">@profile.followers.size</span>
@@ -175,12 +176,14 @@
 					}
 					</div> 
 			    </div>
-			    
+
 			    <div role="tabpanel" class="tab-pane fade" id="files">
+                    @util.multimasonry()
 		    	<div class="row" style="margin-top : 15px;">
 				  	<div class="panel-body">
+                        <div id="masonry" class="masonry" >
 						@for(fileInfo <- myFiles) {
-				    	<div class="col-md-3" style="margin-top: 30px">
+				    	<div class="post-box col-md-3" style="margin-top: 30px">
 					    	<div class="panel panel-default">
 							  <div class="panel-heading caption break-word">
 							    	<a href="@routes.Files.file(fileInfo._1)">@fileInfo._2.toString</a>
@@ -191,6 +194,7 @@
 							</div>
 						</div>
 				    	}
+                    </div>
 					</div>
 				</div> 
 		    </div>
@@ -198,8 +202,9 @@
 		    <div role="tabpanel" class="tab-pane fade" id="datasets">
 		    	<div class="row" style="margin-top : 15px;">
 				  	<div class="panel-body">
+                        <div id="masonry" class="masonry" >
 						@for(datasetInfo <- myDatasets) {
-				    	<div class="col-md-3" style="margin-top: 30px">
+				    	<div class="post-box col-md-3" style="margin-top: 30px">
 					    	<div class="panel panel-default">
 							  <div class="panel-heading caption break-word">
 							    	<a href="@routes.Datasets.dataset(datasetInfo._1)">@datasetInfo._2.toString</a>
@@ -210,15 +215,17 @@
 							</div>
 						</div>
 				    	}
-					</div>
+                        </div>
+                    </div>
 				</div> 
 		    </div>
 		    
 		    <div role="tabpanel" class="tab-pane fade" id="collections">
 		    	<div class="row" style="margin-top : 15px;">
 				  	<div class="panel-body">
+                        <div id="masonry" class="masonry" >
 						@for(collectionInfo <- myCollections) {
-				    	<div class="col-md-3" style="margin-top: 30px">
+				    	<div class="post-box col-md-3" style="margin-top: 30px">
 					    	<div class="panel panel-default">
 							  <div class="panel-heading caption break-word">
 							    	<a href="@routes.Collections.collection(collectionInfo._1)">@collectionInfo._2.toString</a>
@@ -229,6 +236,7 @@
 							</div>
 						</div>
 				    	}
+                        </div>
 					</div>
 				</div> 
 		      </div>
@@ -560,4 +568,5 @@
   </table>
 </div>
     <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
+
 }

@@ -35,10 +35,10 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
               (request.body \ "space").asOpt[String].map { space => 
 	              var c : Collection = null
 	              if (space == "default") {
-	                   c = Collection(name = name, description = description, created = new Date())
+	                   c = Collection(name = name, description = description, created = new Date(), author=request.user)
 	              }
 	              else {
-	                   c = Collection(name = name, description = description, created = new Date(), spaces = List(UUID(space)))
+	                   c = Collection(name = name, description = description, created = new Date(), author=request.user, spaces = List(UUID(space)))
 	              }
 	              collections.insert(c) match {
 	                case Some(id) => {
@@ -138,8 +138,8 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "List all collections",
       notes = "",
       responseClass = "None", httpMethod = "GET")
-  def listCollections() = PermissionAction(Permission.ViewSpace) { implicit request =>
-    val list = for (collection <- collections.listCollections()) yield jsonCollection(collection)
+  def listCollections() = PrivateServerAction { implicit request =>
+    val list = collections.listAccess(0, request.user, request.superAdmin).map(jsonCollection(_))
     Ok(toJson(list))
   }
 

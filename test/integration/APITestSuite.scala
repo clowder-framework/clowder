@@ -20,7 +20,8 @@ class APITestSuite extends Suites (
 		new FilesAPIAppSpec ,
 		new DatasetsAPIAppSpec ,
 		new CollectionsAPIAppSpec ,
-		new PreviewsAPIAppSpec
+		new PreviewsAPIAppSpec,
+		new ApplicationSpec
 	) with OneAppPerSuite
 {
 // Override app if you need a FakeApplication with other than non-default parameters.

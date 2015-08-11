@@ -9,7 +9,10 @@ import models._
 import play.api.Logger
 import play.api.data.Forms._
 import play.api.data.{Form, Forms}
-import services.{SpaceService, UserService}
+import play.api.libs.concurrent.Akka
+import play.api.libs.json.Json
+import securesocial.core.providers.utils.Mailer
+import services._
 import util.Direction._
 
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
@@ -28,7 +31,7 @@ case class spaceFormData(
   isTimeToLiveEnabled: Boolean,
   submitButtonValue:String)
 
-class Spaces @Inject()(spaces: SpaceService, users: UserService) extends SecuredController {
+class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventService) extends SecuredController {
 
   /**
    * New/Edit project space form bindings.
@@ -64,8 +67,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
         case Some(s) => {
 	        val creator = users.findById(s.creator)
 	        var creatorActual: User = null
-	        val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(direction), Some(size))
-	        val datasetsInSpace = spaces.getDatasetsInSpace(Some(id.stringify), Some(direction), Some(size))
+	        val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(size))
+	        val datasetsInSpace = spaces.getDatasetsInSpace(Some(id.stringify), Some(size))
 	        val usersInSpace = spaces.getUsersInSpace(id)
 	        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
 	        creator match {
@@ -129,6 +132,92 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService) extends Secured
         case None => InternalServerError("Space not found")
       }
     }
+
+  /**
+   * Each user with EditSpace permission will see the request on index and receive an email.
+   */
+   def addRequest(id: UUID) = UserAction { implicit request =>
+      implicit val user = request.user
+      spaces.get(id) match {
+        case Some(s) => {
+          Logger.debug("request submitted in controller.Space.addRequest  " )
+          val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName
+          val body = views.html.spaces.requestemail(user.get, id.toString, s.name)
+
+          for(requestReceiver <- spaces.getUsersInSpace(s.id)){
+            spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
+              case Some(aRole) => {
+                if ( aRole.permissions.contains( "EditSpace" )){
+                    events.addRequestEvent(user, requestReceiver, id, s.name, "postrequest_space")
+
+                    //sending emails to the space's Admin && Editor
+                    val recipient:String = requestReceiver.email.get.toString
+                    Users.sendEmail(subject, recipient, body )
+                }
+              }
+            }
+          }
+          spaces.addRequest(id, user.get.id, user.get.fullName)
+          Ok(views.html.notAuthorized( "Request for authorization submitted", null, null))
+        }
+        case None => InternalServerError("Space not found")
+      }
+    }
+
+  /**
+   * accept authorization request with specific Role. Send email to request user.
+   */
+  def acceptRequest( id:UUID, requestuser:String, role:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+    implicit val user = request.user
+    spaces.get(id) match {
+      case Some(s) => {
+        Logger.debug("request submitted in controllers.Space.acceptrequest ")
+        users.get(UUID(requestuser)) match {
+          case Some(requestUser) => {
+            events.addRequestEvent(user, requestUser, id, s.name, "acceptrequest_space")
+            spaces.removeRequest(id, requestUser.id)
+            users.findRoleByName(role) match {
+              case Some(r) => spaces.addUser(requestUser.id, r, id)
+              case _ => Logger.debug("Role not found" + role)
+            }
+
+            val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Accepted"
+            val recipient: String = requestUser.email.get.toString
+            val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "accepted your request and assigned you as " + role + " to")
+            Users.sendEmail(subject, recipient, body)
+            Ok(Json.obj("status" -> "success"))
+          }
+          case None => InternalServerError("Request user not found")
+        }
+      }
+      case None => InternalServerError("Space not found")
+    }
+  }
+
+
+  def rejectRequest( id:UUID, requestuser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+    implicit val user = request.user
+    spaces.get(id) match {
+      case Some(s) => {
+        Logger.debug("request submitted in controller.Space.rejectRequest")
+        users.get(UUID(requestuser)) match {
+          case Some(requestUser) => {
+            events.addRequestEvent(user, requestUser, id, spaces.get(id).get.name, "rejectrequest_space")
+            spaces.removeRequest(id, requestUser.id)
+            val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Rejected"
+            val recipient: String = requestUser.email.get.toString
+            val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "rejected your request to")
+            Users.sendEmail(subject, recipient, body)
+            Ok(Json.obj("status" -> "success"))
+          }
+          case None => InternalServerError("Request user not found")
+        }
+      }
+      case None => InternalServerError("Space not found")
+    }
+  }
+
+
   /**
    * Submit action for new or edit space
    */

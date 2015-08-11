@@ -74,7 +74,13 @@
 
             <div class="row">
                 <div class="col-md-12" id="ds-title">
-                    <h1 id="datasettitle">@Html(dataset.name)</h1>
+                    <h1 id="datasettitle" class="inline">@Html(dataset.name)</h1>
+                    @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        <h3 class="inline align-right"><a id ="edit-title" href = "javascript:updateTitle()">
+                            <span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
+                        </a></h3>
+                    }
+
                 </div>
             </div>
 
@@ -161,6 +167,44 @@
             templates :[ { title : 'Test template 1', content : 'Test 1' }, { title : 'Test template 2', content : 'Test 2' }
             ]
             } ) ;
+        function updateTitle() {
+            var cur_title = $('#datasettitle').text();
+            $('<input type="text" id = "title_input" class="form-control"/>').insertAfter($('#datasettitle'));
+            $('<button id="update_title" class= "btn btn-sm btn-primary" onclick="saveTitle()"> Save </button>').insertAfter($('#title_input'));
+            $('#title_input').val(cur_title);
+            $('#datasettitle').text("");
+            $('#edit-title').css("display", "none");
+        }
+
+        function saveTitle() {
+            var name = $('#title_input').val();
+            var encName = htmlEncode(name);
+            jsonData = JSON.stringify({"name": encName});
+
+            var request = jsRoutes.api.Datasets.updateName("@dataset.id").ajax({
+                data: jsonData,
+                type: 'PUT',
+                contentType: "application/json"
+            });
+
+            request.done(function(response, textStatus, jqXHR){
+                $('#datasettitle').text(encName.replace(/\n/g, "<br>"));
+                $('#title_input').remove();
+                $('#update_title').remove();
+                $('#edit-title').css("display", "inline");
+                $('#datasettitle').css("display", "inline");
+
+            });
+
+            request.fail(function(jqXHR, textStatus, errorThrown) {
+                console.error("The following error occurred: " + textStatus, errorThrown);
+                var errMsg = "Yoy must be logged in to update the information about a dataset.";
+                if(!checkErrorAndRedirect(jqXHR, errMsg)) {
+                    notify("The dataset information was not updated due to: "+ errorThrown, "error");
+			};
+		});
+
+        }
     </script>
 }
 

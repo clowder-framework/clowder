@@ -42,7 +42,7 @@
 				<dl class="dl-horizontal">
 					@if(!collection.author.isEmpty){
 						<dt>Author:</dt>
-						<dd>@collection.author.get.fullName</dd>
+						<dd><a href= "@routes.Profile.viewProfile(collection.author.get.email)"> @collection.author.get.fullName </a></dd>
 					}
                     <dt>Space:</dt>
                     <dd>
