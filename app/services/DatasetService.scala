@@ -205,6 +205,10 @@ trait DatasetService {
    */
   def updateInformation(id: UUID, description: String, name: String)
 
+  def updateName(id: UUID, name: String)
+
+  def updateDescription(id: UUID, description: String)
+
   /**
    * Update the license data that is currently associated with the dataset.
    *

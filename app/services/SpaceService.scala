@@ -1,6 +1,7 @@
 package services
 
-import models.{UUID, ProjectSpace}
+import models._
+import securesocial.core.providers.Token
 import services.core.CRUDService
 import models.Collection
 import models.Dataset
@@ -169,4 +170,29 @@ trait SpaceService extends CRUDService[ProjectSpace] {
    * Remove follower from a file.
    */
   def removeFollower(id: UUID, userId: UUID)
+
+  /**
+   * Add Invitation to a Space
+   */
+  def addInvitationToSpace(invite: SpaceInvite)
+
+  /**
+   * Remove Invitation to a space
+   */
+  def removeInvitationToSpace(inviteId: UUID, spaceId: UUID)
+
+  /**
+   * Find an invitation by ID
+   */
+  def getInvitationToSpace(inviteId: String): Option[SpaceInvite]
+
+  /**
+   * Add authorization request to a space.
+   */
+  def addRequest(id: UUID, userId: UUID, username: String)
+
+  /**
+   * Remove authorization request.
+   */
+  def removeRequest(id: UUID, userId: UUID)
 }

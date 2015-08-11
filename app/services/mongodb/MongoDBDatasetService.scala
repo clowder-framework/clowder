@@ -607,7 +607,19 @@ class MongoDBDatasetService @Inject() (
   def updateInformation(id: UUID, description: String, name: String) {
       val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
           $set("description" -> description, "name" -> name),
-          false, false, WriteConcern.Safe);
+          false, false, WriteConcern.Safe)
+  }
+
+  def updateName(id: UUID, name: String) {
+    val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $set("name" -> name),
+      false, false, WriteConcern.Safe)
+  }
+
+  def updateDescription(id: UUID, description: String){
+    val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $set("description" -> description),
+      false, false, WriteConcern.Safe)
   }
 
   /**

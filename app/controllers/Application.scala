@@ -36,8 +36,11 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val collectionsCountAccess = collections.countAccess(user, request.superAdmin)
     val spacesCount = spaces.count()
     val spacesCountAccess = spaces.countAccess(user, request.superAdmin)
-    val newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)).sorted(Ordering.by((_: Event).created).reverse))
-    Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess, spacesCount, spacesCountAccess,
+    //newsfeedEvents is the combination of followedEntities and requestevents, then take the most recent 20 of them.
+    var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)).sorted(Ordering.by((_: Event).created).reverse))
+    newsfeedEvents =  (newsfeedEvents ::: events.getRequestEvents(user, Some(20)))
+          .sorted(Ordering.by((_: Event).created).reverse).take(20)
+        Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess, spacesCount, spacesCountAccess,
           AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, newsfeedEvents))
   }
   
@@ -97,6 +100,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Datasets.removeTags,
         api.routes.javascript.Datasets.removeAllTags,
         api.routes.javascript.Datasets.updateInformation,
+        api.routes.javascript.Datasets.updateName,
+        api.routes.javascript.Datasets.updateDescription,
         api.routes.javascript.Datasets.updateLicense,
         api.routes.javascript.Datasets.follow,
         api.routes.javascript.Datasets.unfollow,
@@ -142,6 +147,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Spaces.unfollow,
         api.routes.javascript.Collections.follow,
         api.routes.javascript.Collections.unfollow,
+        api.routes.javascript.Collections.updateCollectionName,
+        api.routes.javascript.Collections.updateCollectionDescription,
         api.routes.javascript.Users.follow,
         api.routes.javascript.Users.unfollow,
         api.routes.javascript.Projects.addproject,
@@ -152,7 +159,9 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Profile.viewProfileUUID,
         controllers.routes.javascript.Files.file,
         controllers.routes.javascript.Datasets.dataset,
-        controllers.routes.javascript.Collections.collection
+        controllers.routes.javascript.Collections.collection,
+        controllers.routes.javascript.Spaces.acceptRequest,
+        controllers.routes.javascript.Spaces.rejectRequest
       )
     ).as(JSON) 
   }

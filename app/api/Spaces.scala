@@ -296,6 +296,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   @ApiOperation(value = "Update the information associated with a space", notes = "",
     responseClass = "None", httpMethod = "POST")
   def updateUsers(spaceId: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId)))(parse.json) { implicit request =>
+    val user = request.user
     if (UUID.isValid(spaceId.stringify)) {
       val aResult: JsResult[Map[String, String]] = (request.body \ "rolesandusers").validate[Map[String, String]]
 
@@ -339,7 +340,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
               case None => Logger.debug("A role was sent up that doesn't exist. It is " + k)
             }
           }
-
+          val space = spaces.get(spaceId)
           for ((k, v) <- roleMap) {
             //The role needs to exist
             userService.findRoleByName(k) match {
@@ -364,6 +365,9 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
                     else {
                       //New user completely to the space
                       spaces.addUser(UUID(aUserId), aRole, spaceId)
+                      val newmember = userService.get(UUID(aUserId))
+                      val theHtml = views.html.spaces.inviteNotificationEmail(spaceId.stringify, space.get.name, user.get.getMiniUser, newmember.get.getMiniUser.fullName, aRole.name)
+                      controllers.Users.sendEmail("Added to Space", newmember.get.getMiniUser.email.get ,theHtml)
                     }
                   }
                   else {

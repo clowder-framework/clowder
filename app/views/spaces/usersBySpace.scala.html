@@ -36,10 +36,25 @@ Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)" title="@creator
 	title="Edit User Allocation">
 	    <span class="glyphicon glyphicon-edit"></span> Edit
 	</a>
+	<a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed"
+	    href= "@routes.Spaces.invite(space.id)">
+		<span class="glyphicon glyphicon-envelope"></span> Invite new Users
+	</a>
+	@if(!space.requests.isEmpty) {
+		<a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed" data-toggle="modal"
+		data-target="#requestUser" id="viewrequest"
+		title="View Authorization request">
+			 @space.requests.length Authorization Request
+		</a>
+	}
 } else {
 	<a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed disabled"
 	id="edituseralloc" title="Edit User Allocation">
 		<span class="glyphicon glyphicon-edit"></span> Edit
+	</a>
+	<a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed disabled"
+	    href= "@routes.Spaces.invite(space.id)">
+		<span class="glyphicon glyphicon-envelope"></span> Invite new Users
 	</a>
 }
 
@@ -59,6 +74,46 @@ Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)" title="@creator
                 <span class="glyphicon glyphicon-edit"></span> Submit
             </button>
 			<a href="#" class="btn btn-default" id="closebutton" data-dismiss="modal">Close</a>			
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<div class="modal fade bs-example-modal-lg" id="requestUser" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+						&times;</button>
+				<h4 class="modal-title">Authorization Request</h4>
+			</div>
+			<div class="modal-body">
+				<ul>
+				@for(user <- space.requests) {
+					<li id="requestli_@user.id.stringify">
+						<a href="@routes.Profile.viewProfileUUID(user.id)">@user.name</a>
+						<br><br>
+
+						<select id="roleSelect" class="chosen-select btn btn-default btn-xs">
+							<option value="Viewer">Viewer</option>
+							<option value="Admin">Admin</option>
+							<option value="Editor">Editor</option>
+
+						</select>
+
+					<button class="btn btn-default btn-xs" id="requestviewer_@user.id.stringify" title="accept space request" onclick="return acceptSpaceRequest('@space.id', '@user.id.toString')">
+						Accept
+					</button>
+					<button class="btn btn-default btn-xs" id="requestrej_@user.id.stringify" title="reject space request" onclick= "return rejectSpaceRequest('@space.id', '@user.id.toString')">
+						Reject Request
+					</button>
+					</li>
+				}
+				</ul>
+			</div>
+			<div class="modal-footer">
+				<button class="btn btn-default" type="button" data-dismiss="modal" onClick= "window.location.reload();">Close</button>
 			</div>
 		</div>
 	</div>

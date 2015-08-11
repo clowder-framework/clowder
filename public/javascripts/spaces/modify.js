@@ -132,4 +132,43 @@ function updateUsersInSpace(spaceId, url) {
     return false;
 }
 
+function acceptSpaceRequest(id, user){
+    var role = $("#roleSelect").val();
+    var request = jsRoutes.controllers.Spaces.acceptRequest(id, user, role).ajax({
+        type : 'GET',
+        contentType : "application/json"
+    });
+    request.done ( function ( response, textStatus, jqXHR ) {
+        $("#requestli_"+user).hide();
+        console.log("Successful accept request");
+    });
+    request.fail(function(jqXHR, textStatus, errorThrown) {
+        console.error("The following error occured: " + textStatus, errorThrown);
+        var errMsg = "You must be logged in to accept request.";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("Error accepting request from "+ user);
+        }
+    });
+    return false;
+}
+
+function rejectSpaceRequest(id, user){
+    var request = jsRoutes.controllers.Spaces.rejectRequest(id, user).ajax({
+        type : 'GET',
+        contentType : "application/json"
+    });
+    request.done ( function ( response, textStatus, jqXHR ) {
+        $("#requestli_"+user).hide();
+        console.log("Successful reject request");
+    });
+    request.fail(function(jqXHR, textStatus, errorThrown) {
+        console.error("The following error occured: " + textStatus, errorThrown);
+        var errMsg = "You must be logged in to reject request.";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("Error rejecting request from "+user);
+        }
+    });
+    return false;
+}
+
 window['changeSpace'] = changeSpace;

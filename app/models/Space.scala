@@ -28,7 +28,8 @@ case class ProjectSpace (
   metadata: List[Metadata], 
   resourceTimeToLive: Long = SpaceConfig.getTimeToLive(),
   isTimeToLiveEnabled: Boolean = SpaceConfig.getIsTimeToLiveEnabled(),
-  followers: List[UUID] = List.empty )
+  followers: List[UUID] = List.empty,
+  requests: List[RequestResource] = List.empty)
 
 
 case class UserSpace (
@@ -42,6 +43,12 @@ case class UserSpace (
    datasetCount: Integer,
    userCount: Integer)
 
+case class SpaceInvite(
+    id: UUID = UUID.generate,
+    invite_id: String,
+    email: String,
+    space: UUID,
+    role: String)
    
 // New way to manage metadata. Will eventually be merged with space metadata.
 case class SpaceMetadata (

@@ -233,7 +233,6 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("After " + sinceDate)
       Collection.find(filter ++ ("created" $lt sinceDate)).sort(order).limit(limit).toList
-      Collection.find(filter ++ ("created" $lt sinceDate)).sort(order).limit(limit).toList
     }
   }
 
@@ -541,6 +540,16 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     $pull("spaces" -> Some(new ObjectId(spaceId.stringify))),
     false, false)
 
+  }
+
+   def updateName(collectionId: UUID, name: String){
+     val result = Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+     $set("name" -> name), false, false, WriteConcern.Safe)
+   }
+
+  def updateDescription(collectionId: UUID, description: String){
+    val result = Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+      $set("description" -> description), false, false, WriteConcern.Safe)
   }
 
   /**

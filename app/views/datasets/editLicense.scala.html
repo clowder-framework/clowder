@@ -4,29 +4,23 @@
 
 <!-- If the user can edit the dataset license info, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 @if(Permission.checkPermission(Permission.EditLicense, ResourceRef(ResourceRef.dataset, dataset.id))) {
-    <a class="btn btn-default btn-xs accordion-toggle collapsed" data-toggle="collapse"
+    <a class="inline edit-tab" data-toggle="collapse"
     data-parent="#accordion6" href="#collapseSix" id="editlicense"
     title="Edit License Information">
-        <span class="glyphicon glyphicon-chevron-down"></span> Edit License
+        <span class="glyphicon glyphicon-edit"></span>
     </a>
 
-    <div id="collapseSix" class="accordion-body collapse">
-        <div class="panel panel-primary">
-            <div class="panel-body">
-            @if(user.isDefined) {
-                @licenseform(dataset.id.stringify, dataset.licenseData, "dataset", dataset.author.fullName)
-            }
-            </div>
-        </div>
-    </div>
-} else {
-    <a class="btn btn-default btn-xs accordion-toggle collapsed disabled" data-toggle="collapse"
-    data-parent="#accordion6" href="#collapseSix" id="editlicense"
-    title="Edit License Information">
-        <span class="glyphicon glyphicon-chevron-down"></span> Edit License
-    </a>
 }
 
+<div id="collapseSix" class="accordion-body collapse">
+    <div class="panel panel-primary">
+        <div class="panel-body">
+        @if(user.isDefined) {
+            @licenseform(dataset.id.stringify, dataset.licenseData, "dataset", dataset.author.fullName)
+        }
+        </div>
+    </div>
+</div>
 <script type="text/javascript" language="javascript">
     $(document).ready(function() {
         //Will have to modify the if check to see if there is data that specifies what should be selected
