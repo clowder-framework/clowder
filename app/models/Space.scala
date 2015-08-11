@@ -28,7 +28,8 @@ case class ProjectSpace (
   metadata: List[Metadata], 
   resourceTimeToLive: Long = SpaceConfig.getTimeToLive(),
   isTimeToLiveEnabled: Boolean = SpaceConfig.getIsTimeToLiveEnabled(),
-  followers: List[UUID] = List.empty )
+  followers: List[UUID] = List.empty,
+  requests: List[RequestResource] = List.empty)
 
 
 case class UserSpace (

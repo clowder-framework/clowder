@@ -267,7 +267,7 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
 
     "respond to the attachDataset(coll_id:UUID, ds_id:UUID) function routed by POST /api/collections/:coll_id/datasets/:ds_id for dataset 1" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result1) = route(FakeRequest(GET, "/api/datasets"))
+      val Some(result1) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result1))
       status(result1) mustEqual OK
       info("contentType="+contentType(result1))
@@ -288,7 +288,7 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
           val dataset_id = list.filter(_.datasetname contains "Dataset 1").toString().split(",")(2)
           info("dataset id value " + dataset_id)
 
-          val Some(result2) = route(FakeRequest(GET, "/api/collections"))
+          val Some(result2) = route(FakeRequest(GET, "/api/collections?key=" + secretKey))
           info("Status="+status(result2))
           status(result2) mustEqual OK
           info("contentType="+contentType(result2))
@@ -328,7 +328,7 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
 
     "respond to the listInCollection(coll_id: UUID) function routed by GET /api/collections/:coll_id/getDatasets" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/collections"))
+      val Some(result) = route(FakeRequest(GET, "/api/collections?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -366,7 +366,7 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
 
     "respond to the listOutsideCollection(coll_id: UUID) function routed by GET /api/datasets/listOutsideCollection/:coll_id" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/collections"))
+      val Some(result) = route(FakeRequest(GET, "/api/collections?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -406,7 +406,7 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
     "respond to the attachDataset(coll_id:UUID, ds_id:UUID) function routed by POST /api/collections/:coll_id/datasets/:ds_id for dataset 2" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
 
-      val Some(result1) = route(FakeRequest(GET, "/api/datasets"))
+      val Some(result1) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result1))
       status(result1) mustEqual OK
       info("contentType="+contentType(result1))
@@ -427,7 +427,7 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
           val dataset_id = list.filter(_.datasetname contains "Dataset 2").toString().split(",")(2)
           info("dataset id value " + dataset_id)
 
-          val Some(result2) = route(FakeRequest(GET, "/api/collections"))
+          val Some(result2) = route(FakeRequest(GET, "/api/collections?key=" + secretKey))
           info("Status="+status(result2))
           status(result2) mustEqual OK
           info("contentType="+contentType(result2))
@@ -467,7 +467,7 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
 
     "respond to the removeDataset(coll_id:UUID, ds_id:UUID, ignoreNotFound) function routed by DELETE /api/collections/:coll_id/datasets/:ds_id for dataset 2" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result1) = route(FakeRequest(GET, "/api/datasets"))
+      val Some(result1) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result1))
       status(result1) mustEqual OK
       info("contentType="+contentType(result1))
@@ -488,7 +488,7 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
           val dataset_id = list.filter(_.datasetname contains "Dataset 2").toString().split(",")(2)
           info("dataset id value " + dataset_id)
 
-          val Some(result2) = route(FakeRequest(GET, "/api/collections"))
+          val Some(result2) = route(FakeRequest(GET, "/api/collections?key=" + secretKey))
           info("Status="+status(result2))
           status(result2) mustEqual OK
           info("contentType="+contentType(result2))
@@ -525,7 +525,7 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
 
     "respond to the removeDataset(coll_id:UUID, ds_id:UUID, ignoreNoteFound) function routed by POST /api/collections/:coll_id/datasets/:ds_id/:ignoreNotFound for dataset 2" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result1) = route(FakeRequest(GET, "/api/datasets"))
+      val Some(result1) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result1))
       status(result1) mustEqual OK
       info("contentType="+contentType(result1))
@@ -546,7 +546,7 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
           val dataset_id = list.filter(_.datasetname contains "Dataset 1").toString().split(",")(2)
           info("dataset id value " + dataset_id)
 
-          val Some(result2) = route(FakeRequest(GET, "/api/collections"))
+          val Some(result2) = route(FakeRequest(GET, "/api/collections?key=" + secretKey))
           info("Status="+status(result2))
           status(result2) mustEqual OK
           info("contentType="+contentType(result2))
@@ -587,7 +587,7 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
 
      //link up json file here before fake request.
      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-     val Some(result) = route(FakeRequest(GET, "/api/datasets"))
+     val Some(result) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
      info("Status="+status(result))
      status(result) mustEqual OK
      info("contentType="+contentType(result))
@@ -628,7 +628,7 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
 
      //link up json file here before fake request.
      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-     val Some(result) = route(FakeRequest(GET, "/api/datasets"))
+     val Some(result) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
      info("Status="+status(result))
      status(result) mustEqual OK
      info("contentType="+contentType(result))
@@ -666,7 +666,8 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
    }
 
  "respond to the listCollections() function routed by GET /api/collections" in {
-      val Some(result) = route(FakeRequest(GET, "/api/collections"))
+      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val Some(result) = route(FakeRequest(GET, "/api/collections?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -687,7 +688,7 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
 
     "respond to the removeCollection(coll_id:UUID) function routed by POST /api/collections/:coll_id/remove  " in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/collections"))
+      val Some(result) = route(FakeRequest(GET, "/api/collections?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -729,7 +730,7 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
 
     "respond to the removeCollection(coll_id:UUID) function routed by DELETE /api/collections/:id  " in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/collections"))
+      val Some(result) = route(FakeRequest(GET, "/api/collections?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))

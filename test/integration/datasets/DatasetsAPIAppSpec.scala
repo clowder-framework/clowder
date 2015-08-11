@@ -152,7 +152,8 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
     }
 
  "respond to the list() function routed by GET /api/datasets" in {
-      val Some(result) = route(FakeRequest(GET, "/api/datasets"))
+      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val Some(result) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -171,7 +172,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
 
       //link up json file here before fake request.
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/datasets"))
+      val Some(result) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -213,7 +214,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
 
       //link up json file here before fake request.
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/datasets"))
+      val Some(result) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -252,7 +253,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
 
     "respond to the updateLicense(id: UUID) function routed by POST /api/datasets/:id/license" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/datasets"))
+      val Some(result) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -293,7 +294,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
 
     "respond to the comment(id: UUID) function routed by POST /api/datasets/:id/comment" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/datasets"))
+      val Some(result) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -334,7 +335,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
 
     "respond to the addTags(id: UUID) function routed by POST /api/datasets/:id/tags" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/datasets"))
+      val Some(result) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -393,7 +394,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
 
     "respond to the removeTags(id: UUID) function routed by POST /api/datasets/:id/tags/remove" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/datasets"))
+      val Some(result) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -452,7 +453,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
 
       //link up json file here before fake request.
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/datasets"))
+      val Some(result) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -492,7 +493,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
 
     "respond to the addTags(id: UUID) function routed by POST /api/datasets/:id/tags round two" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/datasets"))
+      val Some(result) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -550,7 +551,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
 
     "respond to the removeTag(id: UUID) function routed by POST /api/datasets/:id/removeTag" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/datasets"))
+      val Some(result) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -706,7 +707,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
 
     "respond to the addMetadata(id: UUID) function routed by POST /api/datasets/:id/metadata" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/datasets"))
+      val Some(result) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -760,7 +761,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
 
     "respond to the addUserMetadata(id: UUID) function routed by POST /api/datasets/:id/usermetadata" in {
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/datasets"))
+      val Some(result) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -814,7 +815,8 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
     }
 
     "respond to the getUserMetadataJSON(id: UUID) function routed by GET /api/datasets/:id/usermetadata" in {
-      val Some(result) = route(FakeRequest(GET, "/api/datasets"))
+      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val Some(result) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -851,7 +853,8 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
     }
 
     "respond to the getTechnicalMetadataJSON(id: UUID) function routed by GET /api/datasets/:id/technicalmetadatajson" in {
-      val Some(result) = route(FakeRequest(GET, "/api/datasets"))
+      val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
+      val Some(result) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))
@@ -995,7 +998,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
 
       //link up json file here before fake request.
       val secretKey = play.api.Play.configuration.getString("commKey").getOrElse("")
-      val Some(result) = route(FakeRequest(GET, "/api/datasets"))
+      val Some(result) = route(FakeRequest(GET, "/api/datasets?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))

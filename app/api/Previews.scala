@@ -56,7 +56,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
   /**
    * Download preview bytes.
    */
-  def download(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+  def download(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.preview, id))) { implicit request =>
         previews.getBlob(id) match {
 
           case Some((inputStream, filename, contentType, contentLength)) => {
@@ -144,7 +144,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    *
    */
 
-  def uploadMetadata(id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
+  def uploadMetadata(id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.preview, id)))(parse.json) { implicit request =>
         Logger.debug(request.body.toString)
         request.body match {
           case JsObject(fields) => {
@@ -166,7 +166,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    * Get preview metadata.
    *
    */
-  def getMetadata(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+  def getMetadata(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.preview, id))) { implicit request =>
         previews.get(id) match {
           case Some(preview) => Ok(toJson(Map("id" -> preview.id.toString, "contentType" -> preview.contentType)))
           case None => Logger.error("Preview metadata not found " + id); InternalServerError
@@ -176,7 +176,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
   /**
    * Add pyramid tile to preview.
    */
-  def attachTile(preview_id: UUID, tile_id: UUID, level: String) =  PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, preview_id)))(parse.json) { implicit request =>
+  def attachTile(preview_id: UUID, tile_id: UUID, level: String) =  PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.preview, preview_id)))(parse.json) { implicit request =>
         request.body match {
           case JsObject(fields) => {
             previews.get(preview_id) match {
@@ -200,7 +200,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
   /**
    * Find tile for given preview, level and filename (row and column).
    */
-  def getTile(dzi_id_dir: String, level: String, filename: String) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, UUID(dzi_id_dir.replaceAll("_files", ""))))) { implicit request =>
+  def getTile(dzi_id_dir: String, level: String, filename: String) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.preview, UUID(dzi_id_dir.replaceAll("_files", ""))))) { implicit request =>
         val dzi_id = dzi_id_dir.replaceAll("_files", "")
         tiles.findTile(UUID(dzi_id), filename, level) match {
           case Some(tile) => {
@@ -253,7 +253,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
   /**
    * Add annotation to 3D model preview.
    */
-  def attachAnnotation(preview_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, preview_id)))(parse.json) { implicit request =>
+  def attachAnnotation(preview_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.preview, preview_id)))(parse.json) { implicit request =>
         val x_coord = (request.body \ "x_coord").asOpt[String].getOrElse("0.0")
         val y_coord = (request.body \ "y_coord").asOpt[String].getOrElse("0.0")
         val z_coord = (request.body \ "z_coord").asOpt[String].getOrElse("0.0")
@@ -269,7 +269,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
         }
     }
 
-  def editAnnotation(preview_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.file, preview_id)))(parse.json) { implicit request =>
+  def editAnnotation(preview_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.preview, preview_id)))(parse.json) { implicit request =>
         Logger.debug("thereq: " + request.body.toString)
         val x_coord = (request.body \ "x_coord").asOpt[String].getOrElse("0.0")
         val y_coord = (request.body \ "y_coord").asOpt[String].getOrElse("0.0")
@@ -292,7 +292,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
         }
     }
 
-  def listAnnotations(preview_id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, preview_id))) { implicit request =>
+  def listAnnotations(preview_id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.preview, preview_id))) { implicit request =>
         previews.get(preview_id) match {
           case Some(preview) => {
             val annotationsOfPreview = previews.listAnnotations(preview_id)

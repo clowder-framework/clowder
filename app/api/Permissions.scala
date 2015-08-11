@@ -78,6 +78,7 @@ object Permission extends Enumeration {
     ViewSection, ViewSpace, ViewTags, ViewUser)
 
   lazy val files: FileService = DI.injector.getInstance(classOf[FileService])
+  lazy val previews: PreviewService = DI.injector.getInstance(classOf[PreviewService])
   lazy val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
   lazy val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   lazy val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
@@ -144,7 +145,31 @@ object Permission extends Enumeration {
 
   def checkPermission(user: Identity, permission: Permission, resourceRef: ResourceRef): Boolean = {
     resourceRef match {
-      case ResourceRef(ResourceRef.file, id) => true
+      case ResourceRef(ResourceRef.preview, id) => {
+        previews.get(id) match {
+          case Some(p) => {
+            p.file_id.exists(id => checkPermission(user, permission, ResourceRef(ResourceRef.file, id))) ||
+              p.section_id.exists(id => checkPermission(user, permission, ResourceRef(ResourceRef.file, id))) ||
+              p.dataset_id.exists(id => checkPermission(user, permission, ResourceRef(ResourceRef.file, id))) ||
+              p.collection_id.exists(id => checkPermission(user, permission, ResourceRef(ResourceRef.file, id)))
+          }
+          case None => false
+        }
+      }
+      case ResourceRef(ResourceRef.file, id) => {
+        var hasPermission: Option[Boolean] = None
+        for (clowderUser <- getUserByIdentity(user)) {
+          datasets.findByFileId(id).foreach { dataset =>
+            dataset.spaces.map{
+              spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+                if(role.permissions.contains(permission.toString))
+                  hasPermission = Some(true)
+              }
+            }
+          }
+        }
+        hasPermission getOrElse files.get(id).exists(_.author.email == user.email)
+      }
       case ResourceRef(ResourceRef.dataset, id) => {
         val dataset = datasets.get(id)
         var hasPermission: Option[Boolean] = None

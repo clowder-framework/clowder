@@ -34,6 +34,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       Logger.info("no connection to mongo specified in , will use default URI mongodb://127.0.0.1:27017/medici")
       MongoURI("mongodb://127.0.0.1:27017/medici")
     }
+    Logger.info("Connecting to : " + mongoURI.toString())
 
     // connect to the database
     mongoConnection = mongoURI.connect.fold(l => throw l, r => r)

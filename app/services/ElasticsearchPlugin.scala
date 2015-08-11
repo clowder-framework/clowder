@@ -252,10 +252,12 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     var dsCollsId = ""
     var dsCollsName = ""
 
-    for (collection <- collections.listInsideDataset(dataset.id)) {
-      dsCollsId = dsCollsId + collection.id.stringify + " %%% "
-      dsCollsName = dsCollsName + collection.name + " %%% "
-    }
+    dataset.collections.foreach(c => {
+      collections.get(UUID(c)).foreach(collection => {
+        dsCollsId = dsCollsId + collection.id.stringify + " %%% "
+        dsCollsName = dsCollsName + collection.name + " %%% "
+      })
+    })
 
     val formatter = new SimpleDateFormat("dd/MM/yyyy")
 
