@@ -102,6 +102,8 @@ GET            /spaces/:id/updateSpace                                          
 GET            /spaces/:id/addRequest                                                   @controllers.Spaces.addRequest(id:UUID)
 GET            /spaces/:id/acceptRequest                                                @controllers.Spaces.acceptRequest(id:UUID, user:String, role:String)
 GET            /spaces/:id/rejectRequest                                                @controllers.Spaces.rejectRequest(id:UUID, user:String)
+GET            /spaces/:id/invite                                                       @controllers.Spaces.invite(id:UUID)
+POST           /spaces/:id/invite                                                       @controllers.Spaces.inviteToSpace(id: UUID)
 POST           /spaces/submit                                                           @controllers.Spaces.submit
 
 # Tags
@@ -144,7 +146,7 @@ GET            /logout                                                          
 GET            /signup                                                                  securesocial.controllers.Registration.startSignUp
 POST           /signup                                                                  securesocial.controllers.Registration.handleStartSignUp
 GET            /signup/:token                                                           securesocial.controllers.Registration.signUp(token)
-POST           /signup/:token                                                           securesocial.controllers.Registration.handleSignUp(token)
+POST           /signup/:token                                                           @controllers.Registration.handleSignUp(token)
 GET            /reset                                                                   securesocial.controllers.Registration.startResetPassword
 POST           /reset                                                                   securesocial.controllers.Registration.handleStartResetPassword
 GET            /reset/:token                                                            securesocial.controllers.Registration.resetPassword(token)

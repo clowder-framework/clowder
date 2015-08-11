@@ -36,6 +36,10 @@ Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)" title="@creator
 	title="Edit User Allocation">
 	    <span class="glyphicon glyphicon-edit"></span> Edit
 	</a>
+	<a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed"
+	    href= "@routes.Spaces.invite(space.id)">
+		<span class="glyphicon glyphicon-envelope"></span> Invite new Users
+	</a>
 	@if(!space.requests.isEmpty) {
 		<a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed" data-toggle="modal"
 		data-target="#requestUser" id="viewrequest"
@@ -47,6 +51,10 @@ Owner: <a href= "@routes.Profile.viewProfile(creator.get.email)" title="@creator
 	<a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed disabled"
 	id="edituseralloc" title="Edit User Allocation">
 		<span class="glyphicon glyphicon-edit"></span> Edit
+	</a>
+	<a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed disabled"
+	    href= "@routes.Spaces.invite(space.id)">
+		<span class="glyphicon glyphicon-envelope"></span> Invite new Users
 	</a>
 }
 

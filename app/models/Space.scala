@@ -43,6 +43,12 @@ case class UserSpace (
    datasetCount: Integer,
    userCount: Integer)
 
+case class SpaceInvite(
+    id: UUID = UUID.generate,
+    invite_id: String,
+    email: String,
+    space: UUID,
+    role: String)
    
 // New way to manage metadata. Will eventually be merged with space metadata.
 case class SpaceMetadata (

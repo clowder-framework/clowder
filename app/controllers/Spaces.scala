@@ -6,7 +6,7 @@ import javax.inject.Inject
 
 import api.Permission
 import models._
-import play.api.Logger
+import play.api.{Play, Logger}
 import play.api.data.Forms._
 import play.api.data.{Form, Forms}
 import play.api.libs.concurrent.Akka
@@ -14,7 +14,10 @@ import play.api.libs.json.Json
 import securesocial.core.providers.utils.Mailer
 import services._
 import util.Direction._
-
+import securesocial.core.providers.{Token, UsernamePasswordProvider}
+import org.joda.time.DateTime
+import play.api.i18n.Messages
+import services.AppConfiguration
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 /**
@@ -30,6 +33,11 @@ case class spaceFormData(
   resourceTimeToLive: Long,
   isTimeToLiveEnabled: Boolean,
   submitButtonValue:String)
+
+case class spaceInviteData(
+  addresses: List[String],
+  role: String,
+  message: String)
 
 class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventService) extends SecuredController {
 
@@ -57,6 +65,18 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
         )
   )
 
+  /**
+   * Invite to space form bindings.
+   */
+  val spaceInviteForm = Form(
+    mapping(
+      "addresses" -> play.api.data.Forms.list(nonEmptyText),
+      "role" -> nonEmptyText,
+      "message" -> nonEmptyText
+      )
+      (( addresses, role, message ) => spaceInviteData(addresses = addresses, role = role, message = message))
+      ((d:spaceInviteData) => Some(d.addresses, d.role, d.message))
+  )
 
   /**
    * Space main page.
@@ -131,7 +151,77 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
           Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), s.resourceTimeToLive, s.isTimeToLiveEnabled, "Update"))))}
         case None => InternalServerError("Space not found")
       }
+  }
+
+  def invite(id:UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+    implicit val user = request.user
+    spaces.get(id) match {
+      case Some(s) => {
+        val roleList: List[String] = users.listRoles().map(role => role.name)
+        Ok(views.html.spaces.invite(spaceInviteForm, Utils.decodeSpaceElements(s), roleList.sorted))}
+      case None => InternalServerError("Space not found")
     }
+  }
+
+  def inviteToSpace(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) {
+    implicit request =>
+      implicit val user = request.user
+      spaces.get(id) match {
+        case Some(s) => {
+          val roleList: List[String] = users.listRoles().map( role=> role.name)
+          spaceInviteForm.bindFromRequest.fold(
+          errors => BadRequest(views.html.spaces.invite(errors, s, roleList.sorted)),
+          formData => {
+            users.findRoleByName(formData.role) match {
+              case Some(role) => {
+                formData.addresses.map {
+                  email =>
+                  securesocial.core.UserService.findByEmailAndProvider(email, UsernamePasswordProvider.UsernamePassword) match {
+                    case Some(member) => {
+                      //Add Person to the space
+                      val usr = users.findByEmail(email)
+                      spaces.addUser(usr.get.id, role, id)
+                      val theHtml = views.html.spaces.inviteNotificationEmail(id.stringify, s.name, user.get.getMiniUser, usr.get.fullName, role.name)
+                      Users.sendEmail("Added to space", email, theHtml)
+                    }
+                    case None => {
+                      val uuid = UUID.generate()
+                      val TokenDurationKey = securesocial.controllers.Registration.TokenDurationKey
+                      val DefaultDuration = securesocial.controllers.Registration.DefaultDuration
+                      val TokenDuration = Play.current.configuration.getInt(TokenDurationKey).getOrElse(DefaultDuration)
+                      val token = new Token(uuid.stringify, email, DateTime.now(), DateTime.now().plusMinutes(TokenDuration), true)
+                      securesocial.core.UserService.save(token)
+                      val invite = SpaceInvite(uuid, uuid.toString(), email, s.id, role.id.stringify)
+                      if(play.api.Play.current.configuration.getBoolean("registerThroughAdmins").get)
+                      {
+                        val theHtml = views.html.inviteEmailThroughAdmin(uuid.stringify, email, s.name, user.get.getMiniUser.fullName, formData.message)
+                        val admins = AppConfiguration.getAdmins
+                        for(admin <- admins) {
+                          Users.sendEmail(Messages("mails.sendSignUpEmail.subject"), admin, theHtml)
+                        }
+                        spaces.addInvitationToSpace(invite)
+                      }
+                      if(!play.api.Play.current.configuration.getBoolean("registerThroughAdmins").get)
+                      {
+                        val theHtml = views.html.inviteThroughEmail(uuid.stringify, s.name, user.get.getMiniUser.fullName, formData.message)
+                        Users.sendEmail(Messages("mails.sendSignUpEmail.subject"), email, theHtml)
+                        spaces.addInvitationToSpace(invite)
+                      }
+                    }
+                  }
+                }
+                Redirect(routes.Spaces.getSpace(s.id))
+              }
+              case None => InternalServerError("Role not found")
+            }
+          }
+
+          )
+        }
+        case None => InternalServerError("Space not found")
+      }
+  }
+
 
   /**
    * Each user with EditSpace permission will see the request on index and receive an email.

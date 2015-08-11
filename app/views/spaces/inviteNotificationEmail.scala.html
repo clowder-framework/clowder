@@ -1,0 +1,12 @@
+@(spaceid: String, spaceName: String, inviter: models.MiniUser, newmember: String, role: String)(implicit request: RequestHeader)
+@import securesocial.core.IdentityProvider
+<html>
+    <body>
+
+        <p>Hello, @newmember</p>
+
+        <p>You have been added to space <a href="@routes.Spaces.getSpace(UUID(spaceid)).absoluteURL(IdentityProvider.sslEnabled)">@spaceName</a> with role: @role by <a href="@routes.Profile.viewProfile(inviter.email).absoluteURL(IdentityProvider.sslEnabled)">@inviter.fullName</a>.
+
+        </p>
+    </body>
+</html>
