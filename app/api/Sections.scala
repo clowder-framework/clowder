@@ -155,10 +155,30 @@ class Sections @Inject()(
       }
   }
   
+  def description(id: UUID) = PermissionAction(Permission.EditSection, Some(ResourceRef(ResourceRef.section, id)))(parse.json)  { implicit request =>
+	  request.user match {
+	    case Some(identity) => {
+		    request.body.\("description").asOpt[String] match {
+			    case Some(descr) => {
+			        sections.setDescription(id, descr)
+			        Ok(toJson(Map("status"->"success")))
+			    }
+			    case None => {
+			    	Logger.error("no section description specified.")
+			    	BadRequest(toJson("no section description specified."))
+			    }
+		    }
+	    }
+	    case None =>
+	      Logger.error(("No user identity found in the request, request body: " + request.body))
+	      BadRequest(toJson("No user identity found in the request, request body: " + request.body))
+	  }
+    }
+
   /**
    * Add thumbnail to section.
    */
-  def attachThumbnail(section_id: UUID, thumbnail_id: UUID) = PermissionAction(Permission.CreateSection, Some(ResourceRef(ResourceRef.section, section_id))) { implicit request =>
+  def attachThumbnail(section_id: UUID, thumbnail_id: UUID) = PermissionAction(Permission.EditSection, Some(ResourceRef(ResourceRef.section, section_id))) { implicit request =>
       sections.get(section_id) match {
         case Some(section) => {
           thumbnails.get(thumbnail_id) match {

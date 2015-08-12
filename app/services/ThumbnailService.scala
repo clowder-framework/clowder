@@ -3,11 +3,27 @@ package services
 import java.io.InputStream
 import models.{UUID, Thumbnail}
 
+
 /**
  * Created by lmarini on 2/27/14.
  */
 trait ThumbnailService {
 
+
+  /**
+   * Count all Thumbnails
+   */
+  def count(): Long
+
+  /**
+   * List all Thumbnails in the system.
+   */
+  def listThumbnails(): List[Thumbnail]
+
+
+  /**
+   * Retrieve information for specific thumbnail
+   */
   def get(thumbnailId: UUID): Option[Thumbnail]
 
   /**

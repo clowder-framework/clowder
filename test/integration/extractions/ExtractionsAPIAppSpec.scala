@@ -124,7 +124,6 @@ class ExtractionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
       contentType(result) mustEqual Some("application/json")
     }
 
-
     "respond to the removeFile(id:UUID) function routed by DELETE /api/files/:id for morrow-plots file  " in {
       // After finding specific "id" of file call RESTful API to get JSON information
       val Some(result_get) = route(FakeRequest(DELETE, "/api/files/" + morrowPlotFileId + "?key=" + secretKey))

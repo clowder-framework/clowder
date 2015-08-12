@@ -99,6 +99,9 @@ object Events {
                     }
                   }
                 }
+                case None => {
+                  Logger.warn("No email specified for user " + user.fullName)
+                }
               }
             }
           }

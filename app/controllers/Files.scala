@@ -11,16 +11,20 @@ import api.Permission
 import fileutils.FilesUtils
 import models._
 import play.api.Logger
-import play.api.Play.current
+import play.api.Play.{current, configuration}
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee._
 import play.api.libs.json.Json._
 import services._
+import play.api.libs.concurrent.Execution.Implicits._
+import services._
+import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
 
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.Future
 
 
 
@@ -54,7 +58,7 @@ class Files @Inject() (
   /**
    * File info.
    */
-  def file(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+  def file(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
     implicit val user = request.user
     Logger.info("GET file with id " + id)
     files.get(id) match {
@@ -90,14 +94,14 @@ class Files @Inject() (
           }
         }
         Logger.debug("Previewers available: " + previewsWithPreviewer)
-
-
+       
+        
         // add sections to file
         val sectionsByFile = sections.findByFileId(file.id)
         Logger.debug("Sections: " + sectionsByFile)
         val sectionsWithPreviews = sectionsByFile.map { s =>
-          val p = previews.findBySectionId(s.id)
-          if(p.length>0)
+        	val p = previews.findBySectionId(s.id)
+        	if(p.length>0)
         		s.copy(preview = Some(p(0)))
         	else
         		s.copy(preview = None)
@@ -137,19 +141,43 @@ class Files @Inject() (
         	val dDataset = Utils.decodeDatasetElements(aDataset)
         	decodedDatasetsNotContaining += dDataset
         }
-        
-        val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
-        val extractionsByFile = extractions.findByFileId(id)
-        
+          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
-        Ok(views.html.file(file, id.stringify, decodedCommentsByFile.toList, previewsWithPreviewer, sectionsWithPreviews,
-          extractorsActive, decodedDatasetsContaining.toList, decodedDatasetsNotContaining.toList, userMetadata, isRDFExportEnabled, extractionsByFile))
+          val extractionsByFile = extractions.findByFileId(id)
+          
+          //call Polyglot to get all possible output formats for this file's content type 
+          
+
+          current.plugin[PolyglotPlugin] match {
+            case Some(plugin) => {
+              Logger.debug("Polyglot plugin found")
+              
+              val fname = file.filename
+              //use name of the file to get the extension (pdf or txt or jpg) to use an input type for Polyglot
+              val lastDividerIndex = (fname.replace("/", ".").lastIndexOf(".")) + 1
+              //drop all elements left of last divider index
+              val contentTypeEnding = fname.drop(lastDividerIndex)
+              Logger.debug("file name ends in " + contentTypeEnding)
+              //get output formats from Polyglot plugin and pass as the last parameter to view
+              plugin.getOutputFormats(contentTypeEnding).map(outputFormats =>
+                Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
+                  extractorsActive, decodedDatasetsContaining.toList, decodedDatasetsNotContaining.toList,
+                  userMetadata, isRDFExportEnabled, extractionsByFile, outputFormats)))
+            }
+            case None =>
+              Logger.debug("Polyglot plugin not found")
+              //passing None as the last parameter (list of output formats)
+              Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
+                extractorsActive, decodedDatasetsContaining.toList, decodedDatasetsNotContaining.toList,
+                userMetadata, isRDFExportEnabled, extractionsByFile, None)))
+          }              
       }
+          
       case None => {
-        val error_str = "The file with id " + id + " is not found."
+        val error_str = s"The file with id ${id} is not found."
         Logger.error(error_str)
-        NotFound(toJson(error_str))
+        Future(NotFound(toJson(error_str)))  
         }
     }
   }
@@ -358,24 +386,24 @@ def uploadExtract() = PermissionAction(Permission.AddFile)(parse.multipartFormDa
 	          var nameOfFile = f.filename
 	          var flags = ""	          
 	          if(nameOfFile.toLowerCase().endsWith(".ptm")){
-		          var thirdSeparatorIndex = nameOfFile.indexOf("__")
+		          val thirdSeparatorIndex = nameOfFile.indexOf("__")
 	              if(thirdSeparatorIndex >= 0){
-	                var firstSeparatorIndex = nameOfFile.indexOf("_")
-	                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+	                val firstSeparatorIndex = nameOfFile.indexOf("_")
+	                val secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
 	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
 	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
 	              }
 	          }	       
 	        Logger.debug("Uploading file " + nameOfFile)
 
-	        var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
+	        val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
 
 	        // store file       
 	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
 	        val uploadedFile = f
 	        file match {
 	          case Some(f) => {
-              var option_user = users.findByIdentity(identity)
+              val option_user = users.findByIdentity(identity)
               events.addObjectEvent(option_user, f.id, f.filename, "upload_file")
 	            if(showPreviews.equals("FileLevel"))
 	                	flags = flags + "+filelevelshowpreviews"
@@ -393,10 +421,10 @@ def uploadExtract() = PermissionAction(Permission.AddFile)(parse.multipartFormDa
 	            				    fileType = "multi/files-zipped";
 	            				  }
 				            
-				              var thirdSeparatorIndex = nameOfFile.indexOf("__")
+				              val thirdSeparatorIndex = nameOfFile.indexOf("__")
 				              if(thirdSeparatorIndex >= 0){
-				                var firstSeparatorIndex = nameOfFile.indexOf("_")
-				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+				                val firstSeparatorIndex = nameOfFile.indexOf("_")
+				                val secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
 				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
 				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
 				            	files.renameFile(f.id, nameOfFile)
@@ -468,7 +496,7 @@ def uploadExtract() = PermissionAction(Permission.AddFile)(parse.multipartFormDa
 	            
 	            //Correctly set the updated URLs and data that is needed for the interface to correctly 
 	            //update the display after a successful upload.
-	            var retMap = Map("files" -> 
+	            val retMap = Map("files" ->
 	                Seq(
 	                    toJson(
 	                        Map(
@@ -486,7 +514,7 @@ def uploadExtract() = PermissionAction(Permission.AddFile)(parse.multipartFormDa
 	         case None => {
 	           Logger.error("Could not retrieve file that was just saved.")
 	           //Changed to return appropriate data and message to the upload interface
-	           var retMap = Map("files" -> 
+	           val retMap = Map("files" ->
                     Seq(
                         toJson(
                             Map(
@@ -503,7 +531,7 @@ def uploadExtract() = PermissionAction(Permission.AddFile)(parse.multipartFormDa
 	      }.getOrElse {
 	         Logger.error("The file appears to not have been attached correctly during upload.")
 	         //This should be a very rare case. Changed to return the simple error message for the interface to display.
-	         var retMap = Map("files" -> 
+	         val retMap = Map("files" ->
                     Seq(
                         toJson(
                             Map(
@@ -596,6 +624,109 @@ def uploadExtract() = PermissionAction(Permission.AddFile)(parse.multipartFormDa
       else {
           Logger.error(s"The given id $id is not a valid ObjectId.")
           BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
+      }
+  }
+
+  //using code from https://www.playframework.com/documentation/2.2.x/ScalaWS
+  //Processing large responses
+  def fromStream(stream: OutputStream): Iteratee[Array[Byte], Unit] = Cont {   
+    case e @ Input.EOF =>
+      Logger.debug("fromStream case EOF")
+      stream.close()
+      Done((),  e)
+    case Input.El(data) =>
+      Logger.debug("fromStream case input.El, data = " + data)
+      stream.write(data)
+      fromStream(stream)
+    case Input.Empty =>
+      Logger.debug("fromStream case empty , so calling fromStream again")
+      fromStream(stream)
+  }
+  
+ 
+  /**
+   *  Uses Polyglot service to convert file to a new format and download to user's computer.
+   *  
+   */                            
+  def downloadAsFormat(id: UUID, outputFormat: String) = PermissionAction(Permission.ViewFile, Some(new ResourceRef(ResourceRef.file, id))).async { implicit request =>
+      current.plugin[PolyglotPlugin] match {
+        case Some(plugin) => {
+          if (UUID.isValid(id.stringify)) {
+            files.get(id) match {
+              case Some(file) => {
+                //get bytes for file to be converted
+                files.getBytes(id) match {
+                  case Some((inputStream, filename, contentType, contentLength)) => {
+                    
+                    //prepare encoded file name for converted file
+                    val lastSeparatorIndex = file.filename.replace("_", ".").lastIndexOf(".")
+                    val outputFileName = file.filename.substring(0, lastSeparatorIndex) + "." + outputFormat
+                    val outputFileNameEncoded = if (request.headers("user-agent").indexOf("MSIE") > -1) {
+                      URLEncoder.encode(outputFileName, "UTF-8")
+                    } else {
+                      MimeUtility.encodeText(outputFileName).replaceAll(",", "%2C")
+                    }
+
+                    //create local temp file to save polyglot output
+                    val tempFileName = "temp_converted_file." + outputFormat
+                    val tempFile: java.io.File = new java.io.File(tempFileName)
+                    tempFile.deleteOnExit()
+
+                    val outputStream: OutputStream = new BufferedOutputStream(new FileOutputStream(tempFile))
+
+                    val polyglotUser: Option[String] = configuration.getString("polyglot.username")
+                    val polyglotPassword: Option[String] = configuration.getString("polyglot.password")
+                    val polyglotConvertURL: Option[String] = configuration.getString("polyglot.convertURL")
+
+                    if (polyglotConvertURL.isDefined && polyglotUser.isDefined && polyglotPassword.isDefined) {
+                      
+                      //first call to Polyglot to get url of converted file
+                      plugin.getConvertedFileURL(filename, inputStream, outputFormat)
+                        .flatMap {
+                          convertedFileURL =>
+                            val triesLeft = 30
+                            //Cponverted file is initially empty. Have to wait for Polyglot to finish conversion.
+                            //keep checking until file exists or until too many tries
+                            //returns future success only if file is found and downloaded
+                            plugin.checkForFileAndDownload(triesLeft, convertedFileURL, outputStream)
+                        }.map {
+                          x =>
+                            //successfuly completed future - get here only after polyglotPlugin.getConvertedFileURL is done executing
+                            Ok.chunked(Enumerator.fromStream(new FileInputStream(tempFileName)))
+                              .withHeaders(CONTENT_TYPE -> "some-content-Type")
+                              .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + outputFileNameEncoded))
+                        }.recover {
+                          case t =>
+                            Logger.debug("Failed:  " + t.getMessage())
+                            BadRequest("Error: " + t.getMessage())
+                        }
+                    } //end of if defined config params
+                    else {
+                      Logger.error("Could not get configuration parameters.")
+                      Future(BadRequest("Could not get configuration parameters."))
+                    }
+                  } //end of case Some
+                  case None => {
+                    Logger.error("Error getting file " + id)
+                    Future(BadRequest("File with this id not found"))
+                  }
+                }
+              }
+              case None => {
+                //File could not be found
+                Logger.info(s"Error getting the file with id $id.")
+                Future(BadRequest("Invalid file ID"))
+              }
+            }
+          } //end of if (UUID.isValid(id.stringify))
+          else {
+            Logger.error(s"The given id $id is not a valid ObjectId.")
+            Future(BadRequest(toJson(s"The given id $id is not a valid ObjectId.")))
+          }
+        } //end of case Some(plugin)
+        case None =>
+          Logger.debug("Polyglot plugin not found")
+          Future(Ok("Plugin not found"))
       }
   }
 

@@ -120,8 +120,34 @@
       <td valign="top">
 	      <div style="margin-left: 45px;">
 	          <h1>@profile.fullName</h1>
-              <p style="margin-bottom: 24px">@profile.email.getOrElse("")</p>
-	      </div>
+          </div>
+          @if(profile.identityId.providerId != "userpass") {
+              <div style="margin-left: 45px;">
+                  <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
+                  @profile.identityId.providerId match {
+                      case "google" => {
+                          <a href="https://plus.google.com/@profile.identityId.userId">Google+ profile</a>
+                      }
+                      case "twitter" => {
+                          <a href="https://twitter.com/intent/user?user_id=@profile.identityId.userId">Twitter profile</a>
+                      }
+                      case "facebook" => {
+                          <a href="https://www.facebook.com/app_scoped_user_id/@profile.identityId.userId">facebook profile</a>
+                      }
+                      case _ => {
+                          @profile.identityId.userId
+                      }
+                  }
+              </div>
+          }
+          @if(profile.email.isDefined) {
+              <div style="margin-left : 45px;">
+                      @profile.email.get
+              </div>
+          }
+          <div style="margin-left: 45px;">
+                  &nbsp;
+          </div>
 	      <div style="margin-left: 45px;">
 			  <!-- Nav tabs -->
 			  <ul class="nav nav-tabs">

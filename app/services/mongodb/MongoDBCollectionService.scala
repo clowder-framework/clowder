@@ -356,12 +356,6 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
                 $addToSet("datasets" ->  Dataset.toDBObject(dataset)), false, false, WriteConcern.Safe)
               //add collection to dataset
               datasets.addCollection(dataset.id, collection.id)
-              
-              if(collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){ 
-                  Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)), 
-                  $set("thumbnail_id" -> dataset.thumbnail_id.get), false, false, WriteConcern.Safe)
-              }
-
               datasets.index(dataset.id)
               index(collection.id)
 
@@ -401,13 +395,6 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
             		  $pull("datasets" ->  MongoDBObject( "_id" -> new ObjectId(dataset.id.stringify))), false, false, WriteConcern.Safe)
               //remove collection from dataset
               datasets.removeCollection(dataset.id, collection.id)
-              
-              if(!collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){
-	        	  if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
-	        		  createThumbnail(collection.id)
-	        	  }		                        
-	          }
-              
               datasets.index(dataset.id)
               index(collection.id)
               
