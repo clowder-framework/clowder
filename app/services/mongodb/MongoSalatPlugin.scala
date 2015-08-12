@@ -146,40 +146,45 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     // add a space if none exists
     if (!appConfig.hasPropertyValue("mongodb.updates", "convert-to-spaces")) {
       if (System.getProperty("MONGOUPDATE") != null) {
-        val datasets = collection("datasets").count(new MongoDBObject())
-        val collections = collection("collections").count(new MongoDBObject())
-        val users = collection("social.users").count(new MongoDBObject())
-        if ((datasets != 0) || (collections != 0)) {
-          Logger.info("[MongoDBUpdate] : Found datasets/collections, will add all to default space")
+        val spaces = ProjectSpaceDAO.count(new MongoDBObject())
+        if (spaces == 0) {
+          val datasets = Dataset.count(new MongoDBObject())
+          val collections = Collection.count(new MongoDBObject())
+          val users = UserSpaceDAO.count(new MongoDBObject())
+          if ((datasets != 0) || (collections != 0)) {
+            Logger.info("[MongoDBUpdate] : Found datasets/collections, will add all to default space")
 
-          // create roles (this is called before Global)
-          if (RoleDAO.count() == 0) {
-            RoleDAO.save(Role.Admin)
-            RoleDAO.save(Role.Editor)
-            RoleDAO.save(Role.Viewer)
+            // create roles (this is called before Global)
+            if (RoleDAO.count() == 0) {
+              RoleDAO.save(Role.Admin)
+              RoleDAO.save(Role.Editor)
+              RoleDAO.save(Role.Viewer)
+            }
+
+            // create the space
+            val spacename = java.net.InetAddress.getLocalHost.getHostName
+            val newspace = new ProjectSpace(name=spacename, description="", created=new Date(), creator=UUID("000000000000000000000000"),
+              homePage=List.empty[URL], logoURL=None, bannerURL=None, metadata=List.empty[Metadata],
+              collectionCount=collections.toInt, datasetCount=datasets.toInt, userCount=users.toInt)
+            ProjectSpaceDAO.save(newspace)
+            val spaceId = new ObjectId(newspace.id.stringify)
+
+            // add space to all datasets/collections
+            val q = MongoDBObject()
+            val o = MongoDBObject("$set" -> MongoDBObject("spaces" -> List[ObjectId](spaceId)))
+            collection("datasets").update(q ,o, multi=true)
+            collection("collections").update(q ,o, multi=true)
+
+            // add all users as admin
+            val adminRole = collection("roles").findOne(MongoDBObject("name" -> "Admin"))
+            val spaceRole = MongoDBObject("_typeHint" -> "models.UserSpaceAndRole", "spaceId" -> spaceId, "role" -> adminRole)
+            collection("social.users").update(MongoDBObject(), $push("spaceandrole" -> spaceRole), multi=true)
+
+          } else {
+            Logger.info("[MongoDBUpdate] : No datasets/collections found, will not create default space")
           }
-
-          // create the space
-          val spacename = java.net.InetAddress.getLocalHost.getHostName
-          val newspace = new ProjectSpace(name=spacename, description="", created=new Date(), creator=UUID("000000000000000000000000"),
-            homePage=List.empty[URL], logoURL=None, bannerURL=None, metadata=List.empty[Metadata],
-            collectionCount=collections.toInt, datasetCount=datasets.toInt, userCount=users.toInt)
-          ProjectSpaceDAO.save(newspace)
-          val spaceId = new ObjectId(newspace.id.stringify)
-
-          // add space to all datasets/collections
-          val q = MongoDBObject()
-          val o = MongoDBObject("$set" -> MongoDBObject("spaces" -> List[ObjectId](spaceId)))
-          collection("datasets").update(q ,o, multi=true)
-          collection("collections").update(q ,o, multi=true)
-
-          // add all users as admin
-          val adminRole = collection("roles").findOne(MongoDBObject("name" -> "Admin"))
-          val spaceRole = MongoDBObject("_typeHint" -> "models.UserSpaceAndRole", "spaceId" -> spaceId, "role" -> adminRole)
-          collection("social.users").update(MongoDBObject(), $push("spaceandrole" -> spaceRole), multi=true)
-
         } else {
-          Logger.info("[MongoDBUpdate] : No datasets/collections found, will not create default space")
+          Logger.info("[MongoDBUpdate] : Found spaces, will not create default space")
         }
         appConfig.addPropertyValue("mongodb.updates", "convert-to-spaces")
       } else {
