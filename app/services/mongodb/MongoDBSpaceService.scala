@@ -37,7 +37,7 @@ class MongoDBSpaceService @Inject() (
   users: UserService) extends SpaceService {
 
   def get(id: UUID): Option[ProjectSpace] = {
-    ProjectSpaceDAO.findOneById(new ObjectId(id.stringify))
+    ProjectSpaceDAO.findOneById(new ObjectId(id.stringify)).map(fixSpaceCounts)
   }
 
   /**
@@ -97,9 +97,9 @@ class MongoDBSpaceService @Inject() (
   private def list(date: Option[String], nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean, owner: Option[User]): List[ProjectSpace] = {
     val (filter, sort) = filteredQuery(date, nextPage, user, superAdmin, owner)
     if (date.isEmpty || nextPage) {
-      ProjectSpaceDAO.find(filter).sort(sort).limit(limit).toList
+      ProjectSpaceDAO.find(filter).sort(sort).limit(limit).toList.map(fixSpaceCounts)
     } else {
-      ProjectSpaceDAO.find(filter).sort(sort).limit(limit).toList.reverse
+      ProjectSpaceDAO.find(filter).sort(sort).limit(limit).toList.reverse.map(fixSpaceCounts)
     }
   }
 
@@ -194,7 +194,7 @@ class MongoDBSpaceService @Inject() (
   }
 
   def list(): List[ProjectSpace] = {
-    (for (space <- ProjectSpaceDAO.find(MongoDBObject())) yield space).toList
+    (for (space <- ProjectSpaceDAO.find(MongoDBObject())) yield space).toList.map(fixSpaceCounts)
   }
 
   /**
@@ -247,7 +247,13 @@ class MongoDBSpaceService @Inject() (
       }
     }
     // update DOs with collection and dataset counts
-    spacesFromDB.map{ s => s.copy(collectionCount = getCollectionsInSpace(Some(s.id.stringify)).size, datasetCount = getDatasetsInSpace(Some(s.id.stringify)).size) }
+    spacesFromDB.map(fixSpaceCounts)
+  }
+
+  private def fixSpaceCounts(space: ProjectSpace): ProjectSpace = {
+    val datasetsCount = datasets.countSpace(space.id.stringify)
+    val collectionsCount = collections.countSpace(space.id.stringify)
+    space.copy(collectionCount=collectionsCount.toInt, datasetCount=datasetsCount.toInt)
   }
 
   override def getNext(order: Option[String], direction: Direction, start: Date, limit: Integer,
@@ -268,10 +274,10 @@ class MongoDBSpaceService @Inject() (
     val x = filter match {
       case Some(f) => {
         val filter = JSON.parse(f).asInstanceOf[DBObject]
-        ProjectSpaceDAO.find(since ++ filter).sort(orderedBy).limit(1).toList
+        ProjectSpaceDAO.find(since ++ filter).sort(orderedBy).limit(1).toList.map(fixSpaceCounts)
       }
       case None => {
-        ProjectSpaceDAO.find(since).sort(orderedBy).limit(1).toList
+        ProjectSpaceDAO.find(since).sort(orderedBy).limit(1).toList.map(fixSpaceCounts)
       }
     }
 
@@ -296,10 +302,10 @@ class MongoDBSpaceService @Inject() (
     val x = filter match {
       case Some(f) => {
         val filter = JSON.parse(f).asInstanceOf[DBObject]
-        ProjectSpaceDAO.find(since ++ filter).sort(orderedBy).limit(limit).toList
+        ProjectSpaceDAO.find(since ++ filter).sort(orderedBy).limit(limit).toList.map(fixSpaceCounts)
       }
       case None => {
-        ProjectSpaceDAO.find(since).sort(orderedBy).limit(limit).toList
+        ProjectSpaceDAO.find(since).sort(orderedBy).limit(limit).toList.map(fixSpaceCounts)
       }
     }
 
