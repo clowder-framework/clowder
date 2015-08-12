@@ -3,7 +3,7 @@
 	
     var pathJs = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + Configuration.jsPath + "/";
 	
-	// retrieve the metadata
+	// Retrieve the metadata
     var jsRoutesObject = jsRoutes.api.Files.getTechnicalMetadataJSON(Configuration.id);
     var metadataApiUrl = jsRoutesObject.url;
 	var request = $.ajax({
@@ -14,7 +14,7 @@
 
 	request.done(function(technicalMetadata) {        
 	    
-        // if there is no technical metadata then display a message
+        // If there is no technical metadata then display a message
 		if (technicalMetadata == null)
 			return;
 		if (technicalMetadata == undefined)
@@ -34,7 +34,7 @@
             break;
         }
 
-        // if it couldn't find the index, display a message and return
+        // If it couldn't find the index, display a message and return
         if (trackingMetadataIndex == -1){
             console.log("Updating tab " + Configuration.tab);
             $(Configuration.tab).append("<br/>");
@@ -52,8 +52,8 @@
         var frameDataArrayCopy = new Array(); // To store a copy of frameDataArray
         var labelArray = new Array(); // To store person label/ID information
         var labelArrayCopy = new Array(); // To store a copy of labelArray
-        var isEditingInProgress = false;
-        var hasTrackingDataChanged = false;
+        var isEditingInProgress = false; // To keep track of when editing is in progress
+        var hasTrackingDataChanged = false; // Might be used in future.
         
         var syncGetScript = function(url){
             var deferred = $.Deferred();
@@ -97,12 +97,7 @@
             });
 
             return deferred.promise();
-        };    
-
-        /*var deferredFotJS = deferredGetScript( pathFlotJS );
-        var deferredNavigateJS = deferredGetScript( pathNavigateJS );
-        var deferredCrosshairJS = deferredGetScript( pathCrosshairJS );
-        var deferredPopcornJS = deferredGetScript( pathPopcornJS );*/        
+        };
 
         var syncFlotJS = syncGetScript( pathFlotJS );
         var syncNavigateJS = syncGetScript( pathNavigateJS );
@@ -153,8 +148,7 @@
                                 }
                             );
 
-                            // if array element is not existing
-                            //if(sortedFrameDataArray[id-1] == undefined || sortedFrameDataArray[id-1] == null) {
+                            // If array element is not existing                            
                             if(arrayIndex == -1) {
                                 var objPerson = new Object();
                                 objPerson.label = "Person_" + id;
@@ -163,7 +157,7 @@
                                 objPerson.data = personFrameData;
                                 sortedFrameDataArray.push(objPerson);
                             }
-                            // if array element is already present
+                            // If array element is already present
                             else {                    
                                 var objPerson = sortedFrameDataArray[arrayIndex];
                                 objPerson.data.push(new Array(frameIndex-1, id));
@@ -188,8 +182,7 @@
                                         }
                                     }
                                 );
-                                // if array element is not existing
-                                //if(sortedFrameDataArray[id-1] == undefined || sortedFrameDataArray[id-1] == null) {
+                                // If array element is not existing                                
                                 if(arrayIndex == -1) {
                                     var objPerson = new Object();
                                     objPerson.label = "Person_" + id;
@@ -198,7 +191,7 @@
                                     objPerson.data = personFrameData;                        
                                     sortedFrameDataArray.push(objPerson);
                                 }
-                                // if array element is already present
+                                // If array element is already present
                                 else {                    
                                     var objPerson = sortedFrameDataArray[arrayIndex];
                                     objPerson.data.push(new Array(frameIndex-1, id));
@@ -211,12 +204,12 @@
                 
                 // Pass 2: Data reduction. 
                 // e.g. if Person 1 is present in frame #1 and frame #2, delete data item for frame #2
-                // if Person 1 is present till frame #50 and then continues from frame #100, insert a null in between.
+                // if Person 1 is present till frame #50 and then from frame #100, insert a null in between.
                 // This results in creating new horizontal bars.
                 
                 for(var i=0; i < sortedFrameDataArray.length; i++) {
 
-                    //Check for missing indices
+                    // Check for missing indices
                     if(sortedFrameDataArray[i] != undefined) {
 
                         // Since in JS, array is passed by reference by default, changes get reflected in sortedFrameDataArray variable too
@@ -288,7 +281,7 @@
 
                 // Creating the label array
                 for(var i=0; i < sortedFrameDataArray.length; i++) {
-                    //Check for missing indices
+                    // Check for missing indices
                     if(sortedFrameDataArray[i] != undefined) {
                         labelArray.push(sortedFrameDataArray[i].label);
                     }
@@ -297,7 +290,8 @@
                 // Display video on screen and visualize person tracking
         		console.log("Updating tab " + Configuration.tab);    		
                 
-                /*  If video preview is available, display it.
+                /*  
+                    If video preview is available, display it.
                     If not, display the raw video file.
                 */
                 var jsRoutesObject = jsRoutes.api.Files.filePreviewsList(Configuration.id);
@@ -313,7 +307,8 @@
                     console.log("downloaded previews list");
                     var videoUrl = "";                    
 
-                    /*  If this previewer is running, it implies that there is one preview in the list. 
+                    /*  
+                        If this previewer is running, it implies that there is one preview in the list. 
                         It is the pseudo preview which is a blank XML file. So, look for the cases where more than one previews are listed.
                     */
                     if (data.length > 1 ){
@@ -408,7 +403,7 @@
                                         var boxHeight = parseInt(personObj.box["@h"]) * scaleHeight;                            
 
                                         for(var k=0; k< series.length; k++){
-                                            //Finding the series whose ID is same as that of the current person
+                                            // Finding the series whose ID is same as that of the current person
                                             if(personObj["@id"] == series[k].label.split("Person_")[1]){
                                                 personSeriesIndex = k;
                                                 break;
@@ -440,7 +435,7 @@
                     // Displaying video through canvas
                     video.on('play', 
                         function (event) {                       
-                            var $this = this; //cache                        
+                            var $this = this; // cache
                             (function loop() {
                                 if (!$this.paused && !$this.ended) {
                                     context.drawImage($this, 0, 0, video[0].clientWidth, video[0].clientHeight);
@@ -501,8 +496,7 @@
                         if (milli != 0) {
                             time += milli
                         }
-                        return hr + ":" + min + ":" + sec;// + ":" + milli;
-                        //return val;
+                        return hr + ":" + min + ":" + sec;                        
                     }
 
                     savePersonTrackingChanges = function() {
@@ -526,31 +520,8 @@
                         var technicalMetadataCopy = JSON.parse(JSON.stringify(technicalMetadata));
                         technicalMetadataCopy[trackingMetadataIndex]["person-tracking-result"].frame = frameDataArrayCopyForUpdate;
                         var requestData = JSON.stringify(technicalMetadataCopy[trackingMetadataIndex]);
-                        console.log(requestData);
-
-                        /* // Debug Code Begin 
-                        // Re-write the global array based on the current changes.
-                        sortedFrameDataArray = JSON.parse(JSON.stringify(sortedFrameDataArrayCopy));
-                        labelArray = JSON.parse(JSON.stringify(labelArrayCopy));
-                        frameDataArray = JSON.parse(JSON.stringify(frameDataArrayCopy));
-                        technicalMetadata = JSON.parse(JSON.stringify(technicalMetadataCopy));                            
-
-                        console.log("sortedFrameDataArray");
-                        console.log(sortedFrameDataArray);
-                        console.log("frameDataArray");
-                        console.log(frameDataArray);
-
-                        $("#btnSaveChanges").hide();
-                        $("#btnCancelChanges").hide();
-
-                        // Redraw graph
-                        plot.setData(sortedFrameDataArray);
-                        plot.setupGrid();
-                        plot.draw();
-                        // Debug Code end */
-                        
                         var jsRoutesObject = jsRoutes.api.Files.updateMetadata(Configuration.id, extractorId);
-                        var setMetadataApiUrl = jsRoutesObject.url;                        
+                        var setMetadataApiUrl = jsRoutesObject.url;
                         var request = $.ajax({
                             type : "POST",
                             url : setMetadataApiUrl,
@@ -558,7 +529,7 @@
                             data: requestData
                         });
 
-                        request.success(function(response) {                            
+                        request.success(function(response) {
 
                             // Re-write the global array based on the current changes.
                             sortedFrameDataArray = JSON.parse(JSON.stringify(sortedFrameDataArrayCopy));
@@ -613,7 +584,7 @@
                             // Iterate through the sorted list of persons
                             for(var i=0; i < sortedFrameDataArrayCopy.length; i++) {
 
-                                //Check for missing indices
+                                // Check for missing indices
                                 if(sortedFrameDataArrayCopy[i] != undefined) {
                                 
                                     // Find the person whose label is being changed
@@ -625,10 +596,11 @@
                                             // If there is another person whose label matches the label of the current person which is being edited
                                             if(sortedFrameDataArrayCopy[j].label == newLabel){
 
-                                                /* Update the data of that person by adding information about the current person.
-                                                   Basically merging the data of two persons into one since their labels (or IDs) match 
-                                                   as per the information provided by the user. */
-
+                                                /* 
+                                                    Update the data of that person by adding information about the current person.
+                                                    Basically merging the data of two persons into one since their labels (or IDs) match 
+                                                    as per the information provided by the user. 
+                                                */
                                                 for (var k =0; k < sortedFrameDataArrayCopy[i].data.length ; k++) {
                                                     if (sortedFrameDataArrayCopy[i].data[k] != null) {
                                                         sortedFrameDataArrayCopy[i].data[k][1] = parseInt(newId);
@@ -689,8 +661,7 @@
                                         }
 
                                         // Remove the current person from the sorted list
-                                        sortedFrameDataArrayCopy.splice(i,1);
-                                        //sortedFrameDataArrayCopy[i] = new Object();
+                                        sortedFrameDataArrayCopy.splice(i,1);                                        
                                         break;
                                     }
                                 }
@@ -721,8 +692,10 @@
                         if (isEditingInProgress == false) {
                             isEditingInProgress = true;                            
 
-                            /*Creating copy of arrays to work with.
-                            Once the changes are confirmed, the original arrays are replaced by its copies. */
+                            /*
+                                Creating copy of arrays to work with.
+                                Once the changes are confirmed, the original arrays are replaced by its copies. 
+                            */
                             sortedFrameDataArrayCopy = JSON.parse(JSON.stringify(sortedFrameDataArray));
                             labelArrayCopy = JSON.parse(JSON.stringify(labelArray));
                             frameDataArrayCopy = JSON.parse(JSON.stringify(frameDataArray));
@@ -744,22 +717,24 @@
                         if (isEditingInProgress == false) {
                             isEditingInProgress = true;
 
-                            /*Creating copy of arrays to work with.
-                            Once the changes are confirmed, the original arrays are replaced by its copies. */
+                            /*
+                                Creating copy of arrays to work with.
+                                Once the changes are confirmed, the original arrays are replaced by its copies.
+                            */
                             sortedFrameDataArrayCopy = JSON.parse(JSON.stringify(sortedFrameDataArray));
                             labelArrayCopy = JSON.parse(JSON.stringify(labelArray));
                             frameDataArrayCopy = JSON.parse(JSON.stringify(frameDataArray));
 
                             $("#btnSaveChanges").show();
                             $("#btnCancelChanges").show();
-                        }                        
+                        }
 
                         var oldId = oldLabel.split("Person_")[1];
 
                         // Iterate through the sorted list of persons
                         for(var i=0; i < sortedFrameDataArrayCopy.length; i++) {
 
-                            //Check for missing indices
+                            // Check for missing indices
                             if(sortedFrameDataArrayCopy[i] != undefined) {
                             
                                 // Find the person whose label is being changed
@@ -774,18 +749,18 @@
 
                                             // Get the start and end frame indices of the current person track bar
                                             var startIndex = sortedFrameDataArrayCopy[i].data[m][0];
-                                            var endIndex = sortedFrameDataArrayCopy[i].data[m+1][0];                                        
-                                            m += 2;                                            
+                                            var endIndex = sortedFrameDataArrayCopy[i].data[m+1][0];
+                                            m += 2;
 
                                             // Iterate through all frames in the selected range
-                                            for(var frameIndex = startIndex; frameIndex <= endIndex; frameIndex++) {                                                
+                                            for(var frameIndex = startIndex; frameIndex <= endIndex; frameIndex++) {
 
                                                 var objList = frameDataArrayCopy[frameIndex].objectlist;
 
                                                 // When there is only one person in frame    
                                                 if(objList.object.length == undefined && objList.object["@id"]) {
 
-                                                    if (objList.object["@id"] == oldId) {                                                        
+                                                    if (objList.object["@id"] == oldId) {
                                                         //objList.object = null;
                                                         frameDataArrayCopy[frameIndex] = null;
                                                     }
@@ -806,26 +781,10 @@
 
                                             m++;
                                         }
-                                    }
-
-                                    // Clean up data. Remove array items containing null values.
-                                    /*console.log(frameDataArrayCopy);
-                                    console.log("copy after remove");
-                                    for(var k = 0; k < frameDataArrayCopy.length; k++) {
-
-                                        if(frameDataArrayCopy[k] != null && frameDataArrayCopy[k].objectlist.object == null) {
-                                            /*  
-                                                Remove the entire frame from the array to avoid null values from getting stored in the database
-                                                and in turn from being displayed on the page. Null values in metadata will break the user interface.
-                                            
-                                            frameDataArrayCopy.splice(k,1);
-                                            k--;
-                                        }
-                                    }*/
+                                    }                                
 
                                     // Remove the current person from the sorted list
                                     sortedFrameDataArrayCopy.splice(i,1);
-                                    //sortedFrameDataArrayCopy[i] = new Object();
                                     break;
                                 }
                             }
@@ -849,7 +808,7 @@
                         // Iterate through the sorted list of persons
                         for(var i=0; i < sortedFrameDataArrayCopy.length; i++) {
 
-                            //Check for missing indices
+                            // Check for missing indices
                             if(sortedFrameDataArrayCopy[i] != undefined) {
                                 
                                 // Find the person whose label was clicked
@@ -954,18 +913,8 @@
                     }
 
                     var placeholder = $("#placeholder");
-
-                    // Creating a copy for display
-                    /*var sortedFrameDataArrayForDisplay = JSON.parse(JSON.stringify(sortedFrameDataArray));
-                    // Adding empty objects in place of null values to prevent jQuery Plot library from breaking.
-                    for(var i=0; i < sortedFrameDataArrayForDisplay.length; i++) {
-                        if(sortedFrameDataArrayForDisplay[i] == null){
-                            sortedFrameDataArrayForDisplay[i] = new Object();
-                        }
-                    }*/
-
                     plot = $.plot(placeholder, sortedFrameDataArray, options);
-                    //$(".legendLabel").hover(labelHoverIn, labelHoverOut);                    
+                    //$(".legendLabel").hover(labelHoverIn, labelHoverOut);
 
                     panPlot = function () {
                         plot.getOptions().xaxes[0].min += offsetVal;
@@ -991,7 +940,7 @@
                         plot.lockCrosshair();
                     }
 
-                    // create a popcorn instance
+                    // Create a popcorn instance
                     var $pop = Popcorn("#video");
                     $pop.on("timeupdate", function () {
                         var currentTime = this.currentTime();
@@ -1009,7 +958,7 @@
                     });
                     
                     placeholder.bind("plotclick", function (event, pos, item) {
-                        //Debug code. Will be deleted.                        
+                        // Debug code. Will be deleted.
                         if (item) {
                             //plot.highlight(item.series, item.datapoint);
                             var timeClicked = item.series.xaxis.ticks[item.dataIndex].label;
@@ -1023,7 +972,7 @@
                     $(Configuration.tab).append("<br/>");
                     $(Configuration.tab).append('<div class="col-md-12"><h4>Sorry, Video dowloading failed. Please refresh and try again.</h4></div>');
                 });
-            }            
+            }
             else{
                 console.log("Updating tab " + Configuration.tab);
                 $(Configuration.tab).append("<br/>");
@@ -1031,11 +980,11 @@
             }
         })
         .fail(function(jqxhr){
-            console.log("Failed to load JS scripts.");            
+            console.log("Failed to load JS scripts.");
             console.log("Updating tab " + Configuration.tab);
             $(Configuration.tab).append("<br/>");
             $(Configuration.tab).append('<div class="col-md-12"><h4>Sorry, data loading failed. Please refresh and try again.</h4></div>');
-        });	    
+        });
 	});
 	
 }(jQuery, Configuration));
