@@ -18,6 +18,7 @@ import securesocial.core.providers.{Token, UsernamePasswordProvider}
 import org.joda.time.DateTime
 import play.api.i18n.Messages
 import services.AppConfiguration
+import util.Formatters
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 /**
@@ -383,49 +384,76 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
    /**
    * Show the list page
    */
-  def list(order: Option[String], direction: String, start: Option[String], limit: Int,
-           filter: Option[String], mode: String) = PrivateServerAction { implicit request =>
-      implicit val user = request.user
-      val d = if (direction.toLowerCase.startsWith("a")) {
-        ASC
-      } else if (direction.toLowerCase.startsWith("d")) {
-        DESC
-      } else if (direction == "1") {
-        ASC
-      } else if (direction == "-1") {
-        DESC
-      } else {
-        ASC
-      }
-      val spaceList = spaces.list(order, d, start, limit, filter)
-      var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
-      for (aSpace <- spaceList) {
-        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
-      }
-      val deletePermission = Permission.checkPermission(user, Permission.DeleteDataset)
-      val prev = if (decodedSpaceList.size > 0) {
-        spaces.getPrev(order, d, decodedSpaceList.head.created, limit, filter).getOrElse("")
-      } else {
-        ""
-      }
-      val next = if (decodedSpaceList.size > 0) {
-        spaces.getNext(order, d, decodedSpaceList.last.created, limit, filter).getOrElse("")
-      } else {
-        ""
-      }
-      //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
-      //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
-      //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
-      val viewMode: Option[String] =
-        if (mode == null || mode == "") {
-          request.cookies.get("view-mode") match {
-            case Some(cookie) => Some(cookie.value)
-            case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
-          }
-        } else {
-          Some(mode)
-        }
+   def list(when: String, date: String, limit: Int, mode: String, owner: Option[String], showAll: Boolean) = PrivateServerAction { implicit request =>
+     implicit val user = request.user
 
-      Ok(views.html.spaces.listSpaces(decodedSpaceList.toList, order, direction, start, limit, filter, viewMode, deletePermission, prev, next))
-  }
+     val nextPage = (when == "a")
+     val person = owner.flatMap(o => users.get(UUID(o)))
+
+     val spaceList = person match {
+       case Some(p) => {
+         if (date != "") {
+           spaces.listUser(date, nextPage, limit, request.user, showAll, p)
+         } else {
+           spaces.listUser(limit, request.user, showAll, p)
+         }
+       }
+       case None => {
+         if (date != "") {
+           spaces.listAccess(date, nextPage, limit, request.user, showAll)
+         } else {
+           spaces.listAccess(limit, request.user, showAll)
+         }
+       }
+     }
+
+     // check to see if there is a prev page
+     val prev = if (spaceList.nonEmpty && date != "") {
+       val first = Formatters.iso8601(spaceList.head.created)
+       val space = person match {
+         case Some(p) => spaces.listUser(first, nextPage=false, 1, request.user, showAll, p)
+         case None => spaces.listAccess(first, nextPage = false, 1, request.user, showAll)
+       }
+       if (space.nonEmpty && space.head.id != spaceList.head.id) {
+         first
+       } else {
+         ""
+       }
+     } else {
+       ""
+     }
+
+     // check to see if there is a next page
+     val next = if (spaceList.nonEmpty) {
+       val last = Formatters.iso8601(spaceList.last.created)
+       val ds = person match {
+         case Some(p) => spaces.listUser(last, nextPage=true, 1, request.user, showAll, p)
+         case None => spaces.listAccess(last, nextPage=true, 1, request.user, showAll)
+       }
+       if (ds.nonEmpty && ds.head.id != spaceList.last.id) {
+         last
+       } else {
+         ""
+       }
+     } else {
+       ""
+     }
+
+     val decodedSpaceList = spaceList.map(Utils.decodeSpaceElements)
+     //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+     //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+     //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+     val viewMode: Option[String] =
+       if (mode == null || mode == "") {
+         request.cookies.get("view-mode") match {
+           case Some(cookie) => Some(cookie.value)
+           case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+         }
+       } else {
+         Some(mode)
+       }
+
+     val deletePermission = Permission.checkPermission(user, Permission.DeleteDataset)
+     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, deletePermission, prev, next))
+   }
 }

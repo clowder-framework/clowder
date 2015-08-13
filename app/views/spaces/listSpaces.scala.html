@@ -1,4 +1,4 @@
-@(spaces: List[models.ProjectSpace], order: Option[String], direction: String, start: Option[String], limit: Int, filter: Option[String], mode: Option[String], deletePermission: Boolean, prev: String, next: String)(implicit user: Option[models.User])
+@(spaces: List[models.ProjectSpace], when: String, date: String, limit: Int, owner: Option[String], showAll: Boolean, mode: Option[String], deletePermission: Boolean, prev: String, next: String)(implicit user: Option[models.User])
 
 @import _root_.util.Formatters.ellipsize
 
@@ -78,8 +78,8 @@
                 //Function to unify the changing of the href for the next/previous links. Called on button activation for
                 //viewMode style, as well as on initial load of page.
                 function updatePage() {
-                    $('#nextlink').attr('href', "@(routes.Spaces.list(order, direction, Some(next), limit, filter))");
-                    $('#prevlink').attr('href', "@(routes.Spaces.list(order, direction, Some(prev), limit, filter))");
+                    $('#nextlink').attr('href', "@(routes.Spaces.list("a", next, limit, "", owner, showAll))");
+                    $('#prevlink').attr('href', "@(routes.Spaces.list("b", prev, limit, "", owner, showAll))");
                 }
             </script>
         </div>
@@ -111,10 +111,11 @@
                             <li class="list-group-item">
                                 <span class="glyphicon glyphicon-file" title="@space.datasetCount datasets"></span> @space.datasetCount
                                 <span class="glyphicon glyphicon-th-large" title="@space.collectionCount collections"></span> @space.collectionCount
+                                <span class="glyphicon glyphicon-user" title="@space.userCount users"></span> @space.userCount
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                     @if(deletePermission || user.get.identityId.userId.equals(space.creator)){
-                                        <button onclick="removeSpaceAndRedirect ( '@(space.id) ',' @(routes.Spaces.list()) ')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
+                                        <button onclick="removeSpaceAndRedirect ( '@(space.id) ',' @(routes.Spaces.list(when, date, limit, "", owner, showAll)) ')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
                                             <span class="glyphicon glyphicon-trash"></span>
                                         </button>
                                     } else {
