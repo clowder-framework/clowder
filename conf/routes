@@ -522,3 +522,9 @@ GET            /api/status                                                      
 # ----------------------------------------------------------------------
 GET            /rss                                                                     @controllers.RSS.siteRSS(limit: Option[Int])
 GET            /rss/:etype                                                              @controllers.RSS.siteRSSOfType(limit: Option[Int], etype: String)
+
+# ----------------------------------------------------------------------
+# CURATIONS ENDPOINT
+# ----------------------------------------------------------------------
+GET            /spaces/:id/curations/new                                                         @controllers.Curations.newCO(id:UUID)
+POST           /spaces/:id/curation/submit                                                       @controllers.Curations.submit(id:UUID)

@@ -17,7 +17,11 @@
     }
     <div class="row space-head vertical-align">
         <div class="col-md-10 col-lg-10 col-sm-10">
-            <h1 id="spacenamedisplay">@space.name</h1>
+            <h1 id="spacenamedisplay">@space.name
+                <a href="@(routes.Curations.newCO(space.id))">
+                    <span class="glyphicon glyphicon glyphicon-flag"></span>
+                </a>
+            </h1>
             <p><span id="spacedescdisplay">@space.description</span></p>
         </div>
         <div class="pull-right col-md-2 col-lg-2 col-sm-2 text-center">
