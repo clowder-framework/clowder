@@ -38,6 +38,9 @@
                             <span class="glyphicon glyphicon glyphicon-file" title="@dataset.files.size files"></span> @dataset.files.size
                             <span class="glyphicon glyphicon glyphicon-tags" title="@dataset.tags.size tags"></span>  @dataset.tags.size
                             <span class="glyphicon glyphicon glyphicon-list" title="@(dataset.metadata.keys.size + dataset.userMetadata.keys.size) metadata fields"></span>  @(dataset.metadata.keys.size + dataset.userMetadata.keys.size)
+                            <a href="@(routes.CurationObjs.newCO)">
+                                <span class="glyphicon glyphicon glyphicon-flag" title="@dataset.id"></span>
+                            <\a>
                         </li>
                     </ul>
                 </div>
