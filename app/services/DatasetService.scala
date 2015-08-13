@@ -35,32 +35,32 @@ trait DatasetService {
   /**
    * Return a count of datasets the user has access to.
    */
-  def countAccess(user: Option[User], superAdmin: Boolean): Long
+  def countAccess(user: Option[User], showAll: Boolean): Long
 
   /**
    * Return a list of datasets the user has access to.
    */
-  def listAccess(limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset]
+  def listAccess(limit: Integer, user: Option[User], showAll: Boolean): List[Dataset]
 
   /**
    * Return a list of datasets the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean): List[Dataset]
 
   /**
    * Return a count of datasets the user has created.
    */
-  def countUser(user: Option[User], superAdmin: Boolean, owner: User): Long
+  def countUser(user: Option[User], showAll: Boolean, owner: User): Long
 
   /**
    * Return a list of datasets the user has created.
    */
-  def listUser(limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[Dataset]
+  def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Dataset]
 
   /**
    * Return a list of datasets the user has created starting at a specific date.
    */
-  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[Dataset]
+  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Dataset]
 
   /**
    * Get dataset.

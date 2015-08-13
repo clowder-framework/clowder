@@ -182,7 +182,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
 //      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.collection").getOrElse(1)
 //    }
 
-    for(dataset <- datasets.listAccess(12, user, superAdmin=false); tag <- dataset.tags) {
+    for(dataset <- datasets.listAccess(12, user, showAll=false); tag <- dataset.tags) {
       weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.dataset").getOrElse(1)
     }
 

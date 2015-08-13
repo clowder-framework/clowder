@@ -58,70 +58,70 @@ class MongoDBDatasetService @Inject() (
    * Count all datasets in a space
    */
   def countSpace(space: String): Long = {
-    count(None, false, Some(space), None, superAdmin=false, None)
+    count(None, false, Some(space), None, showAll=false, None)
   }
 
   /**
    * Return a list of datasets in a space, this does not check for permissions
    */
   def listSpace(limit: Integer, space: String): List[Dataset] = {
-    list(None, false, limit, Some(space), None, superAdmin=false, None)
+    list(None, false, limit, Some(space), None, showAll=false, None)
   }
 
   /**
    * Return a list of datasets in a space starting at a specific date, this does not check for permissions
    */
   def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Dataset] = {
-    list(Some(date), nextPage, limit, Some(space), None, superAdmin=false, None)
+    list(Some(date), nextPage, limit, Some(space), None, showAll=false, None)
   }
 
   /**
    * Count all datasets the user has access to.
    */
-  def countAccess(user: Option[User], superAdmin: Boolean): Long = {
-    count(None, false, None, user, superAdmin, None)
+  def countAccess(user: Option[User], showAll: Boolean): Long = {
+    count(None, false, None, user, showAll, None)
   }
 
   /**
    * Return a list of datasets the user has access to.
    */
-  def listAccess(limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset] = {
-    list(None, false, limit, None, user, superAdmin, None)
+  def listAccess(limit: Integer, user: Option[User], showAll: Boolean): List[Dataset] = {
+    list(None, false, limit, None, user, showAll, None)
   }
 
   /**
    * Return a list of datasets the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset] = {
-    list(Some(date), nextPage, limit, None, user, superAdmin, None)
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean): List[Dataset] = {
+    list(Some(date), nextPage, limit, None, user, showAll, None)
   }
 
   /**
    * Count all datasets the user has created.
    */
-  def countUser(user: Option[User], superAdmin: Boolean, owner: User): Long = {
-    count(None, false, None, user, superAdmin, Some(owner))
+  def countUser(user: Option[User], showAll: Boolean, owner: User): Long = {
+    count(None, false, None, user, showAll, Some(owner))
   }
 
   /**
    * Return a list of datasets the user has created.
    */
-  def listUser(limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[Dataset] = {
-    list(None, false, limit, None, user, superAdmin, Some(owner))
+  def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Dataset] = {
+    list(None, false, limit, None, user, showAll, Some(owner))
   }
 
   /**
    * Return a list of datasets the user has created starting at a specific date.
    */
-  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[Dataset] = {
-    list(Some(date), nextPage, limit, None, user, superAdmin, Some(owner))
+  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Dataset] = {
+    list(Some(date), nextPage, limit, None, user, showAll, Some(owner))
   }
 
   /**
    * return count based on input
    */
-  private def count(date: Option[String], nextPage: Boolean, space: Option[String], user: Option[User], superAdmin: Boolean, owner: Option[User]): Long = {
-    val (filter, _) = filteredQuery(date, nextPage, space, user, superAdmin, owner)
+  private def count(date: Option[String], nextPage: Boolean, space: Option[String], user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
+    val (filter, _) = filteredQuery(date, nextPage, space, user, showAll, owner)
     Dataset.count(filter)
   }
 
@@ -129,8 +129,8 @@ class MongoDBDatasetService @Inject() (
   /**
    * return list based on input
    */
-  private def list(date: Option[String], nextPage: Boolean, limit: Integer, space: Option[String], user: Option[User], superAdmin: Boolean, owner: Option[User]): List[Dataset] = {
-    val (filter, sort) = filteredQuery(date, nextPage, space, user, superAdmin, owner)
+  private def list(date: Option[String], nextPage: Boolean, limit: Integer, space: Option[String], user: Option[User], showAll: Boolean, owner: Option[User]): List[Dataset] = {
+    val (filter, sort) = filteredQuery(date, nextPage, space, user, showAll, owner)
     if (date.isEmpty || nextPage) {
       Dataset.find(filter).sort(sort).limit(limit).toList
     } else {
@@ -141,7 +141,7 @@ class MongoDBDatasetService @Inject() (
   /**
    * Monster function, does all the work. Will create a filters and sorts based on the given parameters
    */
-  private def filteredQuery(date: Option[String], nextPage: Boolean, space: Option[String], user: Option[User], superAdmin: Boolean, owner: Option[User]): (DBObject, DBObject) = {
+  private def filteredQuery(date: Option[String], nextPage: Boolean, space: Option[String], user: Option[User], showAll: Boolean, owner: Option[User]): (DBObject, DBObject) = {
     // filter =
     // - owner   == show datasets owned by owner that user can see
     // - space   == show all datasets in space
@@ -152,20 +152,20 @@ class MongoDBDatasetService @Inject() (
     val filter = owner match {
       case Some(o) => {
         val author = MongoDBObject("author.identityId.userId" -> o.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> o.identityId.providerId)
-        user match {
-          case Some(u) => {
-            if (superAdmin) {
-              author
-            } else {
+        if (showAll) {
+          author
+        } else {
+          user match {
+            case Some(u) => {
               if (u == o) {
                 author ++ $or(public, emptySpaces, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
               } else {
                 author ++ $or(public, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
               }
             }
-          }
-          case None => {
-            author ++ public
+            case None => {
+              author ++ public
+            }
           }
         }
       }
@@ -173,12 +173,16 @@ class MongoDBDatasetService @Inject() (
         space match {
           case Some(s) => MongoDBObject("spaces" -> new ObjectId(s))
           case None => {
-            user match {
-              case Some(u) => {
-                val author = $and(MongoDBObject("author.identityId.userId" -> u.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> u.identityId.providerId))
-                $or(author, public, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+            if (showAll) {
+              MongoDBObject()
+            } else {
+              user match {
+                case Some(u) => {
+                  val author = $and(MongoDBObject("author.identityId.userId" -> u.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> u.identityId.providerId))
+                  $or(author, public, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+                }
+                case None => public
               }
-              case None => public
             }
           }
         }
