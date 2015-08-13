@@ -4,13 +4,13 @@ import java.util.Date
 import securesocial.core.Identity
 
 /**
- * Created by yanzhao3 on 8/12/15.
+ * A Curation Object assists researchers and curators to identify sets of resources for publication.
  */
 case class CurationObj (
   id: UUID = UUID.generate,
-  name: String = "N/A",
-  author: Option[Identity],
-  description: String = "N/A",
+  name: String = "",
+  author: Identity,
+  description: String = "",
   created: Date,
   spaces: UUID,
   datasets: List[Dataset] =  List.empty,
