@@ -1,4 +1,4 @@
-@(file: File, metadata: List[models.Metadata])
+@(file: File, metadata: List[models.Metadata])(implicit user: Option[models.User])
 
 @main("Metadata") {
     <div class="row">
@@ -10,7 +10,7 @@
     </div>
     <div class="row">
         <div class="col-md-12">
-        @addMetadata()
+            @addMetadata("file", file.id.toString)
         </div>
     </div>
     <div class="row">

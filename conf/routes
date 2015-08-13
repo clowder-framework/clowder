@@ -19,7 +19,7 @@ GET            /                                                                
 # ----------------------------------------------------------------------
 # Map static resources from the /public folder to the /assets URL path
 #GET      /documentation/api/*testFile                                        controllers.Assets.at(path="/public/docs/api", testFile)
-GET            /contexts/metadata.jsonld                                         controllers.Assets.at(path="/public", file="/jsonld/contexts/metadata.jsonld")
+GET            /contexts/metadata.jsonld                                                controllers.Assets.at(path="/public", file="/jsonld/contexts/metadata.jsonld")
 GET            /assets/img/glyphicons-halflings-white.png                               controllers.Assets.at(path="/public", file="/images/glyphicons-halflings-white.png")
 GET            /assets/img/glyphicons-halflings.png                                     controllers.Assets.at(path="/public", file="/images/glyphicons-halflings.png")
 GET            /assets/*file                                                            controllers.Assets.at(path="/public", file)
@@ -242,6 +242,23 @@ GET            /api-docs.json/extractions                                       
 # ----------------------------------------------------------------------
 # RESTful API
 # ----------------------------------------------------------------------
+
+#----------------------------------------------------------------------
+# JSON-LD METADATA
+#----------------------------------------------------------------------
+POST           /api/contexts                                                            @api.ContextLD.addContext()
+GET            /api/contexts/:id                                                        @api.ContextLD.getContextById(id: UUID)
+GET            /api/contexts/:name/context.json                                         @api.ContextLD.getContextByName(name: String)
+DELETE         /api/contexts/:id                                                        @api.ContextLD.removeById(id: UUID)
+
+POST           /api/datasets/:id/metadata.jsonld                                        @api.Datasets.addMetadataJsonLD(id: UUID)
+GET            /api/datasets/:id/metadata.jsonld                                        @api.Datasets.getMetadataJsonLD(id: UUID)
+POST           /api/files/:id/metadata.jsonld                                           @api.Files.addMetadataJsonLD(id: UUID)
+GET            /api/files/:id/metadata.jsonld                                           @api.Files.getMetadataJsonLD(id: UUID)
+
+POST           /api/metadata.jsonld                                                     @api.Metadata.addUserMetadata()
+GET            /api/metadata.jsonld                                                     @api.Metadata.getUserMetadata()
+
 # ----------------------------------------------------------------------
 # FILES ENDPOINT
 # ----------------------------------------------------------------------
@@ -325,19 +342,6 @@ GET            /api/files/:id                                                   
 GET            /api/delete-data                                                         api.Admin.deleteAllData
 POST           /api/remove-admin                                                        api.Admin.removeAdmin
 POST           /api/changeAppearance                                                    api.Admin.submitAppearance
-
-#----------------------------------------------------------------------
-# JSON-LD METADATA
-#----------------------------------------------------------------------
-POST           /api/contexts                                                            @api.ContextLD.addContext()
-GET            /api/contexts/:id                                                        @api.ContextLD.getContextById(id: UUID)
-GET            /api/contexts/:name/context.json                                         @api.ContextLD.getContextByName(name: String)
-DELETE         /api/contexts/:id                                                        @api.ContextLD.removeById(id: UUID)
-
-POST           /api/datasets/:id/metadata.jsonld                                        @api.Datasets.addMetadataJsonLD(id: UUID)
-GET            /api/datasets/:id/metadata.jsonld                                        @api.Datasets.getMetadataJsonLD(id: UUID)
-POST           /api/files/:id/metadata.jsonld                                           @api.Files.addMetadataJsonLD(id: UUID)
-GET            /api/files/:id/metadata.jsonld                                           @api.Files.getMetadataJsonLD(id: UUID)
 
 #----------------------------------------------------------------------
 # 3D FILES

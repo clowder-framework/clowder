@@ -22,6 +22,7 @@ class Metadata @Inject() (
   }
 
   def file(file_id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowFilesMetadata)) { implicit request =>
+    implicit val user = request.user
     files.get(file_id) match {
       case Some(file) => {
         val m = metadata.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file_id))
@@ -32,6 +33,7 @@ class Metadata @Inject() (
   }
 
   def dataset(dataset_id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowFilesMetadata)) { implicit request =>
+    implicit val user = request.user
     datasets.get(dataset_id) match {
       case Some(dataset) => {
         val m = metadata.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset_id))
