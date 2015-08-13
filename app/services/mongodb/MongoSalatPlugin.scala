@@ -150,7 +150,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         if (spaces == 0) {
           val datasets = Dataset.count(new MongoDBObject())
           val collections = Collection.count(new MongoDBObject())
-          val users = UserSpaceDAO.count(new MongoDBObject())
+          val users = SocialUserDAO.count(new MongoDBObject())
           if ((datasets != 0) || (collections != 0)) {
             Logger.info("[MongoDBUpdate] : Found datasets/collections, will add all to default space")
 
