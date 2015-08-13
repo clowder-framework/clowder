@@ -40,53 +40,63 @@ class MongoDBSpaceService @Inject() (
     ProjectSpaceDAO.findOneById(new ObjectId(id.stringify))
   }
 
+  /** count all spaces */
+  def count(): Long = {
+    count(None, nextPage=false, None, showAll=true, None)
+  }
+
+  /** list all spaces */
+  def list(): List[ProjectSpace] = {
+    list(None, nextPage=false, 0, None, showAll=true, None)
+  }
+
   /**
    * Count all spaces the user has access to.
    */
-  def countAccess(user: Option[User], superAdmin: Boolean): Long = {
-    count(None, false, user, superAdmin, None)
+  def countAccess(user: Option[User], showAll: Boolean): Long = {
+    count(None, nextPage=false, user, showAll, None)
   }
 
   /**
    * Return a list of spaces the user has access to.
    */
-  def listAccess(limit: Integer, user: Option[User], superAdmin: Boolean): List[ProjectSpace] = {
-    list(None, false, limit, user, superAdmin, None)
+  def listAccess(limit: Integer, user: Option[User], showAll: Boolean): List[ProjectSpace] = {
+    list(None, nextPage=false, limit, user, showAll, None)
   }
 
   /**
    * Return a list of spaces the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean): List[ProjectSpace] = {
-    list(Some(date), nextPage, limit, user, superAdmin, None)
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean): List[ProjectSpace] = {
+    list(Some(date), nextPage, limit, user, showAll, None)
   }
 
   /**
    * Count all spaces the user has created.
    */
-  def countUser(user: Option[User], superAdmin: Boolean, owner: User): Long = {
-    count(None, false, user, superAdmin, Some(owner))
+  def countUser(user: Option[User], showAll: Boolean, owner: User): Long = {
+    count(None, nextPage=false, user, showAll, Some(owner))
   }
 
   /**
    * Return a list of spaces the user has created.
    */
-  def listUser(limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[ProjectSpace] = {
-    list(None, false, limit, user, superAdmin, Some(owner))
+  def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
+    list(None, nextPage=false, limit, user, showAll, Some(owner))
   }
 
   /**
    * Return a list of spaces the user has created starting at a specific date.
    */
-  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[ProjectSpace] = {
-    list(Some(date), nextPage, limit, user, superAdmin, Some(owner))
+  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
+    list(Some(date), nextPage, limit, user, showAll, Some(owner))
   }
 
   /**
    * return count based on input
    */
-  private def count(date: Option[String], nextPage: Boolean, user: Option[User], superAdmin: Boolean, owner: Option[User]): Long = {
-    val (filter, _) = filteredQuery(date, nextPage, user, superAdmin, owner)
+  private def count(date: Option[String], nextPage: Boolean, user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
+    val (filter, _) = filteredQuery(date, nextPage, user, showAll, owner)
     ProjectSpaceDAO.count(filter)
   }
 
@@ -94,8 +104,8 @@ class MongoDBSpaceService @Inject() (
   /**
    * return list based on input
    */
-  private def list(date: Option[String], nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean, owner: Option[User]): List[ProjectSpace] = {
-    val (filter, sort) = filteredQuery(date, nextPage, user, superAdmin, owner)
+  private def list(date: Option[String], nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: Option[User]): List[ProjectSpace] = {
+    val (filter, sort) = filteredQuery(date, nextPage, user, showAll, owner)
     if (date.isEmpty || nextPage) {
       ProjectSpaceDAO.find(filter).sort(sort).limit(limit).toList
     } else {
@@ -106,7 +116,7 @@ class MongoDBSpaceService @Inject() (
   /**
    * Monster function, does all the work. Will create a filters and sorts based on the given parameters
    */
-  private def filteredQuery(date: Option[String], nextPage: Boolean, user: Option[User], superAdmin: Boolean, owner: Option[User]): (DBObject, DBObject) = {
+  private def filteredQuery(date: Option[String], nextPage: Boolean, user: Option[User], showAll: Boolean, owner: Option[User]): (DBObject, DBObject) = {
     // filter =
     // - owner   == show datasets owned by owner that user can see
     // - space   == show all datasets in space
@@ -116,26 +126,30 @@ class MongoDBSpaceService @Inject() (
     val filter = owner match {
       case Some(o) => {
         val author = MongoDBObject("author.identityId.userId" -> o.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> o.identityId.providerId)
-        user match {
-          case Some(u) => {
-            if (superAdmin) {
-              author
-            } else {
+        if (showAll) {
+          author
+        } else {
+          user match {
+            case Some(u) => {
               author ++ $or(public, ("_id" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
             }
-          }
-          case None => {
-            author ++ public
+            case None => {
+              author ++ public
+            }
           }
         }
       }
       case None => {
-        user match {
-          case Some(u) => {
-            val author = $and(MongoDBObject("author.identityId.userId" -> u.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> u.identityId.providerId))
-            $or(author, public, ("_id" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+        if (showAll) {
+          MongoDBObject()
+        } else {
+          user match {
+            case Some(u) => {
+              val author = $and(MongoDBObject("author.identityId.userId" -> u.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> u.identityId.providerId))
+              $or(author, public, ("_id" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+            }
+            case None => public
           }
-          case None => public
         }
       }
     }
@@ -193,119 +207,6 @@ class MongoDBSpaceService @Inject() (
     ProjectSpaceDAO.removeById(new ObjectId(id.stringify))
   }
 
-  def list(): List[ProjectSpace] = {
-    (for (space <- ProjectSpaceDAO.find(MongoDBObject())) yield space).toList
-  }
-
-  /**
-   * The number of objects that are available based on the filter
-   */
-  override def count(filter: Option[String]): Long = {
-    val filterBy = filter.fold(MongoDBObject())(JSON.parse(_).asInstanceOf[DBObject])
-    ProjectSpaceDAO.count(filterBy)
-  }
-
-  /**
-   * Return a list objects that are available based on the filter as well as the other options.
-   *
-   * @param order the key to use to order the data, default is natural ordering of underlying implementation
-   * @param direction the direction to order the data in
-   * @param start the first element that should be returned based on the order key
-   * @param limit the maximum number of elements to return
-   * @param filter is a json representation of the filter to be applied
-   */
-  override def list(order: Option[String], direction: Direction, start: Option[String], limit: Integer,
-                    filter: Option[String]): List[ProjectSpace] = {
-    val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
-
-    // Create sort object
-    val d = if (direction == ASC) 1 else -1
-    val o = order.getOrElse("created")
-    val orderedBy = if (o == "created") {
-      MongoDBObject(o -> d)
-    } else {
-      MongoDBObject(o -> d) ++ MongoDBObject("created" -> 1)
-    }
-
-    // set start and filter the data
-    val spacesFromDB = (start, filter) match {
-      case (Some(d), Some(f)) => {
-        val since = "created" $gte sdf.parse(d)
-        val filter = JSON.parse(f).asInstanceOf[DBObject]
-        ProjectSpaceDAO.find(since ++ filter).sort(orderedBy).limit(limit).toList
-      }
-      case (Some(d), None) => {
-        val since = "created" $gte sdf.parse(d)
-        ProjectSpaceDAO.find(since).sort(orderedBy).limit(limit).toList
-      }
-      case (None, Some(f)) => {
-        val filter = JSON.parse(f).asInstanceOf[DBObject]
-        ProjectSpaceDAO.find(filter).sort(orderedBy).limit(limit).toList
-      }
-      case (None, None) => {
-        ProjectSpaceDAO.findAll().sort(orderedBy).limit(limit).toList
-      }
-    }
-    // update DOs with collection and dataset counts
-    spacesFromDB.map{ s => s.copy(collectionCount = getCollectionsInSpace(Some(s.id.stringify)).size, datasetCount = getDatasetsInSpace(Some(s.id.stringify)).size) }
-  }
-
-  override def getNext(order: Option[String], direction: Direction, start: Date, limit: Integer,
-                       filter: Option[String]): Option[String] = {
-    val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
-
-    // Create sort object
-    val d = if (direction == ASC) 1 else -1
-    val o = order.getOrElse("created")
-    val orderedBy = if (o == "created") {
-      MongoDBObject(o -> d)
-    } else {
-      MongoDBObject(o -> d) ++ MongoDBObject("created" -> 1)
-    }
-
-    // set start and filter the data
-    val since = "created" $gt start
-    val x = filter match {
-      case Some(f) => {
-        val filter = JSON.parse(f).asInstanceOf[DBObject]
-        ProjectSpaceDAO.find(since ++ filter).sort(orderedBy).limit(1).toList
-      }
-      case None => {
-        ProjectSpaceDAO.find(since).sort(orderedBy).limit(1).toList
-      }
-    }
-
-    x.headOption.map(x => sdf.format(x.created))
-  }
-
-  override def getPrev(order: Option[String], direction: Direction, start: Date, limit: Integer,
-                       filter: Option[String]): Option[String] = {
-    val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
-
-    // Create sort object
-    val d = if (direction == ASC) -1 else 1
-    val o = order.getOrElse("created")
-    val orderedBy = if (o == "created") {
-      MongoDBObject(o -> d)
-    } else {
-      MongoDBObject(o -> d) ++ MongoDBObject("created" -> -1)
-    }
-
-    // set start and filter the data
-    val since = "created" $lt start
-    val x = filter match {
-      case Some(f) => {
-        val filter = JSON.parse(f).asInstanceOf[DBObject]
-        ProjectSpaceDAO.find(since ++ filter).sort(orderedBy).limit(limit).toList
-      }
-      case None => {
-        ProjectSpaceDAO.find(since).sort(orderedBy).limit(limit).toList
-      }
-    }
-
-    x.lastOption.map(x => sdf.format(x.created))
-  }
-
   /**
    * Associate a collection with a space
    *
@@ -315,11 +216,13 @@ class MongoDBSpaceService @Inject() (
   def addCollection(collection: UUID, space: UUID): Unit = {
     log.debug(s"Adding $collection to $space")
     collections.addToSpace(collection, space)
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("collectionCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
   }
 
   def removeCollection(collection:UUID, space:UUID): Unit = {
     log.debug(s"Space Service - removing $collection from $space")
     collections.removeFromSpace(collection, space)
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("collectionCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
   }
   /**
    * Associate a dataset with a space
@@ -330,6 +233,7 @@ class MongoDBSpaceService @Inject() (
   def addDataset(dataset: UUID, space: UUID): Unit = {
     log.debug(s"Space Service - Adding $dataset to $space")
     datasets.addToSpace(dataset, space)
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("datasetCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
   }
 
   /**
@@ -340,6 +244,7 @@ class MongoDBSpaceService @Inject() (
   def removeDataset(dataset:UUID, space:UUID): Unit = {
     log.debug(s"Space Service - removing $dataset from $space")
     datasets.removeFromSpace(dataset, space)
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("datasetCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
   }
 
   /**
@@ -464,7 +369,8 @@ class MongoDBSpaceService @Inject() (
    *
    */
   def addUser(user: UUID, role: Role, space: UUID): Unit = {
-      users.addUserToSpace(user, role, space)
+    users.addUserToSpace(user, role, space)
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("userCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
   }
 
   /**
@@ -474,7 +380,8 @@ class MongoDBSpaceService @Inject() (
    *
    */
   def removeUser(userId: UUID, space: UUID): Unit = {
-      users.removeUserFromSpace(userId, space)
+    users.removeUserFromSpace(userId, space)
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("userCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
   }
 
   /**

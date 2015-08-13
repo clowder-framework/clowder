@@ -1,8 +1,6 @@
 package services
 
 import models._
-import securesocial.core.providers.Token
-import services.core.CRUDService
 import models.Collection
 import models.Dataset
 import models.User
@@ -10,40 +8,55 @@ import models.Role
 
 /**
  * Service to manipulate spaces.
- *
- * @author Luigi Marini
- *
  */
-trait SpaceService extends CRUDService[ProjectSpace] {
+trait SpaceService {
+  /** return space with specific id */
+  def get(id: UUID): Option[ProjectSpace]
+
+  /** insert new space, will return id if successful. */
+  def insert(model: ProjectSpace): Option[String]
+
+  /** update space */
+  def update(model: ProjectSpace)
+
+  /** delete given space. */
+  def delete(id: UUID)
+
+  /** Count all spaces */
+  def count(): Long
+
+  /** list all spaces */
+  def list(): List[ProjectSpace]
+
   /**
    * Return a count of spaces the user has access to.
    */
-  def countAccess(user: Option[User], superAdmin: Boolean): Long
+  def countAccess(user: Option[User], showAll: Boolean): Long
 
   /**
    * Return a list of spaces the user has access to.
    */
-  def listAccess(limit: Integer, user: Option[User], superAdmin: Boolean): List[ProjectSpace]
+  def listAccess(limit: Integer, user: Option[User], showAll: Boolean): List[ProjectSpace]
 
   /**
    * Return a list of spaces the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean): List[ProjectSpace]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean): List[ProjectSpace]
 
   /**
    * Return a count of spaces the user has created.
    */
-  def countUser(user: Option[User], superAdmin: Boolean, owner: User): Long
+  def countUser(user: Option[User], showAll: Boolean, owner: User): Long
 
   /**
    * Return a list of spaces the user has created.
    */
-  def listUser(limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[ProjectSpace]
+  def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace]
 
   /**
    * Return a list of spaces the user has created starting at a specific date.
    */
-  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean, owner: User): List[ProjectSpace]
+  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace]
 
   def addCollection(collection: UUID, space: UUID)
 
