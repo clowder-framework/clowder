@@ -24,7 +24,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
    * The code will query the datasets, files and sections and combine the lists into a single sorted list
    * and display it to the user.
    */
-  def search(tag: String, start: String, size: Integer, mode: String) = PermissionAction(Permission.ViewTags) { implicit request =>
+  def search(tag: String, start: String, size: Integer, mode: String) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
     var nextItems = ListBuffer.empty[AnyRef]
@@ -112,13 +112,13 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     Ok(views.html.searchByTag(tag, nextItems.slice(0, size).toList, prev, next, size, viewMode))
   }
 
-  def tagCloud() = PermissionAction(Permission.ViewTags) { implicit request =>
+  def tagCloud() = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
     Ok(views.html.tagCloud(computeTagWeights(user)))
   }
 
-  def tagListWeighted() = PermissionAction(Permission.ViewTags) { implicit request =>
+  def tagListWeighted() = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
     val tags = computeTagWeights(user)
@@ -136,7 +136,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     }
   }
 
-  def tagListOrdered() = PermissionAction(Permission.ViewTags) { implicit request =>
+  def tagListOrdered() = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
     Ok(views.html.tagListChar(createTagList(user)))
@@ -150,21 +150,21 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     //      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.collection").getOrElse(1)
     //    }
 
-    for(dataset <- datasets.listUser(0, user, false, user.get); tag <- dataset.tags) {
+    for(dataset <- datasets.listUser(0, user, false, user.get); tag <- dataset.tags; if tag.name.nonEmpty) {
       var firstChar = if (tag.name(0).isLetter) tag.name(0).toUpper else '#'
       if (!tagMap.contains(firstChar)) tagMap(firstChar) = collection.mutable.Map.empty[String, Integer].withDefaultValue(0)
       val map = tagMap(firstChar)
       map(tag.name) = map(tag.name) + 1
     }
 
-    for(file <- files.listFiles; tag <- file.tags) {
+    for(file <- files.listFiles; tag <- file.tags; if tag.name.nonEmpty) {
       var firstChar = if (tag.name(0).isLetter) tag.name(0).toUpper else '#'
       if (!tagMap.contains(firstChar)) tagMap(firstChar) = collection.mutable.Map.empty[String, Integer].withDefaultValue(0)
       val map = tagMap(firstChar)
       map(tag.name) = map(tag.name) + 1
     }
 
-    for(section <- sections.listSections; tag <- section.tags) {
+    for(section <- sections.listSections; tag <- section.tags; if tag.name.nonEmpty) {
       var firstChar = if (tag.name(0).isLetter) tag.name(0).toUpper else '#'
       if (!tagMap.contains(firstChar)) tagMap(firstChar) = collection.mutable.Map.empty[String, Integer].withDefaultValue(0)
       val map = tagMap(firstChar)
@@ -182,19 +182,18 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
 //      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.collection").getOrElse(1)
 //    }
 
-    for(dataset <- datasets.listAccess(12, user, showAll=false); tag <- dataset.tags) {
+    for(dataset <- datasets.listAccess(12, user, showAll=false); tag <- dataset.tags; if tag.name.nonEmpty) {
       weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.dataset").getOrElse(1)
     }
 
-    for(file <- files.listFiles; tag <- file.tags) {
+    for(file <- files.listFiles; tag <- file.tags; if tag.name.nonEmpty) {
       weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.files").getOrElse(1)
     }
 
-    for(section <- sections.listSections; tag <- section.tags) {
+    for(section <- sections.listSections; tag <- section.tags; if tag.name.nonEmpty) {
       weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.sections").getOrElse(1)
     }
 
-    Logger.debug("thelist: "+ weightedTags.toList.toString)
     weightedTags.toList
   }
 }
