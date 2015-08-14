@@ -1,5 +1,5 @@
 @(files: List[models.File], datasetsCount: Long, datasetsCountAccess: Long, filesCount: Long,
-        collectionsCount: Long, collectionsCountAccess: Long, spacesCount: Long, spacesCountAccess: Long,
+        collectionsCount: Long, collectionsCountAccess: Long, spacesCount: Long, spacesCountAccess: Long, usersCount: Long,
         displayedName: String, welcomeMessage: String, newsfeed: List[models.Event])(implicit user: Option[models.User])
 
 @import _root_.util.Formatters
@@ -40,20 +40,19 @@
               <div class="panel-body">
                   <ul class="list-group">
                       <li class="list-group-item" title="Access to @spacesCountAccess spaces">
-                          <span class="badge">@spacesCount</span>
-                          <a href="@routes.Spaces.list()">Project Spaces</a>
+                          <a href="@routes.Spaces.list()">Project Spaces <span class="label label-default pull-right">@spacesCount</span></a>
                       </li>
                       <li class="list-group-item" title="Access to @collectionsCountAccess collections">
-                          <span class="badge">@collectionsCount</span>
-                          <a href="@routes.Collections.list("")">Collections</a>
+                          <a href="@routes.Collections.list("")">Collections <span class="label label-default pull-right">@collectionsCount</span></a>
                       </li>
                       <li class="list-group-item" title="Access to @datasetsCountAccess datasets">
-                          <span class="badge">@datasetsCount</span>
-                          <a href="@routes.Datasets.list("")">Datasets</a>
+                          <a href="@routes.Datasets.list("")">Datasets <span class="label label-default pull-right">@datasetsCount</span></a>
                       </li>
                       <li class="list-group-item">
-                          <span class="badge">@filesCount</span>
-                          <a href="@routes.Files.list("")">Files</a>
+                          Files <span class="label label-default pull-right">@filesCount</span>
+                      </li>
+                      <li class="list-group-item">
+                          Users <span class="label label-default pull-right">@usersCount</span>
                       </li>
                   </ul>
               </div>
