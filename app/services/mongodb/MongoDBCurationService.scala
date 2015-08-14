@@ -15,40 +15,21 @@ import play.api.Logger
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
 
-/**
- * Created by yanzhao3 on 8/13/15.
- */
+
 @Singleton
-class MongoDBCurationService  @Inject()  extends CurationService{
-  def insert(curation: CurationObj): Option[String] = {
-    Logger.debug("insert a new CO")
-    CurationDAO.insert(curation).map(_.toString)
+class MongoDBCurationService  @Inject()  extends CurationService {
+
+  def insert(curation: CurationObj) = {
+    if (CurationDAO != null) {
+      //CurationDAO.save(curation)
+      Logger.debug("insert a new CO with ID: " + curation.id)
+      CurationDAO.insert(curation)
+    }
   }
 
-
-
-  def get(id: UUID) = {None}
-
-
-
-  def update(model: CurationObj) = {}
-
-  def delete(id: UUID) = {}
-
-
-def count(filter: Option[String] = None): Long = {1}
-
-  def list(order: Option[String] = None, direction: Direction=DESC,
-           start: Option[String] = None, limit: Integer = 20,
-           filter: Option[String] = None): List[CurationObj]  = List.empty
-
-
-
-def getNext(order: Option[String], direction: Direction, start: Date, limit: Integer = 20,
-filter: Option[String]): Option[String] = {None}
-
-def getPrev(order: Option[String], direction: Direction, start: Date, limit: Integer = 20,
-filter: Option[String]): Option[String] = {None}
+  def get(id: UUID): Option[CurationObj]  = {
+    CurationDAO.findOneById(new ObjectId(id.stringify))
+  }
 
 }
 

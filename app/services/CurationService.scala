@@ -6,6 +6,11 @@ import services.core.CRUDService
 /**
  * Service to manipulate curation objects.
  */
-trait CurationService extends CRUDService[CurationObj]{
+trait CurationService {
+  def insert(curation: CurationObj)
 
+  /**
+   * Get collection.
+   */
+  def get(id: UUID): Option[CurationObj]
 }

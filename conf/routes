@@ -354,8 +354,8 @@ GET            /api/collections/:coll_id/getDatasets                            
 DELETE         /api/collections/:coll_id                                                @api.Collections.removeCollection(coll_id: UUID)
 POST           /api/collections/:c_id/previews/:p_id                                    @api.Collections.attachPreview(c_id: UUID, p_id: UUID)
 GET            /api/collections/:coll_id                                                @api.Collections.getCollection(coll_id: UUID)
-PUT           /api/collections/:coll_id/title                                           @api.Collections.updateCollectionName(coll_id: UUID)
-PUT           /api/collections/:coll_id/description                                     @api.Collections.updateCollectionDescription(coll_id: UUID)
+PUT            /api/collections/:coll_id/title                                          @api.Collections.updateCollectionName(coll_id: UUID)
+PUT            /api/collections/:coll_id/description                                    @api.Collections.updateCollectionDescription(coll_id: UUID)
 
 # ----------------------------------------------------------------------
 # DATASETS ENDPOINT
@@ -425,7 +425,7 @@ POST           /api/indexes/features                                            
 POST           /api/sections                                                            @api.Sections.add
 GET            /api/sections/:id                                                        @api.Sections.get(id: UUID)
 POST           /api/sections/:id/comments                                               @api.Sections.comment(id: UUID)
-POST    	   /api/sections/:id/description											@api.Sections.description(id: UUID)
+POST           /api/sections/:id/description                                            @api.Sections.description(id: UUID)
 POST           /api/sections/:section_id/thumbnails/:thumbnail_id                       @api.Sections.attachThumbnail(section_id: UUID,thumbnail_id: UUID)
 GET            /api/sections/:id/tags                                                   @api.Sections.getTags(id: UUID)
 POST           /api/sections/:id/tags                                                   @api.Sections.addTags(id: UUID)
@@ -526,5 +526,5 @@ GET            /rss/:etype                                                      
 # ----------------------------------------------------------------------
 # CURATIONS ENDPOINT
 # ----------------------------------------------------------------------
-GET            /spaces/:id/curations/new                                                         @controllers.Curations.newCO(id:UUID)
-POST           /spaces/:id/curation/submit                                                       @controllers.Curations.submit(id:UUID)
+GET            /spaces/:id/curations/new                                                @controllers.Curations.newCO(id:UUID)
+POST           /spaces/:id/curations/submit                                             @controllers.Curations.submit(id:UUID)

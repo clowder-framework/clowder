@@ -47,7 +47,7 @@ class ConfigurationModule extends AbstractModule {
     bind(classOf[EventService]).to(get("service.events", "services.mongodb.MongoDBEventService"))
     bind(classOf[SchedulerService]).to(get("service.jobs", "services.mongodb.MongoDBSchedulerService"))
     //bind(classOf[UserService]).to(get("service.users", "services.mongodb.MongoDBUserService"))
-    bind(classOf[CurationService]).to(get("service.curations", "services.mongodb.MongoDBCurationService"))
+    bind(classOf[CurationService]).to(get("service.curationObjs", "services.mongodb.MongoDBCurationService"))
  
   }
 

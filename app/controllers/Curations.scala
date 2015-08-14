@@ -47,25 +47,29 @@ class Curations @Inject()( curations: CurationService,
         val stringCollections = COCollection(0).split(",").toList
         val stringDatasets = CODataset(0).split(",").toList
 
-        Logger.debug("------- in CUrations.submit with " + stringDatasets.length + " datasets and "+ stringCollections.length +" collections ---------")
 
         val COCollectionIDs: List[UUID] = stringDatasets.map(aCollection => if(aCollection != "") UUID(aCollection) else None).filter(_ != None).asInstanceOf[List[UUID]]
         val COCollections = COCollectionIDs map( collectionid => collections.get(collectionid).getOrElse(null))
+        val COC = COCollections.toList
 
         val CODatasetIDs: List[UUID] = stringDatasets.map(aDataset => if(aDataset != "") UUID(aDataset) else None).filter(_ != None).asInstanceOf[List[UUID]]
         val CODatasets = CODatasetIDs map( datasetid => datasets.get(datasetid).getOrElse(null))
+        val COD = CODatasets.toList
+
+        Logger.debug("------- in CUrations.submit with " + COD.length + " datasets and "+ COC.length +" collections ---------")
 
         val newCuration = CurationObj(
         name = COName(0),
         author = identity,
         description = CODesc(0),
         created = new Date,
-        spaces = spaceId,
-        datasets = CODatasets,
-        collections = COCollections
+        space = spaceId,
+        datasets = COD,
+        collections = COC
         )
 
         // insert curation
+        Logger.debug("create Co: " + newCuration.id)
         curations.insert(newCuration)
 
        Redirect(routes.Spaces.getSpace(spaceId))
