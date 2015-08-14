@@ -82,23 +82,31 @@ trait SecuredController extends Controller {
 
           case Some(ResourceRef(ResourceRef.dataset, id)) => {
             val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
-            val dataset = datasets.get(id).get
-            ("dataset \"" + dataset.name + "\"", id.toString, "dataset")
+            datasets.get(id) match {
+              case None => ("dataset \"" + id.toString() + "\" does not exist", "", "dataset")
+              case Some(dataset) => ("dataset \"" + dataset.name + "\"", id.toString, "dataset")
+            }
           }
 
           case Some(ResourceRef(ResourceRef.collection, id)) => {
             val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
-            val collection = collections.get(id).get
-            ("collection \"" + collection.name + "\"", id.toString, "collection")
+            collections.get(id) match {
+              case None => ("collection \"" + id.toString() + "\" does not exist", "", "collection")
+              case Some(collection) => ("collection \"" + collection.name + "\"", id.toString, "collection")
+            }
           }
 
           case Some(ResourceRef(ResourceRef.space, id)) => {
             val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
-            val space = spaces.get(id).get
-            if (space.requests.contains(RequestResource(userRequest.user.get.id))) {
-              ("space \"" + space.name + "\". \nAuthorization request is pending", "", "space")
-            } else {
-              ("space \"" + space.name + "\"", id.toString, "space")
+            spaces.get(id) match {
+              case None => ("space \"" + id.toString() + "\" does not exist", "", "space")
+              case Some(space) => {
+                if (space.requests.contains(RequestResource(userRequest.user.get.id))) {
+                  ("space \"" + space.name + "\". \nAuthorization request is pending", "", "space")
+                } else {
+                  ("space \"" + space.name + "\"", id.toString, "space")
+                }
+              }
             }
           }
 
