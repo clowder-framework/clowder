@@ -12,7 +12,7 @@ case class CurationObj (
   author: Identity,
   description: String = "",
   created: Date,
-  spaces: UUID,
+  space: UUID,
   datasets: List[Dataset] =  List.empty,
   collections: List[Collection] = List.empty
 )

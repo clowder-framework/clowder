@@ -526,5 +526,5 @@ GET            /rss/:etype                                                      
 # ----------------------------------------------------------------------
 # CURATIONS ENDPOINT
 # ----------------------------------------------------------------------
-GET            /spaces/:id/curations/new                                                @controllers.Curations.newCO(id:UUID)
-POST           /spaces/:id/curations/submit                                             @controllers.Curations.submit(id:UUID)
+GET            /spaces/:id/curations/new                                                @controllers.CurationObjs.newCO(id:UUID)
+POST           /spaces/:id/curations/submit                                             @controllers.CurationObjs.submit(id:UUID)

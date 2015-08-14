@@ -14,7 +14,7 @@ import util.RequiredFieldsConfig
 
 import scala.text
 
-class Curations @Inject()( curations: CurationService,
+class CurationObjs @Inject()( curations: CurationService,
                            datasets: DatasetService,
                              collections: CollectionService,
                              spaces: SpaceService
@@ -40,23 +40,23 @@ class Curations @Inject()( curations: CurationService,
     var CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
     var CODataset = request.body.asFormUrlEncoded.getOrElse("datasets",  List.empty)
     var COCollection = request.body.asFormUrlEncoded.getOrElse("collections",  List.empty)
+
     implicit val user = request.user
     user match {
       case Some(identity) => {
-        /////check COName is null
+        //TODO:check COName is null
         val stringCollections = COCollection(0).split(",").toList
         val stringDatasets = CODataset(0).split(",").toList
 
+        val COCollectionIDs: List[UUID] = stringCollections.map(aCollection => if(aCollection != "") UUID(aCollection) else None).filter(_ != None).asInstanceOf[List[UUID]]
+        var COCollections = COCollectionIDs.map( collectionid => collections.get(collectionid).getOrElse(null)).filter(_ != null)
 
-        val COCollectionIDs: List[UUID] = stringDatasets.map(aCollection => if(aCollection != "") UUID(aCollection) else None).filter(_ != None).asInstanceOf[List[UUID]]
-        val COCollections = COCollectionIDs map( collectionid => collections.get(collectionid).getOrElse(null))
-        val COC = COCollections.toList
 
         val CODatasetIDs: List[UUID] = stringDatasets.map(aDataset => if(aDataset != "") UUID(aDataset) else None).filter(_ != None).asInstanceOf[List[UUID]]
-        val CODatasets = CODatasetIDs map( datasetid => datasets.get(datasetid).getOrElse(null))
-        val COD = CODatasets.toList
+        var CODatasets = CODatasetIDs.map( datasetid => datasets.get(datasetid).getOrElse(null)).filter(_ != null)
 
-        Logger.debug("------- in CUrations.submit with " + COD.length + " datasets and "+ COC.length +" collections ---------")
+
+        Logger.debug("------- in CUrations.submit with " + CODatasets.length + " datasets and "+ COCollections.length +" collections ---------")
 
         val newCuration = CurationObj(
         name = COName(0),
@@ -64,8 +64,8 @@ class Curations @Inject()( curations: CurationService,
         description = CODesc(0),
         created = new Date,
         space = spaceId,
-        datasets = COD,
-        collections = COC
+        datasets = CODatasets,
+        collections = COCollections
         )
 
         // insert curation

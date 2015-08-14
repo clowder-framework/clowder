@@ -40,7 +40,7 @@
             <tr>
                 <td style="width : 20 % ; vertical-align : top ;" class="input-table-cell">Collections:</td>
                 <td style="width : 35 % ; vertical-align : top ;" class="input-table-cell" id="desccell">
-                    <select name="collection" id="collectionid" class = "chosen-select" multiple style="width : 342 px ;">
+                    <select multiple name="collection" id="collectionid" class = "chosen-select"  style="width : 342 px ;">
                         @*<option value="default">Default</option>*@
                         @collections.map { collection =>
                             <option value="@(collection.id)">@(collection.name)</option>
@@ -54,7 +54,7 @@
             <tr>
                 <td style="width : 20 % ; vertical-align : top ;" class="input-table-cell">Datasets:</td>
                 <td style="width : 35 % ; vertical-align : top ;" class="input-table-cell" id="desccell">
-                    <select name="dataset" id="datasetid" class = "chosen-select" multiple style="width : 342 px ;">
+                    <select multiple name="dataset" id="datasetid" class = "chosen-select"  style="width : 342 px ;">
                         @*<option value="default">Default</option>*@
                         @datasets.map { dataset =>
                             <option value="@(dataset.id)">@(dataset.name)</option>
@@ -76,7 +76,7 @@
             </td>
         </tr>
     </table>
-            <form id="curationcreate" action='@routes.Curations.submit(spaceId)' method="POST" enctype="multipart/form-data">
+            <form id="curationcreate" action='@routes.CurationObjs.submit(spaceId)' method="POST" enctype="multipart/form-data">
                     <!-- Redirect browsers with JavaScript disabled to the origin page -->
                 <noscript>Javascript is required in order to use the uploader to create a new dataset.</noscript>
 
@@ -93,7 +93,7 @@
     <script language="javascript">
     $(".chosen-select").chosen({
         width: "90%",
-        placeholder_text_multiple: "Select spaces for this collection."
+        placeholder_text_multiple: "Select live objects for this curation object."
     });
 </script>
     <script language = "javascript">
@@ -110,7 +110,9 @@
     $(document).ready(function() {
         @for(dataset <- datasets) {
             idNameObj["@dataset.name"] = "@dataset.id";
-
+        }
+        @for(collection <- collections) {
+            idNameObj["@collection.name"] = "@collection.id";
         }
     });
 
@@ -170,7 +172,8 @@
     }
 
     }
-    })
+    });
+   // $(".chosen-select").multiSelect({});
   </script>
 
 }

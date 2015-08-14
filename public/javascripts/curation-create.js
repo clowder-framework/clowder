@@ -13,8 +13,24 @@ function createCuration() {
     //Update the input we are adding to the form programmatically
     var name = $('#name');
     var desc = $('#description');
-    var datasets = $('#datasetid').find(":selected").val();
-    var collections = $('#collectionid').find(":selected").val();
+
+    var datasets = document.getElementById('datasetid');
+    var Datasets = "";
+
+    for (var i = 0; i < datasets.options.length; i++) {
+        if (datasets.options[i].selected ) {
+            Datasets = Datasets  +datasets.options[i].value + ",";
+        }
+    }
+
+    var collections = document.getElementById('collectionid');
+    var Collections = "";
+
+    for (var i = 0; i < collections.options.length; i++) {
+        if (collections.options[i].selected ) {
+            Collections = Collections  + collections.options[i].value + ",";
+        }
+    }
 
     //Add errors and return false if validation fails. Validation comes from the host page, passing in the isNameRequired and isDescRequired
     //variables.
@@ -35,8 +51,8 @@ function createCuration() {
     var encDescription = htmlEncode(desc.val());
     $('#hiddenname').val(encName);
     $('#hiddendescription').val(encDescription);
-    $('#hiddendatasets').val(datasets);
-    $('#hiddencollections').val(collections);
+    $('#hiddendatasets').val(Datasets);
+    $('#hiddencollections').val(Collections);
 
     //Submit the form
     $('#curationcreate').submit();
