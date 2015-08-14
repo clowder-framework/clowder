@@ -1,4 +1,4 @@
-@(myForm: Form[controllers.spaceFormData], title:String, submitButton: Html)(implicit flash: play.api.mvc.Flash, user: Option[securesocial.core.Identity])
+@(myForm: Form[controllers.spaceFormData], title:String, submitButton: Html)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f)}
