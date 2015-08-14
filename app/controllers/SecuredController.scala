@@ -77,39 +77,46 @@ trait SecuredController extends Controller {
       if (p || userRequest.superAdmin) {
         block(userRequest)
       } else {
-        lazy val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
-        lazy val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
-        lazy val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+        val (message: String, requestid: String, requestType: String) = resourceRef match {
+          case None => ("Unknown resource", "Unknown id", "no resource")
 
-        val (messgae: String, requestid: String) = {
-          resourceRef.get match {
-            // TODO "Not authorized" occurs with other ResourceRef.Type or there is resourceRef.parse
-            case ResourceRef(ResourceRef.dataset, id) => {
-              val dataset = datasets.get(id).get
-              Pair("dataset \"" + dataset.name + "\"", id.toString)
-            }
-
-            case ResourceRef(ResourceRef.collection, id) => {
-              val collection = collections.get(id).get
-              Pair("collection \"" + collection.name + "\"", id.toString)
-            }
-
-            case ResourceRef(ResourceRef.space, id) => {
-              val space = spaces.get(id).get
-              if (space.requests.contains(RequestResource(userRequest.user.get.id))) {
-                Pair("space \"" + space.name + "\". \nAuthorization request is pending", "")
-              } else {
-                Pair("space \"" + space.name + "\"", id.toString)
-              }
-            }
-
-            case ResourceRef(resType, id) => {
-              Pair("error resource", null)
+          case Some(ResourceRef(ResourceRef.dataset, id)) => {
+            val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+            datasets.get(id) match {
+              case None => ("dataset \"" + id.toString() + "\" does not exist", "", "dataset")
+              case Some(dataset) => ("dataset \"" + dataset.name + "\"", id.toString, "dataset")
             }
           }
+
+          case Some(ResourceRef(ResourceRef.collection, id)) => {
+            val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
+            collections.get(id) match {
+              case None => ("collection \"" + id.toString() + "\" does not exist", "", "collection")
+              case Some(collection) => ("collection \"" + collection.name + "\"", id.toString, "collection")
+            }
+          }
+
+          case Some(ResourceRef(ResourceRef.space, id)) => {
+            val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
+            spaces.get(id) match {
+              case None => ("space \"" + id.toString() + "\" does not exist", "", "space")
+              case Some(space) => {
+                if (space.requests.contains(RequestResource(userRequest.user.get.id))) {
+                  ("space \"" + space.name + "\". \nAuthorization request is pending", "", "space")
+                } else {
+                  ("space \"" + space.name + "\"", id.toString, "space")
+                }
+              }
+            }
+          }
+
+          case Some(ResourceRef(resType, id)) => {
+            ("error resource", id.toString(), resType.toString())
+          }
         }
+
         Future.successful(Results.Redirect(routes.Authentication.notAuthorized("You are not authorized to access "
-          + messgae, requestid, resourceRef.get.resourceType.toString)))
+          + message, requestid, requestType)))
       }
     }
   }

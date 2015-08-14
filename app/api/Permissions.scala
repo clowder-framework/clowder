@@ -174,58 +174,70 @@ object Permission extends Enumeration {
         hasPermission getOrElse files.get(id).exists(_.author.email == user.email)
       }
       case ResourceRef(ResourceRef.dataset, id) => {
-        val dataset = datasets.get(id)
-        var hasPermission: Option[Boolean] = None
+        datasets.get(id) match {
+          case None => false
+          case Some(dataset) => {
+            var hasPermission: Option[Boolean] = None
 
-        for (clowderUser <- getUserByIdentity(user)) {
-          dataset.get.spaces.map{
-             spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
-               if(role.permissions.contains(permission.toString))
-                 hasPermission = Some(true)
-             }
+            for (clowderUser <- getUserByIdentity(user)) {
+              dataset.spaces.map {
+                spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+                  if (role.permissions.contains(permission.toString))
+                    hasPermission = Some(true)
+                }
+              }
+            }
+            hasPermission getOrElse (dataset.author.email == user.email)
           }
         }
-        hasPermission getOrElse dataset.exists(_.author.email == user.email)
       }
       case ResourceRef(ResourceRef.collection, id) => {
-        val collection = collections.get(id)
-        var hasPermission: Option[Boolean] = None
+        collections.get(id) match {
+          case None => false
+          case Some(collection) => {
+            var hasPermission: Option[Boolean] = None
 
-        for(clowderUser <- getUserByIdentity(user)) {
-          collection.get.spaces.map {
-            spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
-              if(role.permissions.contains(permission.toString))
-                hasPermission = Some(true)
+            for (clowderUser <- getUserByIdentity(user)) {
+              collection.spaces.map {
+                spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+                  if (role.permissions.contains(permission.toString))
+                    hasPermission = Some(true)
+                }
+              }
+            }
+            hasPermission getOrElse {
+              collection.author match {
+                case Some(realAuthor) => {
+                  val r = for {
+                    e1 <- realAuthor.email
+                    e2 <- user.email}
+                    yield e1 == e2
+                  return r getOrElse false
+                }
+                case None => false
+              }
             }
           }
         }
-        hasPermission getOrElse collection.exists(x => {
-          x.author match {
-            case Some(realAuthor) => {
-              val r = for {
-                e1 <- realAuthor.email
-                e2 <- user.email}
-                yield e1 == e2
-              return r getOrElse false
-            }
-            case None => false
-          }
-        })
       }
       case ResourceRef(ResourceRef.space, id) => {
-        val space = spaces.get(id)
-        val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
-                                                  role <- users.getUserRoleInSpace(clowderUser.id, space.get.id)
-                                                  if role.permissions.contains(permission.toString)
-        } yield true
-        hasPermission getOrElse space.exists(x => {
-          users.findById(x.creator) match {
-            case Some(realCreator) => {
-              realCreator.email == user.email
+        spaces.get(id) match {
+          case None => false
+          case Some(space) => {
+            val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
+                                                      role <- users.getUserRoleInSpace(clowderUser.id, space.id)
+                                                      if role.permissions.contains(permission.toString)
+            } yield true
+            hasPermission getOrElse {
+              users.findById(space.creator) match {
+                case Some(realCreator) => {
+                  realCreator.email == user.email
+                }
+                case None => false
+              }
             }
-            case None => false
           }
-        })
+        }
       }
       case ResourceRef(ResourceRef.comment, id) => {
         val comment = comments.get(id)
