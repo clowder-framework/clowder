@@ -13,7 +13,7 @@ import play.api.Logger
  */
 @Singleton
 class Application @Inject() (files: FileService, collections: CollectionService, datasets: DatasetService,
-                             spaces: SpaceService, events: EventService) extends SecuredController {
+                             spaces: SpaceService, events: EventService, users: UserService) extends SecuredController {
   /**
    * Redirect any url's that have a trailing /
    * @param path the path minus the slash
@@ -36,12 +36,13 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val collectionsCountAccess = collections.countAccess(user, request.superAdmin)
     val spacesCount = spaces.count()
     val spacesCountAccess = spaces.countAccess(user, request.superAdmin)
+    val usersCount = users.count();
     //newsfeedEvents is the combination of followedEntities and requestevents, then take the most recent 20 of them.
     var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)).sorted(Ordering.by((_: Event).created).reverse))
     newsfeedEvents =  (newsfeedEvents ::: events.getRequestEvents(user, Some(20)))
           .sorted(Ordering.by((_: Event).created).reverse).take(20)
-        Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess, spacesCount, spacesCountAccess,
-          AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, newsfeedEvents))
+        Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess,
+          spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, newsfeedEvents))
   }
   
   def options(path:String) = UserAction { implicit request =>
