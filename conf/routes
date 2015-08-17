@@ -251,6 +251,7 @@ GET            /api/files/:id/blob                                              
 POST           /api/files/:id/remove                                                    @api.Files.removeFile(id: UUID)
 GET            /api/files/:id/metadata                                                  @api.Files.get(id: UUID)
 POST           /api/files/:id/metadata                                                  @api.Files.addMetadata(id: UUID)
+POST           /api/files/:id/updateMetadata                                            @api.Files.updateMetadata(id: UUID, extractor_id: String)
 POST           /api/files/:id/versus_metadata                                           @api.Files.addVersusMetadata(id:UUID)
 GET            /api/files/:id/versus_metadata                                           @api.Files.getVersusMetadataJSON(id:UUID)
 GET            /api/files/:id/usermetadatajson                                          @api.Files.getUserMetadataJSON(id: UUID)

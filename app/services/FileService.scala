@@ -183,4 +183,9 @@ trait FileService {
    */
   def removeFollower(id: UUID, userId: UUID)
 
+  /**
+   * Update technical metadata
+   */
+  def updateMetadata(fileId: UUID, metadata: JsValue, extractor_id: String)
+
 }
