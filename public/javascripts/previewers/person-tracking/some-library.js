@@ -881,7 +881,7 @@
                             minTickSize: 1,
                             tickDecimals: 0,
                             min: 0,
-                            max: maxFrames,
+                            max: totalFrames,
                             autoscaleMargin: 0.05,
                             show: true,
                             zoomRange: [0, totalFrames],
