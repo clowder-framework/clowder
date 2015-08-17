@@ -30,3 +30,4 @@
 #10502:services.PostgresPlugin
 #10503:services.irods.IRODSPlugin
 #10700:services.ElasticsearchPlugin
+10800:services.StagingAreaPlugin

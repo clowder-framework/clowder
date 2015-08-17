@@ -285,7 +285,6 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
     }
   }
 
-
   def rejectRequest( id:UUID, requestuser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
@@ -312,7 +311,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   /**
    * Submit action for new or edit space
    */
-  // TODO this should check to see if user has editpsace for specific space
+  // TODO this should check to see if user has editspace for specific space
   def submit() = AuthenticatedAction { implicit request =>
       implicit val user = request.user
       user match {
@@ -456,4 +455,20 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
      val deletePermission = Permission.checkPermission(user, Permission.DeleteDataset)
      Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, deletePermission, prev, next))
    }
+
+
+  def stagingArea(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) {
+    implicit request =>
+      implicit val user  = request.user
+      spaces.get(id) match {
+        case Some(s) => {
+//          val curationDatasets: List[CurationObject] = s.curationObjects.map{curObject => }
+//          OK(views.html.spaces.stagingarea(s, ))
+          InternalServerError("Space Not found")
+        }
+        case None => InternalServerError("Space Not found")
+      }
+  }
+
+
 }
