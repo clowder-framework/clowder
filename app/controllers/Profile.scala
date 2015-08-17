@@ -108,12 +108,8 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
               var userFollower = users.findById(followerID)
               userFollower match {
                 case Some(uFollower) => {
-                  var ufEmail = uFollower.email
-                  ufEmail match {
-                    case Some(fufEmail) => {
-                      followers = followers.++(List((uFollower.id, fufEmail, uFollower.getAvatarUrl(), uFollower.fullName)))
-                    }
-                  }   
+                  var ufEmail = uFollower.email.getOrElse("")
+                  followers = followers.++(List((uFollower.id, ufEmail, uFollower.getAvatarUrl(), uFollower.fullName)))
                 }
               }
             }
@@ -134,6 +130,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
                   myFiles = myFiles.++(List((fset.id, fset.filename, fset.contentType)))
                 }
               }
+              case None => {}
             }
             Ok(views.html.profile(existingUser, ownProfile, followers, followedUsers, followedFiles, followedDatasets, followedCollections, myFiles, myDatasets, myCollections))
         

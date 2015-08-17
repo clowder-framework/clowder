@@ -549,9 +549,7 @@ textarea, input[type='text'], input[type='password']{
 #scrollTableGalleria{
 	width: 100%;
 }
-#scrollTableGalleria thead,#scrollTableGalleria tbody,#scrollTableGalleria tr,#scrollTableGalleria td,#scrollTableGalleria th{
-	display:block;
-}
+
 #scrollTableGalleria tr:after{
 	content: ' ';
     display: block;
@@ -569,13 +567,16 @@ textarea, input[type='text'], input[type='password']{
 	width: 5%;
 }
 #scrollTableGalleria .galleriaTheThumbnail{
-	width: 35%;
+	width: 20%;
 }
-#scrollTableGalleria .galleriaInfo{
+#scrollTableGalleria .galleriaPosition{
+	width: 20%;
+}
+#scrollTableGalleria .galleriaDescr{
 	width: 35%;
 }
 #scrollTableGalleria .galleriaFindSimilar{
-	width: 25%;
+	width: 20%;
 }
 #scrollTableGalleria thead{
 	width:98%;
@@ -612,4 +613,65 @@ textarea, input[type='text'], input[type='password']{
 }
 .galleria-fscr:active{
     color: #fff;
+}
+
+
+
+.prevIframeWrap{
+	width: 36em;
+    height: 27em;
+    padding: 0;
+    overflow: hidden;
+    align-content: center;
+}
+.prevIframe{
+	width: 72em;
+	-moz-transform: scale(0.5);
+	-moz-transform-origin: 0 0;
+	-o-transform: scale(0.5);
+    -o-transform-origin: 0 0;
+    -webkit-transform: scale(0.5);
+    -webkit-transform-origin: 0 0;
+    height: 54em;
+    border: none;
+    background-image: url("../javascripts/previewers/iframe/images/iframe_error.jpg");
+    background-size: cover;
+}
+.iframeLink{
+	position: relative;
+	top: -27em;
+	width: 36em;
+	height: 30em;
+	display:block;
+	margin-bottom: -26em;
+	border: 1px solid grey;
+}
+.iframeLink:hover {
+	opacity:0.5;
+}
+.iframeBtn{
+	bottom: -27em;
+	position: relative;
+	left: 17em;
+}
+.iframeModalDiv{
+	width: 72%;
+	overflow:hidden !important;
+	position: fixed !important;
+    left: 14% !important;
+    top: 5% !important;
+}
+.iframeModal{
+/* 	height: 60em; */
+/* 	width: 100%; */
+}
+
+.iframeModalDivInternal{
+	position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%;
+}
+.iframeModalDivInternal iframe, .embed-container object, .embed-container embed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+.iframeClose{
+	font-size: 30px !important;
+	margin-top: -5px !important;
 }

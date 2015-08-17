@@ -107,7 +107,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
       case Some(preview) => {
         //var newAnnotations = List.empty[ThreeDAnnotation]
         for (annotation <- preview.annotations) {
-          if (annotation.id.toString().equals(annotation_id)) {
+          if (annotation.id.toString.equals(annotation_id.toString)) {
             PreviewDAO.update(MongoDBObject("_id" -> new ObjectId(preview_id.stringify), "annotations._id" -> new ObjectId(annotation.id.stringify)), $set("annotations.$.description" -> description), false, false, WriteConcern.Safe)
             return
           }
