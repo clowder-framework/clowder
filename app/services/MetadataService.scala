@@ -26,6 +26,9 @@ trait MetadataService {
   /** Get metadata context if available */
   def getMetadataContext(metadataId: UUID): Option[JsValue]
 
-  /** update Metadata */  
+  /** Update Metadata */
   def updateMetadata(metadataId: UUID, json: JsValue)
+
+  /** Search for resources matching a particular query **/
+  def search(query: JsValue): List[ResourceRef]
 }

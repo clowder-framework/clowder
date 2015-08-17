@@ -64,7 +64,7 @@
             }
             case a: UserAgent => {
                 Extracted by <a href="@a.userId.get">
-                    @agent.asInstanceOf[ExtractorAgent].extractorId.get
+                    @agent.asInstanceOf[UserAgent].userId.get
                 </a> on @dateFormatter(date)
             }
             case _ => {

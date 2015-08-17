@@ -1,12 +1,13 @@
 package services.mongodb
 import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.util.JSON
 import play.api.Logger
 import models._
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import com.mongodb.casbah.Imports._
-import play.api.libs.json.JsValue
+import play.api.libs.json.{Json, JsValue}
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
@@ -17,8 +18,7 @@ import services.ContextLDService
  * MongoDB Metadata Service Implementation
  */
 @Singleton
-class MongoDBMetadataService @Inject() (
-  contextService: ContextLDService) extends MetadataService{
+class MongoDBMetadataService @Inject() (contextService: ContextLDService) extends MetadataService {
 
   /**
    * Add metadata to the metadata collection and attach to a section /file/dataset/collection
@@ -79,6 +79,12 @@ class MongoDBMetadataService @Inject() (
    *  TODO
    *  */  
   def updateMetadata(metadataId: UUID, json: JsValue) = {}
+
+  def search(query: JsValue): List[ResourceRef] = {
+    val doc = JSON.parse(Json.stringify(query)).asInstanceOf[DBObject]
+    val resources: List[ResourceRef] = MetadataDAO.find(doc).map(_.attachedTo).toList
+    resources
+  }
 
 }
 object MetadataDAO extends ModelCompanion[Metadata, ObjectId] {
