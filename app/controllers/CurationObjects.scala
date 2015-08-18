@@ -71,7 +71,7 @@ class CurationObjects @Inject()( curations: CurationService,
         // insert curation
         Logger.debug("create Co: " + newCuration.id)
         curations.insert(newCuration)
-
+        spaces.addCurationObject(spaceId, newCuration.id)
        Redirect(routes.Spaces.getSpace(spaceId))
      }
       case None => Redirect(routes.Spaces.getSpace(spaceId))
