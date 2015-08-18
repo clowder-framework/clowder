@@ -208,4 +208,8 @@ trait SpaceService {
    * Remove authorization request.
    */
   def removeRequest(id: UUID, userId: UUID)
+
+  def addCurationObject(spaceId: UUID, curationObjectId: UUID)
+
+  def removeCurationObject(spaceId: UUID, curationObjectId: UUID)
 }

@@ -40,7 +40,7 @@ case class spaceInviteData(
   role: String,
   message: String)
 
-class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventService) extends SecuredController {
+class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventService, curationService: CurationService) extends SecuredController {
 
   /**
    * New/Edit project space form bindings.
@@ -462,9 +462,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       implicit val user  = request.user
       spaces.get(id) match {
         case Some(s) => {
-//          val curationDatasets: List[CurationObject] = s.curationObjects.map{curObject => }
-//          OK(views.html.spaces.stagingarea(s, ))
-          InternalServerError("Space Not found")
+          val curationDatasets: List[CurationObject] = s.curationObjects.map{curObject => curationService.get(curObject).get}
+          Ok(views.html.spaces.stagingarea(s, curationDatasets ))
         }
         case None => InternalServerError("Space Not found")
       }

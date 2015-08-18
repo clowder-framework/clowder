@@ -62,7 +62,7 @@
                 </a>
             }
             @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
-                <a class = "btn btn-xs btn-default" href="@routes.Spaces.newSpace" title="Staging Area">Staging Area</a>
+                <a class = "btn btn-xs btn-default" href="@routes.Spaces.stagingArea(space.id)" title="Staging Area">Staging Area</a>
             }
         </div>
     </div>

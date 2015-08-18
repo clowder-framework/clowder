@@ -416,6 +416,16 @@ class MongoDBSpaceService @Inject() (
       users.changeUserRoleInSpace(userId, role, space)
   }
 
+  def addCurationObject(spaceId: UUID, curationObjectId: UUID) {
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
+    $addToSet("curationObjects" -> new ObjectId(curationObjectId.stringify)), false, false, WriteConcern.Safe)
+  }
+
+  def removeCurationObject(spaceId: UUID, curationObjectId: UUID) {
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
+      $pull("curationObjects" -> new ObjectId(curationObjectId.stringify)), false, false, WriteConcern.Safe)
+  }
+
   def addFollower(id: UUID, userId: UUID) {
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
       $addToSet("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
