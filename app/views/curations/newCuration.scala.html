@@ -1,0 +1,179 @@
+@(spaceId: UUID, datasets: List[models.Dataset], collections: List[models.Collection], isNameRequired: Boolean, isDescriptionRequired: Boolean)(implicit user: Option[models.User])
+
+
+@main("Clowder") {
+    <script src="@routes.Assets.at("javascripts/curation-create.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
+    <script type="text/javascript" language="javascript">
+      //Global so that the javascript for the collection creation can reference this.
+      var isNameRequired = @isNameRequired;
+      var isDescRequired = @isDescriptionRequired;
+  </script>
+
+  <div class="page-header">
+    <h1>Create New Curation Object</h1>
+  </div>
+
+    <div class="row">
+        <div class="col-md-12">
+    <table style="width: 100%; margin-bottom: 40px; margin-top: 40px;">
+        <tr>
+            <td style="width: 20%; vertical-align:top;" class="input-table-cell">Name:</td>
+            <td style="width: 35%; vertical-align:top;" class="input-table-cell">
+                <textarea cols=40 rows=4 type="text" id="name"></textarea>
+            </td>
+            <td style="vertical-align:top;" class="input-table-cell">
+                <span class="error hiddencomplete" id="nameerror"> The name is a required field</span><br>
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 20%; vertical-align:top;" class="input-table-cell">Description:</td>
+            <td style="width: 35%; vertical-align:top;" class="input-table-cell" id="desccell">
+                <textarea cols=40 rows=4 type="text" id="description"></textarea>
+            </td>
+            <td style="vertical-align:top;" class="input-table-cell">
+                <span class="error hiddencomplete" id="descerror"> This description is a required field</span><br>
+            </td>
+        </tr>
+
+        @if( !collections.isEmpty) {
+            <tr>
+                <td style="width : 20 % ; vertical-align : top ;" class="input-table-cell">Collections:</td>
+                <td style="width : 35 % ; vertical-align : top ;" class="input-table-cell" id="desccell">
+                    <select multiple name="collection" id="collectionid" class = "chosen-select"  style="width : 342 px ;">
+                        @*<option value="default">Default</option>*@
+                        @collections.map { collection =>
+                            <option value="@(collection.id)">@(collection.name)</option>
+                        }
+                    </select>
+                </td>
+            </tr>
+        }
+
+        @if( !datasets.isEmpty) {
+            <tr>
+                <td style="width : 20 % ; vertical-align : top ;" class="input-table-cell">Datasets:</td>
+                <td style="width : 35 % ; vertical-align : top ;" class="input-table-cell" id="desccell">
+                    <select multiple name="dataset" id="datasetid" class = "chosen-select"  style="width : 342 px ;">
+                        @*<option value="default">Default</option>*@
+                        @datasets.map { dataset =>
+                            <option value="@(dataset.id)">@(dataset.name)</option>
+                        }
+                    </select>
+                </td>
+            </tr>
+        }
+        <tr>
+            <td>
+            </td>
+            <td>
+                <button style="margin-top: 10px; margin-right: 10px;" class="btn btn-primary" title="Create the CO" onclick="return createCuration();">
+                    <span class="glyphicon glyphicon-upload"></span> Create
+                </button>
+                <button style="margin-top: 10px;" class="btn btn-default" title="Clear the input fields" onclick="return clearFields();">
+                    <span class="glyphicon glyphicon-refresh"></span> Reset
+                </button>
+            </td>
+        </tr>
+    </table>
+            <form id="curationcreate" action='@routes.CurationObjs.submit(spaceId)' method="POST" enctype="multipart/form-data">
+                    <!-- Redirect browsers with JavaScript disabled to the origin page -->
+                <noscript>Javascript is required in order to use the uploader to create a new dataset.</noscript>
+
+                <input type="hidden" name="name" id="hiddenname" value="not set">
+                <input type="hidden" name="description" id="hiddendescription" value="not set">
+                <input type="hidden" name="datasets" id="hiddendatasets" value="not set">
+                <input type="hidden" name="collections" id="hiddencollections" value="not set">
+            </form>
+        </div>
+    </div>
+
+    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
+    <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
+    <script language="javascript">
+    $(".chosen-select").chosen({
+        width: "90%",
+        placeholder_text_multiple: "Select live objects for this curation object."
+    });
+</script>
+    <script language = "javascript">
+    var idNameObj = {};
+
+    function isUndefined(value) {
+        return typeof value === 'undefined';
+    }
+
+    function getName(id) {
+        return idNameObj[id];
+    }
+
+    $(document).ready(function() {
+        @for(dataset <- datasets) {
+            idNameObj["@dataset.name"] = "@dataset.id";
+        }
+        @for(collection <- collections) {
+            idNameObj["@collection.name"] = "@collection.id";
+        }
+    });
+
+    $(".chosen-select").chosen().change(function(event, params) {
+
+    if( this.getAttribute("name") == "collection" ){
+    var targetId = this.getAttribute("id");
+
+    if(!isUndefined(params.selected)) {
+        var addedId = params.selected;
+        @for(collection <- collections) {
+            var currentId = "@collections";
+            if(currentId != targetId) {
+                $("#@collection.id option [value="+addedId +']').remove();
+                $('#@collection.id').trigger("chosen:updated");
+            }
+        }
+        $('ul.chosen-choices li.search-field').css("width", "0");
+
+    }
+    else if (!isUndefined(params.deselected)) {
+        var removedId = params.deselected;
+        @for(collection <- collections) {
+            var currentId = "@collections";
+            if(currentId != targetId) {
+                $('#@collection.id').prepend($("<option></option>").attr("value", removedId).text(getName(removedId)));
+                $('#@collection.id').trigger("chosen:updated");
+            }
+        }
+    }
+
+    }
+        if( this.getAttribute("name") == "dataset" ){
+    var targetId = this.getAttribute("id");
+
+    if(!isUndefined(params.selected)) {
+        var addedId = params.selected;
+        @for(dataset <- datasets) {
+            var currentId = "@datasets";
+            if(currentId != targetId) {
+                $("#@dataset.id option [value="+addedId +']').remove();
+                $('#@dataset.id').trigger("chosen:updated");
+            }
+        }
+        $('ul.chosen-choices li.search-field').css("width", "0");
+
+    }
+    else if (!isUndefined(params.deselected)) {
+        var removedId = params.deselected;
+        @for(dataset <- datasets) {
+            var currentId = "@dataset";
+            if(currentId != targetId) {
+                $('#@dataset.id').prepend($("<option></option>").attr("value", removedId).text(getName(removedId)));
+                $('#@dataset.id').trigger("chosen:updated");
+            }
+        }
+    }
+
+    }
+    });
+   // $(".chosen-select").multiSelect({});
+  </script>
+
+}

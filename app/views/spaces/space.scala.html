@@ -21,7 +21,11 @@
         } else {
             <div class="col-md-10 col-lg-10 col-sm-10">
         }
-            <h1 id="spacenamedisplay">@space.name</h1>
+            <h1 id="spacenamedisplay">@space.name
+                <a href="@(routes.CurationObjs.newCO(space.id))">
+                    <span class="glyphicon glyphicon glyphicon-flag"></span>
+                </a>
+            </h1>
             <p><span id="spacedescdisplay">@space.description</span></p>
         </div>
         @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
@@ -52,7 +56,6 @@
                 <a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-default btn-xs">
                     <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
                 </a>
-
             } else {
                 <a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-default btn-xs disabled">
                     <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
