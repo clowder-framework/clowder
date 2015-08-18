@@ -81,12 +81,19 @@ class CurationObjects @Inject()( curations: CurationService,
   def getCurationObject(spaceId: UUID, curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) {
     implicit request =>
       implicit val user = request.user
-      curations.get(curationId) match {
-        case Some(c) => {
-          Ok(views.html.spaces.curationObject(c))
+      spaces.get(spaceId) match {
+        case Some(s) => {
+          curations.get(curationId) match {
+            case Some(c) => {
+              Ok(views.html.spaces.curationObject(s, c))
+            }
+            case None => InternalServerError("Curation Object Not found")
+          }
         }
-        case None => InternalServerError("Curation Object Not found")
+        case None => InternalServerError("Space not found")
+
       }
+
   }
 
 }

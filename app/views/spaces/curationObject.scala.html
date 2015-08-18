@@ -1,9 +1,13 @@
-@(curationObject: models.CurationObject)(implicit user: Option[models.User])
+@(space: models.ProjectSpace, curationObject: models.CurationObject)(implicit user: Option[models.User])
 
 @main(curationObject.name) {
     <div class="row">
         <div class="col-md-12">
-            <h1>Staging Area for @curationObject.name</h1>
+            <h1>@curationObject.name</h1>
         </div>
     </div>
+    <button class="btn btn-primary"> Continue</button>
+    <a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> Go Back to Space </a>
+    <a class="btn btn-default" href="@routes.Spaces.stagingArea(space.id)">Go Back to Staging Area</a>
+
 }
