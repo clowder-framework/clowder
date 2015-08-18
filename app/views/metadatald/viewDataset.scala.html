@@ -1,11 +1,15 @@
 @(dataset: Dataset, metadata: List[models.Metadata])(implicit user: Option[models.User])
 
 @main("Metadata") {
+
     <div class="row">
-        <div class="col-md-12">
-            <div class="page-header">
-                <h1>Metadata for <a href="@routes.Datasets.dataset(dataset.id)">@Html(dataset.name)</a></h1>
-            </div>
+        <div class="col-md-10">
+            <h1>Metadata for dataset <a href="@routes.Datasets.dataset(dataset.id)">@Html(dataset.name)</a></h1>
+        </div>
+        <div class="col-md-2">
+            <a href="@api.routes.Datasets.getMetadataJsonLD(dataset.id)" class="pull-right" title="JSON-LD">
+                <img src="@routes.Assets.at("images/json-ld.png")"/>
+            </a>
         </div>
     </div>
     <div class="row">

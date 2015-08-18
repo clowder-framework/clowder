@@ -2,10 +2,13 @@
 
 @main("Metadata") {
     <div class="row">
-        <div class="col-md-12">
-            <div class="page-header">
-                <h1>Metadata for <a href="@routes.Files.file(file.id)">@file.filename</a></h1>
-            </div>
+        <div class="col-md-10">
+            <h1>Metadata for file <a href="@routes.Files.file(file.id)">@file.filename</a></h1>
+        </div>
+        <div class="col-md-2">
+            <a href="@api.routes.Files.getMetadataJsonLD(file.id)" class="pull-right" title="JSON-LD">
+                <img src="@routes.Assets.at("images/json-ld.png")"/>
+            </a>
         </div>
     </div>
     <div class="row">
