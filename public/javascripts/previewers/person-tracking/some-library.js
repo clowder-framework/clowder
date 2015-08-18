@@ -138,7 +138,7 @@
                             var arrayIndex = -1;
                             sortedFrameDataArray.filter(
                                 function (item, index){
-                                    if(item.label == ("Person_" + id)){
+                                    if(item.label == id){
                                         arrayIndex = index;
                                         return true;
                                     }
@@ -151,7 +151,7 @@
                             // If array element is not existing                            
                             if(arrayIndex == -1) {
                                 var objPerson = new Object();
-                                objPerson.label = "Person_" + id;
+                                objPerson.label = id;
                                 var personFrameData = new Array();
                                 personFrameData.push(new Array(frameIndex-1, id));
                                 objPerson.data = personFrameData;
@@ -173,7 +173,7 @@
                                 var arrayIndex = -1;
                                 sortedFrameDataArray.filter(
                                     function (item, index){
-                                        if(item.label == ("Person_" + id)){
+                                        if(item.label == id){
                                             arrayIndex = index;
                                             return true;
                                         }
@@ -185,7 +185,7 @@
                                 // If array element is not existing                                
                                 if(arrayIndex == -1) {
                                     var objPerson = new Object();
-                                    objPerson.label = "Person_" + id;
+                                    objPerson.label = id;
                                     var personFrameData = new Array();
                                     personFrameData.push(new Array(frameIndex-1, id));
                                     objPerson.data = personFrameData;                        
@@ -377,7 +377,7 @@
 
                                     for(var k=0; k< series.length; k++){
                                         // Finding the series whose ID is same as that of the current person
-                                        if(personObj["@id"] == series[k].label.split("Person_")[1]){
+                                        if(personObj["@id"] == series[k].label){
                                             personSeriesIndex = k;
                                             break;
                                         }
@@ -404,7 +404,7 @@
 
                                         for(var k=0; k< series.length; k++){
                                             // Finding the series whose ID is same as that of the current person
-                                            if(personObj["@id"] == series[k].label.split("Person_")[1]){
+                                            if(personObj["@id"] == series[k].label){
                                                 personSeriesIndex = k;
                                                 break;
                                             }
@@ -575,8 +575,8 @@
                     saveLabel = function (oldLabel){
 
                         var newLabel = $("#" + oldLabel+ "Select").val();
-                        var oldId = oldLabel.split("Person_")[1];
-                        var newId = newLabel.split("Person_")[1];
+                        var oldId = oldLabel;
+                        var newId = newLabel;
 
                         // If there is a change in the label (synonymously ID) of a person
                         if(oldLabel != newLabel) {
@@ -729,7 +729,7 @@
                             $("#btnCancelChanges").show();
                         }
 
-                        var oldId = oldLabel.split("Person_")[1];
+                        var oldId = oldLabel;
 
                         // Iterate through the sorted list of persons
                         for(var i=0; i < sortedFrameDataArrayCopy.length; i++) {
