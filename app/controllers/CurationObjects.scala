@@ -21,7 +21,7 @@ class CurationObjects @Inject()( curations: CurationService,
 
                               ) extends SecuredController {
 
-  def newCO(spaceId:UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+  def newCO(spaceId:UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     implicit val user = request.user
     val collectionsInSpace = spaces.getCollectionsInSpace(Some(spaceId.stringify))
     val datasetsInSpace = spaces.getDatasetsInSpace(Some(spaceId.stringify))
@@ -34,7 +34,7 @@ class CurationObjects @Inject()( curations: CurationService,
    * the browser is redirected to the space page since I haven't merge staging area. On error, it is redirected back space
    * page since I haven't merge staging area.
    */
-  def submit(spaceId:UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId))) (parse.multipartFormData) { implicit request =>
+  def submit(spaceId:UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) (parse.multipartFormData) { implicit request =>
 
     var COName = request.body.asFormUrlEncoded.getOrElse("name", null)
     var CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
@@ -76,6 +76,17 @@ class CurationObjects @Inject()( curations: CurationService,
      }
       case None => Redirect(routes.Spaces.getSpace(spaceId))
     }
+  }
+
+  def getCurationObject(spaceId: UUID, curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) {
+    implicit request =>
+      implicit val user = request.user
+      curations.get(curationId) match {
+        case Some(c) => {
+          Ok(views.html.spaces.curationObject(c))
+        }
+        case None => InternalServerError("Curation Object Not found")
+      }
   }
 
 }

@@ -1,0 +1,51 @@
+@(space: models.ProjectSpace, curationObjects: List[models.CurationObject])(implicit user: Option[models.User])
+
+@main("Staging Area") {
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Staging Area for @space.name</h1>
+        </div>
+    </div>
+    @util.masonry()
+    <div class = "row" id="tile-view">
+        <div class = col-md-12>
+            <div id = "masonry">
+                @curationObjects.map { curObject =>
+                    <div class="post-box">
+                        <div class = "panel panel-default">
+                            <div class = "panel-body">
+                                <div class="caption break-word">
+                                    <h4> <a>@curObject.name</a></h4>
+
+                                    Author: @curObject.author.fullName
+                                    <p>@curObject.description</p>
+                                </div>
+                            </div>
+                            <ul class="list-group">
+                                <li class="list-group-item">
+                                    <span class="glyphicon glyphicon glyphicon-file" title="@curObject.datasets.size datasets"></span> @curObject.datasets.size
+                                    <span class="glyphicon glyphicon glyphicon-th-large" title="@curObject.collections.size collections"></span> @curObject.collections.size
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                }
+            </div>
+        </div>
+    </div>
+    @for(curObject <- curationObjects) {
+        @*<div id="curObject.name">*@
+
+        @*<h3>*@
+        @*<input type="checkbox" name = "@curObject.name" value = "@curObject.id">@curObject.name</input>*@
+        @*</h3>*@
+        @*Author: @curObject.author.fullName <br/>*@
+        @*Datasets: @curObject.datasets.size <br/>*@
+        @*Collections: @curObject.collections.size <br/>*@
+        @*</div>*@
+        @*}*@
+    }
+    <button class="btn btn-primary"> Continue</button>
+    <a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> Go Back to Space </a>
+}

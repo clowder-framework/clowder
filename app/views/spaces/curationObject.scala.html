@@ -1,0 +1,9 @@
+@(curationObject: models.CurationObject)(implicit user: Option[models.User])
+
+@main(curationObject.name) {
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Staging Area for @curationObject.name</h1>
+        </div>
+    </div>
+}

@@ -526,6 +526,7 @@ GET            /rss/:etype                                                      
 # ----------------------------------------------------------------------
 # CURATIONS ENDPOINT
 # ----------------------------------------------------------------------
+GET            /spaces/:id/curations/:curationId                                        @controllers.CurationObjects.getCurationObject(spaceId:UUID, curationId: UUID)
 GET            /spaces/:id/curations/new                                                @controllers.CurationObjects.newCO(id:UUID)
 POST           /spaces/:id/curations/submit                                             @controllers.CurationObjects.submit(id:UUID)
 GET            /spaces/:id/stagingArea                                                  @controllers.Spaces.stagingArea(id: UUID)

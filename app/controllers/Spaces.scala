@@ -457,7 +457,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
    }
 
 
-  def stagingArea(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) {
+  def stagingArea(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, id))) {
     implicit request =>
       implicit val user  = request.user
       spaces.get(id) match {
