@@ -96,6 +96,26 @@ class CurationObjects @Inject()( curations: CurationService,
 
   }
 
+  def findMatchingRepositories(spaceId: UUID, curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) {
+    implicit request =>
+      implicit val user = request.user
+      spaces.get(spaceId) match {
+        case Some(s) => {
+          curations.get(curationId) match {
+            case Some(c) => {
+              //TODO: Make some sort of call to the matckmaker
+              Ok(views.html.spaces.matchmakerResult(s, c))
+            }
+            case None => InternalServerError("Curation Object not found")
+          }
+        }
+        case None => InternalServerError("Space not found")
+      }
+
+  }
+
+
+
 }
 
 

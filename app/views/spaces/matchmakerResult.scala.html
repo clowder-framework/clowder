@@ -1,0 +1,12 @@
+@(space: models.ProjectSpace, curationObject: models.CurationObject)(implicit user: Option[models.User] )
+@main("Matchmaker") {
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Find Matchmaking Repositories for @curationObject.name</h1>
+        </div>
+    </div>
+    <button class="btn btn-primary">Update Results</button>
+    <button class="btn btn-primary">Continue</button>
+    <a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> Go Back to Space </a>
+
+}

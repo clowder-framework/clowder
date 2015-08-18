@@ -6,7 +6,7 @@
             <h1>@curationObject.name</h1>
         </div>
     </div>
-    <button class="btn btn-primary"> Continue</button>
+    <a class="btn btn-primary" href="@routes.CurationObjects.findMatchingRepositories(space.id, curationObject.id)"> Find Matchmaking Repositories </a>
     <a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> Go Back to Space </a>
     <a class="btn btn-default" href="@routes.Spaces.stagingArea(space.id)">Go Back to Staging Area</a>
 
