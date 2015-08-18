@@ -855,7 +855,8 @@
                         },
                         legend: {
                             container: $("#legend"),
-                            labelFormatter: formatLabel
+                            labelFormatter: formatLabel,
+                            sorted: true
                         },
                         grid: {
                             show: true,
