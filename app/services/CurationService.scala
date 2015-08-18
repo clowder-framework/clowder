@@ -7,10 +7,10 @@ import services.core.CRUDService
  * Service to manipulate curation objects.
  */
 trait CurationService {
-  def insert(curation: CurationObj)
+  def insert(curation: CurationObject)
 
   /**
    * Get collection.
    */
-  def get(id: UUID): Option[CurationObj]
+  def get(id: UUID): Option[CurationObject]
 }

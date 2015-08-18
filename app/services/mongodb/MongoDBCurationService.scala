@@ -3,7 +3,7 @@ package services.mongodb
 import javax.inject.{Inject, Singleton}
 
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
-import models.{CurationObj, ProjectSpace, SpaceInvite}
+import models.{CurationObject, ProjectSpace, SpaceInvite}
 import org.bson.types.ObjectId
 import play.api.Play._
 import MongoContext.context
@@ -19,7 +19,7 @@ import com.mongodb.casbah.Imports._
 @Singleton
 class MongoDBCurationService  @Inject()  extends CurationService {
 
-  def insert(curation: CurationObj) = {
+  def insert(curation: CurationObject) = {
     if (CurationDAO != null) {
       //CurationDAO.save(curation)
       Logger.debug("insert a new CO with ID: " + curation.id)
@@ -27,18 +27,18 @@ class MongoDBCurationService  @Inject()  extends CurationService {
     }
   }
 
-  def get(id: UUID): Option[CurationObj]  = {
+  def get(id: UUID): Option[CurationObject]  = {
     CurationDAO.findOneById(new ObjectId(id.stringify))
   }
 
 }
 
 /**
- * Salat CurationObj model companion.
+ * Salat CurationObject model companion.
  */
-object CurationDAO extends ModelCompanion[CurationObj, ObjectId] {
+object CurationDAO extends ModelCompanion[CurationObject, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[CurationObj, ObjectId](collection = x.collection("curationObjs")) {}
+    case Some(x) => new SalatDAO[CurationObject, ObjectId](collection = x.collection("curationObjs")) {}
   }
 }

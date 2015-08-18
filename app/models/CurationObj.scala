@@ -6,7 +6,7 @@ import securesocial.core.Identity
 /**
  * A Curation Object assists researchers and curators to identify sets of resources for publication.
  */
-case class CurationObj (
+case class CurationObject (
   id: UUID = UUID.generate,
   name: String = "",
   author: Identity,

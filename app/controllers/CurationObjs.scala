@@ -14,7 +14,7 @@ import util.RequiredFieldsConfig
 
 import scala.text
 
-class CurationObjs @Inject()( curations: CurationService,
+class CurationObjects @Inject()( curations: CurationService,
                            datasets: DatasetService,
                              collections: CollectionService,
                              spaces: SpaceService
@@ -58,7 +58,7 @@ class CurationObjs @Inject()( curations: CurationService,
 
         Logger.debug("------- in CUrations.submit with " + CODatasets.length + " datasets and "+ COCollections.length +" collections ---------")
 
-        val newCuration = CurationObj(
+        val newCuration = CurationObject(
         name = COName(0),
         author = identity,
         description = CODesc(0),
