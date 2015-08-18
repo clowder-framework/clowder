@@ -163,7 +163,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Spaces.acceptRequest,
         controllers.routes.javascript.Spaces.rejectRequest,
         controllers.routes.javascript.Spaces.stagingArea,
-        controllers.routes.javascript.CurationObjs.submit
+        controllers.routes.javascript.CurationObjects.submit
       )
     ).as(JSON) 
   }

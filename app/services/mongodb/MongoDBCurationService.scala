@@ -34,7 +34,7 @@ class MongoDBCurationService  @Inject()  extends CurationService {
 }
 
 /**
- * Salat CurationObj model companion.
+ * Salat CurationObject model companion.
  */
 object CurationDAO extends ModelCompanion[CurationObject, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
