@@ -841,12 +841,31 @@
                     }
 
                     var formatLabel = function (label, series){
-                        return  '<span style="margin-left: 5px;" id="'+ label +'" >'+
+                        return  '<span style="margin-left: 5px;" id="'+ label +'" data-value="'+ label +'" >'+
                                     '<a href="javascript:void(0);" onClick="labelClicked(\'' + label + '\'); return false;" style="margin-right: 5px;">' + label + '</a> ' + 
                                     '<a href="javascript:void(0);" style="margin-right: 5px;">' +
                                         '<i class="glyphicon glyphicon-edit" onClick="editLabel(\'' + label + '\'); return false;"></i></a>' + 
                                     '<a href="javascript:void(0);" style="margin-right: 5px;">' +
                                         '<i class="glyphicon glyphicon-remove" onClick="removeLabel(\'' + label + '\'); return false;"></i></a></span>';
+                    }
+
+                    var sortLabel = function (first, second) {
+
+                        var i = parseInt($(first.label).attr("data-value"));
+                        var j = parseInt($(second.label).attr("data-value"));                        
+
+                        if(i == j) {
+
+                            return 0;
+                        }
+                        else if( i > j) {
+
+                            return 1;
+                        }
+                        else {
+
+                            return -1;
+                        }
                     }
 
                     var options = {
@@ -856,7 +875,7 @@
                         legend: {
                             container: $("#legend"),
                             labelFormatter: formatLabel,
-                            sorted: true
+                            sorted: sortLabel
                         },
                         grid: {
                             show: true,
