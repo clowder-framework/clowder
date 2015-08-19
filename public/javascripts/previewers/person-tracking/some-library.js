@@ -103,8 +103,8 @@
         };
 
         // Find min and max values of Person IDs
-        var updateMinMaxValuesLabelArray = function () {
-            labelArray.forEach(
+        var updateMinMaxValuesLabelArray = function (labelArrayTemp) {
+            labelArrayTemp.forEach(
                 function (value) {
                     minLabelDisplay = Math.min(parseInt(value), minLabelDisplay);
                     maxLabelDisplay = Math.max(parseInt(value), maxLabelDisplay);
@@ -112,16 +112,26 @@
         }
 
         // Sort Person IDs in ascending order
-        var sortLabelArray = function () {
-            for(var i = 0; i < labelArray.length; i++){
-                for(var j = i + 1; j < labelArray.length; j++){
-                    if (parseInt(labelArray[i]) > parseInt(labelArray[j])){
-                        var temp = labelArray[i];
-                        labelArray[i] = labelArray[j];
-                        labelArray[j] = temp;
+        var sortLabelArray = function (labelArrayTemp) {
+            for(var i = 0; i < labelArrayTemp.length; i++){
+                for(var j = i + 1; j < labelArrayTemp.length; j++){
+                    if (parseInt(labelArrayTemp[i]) > parseInt(labelArrayTemp[j])){
+                        var temp = labelArrayTemp[i];
+                        labelArrayTemp[i] = labelArrayTemp[j];
+                        labelArrayTemp[j] = temp;
                     }
                 }
             }
+        }
+
+        // Change y-axis ranges 
+        var resetYAxis = function () {
+            
+            var axes = plot.getAxes();
+            axes.yaxis.options.min = minLabelDisplay;
+            axes.yaxis.options.max = maxLabelDisplay + 1;
+            axes.yaxis.options.zoomRange = [minLabelDisplay, maxLabelDisplay + 1];
+            axes.yaxis.options.panRange = [minLabelDisplay, maxLabelDisplay + 1];
         }
 
         var syncFlotJS = syncGetScript( pathFlotJS );
@@ -310,15 +320,15 @@
                 for(var i=0; i < sortedFrameDataArray.length; i++) {
                     // Check for missing indices
                     if(sortedFrameDataArray[i] != undefined) {
-                        labelArray.push(sortedFrameDataArray[i].label);
+                        labelArray.push(sortedFrameDataArray[i].label.toString());
                     }
                 }
 
-                updateMinMaxValuesLabelArray();
-                sortLabelArray();
+                updateMinMaxValuesLabelArray(labelArray);
+                sortLabelArray(labelArray);
 
                 // Display video on screen and visualize person tracking
-        		console.log("Updating tab " + Configuration.tab);    		
+        		console.log("Updating tab " + Configuration.tab);                
                 
                 /*  
                     If video preview is available, display it.
@@ -604,9 +614,11 @@
 
                     saveLabel = function (oldLabel){
 
-                        var newLabel = $("#" + oldLabel+ "Select").val();
+                        //var newLabel = $("#" + oldLabel+ "Select").val();
+                        var newLabel = $("#" + oldLabel + "Input").val();
                         var oldId = oldLabel;
                         var newId = newLabel;
+                        var changingToExistingLabel = false;
 
                         // If there is a change in the label (synonymously ID) of a person
                         if(oldLabel != newLabel) {
@@ -625,7 +637,7 @@
 
                                             // If there is another person whose label matches the label of the current person which is being edited
                                             if(sortedFrameDataArrayCopy[j].label == newLabel){
-
+                                                changingToExistingLabel = true;
                                                 /* 
                                                     Update the data of that person by adding information about the current person.
                                                     Basically merging the data of two persons into one since their labels (or IDs) match 
@@ -646,6 +658,24 @@
                                                 sortedFrameDataArrayCopy[j].data = sortedFrameDataArrayCopy[j].data.concat(sortedFrameDataArrayCopy[i].data);
                                                 break;
                                             }
+                                        }
+
+                                        // Add new label
+                                        if(changingToExistingLabel == false){                                            
+                                            /* 
+                                                Update the data of the current person by adding information about the new person.
+                                            */
+                                            for (var k =0; k < sortedFrameDataArrayCopy[i].data.length ; k++) {
+                                                if (sortedFrameDataArrayCopy[i].data[k] != null) {
+                                                    sortedFrameDataArrayCopy[i].data[k][1] = parseInt(newId);
+                                                }
+                                            }
+
+                                            // Update label
+                                            sortedFrameDataArrayCopy[i].label = parseInt(newId);
+
+                                            // Add new label to labelArray
+                                            labelArrayCopy.push(newLabel);                                            
                                         }
 
                                         // Update the tracking metadata 
@@ -690,24 +720,26 @@
                                             }
                                         }
 
-                                        // Remove the current person from the sorted list
-                                        sortedFrameDataArrayCopy.splice(i,1);                                        
+                                        if(changingToExistingLabel == true){
+                                            // Remove the current person from the sorted list
+                                            sortedFrameDataArrayCopy.splice(i,1);
+                                        }                                        
                                         break;
                                     }
                                 }
                             }
 
-                            updateMinMaxValuesLabelArray();
-                            sortLabelArray();
-
-                            // Redraw graph
-                            plot.setData(sortedFrameDataArrayCopy);
-                            plot.setupGrid();
-                            plot.draw();
-
                             var index = $.inArray(oldLabel, labelArrayCopy);
                             labelArrayCopy.splice(index,1);                            
                             $("#" + oldLabel + "Div").remove();
+
+                            updateMinMaxValuesLabelArray(labelArrayCopy);
+                            sortLabelArray(labelArrayCopy);                            
+
+                            // Redraw graph                            
+                            plot.setData(sortedFrameDataArrayCopy);                            
+                            plot.setupGrid();
+                            plot.draw();                            
 
                             hasTrackingDataChanged = true;
                         }                        
@@ -737,12 +769,22 @@
                             $("#btnCancelChanges").show();
                         }
 
-                        $("#" + label).replaceWith('<span style="margin-left: 5px;" id="'+ label + "Div" + '"><select id="'+ label + 
+                        /*$("#" + label).replaceWith('<span style="margin-left: 5px;" id="'+ label + "Div" + '"><select id="'+ label + 
                             "Select" + '"></select> <button type="button" onclick="saveLabel(\'' + label + '\');">Save</button></span');
                         for(var i=0; i < labelArrayCopy.length; i++) {                    
                             $("#" + label+ "Select").append('<option value="' + labelArrayCopy[i] + '">'+ labelArrayCopy[i] +'</option>');
                         }
-                        $("#" + label + "Select").val(label);
+                        $("#" + label + "Select").val(label);*/
+
+                        $("#" + label).replaceWith('<span style="margin-left: 5px;" id="'+ label + "Div" + '"><input style="width: 70px;" id="' + label + "Input" + 
+                            '"></input><button type="button" onclick="saveLabel(\'' + label + '\');">Save</button></span>');                        
+                        $("#" + label + "Input").autocomplete({
+                            source: labelArray,
+                            minLength: 1
+                        });
+
+                        $("#" + label + "Input").val(label);
+
                     }
 
                     removeLabel = function (oldLabel) {
@@ -823,17 +865,17 @@
                             }
                         }
 
-                        updateMinMaxValuesLabelArray();
-                        sortLabelArray();
+                        var index = $.inArray(oldLabel, labelArrayCopy);
+                        labelArrayCopy.splice(index,1);                        
+                        $("#" + oldLabel + "Div").remove();
+
+                        updateMinMaxValuesLabelArray(labelArrayCopy);
+                        sortLabelArray(labelArrayCopy);                        
 
                         // Redraw graph
                         plot.setData(sortedFrameDataArrayCopy);
                         plot.setupGrid();
-                        plot.draw();
-
-                        var index = $.inArray(oldLabel, labelArrayCopy);
-                        labelArrayCopy.splice(index,1);                        
-                        $("#" + oldLabel + "Div").remove();
+                        plot.draw();                        
 
                         hasTrackingDataChanged = true;
                     }
@@ -902,7 +944,7 @@
 
                             return -1;
                         }
-                    }
+                    }                
 
                     var options = {
                         crosshair: {
@@ -917,7 +959,8 @@
                             show: true,
                             hoverable: false,
                             clickable: true,
-                            color: "#5E5E5E"
+                            color: "#5E5E5E",
+                            labelMargin: 10
                         },
                         series: {
                             lines: {
