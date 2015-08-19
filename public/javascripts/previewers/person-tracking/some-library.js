@@ -949,7 +949,7 @@
                             axisLabelUseCanvas: true,            
                             axisLabelFontSizePixels: 12,
                             axisLabelFontFamily: 'Verdana, Arial',
-                            axisLabelPadding: 10,
+                            axisLabelPadding: 5 * (maxLabelDisplay.toString().length + 1), //custom padding based on number of digits
                             tickColor: "#EDEDED",
                             minTickSize: 1,
                             tickDecimals: 0,
