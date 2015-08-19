@@ -45,7 +45,8 @@
         var pathFlotJS = pathJs + "jquery.flot.js";
         var pathNavigateJS = pathJs + "jquery.flot.navigate.js";
         var pathCrosshairJS = pathJs + "jquery.flot.crosshair.js";
-        var pathPopcornJS = pathJs + "popcorn-complete.min.js";        
+        var pathPopcornJS = pathJs + "popcorn-complete.min.js";
+        var pathAxisLabelsJS = pathJs + "jquery.flot.axislabels.js";
         var sortedFrameDataArray = new Array();
         var sortedFrameDataArrayCopy = new Array();
         var frameDataArray = new Array(); // To store array of frames obtained from the JSON response
@@ -54,6 +55,8 @@
         var labelArrayCopy = new Array(); // To store a copy of labelArray
         var isEditingInProgress = false; // To keep track of when editing is in progress
         var hasTrackingDataChanged = false; // Might be used in future.
+        var minLabelDisplay = 0;
+        var maxLabelDisplay = 0;
         
         var syncGetScript = function(url){
             var deferred = $.Deferred();
@@ -99,16 +102,40 @@
             return deferred.promise();
         };
 
+        // Find min and max values of Person IDs
+        var updateMinMaxValuesLabelArray = function () {
+            labelArray.forEach(
+                function (value) {
+                    minLabelDisplay = Math.min(parseInt(value), minLabelDisplay);
+                    maxLabelDisplay = Math.max(parseInt(value), maxLabelDisplay);
+                });
+        }
+
+        // Sort Person IDs in ascending order
+        var sortLabelArray = function () {
+            for(var i = 0; i < labelArray.length; i++){
+                for(var j = i + 1; j < labelArray.length; j++){
+                    if (parseInt(labelArray[i]) > parseInt(labelArray[j])){
+                        var temp = labelArray[i];
+                        labelArray[i] = labelArray[j];
+                        labelArray[j] = temp;
+                    }
+                }
+            }
+        }
+
         var syncFlotJS = syncGetScript( pathFlotJS );
         var syncNavigateJS = syncGetScript( pathNavigateJS );
         var syncCrosshairJS = syncGetScript( pathCrosshairJS );
         var syncPopcornJS = syncGetScript( pathPopcornJS );
+        var syncAxisLabelsJS = syncGetScript( pathAxisLabelsJS );
 
         $.when(            
             syncFlotJS,
             syncNavigateJS,
             syncCrosshairJS,
-            syncPopcornJS
+            syncPopcornJS,
+            syncAxisLabelsJS
 
         ).done(function(){
             console.log("downloaded JS sciprts");
@@ -285,8 +312,11 @@
                     if(sortedFrameDataArray[i] != undefined) {
                         labelArray.push(sortedFrameDataArray[i].label);
                     }
-                }                
-                                                        
+                }
+
+                updateMinMaxValuesLabelArray();
+                sortLabelArray();
+
                 // Display video on screen and visualize person tracking
         		console.log("Updating tab " + Configuration.tab);    		
                 
@@ -667,13 +697,16 @@
                                 }
                             }
 
+                            updateMinMaxValuesLabelArray();
+                            sortLabelArray();
+
                             // Redraw graph
                             plot.setData(sortedFrameDataArrayCopy);
                             plot.setupGrid();
                             plot.draw();
 
                             var index = $.inArray(oldLabel, labelArrayCopy);
-                            labelArrayCopy.splice(index,1);
+                            labelArrayCopy.splice(index,1);                            
                             $("#" + oldLabel + "Div").remove();
 
                             hasTrackingDataChanged = true;
@@ -788,7 +821,10 @@
                                     break;
                                 }
                             }
-                        }                    
+                        }
+
+                        updateMinMaxValuesLabelArray();
+                        sortLabelArray();
 
                         // Redraw graph
                         plot.setData(sortedFrameDataArrayCopy);
@@ -796,7 +832,7 @@
                         plot.draw();
 
                         var index = $.inArray(oldLabel, labelArrayCopy);
-                        labelArrayCopy.splice(index,1);
+                        labelArrayCopy.splice(index,1);                        
                         $("#" + oldLabel + "Div").remove();
 
                         hasTrackingDataChanged = true;
@@ -895,7 +931,7 @@
                             axisLabelUseCanvas: true,            
                             axisLabelFontSizePixels: 12,
                             axisLabelFontFamily: 'Verdana, Arial',
-                            axisLabelPadding: 10,
+                            axisLabelPadding: 25,
                             tickColor: "#EDEDED",
                             //ticks: ticksArray,
                             minTickSize: 1,
@@ -917,12 +953,12 @@
                             tickColor: "#EDEDED",
                             minTickSize: 1,
                             tickDecimals: 0,
-                            min: 0,
-                            max: numPeople,
+                            min: minLabelDisplay,
+                            max: maxLabelDisplay + 1,
                             autoscaleMargin: 0.05,
                             show: true,
-                            zoomRange: [0, numPeople],
-                            panRange: [0, numPeople]
+                            zoomRange: [minLabelDisplay, maxLabelDisplay + 1],
+                            panRange: [minLabelDisplay, maxLabelDisplay + 1]
                         },
                         zoom: {
                             interactive: true
