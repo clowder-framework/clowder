@@ -165,7 +165,9 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Spaces.stagingArea,
         controllers.routes.javascript.CurationObjects.submit,
         controllers.routes.javascript.CurationObjects.getCurationObject,
-        controllers.routes.javascript.CurationObjects.findMatchingRepositories
+        controllers.routes.javascript.CurationObjects.findMatchingRepositories,
+        controllers.routes.javascript.CurationObjects.sendToRepository,
+        controllers.routes.javascript.CurationObjects.compareToRepository
       )
     ).as(JSON) 
   }

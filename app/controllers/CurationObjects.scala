@@ -11,14 +11,16 @@ import play.api.data.{Forms, Form}
 import play.api.data.Forms._
 import services._
 import util.RequiredFieldsConfig
+import play.api.Play.current
+
 
 import scala.text
 
 class CurationObjects @Inject()( curations: CurationService,
                            datasets: DatasetService,
                              collections: CollectionService,
-                             spaces: SpaceService
-
+                             spaces: SpaceService,
+                               files: FileService
                               ) extends SecuredController {
 
   def newCO(spaceId:UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
@@ -85,7 +87,12 @@ class CurationObjects @Inject()( curations: CurationService,
         case Some(s) => {
           curations.get(curationId) match {
             case Some(c) => {
-              Ok(views.html.spaces.curationObject(s, c))
+              val ds: Dataset = c.datasets(0)
+              val dsmetadata = datasets.getMetadata(ds.id)
+              val dsUsrMetadata = datasets.getUserMetadata(ds.id)
+              val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
+              val filesUsrMetadata: Map[String, scala.collection.mutable.Map[String,Any]] = ds.files.map(file=> file.id.stringify -> files.getUserMetadata(file.id)).toMap.asInstanceOf[Map[String, scala.collection.mutable.Map[String,Any]]]
+              Ok(views.html.spaces.curationObject(s, c, dsmetadata, dsUsrMetadata, filesUsrMetadata, isRDFExportEnabled))
             }
             case None => InternalServerError("Curation Object Not found")
           }
@@ -104,7 +111,11 @@ class CurationObjects @Inject()( curations: CurationService,
           curations.get(curationId) match {
             case Some(c) => {
               //TODO: Make some sort of call to the matckmaker
-              Ok(views.html.spaces.matchmakerResult(s, c))
+              val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
+              "Dissemination Control" -> List("Restricted Use", "Ability to Embargo"),"License" -> List("Creative Commons", "GPL") ,
+              "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
+
+              Ok(views.html.spaces.matchmakerResult(s, c, propertiesMap))
             }
             case None => InternalServerError("Curation Object not found")
           }
@@ -114,7 +125,48 @@ class CurationObjects @Inject()( curations: CurationService,
 
   }
 
+  def compareToRepository(spaceId: UUID, curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) {
+    implicit request =>
+      implicit val user = request.user
+      spaces.get(spaceId) match {
+        case Some(s) => {
+         curations.get(curationId) match {
+           case Some(c) => {
+             //TODO: Make some call to C3-PR?
+           //  Ok(views.html.spaces.matchmakerReport())
+             val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
+               "Dissemination Control" -> List("Restricted Use", "Ability to Embargo"),"License" -> List("Creative Commons", "GPL") ,
+               "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
 
+             Ok(views.html.spaces.curationDetailReport(s, c, propertiesMap))
+           }
+           case None => InternalServerError("Curation Object not found")
+
+         }
+        }
+        case None => InternalServerError("Space not found")
+      }
+  }
+
+  def sendToRepository(spaceId: UUID, curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) {
+    implicit request =>
+      implicit val user = request.user
+      spaces.get(spaceId) match {
+        case Some(s) => {
+          curations.get(curationId) match {
+            case Some(c) =>
+              //TODO : Submit the curationId to the repository. This probably needs the repository as input
+
+              val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
+                "Dissemination Control" -> List("Restricted Use", "Ability to Embargo"),"License" -> List("Creative Commons", "GPL") ,
+                "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
+
+              Ok(views.html.spaces.curationSubmitted(s, c, "IDEALS"))
+          }
+        }
+        case None => InternalServerError("Space Not found")
+      }
+  }
 
 }
 

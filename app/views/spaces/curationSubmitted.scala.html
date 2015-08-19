@@ -1,0 +1,5 @@
+@(space: models.ProjectSpace, curationObject: models.CurationObject, repository: String)(implicit user: Option[models.User] )
+@main("Submitted"){
+    <h1>Curation Object @curationObject.name has been submitted to Repository @repository </h1>
+    <a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> Go Back to Space </a>
+}

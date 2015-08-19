@@ -194,9 +194,9 @@ code {
   padding:10px;
 }
 
-.usr_md_search_list {
-	list-style-type:none;
-}
+/*.usr_md_search_list {*/
+	/*list-style-type:none;*/
+/*}*/
 
 .usr_md_search_list_not {
 	margin-left:58px;

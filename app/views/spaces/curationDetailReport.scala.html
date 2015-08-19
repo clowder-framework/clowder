@@ -1,0 +1,32 @@
+@(space: models.ProjectSpace, curationObject: models.CurationObject, properties: Map[String, List[String]])(implicit user: Option[models.User] )
+@main("Detail Report / Submit") {
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Detail Report / Submit <a href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)">@curationObject.name</a></h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            @for((prop, value) <- properties) {
+                <h4>@prop</h4>
+                @for(cur<-value) {
+                    <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
+                }
+            }
+
+        </div>
+        <div class ="col-md-6">
+            <h3>IDEALSs</h3>
+            @for((prop, value) <- properties) {
+                <h4>@prop</h4>
+                @for(cur<-value) {
+                    <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
+                }
+            }
+        </div>
+
+    </div>
+    <a class = "btn btn-default btn-primary" href ="@routes.CurationObjects.sendToRepository(space.id, curationObject.id)"> Submit to Ideals</a>
+    <a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> Go Back to Space </a>
+
+}

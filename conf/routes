@@ -530,5 +530,8 @@ GET            /rss/:etype                                                      
 GET            /spaces/:id/curations/new                                                @controllers.CurationObjects.newCO(id:UUID)
 POST           /spaces/:id/curations/submit                                             @controllers.CurationObjects.submit(id:UUID)
 GET            /spaces/:spaceId/curations/:curationId                                   @controllers.CurationObjects.getCurationObject(spaceId:UUID, curationId: UUID)
-GET           /spaces/:spaceId/curations/:curationId/matchmaker                        @controllers.CurationObjects.findMatchingRepositories(spaceId:UUID, curationId: UUID)
+GET            /spaces/:spaceId/curations/:curationId/compareToRepository               @controllers.CurationObjects.compareToRepository(spaceId: UUID, curationId: UUID)
+GET            /spaces/:spaceId/curations/:curationId/sendToRepository                  @controllers.CurationObjects.sendToRepository(spaceId:UUID, curationId: UUID)
+GET            /spaces/:spaceId/curations/:curationId/matchmaker                        @controllers.CurationObjects.findMatchingRepositories(spaceId:UUID, curationId: UUID)
 GET            /spaces/:id/stagingArea                                                  @controllers.Spaces.stagingArea(id: UUID)
+
