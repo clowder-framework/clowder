@@ -142,6 +142,26 @@
         var syncPopcornJS = syncGetScript( pathPopcornJS );
         var syncAxisLabelsJS = syncGetScript( pathAxisLabelsJS );
 
+        var validateLabel = function (labelText) {
+
+            /*
+                A person label or a person ID has to meet the following condition:
+                1. Should be a positive integer
+                2. Should not be greater than the maxiumum safe integer
+            */
+            var label = parseInt(labelText);
+
+            // Check if label is a valid number
+            if (isNaN(label) == true) {
+                return false;
+            }
+
+            // Check if label is within the permissible range
+            if (label > Number.MAX_SAFE_INTEGER || label <= 0) {
+                return false;
+            }
+        }
+
         $.when(            
             syncFlotJS,
             syncNavigateJS,
@@ -378,9 +398,9 @@
                     $("#videoDiv").append("<canvas id='canvas' style='position: absolute; top: 0px; left: 0px;' ></canvas>");
                     
                     // Add graph div and legend div for jQuery flot
-                    $(Configuration.tab).append("<div id='persontracking' style='width: 750px; height: 400px; float: left; margin-bottom: 20px; margin-top: 10px;'></div>");
+                    $(Configuration.tab).append("<div id='persontracking' style='width: 750px; height: 400px; float: left; margin-top: 10px;'></div>");
                     $("#persontracking").append("<div id='placeholder' style='width: 560px; height: 400px; margin-right: 10px; float: left;'></div>");
-                    $("#persontracking").append("<div id='legend' style='width: 150px; max-height: 350px; overflow: auto; margin-right: 10px; margin-top: 5px; float: left;'></div>");
+                    $("#persontracking").append("<div id='legend' style='width: 175px; max-height: 350px; overflow: auto; margin-top: 5px; float: left;'></div>");
                     $("#persontracking").append("<span class=button-bar> <button id='btnSaveChanges' onClick='savePersonTrackingChanges(); return false;' class='usr_md_submit btn btn-default btn-xs' " + 
                                                 " style='margin-right: 10px; margin-top: 5px; float: left; display:none;'>Save</button>"+
                                                 "<button id='btnCancelChanges' onClick='cancelPersonTrackingChanges(); return false;' class='usr_md_submit btn btn-default btn-xs' " + 
@@ -622,10 +642,23 @@
                         plot.draw();
                     }
 
-                    saveLabel = function (oldLabel){
+                    saveLabel = function (oldLabel){                    
 
                         //var newLabel = $("#" + oldLabel+ "Select").val();
                         var newLabel = $("#" + oldLabel + "Input").val();
+
+                        // If label not validated, show a message and return                        
+                        if (validateLabel(newLabel) == false) {
+                            $("#" + oldLabel + "Input")
+                                .val("Enter a valid number.")
+                                    .focus(function () {
+                                            if($(this).val() == "Enter a valid number.") {
+                                                $(this).val('');
+                                            }
+                                        });
+                            return;
+                        }
+
                         var oldId = oldLabel;
                         var newId = newLabel;
                         var changingToExistingLabel = false;
@@ -788,7 +821,7 @@
                         }
                         $("#" + label + "Select").val(label);*/
 
-                        $("#" + label).replaceWith('<span style="margin-left: 5px;" id="'+ label + "Div" + '"><input style="width: 70px;" id="' + label + "Input" + 
+                        $("#" + label).replaceWith('<span style="margin-left: 5px;" id="'+ label + "Div" + '"><input style="width: 115px;" id="' + label + "Input" + 
                             '"></input><button type="button" onclick="saveLabel(\'' + label + '\');">Save</button></span>');                        
                         $("#" + label + "Input").autocomplete({
                             source: labelArray,
