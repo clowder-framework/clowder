@@ -36,9 +36,8 @@
 
         // If it couldn't find the index, display a message and return
         if (trackingMetadataIndex == -1){
-            console.log("Updating tab " + Configuration.tab);
-            $(Configuration.tab).append("<br/>");
-            $(Configuration.tab).append('<div class="col-md-12"><h4>Sorry, invalid person tracking metadata. Preview generation failed.</h4></div>');
+            console.log("Updating tab " + Configuration.tab);            
+            notify("Oops! Received invalid person tracking metadata. Preview generation failed.", "error");
             return;
         }
 
@@ -566,6 +565,9 @@
                         isEditingInProgress = false;
                         hasTrackingDataChanged = false;
 
+                        $("#btnSaveChanges").prop("disabled", true);
+                        $("#btnCancelChanges").prop("disabled", true);                        
+
                         var frameDataArrayCopyForUpdate = JSON.parse(JSON.stringify(frameDataArrayCopy));
                         /*
                             Removing null values from the copy.
@@ -591,16 +593,18 @@
                             data: requestData
                         });
 
-                        request.success(function(response) {
+                        request.done(function() {
+
+                            $("#btnSaveChanges").prop("disabled", false);
+                            $("#btnCancelChanges").prop("disabled", false);
+                            $("#btnSaveChanges").hide();
+                            $("#btnCancelChanges").hide();
 
                             // Re-write the global array based on the current changes.
                             sortedFrameDataArray = JSON.parse(JSON.stringify(sortedFrameDataArrayCopy));
                             labelArray = JSON.parse(JSON.stringify(labelArrayCopy));
                             frameDataArray = JSON.parse(JSON.stringify(frameDataArrayCopy));
-                            technicalMetadata = JSON.parse(JSON.stringify(technicalMetadataCopy));
-
-                            $("#btnSaveChanges").hide();
-                            $("#btnCancelChanges").hide();
+                            technicalMetadata = JSON.parse(JSON.stringify(technicalMetadataCopy));                            
 
                             updateMinMaxValuesLabelArray(labelArray);
                             sortLabelArray(labelArray);
@@ -609,14 +613,16 @@
                             plot.setData(sortedFrameDataArray);
                             resetYAxis();
                             plot.setupGrid();
-                            plot.draw();
+                            plot.draw();                            
                         })
                         .fail(function(jqxhr){
-                            console.log("Failed to update person tracking metadata.");            
+                            $("#btnSaveChanges").prop("disabled", false);
+                            $("#btnCancelChanges").prop("disabled", false);
+
+                            console.log("Failed to update person tracking metadata.");
                             console.log("Updating tab " + Configuration.tab);
-                            console.log(jqxhr);
-                            $(Configuration.tab).append("<br/>");
-                            $(Configuration.tab).append('<div class="col-md-12"><h4>Sorry, person-tracking metadata update failed. Please try again.</h4></div>');
+                            notify("Oops! Person-tracking metadata update failed. Please try again. Error: " + jqxhr.statusText, "error");
+
                         });
                     }
 
@@ -642,9 +648,8 @@
                         plot.draw();
                     }
 
-                    saveLabel = function (oldLabel){                    
-
-                        //var newLabel = $("#" + oldLabel+ "Select").val();
+                    saveLabel = function (oldLabel){                                                
+                        
                         var newLabel = $("#" + oldLabel + "Input").val();
 
                         // If label not validated, show a message and return                        
@@ -813,14 +818,7 @@
                             $("#btnSaveChanges").show();
                             $("#btnCancelChanges").show();
                         }
-
-                        /*$("#" + label).replaceWith('<span style="margin-left: 5px;" id="'+ label + "Div" + '"><select id="'+ label + 
-                            "Select" + '"></select> <button type="button" onclick="saveLabel(\'' + label + '\');">Save</button></span');
-                        for(var i=0; i < labelArrayCopy.length; i++) {                    
-                            $("#" + label+ "Select").append('<option value="' + labelArrayCopy[i] + '">'+ labelArrayCopy[i] +'</option>');
-                        }
-                        $("#" + label + "Select").val(label);*/
-
+                        
                         $("#" + label).replaceWith('<span style="margin-left: 5px;" id="'+ label + "Div" + '"><input style="width: 115px;" id="' + label + "Input" + 
                             '"></input><button type="button" onclick="saveLabel(\'' + label + '\');">Save</button></span>');                        
                         $("#" + label + "Input").autocomplete({
@@ -1113,22 +1111,19 @@
                 })
                 .fail(function(jqxhr){
                     console.log("Failed to get previews list and hence failed to create the visualization.");            
-                    console.log("Updating tab " + Configuration.tab);
-                    $(Configuration.tab).append("<br/>");
-                    $(Configuration.tab).append('<div class="col-md-12"><h4>Sorry, Video dowloading failed. Please refresh and try again.</h4></div>');
+                    console.log("Updating tab " + Configuration.tab);                    
+                    notify("Oops! Video dowloading failed. Please refresh and try again. Error: " + jqxhr.statusText,"error");
                 });
             }
             else{
-                console.log("Updating tab " + Configuration.tab);
-                $(Configuration.tab).append("<br/>");
-                $(Configuration.tab).append('<div class="col-md-12"><h4>Sorry, invalid person tracking metadata. Preview generation failed.</h4></div>');
+                console.log("Updating tab " + Configuration.tab);                
+                notify("Oops! Received invalid person tracking metadata. Preview generation failed.","error");
             }
         })
         .fail(function(jqxhr){
             console.log("Failed to load JS scripts.");
-            console.log("Updating tab " + Configuration.tab);
-            $(Configuration.tab).append("<br/>");
-            $(Configuration.tab).append('<div class="col-md-12"><h4>Sorry, data loading failed. Please refresh and try again.</h4></div>');
+            console.log("Updating tab " + Configuration.tab);            
+            notify("Oops! Failed to download some script files. Please refresh and try again. Error: " + jqxhr.statusText,"error");
         });
 	});
 	
