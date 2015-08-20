@@ -62,14 +62,12 @@
                     @agent.asInstanceOf[ExtractorAgent].extractorId.get
                 </a> on @dateFormatter(date)
                 @if(contextId.isDefined) {
-                    <a href="@api.routes.ContextLD.getContextById(contextId.get)" class="pull-right"
-                    data-toggle="tooltip" data-placement="auto" title="sdfgdsg">context</a>
+                    <a href="@api.routes.ContextLD.getContextById(contextId.get)" class="pull-right">context</a>
                 }
             }
             case a: UserAgent => {
-                Added by <a href="@a.userId.get">
-                    @agent.asInstanceOf[UserAgent].userId.get
-                </a> on @dateFormatter(date)
+                Added by <a href="@routes.Profile.viewProfileUUID(a.user.id)">@a.user.fullName</a>
+                on @dateFormatter(date)
                 @if(contextId.isDefined) {
                     <a href="@api.routes.ContextLD.getContextById(contextId.get)" class="pull-right">context</a>
                 }

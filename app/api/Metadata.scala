@@ -4,17 +4,17 @@ import java.net.URL
 import java.util.Date
 import javax.inject.{Inject, Singleton}
 
-import models.{UserAgent, UUID, ResourceRef}
+import models._
 import play.api.libs.json.{JsArray, JsValue, JsString, JsObject}
 import play.api.libs.json.Json._
-import services.{ContextLDService, MetadataService}
+import services.{UserService, ContextLDService, MetadataService}
 import play.api.Play.configuration
 
 /**
  * Manipulate generic metadata.
  */
 @Singleton
-class Metadata @Inject()(metadataService: MetadataService, contextService: ContextLDService) extends ApiController {
+class Metadata @Inject()(metadataService: MetadataService, contextService: ContextLDService, userService: UserService) extends ApiController {
 
   def getUserMetadata() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.AddMetadata)) {
     implicit request =>
@@ -35,7 +35,7 @@ class Metadata @Inject()(metadataService: MetadataService, contextService: Conte
             // build creator uri
             // TODO switch to internal id and then build url when returning?
             val userURI = controllers.routes.Application.index().absoluteURL() + "api/users/" + user.id
-            val creator = UserAgent(id = user.id, userId = Some(new URL(userURI)))
+            val creator = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.get, user.email), Some(new URL(userURI)))
 
             val context: JsValue = (json \ "@context")
 

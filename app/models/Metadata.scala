@@ -4,6 +4,7 @@ import java.net.URL
 import java.util.Date
 import play.api.libs.json._
 import play.api.data.validation.ValidationError
+import services.{UserService, DI, FileService}
 
 /**
  * A piece of metadata for a section/file/dataset/collection/space
@@ -25,7 +26,7 @@ trait Agent {
 }
 
 // User through the GUI
-case class UserAgent(id: UUID, var typeOfAgent: String = "user", userId: Option[URL]) extends Agent
+case class UserAgent(id: UUID, var typeOfAgent: String = "user", user: MiniUser, userId: Option[URL]) extends Agent
 
 // Automatic extraction
 case class ExtractorAgent(id: UUID, var typeOfAgent: String = "extractor" , extractorId: Option[URL]) extends Agent
@@ -33,6 +34,9 @@ case class ExtractorAgent(id: UUID, var typeOfAgent: String = "extractor" , extr
 object Agent {
 
   implicit object AgentReads extends Reads[Agent] {
+
+    val userService: UserService = DI.injector.getInstance(classOf[UserService])
+
     def reads(json: JsValue) = {
       //creator(agent) may be User or Extractor depending on the json 
       var creator: Option[models.Agent] = None
@@ -44,7 +48,8 @@ object Agent {
       val user_id = (json \ "agent" \ "user_id").asOpt[String]
       user_id map { uid =>
         val userId = Some(new URL(uid))
-        creator = Some(UserAgent(UUID.generate, typeOfAgent, userId))
+        val user = userService.get(UUID(uid)).get
+        creator = Some(UserAgent(UUID.generate, typeOfAgent, MiniUser(user.id, user.fullName, user.avatarUrl.get, user.email), userId))
       }
 
       //if extractor_id is part of the request, then creator is an extractor
