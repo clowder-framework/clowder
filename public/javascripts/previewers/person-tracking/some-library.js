@@ -55,8 +55,8 @@
         var labelArrayCopy = new Array(); // To store a copy of labelArray
         var isEditingInProgress = false; // To keep track of when editing is in progress
         var hasTrackingDataChanged = false; // Might be used in future.
-        var minLabelDisplay = 0;
-        var maxLabelDisplay = 0;
+        var minLabelDisplay = Number.MAX_SAFE_INTEGER; // Setting initial value for min label number
+        var maxLabelDisplay = -1; // Setting initial value for max label number
         
         var syncGetScript = function(url){
             var deferred = $.Deferred();
@@ -104,10 +104,12 @@
 
         // Find min and max values of Person IDs
         var updateMinMaxValuesLabelArray = function (labelArrayTemp) {
+            minLabelDisplay = Number.MAX_SAFE_INTEGER;
+            maxLabelDisplay = -1;
             labelArrayTemp.forEach(
                 function (value) {
                     minLabelDisplay = Math.min(parseInt(value), minLabelDisplay);
-                    maxLabelDisplay = Math.max(parseInt(value), maxLabelDisplay);
+                    maxLabelDisplay = Math.max(parseInt(value), maxLabelDisplay);                    
                 });
         }
 
@@ -124,14 +126,14 @@
             }
         }
 
-        // Change y-axis ranges 
+        // Reset y-axis ranges
         var resetYAxis = function () {
             
-            var axes = plot.getAxes();
-            axes.yaxis.options.min = minLabelDisplay;
+            var axes = plot.getAxes();            
+            axes.yaxis.options.min = minLabelDisplay -1;
             axes.yaxis.options.max = maxLabelDisplay + 1;
-            axes.yaxis.options.zoomRange = [minLabelDisplay, maxLabelDisplay + 1];
-            axes.yaxis.options.panRange = [minLabelDisplay, maxLabelDisplay + 1];
+            axes.yaxis.options.zoomRange = [minLabelDisplay - 1, maxLabelDisplay + 1];
+            axes.yaxis.options.panRange = [minLabelDisplay - 1, maxLabelDisplay + 1];
         }
 
         var syncFlotJS = syncGetScript( pathFlotJS );
@@ -580,8 +582,12 @@
                             $("#btnSaveChanges").hide();
                             $("#btnCancelChanges").hide();
 
+                            updateMinMaxValuesLabelArray(labelArray);
+                            sortLabelArray(labelArray);
+
                             // Redraw graph
                             plot.setData(sortedFrameDataArray);
+                            resetYAxis();
                             plot.setupGrid();
                             plot.draw();
                         })
@@ -606,8 +612,12 @@
                         $("#btnSaveChanges").hide();
                         $("#btnCancelChanges").hide();
 
+                        updateMinMaxValuesLabelArray(labelArray);
+                        sortLabelArray(labelArray);
+
                         // Redraw graph
                         plot.setData(sortedFrameDataArray);
+                        resetYAxis();
                         plot.setupGrid();
                         plot.draw();
                     }
@@ -720,6 +730,7 @@
                                             }
                                         }
 
+                                        // If the new label already exists
                                         if(changingToExistingLabel == true){
                                             // Remove the current person from the sorted list
                                             sortedFrameDataArrayCopy.splice(i,1);
@@ -731,14 +742,15 @@
 
                             var index = $.inArray(oldLabel, labelArrayCopy);
                             labelArrayCopy.splice(index,1);                            
-                            $("#" + oldLabel + "Div").remove();
+                            $("#" + oldLabel + "Div").remove();                            
 
                             updateMinMaxValuesLabelArray(labelArrayCopy);
-                            sortLabelArray(labelArrayCopy);                            
+                            sortLabelArray(labelArrayCopy);
 
                             // Redraw graph                            
-                            plot.setData(sortedFrameDataArrayCopy);                            
-                            plot.setupGrid();
+                            plot.setData(sortedFrameDataArrayCopy);
+                            resetYAxis();
+                            plot.setupGrid();                            
                             plot.draw();                            
 
                             hasTrackingDataChanged = true;
@@ -874,7 +886,8 @@
 
                         // Redraw graph
                         plot.setData(sortedFrameDataArrayCopy);
-                        plot.setupGrid();
+                        resetYAxis();
+                        plot.setupGrid();                        
                         plot.draw();                        
 
                         hasTrackingDataChanged = true;
@@ -996,12 +1009,12 @@
                             tickColor: "#EDEDED",
                             minTickSize: 1,
                             tickDecimals: 0,
-                            min: minLabelDisplay,
+                            min: minLabelDisplay - 1,
                             max: maxLabelDisplay + 1,
                             autoscaleMargin: 0.05,
                             show: true,
-                            zoomRange: [minLabelDisplay, maxLabelDisplay + 1],
-                            panRange: [minLabelDisplay, maxLabelDisplay + 1]
+                            zoomRange: [minLabelDisplay - 1, maxLabelDisplay + 1],
+                            panRange: [minLabelDisplay - 1, maxLabelDisplay + 1]
                         },
                         zoom: {
                             interactive: true
