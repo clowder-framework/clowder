@@ -224,17 +224,19 @@
   			<li class="previous" id="addPagerPrev" style="visibility:hidden;"><a href="#!">Previous</a></li>
   			<li class ="next" id="addPagerNext" style="visibility:hidden;"><a href="#!">Next</a></li>
 		</ul>
-
+	@if(collection.spaces.size < 0) {
 		<div class="row border-top bottom-padding">
 			<div class="col-md-12">
 				<a href="@routes.Collections.users(collection.id)">
 					<span class="glyphicon glyphicon-hand-right"></span> Users with access to the collection
 				</a>
 				<div class="alert-danger inner-item">
-					@flash.get("error")
+				@flash.get("error")
 				</div>
 			</div>
 		</div>
+	}
+
 
 	</div>
 
