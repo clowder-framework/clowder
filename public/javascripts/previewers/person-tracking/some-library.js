@@ -147,14 +147,15 @@
                 A person label or a person ID has to meet the following condition:
                 1. Should be a positive integer
                 2. Should not be greater than the maxiumum safe integer
-            */
-            var label = parseInt(labelText);
+            */            
 
+            var pattern = /^[0-9]+$/;
             // Check if label is a valid number
-            if (isNaN(label) == true) {
+            if (pattern.test(labelText) != true) {
                 return false;
             }
 
+            var label = parseInt(labelText);
             // Check if label is within the permissible range
             if (label > Number.MAX_SAFE_INTEGER || label <= 0) {
                 return false;
