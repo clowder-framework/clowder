@@ -79,7 +79,10 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], fileUsrMetadata: Map[S
         <h2><a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h2>
         @metadata(curationObject.datasets(0), dsMetadata, dsUserMetadata, curationObject.datasets(0).datasetXmlMetadata, rdfExported)
     </div>
-    <h2> Files</h2>
+    @if(curationObject.datasets(0).files.size > 0 ){
+        <h2> Files</h2>
+    }
+
     <div>
         <ul style = "list-style-type: none">
         @for(file<- curationObject.datasets(0).files) {

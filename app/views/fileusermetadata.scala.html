@@ -2,6 +2,7 @@
 
 @import com.mongodb.casbah.Imports.DBObject
 @import collection.JavaConverters._
+@import api.Permission
 
 <br/>
 
@@ -34,7 +35,10 @@
 	}
 	
 	<div id='generalUserMetadata_@(file.id.stringify)' class='usr_md_'>
-		<button class="usr_md_ btn btn-link btn-sm" type="button">Add property</button>
+		@if(user.isDefined && Permission.checkPermission(Permission.EditMetadata, ResourceRef(ResourceRef.file, file.id))) {
+			<button class="usr_md_ btn btn-link btn-sm" type="button">Add property</button>
+		}
+
 		@printLevelUserMetadata(userMetadata)
 		<button class="usr_md_submit btn btn-default btn-xs">Submit</button>
 		@if(rdfExported){
@@ -49,17 +53,5 @@
 	window["modelIp"+topId] = "@(routes.Assets.at("filesUserMetadataModel"))";
 </script>
 <script src="@routes.Assets.at("javascripts/userMetadata.js")" type="text/javascript"></script>
-@if(!user.isDefined) {
-		      	   <script language="javascript">
-			     		$("#generalUserMetadata_@(file.id.stringify) button").css("display","none");
-			     		$("#generalUserMetadata_@(file.id.stringify) .rdfbtn").css("display","inline");
-			       </script>
-		      	}
-@if(user.isDefined) {
-			@if(!user.get.identityId.userId.equals(file.author.identityId.userId)){
-					<script language="javascript">
-			     		$("#generalUserMetadata_@(file.id.stringify) button").css("display","none");
-			     		$("#generalUserMetadata_@(file.id.stringify) .rdfbtn").css("display","inline");
-			       </script>
-			}													
-		}
+
+

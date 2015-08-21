@@ -101,7 +101,10 @@
 			<div class="col-md-12 box-white-space">
 				<h4>Community generated metadata</h4>
 				<div id='generalUserMetadata_@(dataset.id.stringify)' class='usr_md_'>
-					<button class="usr_md_ btn btn-link btn-sm" type="button">Add property</button>
+					@if(Permission.checkPermission(Permission.EditMetadata, ResourceRef(ResourceRef.dataset, dataset.id))) {
+						<button class="usr_md_ btn btn-link btn-sm" type="button">Add property</button>
+					}
+
 					@printLevelUserMetadata(userMetadata)
 					<button class="usr_md_submit btn btn-default btn-xs" type="button">Submit</button>
 					@if(rdfExported) {

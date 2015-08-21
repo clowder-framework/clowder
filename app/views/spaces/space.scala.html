@@ -16,7 +16,7 @@
         </div>
     }
     <div class="row space-head vertical-align">
-        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))) {
             <div class="col-md-9 col-lg-9 col-sm-9">
         } else {
             <div class="col-md-10 col-lg-10 col-sm-10">
@@ -28,7 +28,7 @@
             </h1>
             <p><span id="spacedescdisplay">@space.description</span></p>
         </div>
-        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))) {
             <div class="pull-right col-md-3 col-lg-3 col-sm-3 text-center">
         } else {
             <div class="pull-right col-md-2 col-lg-2 col-sm-2 text-center">
@@ -61,7 +61,7 @@
                     <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
                 </a>
             }
-            @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+            @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))) {
                 <a class = "btn btn-xs btn-default" href="@routes.Spaces.stagingArea(space.id)" title="Staging Area">Staging Area</a>
             }
         </div>
