@@ -1102,11 +1102,10 @@
                     });
                     
                     placeholder.bind("plotclick", function (event, pos, item) {
-                        // Debug code. Will be deleted.
+
                         if (item) {
-                            //plot.highlight(item.series, item.datapoint);
-                            var timeClicked = item.series.xaxis.ticks[item.dataIndex].label;
-                            console.debug(item);
+                            var startIndex = item.datapoint[0];
+                            video[0].currentTime = startIndex / videoFrameRate;
                         }
                     });
                 })
