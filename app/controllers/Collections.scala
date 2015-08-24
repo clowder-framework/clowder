@@ -275,12 +275,19 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
               case None => Logger.error(s"space with id $sp on collection $id doesn't exist.")
             }
           }
-
-          val otherSpaces: List[ProjectSpace] = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!collectionSpaces.map(_.id).contains(aSpace.id)) aSpace else None).filter(_ != None).asInstanceOf[List[ProjectSpace]]
           val decodedSpaces: List[ProjectSpace] = collectionSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
-          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, Some(decodedSpaces), otherSpaces))
+          var otherSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
+          user match {
+            case Some (u) => {
+              otherSpaces = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!collectionSpaces.map(_.id).contains(aSpace.id)) aSpace else None).filter(_ != None).asInstanceOf[List[ProjectSpace]]
 
+              Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, Some(decodedSpaces), otherSpaces))
+            }
+            case None => {
+              Redirect(routes.RedirectUtility.authenticationRequired())
+            }
+          }
         }
         case None => {
           Logger.error("Error getting collection " + id); BadRequest("Collection not found")
