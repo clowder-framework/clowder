@@ -55,17 +55,22 @@
         }
     }
 
-    @printHeader(agent: Agent, date: java.util.Date) = {
+    @printHeader(agent: Agent, date: java.util.Date, contextId: Option[UUID]) = {
         @agent match {
             case a: ExtractorAgent => {
                 Extracted by <a href="@a.extractorId.get">
                     @agent.asInstanceOf[ExtractorAgent].extractorId.get
                 </a> on @dateFormatter(date)
+                @if(contextId.isDefined) {
+                    <a href="@api.routes.ContextLD.getContextById(contextId.get)" class="pull-right">context</a>
+                }
             }
             case a: UserAgent => {
-                Extracted by <a href="@a.userId.get">
-                    @agent.asInstanceOf[UserAgent].userId.get
-                </a> on @dateFormatter(date)
+                Added by <a href="@routes.Profile.viewProfileUUID(a.user.id)">@a.user.fullName</a>
+                on @dateFormatter(date)
+                @if(contextId.isDefined) {
+                    <a href="@api.routes.ContextLD.getContextById(contextId.get)" class="pull-right">context</a>
+                }
             }
             case _ => {
                 Extracted by unknown agent on @dateFormatter(date)
@@ -83,7 +88,7 @@
                     <span class="panel-icon glyphicon glyphicon-minus"></span>
                 </a>
                 <span>
-                    @printHeader(m.creator, m.createdAt)
+                    @printHeader(m.creator, m.createdAt, m.contextId)
                 </span>
             </div>
             <div id="collapse_@i" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading_@i">

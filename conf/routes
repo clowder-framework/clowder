@@ -256,7 +256,11 @@ GET            /api/datasets/:id/metadata.jsonld                                
 POST           /api/files/:id/metadata.jsonld                                           @api.Files.addMetadataJsonLD(id: UUID)
 GET            /api/files/:id/metadata.jsonld                                           @api.Files.getMetadataJsonLD(id: UUID)
 
+POST           /api/metadata.jsonld                                                     @api.Metadata.addUserMetadata()
+GET            /api/metadata.jsonld                                                     @api.Metadata.getUserMetadata()
+
 POST           /api/metadata/search                                                     @api.Metadata.search()
+
 
 # ----------------------------------------------------------------------
 # FILES ENDPOINT

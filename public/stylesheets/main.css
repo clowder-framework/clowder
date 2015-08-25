@@ -700,3 +700,7 @@ textarea, input[type='text'], input[type='password']{
 	font-size: 30px !important;
 	margin-top: -5px !important;
 }
+
+.form-md {
+    padding: 10px 0px;
+}

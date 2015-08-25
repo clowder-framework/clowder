@@ -284,7 +284,7 @@ class Files @Inject()(
       responseClass = "None", httpMethod = "POST")
   def addMetadataJsonLD(id: UUID) =
     SecuredAction(authorization = WithPermission(Permission.AddMetadata), resourceId = Some(id)) {
-      request =>
+        request =>
         files.get(id) match {
           case Some(x) => {
             val json = request.body

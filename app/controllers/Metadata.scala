@@ -12,7 +12,7 @@ import services._
 class Metadata @Inject() (
   files: FileService,
   datasets: DatasetService,
-  metadata: MetadataService) extends SecuredController {
+  metadata: MetadataService, contextLDService: ContextLDService) extends SecuredController {
 
   def view(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowFilesMetadata)) { implicit request =>
     metadata.getMetadataById(id) match {
@@ -22,16 +22,24 @@ class Metadata @Inject() (
   }
 
   def file(file_id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowFilesMetadata)) { implicit request =>
+    implicit val user = request.user
     files.get(file_id) match {
       case Some(file) => {
-        val m = metadata.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file_id))
-        Ok(views.html.metadatald.viewFile(file, m))
+        val mds = metadata.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file_id))
+        // TODO use to provide contextual definitions directly in the GUI
+        val contexts = (for (md <- mds;
+                             cId <- md.contextId;
+                             c <- contextLDService.getContextById(cId))
+          yield cId -> c).toMap
+
+        Ok(views.html.metadatald.viewFile(file, mds))
       }
       case None => NotFound
     }
   }
 
   def dataset(dataset_id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowFilesMetadata)) { implicit request =>
+    implicit val user = request.user
     datasets.get(dataset_id) match {
       case Some(dataset) => {
         val m = metadata.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset_id))
