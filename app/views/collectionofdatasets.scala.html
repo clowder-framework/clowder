@@ -75,26 +75,27 @@
 						<span class="glyphicon glyphicon-trash"></span> Delete</button>
 					</span>
 				}
-
-				<span class="align-right" style="margin-right: 10px;">
+				@if(user.isDefined) {
+					<span class="align-right" style="margin-right : 10 px ;">
 					@if(!collection.followers.contains(user.get.id)) {
 						<button id="followButton"
-								class="btn btn-success followButton"
-								objectId="@collection.id"
-								objectName="@collection.name"
-								objectType="collection">
+						class="btn btn-success followButton"
+						objectId="@collection.id"
+						objectName="@collection.name"
+						objectType="collection">
 							Follow
 						</button>
 					} else {
 						<button id="followButton"
-								class="btn btn-danger followButton"
-								objectId="@collection.id"
-								objectName="@collection.name"
-								objectType="collection">
+						class="btn btn-danger followButton"
+						objectId="@collection.id"
+						objectName="@collection.name"
+						objectType="collection">
 							Unfollow
 						</button>
 					}
-				</span>
+					</span>
+				}
 
 				<div style="clear: both;"></div>
 
