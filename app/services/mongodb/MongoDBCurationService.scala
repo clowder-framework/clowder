@@ -39,6 +39,6 @@ class MongoDBCurationService  @Inject()  extends CurationService {
 object CurationDAO extends ModelCompanion[CurationObject, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[CurationObject, ObjectId](collection = x.collection("curationObjs")) {}
+    case Some(x) => new SalatDAO[CurationObject, ObjectId](collection = x.collection("curationObjects")) {}
   }
 }
