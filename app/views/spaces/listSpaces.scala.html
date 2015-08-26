@@ -19,7 +19,7 @@
         <div class="col-md-10">
         </div>
         <div class="col-md-1">
-            <a class="btn btn-primary btn-sm pull-right" href="@routes.Spaces.newSpace" title="Create a new space">Create</a>
+            <button class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new space">Create</button>
         </div>
         <div class="col-md-1">
             <div class="btn-group btn-group-sm pull-right">
@@ -202,6 +202,7 @@
     @if(!user.isDefined) {
         <script type="text/javascript">
         $ ( ".requiresLogin" ).css ( "display", "none" ) ;
+        $('#create-space').prop('disabled', true);
         </script>
     }
 }
