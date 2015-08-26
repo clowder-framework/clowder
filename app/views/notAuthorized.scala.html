@@ -9,7 +9,7 @@
 			}
 		</h2>
 		@if(user.isDefined && (id != null && !id.isEmpty)) {
-			@if( resourceType.compareTo("'space") ==0 ){
+			@if( resourceType.compareTo("space") ==0 ){
 			<a class="btn btn-default btn-margins accordion-toggle collapsed"
 			href="@(routes.Spaces.addRequest(UUID(id)))"><span class="glyphicon glyphicon-envelope"></span>
 				Authorization request</a>
