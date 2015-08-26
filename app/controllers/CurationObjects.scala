@@ -40,9 +40,8 @@ class CurationObjects @Inject()( curations: CurationService,
   }
 
   /**
-   * Controller flow to create a new collection. Takes two parameters, name, a String, and description, a String. On success,
-   * the browser is redirected to the space page since I haven't merge staging area. On error, it is redirected back space
-   * page since I haven't merge staging area.
+   * Controller flow to create a new curation object. On success,
+   * the browser is redirected to the new Curation page.
    */
   def submit(datasetId:UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) (parse.multipartFormData)  { implicit request =>
 

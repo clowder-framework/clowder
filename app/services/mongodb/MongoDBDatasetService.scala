@@ -1080,7 +1080,6 @@ class MongoDBDatasetService @Inject() (
     Dataset.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
                     $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
-
 }
 
 object Dataset extends ModelCompanion[Dataset, ObjectId] {
