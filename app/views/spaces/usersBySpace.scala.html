@@ -2,6 +2,7 @@
 
 @import api.Permission
 @import play.api.libs.json._
+@import play.api.Play.current
 
 
 <h3>Members</h3>
@@ -58,6 +59,16 @@
 	    href= "@routes.Spaces.invite(space.id)">
 		<span class="glyphicon glyphicon-envelope"></span> Invite new Users
 	</a>
+	<!-- user can request Authorization when permissions is public and user is login -->
+	@if(user.isDefined && current.configuration.getString("permissions").getOrElse("public").compareTo("public") == 0) {
+		@if(!(userRoleMap contains user.get)) {
+			<a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed"
+			href="@(routes.Spaces.addRequest(space.id))">
+				<span class="glyphicon glyphicon-envelope"></span>
+				Authorization request
+			</a>
+		}
+	}
 }
 
 <div class="modal fade bs-example-modal-lg" id="modalUser" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
