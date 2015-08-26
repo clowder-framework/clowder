@@ -34,11 +34,13 @@
 
         @datasets.deleteButton(dataset)
         @datasets.follow(dataset)
-		<a href="@(routes.CurationObjects.newCO(dataset.id, spaceTraced.getOrElse("")))">
-		<button class="btn btn-default btn-xs">
-                                    Publish
-		</button>
-		</a>
+		@if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+			<a href="@(routes.CurationObjects.newCO(dataset.id, spaceTraced.getOrElse("")))">
+				<button class="btn btn-default btn-xs">
+					Publish
+				</button>
+			</a>
+		}
     </div>
 
 </div>

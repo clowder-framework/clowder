@@ -527,7 +527,7 @@ GET            /rss/:etype                                                      
 # CURATIONS ENDPOINT
 # ----------------------------------------------------------------------
 
-GET            /dataset/:id/curations/new                                               @controllers.CurationObjects.newCO(id:UUID, spaceId:String ?= "")
+GET            /dataset/:id/curations/new                                               @controllers.CurationObjects.newCO(id:UUID, space:String ?= "")
 POST           /dataset/:id/curations/submit                                            @controllers.CurationObjects.submit(id:UUID)
 GET            /spaces/:spaceId/curations/:curationId                                   @controllers.CurationObjects.getCurationObject(spaceId:UUID, curationId: UUID)
 GET            /spaces/:spaceId/curations/:curationId/compareToRepository               @controllers.CurationObjects.compareToRepository(spaceId: UUID, curationId: UUID)

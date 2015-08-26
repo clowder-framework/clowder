@@ -26,16 +26,18 @@ class CurationObjects @Inject()( curations: CurationService,
 
   def newCO(datasetId:UUID, spaceId:String) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
-    val spaceByDataset = datasets.get(datasetId) match {
-      case Some(dataset) => dataset.spaces map( id => spaces.get(id).get) filter(_ != None) filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id)))
-      case None =>List.empty
+    val (name, desc, spaceByDataset) = datasets.get(datasetId) match {
+      case Some(dataset) => (dataset.name, dataset.description, dataset.spaces map( id => spaces.get(id).get) filter(_ != None) filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))))
+      case None => ("", "", List.empty)
     }
 
     val defaultspace = spaceId match {
       case "" => None
       case _ => spaces.get(UUID(spaceId))
     }
-    Ok(views.html.curations.newCuration(datasetId, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
+
+
+    Ok(views.html.curations.newCuration(datasetId, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
       RequiredFieldsConfig.isDescriptionRequired))
   }
 
