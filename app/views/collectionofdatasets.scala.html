@@ -226,7 +226,7 @@
   			<li class ="next" id="addPagerNext" style="visibility:hidden;"><a href="#!">Next</a></li>
 		</ul>
 		@if(user.isDefined ) {
-			<div class="row border-top bottom-padding">
+			<div id ='collection-users' class="row border-top bottom-padding">
 				<div class="col-md-12">
 					<a href="@routes.Collections.users(collection.id)">
 						<span class="glyphicon glyphicon-hand-right"></span> Users with access to the collection
@@ -330,6 +330,12 @@
 			}
 		});
 	}
+	 $(document).ready(function(){
+		if(@collection.spaces.size < 1 ) {
+			$('#collection-users').hide();
+		}
+
+	});
 </script>
     <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
