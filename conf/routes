@@ -96,7 +96,7 @@ GET            /datasets/new                                                    
 GET            /datasets/addToDataset/:id/:name/:desc                                   @controllers.Datasets.addToDataset(id: UUID, name: String, desc: String)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
-GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID)
+GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
 POST           /dataset/submit                                                          @controllers.Datasets.submit
@@ -527,8 +527,8 @@ GET            /rss/:etype                                                      
 # CURATIONS ENDPOINT
 # ----------------------------------------------------------------------
 
-GET            /spaces/:id/curations/new                                                @controllers.CurationObjects.newCO(id:UUID)
-POST           /spaces/:id/curations/submit                                             @controllers.CurationObjects.submit(id:UUID)
+GET            /dataset/:id/curations/new                                               @controllers.CurationObjects.newCO(id:UUID, spaceId:String ?= "")
+POST           /dataset/:id/curations/submit                                            @controllers.CurationObjects.submit(id:UUID)
 GET            /spaces/:spaceId/curations/:curationId                                   @controllers.CurationObjects.getCurationObject(spaceId:UUID, curationId: UUID)
 GET            /spaces/:spaceId/curations/:curationId/compareToRepository               @controllers.CurationObjects.compareToRepository(spaceId: UUID, curationId: UUID)
 GET            /spaces/:spaceId/curations/:curationId/sendToRepository                  @controllers.CurationObjects.sendToRepository(spaceId:UUID, curationId: UUID)

@@ -28,7 +28,7 @@
                             </a>
                         }
                     <div class="caption break-word">
-                        <h4><a href="@(routes.Datasets.dataset(dataset.id))">@dataset.name</a></h4>
+                        <h4><a href="@(routes.Datasets.dataset(dataset.id, Some(space)))">@dataset.name</a></h4>
                         <p>@ellipsize(dataset.description, 200)</p>
                     </div>
                     </div>
@@ -38,6 +38,11 @@
                             <span class="glyphicon glyphicon glyphicon-file" title="@dataset.files.size files"></span> @dataset.files.size
                             <span class="glyphicon glyphicon glyphicon-tags" title="@dataset.tags.size tags"></span>  @dataset.tags.size
                             <span class="glyphicon glyphicon glyphicon-list" title="@(dataset.metadata.keys.size + dataset.userMetadata.keys.size) metadata fields"></span>  @(dataset.metadata.keys.size + dataset.userMetadata.keys.size)
+                            <a href="@(routes.CurationObjects.newCO(dataset.id, space))">
+                                <button class="btn btn-default btn-xs">
+                                    Publish
+                                </button>
+                            </a>
                         </li>
                     </ul>
                 </div>

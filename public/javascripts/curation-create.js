@@ -14,23 +14,11 @@ function createCuration() {
     var name = $('#name');
     var desc = $('#description');
 
-    var datasets = document.getElementById('datasetid');
-    var Datasets = "";
+    var space = document.getElementById("spaceid");
 
-    for (var i = 0; i < datasets.options.length; i++) {
-        if (datasets.options[i].selected ) {
-            Datasets = Datasets  +datasets.options[i].value + ",";
-        }
-    }
+    var i = space.selectedIndex;
+    var spaceId =  space.options[i].value;
 
-    var collections = document.getElementById('collectionid');
-    var Collections = "";
-
-    for (var i = 0; i < collections.options.length; i++) {
-        if (collections.options[i].selected ) {
-            Collections = Collections  + collections.options[i].value + ",";
-        }
-    }
 
     //Add errors and return false if validation fails. Validation comes from the host page, passing in the isNameRequired and isDescRequired
     //variables.
@@ -43,6 +31,13 @@ function createCuration() {
         $('#descerror').show();
         error = true;
     }
+
+    if(spaceId.search("dataset")>0) {
+        $('#spaceerror').show();
+        error = true;
+    }
+
+
     if (error) {
         return false;
     }
@@ -51,8 +46,7 @@ function createCuration() {
     var encDescription = htmlEncode(desc.val());
     $('#hiddenname').val(encName);
     $('#hiddendescription').val(encDescription);
-    $('#hiddendatasets').val(Datasets);
-    $('#hiddencollections').val(Collections);
+    $('#hiddenspace').val(spaceId);
 
     //Submit the form
     $('#curationcreate').submit();

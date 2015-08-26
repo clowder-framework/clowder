@@ -1,4 +1,4 @@
-@(dataset: Dataset, space: Option [List[ProjectSpace]], previewers: List[Previewer], spaceList: List[ProjectSpace])(implicit user: Option[models.User])
+@(dataset: Dataset, space: Option [List[ProjectSpace]], previewers: List[Previewer], spaceList: List[ProjectSpace], spaceTraced:Option[String])(implicit user: Option[models.User])
 @import api.Permission
 <div class="row">
     <div class="col-md-12 box-white-space">
@@ -34,6 +34,11 @@
 
         @datasets.deleteButton(dataset)
         @datasets.follow(dataset)
+		<a href="@(routes.CurationObjects.newCO(dataset.id, spaceTraced.getOrElse("")))">
+		<button class="btn btn-default btn-xs">
+                                    Publish
+		</button>
+		</a>
     </div>
 
 </div>

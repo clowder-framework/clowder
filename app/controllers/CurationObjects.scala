@@ -8,6 +8,7 @@ import api.Permission
 import models._
 import play.api.Logger
 import play.api.data.{Forms, Form}
+import play.api.mvc.MultipartFormData
 import play.api.data.Forms._
 import services._
 import util.RequiredFieldsConfig
@@ -17,18 +18,25 @@ import play.api.Play.current
 import scala.text
 
 class CurationObjects @Inject()( curations: CurationService,
-                           datasets: DatasetService,
-                             collections: CollectionService,
-                             spaces: SpaceService,
-                               files: FileService
-                              ) extends SecuredController {
+                                 datasets: DatasetService,
+                                 collections: CollectionService,
+                                 spaces: SpaceService,
+                                 files: FileService
+                               ) extends SecuredController {
 
-  def newCO(spaceId:UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+  def newCO(datasetId:UUID, spaceId:String) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
-    val collectionsInSpace = spaces.getCollectionsInSpace(Some(spaceId.stringify))
-    val datasetsInSpace = spaces.getDatasetsInSpace(Some(spaceId.stringify))
-    Ok(views.html.curations.newCuration(spaceId, datasetsInSpace, collectionsInSpace, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired
-    ))
+    val spaceByDataset = datasets.get(datasetId) match {
+      case Some(dataset) => dataset.spaces map( id => spaces.get(id).get) filter(_ != None) filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id)))
+      case None =>List.empty
+    }
+
+    val defaultspace = spaceId match {
+      case "" => None
+      case _ => spaces.get(UUID(spaceId))
+    }
+    Ok(views.html.curations.newCuration(datasetId, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
+      RequiredFieldsConfig.isDescriptionRequired))
   }
 
   /**
@@ -36,47 +44,44 @@ class CurationObjects @Inject()( curations: CurationService,
    * the browser is redirected to the space page since I haven't merge staging area. On error, it is redirected back space
    * page since I haven't merge staging area.
    */
-  def submit(spaceId:UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) (parse.multipartFormData) { implicit request =>
+  def submit(datasetId:UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) (parse.multipartFormData)  { implicit request =>
 
+    //get name, des, space from request
     var COName = request.body.asFormUrlEncoded.getOrElse("name", null)
     var CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
-    var CODataset = request.body.asFormUrlEncoded.getOrElse("datasets",  List.empty)
-    var COCollection = request.body.asFormUrlEncoded.getOrElse("collections",  List.empty)
+    var COSpace = request.body.asFormUrlEncoded.getOrElse("space", null)
 
     implicit val user = request.user
     user match {
       case Some(identity) => {
         //TODO:check COName is null
-        val stringCollections = COCollection(0).split(",").toList
-        val stringDatasets = CODataset(0).split(",").toList
 
-        val COCollectionIDs: List[UUID] = stringCollections.map(aCollection => if(aCollection != "") UUID(aCollection) else None).filter(_ != None).asInstanceOf[List[UUID]]
-        var COCollections = COCollectionIDs.map( collectionid => collections.get(collectionid).getOrElse(null)).filter(_ != null)
+        datasets.get(datasetId) match {
+          case Some(dataset) => {
+            val spaceId = UUID(COSpace(0))
+            if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId))){
+            //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
+            val newCuration = CurationObject(
+              name = COName(0),
+              author = identity,
+              description = CODesc(0),
+              created = new Date,
+              space = spaceId,
+              datasets = List(dataset)
+            )
 
-
-        val CODatasetIDs: List[UUID] = stringDatasets.map(aDataset => if(aDataset != "") UUID(aDataset) else None).filter(_ != None).asInstanceOf[List[UUID]]
-        var CODatasets = CODatasetIDs.map( datasetid => datasets.get(datasetid).getOrElse(null)).filter(_ != null)
-
-
-        Logger.debug("------- in CUrations.submit with " + CODatasets.length + " datasets and "+ COCollections.length +" collections ---------")
-
-        val newCuration = CurationObject(
-        name = COName(0),
-        author = identity,
-        description = CODesc(0),
-        created = new Date,
-        space = spaceId,
-        datasets = CODatasets,
-        collections = COCollections
-        )
-
-        // insert curation
-        Logger.debug("create Co: " + newCuration.id)
-        curations.insert(newCuration)
-        spaces.addCurationObject(spaceId, newCuration.id)
-       Redirect(routes.Spaces.getSpace(spaceId))
-     }
-      case None => Redirect(routes.Spaces.getSpace(spaceId))
+            // insert curation
+            Logger.debug("create Co: " + newCuration.id)
+            curations.insert(newCuration)
+            spaces.addCurationObject(spaceId, newCuration.id)
+            Redirect(routes.CurationObjects.getCurationObject(spaceId, newCuration.id))
+          }
+              else InternalServerError("Permission Denied")
+          }
+          case None => InternalServerError("Dataset Not found")
+        }
+      }
+      case None => InternalServerError("User Not found")
     }
   }
 

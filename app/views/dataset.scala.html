@@ -9,7 +9,9 @@
   rdfExported: Boolean,
   datasetSpaces: Option[List[ProjectSpace]],
   filesTags: Set[String],
-  otherSpaces: List[ProjectSpace])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  otherSpaces: List[ProjectSpace],
+  spaceTraced: Option[String]
+        )(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -76,9 +78,11 @@
                 <div class="col-md-12" id="ds-title">
                     <h1 id="datasettitle" class="inline">@Html(dataset.name)</h1>
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                        <h3 class="inline align-right"><a id ="edit-title" href = "javascript:updateTitle()">
+                        <h3 class="inline align-right">
+                            <a id ="edit-title" href = "javascript:updateTitle()">
                             <span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
-                        </a></h3>
+                            </a>
+                        </h3>
                     }
 
                 </div>
@@ -94,7 +98,7 @@
                 </ul>
                 <div class="tab-content">
                     <div role="tabpanel" class="tab-pane fade in active" id="tab-home">
-                        @datasets.home(dataset, datasetSpaces, previews, otherSpaces)
+                        @datasets.home(dataset, datasetSpaces, previews, otherSpaces, spaceTraced)
                     </div>
                   <div role="tabpanel" class="tab-pane" id="tab-files">
                       <div id="add-file-btn">
