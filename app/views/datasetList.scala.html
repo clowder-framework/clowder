@@ -96,12 +96,12 @@
                   </div>
                   <div class="panel-body">
                         @if(!dataset.thumbnail_id.isEmpty){
-                            <a href="@(routes.Datasets.dataset(dataset.id))">
+                            <a href="@(routes.Datasets.dataset(dataset.id,space))">
                                 <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)">
                             </a>
                         }
                         <div class="caption break-word">
-                            <h4><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></h4>
+                            <h4><a href="@(routes.Datasets.dataset(dataset.id, space))">@Html(dataset.name)</a></h4>
                             <p>@Html(ellipsize(dataset.description, 200))</p>
                         </div>
                   </div>
