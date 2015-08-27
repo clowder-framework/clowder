@@ -45,12 +45,23 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // create indices.
     Logger.debug("Ensuring indices exist")
+    collection("spaces.projects").ensureIndex(MongoDBObject("created" -> -1))
+    collection("spaces.projects").ensureIndex(MongoDBObject("public" -> 1))
+    collection("spaces.projects").ensureIndex(MongoDBObject("creator" -> 1))
+
     collection("collections").ensureIndex(MongoDBObject("created" -> -1))
-    
+    collection("collections").ensureIndex(MongoDBObject("spaces" -> 1))
+    collection("collections").ensureIndex(MongoDBObject("datasets._id" -> 1))
+    collection("collections").ensureIndex(MongoDBObject("public" -> 1))
+    collection("collections").ensureIndex(MongoDBObject("author.identityId.userId" -> 1, "author.identityId.providerId" -> 1))
+
     collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
     collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("files._id" -> 1))
-    
+    collection("datasets").ensureIndex(MongoDBObject("spaces" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("public" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("author.identityId.userId" -> 1, "author.identityId.providerId" -> 1))
+
     collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
     collection("uploads.files").ensureIndex(MongoDBObject("tags" -> 1))
     collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
