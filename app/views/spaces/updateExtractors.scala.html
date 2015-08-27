@@ -1,15 +1,12 @@
+@(runningExtractors: List[String], selectedExtractors: List[String], space: String)(implicit user: Option[models.User])
 
-  
-  @(runningExtractors: List[String], selectedExtractors: List[String], space: String)(implicit user: Option[models.User])
 @import helper._
 
-<!-- Copy of the collections page -->
 @main("Space") {
-
  @if(runningExtractors.size == 0) {
 	<div class="page-header">
         <h1> No extractors running</h1>
-    </div>
+  </div>
  } else {     
      <div class="page-header">
         <h1> Update Extractors </h1>
@@ -26,11 +23,8 @@
 	 		@extractor	     	
 	 		<br>
 	 	}
-	 	<p>
-	 	
-	 	@updateButton()
-	 	 
+	 	<p> 	
+	 	@updateButton()	 	 
 	}<!-- end of form -->
-   }  
- }    
-
+ }  
+}    
