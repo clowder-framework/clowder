@@ -225,7 +225,7 @@ class Datasets @Inject()(
           var datasetWithFiles = dataset.copy(files = filesInDataset)
           datasetWithFiles = Utils.decodeDatasetElements(datasetWithFiles)
 
-          val filteredPreviewers = Previewers.findDatasetPreviewers;
+          val filteredPreviewers = Previewers.findDatasetPreviewers
 
           val metadata = datasets.getMetadata(id)
           Logger.debug("Metadata: " + metadata)
@@ -237,7 +237,6 @@ class Datasets @Inject()(
 
           val collectionsOutside = collections.listOutsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
           val collectionsInside = collections.listInsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
-          val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
           var decodedCollectionsOutside = new ListBuffer[models.Collection]()
           var decodedCollectionsInside = new ListBuffer[models.Collection]()
           var filesTags = TreeSet.empty[String]
@@ -294,7 +293,7 @@ class Datasets @Inject()(
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
-          decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpaces), filesTags, otherSpaces))
+          decodedCollectionsOutside.toList, decodedCollectionsInside.toList, isRDFExportEnabled, Some(decodedSpaces), filesTags, otherSpaces))
 
         }
         case None => {
