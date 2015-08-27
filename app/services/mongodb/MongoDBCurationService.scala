@@ -8,7 +8,7 @@ import org.bson.types.ObjectId
 import play.api.Play._
 import MongoContext.context
 import models.{User, UUID, Collection, Dataset}
-import services.CurationService
+import services.{SpaceService, CurationService}
 import util.Direction._
 import java.util.Date
 import play.api.Logger
@@ -17,13 +17,14 @@ import com.mongodb.casbah.Imports._
 
 
 @Singleton
-class MongoDBCurationService  @Inject()  extends CurationService {
+class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends CurationService {
 
   def insert(curation: CurationObject) = {
     if (CurationDAO != null) {
       //CurationDAO.save(curation)
       Logger.debug("insert a new CO with ID: " + curation.id)
       CurationDAO.insert(curation)
+      spaces.addCurationObject(curation.space, curation.id)
     }
   }
 

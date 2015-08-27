@@ -74,7 +74,6 @@ class CurationObjects @Inject()( curations: CurationService,
             // insert curation
             Logger.debug("create Co: " + newCuration.id)
             curations.insert(newCuration)
-            spaces.addCurationObject(spaceId, newCuration.id)
             Redirect(routes.CurationObjects.getCurationObject(spaceId, newCuration.id))
           }
               else InternalServerError("Permission Denied")
