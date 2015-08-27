@@ -9,9 +9,9 @@
         <div class="row">
             <div class="col-md-12">
                 <form class="form-horizontal form-md">
-                        <select id="add-metadata-select">
-                            <option value=""></option>
-                        </select>
+                    <select id="add-metadata-select">
+                        <option value=""></option>
+                    </select>
                 </form>
             </div>
         </div>
@@ -23,77 +23,83 @@
 <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
 <script language="javascript">
-    // populate pull down, do this before initializing chosen
-    // TODO move to service
-    var fields = [
-        {"label":"Abstract",
-         "uri":"http://purl.org/dc/terms/abstract",
-         "type":"string"},
-        {"label":"Audience",
-         "uri":"http://purl.org/dc/terms/audience",
-         "type":"string"},
-        {"label":"Alternative Title",
-         "uri":"http://purl.org/dc/terms/alternative",
-         "type":"string"}
-    ];
-    for (i = 0; i < fields.length; i++) {
-       var elem = $("<option></option>");
-            elem.attr("data-type", fields[i].type);
-            elem.attr("value",fields[i].uri);
-            elem.text(fields[i].label);
-        $("#add-metadata-select").append(elem);
-    }
-    // chosen pulldown configuration
-    $("#add-metadata-select").chosen({
-    no_results_text: "Not found. Press enter to add ",
-    disable_search_threshold: 10,
-    width: "100%",
-    placeholder_text_single: "Select field"});
-    // register selection listener
-    $("#add-metadata-select").change(function () {
-        $("#add-metadata-select option:selected").each(function() {
-            // create html form
-            var field_label = $(this).text();
-            var field_id = $(this).val();
-            var field_type = $(this).data("type");
-            var modalTemplate = Handlebars.getTemplate('/assets/templates/metadata/add_metadata');
-            var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type});
-            $('#selected_field').html(html);
-            // register submit listener
-            $("#add-metadata-button").click(function(event){
-                event.preventDefault();
-                var field_label = $("#field-value").data("label");
-                var field_id = $("#field-value").data("id");
-                var field_value = $("#field-value").val();
-                var context = {};
-                context[field_label] = field_id;
-                var content = {};
-                content[field_label] = field_value;
-                var body = {
-                        "@@context": context,
-                        "@(resType)_id": "@id",
-                        "content": content
-                    };
-                var request = jsRoutes.api.Metadata.addUserMetadata().ajax({
-                    data: JSON.stringify(body),
-                    type: 'POST',
-                    contentType: "application/json"
-                  });
+    // get metadata definitions
+    var request = jsRoutes.api.Metadata.getVocabularies().ajax({
+        type: 'GET',
+        contentType: "application/json"
+    });
 
-                  request.done(function (response, textStatus, jqXHR) {
-                    console.log("Response " + textStatus);
-                    // TODO update gui without reloading page
-                    location.reload();
-                  });
+    request.done(function (response, textStatus, jqXHR) {
+        console.log("Response " + textStatus);
+        var fields = response;
+        for (i = 0; i < fields.length; i++) {
+           var elem = $("<option></option>");
+                elem.attr("data-type", fields[i].type);
+                elem.attr("value",fields[i].uri);
+                elem.text(fields[i].label);
+            $("#add-metadata-select").append(elem);
+        }
+        // chosen pulldown configuration
+        $("#add-metadata-select").chosen({
+        no_results_text: "Not found. Press enter to add ",
+        disable_search_threshold: 10,
+        width: "100%",
+        placeholder_text_single: "Select field"});
+        // register selection listener
+        $("#add-metadata-select").change(function () {
+            $("#add-metadata-select option:selected").each(function() {
+                // create html form
+                var field_label = $(this).text();
+                var field_id = $(this).val();
+                var field_type = $(this).data("type");
+                var modalTemplate = Handlebars.getTemplate('/assets/templates/metadata/add_metadata');
+                var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type});
+                $('#selected_field').html(html);
+                // register submit listener
+                $("#add-metadata-button").click(function(event){
+                    event.preventDefault();
+                    var field_label = $("#field-value").data("label");
+                    var field_id = $("#field-value").data("id");
+                    var field_value = $("#field-value").val();
+                    var context = {};
+                    context[field_label] = field_id;
+                    var content = {};
+                    content[field_label] = field_value;
+                    var body = {
+                            "@@context": context,
+                            "@(resType)_id": "@id",
+                            "content": content
+                        };
 
-                  request.fail(function (jqXHR, textStatus, errorThrown){
-                      console.error("The following error occured: " + textStatus, errorThrown);
-                      var errMsg = "You must be logged in to add metadata";
-                      if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                    var request = jsRoutes.api.Metadata.addUserMetadata().ajax({
+                        data: JSON.stringify(body),
+                        type: 'POST',
+                        contentType: "application/json"
+                    });
+
+                    request.done(function (response, textStatus, jqXHR) {
+                        console.log("Response " + textStatus);
+                        // TODO update gui without reloading page
+                        location.reload();
+                    });
+
+                    request.fail(function (jqXHR, textStatus, errorThrown){
+                        console.error("The following error occured: " + textStatus, errorThrown);
+                        var errMsg = "You must be logged in to add metadata";
+                        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
                           notify("Metadata was not added due to : " + errorThrown, "error");
-                      }
-                  });
+                        }
+                    });
+                });
             });
+        });
+
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occured: " + textStatus, errorThrown);
+            var errMsg = "You must be logged in to retrieve metadata definitions";
+            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+              notify("Metadata was not added due to : " + errorThrown, "error");
+            }
         });
     });
 </script>

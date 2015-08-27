@@ -7,7 +7,7 @@ import play.libs.Akka
 import services.AppConfiguration
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
-import models.{ServerStartTime, CORSFilter, ExtractionInfoSetUp, JobsScheduler}
+import models._
 import java.util.Calendar
 import play.api.mvc.WithFilters
 import akka.actor.Cancellable
@@ -29,6 +29,9 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
     // set admins
     AppConfiguration.setDefaultAdmins()
+
+    // set default metadata definitions
+    MDVocabularyDefinition.registerDefaultVacabularyDefinitions()
 
     extractorTimer = Akka.system().scheduler.schedule(0 minutes, 5 minutes) {
       ExtractionInfoSetUp.updateExtractorsInfo()

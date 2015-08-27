@@ -545,8 +545,10 @@ class MongoDBFileService @Inject() (
   /**
    * Implementation of updateLicenseing defined in services/FileService.scala.
    */
-  def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String) {      
-      val licenseData = models.LicenseData(m_licenseType = licenseType, m_rightsHolder = rightsHolder, m_licenseText = licenseText, m_licenseUrl = licenseUrl, m_allowDownload = allowDownload.toBoolean)
+  def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String,
+    allowDownload: String) {
+      val licenseData = models.LicenseData(m_licenseType = licenseType, m_rightsHolder = rightsHolder,
+        m_licenseText = licenseText, m_licenseUrl = licenseUrl, m_allowDownload = allowDownload.toBoolean)
       val result = FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), 
           $set("licenseData" -> LicenseData.toDBObject(licenseData)), 
           false, false, WriteConcern.Safe);      
@@ -563,34 +565,41 @@ class MongoDBFileService @Inject() (
       // Only add tags with new values.
       if (!existingTags.contains(tag)) {
         val tagObj = models.Tag(name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
-        FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
+        FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("tags" -> Tag.toDBObject(tagObj)),
+          false, false, WriteConcern.Safe)
       }
     })
   }
 
   def removeAllTags(id: UUID) {
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("tags" -> List()), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("tags" -> List()), false, false,
+      WriteConcern.Safe)
   }
   // ---------- Tags related code ends ------------------
 
   def comment(id: UUID, comment: Comment) {
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("comments" -> Comment.toDBObject(comment)),
+      false, false, WriteConcern.Safe)
   }
   
   def setIntermediate(id: UUID){
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("isIntermediate" -> Some(true)), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("isIntermediate" -> Some(true)), false, false,
+      WriteConcern.Safe)
   }
 
   def renameFile(id: UUID, newName: String){
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("filename" -> newName), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("filename" -> newName), false, false,
+      WriteConcern.Safe)
   }
 
   def setContentType(id: UUID, newType: String){
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("contentType" -> newType), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("contentType" -> newType), false, false,
+      WriteConcern.Safe)
   }
 
   def setUserMetadataWasModified(id: UUID, wasModified: Boolean){
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadataWasModified" -> Some(wasModified)), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadataWasModified" -> Some(wasModified)),
+      false, false, WriteConcern.Safe)
   }
 
   def removeFile(id: UUID){

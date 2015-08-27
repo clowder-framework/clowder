@@ -68,7 +68,7 @@ object Agent {
   }
 }
 
-object Metadata{
+object Metadata {
 
   implicit object ExtractorAgentWrites extends Writes[ExtractorAgent] {
     def writes(extractor: ExtractorAgent): JsObject = {

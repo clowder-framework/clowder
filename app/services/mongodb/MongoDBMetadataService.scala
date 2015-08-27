@@ -74,6 +74,21 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
       case None => None
     }
   }
+
+  /** Vocabulary definitions for user fields **/
+  def getVocabularies(spaceId: Option[UUID] = None): List[MDVocabularyDefinition] = {
+    MDVocabularyDefinitionDAO.findAll().toList
+  }
+
+  /** Add vocabulary definitions **/
+  def addVocabularyDefinition(definition: MDVocabularyDefinition): Unit = {
+    val uri = (definition.json \ "uri").as[String]
+    MDVocabularyDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri)) match {
+      case Some(md) => MDVocabularyDefinitionDAO.update(MongoDBObject("json.uri" -> uri), definition,
+        false, false, WriteConcern.Normal)
+      case None => MDVocabularyDefinitionDAO.save(definition)
+    }
+  }
   
   /** update Metadata 
    *  TODO
@@ -87,9 +102,17 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
   }
 
 }
+
 object MetadataDAO extends ModelCompanion[Metadata, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin")
     case Some(x) => new SalatDAO[Metadata, ObjectId](collection = x.collection("metadata")) {}
+  }
+}
+
+object MDVocabularyDefinitionDAO extends ModelCompanion[MDVocabularyDefinition, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin")
+    case Some(x) => new SalatDAO[MDVocabularyDefinition, ObjectId](collection = x.collection("metadata.definitions")) {}
   }
 }

@@ -14,8 +14,10 @@ import play.api.libs.json.Json
  *
  * @author Smruti Padhy
  */
-class MetadataMongoDBSpec extends PlaySpec with OneServerPerSuite{
-  val testCreator = UserAgent(id= UUID.generate, typeOfAgent="cat:user", userId = Some(new URL("http://dts.ncsa.illinois.edu/user06")))
+class MetadataMongoDBSpec extends PlaySpec with OneServerPerSuite {
+  val id = UUID.generate
+  val testCreator = UserAgent(id = UUID.generate, typeOfAgent="cat:user", MiniUser(id, "Test User", "", None),
+    userId = Some(new URL("http://dts.ncsa.illinois.edu/user06")))
   val fileId = UUID.generate
   val datasetId = UUID.generate
   val testcontent = Json.obj("score"->Json.arr("3.4"),"category"->Json.arr("cat"))

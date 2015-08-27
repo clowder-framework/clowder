@@ -25,10 +25,13 @@ class Metadata @Inject()(metadataService: MetadataService, contextService: Conte
     Ok(toJson(results))
   }
   
-  def getUserMetadata() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.AddMetadata)) {
+  def getVocabularies() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.AddMetadata)) {
     implicit request =>
       request.user match {
-        case Some(user) => Ok(JsObject(Seq("status" -> JsString(user.identityId.userId))))
+        case Some(user) => {
+          val vocabularies = metadataService.getVocabularies()
+          Ok(toJson(vocabularies.map(_.json)))
+        }
         case None => BadRequest(toJson("Invalid user"))
       }
   }
