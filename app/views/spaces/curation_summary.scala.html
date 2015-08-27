@@ -1,0 +1,15 @@
+@(space: models.ProjectSpace, curationObject: models.CurationObject, title: String, editDataset: Boolean)(implicit user: Option[models.User])
+
+    <div class="break-word black-border">
+        <h1 class="center-glyphicon glyphicon glyphicon-cloud-upload" style="display:block;" ></h1> <br/>
+        <h5>@curationObject.name</h5> <br/>
+        Size: @{curationObject.datasets(0).files.map(_.length).sum /1024} MB <br/>
+        File Formats: @curationObject.datasets(0).files.map(_.contentType).toSet.mkString(", ") <br/>
+        Creator: @curationObject.datasets(0).author.fullName <br/>
+        Uploaded: @curationObject.created.date.format("yyyy-mm-dd hh:mm") <br/>
+        @if(!editDataset) {
+            <div class="center">
+                <a class="btn btn-sm btn-default" href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)">Edit Metadata</a>
+            </div>
+        }
+    </div>

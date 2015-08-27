@@ -117,8 +117,8 @@ class CurationObjects @Inject()( curations: CurationService,
           curations.get(curationId) match {
             case Some(c) => {
               //TODO: Make some sort of call to the matckmaker
-              val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
-              "Dissemination Control" -> List("Restricted Use", "Ability to Embargo"),"License" -> List("Creative Commons", "GPL") ,
+              val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
+                "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
               "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
 
               Ok(views.html.spaces.matchmakerResult(s, c, propertiesMap))

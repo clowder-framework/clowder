@@ -2,28 +2,111 @@
 @main("Matchmaker") {
     <div class="row">
         <div class="col-md-12">
-            <h1>Find Matchmaking Repositories for <a href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)">@curationObject.name</a></h1>
+            <h1>Find Repositories for @curationObject.name</h1>
         </div>
     </div>
     <div class="row">
-        <div class="col-md-6">
-        @for((prop, value) <- properties) {
-            <h4>@prop</h4>
-            @for(cur<-value) {
-                <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
+        <div class="col-md-3">
+            @spaces.curation_summary(space, curationObject, "Matchmaker", false)
+            <h4><b>Publication Preferences</b></h4>
+            @for((prop, value) <- properties) {
+                <h5>@prop</h5>
+                @for(cur<-value) {
+                    <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
+                }
             }
-        }
-            <button class="btn btn-primary">Update Results</button>
+            <button class="btn btn-sm btn-primary">Update Results</button>
         </div>
-        <div class ="col-md-6">
-            <h3>Recommended Repositories</h3>
-            <input type="checkbox" name="repository" value="1"> 1. OpenICPSR <br/>
-            <input type="checkbox" name="repository" value="2"> 2. Ideals<br/>
-            <input type="checkbox" name="repository" value="3"> 3. IU Cloud<br/>
+        <div class="col-md-9">
+
+                <h3>Candidate Repositories</h3>
+                The results below are based on an analysis of the dataset's properties and metadata and the preferences you specified. <br/>
+                <h4><input type="radio" name="repository" value="1">1. IDEALS </h4>
+                    <div class="indent_20" id="ideals_mm">
+
+                        <a><span class="glyphicon glyphicon-chevron-down"></span>Matchmaker Summary</a> <br/>
+                        <div class="indent_20">
+                            Dataset properties: <br/>
+                            <span class="green">All requirements are satisfied</span><br/>
+                            Preferences: <br/>
+                            <span class="green"> All requirements are satisfied</span><br/>
+                            Metadata: <br/>
+                            <span class="red"> Coverage is required </span> <a href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)">Edit Metadata</a>
+                        </div>
+                    </div>
+                 <h4><input type="radio" name="repository" value="2"> 2. IU Cloud</h4>
+                    <div class="indent_20" id = "iu_cloud_mm">
+                        <a><span class="glyphicon glyphicon-chevron-down" ></span>Matchmaker Summary</a> <br/>
+                        <div class="indent_20">
+                            Dataset properties: <br/>
+                            <span class="green">All requirements are satisfied</span><br/>
+                            Preferences: <br/>
+                            <span class="red"> Cost: You specified a preference of free. IU Cloudhas a $300 fee</span><br/>
+                            Metadata: <br/>
+                            <span class="green"> All requirements are satisfied</span> <a href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)">Edit Metadata</a>
+                        </div>
+                    </div>
+                <h4><input type="radio" name="repository" value="3"> 3. OpenICPSR<br/></h4>
+                    <div class="indent_20" id="open_icpsr_mm">
+                        <a><span class="glyphicon glyphicon-chevron-down" ></span>Matchmaker Summary</a> <br/>
+                        <div class="indent_20">
+                            Dataset properties: <br/>
+                            <span class="red">Filetypes: Dataset containes video files. openICSPR does not allow video files</span><br/>
+                            Preferences: <br/>
+                            <span class="red"> Cost: You specified a preference of free. openICPSR has a $600 fee</span><br/>
+                            Metadata: <br/>
+                            <span class="green"> All requirements are satisfied </span> <a href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)">Edit Metadata</a>
+                        </div>
+                    </div>
         </div>
-        <a class="btn btn-primary" href=@routes.CurationObjects.compareToRepository(space.id, curationObject.id)>Select Repository</a>
+
+    </div>
+    <div class="row border-top bottom-padding">
+
+        @*<a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> <span class="glyphicon glyphicon-arrow-left"></span>Go Back to Space </a>*@
+        <a class="btn btn-default" href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Edit Metadata</a>
+        <a class="btn btn-primary pull-right" href=@routes.CurationObjects.compareToRepository(space.id, curationObject.id)> Select Repository <span class="glyphicon glyphicon-chevron-right"></span></a>
     </div>
 
-    <a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> Go Back to Space </a>
+    <script>
+                $("#ideals_mm").on('click', function(){
+                    if($("#ideals_mm > div").attr('style') == 'display:none;'){
+                        $("#ideals_mm > div").attr('style', 'display:block;');
+                        $("#ideals_mm > a > span").removeClass('glyphicon-chevron-right');
+                        $("#ideals_mm > a >span").addClass('glyphicon-chevron-down');
+                    }
+                    else{
+                       $("#ideals_mm > div").attr('style', 'display:none;');
+                        $("#ideals_mm > a >span").removeClass('glyphicon-chevron-down');
+                        $("#ideals_mm > a >span").addClass('glyphicon-chevron-right');
 
+                    }
+                    });
+                    $("#iu_cloud_mm").on('click', function(){
+                    if($("#iu_cloud_mm > div").attr('style') == 'display:none;'){
+                        $("#iu_cloud_mm > div").attr('style', 'display:block;');
+                        $("#iu_cloud_mm > a > span").removeClass('glyphicon-chevron-right');
+                        $("#iu_cloud_mm > a >span").addClass('glyphicon-chevron-down');
+                    }
+                    else{
+                       $("#iu_cloud_mm> div").attr('style', 'display:none;');
+                        $("#iu_cloud_mm > a >span").removeClass('glyphicon-chevron-down');
+                        $("#iu_cloud_mm > a >span").addClass('glyphicon-chevron-right');
+
+                    }
+                    });
+                    $("#open_icpsr_mm").on('click', function(){
+                    if($("#open_icpsr_mm > div").attr('style') == 'display:none;'){
+                        $("#open_icpsr_mm > div").attr('style', 'display:block;');
+                        $("#open_icpsr_mm > a >span").removeClass('glyphicon-chevron-right');
+                        $("#open_icpsr_mm > a >span").addClass('glyphicon-chevron-down');
+                    }
+                    else{
+                       $("#open_icpsr_mm > div").attr('style', 'display:none;');
+                        $("#open_icpsr_mm > a >span").removeClass('glyphicon-chevron-down');
+                        $("#open_icpsr_mm > a >span").addClass('glyphicon-chevron-right');
+
+                    }
+                    });
+            </script>
 }

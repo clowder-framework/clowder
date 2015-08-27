@@ -67,16 +67,14 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], fileUsrMetadata: Map[S
 }
 }
 @main(curationObject.name) {
-
-    <div class="row">
-        <div class="col-md-12">
-            <h1>@curationObject.name</h1>
-        </div>
-
-        Note: The links in this page are for the live objects.
+    <div class="container row">
+    <div class="col-md-3">
+        @spaces.curation_summary(space, curationObject, curationObject.name, true)
     </div>
+    <div class="col-md-9">
     <div>
-        <h2><a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h2>
+        <h2>Dataset <a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h2> <br/>
+        Note: The links in this page redirect to the live objects.
         @metadata(curationObject.datasets(0), dsMetadata, dsUserMetadata, curationObject.datasets(0).datasetXmlMetadata, rdfExported)
     </div>
     @if(curationObject.datasets(0).files.size > 0 ){
@@ -167,8 +165,14 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], fileUsrMetadata: Map[S
         }
         </ul>
     </div>
-    <a class="btn btn-primary" href="@routes.CurationObjects.findMatchingRepositories(space.id, curationObject.id)"> Find Matchmaking Repositories </a>
-    <a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> Go Back to Space </a>
-    <a class="btn btn-default" href="@routes.Spaces.stagingArea(space.id)">Go Back to Staging Area</a>
+    </div>
+    </div>
+    <div class="row border-top bottom-padding">
+
+        @*<a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> <span class="glyphicon glyphicon-arrow-left"></span>Go Back to Space </a>*@
+        <a class="btn btn-default" href="@routes.Spaces.stagingArea(space.id)"><span class="glyphicon glyphicon-chevron-left"></span>Staging Area</a>
+        <a class="btn btn-primary pull-right" href="@routes.CurationObjects.findMatchingRepositories(space.id, curationObject.id)"> Find Repositories <span class="glyphicon glyphicon-chevron-right"></span></a>
+    </div>
+
 
 }
