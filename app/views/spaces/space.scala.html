@@ -20,8 +20,9 @@
             <p><span id="spacedescdisplay">@space.description</span></p>
         </div>
         <!-- Use text-right for the buttons to align at right side of screen -->
-        <div class="pull-right col-md-4 col-lg-4 col-sm-4 text-right">            
-            @if(!space.followers.contains(user.get.id)) {
+        <div class="pull-right col-md-4 col-lg-4 col-sm-4 text-right"> 
+            <!-- Fix for CATS-163 An exception is thrown if user is not defined -->           
+            @if(user.isEmpty || !space.followers.contains(user.get.id)) {
                 <button id="followButton"
                 class="btn btn-success followButton btn-xs"
                 objectId="@space.id"
