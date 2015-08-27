@@ -122,6 +122,8 @@ GET            /spaces/:id/addRequest                                           
 GET            /spaces/:id/acceptRequest                                                @controllers.Spaces.acceptRequest(id:UUID, user:String, role:String)
 GET            /spaces/:id/rejectRequest                                                @controllers.Spaces.rejectRequest(id:UUID, user:String)
 GET            /spaces/:id/invite                                                       @controllers.Spaces.invite(id:UUID)
+GET 		   /spaces/:id/selectExtractors											                            @controllers.Spaces.selectExtractors(id: UUID)
+POST		   /updateExtractors														                                @controllers.Spaces.updateExtractors
 POST           /spaces/:id/invite                                                       @controllers.Spaces.inviteToSpace(id: UUID)
 POST           /spaces/submit                                                           @controllers.Spaces.submit
 
