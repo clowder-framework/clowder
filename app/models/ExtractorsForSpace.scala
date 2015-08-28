@@ -1,9 +1,7 @@
 package models
 
 /**
- * Information about extractors assigned to a space. *
- * @author Inna Zharnitsky
- *
+ * Information about extractors assigned to a space.
  */
 case class ExtractorsForSpace(
     spaceId:String,

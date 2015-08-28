@@ -40,8 +40,7 @@ case class spaceInviteData(
   role: String,
   message: String)
 
-class Spaces @Inject()(extractorsForSpace: ExtractorsForSpaceService, extractors: ExtractorService, 
-		spaces: SpaceService, users: UserService, events: EventService) extends SecuredController {
+class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users: UserService, events: EventService) extends SecuredController {
 
   /**
    * New/Edit project space form bindings.
@@ -89,7 +88,7 @@ class Spaces @Inject()(extractorsForSpace: ExtractorsForSpaceService, extractors
       spaces.get(id) match {
         case Some(s) => {
           val runningExtractors: List[String] = extractors.getExtractorNames()
-          val selectedExtractors: List[String] = extractorsForSpace.getAllExtractors(id)
+          val selectedExtractors: List[String] = spaces.getAllExtractors(id)
           Ok(views.html.spaces.updateExtractors(runningExtractors, selectedExtractors, id.stringify))
         }
         case None => InternalServerError("Space not found")      
@@ -103,28 +102,37 @@ class Spaces @Inject()(extractorsForSpace: ExtractorsForSpaceService, extractors
     implicit request =>
       implicit val user = request.user
       //form contains space id and list of extractors.
-      val dataParts = request.body.dataParts
       var space_id: String = ""
       var extractors: List[String] = Nil
 
+      val dataParts = request.body.dataParts
       if (!dataParts.isDefinedAt("space_id")) {
         Logger.error("space id not defined")
-        Ok("Error - Space id not defined")
+        BadRequest("Space id not defined")
       } else {
         //space id passed as hidden parameter
         space_id = dataParts("space_id").head
-
-        //1. remove entry with extractors for this space from mongo
-        extractorsForSpace.delete(new UUID(space_id))
-        //2. if extractors are selected, add them 
-        if (dataParts.isDefinedAt("extractors")) {
-          extractors = dataParts("extractors").toList
-          extractors.map(extractorsForSpace.addExtractor(new UUID(space_id), _))
+        spaces.get(new UUID(space_id)) match {
+          case Some(existing_space) => {
+            //1. remove entry with extractors for this space from mongo
+            spaces.deleteAllExtractors(existing_space.id)
+            //2. if extractors are selected, add them 
+            if (dataParts.isDefinedAt("extractors")) {
+              extractors = dataParts("extractors").toList
+              extractors.map(spaces.addExtractor(existing_space.id, _))
+            }
+            Redirect(routes.Spaces.getSpace(new UUID(space_id)))
+          }
+          case None => {
+            BadRequest("The space does not exist")
+          }
         }
-        Redirect(routes.Spaces.getSpace(new UUID(space_id)))
+
       }
-    }
-   
+  }
+  
+                      
+                      
   
   /**
    * Space main page.
