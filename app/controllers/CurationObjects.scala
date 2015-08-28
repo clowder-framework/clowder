@@ -60,23 +60,29 @@ class CurationObjects @Inject()( curations: CurationService,
         datasets.get(datasetId) match {
           case Some(dataset) => {
             val spaceId = UUID(COSpace(0))
-            if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId))){
-            //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
-            val newCuration = CurationObject(
-              name = COName(0),
-              author = identity,
-              description = CODesc(0),
-              created = new Date,
-              space = spaceId,
-              datasets = List(dataset)
-            )
+            if (spaces.get(spaceId) != None) {
+              if (Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId))) {
+                //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
+                val newCuration = CurationObject(
+                  name = COName(0),
+                  author = identity,
+                  description = CODesc(0),
+                  created = new Date,
+                  space = spaceId,
+                  datasets = List(dataset)
+                )
 
-            // insert curation
-            Logger.debug("create Co: " + newCuration.id)
-            curations.insert(newCuration)
-            Redirect(routes.CurationObjects.getCurationObject(spaceId, newCuration.id))
-          }
-              else InternalServerError("Permission Denied")
+                // insert curation
+                Logger.debug("create Co: " + newCuration.id)
+                curations.insert(newCuration)
+                Redirect(routes.CurationObjects.getCurationObject(spaceId, newCuration.id))
+              }
+              else {
+                InternalServerError("Permission Denied")
+              }
+            }else {
+              InternalServerError("Space Not Found")
+            }
           }
           case None => InternalServerError("Dataset Not found")
         }

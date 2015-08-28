@@ -10,8 +10,7 @@
   datasetSpaces: Option[List[ProjectSpace]],
   filesTags: Set[String],
   otherSpaces: List[ProjectSpace],
-  spaceTraced: Option[String]
-        )(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  currentSpace: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -98,7 +97,7 @@
                 </ul>
                 <div class="tab-content">
                     <div role="tabpanel" class="tab-pane fade in active" id="tab-home">
-                        @datasets.home(dataset, datasetSpaces, previews, otherSpaces, spaceTraced)
+                        @datasets.home(dataset, datasetSpaces, previews, otherSpaces, currentSpace)
                     </div>
                   <div role="tabpanel" class="tab-pane" id="tab-files">
                       <div id="add-file-btn">
