@@ -37,36 +37,37 @@
         }  else {
             console.log("Wrong field type: " + field_type);
         }
-        var field_type = $(this).data("type");
-        var context = {};
-        context[field_label] = field_id;
-        var content = {};
-        content[field_label] = field_value;
-        var body = {
-                "@@context": context,
-                "@(resType)_id": "@id",
-                "content": content
-            };
+        if (field_value != "") {
+            var context = {};
+            context[field_label] = field_id;
+            var content = {};
+            content[field_label] = field_value;
+            var body = {
+                    "@@context": context,
+                    "@(resType)_id": "@id",
+                    "content": content
+                };
 
-        var request = jsRoutes.api.Metadata.addUserMetadata().ajax({
-            data: JSON.stringify(body),
-            type: 'POST',
-            contentType: "application/json"
-        });
+            var request = jsRoutes.api.Metadata.addUserMetadata().ajax({
+                data: JSON.stringify(body),
+                type: 'POST',
+                contentType: "application/json"
+            });
 
-        request.done(function (response, textStatus, jqXHR) {
-            console.log("Response " + textStatus);
-            // TODO update gui without reloading page
-            location.reload();
-        });
+            request.done(function (response, textStatus, jqXHR) {
+                console.log("Response " + textStatus);
+                // TODO update gui without reloading page
+                location.reload();
+            });
 
-        request.fail(function (jqXHR, textStatus, errorThrown){
-            console.error("The following error occured: " + textStatus, errorThrown);
-            var errMsg = "You must be logged in to add metadata";
-            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-              notify("Metadata was not added due to : " + errorThrown, "error");
-            }
-        });
+            request.fail(function (jqXHR, textStatus, errorThrown){
+                console.error("The following error occured: " + textStatus, errorThrown);
+                var errMsg = "You must be logged in to add metadata";
+                if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                  notify("Metadata was not added due to : " + errorThrown, "error");
+                }
+            });
+        }
     }
 
     // get metadata definitions
@@ -87,7 +88,7 @@
         // chosen pulldown configuration
         $("#add-metadata-select").chosen({
             no_results_text: "Not found. Press enter to add ",
-            disable_search_threshold: 10,
+            search_contains: true,
             width: "100%",
             placeholder_text_single: "Select field"});
         // register selection listener
@@ -116,7 +117,7 @@
                         // chosen pulldown configuration
                         $("#field-value").chosen({
                             no_results_text: "Not found. Press enter to add ",
-                            disable_search_threshold: 10,
+                            search_contains: true,
                             width: "100%",
                             placeholder_text_single: "Select field"});
                         // register submit listener
@@ -124,10 +125,8 @@
                       })
                       .fail(function() {
                         console.log("Failed retrieving vocabulary from remote endpoint" + field[0].definitions_url);
-                      }).always(function() {console.log("always")});
+                      });
                 }
-
-
             });
         });
 
