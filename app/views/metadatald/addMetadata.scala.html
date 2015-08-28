@@ -41,10 +41,10 @@
         }
         // chosen pulldown configuration
         $("#add-metadata-select").chosen({
-        no_results_text: "Not found. Press enter to add ",
-        disable_search_threshold: 10,
-        width: "100%",
-        placeholder_text_single: "Select field"});
+            no_results_text: "Not found. Press enter to add ",
+            disable_search_threshold: 10,
+            width: "100%",
+            placeholder_text_single: "Select field"});
         // register selection listener
         $("#add-metadata-select").change(function () {
             $("#add-metadata-select option:selected").each(function() {
@@ -52,9 +52,30 @@
                 var field_label = $(this).text();
                 var field_id = $(this).val();
                 var field_type = $(this).data("type");
-                var modalTemplate = Handlebars.getTemplate('/assets/templates/metadata/add_metadata');
-                var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type});
-                $('#selected_field').html(html);
+                if (field_type == "string") {
+                    var modalTemplate = Handlebars.getTemplate('/assets/templates/metadata/add_metadata');
+                    var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type});
+                    $('#selected_field').html(html);
+                } else if (field_type == "list") {
+                    var field = $.grep(fields, function(e){ return e.uri == field_id; });
+                    $.ajax(field[0].definitions_url, dataType = "jsonp")
+                      .done(function (data) {
+                        console.log(data);
+                        var modalTemplate = Handlebars.getTemplate('/assets/templates/metadata/add_metadata_list');
+                        var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type, 'options': data});
+                        $('#selected_field').html(html);
+                        // chosen pulldown configuration
+                        $("#metadata-list-select").chosen({
+                            no_results_text: "Not found. Press enter to add ",
+                            disable_search_threshold: 10,
+                            width: "100%",
+                            placeholder_text_single: "Select field"});
+                      })
+                      .fail(function() {
+                        console.log("Failed retrieving vocabulary from remote endpoint" + field[0].definitions_url);
+                      }).always(function() {console.log("always")});
+                }
+
                 // register submit listener
                 $("#add-metadata-button").click(function(event){
                     event.preventDefault();

@@ -3,7 +3,7 @@ package models
 import java.net.URL
 
 import play.api.Logger
-import play.api.libs.json.{Json, JsString, JsObject, JsValue}
+import play.api.libs.json._
 import services.{MetadataService, DI, UserService}
 
 /**
@@ -37,7 +37,10 @@ object MDVocabularyDefinition {
           "type":"string"}"""),
       Json.parse("""{"label":"References",
           "uri":"http://purl.org/dc/terms/references",
-          "type":"string"}""")
+          "type":"string"}"""),
+        Json.parse("""{"label":"CSDMS Standard Name",
+          "uri":"http://ecgs.ncsa.illinois.edu/gsis/CSN",
+          "type":"list", "definitions_url":"http://localhost:3000/CSN"}""")
     )
     default.map(d => metadataService.addVocabularyDefinition(MDVocabularyDefinition(json = d)))
   }
