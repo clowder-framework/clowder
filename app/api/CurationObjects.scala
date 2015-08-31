@@ -23,22 +23,23 @@ class CurationObjects @Inject()(
   httpMethod="GET")
   def getCurationObjectOre(curationId: UUID) = PrivateServerAction {
     implicit request =>
+      val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
       curations.get(curationId) match {
         case Some(c) => {
           //          var filesJson =""
           val filesJson = c.datasets(0).files.map { file =>
             Json.toJson(Map(
               "Identifier" -> Json.toJson(file.id),
-              "Creation Date" -> Json.toJson(file.uploadDate),
+              "Creation Date" -> Json.toJson(format.format(file.uploadDate)),
               "Label" -> Json.toJson(""),
               "Title" -> Json.toJson(file.filename),
               "Uploaded By" -> Json.toJson(file.author.avatarUrl.getOrElse("")),
               "Abstract" -> Json.toJson(""),
-              "Creator" -> Json.toJson(Seq(file.author.fullName, ": " , file.author.avatarUrl.getOrElse(""))),
+              "Creator" -> Json.toJson(file.author.fullName + ": " + file.author.avatarUrl.getOrElse("")),
               "Publication Date" -> Json.toJson(""),
               "External Identifier" -> Json.toJson(""),
               "Keyword" -> Json.toJson(file.tags.map(_.name)),
-              "@type" -> Json.toJson(Seq("AggregatedResource", "")),
+              "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2007/Dataset")),
               "Version Of" -> Json.toJson(""),
               "Has Part" ->Json.toJson("")
             ))
@@ -58,7 +59,7 @@ class CurationObjects @Inject()(
           val commentsJson =  commentsByDataset.map { comm =>
             Json.toJson(Map(
               "comment_body" -> Json.toJson(comm.text),
-              "comment_date" -> Json.toJson(comm.posted),
+              "comment_date" -> Json.toJson(format.format(comm.posted)),
               "Identifier" -> Json.toJson(comm.id),
               "comment_author" -> Json.toJson(comm.author.fullName)
             ))
@@ -142,7 +143,7 @@ class CurationObjects @Inject()(
               "describes" ->
                 Json.toJson(Map(
                   "Identifier" -> Json.toJson(""),
-                  "Creation Date" -> Json.toJson(c.created),
+                  "Creation Date" -> Json.toJson(format.format(c.created)),
                   "Label" -> Json.toJson(""),
                   "Title" -> Json.toJson(c.name),
                   "Uploaded By" -> Json.toJson(c.author.fullName),
@@ -150,7 +151,7 @@ class CurationObjects @Inject()(
                   "Creator" -> Json.toJson(Seq(
                     Json.toJson(c.author.fullName + ": " + c.author.avatarUrl.getOrElse(""))
                   )),
-                  "Publication Date" -> Json.toJson(c.created),
+                  "Publication Date" -> Json.toJson(format.format(c.created)),
                   "Comment" -> Json.toJson(JsArray(commentsJson)),
                   "Published In" -> Json.toJson(""),
                   "Alternative title" -> Json.toJson(c.name),
@@ -167,7 +168,7 @@ class CurationObjects @Inject()(
                   "Has Part" -> Json.toJson("")
 
                 )),
-              "Creation Date" -> Json.toJson(c.created),
+              "Creation Date" -> Json.toJson(format.format(c.created)),
               "Creator" -> Json.toJson(c.author.fullName),
               "@type" -> Json.toJson("ResourceMap"),
               "@id" -> Json.toJson(c.id)
