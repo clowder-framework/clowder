@@ -1,32 +1,46 @@
 @(space: models.ProjectSpace, curationObject: models.CurationObject, properties: Map[String, List[String]])(implicit user: Option[models.User] )
-@main("Detail Report / Submit") {
+@main("Submit to Repository") {
     <div class="row">
         <div class="col-md-12">
-            <h1>Detail Report / Submit <a href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)">@curationObject.name</a></h1>
+            <h1>Submit @curationObject.name to repository</h1>
         </div>
     </div>
     <div class="row">
-        <div class="col-md-6">
-            @for((prop, value) <- properties) {
-                <h4>@prop</h4>
-                @for(cur<-value) {
-                    <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
-                }
-            }
-
+        <div class="col-md-3">
+            @spaces.curation_summary(space, curationObject, "Submit to Repository", false)
         </div>
-        <div class ="col-md-6">
-            <h3>IDEALSs</h3>
-            @for((prop, value) <- properties) {
-                <h4>@prop</h4>
-                @for(cur<-value) {
-                    <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
-                }
-            }
+        <div class="col-md-9">
+           <h3> IDEALS</h3>
+            <b>Matchmaker Summary</b> <br/>
+            Dataset Properties: <br/>
+            <span class="green">All requirements are satisfied.</span><br/>
+            Preferences: <br/>
+            <span class="green">All requirements are satisfied.</span><br/>
+            Metadata: <br/>
+            <span class="green">All requirements are satisfied.</span><br/>
+
+            <br/>
+            <b> Acknowledgments</b><br/>
+            Confidentiality<br/>
+            <input type="checkbox" id="confidential_agreement"> Dataset contains confidential info <br/>
+            <br/>
+            Copyrighted material: <br/>
+            <input type="checkbox" checked id="copyright_agreement"> Dataset contains copyrighted material <br/>
+            <br/>
+            Depositor Agreement: <br/>
+            <input type="checkbox" checked id="depositor_agreement"> I agree to IDEALS deposit agreement <br/>
+
+
         </div>
 
     </div>
-    <a class = "btn btn-default btn-primary" href ="@routes.CurationObjects.sendToRepository(space.id, curationObject.id)"> Submit to Ideals</a>
-    <a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> Go Back to Space </a>
+
+    <div class="row border-top bottom-padding">
+
+        @*<a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> <span class="glyphicon glyphicon-arrow-left"></span>Go Back to Space </a>*@
+        <a class="btn btn-default" href="@routes.CurationObjects.findMatchingRepositories(space.id, curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Find Repository</a>
+        <a class = "btn btn-default btn-primary pull-right" href ="@routes.CurationObjects.sendToRepository(space.id, curationObject.id)"> Submit dataset @curationObject.name to Ideals <span class="glyphicon glyphicon-chevron-right"></span></a>
+    </div>
+
 
 }
