@@ -80,6 +80,10 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
     MDVocabularyDefinitionDAO.findAll().toList
   }
 
+  def getVocabulary(id: UUID): Option[MDVocabularyDefinition] = {
+    MDVocabularyDefinitionDAO.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)))
+  }
+
   /** Add vocabulary definitions **/
   def addVocabularyDefinition(definition: MDVocabularyDefinition): Unit = {
     val uri = (definition.json \ "uri").as[String]

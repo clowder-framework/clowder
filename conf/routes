@@ -262,6 +262,7 @@ POST           /api/metadata.jsonld                                             
 POST           /api/metadata/search                                                     @api.Metadata.search()
 
 GET            /api/metadata/vocabularies                                               @api.Metadata.getVocabularies()
+GET            /api/metadata/vocabularies/:id                                           @api.Metadata.getVocabulary(id: UUID)
 
 
 

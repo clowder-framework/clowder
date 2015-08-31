@@ -10,8 +10,12 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.json.Json._
 import models._
+import play.api.libs.ws.WS
+import play.api.mvc.Action
 import services.{UserService, ContextLDService, MetadataService}
 import play.api.Play.configuration
+
+import scala.concurrent.Future
 
 /**
  * Manipulate generic metadata.
@@ -30,10 +34,23 @@ class Metadata @Inject()(metadataService: MetadataService, contextService: Conte
       request.user match {
         case Some(user) => {
           val vocabularies = metadataService.getVocabularies()
-          Ok(toJson(vocabularies.map(_.json)))
+          Ok(toJson(vocabularies))
         }
         case None => BadRequest(toJson("Invalid user"))
       }
+  }
+
+  def getVocabulary(id: UUID) = Action.async { implicit request =>
+    implicit val context = scala.concurrent.ExecutionContext.Implicits.global
+    val foo = for {
+      md <- metadataService.getVocabulary(id)
+      url <- (md.json \ "definitions_url").asOpt[String]
+    } yield {
+      WS.url(url).get().map(response => Ok(response.body.trim))
+    }
+    foo.getOrElse {
+      Future(InternalServerError)
+    }
   }
 
   def addUserMetadata() = SecuredAction(authorization = WithPermission(Permission.AddMetadata)) {

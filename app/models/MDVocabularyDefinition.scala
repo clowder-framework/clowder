@@ -12,12 +12,14 @@ import services.{MetadataService, DI, UserService}
  */
 case class MDVocabularyDefinition(
   id: UUID = UUID.generate(),
-  remoteURL: Option[URL] = None,
+//  remoteURL: Option[URL] = None,
   spaceId: Option[UUID] = None,
   json: JsValue
 )
 
 object MDVocabularyDefinition {
+
+  implicit val repositoryFormat = Json.format[MDVocabularyDefinition]
 
   /** Register default definitions that every instance should have **/
   def registerDefaultVacabularyDefinitions(): Unit = {
@@ -40,7 +42,7 @@ object MDVocabularyDefinition {
           "type":"string"}"""),
         Json.parse("""{"label":"CSDMS Standard Name",
           "uri":"http://ecgs.ncsa.illinois.edu/gsis/CSN",
-          "type":"list", "definitions_url":"http://localhost:3000/CSN"}""")
+          "type":"list", "definitions_url":"http://ecgs-dev.ncsa.illinois.edu/gsis/CSN"}""")
     )
     default.map(d => metadataService.addVocabularyDefinition(MDVocabularyDefinition(json = d)))
   }

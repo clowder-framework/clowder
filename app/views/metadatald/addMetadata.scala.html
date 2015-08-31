@@ -55,7 +55,6 @@
             });
 
             request.done(function (response, textStatus, jqXHR) {
-                console.log("Response " + textStatus);
                 // TODO update gui without reloading page
                 location.reload();
             });
@@ -79,10 +78,12 @@
     request.done(function (response, textStatus, jqXHR) {
         var fields = response;
         for (var i = 0; i < fields.length; i++) {
+
            var elem = $("<option></option>");
-                elem.attr("data-type", fields[i].type);
-                elem.attr("value",fields[i].uri);
-                elem.text(fields[i].label);
+                elem.attr("data-type", fields[i].json.type);
+                elem.attr("data-id", fields[i].id);
+                elem.attr("value", fields[i].json.uri);
+                elem.text(fields[i].json.label);
             $("#add-metadata-select").append(elem);
         }
         // chosen pulldown configuration
@@ -106,13 +107,19 @@
                     $("#add-metadata-button").click(submit);
                 } else if (field_type == "list") {
                     // find field with the specific uri
-                    var field = $.grep(fields, function(e){ return e.uri == field_id; });
+                    var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
+
                     // make call to external service
-                    $.ajax(field[0].definitions_url, dataType = "jsonp")
-                      .done(function (data) {
-                        console.log(data);
+                    var request = jsRoutes.api.Metadata.getVocabulary(field[0].id).ajax({
+                        type: 'GET',
+                        contentType: "application/json"
+                    });
+
+                    request.done(function (response, textStatus, jqXHR) {
+                        var vocabulary = JSON.parse(response);
                         var modalTemplate = Handlebars.getTemplate('/assets/templates/metadata/add_metadata_list');
-                        var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type, 'options': data});
+                        var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type,
+                            'options': vocabulary});
                         $('#selected_field').html(html);
                         // chosen pulldown configuration
                         $("#field-value").chosen({
@@ -122,10 +129,12 @@
                             placeholder_text_single: "Select field"});
                         // register submit listener
                         $("#add-metadata-button").click(submit);
-                      })
-                      .fail(function() {
-                        console.log("Failed retrieving vocabulary from remote endpoint" + field[0].definitions_url);
                       });
+
+                    request.fail(function (jqXHR, textStatus, errorThrown){
+                        console.error("The following error occured: " + textStatus, errorThrown);
+                        notify("Could not retrieve external vocabulary: " + errorThrown, "error");
+                    });
                 }
             });
         });
