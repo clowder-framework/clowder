@@ -8,7 +8,7 @@ import org.bson.types.ObjectId
 import play.api.Play._
 import MongoContext.context
 import models.{User, UUID, Collection, Dataset}
-import services.{SpaceService, CurationService}
+import services.{CurationService, SpaceService}
 import util.Direction._
 import java.util.Date
 import play.api.Logger
@@ -30,6 +30,16 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
 
   def get(id: UUID): Option[CurationObject]  = {
     CurationDAO.findOneById(new ObjectId(id.stringify))
+  }
+
+  def remove(id: UUID): Unit = {
+    val curation = get(id)
+    curation match {
+      case Some(c) => {spaces.removeCurationObject(c.space, c.id)
+        CurationDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
+      }
+      case None =>
+    }
   }
 
 }

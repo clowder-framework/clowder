@@ -10,7 +10,12 @@ trait CurationService {
   def insert(curation: CurationObject)
 
   /**
-   * Get collection.
+   * Get curation object.
    */
   def get(id: UUID): Option[CurationObject]
+
+  /**
+   * remove curation object, also delete it from staging area.
+   */
+  def remove(id: UUID): Unit
 }
