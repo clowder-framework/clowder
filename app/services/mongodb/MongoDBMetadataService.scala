@@ -88,10 +88,16 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
   def addVocabularyDefinition(definition: MDVocabularyDefinition): Unit = {
     val uri = (definition.json \ "uri").as[String]
     MDVocabularyDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri)) match {
-        // FIXME doesn't seem to propery update
-      case Some(md) => MDVocabularyDefinitionDAO.update(MongoDBObject("json.uri" -> uri), definition,
-        false, false, WriteConcern.Normal)
-      case None => MDVocabularyDefinitionDAO.save(definition)
+      case Some(md) => {
+        Logger.debug("Updating existing vocabulary definition: " + definition)
+        // make sure to use the same id as the old value
+        val writeResult = MDVocabularyDefinitionDAO.update(MongoDBObject("json.uri" -> uri), definition.copy(id=md.id),
+          false, false, WriteConcern.Normal)
+      }
+      case None => {
+        Logger.debug("Adding new vocabulary definition " + definition)
+        MDVocabularyDefinitionDAO.save(definition)
+      }
     }
   }
   
