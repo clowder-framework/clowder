@@ -25,6 +25,8 @@
                                 <li class="list-group-item">
                                     <span class="glyphicon glyphicon glyphicon-file" title="@curObject.datasets.size datasets"></span> @curObject.datasets.size
                                     <span class="glyphicon glyphicon glyphicon-th-large" title="@curObject.collections.size collections"></span> @curObject.collections.size
+                                    <button onclick="removeCuration('@(space.id)','@(curObject.id)')"  type="button" class="btn btn-link">
+                                        <span class="glyphicon glyphicon glyphicon-trash" title="@curObject.collections.size collections"></span></button>
                                 </li>
                             </ul>
                         </div>
@@ -48,4 +50,5 @@
     }
     @*<button class="btn btn-primary">Find Matching Repositories</button>*@
     <a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> Go Back to Space </a>
+    <script src="@routes.Assets.at("javascripts/curationProcess.js")" type="text/javascript"></script>
 }

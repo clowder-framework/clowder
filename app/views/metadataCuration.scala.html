@@ -1,0 +1,140 @@
+@(curation: models.CurationObject, metadata: Map[String,Any], userMetadata: scala.collection.mutable.Map[String,Any], xmlMetadata: List[models.DatasetXMLMetadata], rdfExported: Boolean)(implicit user: Option[models.User])
+
+@import api.Permission
+@import com.mongodb.casbah.Imports.DBObject
+@import collection.JavaConverters._
+
+@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
+@for((key,value) <- metadata) {
+  <li><b>@(key):</b>
+    @if(value.isInstanceOf[String]) {
+      @if(value.asInstanceOf[String].startsWith("http://") || value.asInstanceOf[String].startsWith("https://")) {
+        <a href="@value">@value</a>
+      } else {
+        @value
+      }
+    } else {
+      @if(value.isInstanceOf[java.lang.Integer] || value.isInstanceOf[java.lang.Double] || value.isInstanceOf[java.lang.Float] ) {
+        @value.toString
+      } else {
+        @if(value.isInstanceOf[com.mongodb.BasicDBList]) {
+          <ul>
+          @printList(value.asInstanceOf[com.mongodb.BasicDBList].toList)
+          </ul>
+        } else {
+          @if(value.isInstanceOf[com.mongodb.BasicDBObject]) {
+            <ul>
+            @printLevel(value.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+            </ul>
+          } else {
+            @value.toString
+          }
+        }
+      }
+    }</li>
+}
+}
+
+@printList(metadata: List[AnyRef])	= {
+@metadata.indices.map { i =>
+  <li><b>@i:</b>
+    @if(metadata(i).isInstanceOf[String]) {
+      @if(metadata(i).asInstanceOf[String].startsWith("http://") || metadata(i).asInstanceOf[String].startsWith("https://")) {
+        <a href="@metadata(i)">@metadata(i)</a>
+      } else {
+        @metadata(i)
+      }
+    } else {
+      @if(metadata(i).isInstanceOf[java.lang.Integer] || metadata(i).isInstanceOf[java.lang.Double] || metadata(i).isInstanceOf[java.lang.Float] ) {
+        @metadata(i).toString
+      } else {
+        @if(metadata(i).isInstanceOf[com.mongodb.BasicDBList]) {
+          <ul>
+          @printList(metadata(i).asInstanceOf[com.mongodb.BasicDBList].toList)
+          </ul>
+        } else {
+          @if(metadata(i).isInstanceOf[com.mongodb.BasicDBObject]) {
+            <ul>
+            @printLevel(metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+            </ul>
+          } else {
+            @metadata(i)
+          }
+        }
+      }
+    }</li>
+}
+}
+@printLevelUserMetadata(metadata: scala.collection.mutable.Map[String,Any]) = {
+  <ul class="usr_md_">
+  @for((key,value) <- metadata) {
+    @if(value.isInstanceOf[com.mongodb.BasicDBList]){
+      @for(listValue <- value.asInstanceOf[com.mongodb.BasicDBList]) {
+        <li class="usr_md_"><b class="usr_md_">@(key):</b>
+          @if(listValue.isInstanceOf[String]) {
+            <span class="usr_md_">@listValue</span><button class="usr_md_ btn btn-link btn-sm" type="button">Modify</button>
+            <button class="usr_md_ btn btn-link btn-sm" >Delete</button>
+          } else {
+            <button class="usr_md_ btn btn-link btn-sm" type="button">Add property</button>
+            <button class="usr_md_ btn btn-link btn-sm" type="button">
+              Delete</button>@printLevelUserMetadata(listValue.asInstanceOf[DBObject].toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]])
+          }</li>
+      }
+    }else{
+      <li class="usr_md_"><b class="usr_md_">@(key):</b>
+        @if(value.isInstanceOf[String]) {
+          <span class="usr_md_">@value</span><button class="usr_md_ btn btn-link btn-sm" type="button">Modify</button>
+          <button class="usr_md_ btn btn-link btn-sm" >Delete</button>
+        } else {
+          <button class="usr_md_ btn btn-link btn-sm" type="button">Add property</button>
+          <button class="usr_md_ btn btn-link btn-sm" type="button">
+            Delete</button>@printLevelUserMetadata(value.asInstanceOf[DBObject].toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]])
+        }</li>
+    }
+  }
+  </ul>
+}
+
+  <!-- If the user can view metadata for this dataset, display what is available, otherwise display nothing. -->
+@if(Permission.checkPermission(Permission.ViewMetadata, ResourceRef(ResourceRef.dataset, curation.datasets(0).id))) {
+  <div class="row">
+    <div class="col-md-12 box-white-space">
+      <h4>Community generated metadata</h4>
+      <div id='generalUserMetadata_@(curation.id.stringify)' class='usr_md_'>
+        @if(Permission.checkPermission(Permission.EditMetadata, ResourceRef(ResourceRef.dataset, curation.datasets(0).id))) {
+          <button class="usr_md_ btn btn-link btn-sm" type="button">Add property</button>
+        }
+
+        @printLevelUserMetadata(userMetadata)
+        <button class="usr_md_submit btn btn-default btn-xs" type="button">Submit</button>
+        @if(rdfExported) {
+          <button class="usr_md_submit btn btn-primary rdfbtn" type="button">Get as RDF</button>
+        }
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12 box-white-space">
+      <h4>System generated metadata</h4>
+      @if(metadata.isEmpty) {
+        <div>No system generated metadata available yet</div>
+      } else {
+        <div>@printLevel(metadata)</div>
+      }
+    </div>
+  </div>
+}
+
+<script language="javascript">
+	var topId = "generalUserMetadata_@(curation.datasets(0).id.stringify)";
+	window["uploadIp"+topId] = "@routes.CurationObjects.addUserMetadata(curation.id)";
+
+	window["modelIp"+topId] = "@(routes.Assets.at("datasetsUserMetadataModel"))";
+</script>
+<script src="@routes.Assets.at("javascripts/userMetadataCuration.js")" type="text/javascript"></script>
+@if(!user.isDefined) {
+  <script language="javascript">
+		$("#generalUserMetadata_@(curation.datasets(0).id.stringify) button").css("display","none");
+		$("#generalUserMetadata_@(curation.datasets(0).id.stringify) .rdfbtn").css("display","inline");
+   </script>
+}

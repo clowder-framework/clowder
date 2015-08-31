@@ -5,14 +5,17 @@ import java.util.Date
 import javax.inject.Inject
 
 import api.Permission
+import com.mongodb.DBObject
 import models._
 import play.api.Logger
 import play.api.data.{Forms, Form}
+import play.api.libs.json.Json
+import play.api.libs.json.Json._
 import play.api.mvc.MultipartFormData
 import play.api.data.Forms._
 import services._
 import util.RequiredFieldsConfig
-import play.api.Play.current
+import play.api.Play._
 
 
 import scala.text
@@ -91,6 +94,44 @@ class CurationObjects @Inject()( curations: CurationService,
     }
   }
 
+
+  def deleteCuration(spaceId: UUID, curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) {
+    implicit request =>
+      implicit val user = request.user
+
+          curations.get(curationId) match {
+            case Some(c) => {
+              Logger.debug("delete Co: " + c.id)
+              curations.remove(curationId)
+              Redirect(routes.Spaces.stagingArea(spaceId))
+            }
+            case None => InternalServerError("Curation Object Not found")
+          }
+        }
+
+  /////////////////////
+  def addUserMetadata(id: UUID) = AuthenticatedAction (parse.json) { implicit request =>
+    implicit val user = request.user
+    Logger.debug(s"Adding user metadata to curation's dataset $id")
+    curations.addUserMetadata(id, Json.stringify(request.body))
+
+//    curations.get(id) match {
+//      case Some(dataset) => {
+//        events.addObjectEvent(user, id, dataset.name, "addMetadata_dataset")
+//      }
+//    }
+
+    //datasets.index(id)
+//    configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+//      case "yes" => datasets.setUserMetadataWasModified(id, true)
+//      case _ => Logger.debug("userdfSPARQLStore not enabled")
+//    }
+    Ok(toJson(Map("status" -> "success")))
+  }
+
+
+
+
   def getCurationObject(spaceId: UUID, curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) {
     implicit request =>
       implicit val user = request.user
@@ -99,10 +140,15 @@ class CurationObjects @Inject()( curations: CurationService,
           curations.get(curationId) match {
             case Some(c) => {
               val ds: Dataset = c.datasets(0)
-              val dsmetadata = datasets.getMetadata(ds.id)
-              val dsUsrMetadata = datasets.getUserMetadata(ds.id)
+              //val dsmetadata = datasets.getMetadata(ds.id)
+              //val dsUsrMetadata = datasets.getUserMetadata(ds.id)
+              val dsmetadata = ds.metadata
+                //userMetadata).get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]]
+
+              val dsUsrMetadata = collection.mutable.Map(ds.userMetadata.toSeq: _*)
               val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
-              val filesUsrMetadata: Map[String, scala.collection.mutable.Map[String,Any]] = ds.files.map(file=> file.id.stringify -> files.getUserMetadata(file.id)).toMap.asInstanceOf[Map[String, scala.collection.mutable.Map[String,Any]]]
+              val filesUsrMetadata: Map[String, scala.collection.mutable.Map[String,Any]] = ds.files.map(file=> file.id.stringify ->
+                files.getUserMetadata(file.id)).toMap.asInstanceOf[Map[String, scala.collection.mutable.Map[String,Any]]]
               Ok(views.html.spaces.curationObject(s, c, dsmetadata, dsUsrMetadata, filesUsrMetadata, isRDFExportEnabled))
             }
             case None => InternalServerError("Curation Object Not found")
@@ -144,7 +190,7 @@ class CurationObjects @Inject()( curations: CurationService,
          curations.get(curationId) match {
            case Some(c) => {
              //TODO: Make some call to C3-PR?
-           //  Ok(views.html.spaces.matchmakerReport())
+             //  Ok(views.html.spaces.matchmakerReport())
              val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
                "Dissemination Control" -> List("Restricted Use", "Ability to Embargo"),"License" -> List("Creative Commons", "GPL") ,
                "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
@@ -178,6 +224,8 @@ class CurationObjects @Inject()( curations: CurationService,
         case None => InternalServerError("Space Not found")
       }
   }
+
+
 
 }
 

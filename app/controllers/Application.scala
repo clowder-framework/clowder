@@ -167,7 +167,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.CurationObjects.getCurationObject,
         controllers.routes.javascript.CurationObjects.findMatchingRepositories,
         controllers.routes.javascript.CurationObjects.sendToRepository,
-        controllers.routes.javascript.CurationObjects.compareToRepository
+        controllers.routes.javascript.CurationObjects.compareToRepository,
+        controllers.routes.javascript.CurationObjects.deleteCuration
       )
     ).as(JSON) 
   }

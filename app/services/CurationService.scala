@@ -18,4 +18,9 @@ trait CurationService {
    * remove curation object, also delete it from staging area.
    */
   def remove(id: UUID): Unit
+
+  /**
+   * add metadata to curation object, no influence to live object
+   */
+  def addUserMetadata(id: UUID, json: String)
 }
