@@ -13,4 +13,9 @@ trait CurationService {
    * Get collection.
    */
   def get(id: UUID): Option[CurationObject]
+
+  /**
+   * Update submitted indicator.
+   */
+  def setSubmitted(id: UUID, submitted: Boolean)
 }

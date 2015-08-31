@@ -6,6 +6,9 @@ import javax.inject.Inject
 
 import api.Permission
 import models._
+import org.apache.http.client.entity.UrlEncodedFormEntity
+import org.apache.http.entity.StringEntity
+import org.apache.http.impl.client.DefaultHttpClient
 import play.api.Logger
 import play.api.data.{Forms, Form}
 import play.api.mvc.MultipartFormData
@@ -13,7 +16,9 @@ import play.api.data.Forms._
 import services._
 import util.RequiredFieldsConfig
 import play.api.Play.current
-
+import play.api.libs.json._
+import play.api.libs.json.JsArray
+import org.apache.http.client.methods.HttpPost
 
 import scala.text
 
@@ -21,7 +26,9 @@ class CurationObjects @Inject()( curations: CurationService,
                                  datasets: DatasetService,
                                  collections: CollectionService,
                                  spaces: SpaceService,
-                                 files: FileService
+                                 files: FileService,
+                                 comments: CommentService,
+                                 sections: SectionService
                                ) extends SecuredController {
 
   def newCO(datasetId:UUID, spaceId:String) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
@@ -162,17 +169,48 @@ class CurationObjects @Inject()( curations: CurationService,
           curations.get(curationId) match {
             case Some(c) =>
               //TODO : Submit the curationId to the repository. This probably needs the repository as input
+              var success = false
+              val hostIp = Utils.baseUrl(request)
+              val hostUrl = hostIp + "/api/curations/" + curationId + "/ore"
+              val valuetoSend = Json.toJson(
+                Map(
+                  "Repository" -> Json.toJson("Ideals"),
+                  "Preferences" -> Json.toJson(
+                    Map(
+                      "key1" -> Json.toJson("val1"),
+                      "key2" -> Json.toJson("val2")
+                    ))
+                  ,
+                  "Aggregation" -> Json.toJson (
+                    Map(
+                      "Identifier" -> Json.toJson(curationId),
+                      "@id" -> Json.toJson(hostUrl),
+                      "Title" -> Json.toJson(c.name)
+                    )
+                  )
+                )
 
-              val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
-                "Dissemination Control" -> List("Restricted Use", "Ability to Embargo"),"License" -> List("Creative Commons", "GPL") ,
-                "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
+                )
 
-              Ok(views.html.spaces.curationSubmitted(s, c, "IDEALS"))
+              var endpoint = "https://sead-test.ncsa.illinois.edu/sead-cp/cp/researchobjects"
+              val httpPost = new HttpPost(endpoint)
+              httpPost.setHeader("Content-Type", "application/json")
+              httpPost.setEntity(new StringEntity(Json.stringify(valuetoSend)))
+              var client = new DefaultHttpClient
+              val response = client.execute(httpPost)
+              val responseStatus = response.getStatusLine().getStatusCode()
+              if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304) {
+                curations.setSubmitted(c.id, true)
+                success = true
+              }
+
+              Ok(views.html.spaces.curationSubmitted(s, c, "IDEALS", success))
           }
         }
         case None => InternalServerError("Space Not found")
       }
   }
+
 
 }
 

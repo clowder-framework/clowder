@@ -510,6 +510,7 @@ POST           /api/users/createNewListInUser                                   
 POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
 POST           /api/users/follow                                                        @api.Users.follow(followeeUUID: UUID, name: String)
 POST           /api/users/unfollow                                                      @api.Users.unfollow(followeeUUID: UUID, name: String)
+GET            /api/curations/:curationId/ore                                           @api.CurationObjects.getCurationObjectOre(curationId: UUID)
 
 # ----------------------------------------------------------------------
 # MEDICI STATUS API

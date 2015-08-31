@@ -462,7 +462,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       implicit val user  = request.user
       spaces.get(id) match {
         case Some(s) => {
-          val curationDatasets: List[CurationObject] = s.curationObjects.map{curObject => curationService.get(curObject).get}
+          val curationDatasets: List[CurationObject] = s.curationObjects.map{curObject => curationService.get(curObject)}.flatten
           Ok(views.html.spaces.stagingarea(s, curationDatasets ))
         }
         case None => InternalServerError("Space Not found")

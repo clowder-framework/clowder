@@ -13,6 +13,7 @@ import util.Direction._
 import java.util.Date
 import play.api.Logger
 import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
 
 
@@ -29,6 +30,11 @@ class MongoDBCurationService  @Inject()  extends CurationService {
 
   def get(id: UUID): Option[CurationObject]  = {
     CurationDAO.findOneById(new ObjectId(id.stringify))
+  }
+
+  def setSubmitted(id: UUID, submitted: Boolean) {
+    //TODO
+    //CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify), $set("submitted" -> Some(submitted)), false, false, WriteConcern.Safe))
   }
 
 }
