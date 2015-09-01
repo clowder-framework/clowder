@@ -25,7 +25,7 @@ class CurationObjects @Inject()( curations: CurationService,
                                  collections: CollectionService,
                                  spaces: SpaceService,
                                  files: FileService,
-                                 events: EventService,
+                                 events: EventService
                                ) extends SecuredController {
 
   def newCO(datasetId:UUID, spaceId:String) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
