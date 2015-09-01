@@ -8,7 +8,7 @@ function clearFields() {
 //Call on Create button click. Move to create a curation object as specified after validating input fields
 function createCuration() {
     //Remove error messages if present
-    clearErrors();
+    $('.error').hide();
 
     //Update the input we are adding to the form programmatically
     var name = $('#name');
@@ -32,7 +32,7 @@ function createCuration() {
         error = true;
     }
 
-    if(spaceId.search("elect the space")>0) {
+    if(spaceId.search("select the space") == 0) {
         $('#spaceerror').show();
         error = true;
     }

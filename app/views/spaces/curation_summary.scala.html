@@ -3,7 +3,7 @@
 
 
     <div class="break-word black-border">
-        <h1 class="center-glyphicon glyphicon glyphicon-cloud-upload"></h1> <br/>
+        <h1 class="center-glyphicon glyphicon glyphicon-cloud-upload" style="display:block;"></h1> <br/>
         <h5>@curationObject.name</h5> <br/>
         Size: @{curationObject.datasets(0).files.map(_.length).sum /1024} MB <br/>
         File Formats: @curationObject.datasets(0).files.map(_.contentType).toSet.mkString(", ") <br/>

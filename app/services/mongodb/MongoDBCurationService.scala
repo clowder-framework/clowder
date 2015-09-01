@@ -35,7 +35,8 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
   def remove(id: UUID): Unit = {
     val curation = get(id)
     curation match {
-      case Some(c) => {spaces.removeCurationObject(c.space, c.id)
+      case Some(c) => {
+        spaces.removeCurationObject(c.space, c.id)
         CurationDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
       }
       case None =>
