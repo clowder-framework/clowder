@@ -236,10 +236,10 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
           // when permission is public, user can reach the authorization request button, so we check if the request is
           // already inserted
           if(s.requests.contains(RequestResource(user.id))) {
-            Ok(views.html.notAuthorized("Authorization request is pending", null, null))
+            Ok(views.html.notAuthorized("Request for access is pending", null, null))
           }else{
-            Logger.debug("request submitted in controller.Space.addRequest  ")
-            val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName
+            Logger.debug("Request submitted in controller.Space.addRequest  ")
+            val subject: String = "Request for access from " + AppConfiguration.getDisplayName
             val body = views.html.spaces.requestemail(user, id.toString, s.name)
 
             for (requestReceiver <- spaces.getUsersInSpace(s.id)) {
@@ -256,7 +256,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
               }
             }
             spaces.addRequest(id, user.id, user.fullName)
-            Ok(views.html.notAuthorized("Request for authorization submitted", null, null))
+            Ok(views.html.notAuthorized("Request for access submitted", null, null))
           }
         }
         case None => InternalServerError("Space not found")
