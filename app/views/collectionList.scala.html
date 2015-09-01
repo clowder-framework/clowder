@@ -19,7 +19,7 @@
     <div class="col-md-10">
     </div>
     <div class="col-md-1">
-        <a class="btn btn-primary btn-sm pull-right" href="@routes.Collections.newCollection()" title="Create a new collection">Create</a>
+        <button id="create-collection" class="btn btn-primary btn-sm pull-right" href="@routes.Collections.newCollection()" title="Create a new collection">Create</button>
     </div>
     <div class="col-md-1">
         <div class="btn-group btn-group-sm pull-right">            
@@ -195,6 +195,7 @@
 	@if(!user.isDefined) {
 		<script type="text/javascript">
 			$(".requiresLogin").css("display","none");
+			$('#create-collection').prop('disabled', true);
 		</script>
 	}
 }

@@ -283,31 +283,43 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
    * Each user with EditSpace permission will see the request on index and receive an email.
    */
    def addRequest(id: UUID) = UserAction { implicit request =>
-      implicit val user = request.user
-      spaces.get(id) match {
-        case Some(s) => {
-          Logger.debug("request submitted in controller.Space.addRequest  " )
-          val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName
-          val body = views.html.spaces.requestemail(user.get, id.toString, s.name)
+      implicit val requestuser = request.user
 
-          for(requestReceiver <- spaces.getUsersInSpace(s.id)){
-            spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
-              case Some(aRole) => {
-                if ( aRole.permissions.contains( "EditSpace" )){
-                    events.addRequestEvent(user, requestReceiver, id, s.name, "postrequest_space")
+    requestuser match{
+      case Some(user) =>  {    spaces.get(id) match {
+        case Some(s) => {
+          // when permission is public, user can reach the authorization request button, so we check if the request is
+          // already inserted
+          if(s.requests.contains(RequestResource(user.id))) {
+            Ok(views.html.notAuthorized("Request for access is pending", null, null))
+          }else{
+            Logger.debug("Request submitted in controller.Space.addRequest  ")
+            val subject: String = "Request for access from " + AppConfiguration.getDisplayName
+            val body = views.html.spaces.requestemail(user, id.toString, s.name)
+
+            for (requestReceiver <- spaces.getUsersInSpace(s.id)) {
+              spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
+                case Some(aRole) => {
+                  if (aRole.permissions.contains("EditSpace")) {
+                    events.addRequestEvent(Some(user), requestReceiver, id, s.name, "postrequest_space")
 
                     //sending emails to the space's Admin && Editor
-                    val recipient:String = requestReceiver.email.get.toString
-                    Users.sendEmail(subject, recipient, body )
+                    val recipient: String = requestReceiver.email.get.toString
+                    Users.sendEmail(subject, recipient, body)
+                  }
                 }
               }
             }
+            spaces.addRequest(id, user.id, user.fullName)
+            Ok(views.html.notAuthorized("Request for access submitted", null, null))
           }
-          spaces.addRequest(id, user.get.id, user.get.fullName)
-          Ok(views.html.notAuthorized( "Request for authorization submitted", null, null))
         }
         case None => InternalServerError("Space not found")
       }
+    }
+
+    case None => InternalServerError("User not found")
+       }
     }
 
   /**

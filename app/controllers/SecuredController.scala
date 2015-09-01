@@ -76,7 +76,7 @@ trait SecuredController extends Controller {
       val p = Permission.checkPermission(userRequest.user, permission, resourceRef)
       if (p || userRequest.superAdmin) {
         block(userRequest)
-      } else {
+      } else if (Permission.checkPrivateServer(userRequest.user)) {
         val (message: String, requestid: String, requestType: String) = resourceRef match {
           case None => ("Unknown resource", "Unknown id", "no resource")
 
@@ -117,6 +117,8 @@ trait SecuredController extends Controller {
 
         Future.successful(Results.Redirect(routes.Authentication.notAuthorized("You are not authorized to access "
           + message, requestid, requestType)))
+      } else {
+        Future.successful(Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("You must be logged in to perform that action.", userRequest.uri )))
       }
     }
   }
