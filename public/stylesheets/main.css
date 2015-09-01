@@ -770,3 +770,21 @@ textarea, input[type='text'], input[type='password']{
 	font-size: 30px !important;
 	margin-top: -5px !important;
 }
+
+/* For the nested table in the 'users' view, under collections */
+table#user-space-role>thead>tr>th {
+    vertical-align: middle;
+}
+table#nested-space-role-headers {
+    margin: 0;
+}
+table#nested-space-role-headers>thead>tr>th {
+    border: none;
+    padding: 0;
+}
+table#nested-space-role-pairs>tbody>tr:first-child {
+    border-top-style: hidden;
+}
+table#nested-space-role-pairs>tbody>tr>td {
+    padding: 0;
+}
