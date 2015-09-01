@@ -31,15 +31,21 @@ class CurationObjects @Inject()( curations: CurationService,
   def newCO(datasetId:UUID, spaceId:String) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
     val (name, desc, spaceByDataset) = datasets.get(datasetId) match {
-      case Some(dataset) => (dataset.name, dataset.description, dataset.spaces map( id => spaces.get(id).get) filter(_ != None) filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))))
+      case Some(dataset) => (dataset.name, dataset.description, dataset.spaces map( id => spaces.get(id)) filter(_ != None)
+        filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.get.id)))map(_.get))
       case None => ("", "", List.empty)
     }
     //default space is the space from which user access to the dataset
     val defaultspace = spaceId match {
-      case "" => None
+      case "" => {
+        if(spaceByDataset.length ==1) {
+          spaceByDataset.lift(0)
+        } else {
+          None
+        }
+      }
       case _ => spaces.get(UUID(spaceId))
     }
-
 
     Ok(views.html.curations.newCuration(datasetId, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
       RequiredFieldsConfig.isDescriptionRequired))
@@ -77,7 +83,7 @@ class CurationObjects @Inject()( curations: CurationService,
                 )
 
                 // insert curation
-                Logger.debug("create Co: " + newCuration.id)
+                Logger.debug("create curation object: " + newCuration.id)
                 curations.insert(newCuration)
                 Redirect(routes.CurationObjects.getCurationObject(spaceId, newCuration.id))
               }
@@ -102,7 +108,7 @@ class CurationObjects @Inject()( curations: CurationService,
 
           curations.get(curationId) match {
             case Some(c) => {
-              Logger.debug("delete Co: " + c.id)
+              Logger.debug("delete Curation object: " + c.id)
               curations.remove(curationId)
               //spaces.get(spaceId) is checked in Space.stagingArea
               Redirect(routes.Spaces.stagingArea(spaceId))
