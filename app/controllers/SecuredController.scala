@@ -118,7 +118,7 @@ trait SecuredController extends Controller {
         Future.successful(Results.Redirect(routes.Authentication.notAuthorized("You are not authorized to access "
           + message, requestid, requestType)))
       } else {
-        Future.successful(Results.Redirect(routes.RedirectUtility.authenticationRequired()))
+        Future.successful(Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("You must be logged in to perform that action.", userRequest.uri )))
       }
     }
   }
