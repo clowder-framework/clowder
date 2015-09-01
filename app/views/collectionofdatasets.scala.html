@@ -58,17 +58,20 @@
 					</dd>
 				</dl>
 
-				<div id="collection-users" class="col-md-12 bottom-padding">
-					<div class="align-right">
-						<a href="@routes.Collections.users(collection.id)">
-							<span class="glyphicon glyphicon-hand-right"></span> Users with access to the collection
-						</a>
-						<br /> <br />
-						<div class="alert-danger inner-item">
-							@flash.get("error")
+				@if(user.isDefined){
+
+					<div id="collection-users" class="col-md-12 bottom-padding">
+						<div class="align-right">
+							<a href="@routes.Collections.users(collection.id)">
+								<span class="glyphicon glyphicon-hand-right"></span> Users with access to the collection
+							</a>
+							<br /> <br />
+							<div class="alert-danger inner-item">
+								@flash.get("error")
+							</div>
 						</div>
 					</div>
-				</div>
+				}
 
 				<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 				@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
@@ -234,19 +237,6 @@
   			<li class="previous" id="addPagerPrev" style="visibility:hidden;"><a href="#!">Previous</a></li>
   			<li class ="next" id="addPagerNext" style="visibility:hidden;"><a href="#!">Next</a></li>
 		</ul>
-		@if(user.isDefined ) {
-			<div id ='collection-users' class="row border-top bottom-padding">
-				<div class="col-md-12">
-					<a href="@routes.Collections.users(collection.id)">
-						<span class="glyphicon glyphicon-hand-right"></span> Users with access to the collection
-					</a>
-					<div class="alert-danger inner-item">
-					@flash.get("error")
-					</div>
-				</div>
-			</div>
-		}
-
 	</div>
 
 <script language="javascript">
