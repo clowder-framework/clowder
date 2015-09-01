@@ -2,7 +2,7 @@ package services
 
 import play.api.{Plugin, Logger, Application}
 /**
- * Staging Area Plugin. Created for SEAD project.
+ * Staging Area Plugin.
  */
 class StagingAreaPlugin(application: Application) extends Plugin{
 
