@@ -301,7 +301,7 @@ class Datasets @Inject()(
 
         }
         case None => {
-          Logger.error("Error getting dataset" + id);
+          Logger.error("Error getting dataset" + id)
           InternalServerError
         }
     }
@@ -581,44 +581,52 @@ class Datasets @Inject()(
   }
   def users(id: UUID) = PermissionAction(Permission.ViewDataset) { implicit request =>
     implicit val user = request.user
+
     datasets.get(id) match {
       case Some(dataset) => {
-        var userList: List[User]=  List.empty
-        var userRoleMap = Map[UUID, String]()
-        var spaceMap = Map[UUID, String]()
-        dataset.spaces.map{
-          space_id => spaceService.get(space_id) match {
-            case Some(projectSpace) => {
-              val space_users: List[User] = spaceService.getUsersInSpace(space_id)
-              var new_users: List[User] = List.empty
-              space_users.map {
-                aUser => if(!userList.contains(aUser)) {
-                  new_users = aUser :: new_users
-                }
-              }
-               userList = userList ::: new_users
-              if(!space_users.isEmpty) {
-                space_users.map { usr =>
-                  spaceService.getRoleForUserInSpace(space_id, usr.id) match {
-                    case Some(role) => {
-                      val cur_role = userRoleMap getOrElse(usr.id, "")
-                      userRoleMap += (usr.id -> (cur_role + ", " + role.name))
-                    }
-                    case None => Redirect(routes.Datasets.dataset(id)).flashing("error"-> s"Error: Role not found for dataset $id user $usr.")
-                  }
-                  val curSpace = spaceMap getOrElse(usr.id, "")
-                  spaceMap += (usr.id -> (curSpace + ", " + projectSpace.name))
-                }
-              }
-            }
-            case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> "Error: Dataset's space not found.")
+        var userList: List[User] = List.empty
+        var userListSpaceRoleTupleMap = Map[UUID, List[Tuple2[String,String]]]() // Map( User-id -> List((Space-name,Role-name)) )
+
+        // Setup userList, add all users of all spaces associated with the dataset
+        dataset.spaces.foreach { spaceId =>
+          spaceService.get(spaceId) match {
+            case Some(spc) => userList = spaceService.getUsersInSpace(spaceId) ::: userList
+            case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No spaces found for dataset $id.")
           }
         }
-        if(!userList.isEmpty) {
-          Ok(views.html.datasets.users(dataset, spaceMap, userRoleMap, userList.sortBy(_.fullName.toLowerCase)))
-        } else { Redirect(routes.Datasets.dataset(id)).flashing("error" -> "Error: Dataset's users not found.") }
+        userList = userList.distinct.sortBy(_.fullName.toLowerCase)
+
+        // Setup userListSpaceRoleTupleMap
+        userList.foreach( usr => userListSpaceRoleTupleMap = userListSpaceRoleTupleMap + (usr.id -> List()) ) // initialize, based upon userList's values
+        dataset.spaces.foreach { spaceId =>
+          spaceService.get(spaceId) match {
+            case Some(spc) => {
+              val usersInCurrSpace: List[User] = spaceService.getUsersInSpace(spaceId)
+              if (usersInCurrSpace.nonEmpty) {
+
+                usersInCurrSpace.foreach { usr =>
+                  spaceService.getRoleForUserInSpace(spaceId, usr.id) match {
+                    case Some(role) => userListSpaceRoleTupleMap += ( usr.id -> ((spc.name,role.name) :: userListSpaceRoleTupleMap(usr.id)) )
+                    case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: Role not found for dataset $id user $usr.")
+                  }
+                }
+
+              }
+            }
+            case None => Redirect (routes.Datasets.dataset(id)).flashing ("error" -> s"Error: No spaces found for dataset $id.");
+          }
+        }
+        // Clean-up, and sort space-names per user
+        userListSpaceRoleTupleMap = userListSpaceRoleTupleMap filter (_._2.nonEmpty) // remove empty-list Values from Map (and corresponding Key)
+        for(k <- userListSpaceRoleTupleMap.keys) userListSpaceRoleTupleMap += ( k -> userListSpaceRoleTupleMap(k).distinct.sortBy(_._1.toLowerCase) )
+
+        if(userList.nonEmpty) {
+          val currUserIsAuthor = user.get.identityId.userId.equals(dataset.author.identityId.userId)
+          Ok(views.html.datasets.users(dataset, userListSpaceRoleTupleMap, currUserIsAuthor, userList))
+        }
+        else Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No users found for dataset $id.")
       }
-      case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> "Error: Dataset not found.")
+      case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: Dataset $id not found.")
     }
 
   }

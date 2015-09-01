@@ -55,11 +55,20 @@
 								<span class="glyphicon glyphicon-edit edit-tab" aria-hidden="true"></span>
 							</a>
 						}
-
-						</dd>
-
-
+					</dd>
 				</dl>
+
+				<div id="collection-users" class="col-md-12 bottom-padding">
+					<div class="align-right">
+						<a href="@routes.Collections.users(collection.id)">
+							<span class="glyphicon glyphicon-hand-right"></span> Users with access to the collection
+						</a>
+						<br /> <br />
+						<div class="alert-danger inner-item">
+							@flash.get("error")
+						</div>
+					</div>
+				</div>
 
 				<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 				@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
@@ -330,7 +339,7 @@
 			}
 		});
 	}
-	 $(document).ready(function(){
+	$(document).ready(function(){
 		if(@collection.spaces.size < 1 ) {
 			$('#collection-users').hide();
 		}

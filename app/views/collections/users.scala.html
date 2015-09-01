@@ -1,7 +1,6 @@
-@(collection: models.Collection, space: Map[UUID, String], userRoleMap: Map[UUID,String], users: List[User])(implicit user: Option[models.User])
+@(collection: models.Collection, userListSpaceRoleTupleMap: Map[UUID, List[Tuple2[String,String]]], currUserIsAuthor: Boolean, users: List[User])(implicit user: Option[models.User])
 
 @main("Collection") {
-
     <div class="row">
 
         <div class="row bottom-padding">
@@ -10,34 +9,55 @@
             </div>
         </div>
 
-        <div class="row bottom-padding">
-            <div class="col-md-12">
-                <h4>Users with access to this collection, excluding author:</h4>
-            </div>
-        </div>
+        <div class="col-md-12">
+            @if(users.isEmpty) {
+                @Html("No users with access to the collection")
+            } else {
+                <h3>Users with access to the collection</h3>
 
-        <div class="row bottom-padding">
-            <div id ="users" class="col-md-12">
-                @if(users.isEmpty) {
-                    <div>No users.</div>
-                } else {
-                    <ol>
-                        @for(usr <- users) {
-                            <li>
-                                @if(!usr.fullName.isEmpty) {
-                                    @usr.fullName
-                                    @if(user.get.identityId.userId.equals(collection.author.get.identityId.userId)) {
-                                        -- Space: @space(usr.id).substring(2) | Role: @userRoleMap(usr.id).substring(2)
-                                    }
+                <table id='user-space-role' class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th class="col-md-4">User</th>
+                            @if(currUserIsAuthor) {
+                                <th>
+                                    <table id='nested-space-role-headers' class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th class="col-md-6">Space</th>
+                                                <th class="col-md-2">Role</th>
+                                            </tr>
+                                        </thead>
+                                    </table>
+                                </th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @users.filter(!_.fullName.isEmpty).map { u =>
+                            <tr>
+                                <td class="col-md-4">@u.fullName</td>
+                                @if(currUserIsAuthor && (userListSpaceRoleTupleMap contains u.id)) {
+                                    <td>
+                                        <table id='nested-space-role-pairs' class="table table-hover">
+                                            <tbody>
+                                                @for(tupleSpaceRole <- userListSpaceRoleTupleMap(u.id)) {
+                                                    <tr>
+                                                        <td class="col-md-6">@tupleSpaceRole._1</td>
+                                                        <td class="col-md-2">@tupleSpaceRole._2</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </td>
                                 }
-                            </li>
+                            </tr>
                         }
-                    </ol>
-                }
-            </div>
+                    </tbody>
+                </table>
+            }
         </div>
 
     </div>
-
 }
 

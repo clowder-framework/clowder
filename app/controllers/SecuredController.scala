@@ -76,7 +76,7 @@ trait SecuredController extends Controller {
       val p = Permission.checkPermission(userRequest.user, permission, resourceRef)
       if (p || userRequest.superAdmin) {
         block(userRequest)
-      } else if(Permission.checkPrivateServer(userRequest.user)) {
+      } else if (Permission.checkPrivateServer(userRequest.user)) {
         val (message: String, requestid: String, requestType: String) = resourceRef match {
           case None => ("Unknown resource", "Unknown id", "no resource")
 
