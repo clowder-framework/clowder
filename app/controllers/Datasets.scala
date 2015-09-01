@@ -289,19 +289,24 @@ class Datasets @Inject()(
                     case None => Logger.error(s"space with id $sp on dataset $id doesn't exist.")
                   }
           }
-
-          val otherSpaces: List[ProjectSpace] = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!datasetSpaces.map(_.id).contains(aSpace.id)) aSpace else None).filter(_ != None).asInstanceOf[List[ProjectSpace]]
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
-          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
-          decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpaces), filesTags, otherSpaces))
+          var otherSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
+          user match {
+            case Some(u) => {
+              otherSpaces = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!datasetSpaces.map(_.id).contains(aSpace.id)) aSpace else None).filter(_ != None).asInstanceOf[List[ProjectSpace]]
 
+              Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata, decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpaces), filesTags, otherSpaces))
+            }
+            case None => {
+              Redirect(routes.RedirectUtility.authenticationRequired())
+            }
+          }
         }
         case None => {
-          Logger.error("Error getting dataset" + id);
-          InternalServerError
+          Logger.error("Error getting dataset" + id); InternalServerError
         }
-    }
+      }
   }
 
   /**

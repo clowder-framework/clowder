@@ -77,24 +77,31 @@
 				}
 
 				<span class="align-right" style="margin-right: 10px;">
-					@if(!collection.followers.contains(user.get.id)) {
-						<button id="followButton"
-								class="btn btn-success followButton"
-								objectId="@collection.id"
-								objectName="@collection.name"
-								objectType="collection">
-							Follow
-						</button>
-					} else {
-						<button id="followButton"
-								class="btn btn-danger followButton"
-								objectId="@collection.id"
-								objectName="@collection.name"
-								objectType="collection">
-							Unfollow
-						</button>
+					@user match {
+						case Some(u) => {
+                            @if(!collection.followers.contains(user.get.id)) {
+                                <button id="followButton"
+                                        class="btn btn-success followButton"
+                                        objectId="@collection.id"
+                                        objectName="@collection.name"
+                                        objectType="collection">
+                                    Follow
+                                </button>
+                            } else {
+                                <button id="followButton"
+                                        class="btn btn-danger followButton"
+                                        objectId="@collection.id"
+                                        objectName="@collection.name"
+                                        objectType="collection">
+                                    Unfollow
+                                </button>
+                            }
+                        }
+						case None => {
+							<button id="followButton" class="btn btn-success followButton disabled">Follow</button>
+						}
 					}
-				</span>
+                </span>
 
 				<div style="clear: both;"></div>
 

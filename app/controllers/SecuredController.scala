@@ -77,46 +77,55 @@ trait SecuredController extends Controller {
       if (p || userRequest.superAdmin) {
         block(userRequest)
       } else {
-        val (message: String, requestid: String, requestType: String) = resourceRef match {
-          case None => ("Unknown resource", "Unknown id", "no resource")
+        val (message: String, requestid: String, requestType: String, authenticateUser: Boolean) = resourceRef match {
+          case None => ("Unknown resource", "Unknown id", "no resource", false)
 
           case Some(ResourceRef(ResourceRef.dataset, id)) => {
             val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
             datasets.get(id) match {
-              case None => ("dataset \"" + id.toString() + "\" does not exist", "", "dataset")
-              case Some(dataset) => ("dataset \"" + dataset.name + "\"", id.toString, "dataset")
+              case None => ("dataset \"" + id.toString() + "\" does not exist", "", "dataset", false)
+              case Some(dataset) => ("dataset \"" + dataset.name + "\"", id.toString, "dataset", false)
             }
           }
 
           case Some(ResourceRef(ResourceRef.collection, id)) => {
             val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
             collections.get(id) match {
-              case None => ("collection \"" + id.toString() + "\" does not exist", "", "collection")
-              case Some(collection) => ("collection \"" + collection.name + "\"", id.toString, "collection")
+              case None => ("collection \"" + id.toString() + "\" does not exist", "", "collection", false)
+              case Some(collection) => ("collection \"" + collection.name + "\"", id.toString, "collection", false)
             }
           }
 
           case Some(ResourceRef(ResourceRef.space, id)) => {
             val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
             spaces.get(id) match {
-              case None => ("space \"" + id.toString() + "\" does not exist", "", "space")
+              case None => ("space \"" + id.toString() + "\" does not exist", "", "space", false)
               case Some(space) => {
-                if (space.requests.contains(RequestResource(userRequest.user.get.id))) {
-                  ("space \"" + space.name + "\". \nAuthorization request is pending", "", "space")
-                } else {
-                  ("space \"" + space.name + "\"", id.toString, "space")
+                userRequest.user match {
+                  case Some(u) => {
+                    if (space.requests.contains(RequestResource(userRequest.user.get.id))) {
+                      ("space \"" + space.name + "\". \nAuthorization request is pending", "", "space", false)
+                    } else {
+                      ("space \"" + space.name + "\"", id.toString, "space", false)
+                    }
+                  }
+                  case None => ("", "", "", true)
                 }
               }
             }
           }
 
           case Some(ResourceRef(resType, id)) => {
-            ("error resource", id.toString(), resType.toString())
+            ("error resource", id.toString(), resType.toString(), false)
           }
         }
 
-        Future.successful(Results.Redirect(routes.Authentication.notAuthorized("You are not authorized to access "
-          + message, requestid, requestType)))
+        if (authenticateUser) {
+          Future.successful(Results.Redirect(routes.RedirectUtility.authenticationRequired()))
+        } else {
+          Future.successful(Results.Redirect(routes.Authentication.notAuthorized("You are not authorized to access "
+            + message, requestid, requestType)))
+        }
       }
     }
   }
