@@ -1,4 +1,4 @@
-//Method to remove the CO and redirect back to a specific URL on completion
+//Method to remove the CO and redirect back to staging area on completion
 function removeCuration(spaceId, curationId){
     console.log(spaceId);
 

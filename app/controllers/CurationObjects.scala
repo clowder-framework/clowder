@@ -24,7 +24,8 @@ class CurationObjects @Inject()( curations: CurationService,
                                  datasets: DatasetService,
                                  collections: CollectionService,
                                  spaces: SpaceService,
-                                 files: FileService
+                                 files: FileService,
+                                 events: EventService,
                                ) extends SecuredController {
 
   def newCO(datasetId:UUID, spaceId:String) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
@@ -33,7 +34,7 @@ class CurationObjects @Inject()( curations: CurationService,
       case Some(dataset) => (dataset.name, dataset.description, dataset.spaces map( id => spaces.get(id).get) filter(_ != None) filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))))
       case None => ("", "", List.empty)
     }
-
+    //default space is the space from which user access to the dataset
     val defaultspace = spaceId match {
       case "" => None
       case _ => spaces.get(UUID(spaceId))
@@ -58,7 +59,7 @@ class CurationObjects @Inject()( curations: CurationService,
     implicit val user = request.user
     user match {
       case Some(identity) => {
-        //TODO:check COName is null
+
 
         datasets.get(datasetId) match {
           case Some(dataset) => {
@@ -103,23 +104,24 @@ class CurationObjects @Inject()( curations: CurationService,
             case Some(c) => {
               Logger.debug("delete Co: " + c.id)
               curations.remove(curationId)
+              //spaces.get(spaceId) is checked in Space.stagingArea
               Redirect(routes.Spaces.stagingArea(spaceId))
             }
             case None => InternalServerError("Curation Object Not found")
           }
         }
 
-  /////////////////////
+  //use EditStagingArea permission?
   def addUserMetadata(id: UUID) = AuthenticatedAction (parse.json) { implicit request =>
     implicit val user = request.user
     Logger.debug(s"Adding user metadata to curation's dataset $id")
     curations.addUserMetadata(id, Json.stringify(request.body))
 
-//    curations.get(id) match {
-//      case Some(dataset) => {
-//        events.addObjectEvent(user, id, dataset.name, "addMetadata_dataset")
-//      }
-//    }
+    curations.get(id) match {
+      case Some(c) => {
+        events.addObjectEvent(user, id, c.name, "addMetadata_curation")
+      }
+    }
 
     //datasets.index(id)
 //    configuration.getString("userdfSPARQLStore").getOrElse("no") match {
@@ -224,8 +226,6 @@ class CurationObjects @Inject()( curations: CurationService,
         case None => InternalServerError("Space Not found")
       }
   }
-
-
 
 }
 

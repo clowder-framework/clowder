@@ -8,7 +8,7 @@ function clearFields() {
 //Call on Create button click. Move to create a curation object as specified after validating input fields
 function createCuration() {
     //Remove error messages if present
-    //////////////clearErrors();
+    clearErrors();
 
     //Update the input we are adding to the form programmatically
     var name = $('#name');
