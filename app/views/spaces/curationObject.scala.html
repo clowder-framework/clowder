@@ -75,7 +75,7 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], fileUsrMetadata: Map[S
     <div>
         <h2>Dataset <a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h2> <br/>
         Note: The links in this page redirect to the live objects.
-        @metadataCuration(curationObject, dsMetadata, dsUserMetadata, curationObject.datasets(0).datasetXmlMetadata, rdfExported)
+        @metadata(curationObject.datasets(0), dsMetadata, dsUserMetadata, curationObject.datasets(0).datasetXmlMetadata, rdfExported, Some(curationObject.id))
     </div>
     @if(curationObject.datasets(0).files.size > 0 ){
         <h2> Files</h2>

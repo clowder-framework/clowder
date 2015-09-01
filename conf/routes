@@ -535,5 +535,5 @@ GET            /spaces/:spaceId/curations/:curationId/compareToRepository       
 GET            /spaces/:spaceId/curations/:curationId/sendToRepository                  @controllers.CurationObjects.sendToRepository(spaceId:UUID, curationId: UUID)
 GET            /spaces/:spaceId/curations/:curationId/matchmaker                        @controllers.CurationObjects.findMatchingRepositories(spaceId:UUID, curationId: UUID)
 GET            /spaces/:id/stagingArea                                                  @controllers.Spaces.stagingArea(id: UUID)
-POST           curations/:curationId/usermetadata                                           @controllers.CurationObjects.addUserMetadata(id: UUID)
+POST           /curations/:id/usermetadata                                           @controllers.CurationObjects.addUserMetadata(id: UUID)
 

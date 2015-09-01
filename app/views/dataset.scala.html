@@ -125,7 +125,7 @@
                          @comment(comments)</div>
                   </div>
                   <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
-                    @metadata(dataset, md, usrmd, dataset.datasetXmlMetadata, rdfExported)
+                    @metadata(dataset, md, usrmd, dataset.datasetXmlMetadata, rdfExported, None)
                   </div>
                   <!-- If the user can create a note on this dataset, display this tab. Otherwise, remove it. Is there a better way to do this? -->
                   @if(Permission.checkPermission(Permission.CreateNote, ResourceRef(ResourceRef.dataset, dataset.id))) {

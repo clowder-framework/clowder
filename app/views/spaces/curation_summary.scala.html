@@ -15,7 +15,7 @@
             </div>
         }
         @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))){
-            <button onclick="removeCuration('@(space.id)','@(curationObject.id)')"  type="button" class="btn btn-default btn-primary">
+            <button onclick="removeCuration('@(space.id)','@(curationObject.id)')"  type="button" class="btn btn-primary btn-xs">
                 <span class="glyphicon glyphicon-trash"></span> Delete Curation Object</button>
         }
     </div>

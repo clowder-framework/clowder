@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, metadata: Map[String,Any], userMetadata: scala.collection.mutable.Map[String,Any], xmlMetadata: List[models.DatasetXMLMetadata], rdfExported: Boolean)(implicit user: Option[models.User])
+@(dataset: models.Dataset, metadata: Map[String,Any], userMetadata: scala.collection.mutable.Map[String,Any], xmlMetadata: List[models.DatasetXMLMetadata], rdfExported: Boolean, curationId: Option[UUID])(implicit user: Option[models.User])
 
 @import api.Permission
 @import com.mongodb.casbah.Imports.DBObject
@@ -124,7 +124,22 @@
 			</div>
 		</div>
 	}
+	@if(curationId.isDefined){
+		<script language="javascript">
 
+		var topId = "generalUserMetadata_@(dataset.id.stringify)";
+		window["uploadIp"+topId] = "@routes.CurationObjects.addUserMetadata(curationId.get)";
+
+		window["modelIp"+topId] = "@(routes.Assets.at("datasetsUserMetadataModel"))";
+		</script>
+        <script src="@routes.Assets.at("javascripts/userMetadata.js")" type="text/javascript"></script>
+		@if(!user.isDefined) {
+			<script language="javascript">
+		$("#generalUserMetadata_@(dataset.id.stringify) button").css("display","none");
+		$("#generalUserMetadata_@(dataset.id.stringify) .rdfbtn").css("display","inline");
+   </script>
+	}
+	}else {
 <script language="javascript">
 	var topId = "generalUserMetadata_@(dataset.id.stringify)"; 
 	window["uploadIp"+topId] = "@api.routes.Datasets.addUserMetadata(dataset.id)";
@@ -138,6 +153,10 @@
 		$("#generalUserMetadata_@(dataset.id.stringify) .rdfbtn").css("display","inline");
    </script>
 }
+}
+
+
+
 @*@if(user.isDefined) {*@
 	@*@if(!user.get.identityId.userId.equals(dataset.author.identityId.userId)){*@
 			@*<script language="javascript">*@
