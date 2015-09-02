@@ -9,14 +9,18 @@
         File Formats: @curationObject.datasets(0).files.map(_.contentType).toSet.mkString(", ") <br/>
         Creator: @curationObject.datasets(0).author.fullName <br/>
         Uploaded: @curationObject.created.date.format("yyyy-mm-dd hh:mm") <br/>
-        @if(!editDataset) {
-            <div class="center">
-                <a class="btn btn-sm btn-default" href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)">Edit Metadata</a>
-            </div>
-        }
+
         @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))){
-            <button onclick="removeCuration('@(space.id)','@(curationObject.id)')"  type="button" class="btn btn-primary btn-xs">
-                <span class="glyphicon glyphicon-trash"></span> Delete Curation Object</button>
+
+            @if(!editDataset) {
+                <div class="center-margin">
+                    <a class="btn btn-sm btn-default" href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)"> <span class="glyphicon glyphicon-edit"></span> Edit Metadata</a>
+                </div>
+            }
+            <div class="center-margin">
+            <a class="btn btn-sm btn-default danger" onclick="removeCuration('@(space.id)','@(curationObject.id)')"  >
+                <span class="glyphicon glyphicon-trash"></span> Delete Curation Object</a>
+            </div>
         }
     </div>
     <script src="@routes.Assets.at("javascripts/curationProcess.js")" type="text/javascript"></script>

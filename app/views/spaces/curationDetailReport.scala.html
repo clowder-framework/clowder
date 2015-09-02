@@ -1,5 +1,14 @@
 @(space: models.ProjectSpace, curationObject: models.CurationObject, properties: Map[String, List[String]])(implicit user: Option[models.User] )
 @main("Submit to Repository") {
+    <div class = "row">
+        <ol class="breadcrumb">
+            <li> <a href="@routes.Spaces.stagingArea(space.id)"> Staging Area</a></li>
+            <li> <a  href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)"> Edit Metadata</a></li>
+            <li> <a  href="@routes.CurationObjects.findMatchingRepositories(space.id, curationObject.id)">Find Repositories </a></li>
+            <li class="active"> Submit to Repository</li>
+        </ol>
+
+    </div>
     <div class="row">
         <div class="col-md-12">
             <h1>Submit @curationObject.name to repository</h1>
