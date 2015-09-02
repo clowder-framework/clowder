@@ -10,8 +10,7 @@
   datasetSpaces: Option[List[ProjectSpace]],
   filesTags: Set[String],
   otherSpaces: List[ProjectSpace],
-  spaceTraced: Option[String]
-        )(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  currentSpace: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -98,7 +97,7 @@
                 </ul>
                 <div class="tab-content">
                     <div role="tabpanel" class="tab-pane fade in active" id="tab-home">
-                        @datasets.home(dataset, datasetSpaces, previews, otherSpaces, spaceTraced)
+                        @datasets.home(dataset, datasetSpaces, previews, otherSpaces, currentSpace)
                     </div>
                   <div role="tabpanel" class="tab-pane" id="tab-files">
                       <div id="add-file-btn">
@@ -126,7 +125,7 @@
                          @comment(comments)</div>
                   </div>
                   <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
-                    @metadata(dataset, md, usrmd, dataset.datasetXmlMetadata, rdfExported)
+                    @metadata(dataset, md, usrmd, dataset.datasetXmlMetadata, rdfExported, None)
                   </div>
                   <!-- If the user can create a note on this dataset, display this tab. Otherwise, remove it. Is there a better way to do this? -->
                   @if(Permission.checkPermission(Permission.CreateNote, ResourceRef(ResourceRef.dataset, dataset.id))) {

@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, metadata: Map[String,Any], userMetadata: scala.collection.mutable.Map[String,Any], xmlMetadata: List[models.DatasetXMLMetadata], rdfExported: Boolean)(implicit user: Option[models.User])
+@(dataset: models.Dataset, metadata: Map[String,Any], userMetadata: scala.collection.mutable.Map[String,Any], xmlMetadata: List[models.DatasetXMLMetadata], rdfExported: Boolean, curationId: Option[UUID])(implicit user: Option[models.User])
 
 @import api.Permission
 @import com.mongodb.casbah.Imports.DBObject
@@ -71,7 +71,7 @@
 			@if(value.isInstanceOf[com.mongodb.BasicDBList]){
 				@for(listValue <- value.asInstanceOf[com.mongodb.BasicDBList]) {
 						<li class="usr_md_"><b class="usr_md_">@(key):</b>
-						@if(listValue.isInstanceOf[String]) {			
+						@if(listValue.isInstanceOf[String]) {
 							<span class="usr_md_">@listValue</span><button class="usr_md_ btn btn-link btn-sm" type="button">Modify</button>
                             <button class="usr_md_ btn btn-link btn-sm" >Delete</button>
 						} else {
@@ -82,7 +82,7 @@
 				}
 			}else{
 				<li class="usr_md_"><b class="usr_md_">@(key):</b>
-				@if(value.isInstanceOf[String]) {			
+				@if(value.isInstanceOf[String]) {
 					<span class="usr_md_">@value</span><button class="usr_md_ btn btn-link btn-sm" type="button">Modify</button>
                     <button class="usr_md_ btn btn-link btn-sm" >Delete</button>
 				} else {
@@ -90,7 +90,7 @@
                     <button class="usr_md_ btn btn-link btn-sm" type="button">
                         Delete</button>@printLevelUserMetadata(value.asInstanceOf[DBObject].toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]])
 				}</li>
-			}	
+			}
 		}
 		</ul>
 	}
@@ -107,7 +107,7 @@
 
 					@printLevelUserMetadata(userMetadata)
 					<button class="usr_md_submit btn btn-default btn-xs" type="button">Submit</button>
-					@if(rdfExported) {
+					@if(rdfExported && !curationId.isDefined) {
 						<button class="usr_md_submit btn btn-primary rdfbtn" type="button">Get as RDF</button>
 					}
 				</div>
@@ -125,8 +125,25 @@
 		</div>
 	}
 
+@if(curationId.isDefined){
+	<script language="javascript">
+
+   var topId = "generalUserMetadata_@(dataset.id.stringify)";
+   window["uploadIp"+topId] = "@routes.CurationObjects.addUserMetadata(curationId.get)";
+
+   window["modelIp"+topId] = "@(routes.Assets.at("datasetsUserMetadataModel"))";
+   </script>
+	<script src="@routes.Assets.at("javascripts/userMetadata.js")" type="text/javascript"></script>
+	@if(!user.isDefined) {
+		<script language="javascript">
+   $("#generalUserMetadata_@(dataset.id.stringify) button").css("display","none");
+   $("#generalUserMetadata_@(dataset.id.stringify) .rdfbtn").css("display","inline");
+  </script>
+	}
+} else {
+
 <script language="javascript">
-	var topId = "generalUserMetadata_@(dataset.id.stringify)"; 
+	var topId = "generalUserMetadata_@(dataset.id.stringify)";
 	window["uploadIp"+topId] = "@api.routes.Datasets.addUserMetadata(dataset.id)";
 	window["rdfIp"+topId] = "@api.routes.Datasets.getRDFUserMetadata(dataset.id)";
 	window["modelIp"+topId] = "@(routes.Assets.at("datasetsUserMetadataModel"))";
@@ -138,6 +155,10 @@
 		$("#generalUserMetadata_@(dataset.id.stringify) .rdfbtn").css("display","inline");
    </script>
 }
+}
+
+
+
 @*@if(user.isDefined) {*@
 	@*@if(!user.get.identityId.userId.equals(dataset.author.identityId.userId)){*@
 			@*<script language="javascript">*@

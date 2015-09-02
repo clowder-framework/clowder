@@ -10,7 +10,7 @@ trait CurationService {
   def insert(curation: CurationObject)
 
   /**
-   * Get collection.
+   * Get curation object.
    */
   def get(id: UUID): Option[CurationObject]
 
@@ -18,4 +18,14 @@ trait CurationService {
    * Update submitted indicator.
    */
   def setSubmitted(id: UUID, submitted: Boolean)
+
+  /**
+   * remove curation object, also delete it from staging area.
+   */
+  def remove(id: UUID): Unit
+
+  /**
+   * add metadata to curation object, no influence to live object
+   */
+  def addUserMetadata(id: UUID, json: String)
 }

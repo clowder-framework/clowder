@@ -530,9 +530,11 @@ GET            /rss/:etype                                                      
 
 GET            /dataset/:id/curations/new                                               @controllers.CurationObjects.newCO(id:UUID, space:String ?= "")
 POST           /dataset/:id/curations/submit                                            @controllers.CurationObjects.submit(id:UUID)
+DELETE         /spaces/:spaceId/curations/:curationId                                   @controllers.CurationObjects.deleteCuration(spaceId: UUID, curationId: UUID)
 GET            /spaces/:spaceId/curations/:curationId                                   @controllers.CurationObjects.getCurationObject(spaceId:UUID, curationId: UUID)
 GET            /spaces/:spaceId/curations/:curationId/compareToRepository               @controllers.CurationObjects.compareToRepository(spaceId: UUID, curationId: UUID)
 GET            /spaces/:spaceId/curations/:curationId/sendToRepository                  @controllers.CurationObjects.sendToRepository(spaceId:UUID, curationId: UUID)
 GET            /spaces/:spaceId/curations/:curationId/matchmaker                        @controllers.CurationObjects.findMatchingRepositories(spaceId:UUID, curationId: UUID)
 GET            /spaces/:id/stagingArea                                                  @controllers.Spaces.stagingArea(id: UUID)
+POST           /curations/:id/usermetadata                                           @controllers.CurationObjects.addUserMetadata(id: UUID)
 
