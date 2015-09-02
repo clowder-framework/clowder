@@ -192,7 +192,7 @@ class CurationObjects @Inject()( curations: CurationService,
 
                 )
 
-              var endpoint = "https://sead-test.ncsa.illinois.edu/sead-cp/cp/researchobjects"
+              var endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
               val httpPost = new HttpPost(endpoint)
               httpPost.setHeader("Content-Type", "application/json")
               httpPost.setEntity(new StringEntity(Json.stringify(valuetoSend)))
