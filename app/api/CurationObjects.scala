@@ -3,22 +3,22 @@ package api
 import javax.inject.{Inject, Singleton}
 
 
+import controllers.Utils
 import models.UUID
 import services._
 import play.api.libs.json._
 import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
 /**
- * Created by indiragp on 8/31/15.
+ * Manipulates curation objects.
  */
 @Api(value="/curations", listingPath= "/api-docs.json/curations", description = "A curation object is a dataset ready for publication")
 @Singleton
-class CurationObjects @Inject()(
-                                 datasets: DatasetService,
-                               curations: CurationService,
-                               files: FileService,
-                               comments: CommentService,
-                               sections: SectionService
-                                 ) extends ApiController{
+class CurationObjects @Inject()(datasets: DatasetService,
+      curations: CurationService,
+      files: FileService,
+      comments: CommentService,
+      sections: SectionService
+      ) extends ApiController{
   @ApiOperation(value=" Get Curation object ORE map",
   httpMethod="GET")
   def getCurationObjectOre(curationId: UUID) = PrivateServerAction {
@@ -26,10 +26,11 @@ class CurationObjects @Inject()(
       val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
       curations.get(curationId) match {
         case Some(c) => {
-          //          var filesJson =""
+          val hostIp = Utils.baseUrl(request)
+          val hostUrl = hostIp + "/api/curations/" + curationId + "/ore"
           val filesJson = c.datasets(0).files.map { file =>
             Json.toJson(Map(
-              "Identifier" -> Json.toJson(file.id),
+              "Identifier" -> Json.toJson(hostIp+"/files/" +file.id),
               "Creation Date" -> Json.toJson(format.format(file.uploadDate)),
               "Label" -> Json.toJson(""),
               "Title" -> Json.toJson(file.filename),
@@ -142,7 +143,7 @@ class CurationObjects @Inject()(
               "Rights" -> Json.toJson(c.datasets(0).licenseData.m_licenseText),
               "describes" ->
                 Json.toJson(Map(
-                  "Identifier" -> Json.toJson(""),
+                  "Identifier" -> Json.toJson(hostIp + "/api/curations/" + c.id),
                   "Creation Date" -> Json.toJson(format.format(c.created)),
                   "Label" -> Json.toJson(""),
                   "Title" -> Json.toJson(c.name),
@@ -160,7 +161,7 @@ class CurationObjects @Inject()(
                   "keyword" -> Json.toJson(
                     Json.toJson(c.datasets(0).tags.map(_.name))
                   ),
-                  "@id" -> Json.toJson(""),
+                  "@id" -> Json.toJson(hostIp + "/api/curations/" + c.id + "/ore#aggregation"),
                   "@type" -> Json.toJson(Seq("Aggregation", "http://cet.ncsa.uiuc.edu/2007/Collection")),
                   "Is Version of" -> Json.toJson(""),
                   "similarTo" -> Json.toJson(""),
@@ -171,7 +172,7 @@ class CurationObjects @Inject()(
               "Creation Date" -> Json.toJson(format.format(c.created)),
               "Creator" -> Json.toJson(c.author.fullName),
               "@type" -> Json.toJson("ResourceMap"),
-              "@id" -> Json.toJson(c.id)
+              "@id" -> Json.toJson(hostUrl)
 
 
             )

@@ -1,38 +1,32 @@
 package controllers
 
-import java.net.URL
 import java.util.Date
 import javax.inject.Inject
-
 import api.Permission
-import com.mongodb.DBObject
 import models._
-import org.apache.http.client.entity.UrlEncodedFormEntity
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.DefaultHttpClient
 import play.api.Logger
 import play.api.data.{Forms, Form}
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
-import play.api.mvc.MultipartFormData
-import play.api.data.Forms._
 import services._
 import util.RequiredFieldsConfig
 import play.api.Play._
-import play.api.libs.json._
-import play.api.libs.json.JsArray
 import org.apache.http.client.methods.HttpPost
-import scala.text
 
+/**
+ * Methods for interacting with the curation objects in the staging area.
+ */
 class CurationObjects @Inject()( curations: CurationService,
-                                 datasets: DatasetService,
-                                 collections: CollectionService,
-                                 spaces: SpaceService,
-                                 files: FileService,
-                                 comments: CommentService,
-                                 sections: SectionService,
-                                 events: EventService
-                               ) extends SecuredController {
+     datasets: DatasetService,
+     collections: CollectionService,
+     spaces: SpaceService,
+     files: FileService,
+     comments: CommentService,
+     sections: SectionService,
+     events: EventService
+     ) extends SecuredController {
 
   def newCO(datasetId:UUID, spaceId:String) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
@@ -228,7 +222,7 @@ class CurationObjects @Inject()( curations: CurationService,
               //TODO : Submit the curationId to the repository. This probably needs the repository as input
               var success = false
               val hostIp = Utils.baseUrl(request)
-              val hostUrl = hostIp + "/api/curations/" + curationId + "/ore"
+              val hostUrl = hostIp + "/api/curations/" + curationId + "/ore#aggregation"
               val valuetoSend = Json.toJson(
                 Map(
                   "Repository" -> Json.toJson("Ideals"),
@@ -240,7 +234,7 @@ class CurationObjects @Inject()( curations: CurationService,
                   ,
                   "Aggregation" -> Json.toJson (
                     Map(
-                      "Identifier" -> Json.toJson(curationId),
+                      "Identifier" -> Json.toJson(hostIp +"/api/curations/" + curationId),
                       "@id" -> Json.toJson(hostUrl),
                       "Title" -> Json.toJson(c.name)
                     )
