@@ -526,6 +526,6 @@ class MongoDBSpaceService @Inject() (
   object ExtractorsForSpaceDAO extends ModelCompanion[ExtractorsForSpace, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[ExtractorsForSpace, ObjectId](collection = x.collection("extractorsForSpace")) {}
+    case Some(x) => new SalatDAO[ExtractorsForSpace, ObjectId](collection = x.collection("spaces.extractors")) {}
   }
 }
