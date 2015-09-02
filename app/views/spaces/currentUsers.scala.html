@@ -1,0 +1,65 @@
+@(space: ProjectSpace, creator: Option[User], userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String])(implicit user: Option[models.User])
+
+@import api.Permission
+
+<div class="row">
+    <div class="col-md-12 col-lg-12 col-sm-12">
+        @if(creator.isDefined) { Owner: <a href= "@routes.Profile.viewProfileUUID(space.creator)" title="@creator.get.email"> @creator.get.fullName</a> }
+    </div>
+</div>
+<br />
+
+<div class="row">
+    <div class="col-md-12 col-lg-12 col-sm-12">
+        <!-- If the user can edit this space, the following are displayed; otherwise they are displayed and disabled, to provide a consistent UE. -->
+        @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
+            <a class="btn btn-default btn-xs accordion-toggle collapsed" data-toggle="modal" data-target="#modalUser" id="edituseralloc" title="Edit User Allocation">
+                <span class="glyphicon glyphicon-edit"></span> Edit Users / Roles
+            </a>
+        } else {
+            <a class="btn btn-default btn-xs accordion-toggle collapsed disabled" id="edituseralloc" title="Edit User Allocation">
+                <span class="glyphicon glyphicon-edit"></span> Edit Users / Roles
+            </a>
+        }
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 col-lg-12 col-sm-12 box-white-space">
+        @if(userRoleMap.isEmpty) { <ul class="list-unstyled"><li>No other users</li></ul> }
+
+        <div id="user-list">
+            @for(role <- roleList) {
+                <h5>@role</h5>
+                <ul>
+                    @for((k,v) <- userRoleMap) {
+                        @if(role == v) { <li><a href= "@routes.Profile.viewProfileUUID(k.id)" title="@k.email">@k.fullName</a></li> }
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+</div>
+
+        <div class="modal fade bs-example-modal-lg" id="modalUser" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title">Edit Users and Roles</h4>
+                    </div>
+                    <div class="modal-body">
+                        @spaces.userAllocation(userRoleMap, externalUsers, roleList)
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" title="Update User Information" onclick="return updateUsersInSpace('@space.id', '@(routes.Spaces.getSpace(space.id))')">
+                        <span class="glyphicon glyphicon-edit"></span> Submit
+                    </button>
+                    <a href="#" class="btn btn-default" id="closebutton" data-dismiss="modal">Close</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<script src="@routes.Assets.at("javascripts/spaces/modify.js")" type="text/javascript"></script>

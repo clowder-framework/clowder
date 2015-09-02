@@ -1,0 +1,58 @@
+@(myForm: Form[controllers.spaceInviteData], space: ProjectSpace, creator: Option[User], userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+
+@import api.Permission
+
+@main(space.name) {
+    <div class="row">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12" id="s-title">
+                    <h1 id="space-title" class="inline">Manage access to @Html(space.name)</h1>
+                </div>
+            </div>
+
+            @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
+
+                <div class="row">
+                    <div class="col-md-12 box-white-space">
+                        <div class="tabbable" id="manage-access-tabbable"> <!-- Only required for left/right tabs -->
+
+                            <!-- Display the tabs with their titles, etc. -->
+                            <ul class="nav nav-tabs">
+                                <li role="presentation" class="active">
+                                    <a href="#tab-home" role="tab" data-toggle="tab"> Current Users
+                                        <span class="label label-default">@space.userCount</span>
+                                    </a>
+                                </li>
+                                <li role="presentation">
+                                    <a href="#tab-outstanding" role="tab" data-toggle="tab"> Outstanding Invites
+                                        <span class="label label-default">@space.requests.size</span>
+                                    </a>
+                                </li>
+                                <li role="presentation">
+                                    <a href="#tab-invite" role="tab" data-toggle="tab">Invite new Users</a>
+                                </li>
+                            </ul>
+                            <br /> <br />
+
+                            <!-- Define the tabs' contents. -->
+                            <div class="tab-content">
+                                <div role="tabpanel" class="tab-pane fade in active" id="tab-home">
+                                    @spaces.currentUsers(space, creator, userRoleMap, externalUsers, roleList)
+                                </div>
+                                <div role="tabpanel" class="tab-pane" id="tab-outstanding">
+                                </div>
+                                <div role="tabpanel" class="tab-pane" id="tab-invite">
+                                    @spaces.invite(myForm, space, roleList)
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            }
+
+        </div>
+    </div>
+}

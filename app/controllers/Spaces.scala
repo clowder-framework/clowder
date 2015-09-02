@@ -134,7 +134,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
           users.listRoles().map{
             role => roleList = role.name :: roleList
           }
-	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, creator, userRoleMap, externalUsers.toList, roleList.sorted))
+	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace))
       }
       case None => InternalServerError("Space not found")
     }
@@ -154,12 +154,68 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       }
   }
 
+  def access(id: UUID) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+    implicit val user = request.user
+    spaces.get(id) match {
+      case Some(s) => {
+        val creator = users.findById(s.creator)
+        var creatorActual: User = null
+        val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify))
+        val datasetsInSpace = spaces.getDatasetsInSpace(Some(id.stringify))
+        val usersInSpace = spaces.getUsersInSpace(id)
+        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
+        creator match {
+          case Some(theCreator) => {
+            inSpaceBuffer += theCreator
+            creatorActual = theCreator
+          }
+          case None => Logger.debug("-------- No creator for space found...")
+        }
+
+        var externalUsers = users.list.to[ArrayBuffer]
+        //inSpaceBuffer += externalUsers(0)
+        externalUsers --= inSpaceBuffer
+
+        var userRoleMap: Map[User, String] = Map.empty
+        for (aUser <- inSpaceBuffer) {
+          var role = "What"
+          spaces.getRoleForUserInSpace(id, aUser.id) match {
+            case Some(aRole) => {
+              role = aRole.name
+            }
+            case None => {
+              //This case catches spaces that have been created before users and roles were assigned to them.
+              if (aUser == creatorActual) {
+                role = "Admin"
+                users.findRoleByName(role) match {
+                  case Some(realRole) => {
+                    spaces.addUser(aUser.id, realRole, id)
+                  }
+                  case None => Logger.debug("No Admin role found for some reason.")
+                }
+              }
+            }
+          }
+          userRoleMap += (aUser -> role)
+        }
+        //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace
+        var roleList: List[String] = List.empty
+        users.listRoles().map{
+          role => roleList = role.name :: roleList
+        }
+        Ok(views.html.spaces.manageAccess(spaceInviteForm, Utils.decodeSpaceElements(s), creator, userRoleMap, externalUsers.toList, roleList.sorted))
+      }
+      case None => InternalServerError("Space not found")
+    }
+  }
+
   def invite(id:UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
         val roleList: List[String] = users.listRoles().map(role => role.name)
-        Ok(views.html.spaces.invite(spaceInviteForm, Utils.decodeSpaceElements(s), roleList.sorted))}
+        Ok(views.html.spaces.invite(spaceInviteForm, Utils.decodeSpaceElements(s), roleList.sorted))
+      }
       case None => InternalServerError("Space not found")
     }
   }
