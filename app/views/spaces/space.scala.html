@@ -3,7 +3,6 @@
 @import api.Permission
 @import helper._
 
-
 @main(space.name) {
 
     @if(space.bannerURL.isDefined) {
@@ -16,29 +15,30 @@
         </div>
     }
     <div class="row space-head vertical-align">
-        <div class="col-md-9 col-lg-9 col-sm-9">
+        <div class="col-md-8 col-lg-8 col-sm-8">
             <h1 id="spacenamedisplay">@space.name</h1>
             <p><span id="spacedescdisplay">@space.description</span></p>
         </div>
-        <div class="pull-right col-md-3 col-lg-3 col-sm-3 text-center">
-            @if(user.isDefined ) {
-                @if(!space.followers.contains(user.get.id)) {
-                    <button id="followButton"
-                    class="btn btn-success followButton btn-xs"
-                    objectId="@space.id"
-                    objectName="@space.name"
-                    objectType="space">
-                        Follow
-                    </button>
-                } else {
-                    <button id="followButton"
-                    class="btn btn-danger followButton btn-xs"
-                    objectId="@space.id"
-                    objectName="@space.name"
-                    objectType="space">
-                        Unfollow
-                    </button>
-                }
+        <!-- Use text-right for the buttons to align at right side of screen -->
+        <div class="pull-right col-md-4 col-lg-4 col-sm-4 text-right"> 
+            <!-- Fix for CATS-163 An exception is thrown if user is not defined -->           
+            @if(user.isEmpty || !space.followers.contains(user.get.id)) {
+                <button id="followButton"
+                class="btn btn-success followButton btn-xs"
+                objectId="@space.id"
+                objectName="@space.name"
+                objectType="space">
+                    Follow
+                </button>
+            } else {
+                <button id="followButton"
+                class="btn btn-danger followButton btn-xs"
+                objectId="@space.id"
+                objectName="@space.name"
+                objectType="space">
+                    Unfollow
+                </button>
+
             }
             <!-- If the user can view tags for this dataset, they are displayed, the area is present but empty to provide a consistent UE. -->
             @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
@@ -48,6 +48,16 @@
             } else {
                 <a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-default btn-xs disabled">
                     <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
+                </a>
+            }
+            
+             @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
+                <a href="@routes.Spaces.selectExtractors(space.id)" class="btn btn-default btn-xs">
+                    <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Extractors
+                </a>
+            } else {
+                <a href="@routes.Spaces.selectExtractors(space.id)" class="btn btn-default btn-xs disabled">
+                    <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Extractors
                 </a>
             }
         </div>
