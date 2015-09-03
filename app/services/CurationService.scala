@@ -27,5 +27,5 @@ trait CurationService {
   /**
    * add metadata to curation object, no influence to live object
    */
-  def addUserMetadata(id: UUID, json: String)
+  def addDatasetUserMetaData(id: UUID, json: String)
 }

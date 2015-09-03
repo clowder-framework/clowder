@@ -32,7 +32,7 @@ function createCuration() {
         error = true;
     }
 
-    if(spaceId.search("select the space") == 0) {
+    if(spaceId.search("elect the space") > 0) {
         $('#spaceerror').show();
         error = true;
     }

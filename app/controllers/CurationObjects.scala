@@ -89,7 +89,7 @@ class CurationObjects @Inject()( curations: CurationService,
               else {
                 InternalServerError("Permission Denied")
               }
-            }else {
+            } else {
               InternalServerError("Space Not Found")
             }
           }
@@ -120,7 +120,7 @@ class CurationObjects @Inject()( curations: CurationService,
   def addUserMetadata(id: UUID) = AuthenticatedAction (parse.json) { implicit request =>
     implicit val user = request.user
     Logger.debug(s"Adding user metadata to curation's dataset $id")
-    curations.addUserMetadata(id, Json.stringify(request.body))
+    curations.addDatasetUserMetaData(id, Json.stringify(request.body))
 
     curations.get(id) match {
       case Some(c) => {
@@ -147,11 +147,8 @@ class CurationObjects @Inject()( curations: CurationService,
           curations.get(curationId) match {
             case Some(c) => {
               val ds: Dataset = c.datasets(0)
-              //val dsmetadata = datasets.getMetadata(ds.id)
-              //val dsUsrMetadata = datasets.getUserMetadata(ds.id)
+              //dsmetadata is immutable but dsUsrMetadata is mutable
               val dsmetadata = ds.metadata
-                //userMetadata).get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]]
-
               val dsUsrMetadata = collection.mutable.Map(ds.userMetadata.toSeq: _*)
               val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
               val filesUsrMetadata: Map[String, scala.collection.mutable.Map[String,Any]] = ds.files.map(file=> file.id.stringify ->
@@ -162,7 +159,6 @@ class CurationObjects @Inject()( curations: CurationService,
           }
         }
         case None => InternalServerError("Space not found")
-
       }
 
   }
@@ -261,7 +257,6 @@ class CurationObjects @Inject()( curations: CurationService,
         case None => InternalServerError("Space Not found")
       }
   }
-
 
 }
 
