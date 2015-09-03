@@ -30,25 +30,36 @@ class CurationObjects @Inject()( curations: CurationService,
 
   def newCO(datasetId:UUID, spaceId:String) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
-    val (name, desc, spaceByDataset) = datasets.get(datasetId) match {
-      case Some(dataset) => (dataset.name, dataset.description, dataset.spaces map( id => spaces.get(id)) filter(_ != None)
-        filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.get.id)))map(_.get))
-      case None => ("", "", List.empty)
-    }
-    //default space is the space from which user access to the dataset
-    val defaultspace = spaceId match {
-      case "" => {
-        if(spaceByDataset.length ==1) {
-          spaceByDataset.lift(0)
-        } else {
-          None
+     datasets.get(datasetId) match {
+      case Some(dataset) => {
+        val name = dataset.name
+        val desc= dataset.description
+        var spaceByDataset = dataset.spaces map( id => spaces.get(id)) filter(_ != None) map(_.get)
+
+        if(user.isDefined && ! dataset.author.identityId.userId.equals(user.get.identityId.userId)){
+          spaceByDataset = spaceByDataset filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id)))
         }
+
+        //default space is the space from which user access to the dataset
+        val defaultspace = spaceId match {
+          case "" => {
+            if(spaceByDataset.length ==1) {
+              spaceByDataset.lift(0)
+            } else {
+              None
+            }
+          }
+          case _ => spaces.get(UUID(spaceId))
+        }
+
+        Ok(views.html.curations.newCuration(datasetId, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
+          RequiredFieldsConfig.isDescriptionRequired))
+
+
       }
-      case _ => spaces.get(UUID(spaceId))
+      case None =>  InternalServerError("Dataset Not found")
     }
 
-    Ok(views.html.curations.newCuration(datasetId, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired))
   }
 
   /**
@@ -70,7 +81,7 @@ class CurationObjects @Inject()( curations: CurationService,
           case Some(dataset) => {
             val spaceId = UUID(COSpace(0))
             if (spaces.get(spaceId) != None) {
-              if (Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId))) {
+              if (dataset.author.identityId.userId.equals(identity.id) ||Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId))) {
                 //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
                 val newCuration = CurationObject(
                   name = COName(0),
