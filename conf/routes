@@ -114,6 +114,14 @@ GET            /collection/:id                                                  
 GET            /collections/:collection_id/previews                                     @controllers.Collections.previews(collection_id: UUID)
 
 # ----------------------------------------------------------------------
+# SENSORS
+# ----------------------------------------------------------------------
+GET            /geostreams                                                              controllers.Geostreams.map
+GET            /geostreams/sensors                                                      controllers.Geostreams.list
+GET            /geostreams/sensors/new                                                  controllers.Geostreams.newSensor
+GET            /geostreams/sensors/:id                                                  controllers.Geostreams.edit(id)
+
+# ----------------------------------------------------------------------
 # TAGS
 # ----------------------------------------------------------------------
 GET            /tags/search                                                             @controllers.Tags.search(tag, start: String ?= "", size: Integer ?= 12, mode: String ?= "")
@@ -439,7 +447,6 @@ GET            /api/geostreams/streams                                          
 DELETE         /api/geostreams/streams/:id                                              api.Geostreams.deleteStream(id: String)
 DELETE         /api/geostreams/dropall                                                  api.Geostreams.deleteAll
 GET            /api/geostreams/counts                                                   api.Geostreams.counts
-GET            /geostreams                                                              controllers.Geostreams.browse
 
 # ----------------------------------------------------------------------
 # THUMBNAILS ENDPOINT
