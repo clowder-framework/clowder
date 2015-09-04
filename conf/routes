@@ -123,6 +123,8 @@ GET            /spaces/:id/acceptRequest                                        
 GET            /spaces/:id/rejectRequest                                                @controllers.Spaces.rejectRequest(id:UUID, user:String)
 GET            /spaces/:id/users                                                        @controllers.Spaces.manageUsers(id: UUID)
 GET            /spaces/:id/invite                                                       @controllers.Spaces.invite(id:UUID)
+GET 		   /spaces/:id/extractors						                            @controllers.Spaces.selectExtractors(id: UUID)
+POST		   /spaces/extractors			    							        @controllers.Spaces.updateExtractors
 POST           /spaces/:id/invite                                                       @controllers.Spaces.inviteToSpace(id: UUID)
 POST           /spaces/submit                                                           @controllers.Spaces.submit
 

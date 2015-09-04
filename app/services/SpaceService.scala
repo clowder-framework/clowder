@@ -65,6 +65,7 @@ trait SpaceService {
   def addDataset(dataset: UUID, space: UUID)
 
   def removeDataset(dataset:UUID, space: UUID)
+
   /**
    * Determine if time to live for resources is enabled for a specific space.
    *
@@ -208,4 +209,20 @@ trait SpaceService {
    * Remove authorization request.
    */
   def removeRequest(id: UUID, userId: UUID)
+
+  /**
+	 * If entry for spaceId already exists, will update list of extractors.
+	 * Otherwise will create and add a new document to the collection, with spaceId and extractor given.
+	 */
+	def addExtractor(spaceId: UUID, extractor:String)
+	
+	/**
+	 * Get all extractors for this space id.
+	 */
+  def getAllExtractors(spaceId: UUID): List[String]
+
+  /**
+	 * Delete an entire entry with extractors for this space id.
+	 */
+	def deleteAllExtractors(spaceId: UUID): Boolean
 }
