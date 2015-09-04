@@ -295,7 +295,7 @@ class Datasets @Inject()(
 
           //dataset is in at least one space with editstagingarea permission, or if the user is the owner of dataset.
           val stagingarea = datasetSpaces filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id)))
-          val toPublish = (! stagingarea.isEmpty) || (user.get.identityId.userId.equals(dataset.author.identityId.userId) && ! datasetSpaces.isEmpty)
+          val toPublish = ! stagingarea.isEmpty
 
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,

@@ -28,50 +28,38 @@ class CurationObjects @Inject()( curations: CurationService,
      events: EventService
      ) extends SecuredController {
 
-  def newCO(datasetId:UUID, spaceId:String) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
+  def newCO(datasetId:UUID, spaceId:String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
-     datasets.get(datasetId) match {
-      case Some(dataset) => {
-        val name = dataset.name
-        val desc= dataset.description
-        var spaceByDataset = dataset.spaces map( id => spaces.get(id)) filter(_ != None) map(_.get)
-
-        if(user.isDefined && ! dataset.author.identityId.userId.equals(user.get.identityId.userId)){
-          spaceByDataset = spaceByDataset filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id)))
+    val (name, desc, spaceByDataset) = datasets.get(datasetId) match {
+      case Some(dataset) => (dataset.name, dataset.description, dataset.spaces map( id => spaces.get(id)) filter(_ != None)
+        filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.get.id)))map(_.get))
+      case None => ("", "", List.empty)
+    }
+    //default space is the space from which user access to the dataset
+    val defaultspace = spaceId match {
+      case "" => {
+        if(spaceByDataset.length ==1) {
+          spaceByDataset.lift(0)
+        } else {
+          None
         }
-
-        //default space is the space from which user access to the dataset
-        val defaultspace = spaceId match {
-          case "" => {
-            if(spaceByDataset.length ==1) {
-              spaceByDataset.lift(0)
-            } else {
-              None
-            }
-          }
-          case _ => spaces.get(UUID(spaceId))
-        }
-
-        Ok(views.html.curations.newCuration(datasetId, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
-          RequiredFieldsConfig.isDescriptionRequired))
-
-
       }
-      case None =>  InternalServerError("Dataset Not found")
+      case _ => spaces.get(UUID(spaceId))
     }
 
+    Ok(views.html.curations.newCuration(datasetId, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
+      RequiredFieldsConfig.isDescriptionRequired))
   }
 
   /**
    * Controller flow to create a new curation object. On success,
    * the browser is redirected to the new Curation page.
    */
-  def submit(datasetId:UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) (parse.multipartFormData)  { implicit request =>
+  def submit(datasetId:UUID, spaceId:UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) (parse.multipartFormData)  { implicit request =>
 
     //get name, des, space from request
     var COName = request.body.asFormUrlEncoded.getOrElse("name", null)
     var CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
-    var COSpace = request.body.asFormUrlEncoded.getOrElse("space", null)
 
     implicit val user = request.user
     user match {
@@ -79,9 +67,9 @@ class CurationObjects @Inject()( curations: CurationService,
 
         datasets.get(datasetId) match {
           case Some(dataset) => {
-            val spaceId = UUID(COSpace(0))
+           // val spaceId = UUID(COSpace(0))
             if (spaces.get(spaceId) != None) {
-              if (dataset.author.identityId.userId.equals(identity.id) ||Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId))) {
+              if (Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId))) {
                 //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
                 val newCuration = CurationObject(
                   name = COName(0),
