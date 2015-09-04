@@ -1,4 +1,4 @@
-@(sensor: play.api.libs.json.JsValue, streams: List[play.api.libs.json.JsValue])(implicit user: Option[securesocial.core.Identity])
+@(sensor: play.api.libs.json.JsValue, streams: List[play.api.libs.json.JsValue])(implicit user: Option[models.User])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
