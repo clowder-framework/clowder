@@ -46,7 +46,8 @@ function createCuration() {
     var encDescription = htmlEncode(desc.val());
     $('#hiddenname').val(encName);
     $('#hiddendescription').val(encDescription);
-    $('#hiddenspace').val(spaceId);
+
+    document.getElementById('curationcreate').setAttribute('action', 'spaces/'+spaceId +'/submit'   );
 
     //Submit the form
     $('#curationcreate').submit();

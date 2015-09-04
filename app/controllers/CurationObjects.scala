@@ -28,7 +28,7 @@ class CurationObjects @Inject()( curations: CurationService,
      events: EventService
      ) extends SecuredController {
 
-  def newCO(datasetId:UUID, spaceId:String) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
+  def newCO(datasetId:UUID, spaceId:String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
     val (name, desc, spaceByDataset) = datasets.get(datasetId) match {
       case Some(dataset) => (dataset.name, dataset.description, dataset.spaces map( id => spaces.get(id)) filter(_ != None)
@@ -55,12 +55,11 @@ class CurationObjects @Inject()( curations: CurationService,
    * Controller flow to create a new curation object. On success,
    * the browser is redirected to the new Curation page.
    */
-  def submit(datasetId:UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) (parse.multipartFormData)  { implicit request =>
+  def submit(datasetId:UUID, spaceId:UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) (parse.multipartFormData)  { implicit request =>
 
     //get name, des, space from request
     var COName = request.body.asFormUrlEncoded.getOrElse("name", null)
     var CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
-    var COSpace = request.body.asFormUrlEncoded.getOrElse("space", null)
 
     implicit val user = request.user
     user match {
@@ -68,7 +67,7 @@ class CurationObjects @Inject()( curations: CurationService,
 
         datasets.get(datasetId) match {
           case Some(dataset) => {
-            val spaceId = UUID(COSpace(0))
+           // val spaceId = UUID(COSpace(0))
             if (spaces.get(spaceId) != None) {
               if (Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId))) {
                 //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
