@@ -1,4 +1,4 @@
-@(file: models.File, userMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean)(implicit user: Option[models.User])
+@(file: models.File, userMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, curationId: Option[UUID])(implicit user: Option[models.User])
 
 @import com.mongodb.casbah.Imports.DBObject
 @import collection.JavaConverters._
@@ -44,14 +44,25 @@
 		@if(rdfExported){
 			<button class="usr_md_submit btn btn-default btn-sm rdfbtn">Get as RDF</button>
 		}
-	</div>		
+	</div>
 
-<script language="javascript">
+
+
+	@if(curationId.isDefined){
+		<script language="javascript">
+	var topId = "generalUserMetadata_@(file.id.stringify)";
+	window["uploadIp"+topId] = "@routes.CurationObjects.addFileUserMetadata(file.id)";
+
+	window["modelIp"+topId] = "@(routes.Assets.at("filesUserMetadataModel"))";
+</script>
+		<script src="@routes.Assets.at("javascripts/userMetadata.js")" type="text/javascript"></script>
+	} else {
+		<script language="javascript">
 	var topId = "generalUserMetadata_@(file.id.stringify)"; 
 	window["uploadIp"+topId] = "@api.routes.Files.addUserMetadata(file.id)";
 	window["rdfIp"+topId] = "@api.routes.Files.getRDFUserMetadata(file.id)";
 	window["modelIp"+topId] = "@(routes.Assets.at("filesUserMetadataModel"))";
 </script>
-<script src="@routes.Assets.at("javascripts/userMetadata.js")" type="text/javascript"></script>
-
+		<script src="@routes.Assets.at("javascripts/userMetadata.js")" type="text/javascript"></script>
+	}
 

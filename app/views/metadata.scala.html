@@ -129,7 +129,7 @@
 	<script language="javascript">
 
    var topId = "generalUserMetadata_@(dataset.id.stringify)";
-   window["uploadIp"+topId] = "@routes.CurationObjects.addUserMetadata(curationId.get)";
+   window["uploadIp"+topId] = "@routes.CurationObjects.addDatasetUserMetadata(curationId.get)";
 
    window["modelIp"+topId] = "@(routes.Assets.at("datasetsUserMetadataModel"))";
    </script>

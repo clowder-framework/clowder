@@ -1,5 +1,5 @@
 @(space: models.ProjectSpace, curationObject: models.CurationObject, dsMetadata: Map[String,Any],
-dsUserMetadata: scala.collection.mutable.Map[String,Any], fileUsrMetadata: Map[String, scala.collection.mutable.Map[String,Any]], rdfExported: Boolean )(implicit user: Option[models.User])
+dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean )(implicit user: Option[models.User])
 @import helper._
 @import collection.JavaConverters._
 @import play.api.Play.current
@@ -92,7 +92,7 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], fileUsrMetadata: Map[S
             <div class="row border-top">
                 <div class="col-md-12">
                     <h4>Community generated metadata</h4>
-                    @fileusermetadata(file, fileUsrMetadata(file.id.stringify), rdfExported)
+                    @fileusermetadata(file, collection.mutable.Map(file.userMetadata.toSeq: _*) , rdfExported, Some(curationObject.id))
                 </div>
             </div>
 
