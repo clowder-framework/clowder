@@ -48,14 +48,12 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService,files: FileService
     }
   }
 
-  def addUserMetadata(id: UUID, json: String) {
+  def addDatasetUserMetaData(id: UUID, json: String) {
     Logger.debug("Adding/modifying user metadata to curation " + id + " : " + json)
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
     CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("datasets.0.userMetadata" -> md),
       false, false, WriteConcern.Safe)
   }
-
-
 }
 
 /**

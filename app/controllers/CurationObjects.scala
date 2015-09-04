@@ -28,7 +28,7 @@ class CurationObjects @Inject()( curations: CurationService,
      events: EventService
      ) extends SecuredController {
 
-  def newCO(datasetId:UUID, spaceId:String) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
+  def newCO(datasetId:UUID, spaceId:String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
     val (name, desc, spaceByDataset) = datasets.get(datasetId) match {
       case Some(dataset) => (dataset.name, dataset.description, dataset.spaces map( id => spaces.get(id)) filter(_ != None)
@@ -55,12 +55,11 @@ class CurationObjects @Inject()( curations: CurationService,
    * Controller flow to create a new curation object. On success,
    * the browser is redirected to the new Curation page.
    */
-  def submit(datasetId:UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) (parse.multipartFormData)  { implicit request =>
+  def submit(datasetId:UUID, spaceId:UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) (parse.multipartFormData)  { implicit request =>
 
     //get name, des, space from request
     var COName = request.body.asFormUrlEncoded.getOrElse("name", null)
     var CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
-    var COSpace = request.body.asFormUrlEncoded.getOrElse("space", null)
 
     implicit val user = request.user
     user match {
@@ -68,7 +67,7 @@ class CurationObjects @Inject()( curations: CurationService,
 
         datasets.get(datasetId) match {
           case Some(dataset) => {
-            val spaceId = UUID(COSpace(0))
+           // val spaceId = UUID(COSpace(0))
             if (spaces.get(spaceId) != None) {
               if (Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId))) {
                 //copy metadata from FileDAO to this dataset
@@ -107,7 +106,7 @@ class CurationObjects @Inject()( curations: CurationService,
               else {
                 InternalServerError("Permission Denied")
               }
-            }else {
+            } else {
               InternalServerError("Space Not Found")
             }
           }
@@ -138,7 +137,7 @@ class CurationObjects @Inject()( curations: CurationService,
   def addDatasetUserMetadata(id: UUID) = AuthenticatedAction (parse.json) { implicit request =>
     implicit val user = request.user
     Logger.debug(s"Adding user metadata to curation's dataset $id")
-    curations.addUserMetadata(id, Json.stringify(request.body))
+    curations.addDatasetUserMetaData(id, Json.stringify(request.body))
 
     curations.get(id) match {
       case Some(c) => {
@@ -184,11 +183,8 @@ class CurationObjects @Inject()( curations: CurationService,
           curations.get(curationId) match {
             case Some(c) => {
               val ds: Dataset = c.datasets(0)
-              //val dsmetadata = datasets.getMetadata(ds.id)
-              //val dsUsrMetadata = datasets.getUserMetadata(ds.id)
+              //dsmetadata is immutable but dsUsrMetadata is mutable
               val dsmetadata = ds.metadata
-                //userMetadata).get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]]
-
               val dsUsrMetadata = collection.mutable.Map(ds.userMetadata.toSeq: _*)
               val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
               val filesUsrMetadata: Map[String, scala.collection.mutable.Map[String,Any]] = ds.files.map(file=> file.id.stringify ->
@@ -199,7 +195,6 @@ class CurationObjects @Inject()( curations: CurationService,
           }
         }
         case None => InternalServerError("Space not found")
-
       }
 
   }
@@ -298,7 +293,6 @@ class CurationObjects @Inject()( curations: CurationService,
         case None => InternalServerError("Space Not found")
       }
   }
-
 
 }
 
