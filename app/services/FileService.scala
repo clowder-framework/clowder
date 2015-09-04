@@ -56,6 +56,16 @@ trait FileService {
   def listFilesBefore(date: String, limit: Int): List[File]
   
   /**
+   * List files for a specific user after a specified date.
+   */
+  def listUserFilesAfter(date: String, limit: Int, email: String): List[File]
+  
+  /**
+   * List files for a specific user before a specified date.
+   */
+  def listUserFilesBefore(date: String, limit: Int, email: String): List[File]
+  
+  /**
    * Get file metadata.
    */
   def get(id: UUID): Option[File]
@@ -88,6 +98,8 @@ trait FileService {
   def modifyRDFOfMetadataChangedFiles()
   
   def modifyRDFUserMetadata(id: UUID, mappingNumber: String="1")
+
+  def dumpAllFileMetadata(): List[String]
 
   def isInDataset(file: File, dataset: Dataset): Boolean
 
@@ -160,5 +172,20 @@ trait FileService {
   def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String)
 
   def setNotesHTML(id: UUID, notesHTML: String)
+
+  /**
+   * Add follower to a file.
+   */
+  def addFollower(id: UUID, userId: UUID)
+
+  /**
+   * Remove follower from a file.
+   */
+  def removeFollower(id: UUID, userId: UUID)
+
+  /**
+   * Update technical metadata
+   */
+  def updateMetadata(fileId: UUID, metadata: JsValue, extractor_id: String)
 
 }

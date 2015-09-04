@@ -49,6 +49,19 @@ class CassandraDataset extends DatasetService {
     List.empty[Dataset]
   }
   
+    /**
+   * List datasets after a specified date.
+   */
+  def listUserDatasetsAfter(date: String, limit: Int, email: String): List[Dataset] = {
+    List.empty[Dataset]
+  }
+  
+  /**
+   * List datasets before a specified date.
+   */
+  def listUserDatasetsBefore(date: String, limit: Int, email: String): List[Dataset] = {
+    List.empty[Dataset]
+  }
   /**
    * Get dataset.
    */
@@ -188,6 +201,17 @@ class CassandraDataset extends DatasetService {
   
   def setNotesHTML(id: UUID, notesHTML: String) {}
 
+  def dumpAllDatasetGroupings(): List[String] = {List.empty}
+  
+  def dumpAllDatasetMetadata(): List[String] = {List.empty}
 
+ /**
+  * Add follower to a dataset.
+  */
+ def addFollower(id: UUID, userId: UUID) {}
 
+ /**
+  * Remove follower from a dataset.
+  */
+ def removeFollower(id: UUID, userId: UUID) {}
 }

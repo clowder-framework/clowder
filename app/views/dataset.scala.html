@@ -6,7 +6,7 @@
         collectionsInside: List[models.Collection],
         filesOutside: List[models.File],
         rdfExported: Boolean,
-        relatedSensors: List[(String,String)])(implicit user: Option[securesocial.core.Identity])
+        relatedSensors: List[(String,String)])(implicit user: Option[models.User])
 
 @import helper._
 @import collection.JavaConverters._
@@ -64,15 +64,13 @@
 	}
 
 @main("Dataset") {
-
 	<div class="row">
-	
 		<!-- left column -->
 		<div class="col-md-8 col-right-border">
 
             <div class="row">
                 <div class="col-md-12" id="ds-title">
-                    <h1>@dataset.name</h1>
+                    <h1 id="datasettitle">@Html(dataset.name)</h1>
                 </div>
             </div>
 

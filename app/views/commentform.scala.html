@@ -1,4 +1,4 @@
-@(id: String, resourceType: String)(implicit user: Option[securesocial.core.Identity])
+@(id: String, resourceType: String)(implicit user: Option[models.User])
 
 @if(user.isDefined) {
   <form class="form-inline">
@@ -11,7 +11,7 @@
        var origText = "";
   
      function showEditComment(id) {
-       var commentText = $("#comment-body_" + id).html();
+       var commentText = $("#comment-body_" + id).html().replace(/<br>/g, "\n");
        origText = commentText;
        if ($("#commentField_" + id).length == 0) {
                var form="<form class=\"form-inline\">";               
@@ -30,13 +30,13 @@
      }
      
      function updateComment(id) {
-       var text = $("#editField_" + id).val();  
+       var text = $("#editField_" + id).val().replace(/\n/g, "<br>");
        editComment(id, text);              
        return false;
      }
      
      function cancelEditComment(id) {           
-           $("#comment-body_" + id).html(origText);
+           $("#comment-body_" + id).html(origText.replace(/\n/g, "<br>"));
            return false;
        }
      
@@ -67,7 +67,7 @@
     }
 
     function postComment(id, resourceType) {
-      var text = $('#commentField_' + id).val();
+      var text = $('#commentField_' + id).val().replace(/\n/g, "<br>");
       $('#commentField_' + id).val("");
 
       console.log("Posting " + text);
@@ -119,7 +119,7 @@
           post += "<span>•</span>";
           post += "<span>" + formatted + "</span>";
           post += "</div>";
-          post += "<div class=\"comment-body\" id=\"comment-body_" + response + "\">" + text + "</div>";
+          post += "<div class=\"comment-body comment-linebreaks\" id=\"comment-body_" + response + "\">" + text + "</div>";
           //Note, no check for comment owner in this case because this case is only displayed immediately after the comment creator posts the comment. MMF - 09/2014
           post += "<div class=\"comment-footer\"><a href=\"#\" class=\"btn btn-link btn-xs\" title=\"Reply To Comment\" onclick=\"return showReplyComment('" + response + "');\"><span class=\"glyphicon glyphicon-share-alt\"></span> Reply</a>&nbsp;&nbsp;<a href=\"#\" class=\"btn btn-link btn-xs\" title=\"Edit Comment\" onclick=\"return showEditComment('" + response + "');\"><span class=\"glyphicon glyphicon-edit\"></span> Edit</a>&nbsp;&nbsp;<a href=\"#\" class=\"btn btn-link btn-xs\" title=\"Delete Comment\" onclick=\"return deleteComment('" + response + "');\"><span class=\"glyphicon glyphicon-trash\"></span> Delete</a> </div>";
           post += "<div class=\"comment-reply\">";

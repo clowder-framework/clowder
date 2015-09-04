@@ -29,6 +29,21 @@ import collection.JavaConverters._
 @Singleton
 class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, storage: ByteStorageService) extends PreviewService {
 
+
+  /**
+   * Count all files
+   */
+  def count(): Long = {
+    PreviewDAO.count(MongoDBObject())
+  }
+
+  /**
+   * List all thumbnail files.
+   */
+  def listPreviews(): List[Preview] = {
+    (for (preview <- PreviewDAO.find(MongoDBObject())) yield preview).toList
+  }
+
   def get(previewId: UUID): Option[Preview] = {
     PreviewDAO.findOneById(new ObjectId(previewId.stringify))
   }
@@ -92,7 +107,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
       case Some(preview) => {
         //var newAnnotations = List.empty[ThreeDAnnotation]
         for (annotation <- preview.annotations) {
-          if (annotation.id.toString().equals(annotation_id)) {
+          if (annotation.id.toString.equals(annotation_id.toString)) {
             PreviewDAO.update(MongoDBObject("_id" -> new ObjectId(preview_id.stringify), "annotations._id" -> new ObjectId(annotation.id.stringify)), $set("annotations.$.description" -> description), false, false, WriteConcern.Safe)
             return
           }
@@ -112,6 +127,11 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
       case None => return List.empty
     }
   }
+
+  def remove(id: UUID): Unit = {
+    MongoUtils.removeBlob(id, "previews", "medici2.mongodb.storeThumbnails")
+  }
+
 
   def removePreview(p: Preview) {
     for (tile <- tiles.get(p.id)) {

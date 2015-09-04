@@ -30,7 +30,8 @@ case class File(
   xmlMetadata: Map[String, Any] = Map.empty,
   userMetadataWasModified: Option[Boolean] = None,
   licenseData: LicenseData = new LicenseData(),
-  notesHTML: Option[String] = None )
+  notesHTML: Option[String] = None,
+  followers: List[UUID] = List.empty )
 
 case class Versus(
   fileId: UUID,

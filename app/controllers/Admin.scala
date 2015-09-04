@@ -370,5 +370,10 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends Secure
       }
     }
   }
+  
+  def viewDumpers()  = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+  	implicit val user = request.user
+	Ok(views.html.viewDumpers())
+  }
 
 }

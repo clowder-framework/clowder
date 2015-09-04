@@ -50,7 +50,8 @@ class MongoDBFileService @Inject() (
   thumbnails: ThumbnailService,
   threeD: ThreeDService,
   sparql: RdfSPARQLService,
-  storage: ByteStorageService) extends FileService {
+  storage: ByteStorageService,
+  userService: UserService) extends FileService {
 
   object MustBreak extends Exception {}
 
@@ -101,6 +102,35 @@ class MongoDBFileService @Inject() (
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("Before " + sinceDate)
       FileDAO.find($and("isIntermediate" $ne true, "uploadDate" $gt sinceDate)).sort(order).limit(limit).toList.reverse
+    }
+  }
+  
+  /**
+   * List files specific to a user after a specified date.
+   */
+  def listUserFilesAfter(date: String, limit: Int, email: String): List[File] = {
+    val order = MongoDBObject("uploadDate"-> -1 )
+    if (date == "") {
+      FileDAO.find(("isIntermediate" $ne true) ++ ("author.email" $eq email)).sort(order).limit(limit).toList
+    } else {
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      FileDAO.find(("isIntermediate" $ne true) ++ ("uploadDate" $lt sinceDate) ++ ("author.email" -> email))
+        .sort(order).limit(limit).toList
+    }
+  }
+
+  /**
+   * List files specific to a user before a specified date.
+   */
+  def listUserFilesBefore(date: String, limit: Int, email: String): List[File] = {
+    var order = MongoDBObject("uploadDate"-> -1)
+    if (date == "") {
+      FileDAO.find(("isIntermediate" $ne true) ++ ("author.email" $eq email)).sort(order).limit(limit).toList
+    } else {
+      order = MongoDBObject("uploadDate"-> 1)
+      val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
+      FileDAO.find(("isIntermediate" $ne true) ++ ("uploadDate" $gt sinceDate) ++ ("author.email" $eq email))
+        .sort(order).limit(limit).toList.reverse
     }
   }
 
@@ -349,6 +379,16 @@ class MongoDBFileService @Inject() (
   def addMetadata(fileId: UUID, metadata: JsValue) {
     val doc = JSON.parse(Json.stringify(metadata)).asInstanceOf[DBObject]
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(fileId.stringify)), $addToSet("metadata" -> doc), false, false, WriteConcern.Safe)
+  }
+
+  def updateMetadata(fileId: UUID, metadata: JsValue, extractor_id: String) {
+    val doc = JSON.parse(Json.stringify(metadata)).asInstanceOf[DBObject]
+    FileDAO.findOneById(new ObjectId(fileId.stringify)) match {
+      case None => None
+      case Some(file) => {        
+        FileDAO.update(MongoDBObject("_id" -> new ObjectId(fileId.stringify), "metadata.extractor_id" -> extractor_id), $set("metadata.$" -> doc), false, false, WriteConcern.Safe)
+      }
+    }
   }
 
   def get(id: UUID): Option[File] = {
@@ -606,6 +646,9 @@ class MongoDBFileService @Inject() (
           for(texture <- threeD.findTexturesByFileId(file.id)){
             ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
           }
+          for (follower <- file.followers) {
+            userService.unfollowFile(follower, id)
+          }
           if(!file.thumbnail_id.isEmpty)
             thumbnails.remove(UUID(file.thumbnail_id.get))
         }
@@ -823,6 +866,82 @@ class MongoDBFileService @Inject() (
   
   def setNotesHTML(id: UUID, html: String) {
 	    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(html)), false, false, WriteConcern.Safe)    
+  }
+  
+  def dumpAllFileMetadata(): List[String] = {    
+		    Logger.debug("Dumping metadata of all files.")
+		    
+		    val fileSep = System.getProperty("file.separator")
+		    val lineSep = System.getProperty("line.separator")
+		    var fileMdDumpDir = play.api.Play.configuration.getString("filedump.dir").getOrElse("")
+			if(!fileMdDumpDir.endsWith(fileSep))
+				fileMdDumpDir = fileMdDumpDir + fileSep
+			var fileMdDumpMoveDir = play.api.Play.configuration.getString("filedumpmove.dir").getOrElse("")	
+			if(fileMdDumpMoveDir.equals("")){
+				Logger.warn("Will not move dumped files metadata to staging directory. No staging directory set.")	  
+			}
+			else{
+			    if(!fileMdDumpMoveDir.endsWith(fileSep))
+				  fileMdDumpMoveDir = fileMdDumpMoveDir + fileSep
+			}
+		    
+			var unsuccessfulDumps: ListBuffer[String] = ListBuffer.empty 	
+				
+			for(file <- FileDAO.findAll){
+			  try{
+				  val fileId = file.id.toString
+				  
+				  val fileTechnicalMetadata = getTechnicalMetadataJSON(file.id)
+				  val fileUserMetadata = getUserMetadataJSON(file.id)
+				  if(fileTechnicalMetadata != "{}" || fileUserMetadata != "{}"){
+				    
+				    val filenameNoExtension = file.filename.substring(0, file.filename.lastIndexOf("."))
+				    val filePathInDirs = fileId.charAt(fileId.length()-3)+ fileSep + fileId.charAt(fileId.length()-2)+fileId.charAt(fileId.length()-1)+ fileSep + fileId + fileSep + filenameNoExtension + "__metadata.txt"
+				    val mdFile = new java.io.File(fileMdDumpDir + filePathInDirs)
+				    mdFile.getParentFile().mkdirs()
+				    
+				    val fileWriter =  new BufferedWriter(new FileWriter(mdFile))
+					fileWriter.write(fileTechnicalMetadata + lineSep + lineSep + fileUserMetadata)
+					fileWriter.close()
+					
+					if(!fileMdDumpMoveDir.equals("")){
+					  try{
+						  val mdMoveFile = new java.io.File(fileMdDumpMoveDir + filePathInDirs)
+					      mdMoveFile.getParentFile().mkdirs()
+					      
+						  if(mdFile.renameTo(mdMoveFile)){
+			            	Logger.info("File metadata dumped and moved to staging directory successfully.")
+						  }else{
+			            	Logger.warn("Could not move dumped file metadata to staging directory.")
+			            	throw new Exception("Could not move dumped file metadata to staging directory.")
+						  }
+					  }catch {case ex:Exception =>{
+						  val badFileId = file.id.toString
+						  Logger.error("Unable to stage dumped metadata of file with id "+badFileId+": "+ex.printStackTrace())
+						  unsuccessfulDumps += badFileId
+					  }}
+					}		    
+				  }
+
+			  }catch {case ex:Exception =>{
+			    val badFileId = file.id.toString
+			    Logger.error("Unable to dump metadata of file with id "+badFileId+": "+ex.printStackTrace())
+			    unsuccessfulDumps += badFileId
+			  }}
+			}
+		    
+		    return unsuccessfulDumps.toList
+
+	}
+
+  def addFollower(id: UUID, userId: UUID) {
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                    $addToSet("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
+  }
+
+  def removeFollower(id: UUID, userId: UUID) {
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+                    $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 
 }

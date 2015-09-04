@@ -1,6 +1,7 @@
 package services
 
-import models.{UUID, ThreeDAnnotation, Preview}
+import com.mongodb.casbah.commons.MongoDBObject
+import models.{Thumbnail, UUID, ThreeDAnnotation, Preview}
 import java.io.InputStream
 import play.api.libs.json.JsValue
 
@@ -8,6 +9,19 @@ import play.api.libs.json.JsValue
  * Created by lmarini on 2/17/14.
  */
 trait PreviewService {
+
+
+  /**
+   * Count all preview files
+   */
+  def count(): Long
+
+  /**
+   * List all preview files.
+   */
+  def listPreviews(): List[Preview]
+
+  def remove(id: UUID)
 
   def get(previewId: UUID): Option[Preview]
 

@@ -1,4 +1,4 @@
-@(file: models.File, userMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean)(implicit user: Option[securesocial.core.Identity]) 
+@(file: models.File, userMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean)(implicit user: Option[models.User])
 
 @import com.mongodb.casbah.Imports.DBObject
 @import collection.JavaConverters._
