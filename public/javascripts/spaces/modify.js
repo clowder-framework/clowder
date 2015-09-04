@@ -139,7 +139,7 @@ function acceptSpaceRequest(id, user){
         contentType : "application/json"
     });
     request.done ( function ( response, textStatus, jqXHR ) {
-        $("#requestli_"+user).hide();
+        $("#request-tr-"+user).hide();
         console.log("Successful accept request");
     });
     request.fail(function(jqXHR, textStatus, errorThrown) {
@@ -158,7 +158,7 @@ function rejectSpaceRequest(id, user){
         contentType : "application/json"
     });
     request.done ( function ( response, textStatus, jqXHR ) {
-        $("#requestli_"+user).hide();
+        $("#request-tr-"+user).hide();
         console.log("Successful reject request");
     });
     request.fail(function(jqXHR, textStatus, errorThrown) {

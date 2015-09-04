@@ -1,0 +1,42 @@
+@(space: ProjectSpace, creator: Option[User], userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String])(implicit user: Option[models.User])
+
+@import api.Permission
+
+<div class="row">
+    <div class="col-md-8 col-lg-8 col-sm-8 col-right-border">
+        @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
+
+            @spaces.userAllocation(userRoleMap, externalUsers, roleList)
+            <br />
+            <div class="row">
+                <button class="btn btn-primary" title="Update Users/Roles" onclick="return updateUsersInSpace('@space.id', '@(routes.Spaces.getSpace(space.id))')">
+                    Submit
+                </button>
+                <button class="btn btn-default" type="button" id="cancel-button" title="Cancel" onClick= "window.location.reload();">Cancel</button>
+            </div>
+
+        }
+    </div>
+
+    <div class="col-md-4 col-lg-4 col-sm-4 col-left-border">
+        <div>
+            @if(creator.isDefined) { Owner: <a href= "@routes.Profile.viewProfileUUID(space.creator)" title="@creator.get.email"> @creator.get.fullName</a> }
+        </div>
+        <br />
+        <div>
+            @if(userRoleMap.isEmpty) { <ul class="list-unstyled"><li>No other users</li></ul> }
+            <div id="user-list">
+                @for(role <- roleList) {
+                    <h5>@role</h5>
+                    <ul>
+                        @for((k,v) <- userRoleMap) {
+                            @if(role == v) { <li><a href= "@routes.Profile.viewProfileUUID(k.id)" title="@k.email">@k.fullName</a></li> }
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="@routes.Assets.at("javascripts/spaces/modify.js")" type="text/javascript"></script>

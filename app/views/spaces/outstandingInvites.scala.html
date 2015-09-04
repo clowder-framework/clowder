@@ -4,127 +4,51 @@
 @import play.api.libs.json._
 @import play.api.Play.current
 
-@main(space.name) {
-    <div class="row">
-        <div class="col-md-12">
-            @if(creator.isDefined) { Owner: <a href= "@routes.Profile.viewProfileUUID(space.creator)" title="@creator.get.email"> @creator.get.fullName</a> }
+<div class="row">
+    <div class="col-md-12">
+        @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
 
-            <div id="userlist">
-                @if(userRoleMap.isEmpty) { <ul class="list-unstyled"><li>No other users</li></ul> }
-
-                @for(role <- roleList) {
-                    <h5>@role</h5>
-                    <ul>
-                        @for((k,v) <- userRoleMap) {
-                            @if(role == v) { <li><a href= "@routes.Profile.viewProfileUUID(k.id)" title="@k.email">@k.fullName</a></li> }
-                        }
-                    </ul>
-                }
-            </div>
-
-            <!-- If the user can view tags for this dataset, they are displayed, the area is present but empty to provide a consistent UE. -->
-            @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
-                <a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed" data-toggle="modal"
-                data-target="#modalUser" id="edituseralloc"
-                title="Edit User Allocation">
-                    <span class="glyphicon glyphicon-edit"></span> Edit
-                </a>
-                <a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed"
-                    href= "@routes.Spaces.invite(space.id)">
-                    <span class="glyphicon glyphicon-envelope"></span> Invite new Users
-                </a>
-                @if(!space.requests.isEmpty) {
-                    <a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed" data-toggle="modal"
-                    data-target="#requestUser" id="viewrequest"
-                    title="View Authorization request">
-                         @space.requests.length requests for access
-                    </a>
-                }
+            @if(space.requests.isEmpty) {
+                <ul class="list-unstyled"><li>No outstanding invites</li></ul>
             } else {
-                <a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed disabled"
-                id="edituseralloc" title="Edit User Allocation">
-                    <span class="glyphicon glyphicon-edit"></span> Edit
-                </a>
-                <a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed disabled"
-                    href= "@routes.Spaces.invite(space.id)">
-                    <span class="glyphicon glyphicon-envelope"></span> Invite new Users
-                </a>
-                <!-- user can request Authorization when permissions is public and user is login -->
-                @if(user.isDefined && current.configuration.getString("permissions").getOrElse("public").compareTo("public") == 0) {
-                    @if(!(userRoleMap contains user.get)) {
-                        <a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed"
-                        href="@(routes.Spaces.addRequest(space.id))">
-                            <span class="glyphicon glyphicon-envelope"></span>
-                            Authorization request
-                        </a>
-                    }
-                }
+                <table id="outstanding-invites" class="table">
+                    <tbody>
+                        @for(user <- space.requests) {
+                            <tr id="request-tr-@user.id.stringify">
+                                <td>
+                                    <a href="@routes.Profile.viewProfileUUID(user.id)">@user.name</a>
+                                </td>
+
+                                <td>
+                                    <select id="roleSelect" class="chosen-select btn btn-success btn-xs">
+                                        <option value="Viewer">Viewer</option>
+                                        <option value="Editor">Editor</option>
+                                        <option value="Admin">Admin</option>
+                                    </select>
+                                </td>
+
+                                <td>
+                                    <button class="btn btn-default btn-xs" id="request-accept-@user.id.stringify" title="Accept request" onclick="return acceptSpaceRequest('@space.id', '@user.id.toString')">
+                                        Accept
+                                    </button>&nbsp;
+                                    <button class="btn btn-default btn-xs" id="request-reject-@user.id.stringify" title="Reject request" onclick= "return rejectSpaceRequest('@space.id', '@user.id.toString')">
+                                        Reject
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <button class="btn btn-default" type="button" id="close-button" title="Close" onClick= "window.location.reload();">Close</button>
             }
 
-            <div class="modal fade bs-example-modal-lg" id="modalUser" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
-                        &times;</button>
-                        <h4 class="modal-title">Edit Users and Roles</h4>
-                        </div>
-                        <div class="modal-body">
-                        @spaces.userAllocation(userRoleMap, externalUsers, roleList)
-                        </div>
-                        <div class="modal-footer">
-                        <button class="btn btn-primary" title="Update User Information" onclick="return updateUsersInSpace('@space.id', '@(routes.Spaces.getSpace(space.id))')">
-                            <span class="glyphicon glyphicon-edit"></span> Submit
-                        </button>
-                        <a href="#" class="btn btn-default" id="closebutton" data-dismiss="modal">Close</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal fade bs-example-modal-lg" id="requestUser" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
-                                    &times;</button>
-                            <h4 class="modal-title">Authorization Request</h4>
-                        </div>
-                        <div class="modal-body">
-                            <ul>
-                            @for(user <- space.requests) {
-                                <li id="requestli_@user.id.stringify">
-                                    <a href="@routes.Profile.viewProfileUUID(user.id)">@user.name</a>
-                                    <br><br>
-
-                                    <select id="roleSelect" class="chosen-select btn btn-default btn-xs">
-                                        <option value="Viewer">Viewer</option>
-                                        <option value="Admin">Admin</option>
-                                        <option value="Editor">Editor</option>
-
-                                    </select>
-
-                                <button class="btn btn-default btn-xs" id="requestviewer_@user.id.stringify" title="accept space request" onclick="return acceptSpaceRequest('@space.id', '@user.id.toString')">
-                                    Accept
-                                </button>
-                                <button class="btn btn-default btn-xs" id="requestrej_@user.id.stringify" title="reject space request" onclick= "return rejectSpaceRequest('@space.id', '@user.id.toString')">
-                                    Reject Request
-                                </button>
-                                </li>
-                            }
-                            </ul>
-                        </div>
-                        <div class="modal-footer">
-                            <button class="btn btn-default" type="button" data-dismiss="modal" onClick= "window.location.reload();">Close</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        }
     </div>
+</div>
 
-    <script type="text/javascript">
-        var roleArray = @Html(Json.stringify(Json.toJson(roleList)))
-    </script>
-    <script src="@routes.Assets.at("javascripts/spaces/modify.js")" type="text/javascript"></script>
-}
+<script type="text/javascript">
+    var roleArray = @Html(Json.stringify(Json.toJson(roleList)))
+</script>
+<script src="@routes.Assets.at("javascripts/spaces/modify.js")" type="text/javascript"></script>
+

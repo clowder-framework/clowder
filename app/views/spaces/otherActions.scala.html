@@ -1,0 +1,8 @@
+@(space: ProjectSpace, userRoleMap: Map[User, String])(implicit user: Option[models.User])
+
+<div class="ds-section-sm">
+    <h3>Other Actions</h3>
+
+    @spaces.follow(space)
+    @spaces.requestAuthorization(space, userRoleMap)
+</div>

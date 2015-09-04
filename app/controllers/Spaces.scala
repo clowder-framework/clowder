@@ -100,12 +100,6 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 	            case None => Logger.debug("-------- No creator for space found...")
 	        }
 
-
-	        var externalUsers = users.list.to[ArrayBuffer]
-
-	        //inSpaceBuffer += externalUsers(0)
-	        externalUsers --= inSpaceBuffer
-
 	        var userRoleMap: Map[User, String] = Map.empty
 	        for (aUser <- inSpaceBuffer) {
 	            var role = "What"
@@ -130,11 +124,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 	            userRoleMap += (aUser -> role)
 	        }
 	        //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace
-          var roleList: List[String] = List.empty
-          users.listRoles().map{
-            role => roleList = role.name :: roleList
-          }
-	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace))
+
+	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, userRoleMap))
       }
       case None => InternalServerError("Space not found")
     }
@@ -154,14 +145,12 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       }
   }
 
-  def access(id: UUID) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+  def manageUsers(id: UUID) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
         val creator = users.findById(s.creator)
         var creatorActual: User = null
-        val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify))
-        val datasetsInSpace = spaces.getDatasetsInSpace(Some(id.stringify))
         val usersInSpace = spaces.getUsersInSpace(id)
         var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
         creator match {
@@ -203,7 +192,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
         users.listRoles().map{
           role => roleList = role.name :: roleList
         }
-        Ok(views.html.spaces.manageAccess(spaceInviteForm, Utils.decodeSpaceElements(s), creator, userRoleMap, externalUsers.toList, roleList.sorted))
+        Ok(views.html.spaces.users(spaceInviteForm, Utils.decodeSpaceElements(s), creator, userRoleMap, externalUsers.toList, roleList.sorted))
       }
       case None => InternalServerError("Space not found")
     }
