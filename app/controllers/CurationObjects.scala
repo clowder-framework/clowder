@@ -69,19 +69,12 @@ class CurationObjects @Inject()( curations: CurationService,
           case Some(dataset) => {
            // val spaceId = UUID(COSpace(0))
             if (spaces.get(spaceId) != None) {
-              if (Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId))) {
+
                 //copy metadata from FileDAO to this dataset
                 var newFiles: List[File]= List.empty
                 for ( file <- dataset.files) {
                    files.get(file.id) match{
                     case Some(f) => {
-                      //file.metadata ::: f.metadata
-//                      for ((k,v) <- f.userMetadata){
-//                        file.userMetadata = Map ("why not" ,"ehvieruvieq")
-//                      }
-//                      Logger.debug("userMetadata should be updated " + file.userMetadata + f.userMetadata);
-                      //file.userMetadataWasModified = f.userMetadataWasModified
-                      //file.xmlMetadata = f.xmlMetadata
                       newFiles =  f :: newFiles
                     }
                   }
@@ -102,10 +95,7 @@ class CurationObjects @Inject()( curations: CurationService,
                 Logger.debug("create curation object: " + newCuration.id)
                 curations.insert(newCuration)
                 Redirect(routes.CurationObjects.getCurationObject(spaceId, newCuration.id))
-              }
-              else {
-                InternalServerError("Permission Denied")
-              }
+
             } else {
               InternalServerError("Space Not Found")
             }
@@ -155,22 +145,24 @@ class CurationObjects @Inject()( curations: CurationService,
 
 
 
-  def addFileUserMetadata(id: UUID) = AuthenticatedAction (parse.json) { implicit request =>
+  def addFileUserMetadata(curationId:UUID, fileId: UUID) = AuthenticatedAction (parse.json) { implicit request =>
     implicit val user = request.user
-    Logger.debug(s"Adding user metadata to curation's file $id")
-    curations.addFileUserMetadata(id, Json.stringify(request.body))
 
-    curations.get(id) match {
-      case Some(c) => {
-        events.addObjectEvent(user, id, c.name, "addMetadata_curation")
+    curations.get(curationId) match {
+      case Some(c) =>{
+        val newFiles: List[File]= c.datasets.head.files
+        val index = newFiles.indexWhere(_.id.equals(fileId))
+        Logger.debug(s"Adding user metadata to curation's file No." + index )
+        curations.addFileUserMetaData(curationId, index, Json.stringify(request.body))
       }
     }
 
-    //datasets.index(id)
-    //    configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-    //      case "yes" => datasets.setUserMetadataWasModified(id, true)
-    //      case _ => Logger.debug("userdfSPARQLStore not enabled")
-    //    }
+    curations.get(curationId) match {
+      case Some(c) => {
+        events.addObjectEvent(user, curationId, c.name, "addMetadata_curation")
+      }
+    }
+
     Ok(toJson(Map("status" -> "success")))
   }
 
@@ -187,8 +179,6 @@ class CurationObjects @Inject()( curations: CurationService,
               val dsmetadata = ds.metadata
               val dsUsrMetadata = collection.mutable.Map(ds.userMetadata.toSeq: _*)
               val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
-              val filesUsrMetadata: Map[String, scala.collection.mutable.Map[String,Any]] = ds.files.map(file=> file.id.stringify ->
-                files.getUserMetadata(file.id)).toMap.asInstanceOf[Map[String, scala.collection.mutable.Map[String,Any]]]
               Ok(views.html.spaces.curationObject(s, c, dsmetadata, dsUsrMetadata, isRDFExportEnabled))
             }
             case None => InternalServerError("Curation Object Not found")

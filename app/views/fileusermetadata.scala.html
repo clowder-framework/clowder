@@ -51,7 +51,7 @@
 	@if(curationId.isDefined){
 		<script language="javascript">
 	var topId = "generalUserMetadata_@(file.id.stringify)";
-	window["uploadIp"+topId] = "@routes.CurationObjects.addFileUserMetadata(file.id)";
+	window["uploadIp"+topId] = "@routes.CurationObjects.addFileUserMetadata(curationId.get, file.id)";
 
 	window["modelIp"+topId] = "@(routes.Assets.at("filesUserMetadataModel"))";
 </script>
