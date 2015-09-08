@@ -99,7 +99,10 @@ case class ClowderUser(
   viewed: Option[List[UUID]] = None,
 
   // spaces
-  spaceandrole: List[UserSpaceAndRole] = List.empty
+  spaceandrole: List[UserSpaceAndRole] = List.empty,
+  //staging area
+  repositoryPreferences: Map[String,String] = Map.empty
+
 ) extends User
 
 case class Profile(
