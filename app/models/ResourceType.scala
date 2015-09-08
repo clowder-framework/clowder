@@ -3,7 +3,7 @@ package models
 import play.api.libs.json._
 
 /**
- * Created by lmarini on 3/11/15.
+ * Enumerate type of resources known to the system.
  */
 object ResourceType extends Enumeration {
 //  type ResourceType = Value

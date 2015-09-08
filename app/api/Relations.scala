@@ -10,9 +10,6 @@ import services.{RelationService}
 
 /**
  * Track relations between resources.
- *
- * @author Luigi Marini
- *
  */
 @Singleton
 class Relations @Inject()(relations: RelationService) extends ApiController {
@@ -36,7 +33,7 @@ class Relations @Inject()(relations: RelationService) extends ApiController {
 
   def add() = SecuredAction(parse.json, authorization = WithPermission(Permission.RelationsWrite)) {
     implicit request =>
-      Logger.debug("Body: " + request.body)
+      // TODO get it to work with implicit formats
       var sourceId= (request.body \ "source" \ "id").as[String]
       var sourceType= ResourceType.withName((request.body \ "source" \ "resourceType").as[String])
       var targetId= (request.body \ "target" \ "id").as[String]
@@ -47,19 +44,6 @@ class Relations @Inject()(relations: RelationService) extends ApiController {
         case Some(id) => Ok(Json.obj("status" ->"OK", "message" -> ("Relation '" + id + "' saved.") ))
         case None => Ok(Json.obj("status" ->"OK", "message" -> ("Relation already exists") ))
       }
-
-
-      // TODO get it to work with implicit formats
-//      val relationResult = request.body.validate[Relation]
-//      relationResult.fold(
-//        errors => {
-//          BadRequest(Json.obj("status" ->"KO", "message" -> JsError.toFlatJson(errors)))
-//        },
-//        relation => {
-//          relations.add(relation)
-//          Ok(Json.obj("status" ->"OK", "message" -> ("Relation '"+relation.id+"' saved.") ))
-//        }
-//      )
   }
 
   def delete(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.RelationsWrite)) { implicit request =>

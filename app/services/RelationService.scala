@@ -3,10 +3,7 @@ package services
 import models.{ResourceType, UUID, Relation}
 
 /**
- * Track relations between resources
- *
- * @author Luigi Marini
- *
+ * Track relations between resources.
  */
 trait RelationService {
 

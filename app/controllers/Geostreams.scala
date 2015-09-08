@@ -13,9 +13,6 @@ import play.api.Logger
 
 /**
  * View/Add/Remove Geostreams
- * 
- * @author Luigi Marini
- *
  */
 object Geostreams extends Controller with SecuredController {
 

@@ -13,9 +13,6 @@ import com.mongodb.casbah.Imports._
 
 /**
  * Track relationships between resources
- *
- * @author Luigi Marini
- *
  */
 class MongoDBRelationService extends RelationService {
 

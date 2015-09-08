@@ -7,9 +7,6 @@ import play.api.libs.json._
 
 /**
  * Wrapper for system IDs. Currently defaults to MongoDB ObjectId, but should be made generic in the future.
- *
- * @author Luigi Marini
- *
  */
 case class UUID(uuid: String) {
   def stringify = uuid

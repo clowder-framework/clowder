@@ -2,9 +2,6 @@ package models
 
 /**
  * Track relations between two arbitrary resources.
- *
- * @author Luigi Marini
- *
  */
 case class Relation (
   id: UUID = UUID.generate,

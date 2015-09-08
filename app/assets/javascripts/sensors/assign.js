@@ -1,9 +1,3 @@
-/**
- * Created by lmarini on 3/11/15.
- */
-/**
- * Created by lmarini on 2/5/15.
- */
 function associateWithSensor(dataset_id, dashboard_url) {
 
     var request = jsRoutes.api.Geostreams.searchSensors().ajax({
