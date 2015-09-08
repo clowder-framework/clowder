@@ -121,26 +121,27 @@
             $("input[name='Access']:checkbox:checked").each(function(i){
                 access[i] = $(this).val();
             });
-            access = access.join(",");
+//            access = access.join(",");
            var license = [];
             $("input[name='License']:checkbox:checked").each(function(i){
                 license[i] = $(this).val();
             });
-            license = license.join(",");
+//            license = license.join(",");
             var cost = [];
             $("input[name='Cost']:checkbox:checked").each(function(i){
                 cost[i] = $(this).val();
             });
-            cost = cost.join(",");
+//            cost = cost.join(",");
             var affiliation = [];
             $("input[name='Organizational Affiliation']:checkbox:checked").each(function(i){
                 affiliation[i] = $(this).val();
             });
-            affiliation = affiliation.join(",");
+//            affiliation = affiliation.join(",");
+            var dataMap = {access: access, license: license, cost: cost, affiliation: affiliation }
 
-            var request = jsRoutes.controllers.CurationObjects.findMatchmakingRepositories('@space.id', '@curationObject.id').ajax({
+            var request = jsRoutes.api.CurationObjects.findMatchmakingRepositories('@space.id', '@curationObject.id').ajax({
                 type: 'POST',
-                data: JSON.stringify({'access': access, 'license': license, 'cost': cost, 'affiliation': affiliation}),
+                data: JSON.stringify({"data": dataMap}),
                 dataType: 'json',
                 contentType: 'application/json; charset=utf-8'
             });

@@ -14,7 +14,8 @@ case class CurationObject (
   created: Date,
   space: UUID,
   datasets: List[Dataset] =  List.empty,
-  collections: List[Collection] = List.empty
+  collections: List[Collection] = List.empty,
+  submitted: Option[Boolean] = Some(false)
 )
 
 

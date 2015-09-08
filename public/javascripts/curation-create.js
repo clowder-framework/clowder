@@ -32,7 +32,7 @@ function createCuration() {
         error = true;
     }
 
-    if(spaceId.search("select the space") == 0) {
+    if(spaceId.search("Select the space") == 0) {
         $('#spaceerror').show();
         error = true;
     }
@@ -46,7 +46,8 @@ function createCuration() {
     var encDescription = htmlEncode(desc.val());
     $('#hiddenname').val(encName);
     $('#hiddendescription').val(encDescription);
-    $('#hiddenspace').val(spaceId);
+
+    document.getElementById('curationcreate').setAttribute('action', 'spaces/'+spaceId +'/submit'   );
 
     //Submit the form
     $('#curationcreate').submit();

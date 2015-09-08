@@ -13,6 +13,7 @@ import util.Direction._
 import java.util.Date
 import play.api.Logger
 import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
 
 
@@ -32,6 +33,11 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
     CurationDAO.findOneById(new ObjectId(id.stringify))
   }
 
+  def setSubmitted(id: UUID, submitted: Boolean) {
+    //TODO
+    //CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify), $set("submitted" -> Some(submitted)), false, false, WriteConcern.Safe))
+  }
+
   def remove(id: UUID): Unit = {
     val curation = get(id)
     curation match {
@@ -43,13 +49,11 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
     }
   }
 
-  def addUserMetadata(id: UUID, json: String) {
+  def addDatasetUserMetaData(id: UUID, json: String) {
     Logger.debug("Adding/modifying user metadata to curation " + id + " : " + json)
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
     CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("datasets.0.userMetadata" -> md), false, false, WriteConcern.Safe)
   }
-
-
 }
 
 /**

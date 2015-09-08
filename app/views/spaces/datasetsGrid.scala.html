@@ -38,8 +38,8 @@
                         <li class="list-group-item">
                             <span class="glyphicon glyphicon glyphicon-file" title="@dataset.files.size files"></span> @dataset.files.size
                             <span class="glyphicon glyphicon glyphicon-tags" title="@dataset.tags.size tags"></span>  @dataset.tags.size
+                            <span class="glyphicon glyphicon glyphicon-list" title="@(dataset.metadata.keys.size + dataset.userMetadata.keys.size) metadata fields"></span> @(dataset.metadata.keys.size + dataset.userMetadata.keys.size)
                             @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, UUID(space)))) {
-                                <span class="glyphicon glyphicon glyphicon-list" title="@(dataset.metadata.keys.size + dataset.userMetadata.keys.size) metadata fields"></span> @(dataset.metadata.keys.size + dataset.userMetadata.keys.size)
                                 <a href="@(routes.CurationObjects.newCO(dataset.id, space))">
                                     <button class="btn btn-default btn-xs">
                                         Publish
