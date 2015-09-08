@@ -537,5 +537,5 @@ GET            /spaces/:spaceId/curations/:curationId/sendToRepository          
 GET            /spaces/:spaceId/curations/:curationId/matchmaker                        @controllers.CurationObjects.findMatchingRepositories(spaceId:UUID, curationId: UUID)
 GET            /spaces/:id/stagingArea                                                  @controllers.Spaces.stagingArea(id: UUID)
 POST           /curations/:id/datasetUsermetadata                                       @controllers.CurationObjects.addDatasetUserMetadata(id: UUID)
-POST           /curations/:curationId/files/:fileId/fileUsermetadata                                          @controllers.CurationObjects.addFileUserMetadata(curationId:UUID, fileId: UUID)
+POST           /curations/:curationId/files/:fileId/fileUsermetadata                    @controllers.CurationObjects.addFileUserMetadata(curationId:UUID, fileId: UUID)
 

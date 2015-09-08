@@ -16,13 +16,7 @@ case class CurationObject (
   datasets: List[Dataset] =  List.empty,
   collections: List[Collection] = List.empty,
   submitted: Option[Boolean] = Some(false)
-  //filesMetadata: List[FileMetadata] = List.empty
 )
 
-//
-//case class FileMetadata(
-// id: UUID = UUID.generate,
-// metadata: List[Map[String, Any]] = List.empty,
-// userMetadata: Map[String, Any] = Map.empty,
-// xmlMetadata: Map[String, Any] = Map.empty
-//)
+
+

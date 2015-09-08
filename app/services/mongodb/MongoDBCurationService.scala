@@ -8,7 +8,7 @@ import org.bson.types.ObjectId
 import play.api.Play._
 import MongoContext.context
 import models.{User, UUID, Collection, Dataset}
-import services.{FileService, CurationService, SpaceService}
+import services.{CurationService, SpaceService}
 import util.Direction._
 import java.util.Date
 import play.api.Logger
@@ -18,7 +18,7 @@ import com.mongodb.casbah.Imports._
 
 
 @Singleton
-class MongoDBCurationService  @Inject() (spaces: SpaceService,files: FileService)  extends CurationService {
+class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends CurationService {
 
   def insert(curation: CurationObject) = {
 
