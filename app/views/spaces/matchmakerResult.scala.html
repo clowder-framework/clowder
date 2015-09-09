@@ -1,9 +1,9 @@
-@(space: models.ProjectSpace, curationObject: models.CurationObject, properties: Map[String, List[String]], userPreferences:  Map[String,List[String]])(implicit user: Option[models.User] )
+@(curationObject: models.CurationObject, properties: Map[String, List[String]], userPreferences:  Map[String,List[String]])(implicit user: Option[models.User] )
 @main("Matchmaker") {
     <div class = "row">
         <ol class="breadcrumb">
-            <li> <a href="@routes.Spaces.stagingArea(space.id)"> Staging Area</a></li>
-            <li> <a  href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)"> Edit Metadata</a></li>
+            <li> <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a></li>
+            <li> <a  href ="@routes.CurationObjects.getCurationObject(curationObject.id)"> Edit Metadata</a></li>
             <li class="active"> Find Repositories</li>
         </ol>
 
@@ -15,7 +15,7 @@
     </div>
     <div class="row">
         <div class="col-md-3">
-            @spaces.curation_summary(space, curationObject, "Matchmaker", false)
+            @spaces.curation_summary( curationObject, "Matchmaker", false)
             <h4><b>Publication Preferences</b></h4>
             @for((prop, value) <- properties) {
                 <h5>@prop</h5>
@@ -45,7 +45,7 @@
                             Preferences: <br/>
                             <span class="green"> All requirements are satisfied</span><br/>
                             Metadata: <br/>
-                            <span class="red"> Coverage is required </span> <a href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)">Edit Metadata</a>
+                            <span class="red"> Coverage is required </span> <a href ="@routes.CurationObjects.getCurationObject(curationObject.id)">Edit Metadata</a>
                         </div>
                     </div>
                  <h4><input type="radio" name="repository" value="2"> 2. IU Cloud</h4>
@@ -55,7 +55,7 @@
                             Dataset properties: <br/>
                             <span class="green">All requirements are satisfied</span><br/>
                             Preferences: <br/>
-                            <span class="red"> Cost: You specified a preference of free. IU Cloudhas a $300 fee</span> <a href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)">Edit Metadata</a><br/>
+                            <span class="red"> Cost: You specified a preference of free. IU Cloudhas a $300 fee</span> <a href ="@routes.CurationObjects.getCurationObject(curationObject.id)">Edit Metadata</a><br/>
                             Metadata: <br/>
                             <span class="green"> All requirements are satisfied</span>
                         </div>
@@ -65,9 +65,9 @@
                         <a><span class="glyphicon glyphicon-chevron-down" ></span>Matchmaker Summary</a> <br/>
                         <div class="indent_20">
                             Dataset properties: <br/>
-                            <span class="red">Filetypes: Dataset containes video files. openICSPR does not allow video files</span><br/>  <a href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)">Edit Metadata</a>
+                            <span class="red">Filetypes: Dataset containes video files. openICSPR does not allow video files</span><br/>  <a href ="@routes.CurationObjects.getCurationObject(curationObject.id)">Edit Metadata</a>
                             Preferences: <br/>
-                            <span class="red"> Cost: You specified a preference of free. openICPSR has a $600 fee</span><br/>  <a href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)">Edit Metadata</a>
+                            <span class="red"> Cost: You specified a preference of free. openICPSR has a $600 fee</span><br/>  <a href ="@routes.CurationObjects.getCurationObject( curationObject.id)">Edit Metadata</a>
                             Metadata: <br/>
                             <span class="green"> All requirements are satisfied </span>
                         </div>
@@ -77,9 +77,8 @@
     </div>
     <div class="row border-top bottom-padding">
 
-        @*<a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> <span class="glyphicon glyphicon-arrow-left"></span>Go Back to Space </a>*@
-        <a class="btn btn-default" href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Edit Metadata</a>
-        <a class="btn btn-primary pull-right" href=@routes.CurationObjects.compareToRepository(space.id, curationObject.id)> Select Repository <span class="glyphicon glyphicon-chevron-right"></span></a>
+        <a class="btn btn-default" href ="@routes.CurationObjects.getCurationObject(curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Edit Metadata</a>
+        <a class="btn btn-primary pull-right" href=@routes.CurationObjects.compareToRepository(curationObject.id)> Select Repository <span class="glyphicon glyphicon-chevron-right"></span></a>
     </div>
 
     <script>
@@ -141,7 +140,7 @@
             });
             var dataMap = {access: access.toString(), license: license.toString(), cost: cost.toString(), organizational_affiliation: affiliation.toString() };
 
-            var request = jsRoutes.api.CurationObjects.findMatchmakingRepositories('@space.id', '@curationObject.id').ajax({
+            var request = jsRoutes.api.CurationObjects.findMatchmakingRepositories('@curationObject.space', '@curationObject.id').ajax({
                 type: 'POST',
                 data: JSON.stringify({"data": dataMap}),
                 dataType: 'json',
