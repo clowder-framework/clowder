@@ -1,5 +1,6 @@
-@(space: models.ProjectSpace, curationObject: models.CurationObject, dsMetadata: Map[String,Any],
+@(curationObject: models.CurationObject, dsMetadata: Map[String,Any],
 dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, files :List[File] )(implicit user: Option[models.User])
+
 @import helper._
 @import collection.JavaConverters._
 @import play.api.Play.current
@@ -69,14 +70,14 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
 @main(curationObject.name) {
     <div class = "row">
         <ol class="breadcrumb">
-            <li> <a href="@routes.Spaces.stagingArea(space.id)"> Staging Area</a></li>
+            <li> <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a></li>
             <li class= "active"> Edit Metadata</li>
         </ol>
 
     </div>
     <div class="container row">
     <div class="col-md-3">
-        @spaces.curation_summary(space, curationObject, curationObject.name, true)
+        @spaces.curation_summary( curationObject, curationObject.name, true)
     </div>
     <div class="col-md-9">
     <div>
@@ -177,8 +178,8 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
     <div class="row border-top bottom-padding">
 
         @*<a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> <span class="glyphicon glyphicon-arrow-left"></span>Go Back to Space </a>*@
-        <a class="btn btn-default" href="@routes.Spaces.stagingArea(space.id)"><span class="glyphicon glyphicon-chevron-left"></span>Staging Area</a>
-        <a class="btn btn-primary pull-right" href="@routes.CurationObjects.findMatchingRepositories(space.id, curationObject.id)"> Find Repositories <span class="glyphicon glyphicon-chevron-right"></span></a>
+        <a class="btn btn-default" href="@routes.Spaces.stagingArea(curationObject.space)"><span class="glyphicon glyphicon-chevron-left"></span>Staging Area</a>
+        <a class="btn btn-primary pull-right" href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)"> Find Repositories <span class="glyphicon glyphicon-chevron-right"></span></a>
     </div>
 
 
