@@ -58,7 +58,7 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
 
   def addFileUserMetaData(curationId: UUID, file: Int, json: String) {
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
-    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(curationId.stringify)), $set("datasets.0.files."+file+".userMetadata" -> md),
+    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(curationId.stringify)), $set("files."+file+".userMetadata" -> md),
       false, false, WriteConcern.Safe)
 
   }

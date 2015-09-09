@@ -70,7 +70,7 @@ class CurationObjects @Inject()( curations: CurationService,
            // val spaceId = UUID(COSpace(0))
             if (spaces.get(spaceId) != None) {
 
-                //copy metadata from FileDAO to this dataset
+                //copy file list from FileDAO.
                 var newFiles: List[File]= List.empty
                 for ( file <- dataset.files) {
                    files.get(file.id) match{
@@ -79,8 +79,9 @@ class CurationObjects @Inject()( curations: CurationService,
                     }
                   }
                 }
+                //this line can actually be removed since we are not using dataset.files to get file's info.
+                //Just to keep consistency
                 var newDataset = dataset.copy(files = newFiles)
-                Logger.debug("userMetadata should be updated " + newDataset.files.head.userMetadata );
                 //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
                 val newCuration = CurationObject(
                   name = COName(0),
@@ -88,7 +89,8 @@ class CurationObjects @Inject()( curations: CurationService,
                   description = CODesc(0),
                   created = new Date,
                   space = spaceId,
-                  datasets = List(newDataset)
+                  datasets = List(newDataset),
+                  files = newFiles
                 )
 
                 // insert curation
@@ -107,6 +109,10 @@ class CurationObjects @Inject()( curations: CurationService,
     }
   }
 
+  def getFiles(curation: CurationObject, dataset: Dataset): List[File] ={
+    curation.files filter (f => (dataset.files map (_.id)) contains  (f.id))
+  }
+
 
   def deleteCuration(spaceId: UUID, curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) {
     implicit request =>
@@ -123,12 +129,15 @@ class CurationObjects @Inject()( curations: CurationService,
           }
         }
 
+
   //use EditStagingArea permission?
   def addDatasetUserMetadata(id: UUID) = AuthenticatedAction (parse.json) { implicit request =>
     implicit val user = request.user
     Logger.debug(s"Adding user metadata to curation's dataset $id")
+    // write metadata to the collection "curationObjects"
     curations.addDatasetUserMetaData(id, Json.stringify(request.body))
 
+    //add event
     curations.get(id) match {
       case Some(c) => {
         events.addObjectEvent(user, id, c.name, "addMetadata_curation")
@@ -148,15 +157,17 @@ class CurationObjects @Inject()( curations: CurationService,
   def addFileUserMetadata(curationId:UUID, fileId: UUID) = AuthenticatedAction (parse.json) { implicit request =>
     implicit val user = request.user
 
+    // write metadata to curationObjects
     curations.get(curationId) match {
       case Some(c) =>{
-        val newFiles: List[File]= c.datasets.head.files
+        val newFiles: List[File]= c.files
         val index = newFiles.indexWhere(_.id.equals(fileId))
         Logger.debug(s"Adding user metadata to curation's file No." + index )
         curations.addFileUserMetaData(curationId, index, Json.stringify(request.body))
       }
     }
 
+    //add event
     curations.get(curationId) match {
       case Some(c) => {
         events.addObjectEvent(user, curationId, c.name, "addMetadata_curation")
@@ -179,7 +190,8 @@ class CurationObjects @Inject()( curations: CurationService,
               val dsmetadata = ds.metadata
               val dsUsrMetadata = collection.mutable.Map(ds.userMetadata.toSeq: _*)
               val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
-              Ok(views.html.spaces.curationObject(s, c, dsmetadata, dsUsrMetadata, isRDFExportEnabled))
+              val files = getFiles(c, ds)
+              Ok(views.html.spaces.curationObject(s, c, dsmetadata, dsUsrMetadata, isRDFExportEnabled, files))
             }
             case None => InternalServerError("Curation Object Not found")
           }
