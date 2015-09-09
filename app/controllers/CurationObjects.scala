@@ -85,6 +85,7 @@ class CurationObjects @Inject()( curations: CurationService,
                 //this line can actually be removed since we are not using dataset.files to get file's info.
                 //Just to keep consistency
                 var newDataset = dataset.copy(files = newFiles)
+
                 //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
                 val newCuration = CurationObject(
                   name = COName(0),
@@ -103,9 +104,8 @@ class CurationObjects @Inject()( curations: CurationService,
                 Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
               }
               else {
-                InternalServerError("Permission Denied")
+                InternalServerError("Space not found")
               }
-
           }
           case None => InternalServerError("Dataset Not found")
         }
@@ -113,8 +113,6 @@ class CurationObjects @Inject()( curations: CurationService,
       case None => InternalServerError("User Not found")
     }
   }
-
-
 
 
   def deleteCuration(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) {
@@ -133,8 +131,8 @@ class CurationObjects @Inject()( curations: CurationService,
           }
         }
 
-
-  //use EditStagingArea permission?
+  // This function is actually "updateDatasetUserMetadata", it can rewrite the metadata in curation.dataset and add/ modify/ delte
+  // is all done in this function. We use addDatasetUserMetadata to keep consistency with live objects
   def addDatasetUserMetadata(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) (parse.json) { implicit request =>
     implicit val user = request.user
     Logger.debug(s"Adding user metadata to curation's dataset $id")
@@ -161,9 +159,8 @@ class CurationObjects @Inject()( curations: CurationService,
     curation.files filter (f => (dataset.files map (_.id)) contains  (f.id))
   }
 
-  def addFileUserMetadata(curationId:UUID, fileId: UUID) = AuthenticatedAction (parse.json) { implicit request =>
+  def addFileUserMetadata(curationId:UUID, fileId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id)))  (parse.json) { implicit request =>
     implicit val user = request.user
-
 
     curations.get(curationId) match {
       case Some(c) => {
@@ -177,8 +174,6 @@ class CurationObjects @Inject()( curations: CurationService,
       }
       case None => InternalServerError("Curation Object Not found")
     }
-
-
 
     Ok(toJson(Map("status" -> "success")))
   }
