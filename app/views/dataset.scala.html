@@ -88,10 +88,15 @@
                     </div>
                   <div role="tabpanel" class="tab-pane" id="tab-files">
                       @if(user.isDefined) {
-                          <div id="add-file-btn">
+                          <div id="file-pane-buttons">
                               <a href="@(routes.Datasets.addToDataset(dataset.id, dataset.name, dataset.description))"
                               class="btn btn-primary btn-sm requiresLogin" id="fileUploadBtn" title="Add File to Dataset" role="button">
                                   <span class="glyphicon glyphicon-export"></span> Add File
+                              </a>
+                              <a href=""
+                              class="btn btn-default btn-sm requiresLogin" title="Download All Files as Zip" role="button">
+                                <span class="glyphicon glyphicon-download-alt"></span>
+                                Download All Files
                               </a>
                           </div>
                       }

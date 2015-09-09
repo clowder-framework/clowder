@@ -514,7 +514,7 @@ table#sensorsListTable > thead > tr > th.headerSortDown {
     padding: 30px 0px 0px 0px;
 }
 
-#add-file-btn {
+#file-pane-buttons {
     margin-top: 10px;
     margin-left: 20px;
 }
