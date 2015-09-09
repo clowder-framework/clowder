@@ -17,7 +17,7 @@ trait CurationService {
   /**
    * Update submitted indicator.
    */
-  def setSubmitted(id: UUID, submitted: Boolean)
+  def updateStatus(id: UUID, status: String)
 
   /**
    * remove curation object, also delete it from staging area.

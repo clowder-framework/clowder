@@ -796,3 +796,11 @@ textarea, input[type='text'], input[type='password']{
 .indent_20{
     margin-left: 20px;
 }
+
+.submitted {
+    background-color: #dff0d8 !important;
+}
+
+.in-curation {
+    background-color: #fcf8e3 !important;
+}

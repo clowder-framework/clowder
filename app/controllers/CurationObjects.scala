@@ -77,7 +77,8 @@ class CurationObjects @Inject()( curations: CurationService,
                   description = CODesc(0),
                   created = new Date,
                   space = spaceId,
-                  datasets = List(dataset)
+                  datasets = List(dataset),
+                  status = "In Curation"
                 )
 
                 // insert curation
@@ -246,7 +247,7 @@ class CurationObjects @Inject()( curations: CurationService,
               val response = client.execute(httpPost)
               val responseStatus = response.getStatusLine().getStatusCode()
               if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304) {
-                curations.setSubmitted(c.id, true)
+                curations.updateStatus(c.id, "Submitted")
                 success = true
               }
 
