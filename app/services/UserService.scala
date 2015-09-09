@@ -89,7 +89,7 @@ trait UserService  {
   /**
    * Updates the user repository preferences.
    */
-  def updateRepositoryPreferences(id: UUID, preferences: Map[String, List[String]])
+  def updateRepositoryPreferences(id: UUID, preferences: Map[String, String])
   /**
    * Adds a dataset view
    * TODO: use UUID instead of email

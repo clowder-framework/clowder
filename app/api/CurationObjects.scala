@@ -200,10 +200,10 @@ class CurationObjects @Inject()(datasets: DatasetService,
       case Some(s) => {
         curations.get(curationId) match {
           case Some(c) => {
-            val values: JsResult[Map[String, List[String]]] = (request.body \ "data").validate[Map[String, List[String]]]
+            val values: JsResult[Map[String, String]] = (request.body \ "data").validate[Map[String, String]]
             values match {
-              case aMap: JsSuccess[Map[String, List[String]]] => {
-                val userPreferences: Map[String, List[String]] = aMap.get
+              case aMap: JsSuccess[Map[String, String]] => {
+                val userPreferences: Map[String, String] = aMap.get
                 userService.updateRepositoryPreferences(user.get.id, userPreferences)
                 Ok(toJson("success"))
               }

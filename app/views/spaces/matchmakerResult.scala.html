@@ -1,4 +1,4 @@
-@(space: models.ProjectSpace, curationObject: models.CurationObject, properties: Map[String, List[String]])(implicit user: Option[models.User] )
+@(space: models.ProjectSpace, curationObject: models.CurationObject, properties: Map[String, List[String]], userPreferences:  Map[String,List[String]])(implicit user: Option[models.User] )
 @main("Matchmaker") {
     <div class = "row">
         <ol class="breadcrumb">
@@ -20,7 +20,13 @@
             @for((prop, value) <- properties) {
                 <h5>@prop</h5>
                 @for(cur<-value) {
-                    <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
+                    @if(userPreferences.contains(prop.replace(" ", "_").toLowerCase()) && userPreferences(prop.replace(" ", "_").toLowerCase()).contains(cur)) {
+                            <input type="checkbox" name="@prop" value="@cur" checked> @cur <br/>
+
+                    } else {
+                        <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
+                    }
+
                 }
             }
             <button class="btn btn-sm btn-primary" id="updateResults">Update Results</button>
@@ -121,23 +127,19 @@
             $("input[name='Access']:checkbox:checked").each(function(i){
                 access[i] = $(this).val();
             });
-//            access = access.join(",");
            var license = [];
             $("input[name='License']:checkbox:checked").each(function(i){
                 license[i] = $(this).val();
             });
-//            license = license.join(",");
             var cost = [];
             $("input[name='Cost']:checkbox:checked").each(function(i){
                 cost[i] = $(this).val();
             });
-//            cost = cost.join(",");
             var affiliation = [];
             $("input[name='Organizational Affiliation']:checkbox:checked").each(function(i){
                 affiliation[i] = $(this).val();
             });
-//            affiliation = affiliation.join(",");
-            var dataMap = {access: access, license: license, cost: cost, affiliation: affiliation }
+            var dataMap = {access: access.toString(), license: license.toString(), cost: cost.toString(), organizational_affiliation: affiliation.toString() };
 
             var request = jsRoutes.api.CurationObjects.findMatchmakingRepositories('@space.id', '@curationObject.id').ajax({
                 type: 'POST',

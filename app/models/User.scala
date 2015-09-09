@@ -12,7 +12,8 @@ import securesocial.core._
  *
  * @author Rob Kooper
  */
-trait User extends Identity {
+trait
+User extends Identity {
   def id: UUID
   def profile: Option[Profile]
   def friends: Option[List[String]]
@@ -20,6 +21,7 @@ trait User extends Identity {
   def followers: List[UUID]
   def viewed: Option[List[UUID]]
   def spaceandrole: List[UserSpaceAndRole]
+  def repositoryPreferences: Map[String,Any]
 
   /**
    * Get the avatar URL for this user's profile
@@ -101,7 +103,7 @@ case class ClowderUser(
   // spaces
   spaceandrole: List[UserSpaceAndRole] = List.empty,
   //staging area
-  repositoryPreferences: Map[String,List[String]] = Map.empty
+  repositoryPreferences: Map[String,Any] = Map.empty
 
 ) extends User
 
