@@ -159,7 +159,7 @@ class CurationObjects @Inject()( curations: CurationService,
     curation.files filter (f => (dataset.files map (_.id)) contains  (f.id))
   }
 
-  def addFileUserMetadata(curationId:UUID, fileId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id)))  (parse.json) { implicit request =>
+  def addFileUserMetadata(curationId:UUID, fileId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId)))  (parse.json) { implicit request =>
     implicit val user = request.user
 
     curations.get(curationId) match {
