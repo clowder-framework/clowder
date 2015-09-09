@@ -156,6 +156,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Users.getUser,
         api.routes.javascript.Spaces.addDatasetToSpaces,
         api.routes.javascript.Spaces.addCollectionToSpaces,
+        api.routes.javascript.CurationObjects.findMatchmakingRepositories,
         controllers.routes.javascript.Profile.viewProfileUUID,
         controllers.routes.javascript.Files.file,
         controllers.routes.javascript.Datasets.dataset,
@@ -168,8 +169,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.CurationObjects.findMatchingRepositories,
         controllers.routes.javascript.CurationObjects.sendToRepository,
         controllers.routes.javascript.CurationObjects.compareToRepository,
-        controllers.routes.javascript.CurationObjects.deleteCuration,
-        api.routes.javascript.CurationObjects.findMatchmakingRepositories
+        controllers.routes.javascript.CurationObjects.deleteCuration
 
       )
     ).as(JSON) 

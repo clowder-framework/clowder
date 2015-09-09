@@ -12,8 +12,7 @@ import securesocial.core._
  *
  * @author Rob Kooper
  */
-trait
-User extends Identity {
+trait User extends Identity {
   def id: UUID
   def profile: Option[Profile]
   def friends: Option[List[String]]
