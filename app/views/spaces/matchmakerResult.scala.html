@@ -1,5 +1,13 @@
-@(space: models.ProjectSpace, curationObject: models.CurationObject, properties: Map[String, List[String]])(implicit user: Option[models.User] )
+@(space: models.ProjectSpace, curationObject: models.CurationObject, properties: Map[String, List[String]], userPreferences:  Map[String,List[String]])(implicit user: Option[models.User] )
 @main("Matchmaker") {
+    <div class = "row">
+        <ol class="breadcrumb">
+            <li> <a href="@routes.Spaces.stagingArea(space.id)"> Staging Area</a></li>
+            <li> <a  href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)"> Edit Metadata</a></li>
+            <li class="active"> Find Repositories</li>
+        </ol>
+
+    </div>
     <div class="row">
         <div class="col-md-12">
             <h1>Find Repositories for @curationObject.name</h1>
@@ -12,10 +20,16 @@
             @for((prop, value) <- properties) {
                 <h5>@prop</h5>
                 @for(cur<-value) {
-                    <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
+                    @if(userPreferences.contains(prop.replace(" ", "_").toLowerCase()) && userPreferences(prop.replace(" ", "_").toLowerCase()).contains(cur)) {
+                            <input type="checkbox" name="@prop" value="@cur" checked> @cur <br/>
+
+                    } else {
+                        <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
+                    }
+
                 }
             }
-            <button class="btn btn-sm btn-primary">Update Results</button>
+            <button class="btn btn-sm btn-primary" id="updateResults">Update Results</button>
         </div>
         <div class="col-md-9">
 
@@ -41,9 +55,9 @@
                             Dataset properties: <br/>
                             <span class="green">All requirements are satisfied</span><br/>
                             Preferences: <br/>
-                            <span class="red"> Cost: You specified a preference of free. IU Cloudhas a $300 fee</span><br/>
+                            <span class="red"> Cost: You specified a preference of free. IU Cloudhas a $300 fee</span> <a href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)">Edit Metadata</a><br/>
                             Metadata: <br/>
-                            <span class="green"> All requirements are satisfied</span> <a href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)">Edit Metadata</a>
+                            <span class="green"> All requirements are satisfied</span>
                         </div>
                     </div>
                 <h4><input type="radio" name="repository" value="3"> 3. OpenICPSR<br/></h4>
@@ -51,11 +65,11 @@
                         <a><span class="glyphicon glyphicon-chevron-down" ></span>Matchmaker Summary</a> <br/>
                         <div class="indent_20">
                             Dataset properties: <br/>
-                            <span class="red">Filetypes: Dataset containes video files. openICSPR does not allow video files</span><br/>
+                            <span class="red">Filetypes: Dataset containes video files. openICSPR does not allow video files</span><br/>  <a href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)">Edit Metadata</a>
                             Preferences: <br/>
-                            <span class="red"> Cost: You specified a preference of free. openICPSR has a $600 fee</span><br/>
+                            <span class="red"> Cost: You specified a preference of free. openICPSR has a $600 fee</span><br/>  <a href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)">Edit Metadata</a>
                             Metadata: <br/>
-                            <span class="green"> All requirements are satisfied </span> <a href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)">Edit Metadata</a>
+                            <span class="green"> All requirements are satisfied </span>
                         </div>
                     </div>
         </div>
@@ -69,44 +83,80 @@
     </div>
 
     <script>
-                $("#ideals_mm").on('click', function(){
-                    if($("#ideals_mm > div").attr('style') == 'display:none;'){
-                        $("#ideals_mm > div").attr('style', 'display:block;');
-                        $("#ideals_mm > a > span").removeClass('glyphicon-chevron-right');
-                        $("#ideals_mm > a >span").addClass('glyphicon-chevron-down');
-                    }
-                    else{
-                       $("#ideals_mm > div").attr('style', 'display:none;');
-                        $("#ideals_mm > a >span").removeClass('glyphicon-chevron-down');
-                        $("#ideals_mm > a >span").addClass('glyphicon-chevron-right');
+        $("#ideals_mm").on('click', function(){
+            if($("#ideals_mm > div").attr('style') == 'display:none;'){
+                $("#ideals_mm > div").attr('style', 'display:block;');
+                $("#ideals_mm > a > span").removeClass('glyphicon-chevron-right');
+                $("#ideals_mm > a >span").addClass('glyphicon-chevron-down');
+            }
+            else{
+               $("#ideals_mm > div").attr('style', 'display:none;');
+                $("#ideals_mm > a >span").removeClass('glyphicon-chevron-down');
+                $("#ideals_mm > a >span").addClass('glyphicon-chevron-right');
 
-                    }
-                    });
-                    $("#iu_cloud_mm").on('click', function(){
-                    if($("#iu_cloud_mm > div").attr('style') == 'display:none;'){
-                        $("#iu_cloud_mm > div").attr('style', 'display:block;');
-                        $("#iu_cloud_mm > a > span").removeClass('glyphicon-chevron-right');
-                        $("#iu_cloud_mm > a >span").addClass('glyphicon-chevron-down');
-                    }
-                    else{
-                       $("#iu_cloud_mm> div").attr('style', 'display:none;');
-                        $("#iu_cloud_mm > a >span").removeClass('glyphicon-chevron-down');
-                        $("#iu_cloud_mm > a >span").addClass('glyphicon-chevron-right');
+            }
+            });
+            $("#iu_cloud_mm").on('click', function(){
+            if($("#iu_cloud_mm > div").attr('style') == 'display:none;'){
+                $("#iu_cloud_mm > div").attr('style', 'display:block;');
+                $("#iu_cloud_mm > a > span").removeClass('glyphicon-chevron-right');
+                $("#iu_cloud_mm > a >span").addClass('glyphicon-chevron-down');
+            }
+            else{
+               $("#iu_cloud_mm> div").attr('style', 'display:none;');
+                $("#iu_cloud_mm > a >span").removeClass('glyphicon-chevron-down');
+                $("#iu_cloud_mm > a >span").addClass('glyphicon-chevron-right');
 
-                    }
-                    });
-                    $("#open_icpsr_mm").on('click', function(){
-                    if($("#open_icpsr_mm > div").attr('style') == 'display:none;'){
-                        $("#open_icpsr_mm > div").attr('style', 'display:block;');
-                        $("#open_icpsr_mm > a >span").removeClass('glyphicon-chevron-right');
-                        $("#open_icpsr_mm > a >span").addClass('glyphicon-chevron-down');
-                    }
-                    else{
-                       $("#open_icpsr_mm > div").attr('style', 'display:none;');
-                        $("#open_icpsr_mm > a >span").removeClass('glyphicon-chevron-down');
-                        $("#open_icpsr_mm > a >span").addClass('glyphicon-chevron-right');
+            }
+            });
+            $("#open_icpsr_mm").on('click', function(){
+            if($("#open_icpsr_mm > div").attr('style') == 'display:none;'){
+                $("#open_icpsr_mm > div").attr('style', 'display:block;');
+                $("#open_icpsr_mm > a >span").removeClass('glyphicon-chevron-right');
+                $("#open_icpsr_mm > a >span").addClass('glyphicon-chevron-down');
+            }
+            else{
+               $("#open_icpsr_mm > div").attr('style', 'display:none;');
+                $("#open_icpsr_mm > a >span").removeClass('glyphicon-chevron-down');
+                $("#open_icpsr_mm > a >span").addClass('glyphicon-chevron-right');
 
-                    }
-                    });
-            </script>
+            }
+            });
+        $('#updateResults').on('click', function() {
+            var access = [];
+            $("input[name='Access']:checkbox:checked").each(function(i){
+                access[i] = $(this).val();
+            });
+           var license = [];
+            $("input[name='License']:checkbox:checked").each(function(i){
+                license[i] = $(this).val();
+            });
+            var cost = [];
+            $("input[name='Cost']:checkbox:checked").each(function(i){
+                cost[i] = $(this).val();
+            });
+            var affiliation = [];
+            $("input[name='Organizational Affiliation']:checkbox:checked").each(function(i){
+                affiliation[i] = $(this).val();
+            });
+            var dataMap = {access: access.toString(), license: license.toString(), cost: cost.toString(), organizational_affiliation: affiliation.toString() };
+
+            var request = jsRoutes.api.CurationObjects.findMatchmakingRepositories('@space.id', '@curationObject.id').ajax({
+                type: 'POST',
+                data: JSON.stringify({"data": dataMap}),
+                dataType: 'json',
+                contentType: 'application/json; charset=utf-8'
+            });
+
+            request.done(function(response, textStatus, jqXHR) {
+                console.log("Updated Data in Preferences");
+                console.log(response)
+            });
+            request.fail(function( jqXHR, textStatus, errorThrown) {
+                console.error("The following error occurred: " + textStatus, errorThrown);
+
+            });
+        });
+
+    </script>
 }

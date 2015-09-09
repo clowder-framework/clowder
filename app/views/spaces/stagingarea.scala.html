@@ -1,6 +1,12 @@
 @(space: models.ProjectSpace, curationObjects: List[models.CurationObject])(implicit user: Option[models.User])
 
 @main("Staging Area") {
+    <div class = "row">
+        <ol class="breadcrumb">
+            <li class="active">  Staging Area </li>
+        </ol>
+
+    </div>
     <div class="row">
         <div class="col-md-12">
             <h1>Staging Area for @space.name</h1>

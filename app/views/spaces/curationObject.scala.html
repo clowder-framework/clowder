@@ -67,6 +67,13 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
 }
 }
 @main(curationObject.name) {
+    <div class = "row">
+        <ol class="breadcrumb">
+            <li> <a href="@routes.Spaces.stagingArea(space.id)"> Staging Area</a></li>
+            <li class= "active"> Edit Metadata</li>
+        </ol>
+
+    </div>
     <div class="container row">
     <div class="col-md-3">
         @spaces.curation_summary(space, curationObject, curationObject.name, true)

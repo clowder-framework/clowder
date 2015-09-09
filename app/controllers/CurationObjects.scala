@@ -25,7 +25,8 @@ class CurationObjects @Inject()( curations: CurationService,
      files: FileService,
      comments: CommentService,
      sections: SectionService,
-     events: EventService
+     events: EventService,
+     userService: UserService
      ) extends SecuredController {
 
   def newCO(datasetId:UUID, spaceId:String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
@@ -109,9 +110,7 @@ class CurationObjects @Inject()( curations: CurationService,
     }
   }
 
-  def getFiles(curation: CurationObject, dataset: Dataset): List[File] ={
-    curation.files filter (f => (dataset.files map (_.id)) contains  (f.id))
-  }
+
 
 
   def deleteCuration(spaceId: UUID, curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) {
@@ -131,7 +130,7 @@ class CurationObjects @Inject()( curations: CurationService,
 
 
   //use EditStagingArea permission?
-  def addDatasetUserMetadata(id: UUID) = AuthenticatedAction (parse.json) { implicit request =>
+  def addDatasetUserMetadata(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) (parse.json) { implicit request =>
     implicit val user = request.user
     Logger.debug(s"Adding user metadata to curation's dataset $id")
     // write metadata to the collection "curationObjects"
@@ -152,7 +151,9 @@ class CurationObjects @Inject()( curations: CurationService,
     Ok(toJson(Map("status" -> "success")))
   }
 
-
+  def getFiles(curation: CurationObject, dataset: Dataset): List[File] ={
+    curation.files filter (f => (dataset.files map (_.id)) contains  (f.id))
+  }
 
   def addFileUserMetadata(curationId:UUID, fileId: UUID) = AuthenticatedAction (parse.json) { implicit request =>
     implicit val user = request.user
@@ -212,8 +213,13 @@ class CurationObjects @Inject()( curations: CurationService,
               val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
                 "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
               "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
+              user match {
+                case Some(usr) => {
+                  val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
+                  Ok(views.html.spaces.matchmakerResult(s, c, propertiesMap, repPreferences))
+                }
+              }
 
-              Ok(views.html.spaces.matchmakerResult(s, c, propertiesMap))
             }
             case None => InternalServerError("Curation Object not found")
           }
