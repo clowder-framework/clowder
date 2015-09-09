@@ -192,7 +192,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
       }
 
   }
-<<<<<<< HEAD
 
   @ApiOperation(value = "Update the user repository preferences and call the matchmaker", notes = "",
     responseClass = "None", httpMethod = "POST")
@@ -223,6 +222,5 @@ class CurationObjects @Inject()(datasets: DatasetService,
     }
 
   }
-=======
->>>>>>> 2f3ff8ac0e1b4ca6c532706d47708a26f1200028
+
 }
