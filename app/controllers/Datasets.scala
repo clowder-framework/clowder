@@ -623,5 +623,21 @@ class Datasets @Inject()(
       implicit val user = request.user
       Ok(views.html.generalMetadataSearch())
   }
-}
 
+  def download(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowDataset)) { implicit request =>
+    implicit val user = request.user match {
+      case Some(x: User) => Some(x)
+      case _ => None
+    }
+
+    datasets.get(id) match {
+      case Some(dataset) => {
+
+        // get files info sorted by date
+        val filesInDataset = dataset.files.map(f => files.get(f.id).get).sortBy(_.uploadDate)
+        Logger.info(filesInDataset.toString())
+        Ok(toJson(filesInDataset.toString()))
+      }
+    }
+  }
+}

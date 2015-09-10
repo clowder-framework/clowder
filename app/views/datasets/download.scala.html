@@ -4,7 +4,7 @@
     <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
     @if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
         <div class="btn-group btn-group-xs">
-            <button id="downloadAllFilesButton" onclick="downloadAllFiles('@(dataset.id)')"
+            <button id="downloadDatasetButton" onclick="download('@(dataset.id)')"
             type="button" title="Download all files in this dataset as a zip file" class="btn btn-default">
                 <span class="glyphicon glyphicon-download-alt"></span>
                 Download All Files

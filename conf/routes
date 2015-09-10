@@ -362,6 +362,7 @@ GET            /api/datasets/:id/technicalmetadatajson                          
 GET            /api/datasets/:id/xmlmetadatajson                                        @api.Datasets.getXMLMetadataJSON(id: UUID)
 GET            /api/datasets/:id/usermetadatajson                                       @api.Datasets.getUserMetadataJSON(id: UUID)
 GET            /api/datasets/:id/listFiles                                              @api.Datasets.datasetFilesList(id: UUID)
+GET            /api/datasets/:id/download                                               @api.Datasets.download(id: UUID)
 POST           /api/datasets/:id/comment                                                @api.Datasets.comment(id: UUID)
 POST           /api/datasets/:id/setNotesHTML                                           @api.Datasets.setNotesHTML(id: UUID)
 POST           /api/datasets/:id/reindex                                                @api.Datasets.reindex(id:UUID, recursive: Boolean ?= true)

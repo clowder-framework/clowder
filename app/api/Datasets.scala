@@ -36,6 +36,8 @@ import play.api.Play.configuration
 import controllers.Utils
 import services._
 
+import scala.collection.mutable.ArrayBuffer
+
 /**
  * Dataset API.
  *
@@ -1428,6 +1430,40 @@ class Datasets @Inject()(
       }
     }
   }
+
+  @ApiOperation(value = "Download dataset",
+    notes = "Downloads all files contained in a dataset that the user has permission to download.",
+    responseClass = "None", httpMethod = "GET")
+  def download(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDatasetsMetadata)) {
+    request =>
+      datasets.get(id) match {
+        case Some(dataset) => {
+          val filelist = ArrayBuffer[String]()
+          for(file <- dataset.files) {
+
+            //Check the license type before doing anything.
+                if (file.licenseData.isDownloadAllowed(request.user)) {
+                  filelist += file.filename.toString()
+//                  files.getBytes(id) match {
+//                    case Some((inputStream, filename, contentType, contentLength)) => {
+//                      Ok(toJson(id))
+//                    }
+//                  }
+                } else {
+                  //Case where the checkLicenseForDownload fails
+                  Logger.error("The file is not able to be downloaded")
+                  BadRequest("The license for this file does not allow it to be downloaded.")
+                }
+
+          }
+          Ok(toJson(filelist))
+        }
+        case None => Logger.error("Error getting dataset" + id); InternalServerError
+      }
+  }
+
+
+
 }
 
 object ActivityFound extends Exception {}
