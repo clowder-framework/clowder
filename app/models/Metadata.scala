@@ -42,7 +42,7 @@ object Agent {
       var creator: Option[models.Agent] = None
       
       //parse json input for type of agent
-      val typeOfAgent = (json \ "agent" \ "@type").toString
+      val typeOfAgent = (json \ "agent" \ "@type").as[String]
 
       //if user_id is part of the request, then creator is a user
       val user_id = (json \ "agent" \ "user_id").asOpt[String]
