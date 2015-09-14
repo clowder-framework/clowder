@@ -7,7 +7,7 @@
         <div class="col-md-12">
             <div class="row">
                 <div class="col-md-12" id="s-title">
-                    <h1 id="space-title" class="inline">Manage users of space
+                    <h1 id="space-title" class="inline">Manage Users of Space
                         <a href= "@routes.Spaces.getSpace(space.id)" title="@space.name"> @space.name</a>
                     </h1>
                 </div>
@@ -15,19 +15,18 @@
 
             @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
 
-                <div class="row">
                     <div class="col-md-12 box-white-space">
                         <div class="tabbable" id="manage-access-tabbable"> <!-- Only required for left/right tabs -->
                             <!-- Display the tabs with their titles, etc. -->
                             <ul class="nav nav-tabs">
                                 <li role="presentation" class="active">
-                                    <a href="#tab-home" role="tab" data-toggle="tab"> Edit Users / Roles</a>
+                                    <a href="#tab-home" role="tab" data-toggle="tab"> Users</a>
                                 </li>
                                 <li role="presentation">
-                                    <a href="#tab-invite" role="tab" data-toggle="tab"> Invite new Users</a>
+                                    <a href="#tab-invite" role="tab" data-toggle="tab"> Invites</a>
                                 </li>
                                 <li role="presentation">
-                                    <a href="#tab-outstanding" role="tab" data-toggle="tab"> Outstanding Invites (@space.requests.size)</a>
+                                    <a href="#tab-outstanding" role="tab" data-toggle="tab"> Requests</a>
                                 </li>
                             </ul>
                             <br /> <br />
@@ -35,18 +34,16 @@
                             <div class="tab-content">
                                 <div role="tabpanel" class="tab-pane fade in active" id="tab-home">
                                     @spaces.editUsers(space, creator, userRoleMap, externalUsers, roleList)
-                                    jgkrelajgieraogi
                                 </div>
                                 <div role="tabpanel" class="tab-pane" id="tab-invite">
                                     @spaces.invite(myForm, space, roleList)
                                 </div>
                                 <div role="tabpanel" class="tab-pane" id="tab-outstanding">
-                                    @spaces.outstandingInvites(space, creator, userRoleMap, externalUsers, roleList)
+                                    @spaces.outstandingRequests(space, creator, userRoleMap, externalUsers, roleList)
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
             }
         </div>

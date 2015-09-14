@@ -53,11 +53,11 @@
     </div>
 
     <div class="row">
-        <div class="col-md-9 col-lg-9 col-sm-9 space-col-left">
+        <div class="col-md-8 col-lg-8 col-sm-8 space-col-left">
             @spaces.collectionsBySpace(collections, space.id.stringify)
             @spaces.datasetsBySpace(datasets, space.id.stringify)
         </div>
-        <div class="col-md-3 col-lg-3 col-sm-3 space-col-right">
+        <div class="col-md-4 col-lg-4 col-sm-4 space-col-right">
             @spaces.otherActions(space, userRoleMap)
             @spaces.externalLinks(space.homePage)
             @spaces.spaceConfiguration(space)
