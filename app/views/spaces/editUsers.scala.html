@@ -2,7 +2,7 @@
 
 @import api.Permission
 
-<div class="row">
+
     <div class="col-md-8 col-lg-8 col-sm-8 col-right-border">
         @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
 
@@ -37,6 +37,6 @@
             </div>
         </div>
     </div>
-</div>
+
 
 <script src="@routes.Assets.at("javascripts/spaces/modify.js")" type="text/javascript"></script>

@@ -21,7 +21,7 @@
                             <!-- Display the tabs with their titles, etc. -->
                             <ul class="nav nav-tabs">
                                 <li role="presentation" class="active">
-                                    <a href="#tab-home" role="tab" data-toggle="tab"> Edit Users (@space.userCount) / Roles</a>
+                                    <a href="#tab-home" role="tab" data-toggle="tab"> Edit Users / Roles</a>
                                 </li>
                                 <li role="presentation">
                                     <a href="#tab-invite" role="tab" data-toggle="tab"> Invite new Users</a>
@@ -35,6 +35,7 @@
                             <div class="tab-content">
                                 <div role="tabpanel" class="tab-pane fade in active" id="tab-home">
                                     @spaces.editUsers(space, creator, userRoleMap, externalUsers, roleList)
+                                    jgkrelajgieraogi
                                 </div>
                                 <div role="tabpanel" class="tab-pane" id="tab-invite">
                                     @spaces.invite(myForm, space, roleList)
