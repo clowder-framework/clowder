@@ -788,13 +788,3 @@ table#nested-space-role-pairs>tbody>tr:first-child {
 table#nested-space-role-pairs>tbody>tr>td {
     padding: 0;
 }
-
-/* For the 'Outstanding Invites' tab in the view, under spaces */
-table#outstanding-invites {
-    border-style: hidden;
-}
-
-/* For the 'Invite New Users' tab in the view, under spaces */
-fieldset.email-new-users>dl>dd.info {
-    color: darkred;
-}

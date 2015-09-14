@@ -2,14 +2,10 @@
 
 @import play.api.Play.current
 
-<!-- The user is permitted to request access to the space if 'permissions' is set to 'public' and user is logged in -->
-@if((current.configuration.getString("permissions").getOrElse("public").compareTo("public") == 0) &&
-    user.isDefined &&  !(userRoleMap contains user.get)) {
-    <a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed" href="@(routes.Spaces.addRequest(space.id))">
-        <span class="glyphicon glyphicon-envelope"></span> Request Space Authorization
-    </a>
-} else {
-    <a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed disabled" href="@(routes.Spaces.addRequest(space.id))">
-        <span class="glyphicon glyphicon-envelope"></span> Request Space Authorization
-    </a>
+<!-- User is permitted to request access if:  'permissions' is set to 'public' && is logged in && doesn't have access -->
+@if( (current.configuration.getString("permissions").getOrElse("public").compareTo("public") == 0) &&
+    user.isDefined && !(userRoleMap contains user.get) ) {
+        <a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed" href="@(routes.Spaces.addRequest(space.id))">
+            <span class="glyphicon glyphicon-envelope"></span> Request Authorization
+        </a>
 }
