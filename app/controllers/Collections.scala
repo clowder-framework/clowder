@@ -26,7 +26,7 @@ import org.apache.commons.lang.StringEscapeUtils
 class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService, 
                             spaceService: SpaceService, users: UserService, events: EventService) extends SecuredController {
 
-  def newCollection() = PermissionAction(Permission.CreateCollection) { implicit request =>
+  def newCollection(space: Option[String]) = PermissionAction(Permission.CreateCollection) { implicit request =>
     implicit val user = request.user
     val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
     var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
@@ -37,7 +37,16 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         decodedSpaceList += Utils.decodeSpaceElements(aSpace)
       }
     }
-    Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired))
+    space match {
+      case Some(spaceId) => {
+        spaceService.get(UUID(spaceId)) match {
+          case Some(s) => Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, Some(spaceId)))
+          case None => Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
+        }
+      }
+      case None =>  Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
+    }
+
   }
 
   /**
@@ -196,7 +205,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
               decodedSpaceList += Utils.decodeSpaceElements(aSpace)
             }
             //This case shouldn't happen as it is validated on the client.
-            BadRequest(views.html.newCollection("Name, Description, or Space was missing during collection creation.", decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired))
+            BadRequest(views.html.newCollection("Name, Description, or Space was missing during collection creation.", decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
           }
 
           var collection : Collection = null

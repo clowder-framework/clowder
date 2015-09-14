@@ -92,7 +92,7 @@ GET            /fileThumbnail/:id/blob                                          
 # DATASETS
 # ----------------------------------------------------------------------
 GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
-GET            /datasets/new                                                            @controllers.Datasets.newDataset
+GET            /datasets/new                                                            @controllers.Datasets.newDataset(space: Option[String] ?= None)
 GET            /datasets/addToDataset/:id/:name/:desc                                   @controllers.Datasets.addToDataset(id: UUID, name: String, desc: String)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
@@ -105,7 +105,7 @@ POST           /dataset/submit                                                  
 # COLLECTIONS
 # ----------------------------------------------------------------------
 GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
-GET            /collections/new                                                         @controllers.Collections.newCollection
+GET            /collections/new                                                         @controllers.Collections.newCollection(space: Option[String])
 POST           /collection/submit                                                       @controllers.Collections.submit
 GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)
 GET            /collection/:id/users                                                    @controllers.Collections.users(id: UUID)
@@ -122,8 +122,8 @@ GET            /spaces/:id/addRequest                                           
 GET            /spaces/:id/acceptRequest                                                @controllers.Spaces.acceptRequest(id:UUID, user:String, role:String)
 GET            /spaces/:id/rejectRequest                                                @controllers.Spaces.rejectRequest(id:UUID, user:String)
 GET            /spaces/:id/invite                                                       @controllers.Spaces.invite(id:UUID)
-GET 		   /spaces/:id/extractors						                            @controllers.Spaces.selectExtractors(id: UUID)
-POST		   /spaces/extractors			    							        @controllers.Spaces.updateExtractors
+GET            /spaces/:id/extractors                                                   @controllers.Spaces.selectExtractors(id: UUID)
+POST           /spaces/extractors                                                       @controllers.Spaces.updateExtractors
 POST           /spaces/:id/invite                                                       @controllers.Spaces.inviteToSpace(id: UUID)
 POST           /spaces/submit                                                           @controllers.Spaces.submit
 
@@ -356,8 +356,8 @@ GET            /api/collections/:coll_id/getDatasets                            
 DELETE         /api/collections/:coll_id                                                @api.Collections.removeCollection(coll_id: UUID)
 POST           /api/collections/:c_id/previews/:p_id                                    @api.Collections.attachPreview(c_id: UUID, p_id: UUID)
 GET            /api/collections/:coll_id                                                @api.Collections.getCollection(coll_id: UUID)
-PUT           /api/collections/:coll_id/title                                           @api.Collections.updateCollectionName(coll_id: UUID)
-PUT           /api/collections/:coll_id/description                                     @api.Collections.updateCollectionDescription(coll_id: UUID)
+PUT            /api/collections/:coll_id/title                                          @api.Collections.updateCollectionName(coll_id: UUID)
+PUT            /api/collections/:coll_id/description                                    @api.Collections.updateCollectionDescription(coll_id: UUID)
 
 # ----------------------------------------------------------------------
 # DATASETS ENDPOINT
@@ -427,7 +427,7 @@ POST           /api/indexes/features                                            
 POST           /api/sections                                                            @api.Sections.add
 GET            /api/sections/:id                                                        @api.Sections.get(id: UUID)
 POST           /api/sections/:id/comments                                               @api.Sections.comment(id: UUID)
-POST    	   /api/sections/:id/description											@api.Sections.description(id: UUID)
+POST           /api/sections/:id/description                                            @api.Sections.description(id: UUID)
 POST           /api/sections/:section_id/thumbnails/:thumbnail_id                       @api.Sections.attachThumbnail(section_id: UUID,thumbnail_id: UUID)
 GET            /api/sections/:id/tags                                                   @api.Sections.getTags(id: UUID)
 POST           /api/sections/:id/tags                                                   @api.Sections.addTags(id: UUID)

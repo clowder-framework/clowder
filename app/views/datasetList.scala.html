@@ -19,7 +19,7 @@
     <div class="col-md-10">
     </div>
     <div class="col-md-1">
-        <button id="create-dataset" class="btn btn-primary btn-sm pull-right" href="@routes.Datasets.newDataset()" title="Create a new dataset">Create</button>
+        <a id="create-dataset" class="btn btn-primary btn-sm pull-right" href="@routes.Datasets.newDataset(space)" title="Create a new dataset">Create</a>
     </div>
     <div class="col-md-1">
         <div class="btn-group btn-group-sm pull-right">            
@@ -199,7 +199,7 @@
 
     @if(!user.isDefined) {
         <script type="text/javascript">
-        $('#create-dataset').prop('disabled', true);
+        $('#create-dataset').addClass('disabled');
         </script>
     }
 

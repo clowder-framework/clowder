@@ -1,4 +1,4 @@
-@(spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
@@ -76,7 +76,7 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
                 <select name="space" id="spaceid" style="width: 415px;" class ="chosen-select" multiple>
 
 			        @spaces.map { space =>  
-			            <option value="@(space.id)">@(space.name)</option>
+			            <option id="@(space.id)" value="@(space.id)">@(space.name)</option>
 			        }                    
 			    </select>
             </td>
@@ -268,6 +268,12 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
             }
         }
     })
+
+    if(@spaceId.isDefined) {
+        $('#@spaceId').prop('selected','selected');
+        $('#spaceid').trigger("chosen:updated");
+    }
+
 </script>
     
 }
