@@ -6,6 +6,7 @@ import javax.inject.Inject
 
 import api.Permission
 import models._
+import play.api.data.validation.{ValidationError, Invalid, Valid, Constraint}
 import play.api.{Play, Logger}
 import play.api.data.Forms._
 import play.api.data.{Form, Forms}
@@ -38,7 +39,7 @@ case class spaceFormData(
 case class spaceInviteData(
   addresses: List[String],
   role: String,
-  message: String)
+  message: Option[String])
 
 class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users: UserService, events: EventService) extends SecuredController {
 
@@ -66,17 +67,21 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
         )
   )
 
+  def nonEmptyList[T]: Constraint[List[T]] = Constraint[List[T]]("constraint.required") { o =>
+    if (o.nonEmpty) Valid else Invalid(ValidationError("error.required"))
+  }
+
   /**
    * Invite to space form bindings.
    */
   val spaceInviteForm = Form(
     mapping(
-      "addresses" -> play.api.data.Forms.list(nonEmptyText),
+      "addresses" -> play.api.data.Forms.list(email).verifying(nonEmptyList),
       "role" -> nonEmptyText,
-      "message" -> nonEmptyText
-      )
-      (( addresses, role, message ) => spaceInviteData(addresses = addresses, role = role, message = message))
-      ((d:spaceInviteData) => Some(d.addresses, d.role, d.message))
+      "message" -> optional(text)
+      )(spaceInviteData.apply)(spaceInviteData.unapply _)
+     // (( addresses, role, message ) => spaceInviteData(addresses = addresses, role = role, message = message))
+      //((d:spaceInviteData) => Some(d.addresses, d.role, d.message))
   )
 
   /**

@@ -21,9 +21,10 @@
 
                                 <td>
                                     <select id="roleSelect" class="chosen-select btn btn-success btn-xs">
-                                        <option value="Viewer">Viewer</option>
-                                        <option value="Editor">Editor</option>
-                                        <option value="Admin">Admin</option>
+                                        @for(aRole <- roleList) {
+                                            <h5>@aRole</h5>
+                                            <option value="@aRole">@aRole</option>
+                                        }
                                     </select>
                                 </td>
 
