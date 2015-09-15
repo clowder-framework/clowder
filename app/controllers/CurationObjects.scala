@@ -226,19 +226,20 @@ class CurationObjects @Inject()( curations: CurationService,
 
   }
 
-  def compareToRepository(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
+  def compareToRepository(curationId: UUID, repository: String) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       implicit val user = request.user
 
        curations.get(curationId) match {
          case Some(c) => {
+           curations.updateRepositoty(c.id, repository);
            //TODO: Make some call to C3-PR?
            //  Ok(views.html.spaces.matchmakerReport())
            val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
              "Dissemination Control" -> List("Restricted Use", "Ability to Embargo"),"License" -> List("Creative Commons", "GPL") ,
              "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
 
-           Ok(views.html.spaces.curationDetailReport( c, propertiesMap))
+           Ok(views.html.spaces.curationDetailReport( c, propertiesMap, repository))
          }
          case None => InternalServerError("Curation Object not found")
 
@@ -271,9 +272,9 @@ class CurationObjects @Inject()( curations: CurationService,
                   "@id" -> Json.toJson(hostUrl),
                   "Title" -> Json.toJson(c.name)
                 )
+
               )
             )
-
             )
 
           var endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")

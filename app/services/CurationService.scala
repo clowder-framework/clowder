@@ -33,4 +33,9 @@ trait CurationService {
    * add metadata to curation object, no influence to live object
    */
   def addFileUserMetaData(curationId: UUID, file: Int, json: String)
+
+  /**
+   * update the repository selected
+   */
+  def updateRepositoty(curationId: UUID, repository: String)
 }
