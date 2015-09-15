@@ -15,6 +15,7 @@ case class CurationObject (
   space: UUID,
   datasets: List[Dataset] =  List.empty,
   collections: List[Collection] = List.empty,
+  repository: Option[String] = Some(""),
   submitted: Option[Boolean] = Some(false)
 )
 
