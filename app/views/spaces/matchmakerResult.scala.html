@@ -34,6 +34,7 @@
         <div class="col-md-9">
                 <h3>Candidate Repositories</h3>
                 The results below are based on an analysis of the dataset's properties and metadata and the preferences you specified. <br/>
+            <span class="error hiddencomplete" id="selecterror"> Please select a repository</span><br>
             @if(curationObject.repository.isDefined && curationObject.repository.get.compareTo("IDEALS") == 0)   {
             <h4><input type="radio" name="repository" value="IDEALS" checked>1. IDEALS </h4>
             } else {
@@ -178,6 +179,10 @@
                  break;
                 }
             }
+            if(repository == ""){
+            $('#selecterror').show();
+            }
+            else{
             var request = jsRoutes.controllers.CurationObjects.compareToRepository('@curationObject.id', repository).ajax({
                 type: 'GET'
             });
@@ -189,6 +194,7 @@
             request.fail(function( jqXHR, textStatus, errorThrown) {
                 console.error("error occurred");
             });
+            }
         });
 
     </script>
