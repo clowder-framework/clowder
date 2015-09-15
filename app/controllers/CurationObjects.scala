@@ -72,7 +72,20 @@ class CurationObjects @Inject()( curations: CurationService,
           case Some(dataset) => {
            // val spaceId = UUID(COSpace(0))
             if (spaces.get(spaceId) != None) {
-              if (Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId))) {
+
+                //copy file list from FileDAO.
+                var newFiles: List[File]= List.empty
+                for ( file <- dataset.files) {
+                   files.get(file.id) match{
+                    case Some(f) => {
+                      newFiles =  f :: newFiles
+                    }
+                  }
+                }
+                //this line can actually be removed since we are not using dataset.files to get file's info.
+                //Just to keep consistency
+                var newDataset = dataset.copy(files = newFiles)
+
                 //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
                 val newCuration = CurationObject(
                   name = COName(0),
@@ -80,21 +93,20 @@ class CurationObjects @Inject()( curations: CurationService,
                   description = CODesc(0),
                   created = new Date,
                   space = spaceId,
-                  datasets = List(dataset),
+                  datasets = List(newDataset),
+                  files = newFiles,
                   status = "In Curation"
                 )
 
                 // insert curation
                 Logger.debug("create curation object: " + newCuration.id)
                 curations.insert(newCuration)
+
                 Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
               }
               else {
-                InternalServerError("Permission Denied")
+                InternalServerError("Space not found")
               }
-            } else {
-              InternalServerError("Space Not Found")
-            }
           }
           case None => InternalServerError("Dataset Not found")
         }
@@ -104,14 +116,15 @@ class CurationObjects @Inject()( curations: CurationService,
   }
 
 
-  def deleteCuration(spaceId: UUID, curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) {
+  def deleteCuration(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) {
     implicit request =>
       implicit val user = request.user
 
-          curations.get(curationId) match {
+          curations.get(id) match {
             case Some(c) => {
               Logger.debug("delete Curation object: " + c.id)
-              curations.remove(curationId)
+              val spaceId = c.space
+              curations.remove(id)
               //spaces.get(spaceId) is checked in Space.stagingArea
               Redirect(routes.Spaces.stagingArea(spaceId))
             }
@@ -119,12 +132,15 @@ class CurationObjects @Inject()( curations: CurationService,
           }
         }
 
-  //use EditStagingArea permission?
-  def addUserMetadata(id: UUID) = AuthenticatedAction (parse.json) { implicit request =>
+  // This function is actually "updateDatasetUserMetadata", it can rewrite the metadata in curation.dataset and add/ modify/ delte
+  // is all done in this function. We use addDatasetUserMetadata to keep consistency with live objects
+  def addDatasetUserMetadata(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) (parse.json) { implicit request =>
     implicit val user = request.user
     Logger.debug(s"Adding user metadata to curation's dataset $id")
+    // write metadata to the collection "curationObjects"
     curations.addDatasetUserMetaData(id, Json.stringify(request.body))
 
+    //add event
     curations.get(id) match {
       case Some(c) => {
         events.addObjectEvent(user, id, c.name, "addMetadata_curation")
@@ -139,25 +155,45 @@ class CurationObjects @Inject()( curations: CurationService,
     Ok(toJson(Map("status" -> "success")))
   }
 
-  def getCurationObject(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
-    implicit request =>
-      implicit val user = request.user
 
-      curations.get(curationId) match {
-        case Some(c) => {
-          val ds: Dataset = c.datasets(0)
-          //dsmetadata is immutable but dsUsrMetadata is mutable
-          val dsmetadata = ds.metadata
-          val dsUsrMetadata = collection.mutable.Map(ds.userMetadata.toSeq: _*)
-          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
-          val filesUsrMetadata: Map[String, scala.collection.mutable.Map[String,Any]] = ds.files.map(file=> file.id.stringify ->
-            files.getUserMetadata(file.id)).toMap.asInstanceOf[Map[String, scala.collection.mutable.Map[String,Any]]]
-          Ok(views.html.spaces.curationObject(c, dsmetadata, dsUsrMetadata, filesUsrMetadata, isRDFExportEnabled))
-        }
-        case None => InternalServerError(" Object Not found")
+  def getFiles(curation: CurationObject, dataset: Dataset): List[File] ={
+    curation.files filter (f => (dataset.files map (_.id)) contains  (f.id))
+  }
+
+  def addFileUserMetadata(curationId:UUID, fileId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId)))  (parse.json) { implicit request =>
+    implicit val user = request.user
+
+    curations.get(curationId) match {
+      case Some(c) => {
+        val newFiles: List[File]= c.files
+        val index = newFiles.indexWhere(_.id.equals(fileId))
+        Logger.debug(s"Adding user metadata to curation's file No." + index )
+        // write metadata to curationObjects
+        curations.addFileUserMetaData(curationId, index, Json.stringify(request.body))
+        //add event
+        events.addObjectEvent(user, curationId, c.name, "addMetadata_curation")
       }
+      case None => InternalServerError("Curation Object Not found")
+    }
+
+    Ok(toJson(Map("status" -> "success")))
+  }
 
 
+  def getCurationObject(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {    implicit request =>
+      implicit val user = request.user
+          curations.get(curationId) match {
+            case Some(c) => {
+              val ds: Dataset = c.datasets(0)
+              //dsmetadata is immutable but dsUsrMetadata is mutable
+              val dsmetadata = ds.metadata
+              val dsUsrMetadata = collection.mutable.Map(ds.userMetadata.toSeq: _*)
+              val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
+              val fileByDataset = getFiles(c, ds)
+              Ok(views.html.spaces.curationObject( c, dsmetadata, dsUsrMetadata, isRDFExportEnabled, fileByDataset))
+            }
+            case None => InternalServerError("Curation Object Not found")
+          }
   }
 
   def findMatchingRepositories(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {

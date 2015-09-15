@@ -2,7 +2,7 @@
 function removeCuration(spaceId, curationId){
     console.log(spaceId);
 
-    var request = jsRoutes.controllers.CurationObjects.deleteCuration(spaceId, curationId).ajax({
+    var request = jsRoutes.controllers.CurationObjects.deleteCuration(curationId).ajax({
         type: 'DELETE'
     });
 
