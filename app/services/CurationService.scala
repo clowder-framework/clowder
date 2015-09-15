@@ -17,7 +17,7 @@ trait CurationService {
   /**
    * Update submitted indicator.
    */
-  def setSubmitted(id: UUID, submitted: Boolean)
+  def updateStatus(id: UUID, status: String)
 
   /**
    * remove curation object, also delete it from staging area.
@@ -35,7 +35,7 @@ trait CurationService {
   def addFileUserMetaData(curationId: UUID, file: Int, json: String)
 
   /**
-   * update the
+   * update the repository selected
    */
   def updateRepositoty(curationId: UUID, repository: String)
 }

@@ -94,7 +94,8 @@ class CurationObjects @Inject()( curations: CurationService,
                   created = new Date,
                   space = spaceId,
                   datasets = List(newDataset),
-                  files = newFiles
+                  files = newFiles,
+                  status = "In Curation"
                 )
 
                 // insert curation
@@ -233,7 +234,7 @@ class CurationObjects @Inject()( curations: CurationService,
              "Dissemination Control" -> List("Restricted Use", "Ability to Embargo"),"License" -> List("Creative Commons", "GPL") ,
              "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
 
-           Ok(views.html.spaces.curationDetailReport( c, propertiesMap))
+           Ok(views.html.spaces.curationDetailReport( c, propertiesMap, repository))
          }
          case None => InternalServerError("Curation Object not found")
 
@@ -266,6 +267,7 @@ class CurationObjects @Inject()( curations: CurationService,
                   "@id" -> Json.toJson(hostUrl),
                   "Title" -> Json.toJson(c.name)
                 )
+
               )
             )
 
@@ -279,8 +281,9 @@ class CurationObjects @Inject()( curations: CurationService,
           val response = client.execute(httpPost)
           val responseStatus = response.getStatusLine().getStatusCode()
           if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304) {
-            curations.setSubmitted(c.id, true)
+            curations.updateStatus(c.id, "Submitted")
             success = true
+
           }
 
           Ok(views.html.spaces.curationSubmitted( c, "IDEALS", success))
