@@ -9,6 +9,8 @@
         File Formats: @curationObject.datasets(0).files.map(_.contentType).toSet.mkString(", ") <br/>
         Creator: @curationObject.datasets(0).author.fullName <br/>
         Uploaded: @curationObject.created.date.format("yyyy-mm-dd hh:mm") <br/>
+        @if(curationObject.repository
+        Selected repository: @curationObject
 
         @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, curationObject.space))){
 

@@ -188,9 +188,14 @@ class CurationObjects @Inject()( curations: CurationService,
               //dsmetadata is immutable but dsUsrMetadata is mutable
               val dsmetadata = ds.metadata
               val dsUsrMetadata = collection.mutable.Map(ds.userMetadata.toSeq: _*)
+              Logger.debug(dsUsrMetadata.toString());
               val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
               val fileByDataset = getFiles(c, ds)
-              Ok(views.html.spaces.curationObject( c, dsmetadata, dsUsrMetadata, isRDFExportEnabled, fileByDataset))
+              if(c.status == "Submitted"){
+                Ok(views.html.spaces.submittedCurationObject(c,ds, fileByDataset))
+              } else {
+                Ok(views.html.spaces.curationObject(c, dsmetadata, dsUsrMetadata, isRDFExportEnabled, fileByDataset))
+              }
             }
             case None => InternalServerError("Curation Object Not found")
           }

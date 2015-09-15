@@ -5,6 +5,7 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
 @import collection.JavaConverters._
 @import play.api.Play.current
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
+@import api.Permission
 
 @printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
 @for((key,value) <- metadata) {
@@ -83,8 +84,49 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
     <div>
         <h2>Dataset <a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h2> <br/>
         Note: The links in this page redirect to the live objects.
-        @metadata(curationObject.datasets(0), dsMetadata, dsUserMetadata, curationObject.datasets(0).datasetXmlMetadata, rdfExported, Some(curationObject.id))
-    </div>
+        @if( curationObject.status == "Submitted" ){
+            @*if(Permission.checkPermission(Permission.ViewMetadata, ResourceRef(ResourceRef.curationObject, curationObject.id))) {*@
+            <div class="row">
+                <div class="col-md-12 box-white-space">
+                    <h4>Community generated metadata</h4>
+                    <div  class='usr_md_'>
+                    @if(dsUserMetadata.isEmpty) {
+                        <div>No community generated metadata.</div>
+                    } else {
+                        @for((key,value) <- dsUserMetadata){
+                            <li><b>@key:</b>
+                                @*if(value.asInstanceOf[String].startsWith("http://") || value.asInstanceOf[String].startsWith("https://")) {*@
+                                    @*<a href="@value">@value</a>*@
+                                @*} else {*@
+                                    @value
+                                @*}*@
+                                }
+                    }
+                    </div>
+                    <h4>System generated metadata</h4>
+                    @if(dsMetadata.isEmpty) {
+                        <div>No system generated metadata.</div>
+                    } else {
+                        <div>
+                        @for((key,value) <- dsMetadata){
+                            <li><b>@(key):</b>
+                                @if(value.asInstanceOf[String].startsWith("http://") || value.asInstanceOf[String].startsWith("https://")) {
+                                    <a href="@value">@value</a>
+                                } else {
+                                    @value
+                                }
+                                }
+                        </div>
+                    }
+                </div>
+            </div>
+            @*}*@
+        } else {
+            @metadata(curationObject.datasets(0), dsMetadata, dsUserMetadata, curationObject.datasets(0).datasetXmlMetadata, rdfExported, Some(curationObject.id))
+        }
+        </div>
+
+
     @if(curationObject.datasets(0).files.size > 0 ){
         <h2> Files</h2>
     }
@@ -100,7 +142,22 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
             <div class="row border-top">
                 <div class="col-md-12">
                     <h4>Community generated metadata</h4>
-                    @fileusermetadata(file, collection.mutable.Map(file.userMetadata.toSeq: _*) , rdfExported, Some(curationObject.id))
+                    @if( curationObject.status == "Submitted" ) {
+                        @if(file.userMetadata.isEmpty) {
+                            <div>No community generated metadata.</div>
+                        } else {
+                            @for((key,value) <- file.userMetadata){
+                                <li><b>@key:</b>
+                                    @if(value.asInstanceOf[String].startsWith("http://") || value.asInstanceOf[String].startsWith("https://")) {
+                                        <a href="@value">@value</a>
+                                    } else {
+                                        @value
+                                    }
+                                    }
+                        }
+                    } else {
+                        @fileusermetadata(file, collection.mutable.Map(file.userMetadata.toSeq: _*) , rdfExported, Some(curationObject.id))
+                    }
                 </div>
             </div>
 
