@@ -95,6 +95,7 @@ class CurationObjects @Inject()( curations: CurationService,
                   space = spaceId,
                   datasets = List(newDataset),
                   files = newFiles,
+                  repository = None,
                   status = "In Curation"
                 )
 
