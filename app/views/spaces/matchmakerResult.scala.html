@@ -60,7 +60,7 @@
                             <span class="green"> All requirements are satisfied</span>
                         </div>
                     </div>
-                <h4><input type="radio" name="repository" value="OpenICPSR"> 3. OpenICPSR<br/></h4>
+                <h4><input type="radio" name="repository" value="OpenICPSR" > 3. OpenICPSR<br/></h4>
                     <div class="indent_20" id="open_icpsr_mm">
                         <a><span class="glyphicon glyphicon-chevron-down" ></span>Matchmaker Summary</a> <br/>
                         <div class="indent_20">
@@ -79,7 +79,8 @@
 
         @*<a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> <span class="glyphicon glyphicon-arrow-left"></span>Go Back to Space </a>*@
         <a class="btn btn-default" href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Edit Metadata</a>
-        <a class="btn btn-primary pull-right" href=@routes.CurationObjects.compareToRepository(space.id, curationObject.id)> Select Repository <span class="glyphicon glyphicon-chevron-right"></span></a>
+        @* <a class="btn btn-primary pull-right" href= "@routes.CurationObjects.compareToRepository(space.id, curationObject.id, "jioj")" > Select Repository <span class="glyphicon glyphicon-chevron-right"></span></a>*@
+        <button class="btn btn-primary pull-right" id="selectRepository">Select Repository</button>
     </div>
 
     <script>
@@ -154,6 +155,32 @@
             });
             request.fail(function( jqXHR, textStatus, errorThrown) {
                 console.error("The following error occurred: " + textStatus, errorThrown);
+
+            });
+        });
+
+
+      $('#selectRepository').on('click', function(){
+
+           var radios = document.getElementsByName('repository');
+           var repository = "";
+           for (var i = 0, length = radios.length; i < length; i++) {
+                 if (radios[i].checked) {
+
+                    repository =  radios[i].value;
+                 break;
+                 }
+            }
+            var request = jsRoutes.controllers.CurationObjects.compareToRepository('@space.id', '@curationObject.id', repository).ajax({
+                type: 'GET'
+            });
+
+            request.done(function(response, textStatus, jqXHR) {
+                console.log("select repository ");
+                document.write(response)
+            });
+            request.fail(function( jqXHR, textStatus, errorThrown) {
+                console.error("The following error occurred: " );
 
             });
         });

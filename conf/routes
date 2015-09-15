@@ -532,7 +532,7 @@ GET            /dataset/:id/curations/new                                       
 POST           /dataset/:datasetId/curations/spaces/:spaceId/submit                     @controllers.CurationObjects.submit(datasetId:UUID, spaceId:UUID)
 DELETE         /spaces/:spaceId/curations/:curationId                                   @controllers.CurationObjects.deleteCuration(spaceId: UUID, curationId: UUID)
 GET            /spaces/:spaceId/curations/:curationId                                   @controllers.CurationObjects.getCurationObject(spaceId:UUID, curationId: UUID)
-GET            /spaces/:spaceId/curations/:curationId/compareToRepository               @controllers.CurationObjects.compareToRepository(spaceId: UUID, curationId: UUID)
+GET            /spaces/:spaceId/curations/:curationId/compareToRepository               @controllers.CurationObjects.compareToRepository(spaceId: UUID, curationId: UUID, repository: String)
 GET            /spaces/:spaceId/curations/:curationId/sendToRepository                  @controllers.CurationObjects.sendToRepository(spaceId:UUID, curationId: UUID)
 GET            /spaces/:spaceId/curations/:curationId/matchmaker                        @controllers.CurationObjects.findMatchingRepositories(spaceId:UUID, curationId: UUID)
 POST           /spaces/:spaceId/curations/:curationId/matchmaker                        @api.CurationObjects.findMatchmakingRepositories(spaceId:UUID, curationId: UUID)
