@@ -19,6 +19,14 @@
                 @curationObjects.map { curObject =>
                     <div class="post-box col-lg-3 col-md-3 coml-sm-3 col-xs-12">
                         <div class = "panel panel-default">
+                            @if(curObject.status == "Submitted") {
+                                <div class="panel-heading text-center submitted">
+                            } else {
+                                <div class="panel-heading text-center in-curation">
+                            }
+
+                               @curObject.status
+                            </div>
                             <div class = "panel-body">
                                 <div class="caption break-word">
                                     <h4> <a href="@routes.CurationObjects.getCurationObject( curObject.id)">@curObject.name</a></h4>
@@ -33,7 +41,9 @@
                                     <span class="glyphicon glyphicon glyphicon-th-large" title="@curObject.collections.size collections"></span> @curObject.collections.size
                                     <button onclick="removeCuration('@(space.id)','@(curObject.id)')"  type="button" class="btn btn-link">
                                         <span class="glyphicon glyphicon glyphicon-trash" title="@curObject.collections.size collections"></span></button>
+
                                 </li>
+
                             </ul>
                         </div>
                     </div>

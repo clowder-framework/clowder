@@ -33,9 +33,8 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
     CurationDAO.findOneById(new ObjectId(id.stringify))
   }
 
-  def setSubmitted(id: UUID, submitted: Boolean) {
-    //TODO
-    //CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify), $set("submitted" -> Some(submitted)), false, false, WriteConcern.Safe))
+  def updateStatus(id: UUID, status: String) {
+    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("status" -> status), false, false, WriteConcern.Safe)
   }
 
   def remove(id: UUID): Unit = {
