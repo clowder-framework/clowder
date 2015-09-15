@@ -25,7 +25,8 @@ class CurationObjects @Inject()( curations: CurationService,
      files: FileService,
      comments: CommentService,
      sections: SectionService,
-     events: EventService
+     events: EventService,
+     userService: UserService
      ) extends SecuredController {
 
   def newCO(datasetId:UUID, spaceId:String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
@@ -173,8 +174,13 @@ class CurationObjects @Inject()( curations: CurationService,
               val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
                 "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
               "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
+              user match {
+                case Some(usr) => {
+                  val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
+                  Ok(views.html.spaces.matchmakerResult(s, c, propertiesMap, repPreferences))
+                }
+              }
 
-              Ok(views.html.spaces.matchmakerResult(s, c, propertiesMap))
             }
             case None => InternalServerError("Curation Object not found")
           }
