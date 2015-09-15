@@ -14,6 +14,8 @@ import services._
 import util.RequiredFieldsConfig
 import play.api.Play._
 import org.apache.http.client.methods.HttpPost
+import scala.concurrent.Future
+import play.api.mvc.Results
 
 /**
  * Methods for interacting with the curation objects in the staging area.
@@ -70,7 +72,20 @@ class CurationObjects @Inject()( curations: CurationService,
           case Some(dataset) => {
            // val spaceId = UUID(COSpace(0))
             if (spaces.get(spaceId) != None) {
-              if (Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, spaceId))) {
+
+                //copy file list from FileDAO.
+                var newFiles: List[File]= List.empty
+                for ( file <- dataset.files) {
+                   files.get(file.id) match{
+                    case Some(f) => {
+                      newFiles =  f :: newFiles
+                    }
+                  }
+                }
+                //this line can actually be removed since we are not using dataset.files to get file's info.
+                //Just to keep consistency
+                var newDataset = dataset.copy(files = newFiles)
+
                 //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
                 val newCuration = CurationObject(
                   name = COName(0),
@@ -78,20 +93,19 @@ class CurationObjects @Inject()( curations: CurationService,
                   description = CODesc(0),
                   created = new Date,
                   space = spaceId,
-                  datasets = List(dataset)
+                  datasets = List(newDataset),
+                  files = newFiles
                 )
 
                 // insert curation
                 Logger.debug("create curation object: " + newCuration.id)
                 curations.insert(newCuration)
-                Redirect(routes.CurationObjects.getCurationObject(spaceId, newCuration.id))
+
+                Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
               }
               else {
-                InternalServerError("Permission Denied")
+                InternalServerError("Space not found")
               }
-            } else {
-              InternalServerError("Space Not Found")
-            }
           }
           case None => InternalServerError("Dataset Not found")
         }
@@ -101,14 +115,15 @@ class CurationObjects @Inject()( curations: CurationService,
   }
 
 
-  def deleteCuration(spaceId: UUID, curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) {
+  def deleteCuration(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) {
     implicit request =>
       implicit val user = request.user
 
-          curations.get(curationId) match {
+          curations.get(id) match {
             case Some(c) => {
               Logger.debug("delete Curation object: " + c.id)
-              curations.remove(curationId)
+              val spaceId = c.space
+              curations.remove(id)
               //spaces.get(spaceId) is checked in Space.stagingArea
               Redirect(routes.Spaces.stagingArea(spaceId))
             }
@@ -116,12 +131,15 @@ class CurationObjects @Inject()( curations: CurationService,
           }
         }
 
-  //use EditStagingArea permission?
-  def addUserMetadata(id: UUID) = AuthenticatedAction (parse.json) { implicit request =>
+  // This function is actually "updateDatasetUserMetadata", it can rewrite the metadata in curation.dataset and add/ modify/ delte
+  // is all done in this function. We use addDatasetUserMetadata to keep consistency with live objects
+  def addDatasetUserMetadata(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) (parse.json) { implicit request =>
     implicit val user = request.user
     Logger.debug(s"Adding user metadata to curation's dataset $id")
+    // write metadata to the collection "curationObjects"
     curations.addDatasetUserMetaData(id, Json.stringify(request.body))
 
+    //add event
     curations.get(id) match {
       case Some(c) => {
         events.addObjectEvent(user, id, c.name, "addMetadata_curation")
@@ -137,13 +155,32 @@ class CurationObjects @Inject()( curations: CurationService,
   }
 
 
+  def getFiles(curation: CurationObject, dataset: Dataset): List[File] ={
+    curation.files filter (f => (dataset.files map (_.id)) contains  (f.id))
+  }
+
+  def addFileUserMetadata(curationId:UUID, fileId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId)))  (parse.json) { implicit request =>
+    implicit val user = request.user
+
+    curations.get(curationId) match {
+      case Some(c) => {
+        val newFiles: List[File]= c.files
+        val index = newFiles.indexWhere(_.id.equals(fileId))
+        Logger.debug(s"Adding user metadata to curation's file No." + index )
+        // write metadata to curationObjects
+        curations.addFileUserMetaData(curationId, index, Json.stringify(request.body))
+        //add event
+        events.addObjectEvent(user, curationId, c.name, "addMetadata_curation")
+      }
+      case None => InternalServerError("Curation Object Not found")
+    }
+
+    Ok(toJson(Map("status" -> "success")))
+  }
 
 
-  def getCurationObject(spaceId: UUID, curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) {
-    implicit request =>
+  def getCurationObject(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {    implicit request =>
       implicit val user = request.user
-      spaces.get(spaceId) match {
-        case Some(s) => {
           curations.get(curationId) match {
             case Some(c) => {
               val ds: Dataset = c.datasets(0)
@@ -151,23 +188,17 @@ class CurationObjects @Inject()( curations: CurationService,
               val dsmetadata = ds.metadata
               val dsUsrMetadata = collection.mutable.Map(ds.userMetadata.toSeq: _*)
               val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
-              val filesUsrMetadata: Map[String, scala.collection.mutable.Map[String,Any]] = ds.files.map(file=> file.id.stringify ->
-                files.getUserMetadata(file.id)).toMap.asInstanceOf[Map[String, scala.collection.mutable.Map[String,Any]]]
-              Ok(views.html.spaces.curationObject(s, c, dsmetadata, dsUsrMetadata, filesUsrMetadata, isRDFExportEnabled))
+              val fileByDataset = getFiles(c, ds)
+              Ok(views.html.spaces.curationObject( c, dsmetadata, dsUsrMetadata, isRDFExportEnabled, fileByDataset))
             }
             case None => InternalServerError("Curation Object Not found")
           }
-        }
-        case None => InternalServerError("Space not found")
-      }
-
   }
 
-  def findMatchingRepositories(spaceId: UUID, curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) {
+  def findMatchingRepositories(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       implicit val user = request.user
-      spaces.get(spaceId) match {
-        case Some(s) => {
+
           curations.get(curationId) match {
             case Some(c) => {
               //TODO: Make some sort of call to the matckmaker
@@ -177,89 +208,82 @@ class CurationObjects @Inject()( curations: CurationService,
               user match {
                 case Some(usr) => {
                   val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
-                  Ok(views.html.spaces.matchmakerResult(s, c, propertiesMap, repPreferences))
+                  Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences))
                 }
+                case None =>Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
               }
 
             }
             case None => InternalServerError("Curation Object not found")
           }
-        }
-        case None => InternalServerError("Space not found")
-      }
+
 
   }
 
-  def compareToRepository(spaceId: UUID, curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) {
+  def compareToRepository(curationId: UUID, repository: String) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       implicit val user = request.user
-      spaces.get(spaceId) match {
-        case Some(s) => {
-         curations.get(curationId) match {
-           case Some(c) => {
-             //TODO: Make some call to C3-PR?
-             //  Ok(views.html.spaces.matchmakerReport())
-             val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
-               "Dissemination Control" -> List("Restricted Use", "Ability to Embargo"),"License" -> List("Creative Commons", "GPL") ,
-               "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
 
-             Ok(views.html.spaces.curationDetailReport(s, c, propertiesMap))
-           }
-           case None => InternalServerError("Curation Object not found")
+       curations.get(curationId) match {
+         case Some(c) => {
+           curations.updateRepositoty(c.id, repository);
+           //TODO: Make some call to C3-PR?
+           //  Ok(views.html.spaces.matchmakerReport())
+           val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
+             "Dissemination Control" -> List("Restricted Use", "Ability to Embargo"),"License" -> List("Creative Commons", "GPL") ,
+             "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
 
+           Ok(views.html.spaces.curationDetailReport( c, propertiesMap))
          }
-        }
-        case None => InternalServerError("Space not found")
-      }
+         case None => InternalServerError("Curation Object not found")
+
+       }
+
   }
 
-  def sendToRepository(spaceId: UUID, curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) {
+  def sendToRepository(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       implicit val user = request.user
-      spaces.get(spaceId) match {
-        case Some(s) => {
-          curations.get(curationId) match {
-            case Some(c) =>
-              //TODO : Submit the curationId to the repository. This probably needs the repository as input
-              var success = false
-              val hostIp = Utils.baseUrl(request)
-              val hostUrl = hostIp + "/api/curations/" + curationId + "/ore#aggregation"
-              val valuetoSend = Json.toJson(
+
+      curations.get(curationId) match {
+        case Some(c) =>
+          //TODO : Submit the curationId to the repository. This probably needs the repository as input
+          var success = false
+          val hostIp = Utils.baseUrl(request)
+          val hostUrl = hostIp + "/api/curations/" + curationId + "/ore#aggregation"
+          val valuetoSend = Json.toJson(
+            Map(
+              "Repository" -> Json.toJson("Ideals"),
+              "Preferences" -> Json.toJson(
                 Map(
-                  "Repository" -> Json.toJson("Ideals"),
-                  "Preferences" -> Json.toJson(
-                    Map(
-                      "key1" -> Json.toJson("val1"),
-                      "key2" -> Json.toJson("val2")
-                    ))
-                  ,
-                  "Aggregation" -> Json.toJson (
-                    Map(
-                      "Identifier" -> Json.toJson(hostIp +"/api/curations/" + curationId),
-                      "@id" -> Json.toJson(hostUrl),
-                      "Title" -> Json.toJson(c.name)
-                    )
-                  )
+                  "key1" -> Json.toJson("val1"),
+                  "key2" -> Json.toJson("val2")
+                ))
+              ,
+              "Aggregation" -> Json.toJson (
+                Map(
+                  "Identifier" -> Json.toJson(hostIp +"/api/curations/" + curationId),
+                  "@id" -> Json.toJson(hostUrl),
+                  "Title" -> Json.toJson(c.name)
                 )
+              )
+            )
 
-                )
+            )
 
-              var endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
-              val httpPost = new HttpPost(endpoint)
-              httpPost.setHeader("Content-Type", "application/json")
-              httpPost.setEntity(new StringEntity(Json.stringify(valuetoSend)))
-              var client = new DefaultHttpClient
-              val response = client.execute(httpPost)
-              val responseStatus = response.getStatusLine().getStatusCode()
-              if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304) {
-                curations.setSubmitted(c.id, true)
-                success = true
-              }
-
-              Ok(views.html.spaces.curationSubmitted(s, c, "IDEALS", success))
+          var endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
+          val httpPost = new HttpPost(endpoint)
+          httpPost.setHeader("Content-Type", "application/json")
+          httpPost.setEntity(new StringEntity(Json.stringify(valuetoSend)))
+          var client = new DefaultHttpClient
+          val response = client.execute(httpPost)
+          val responseStatus = response.getStatusLine().getStatusCode()
+          if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304) {
+            curations.setSubmitted(c.id, true)
+            success = true
           }
-        }
-        case None => InternalServerError("Space Not found")
+
+          Ok(views.html.spaces.curationSubmitted( c, "IDEALS", success))
       }
   }
 

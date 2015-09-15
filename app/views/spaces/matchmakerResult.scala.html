@@ -1,4 +1,4 @@
-@(space: models.ProjectSpace, curationObject: models.CurationObject, properties: Map[String, List[String]], userPreferences:  Map[String,List[String]])(implicit user: Option[models.User] )
+@(curationObject: models.CurationObject, properties: Map[String, List[String]], userPreferences:  Map[String,List[String]])(implicit user: Option[models.User] )
 @main("Matchmaker") {
     <div class = "row">
         <ol class="breadcrumb">
@@ -15,7 +15,7 @@
     </div>
     <div class="row">
         <div class="col-md-3">
-            @spaces.curation_summary(space, curationObject, "Matchmaker", false)
+            @spaces.curation_summary(curationObject, "Matchmaker", false)
             <h4><b>Publication Preferences</b></h4>
             @for((prop, value) <- properties) {
                 <h5>@prop</h5>
@@ -35,7 +35,7 @@
 
                 <h3>Candidate Repositories</h3>
                 The results below are based on an analysis of the dataset's properties and metadata and the preferences you specified. <br/>
-                <h4><input type="radio" name="repository" value="1">1. IDEALS </h4>
+                <h4><input type="radio" name="repository" value="IDEALS">1. IDEALS </h4>
                     <div class="indent_20" id="ideals_mm">
 
                         <a><span class="glyphicon glyphicon-chevron-down"></span>Matchmaker Summary</a> <br/>
@@ -48,7 +48,7 @@
                             <span class="red"> Coverage is required </span> <a href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)">Edit Metadata</a>
                         </div>
                     </div>
-                 <h4><input type="radio" name="repository" value="2"> 2. IU Cloud</h4>
+                 <h4><input type="radio" name="repository" value="IU Cloud"> 2. IU Cloud</h4>
                     <div class="indent_20" id = "iu_cloud_mm">
                         <a><span class="glyphicon glyphicon-chevron-down" ></span>Matchmaker Summary</a> <br/>
                         <div class="indent_20">
@@ -60,7 +60,7 @@
                             <span class="green"> All requirements are satisfied</span>
                         </div>
                     </div>
-                <h4><input type="radio" name="repository" value="3"> 3. OpenICPSR<br/></h4>
+                <h4><input type="radio" name="repository" value="OpenICPSR"> 3. OpenICPSR<br/></h4>
                     <div class="indent_20" id="open_icpsr_mm">
                         <a><span class="glyphicon glyphicon-chevron-down" ></span>Matchmaker Summary</a> <br/>
                         <div class="indent_20">
@@ -79,7 +79,8 @@
 
         @*<a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> <span class="glyphicon glyphicon-arrow-left"></span>Go Back to Space </a>*@
         <a class="btn btn-default" href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Edit Metadata</a>
-        <a class="btn btn-primary pull-right" href=@routes.CurationObjects.compareToRepository(space.id, curationObject.id)> Select Repository <span class="glyphicon glyphicon-chevron-right"></span></a>
+        @*<a class="btn btn-primary pull-right" href=@routes.CurationObjects.compareToRepository(space.id, curationObject.id)> Select Repository <span class="glyphicon glyphicon-chevron-right"></span></a>*@
+        <button  class="btn btn-primary pull-right" id="selectRepository">Select Repository <span class="glyphicon glyphicon-chevron-right"></span></button>
     </div>
 
     <script>
@@ -155,6 +156,27 @@
             request.fail(function( jqXHR, textStatus, errorThrown) {
                 console.error("The following error occurred: " + textStatus, errorThrown);
 
+            });
+        });
+        $('#selectRepository').on('click', function() {
+            var radios = document.getElementsByName('repository');
+            var repository = "";
+            for (var i = 0, length = radios.length; i < length; i++) {
+                 if (radios[i].checked) {
+                    repository = radios[i].value;
+                 break;
+                }
+            }
+            var request = jsRoutes.api.CurationObjects.findMatchmakingRepositories('@space.id', '@curationObject.id').ajax({
+                type: 'GET'
+            });
+
+            request.done(function(response, textStatus, jqXHR) {
+                console.log("Updated Data in Preferences");
+                document.write(response);
+            });
+            request.fail(function( jqXHR, textStatus, errorThrown) {
+                console.error("error occurred");
             });
         });
 
