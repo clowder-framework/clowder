@@ -1,4 +1,4 @@
-@(space: models.ProjectSpace, curationObject: models.CurationObject, title: String, editDataset: Boolean)(implicit user: Option[models.User])
+@( curationObject: models.CurationObject, title: String, editDataset: Boolean)(implicit user: Option[models.User])
 @import api.Permission
 
 
@@ -10,15 +10,15 @@
         Creator: @curationObject.datasets(0).author.fullName <br/>
         Uploaded: @curationObject.created.date.format("yyyy-mm-dd hh:mm") <br/>
 
-        @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))){
+        @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, curationObject.space))){
 
-            @if(!editDataset) {
+            @if(!editDataset){
                 <div class="center-margin">
-                    <a class="btn btn-sm btn-default" href ="@routes.CurationObjects.getCurationObject(space.id, curationObject.id)"> <span class="glyphicon glyphicon-edit"></span> Edit Metadata</a>
+                    <a class="btn btn-sm btn-default" href ="@routes.CurationObjects.getCurationObject(curationObject.id)"> <span class="glyphicon glyphicon-edit"></span> Edit Metadata</a>
                 </div>
             }
             <div class="center-margin">
-            <a class="btn btn-sm btn-default danger" onclick="removeCuration('@(space.id)','@(curationObject.id)')"  >
+            <a class="btn btn-sm btn-default danger" onclick="removeCuration('@(curationObject.space)','@(curationObject.id)')"  >
                 <span class="glyphicon glyphicon-trash"></span> Delete Curation Object</a>
             </div>
         }

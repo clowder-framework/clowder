@@ -190,15 +190,13 @@ class CurationObjects @Inject()( curations: CurationService,
 
   }
 
-  def compareToRepository(curationId: UUID, repository: String) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) {
+  def compareToRepository(spaceId: UUID, curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) {
     implicit request =>
       implicit val user = request.user
       spaces.get(spaceId) match {
         case Some(s) => {
          curations.get(curationId) match {
            case Some(c) => {
-             Logger.debug("User select repository: " + repository )
-             curations.updateRepository(id, Json.stringify(request.body))
              //TODO: Make some call to C3-PR?
              //  Ok(views.html.spaces.matchmakerReport())
              val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),

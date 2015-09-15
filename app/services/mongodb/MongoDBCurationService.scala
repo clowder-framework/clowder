@@ -21,12 +21,11 @@ import com.mongodb.casbah.Imports._
 class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends CurationService {
 
   def insert(curation: CurationObject) = {
-    if (CurationDAO != null) {
+
       //CurationDAO.save(curation)
       Logger.debug("insert a new CO with ID: " + curation.id)
       CurationDAO.insert(curation)
       spaces.addCurationObject(curation.space, curation.id)
-    }
   }
 
   def get(id: UUID): Option[CurationObject]  = {
@@ -52,7 +51,16 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
   def addDatasetUserMetaData(id: UUID, json: String) {
     Logger.debug("Adding/modifying user metadata to curation " + id + " : " + json)
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
-    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("datasets.0.userMetadata" -> md), false, false, WriteConcern.Safe)
+    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("datasets.0.userMetadata" -> md),
+      false, false, WriteConcern.Safe)
+  }
+
+
+  def addFileUserMetaData(curationId: UUID, file: Int, json: String) {
+    val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
+    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(curationId.stringify)), $set("files."+file+".userMetadata" -> md),
+      false, false, WriteConcern.Safe)
+
   }
 }
 

@@ -195,32 +195,26 @@ class CurationObjects @Inject()(datasets: DatasetService,
 
   @ApiOperation(value = "Update the user repository preferences and call the matchmaker", notes = "",
     responseClass = "None", httpMethod = "POST")
-  def findMatchmakingRepositories(spaceId: UUID, curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId)))(parse.json) { implicit request =>
+  def findMatchmakingRepositories(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId)))(parse.json) { implicit request =>
     implicit val user = request.user
-    spaces.get(spaceId) match {
-      case Some(s) => {
-        curations.get(curationId) match {
-          case Some(c) => {
-            val values: JsResult[Map[String, String]] = (request.body \ "data").validate[Map[String, String]]
-            values match {
-              case aMap: JsSuccess[Map[String, String]] => {
-                val userPreferences: Map[String, String] = aMap.get
-                userService.updateRepositoryPreferences(user.get.id, userPreferences)
-                Ok(toJson("success"))
-              }
-              case e: JsError => {
-                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
-                BadRequest(toJson("The user repository preferences are missing from the find matchmaking repositories call."))
-              }
-            }
 
+    curations.get(curationId) match {
+      case Some(c) => {
+        val values: JsResult[Map[String, String]] = (request.body \ "data").validate[Map[String, String]]
+        values match {
+          case aMap: JsSuccess[Map[String, String]] => {
+            val userPreferences: Map[String, String] = aMap.get
+            userService.updateRepositoryPreferences(user.get.id, userPreferences)
+            Ok(toJson("success"))
           }
-          case None => InternalServerError("Curation Object Not found")
+          case e: JsError => {
+            Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+            BadRequest(toJson("The user repository preferences are missing from the find matchmaking repositories call."))
+          }
         }
       }
-      case None => InternalServerError("Space Not Found")
+      case None => InternalServerError("Curation Object Not found")
     }
-
   }
 
 }

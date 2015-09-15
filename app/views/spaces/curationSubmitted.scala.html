@@ -1,4 +1,4 @@
-@(space: models.ProjectSpace, curationObject: models.CurationObject, repository: String, success: Boolean)(implicit user: Option[models.User] )
+@( curationObject: models.CurationObject, repository: String, success: Boolean)(implicit user: Option[models.User] )
 @main("Submitted"){
     @if(success) {
         <h1>Curation Object @curationObject.name has been submitted to Repository @repository </h1>
@@ -6,5 +6,5 @@
         <h1> There was an error Submitting the curation object @curationObject.name. Please try again later.</h1>
     }
 
-    <a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> Go Back to Space </a>
+    <a class="btn btn-default" href="@routes.Spaces.getSpace(curationObject.space)"> Go Back to Space </a>
 }
