@@ -163,14 +163,14 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   ),
                   "@id" -> Json.toJson(hostIp + "/api/curations/" + c.id + "/ore#aggregation"),
                   "@type" -> Json.toJson(Seq("Aggregation", "http://cet.ncsa.uiuc.edu/2007/Dataset")),
-                  "Is Version of" -> Json.toJson(""),
+                  "Is Version of" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id ),
                   "similarTo" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id ),
                   "aggregates" -> Json.toJson(JsArray(filesJson)),
                   "Has Part" -> Json.toJson("")
 
                 )),
               "Creation Date" -> Json.toJson(format.format(c.created)),
-              "Creator" -> Json.toJson(c.author.fullName),
+              "Creator" -> Json.toJson(users.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id))),
               "@type" -> Json.toJson("ResourceMap"),
               "@id" -> Json.toJson(hostUrl)
 
