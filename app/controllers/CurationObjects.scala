@@ -270,25 +270,21 @@ class CurationObjects @Inject()( curations: CurationService,
                 )
               )
             )
-
           )
 
-              var endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
-              val httpPost = new HttpPost(endpoint)
-              httpPost.setHeader("Content-Type", "application/json")
-              httpPost.setEntity(new StringEntity(Json.stringify(valuetoSend)))
-              var client = new DefaultHttpClient
-              val response = client.execute(httpPost)
-              val responseStatus = response.getStatusLine().getStatusCode()
-              if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304) {
-                curations.setSubmitted(c.id, true)
-                success = true
-              }
-
-              Ok(views.html.spaces.curationSubmitted(s, c, "IDEALS", success))
+          var endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
+          val httpPost = new HttpPost(endpoint)
+          httpPost.setHeader("Content-Type", "application/json")
+          httpPost.setEntity(new StringEntity(Json.stringify(valuetoSend)))
+          var client = new DefaultHttpClient
+          val response = client.execute(httpPost)
+          val responseStatus = response.getStatusLine().getStatusCode()
+          if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304) {
+            curations.setSubmitted(c.id)
+            success = true
           }
-        }
-        case None => InternalServerError("Space Not found")
+
+          Ok(views.html.spaces.curationSubmitted( c, "IDEALS", success))
       }
   }
 
