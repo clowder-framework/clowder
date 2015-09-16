@@ -286,8 +286,6 @@ class CurationObjects @Inject()( curations: CurationService,
           }
 
           Ok(views.html.spaces.curationSubmitted(c, "IDEALS", success))
-
-      
       }
   }
 
