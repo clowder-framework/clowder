@@ -229,7 +229,7 @@ class CurationObjects @Inject()( curations: CurationService,
                   ,
                   "Aggregation" -> Json.toJson (
                     Map(
-                      "Identifier" -> Json.toJson(hostIp +"/api/curations/" + curationId),
+                      "Identifier" -> Json.toJson(curationId),
                       "@id" -> Json.toJson(hostUrl),
                       "Title" -> Json.toJson(c.name)
                     )
