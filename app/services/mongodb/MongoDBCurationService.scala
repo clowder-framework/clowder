@@ -37,6 +37,14 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
     CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("status" -> status), false, false, WriteConcern.Safe)
   }
 
+  def setSubmitted(id: UUID) {
+    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("status" -> "Submitted", "submittedDate" -> Some(new Date())), false, false, WriteConcern.Safe)
+  }
+
+  def setPublished(id: UUID) {
+    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("status" -> "Published", "publishedDate" -> Some(new Date())), false, false, WriteConcern.Safe)
+  }
+
   def remove(id: UUID): Unit = {
     val curation = get(id)
     curation match {
