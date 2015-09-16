@@ -20,6 +20,7 @@ trait User extends Identity {
   def followers: List[UUID]
   def viewed: Option[List[UUID]]
   def spaceandrole: List[UserSpaceAndRole]
+  def repositoryPreferences: Map[String,Any]
 
   /**
    * Get the avatar URL for this user's profile
@@ -99,7 +100,10 @@ case class ClowderUser(
   viewed: Option[List[UUID]] = None,
 
   // spaces
-  spaceandrole: List[UserSpaceAndRole] = List.empty
+  spaceandrole: List[UserSpaceAndRole] = List.empty,
+  //staging area
+  repositoryPreferences: Map[String,Any] = Map.empty
+
 ) extends User
 
 case class Profile(

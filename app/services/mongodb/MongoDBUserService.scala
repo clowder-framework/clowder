@@ -160,7 +160,10 @@ class MongoDBUserService @Inject() (
   override def createNewListInUser(email: String, field: String, fieldList: List[Any]) {
     UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldList))
   }
-  
+
+  override def updateRepositoryPreferences(id: UUID, preferences: Map[String, String])  {
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("repositoryPreferences" -> preferences))
+  }
   /**
    * @see app.services.UserService
    * 
