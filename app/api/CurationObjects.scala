@@ -42,9 +42,9 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "Creation Date" -> Json.toJson(format.format(file.uploadDate)),
               "Label" -> Json.toJson(file.filename),
               "Title" -> Json.toJson(file.filename),
-              "Uploaded By" -> Json.toJson(users.findByIdentity(file.author).map ( usr => Json.toJson(file.author.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id))),
+              "Uploaded By" -> Json.toJson(userService.findByIdentity(file.author).map ( usr => Json.toJson(file.author.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id))),
               "Abstract" -> Json.toJson(file.userMetadata.get("Abstract").getOrElse("").toString),
-              "Creator" -> Json.toJson(users.findByIdentity(file.author).map ( usr => usr.profile.map(prof => prof.orcidID.map(oid=> oid)))),
+              "Creator" -> Json.toJson(userService.findByIdentity(file.author).map ( usr => usr.profile.map(prof => prof.orcidID.map(oid=> oid)))),
               "Publication Date" -> Json.toJson(""),
               "External Identifier" -> Json.toJson(""),
               "Keyword" -> Json.toJson(file.tags.map(_.name)),
@@ -70,7 +70,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "comment_body" -> Json.toJson(comm.text),
               "comment_date" -> Json.toJson(format.format(comm.posted)),
               "Identifier" -> Json.toJson(comm.id),
-              "comment_author" -> Json.toJson(users.findByIdentity(comm.author).map ( usr => Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id)))
+              "comment_author" -> Json.toJson(userService.findByIdentity(comm.author).map ( usr => Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id)))
             ))
           }
 
@@ -155,9 +155,9 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "Creation Date" -> Json.toJson(format.format(c.created)),
                   "Label" -> Json.toJson(c.name),
                   "Title" -> Json.toJson(c.name),
-                  "Uploaded By" -> Json.toJson(users.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id))),
+                  "Uploaded By" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id))),
                   "Abstract" -> Json.toJson(c.datasets(0).userMetadata.get("Abstract").getOrElse("").toString),
-                  "Creator" -> Json.toJson(users.findByIdentity(c.author).map(usr => JsArray(Seq(Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/"), Json.toJson(usr.profile.map(prof => prof.orcidID.map(oid=> oid))))))),
+                  "Creator" -> Json.toJson(userService.findByIdentity(c.author).map(usr => JsArray(Seq(Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/"), Json.toJson(usr.profile.map(prof => prof.orcidID.map(oid=> oid))))))),
                   "Publication Date" -> Json.toJson(format.format(c.created)),
                   "Comment" -> Json.toJson(JsArray(commentsJson)),
                   "Published In" -> Json.toJson(""),
@@ -176,7 +176,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
 
                 )),
               "Creation Date" -> Json.toJson(format.format(c.created)),
-              "Creator" -> Json.toJson(users.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id))),
+              "Creator" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id))),
               "@type" -> Json.toJson("ResourceMap"),
               "@id" -> Json.toJson(hostUrl)
 
