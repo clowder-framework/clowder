@@ -284,7 +284,6 @@ class CurationObjects @Inject()( curations: CurationService,
             curations.setSubmitted(c.id)
             success = true
           }
-
           Ok(views.html.spaces.curationSubmitted(c, "IDEALS", success))
       }
   }
