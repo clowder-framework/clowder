@@ -1,6 +1,12 @@
 @(space: models.ProjectSpace, curationObjects: List[models.CurationObject])(implicit user: Option[models.User])
 
 @main("Staging Area") {
+    <div class = "row">
+        <ol class="breadcrumb">
+            <li class="active">  Staging Area </li>
+        </ol>
+
+    </div>
     <div class="row">
         <div class="col-md-12">
             <h1>Staging Area for @space.name</h1>
@@ -15,7 +21,7 @@
                         <div class = "panel panel-default">
                             <div class = "panel-body">
                                 <div class="caption break-word">
-                                    <h4> <a href="@routes.CurationObjects.getCurationObject(space.id, curObject.id)">@curObject.name</a></h4>
+                                    <h4> <a href="@routes.CurationObjects.getCurationObject( curObject.id)">@curObject.name</a></h4>
 
                                     Author: @curObject.author.fullName
                                     <p>@curObject.description</p>
