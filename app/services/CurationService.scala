@@ -37,5 +37,5 @@ trait CurationService {
   /**
    * update the repository selected
    */
-  def updateRepositoty(curationId: UUID, repository: String)
+  def updateRepository(curationId: UUID, repository: String)
 }

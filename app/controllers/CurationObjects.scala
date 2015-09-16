@@ -228,7 +228,7 @@ class CurationObjects @Inject()( curations: CurationService,
 
        curations.get(curationId) match {
          case Some(c) => {
-           curations.updateRepositoty(c.id, repository);
+           curations.updateRepository(c.id, repository);
            //TODO: Make some call to C3-PR?
            //  Ok(views.html.spaces.matchmakerReport())
            val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
