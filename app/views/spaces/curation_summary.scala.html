@@ -1,4 +1,4 @@
-@( curationObject: models.CurationObject, title: String, editDataset: Boolean)(implicit user: Option[models.User])
+@( curationObject: models.CurationObject, title: String, editCurationObject: Boolean)(implicit user: Option[models.User])
 @import api.Permission
 
 
@@ -12,7 +12,7 @@
 
         @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, curationObject.space))){
 
-            @if(!editDataset){
+            @if(!editCurationObject){
                 <div class="center-margin">
                     <a class="btn btn-sm btn-default" href ="@routes.CurationObjects.getCurationObject(curationObject.id)"> <span class="glyphicon glyphicon-edit"></span> Edit Metadata</a>
                 </div>
