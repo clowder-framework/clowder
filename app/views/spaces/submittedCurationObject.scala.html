@@ -88,41 +88,50 @@
   </div>
 
   <div class="container row">
-    <div class="col-md-3">
-    @spaces.curation_summary( curationObject, curationObject.name, false)
-    </div>
-    <div class="col-md-9">
+    @*<div class="col-md-4">*@
+   @**@
+    @*</div>*@
+    @*<div class="col-md-9">*@
       <div>
-        <h2>Dataset <a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h2> <br/>
-        Note: The links in this page redirect to the live objects.
-        @if( curationObject.status == "Submitted" ){
+        <h2>@curationObject.name</h2>
+        @curationObject.description<br/>
+        Uploaded: @curationObject.created.date.format("yyyy-mm-dd hh:mm") <br/>
+        Repository: @curationObject.repository.getOrElse("Not select.") <br/>
+        Creator: @curationObject.author.fullName <br/>
+
+        <br/>
+        <h4>Dataset <a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h4>
+        Note: The links in this page redirect to the live objects.<br/>
+        Size: @{curationObject.datasets(0).files.map(_.length).sum /1024} MB <br/>
+        File Formats: @curationObject.datasets(0).files.map(_.contentType).toSet.mkString(", ") <br/>
+        Creator: @curationObject.datasets(0).author.fullName <br/>
+
+
           @*if(Permission.checkPermission(Permission.ViewMetadata, ResourceRef(ResourceRef.curationObject, curationObject.id))) {*@
           <div class="row">
             <div class="col-md-12 box-white-space">
-              <h4>Community generated metadata</h4>
+              <h5>Community generated metadata</h5>
               <div  class='usr_md_'>
               @staticPrint(dataset.userMetadata, "No community generated metadata.")
-
               </div>
-              <h4>System generated metadata</h4>
+              <h5>System generated metadata</h5>
               @staticPrint(dataset.metadata, "No system generated metadata.")
-
-              }
             </div>
           </div>
           @*}*@
       </div>
 
-
+    <br/>
+    <br/>
       @if(files.size > 0 ){
-        <h2> Files</h2>
+        <h4> Files</h4>
       }
 
-      <div>
-        <ul style = "list-style-type: none">
+      @*<div>*@
+        <ul>
         @for(file<- files) {
 
-          <li><h3><a href=@routes.Files.file(file.id)>@file.filename</a></h3>
+          <li><h4><a href=@routes.Files.file(file.id)>@file.filename</a></h4>
             <div id ='allMetadata_@(file.id)'>
               <button class="tech_md_" type="button">Show File metadata</button>
               <div style="display:none;">
@@ -178,8 +187,8 @@
             </script>
         }
         </ul>
-      </div>
+      @*</div>*@
     </div>
-  </div>
+  @*</div>*@
 
 }

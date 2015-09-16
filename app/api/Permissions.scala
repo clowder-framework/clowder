@@ -281,7 +281,13 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.curationObject, id) => {
         curations.get(id) match {
           case None => false
-          case Some(curation) => checkPermission(user, permission, ResourceRef(ResourceRef.space, curation.space))
+          case Some(curation) => {
+            (curation.status, permission) match {
+              case ("Submitted", Permission.EditStagingArea) => false
+
+                  case _ => checkPermission(user, permission, ResourceRef(ResourceRef.space, curation.space))
+            }
+          }
         }
       }
 

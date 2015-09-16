@@ -116,8 +116,11 @@ class CurationObjects @Inject()( curations: CurationService,
     }
   }
 
-
-  def deleteCuration(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) {
+  /**
+   * Delete curation object.
+   * TODO: use ResourceRef.space instead if ResourceRef.curationObject in permission check
+   */
+  def deleteCuration(id: UUID) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.curationObject, id))) {
     implicit request =>
       implicit val user = request.user
 
@@ -181,7 +184,7 @@ class CurationObjects @Inject()( curations: CurationService,
   }
 
 
-  def getCurationObject(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {    implicit request =>
+  def getCurationObject(curationId: UUID) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.curationObject, curationId))) {    implicit request =>
       implicit val user = request.user
           curations.get(curationId) match {
             case Some(c) => {
