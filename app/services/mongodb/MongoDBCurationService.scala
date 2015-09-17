@@ -69,6 +69,11 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
       false, false, WriteConcern.Safe)
 
   }
+
+  def updateRepository(curationId: UUID, repository: String): Unit = {
+    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(curationId.stringify)), $set("repository" -> repository),
+      false, false, WriteConcern.Safe)
+  }
 }
 
 /**

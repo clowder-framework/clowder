@@ -97,6 +97,7 @@ class CurationObjects @Inject()( curations: CurationService,
                   space = spaceId,
                   datasets = List(newDataset),
                   files = newFiles,
+                  repository = None,
                   status = "In Curation"
                 )
 
@@ -223,19 +224,20 @@ class CurationObjects @Inject()( curations: CurationService,
 
   }
 
-  def compareToRepository(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
+  def compareToRepository(curationId: UUID, repository: String) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       implicit val user = request.user
 
        curations.get(curationId) match {
          case Some(c) => {
+           curations.updateRepository(c.id, repository);
            //TODO: Make some call to C3-PR?
            //  Ok(views.html.spaces.matchmakerReport())
            val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
              "Dissemination Control" -> List("Restricted Use", "Ability to Embargo"),"License" -> List("Creative Commons", "GPL") ,
              "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
 
-           Ok(views.html.spaces.curationDetailReport( c, propertiesMap))
+           Ok(views.html.spaces.curationDetailReport( c, propertiesMap, repository))
          }
          case None => InternalServerError("Curation Object not found")
 
@@ -258,16 +260,22 @@ class CurationObjects @Inject()( curations: CurationService,
               "Repository" -> Json.toJson("Ideals"),
               "Preferences" -> Json.toJson(
                 Map(
-                  "key1" -> Json.toJson("val1"),
-                  "key2" -> Json.toJson("val2")
-                ))
-              ,
-              "Aggregation" -> Json.toJson (
-                Map(
-                  "Identifier" -> Json.toJson(hostIp +"/api/curations/" + curationId),
-                  "@id" -> Json.toJson(hostUrl),
-                  "Title" -> Json.toJson(c.name)
+                  "Repository" -> Json.toJson("Ideals"),
+                  "Preferences" -> Json.toJson(
+                    Map(
+                      "key1" -> Json.toJson("val1"),
+                      "key2" -> Json.toJson("val2")
+                    ))
+                  ,
+                  "Aggregation" -> Json.toJson (
+                    Map(
+                      "Identifier" -> Json.toJson(curationId),
+                      "@id" -> Json.toJson(hostUrl),
+                      "Title" -> Json.toJson(c.name)
+                    )
+                  )
                 )
+
               )
             )
           )

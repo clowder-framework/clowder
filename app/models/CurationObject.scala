@@ -19,6 +19,7 @@ case class CurationObject (
   collections: List[Collection] = List.empty,
   //here we don't use a map to know the file belongs to which dataset, we find the fileByDataset from dataset.files._.id
   files: List[File] =  List.empty,
+  repository: Option[String],
   status: String
 )
 

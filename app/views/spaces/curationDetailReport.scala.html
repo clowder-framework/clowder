@@ -1,4 +1,4 @@
-@(curationObject: models.CurationObject, properties: Map[String, List[String]])(implicit user: Option[models.User] )
+@(curationObject: models.CurationObject, properties: Map[String, List[String]], repository: String)(implicit user: Option[models.User] )
 @main("Submit to Repository") {
     <div class = "row">
         <ol class="breadcrumb">
@@ -19,7 +19,7 @@
             @spaces.curation_summary(curationObject, "Submit to Repository", false)
         </div>
         <div class="col-md-9">
-           <h3> IDEALS</h3>
+           <h3> @repository</h3>
             <b>Matchmaker Summary</b> <br/>
             Dataset Properties: <br/>
             <span class="green">All requirements are satisfied.</span><br/>
@@ -46,7 +46,7 @@
 
     <div class="row border-top bottom-padding">
         <a class="btn btn-default" href="@routes.CurationObjects.findMatchingRepositories( curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Find Repository</a>
-        <a class = "btn btn-default btn-primary pull-right" href ="@routes.CurationObjects.sendToRepository(curationObject.id)"> Submit dataset @curationObject.name to Ideals <span class="glyphicon glyphicon-chevron-right"></span></a>
+        <a class = "btn btn-default btn-primary pull-right" href ="@routes.CurationObjects.sendToRepository(curationObject.id)"> Submit dataset @curationObject.name to @repository <span class="glyphicon glyphicon-chevron-right"></span></a>
     </div>
 
 
