@@ -33,8 +33,10 @@
                         @for((k,v) <- userRoleMap) {
                             @if(roleLevel == v) {
                                 <li>
-                                    <a href= "@routes.Profile.viewProfileUUID(k.id)" id="@k.id" title="@k.email">@k.fullName</a>
-                                    <button class='btn btn-inverse btn-xs' id='@k.id' title='Remove User'> x</button>
+                                    <a href= "@routes.Profile.viewProfileUUID(k.id)" id="@k.id" title="@k.email">
+                                        @k.fullName</a>
+                                    <button class='remove-user btn btn-inverse btn-xs' id="@k.id" title='Remove User'>x</button>
+
                                 </li>
                             }
                         }
@@ -44,7 +46,9 @@
                         @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
                             <li style="list-style: none">
                                 <select class="chosen-select" multiple id='@currRole'>
-                                    @for(extUser <- externalUsers) { <option value="@extUser.id">@extUser.fullName (@extUser.email)</option> }
+                                    @for(extUser <- externalUsers) {
+                                        <option value="@extUser.id">@extUser.fullName (@extUser.email)</option>
+                                    }
                                 </select>
                             </li>
                         }
@@ -132,6 +136,25 @@
                 }
             }
         }
+    });
+
+
+    $(".remove-user").click(function(){
+
+        $( this ).closest( "LI" ).hide();
+        var targetId = this.getAttribute("id");
+
+        @for(roleLevel <- roleList) {
+                var currentId = '@roleLevel.replaceAll("\\s+", "")';
+                //Check to see if we are operating on the original target of the event. If so, don't do anything, it handles
+                //it on its own.
+
+                    $('#@roleLevel.replaceAll("\\s+", "")').prepend($("<option></option>").attr("value", targetId).text(getName(targetId)
+                        + " (" + getEmail(targetId) + ")"));
+                    $('#@roleLevel.replaceAll("\\s+", "")').trigger("chosen:updated");
+
+            }
+
     });
 </script>
 

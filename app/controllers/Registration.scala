@@ -64,14 +64,14 @@ class Registration @Inject()(spaces: SpaceService, users: UserService) extends S
 
               //Code from here to the end of the case is the difference between securesocial and this method. It checks
               // for an invitation pending to the space. If it finds an invitation, it then adds the person to the space.
-              spaces.getInvitationToSpace(token) match {
+              spaces.getInvitation(token) match {
                 case Some(invite) => {
                   users.findByEmail(invite.email) match {
                     case Some(user) => {
                      users.findRole(invite.role) match {
                        case Some(role) => {
                          spaces.addUser(user.id, role, invite.space)
-                         spaces.removeInvitationToSpace(UUID(token), invite.space)
+                         spaces.removeInvitationFromSpace(UUID(token), invite.space)
                         }
                        case None => {
                          Redirect(RoutesHelper.startSignUp).flashing(Registration.Error -> Messages("Error adding to the invited space. The role assigned doesn't exist"))

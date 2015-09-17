@@ -193,12 +193,17 @@ trait SpaceService {
   /**
    * Remove Invitation to a space
    */
-  def removeInvitationToSpace(inviteId: UUID, spaceId: UUID)
+  def removeInvitationFromSpace(inviteId: UUID, spaceId: UUID)
 
   /**
    * Find an invitation by ID
    */
-  def getInvitationToSpace(inviteId: String): Option[SpaceInvite]
+  def getInvitation(inviteId: String): Option[SpaceInvite]
+
+  /**
+   * Find invitations of a space
+   */
+  def getInvitationBySpace(space: UUID): List[SpaceInvite]
 
   /**
    * Add authorization request to a space.

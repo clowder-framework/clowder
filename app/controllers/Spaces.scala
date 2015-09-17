@@ -6,7 +6,7 @@ import javax.inject.Inject
 
 import api.Permission
 import models._
-import play.api.data.validation.{ValidationError, Invalid, Valid, Constraint}
+import play.api.data.validation._
 import play.api.{Play, Logger}
 import play.api.data.Forms._
 import play.api.data.{Form, Forms}
@@ -68,7 +68,11 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
   )
 
   def nonEmptyList[T]: Constraint[List[T]] = Constraint[List[T]]("constraint.required") { o =>
-    if (o.nonEmpty) Valid else Invalid(ValidationError("error.required"))
+    if (o.isEmpty) {
+      Invalid(ValidationError("error.required"))
+    }  else  {
+      Valid
+    }
   }
 
   /**
@@ -79,9 +83,10 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
       "addresses" -> play.api.data.Forms.list(email).verifying(nonEmptyList),
       "role" -> nonEmptyText,
       "message" -> optional(text)
-      )(spaceInviteData.apply)(spaceInviteData.unapply _)
-     // (( addresses, role, message ) => spaceInviteData(addresses = addresses, role = role, message = message))
-      //((d:spaceInviteData) => Some(d.addresses, d.role, d.message))
+      )
+      //(spaceInviteData.apply)(spaceInviteData.unapply _)
+      (( addresses, role, message ) => spaceInviteData(addresses = addresses, role = role, message = message))
+      ((d:spaceInviteData) => Some(d.addresses, d.role, d.message))
   )
 
   /**
@@ -252,22 +257,25 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
         users.listRoles().map{
           role => roleList = role.name :: roleList
         }
-        Ok(views.html.spaces.users(spaceInviteForm, Utils.decodeSpaceElements(s), creator, userRoleMap, externalUsers.toList, roleList.sorted))
+
+        val inviteBySpace = spaces.getInvitationBySpace(s.id)
+        Ok(views.html.spaces.users(spaceInviteForm, Utils.decodeSpaceElements(s), creator, userRoleMap, externalUsers.toList, roleList.sorted, inviteBySpace))
       }
       case None => InternalServerError("Space not found")
     }
   }
 
-  def invite(id:UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
-    implicit val user = request.user
-    spaces.get(id) match {
-      case Some(s) => {
-        val roleList: List[String] = users.listRoles().map(role => role.name)
-        Ok(views.html.spaces.invite(spaceInviteForm, Utils.decodeSpaceElements(s), roleList.sorted))
-      }
-      case None => InternalServerError("Space not found")
-    }
-  }
+//  def invite(id:UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+//    implicit val user = request.user
+//    spaces.get(id) match {
+//      case Some(s) => {
+//        val roleList: List[String] = users.listRoles().map(role => role.name)
+//        val inviteBySpace = spaces.getInvitationBySpace(s.id)
+//        Ok(views.html.spaces.invite(spaceInviteForm, Utils.decodeSpaceElements(s), roleList.sorted, inviteBySpace))
+//      }
+//      case None => InternalServerError("Space not found")
+//    }
+//  }
 
   def inviteToSpace(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) {
     implicit request =>
@@ -275,8 +283,10 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
       spaces.get(id) match {
         case Some(s) => {
           val roleList: List[String] = users.listRoles().map( role=> role.name)
+          val inviteBySpace = spaces.getInvitationBySpace(s.id)
           spaceInviteForm.bindFromRequest.fold(
-          errors => BadRequest(views.html.spaces.invite(errors, s, roleList.sorted)),
+          errors => InternalServerError(errors.toString()),
+            //BadRequest(views.html.spaces.invite(errors, s, roleList.sorted, inviteBySpace)),
           formData => {
             users.findRoleByName(formData.role) match {
               case Some(role) => {

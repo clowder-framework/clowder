@@ -1,4 +1,4 @@
-@(myForm: Form[controllers.spaceInviteData], space: ProjectSpace, creator: Option[User], userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(myForm: Form[controllers.spaceInviteData], space: ProjectSpace, creator: Option[User], userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String], invite:List[SpaceInvite])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import api.Permission
 
@@ -36,7 +36,7 @@
                                     @spaces.editUsers(space, creator, userRoleMap, externalUsers, roleList)
                                 </div>
                                 <div role="tabpanel" class="tab-pane" id="tab-invite">
-                                    @spaces.invite(myForm, space, roleList)
+                                    @spaces.invite(myForm, space, roleList, invite)
                                 </div>
                                 <div role="tabpanel" class="tab-pane" id="tab-outstanding">
                                     @spaces.outstandingRequests(space, creator, userRoleMap, externalUsers, roleList)

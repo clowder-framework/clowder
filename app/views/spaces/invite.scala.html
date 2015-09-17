@@ -1,31 +1,55 @@
-@(myForm: Form[controllers.spaceInviteData], space: ProjectSpace, roleList: List[String])(implicit  flash: play.api.mvc.Flash, user: Option[models.User])
+@(myForm: Form[controllers.spaceInviteData], space: ProjectSpace, roleList: List[String], invite:List[SpaceInvite])(implicit  flash: play.api.mvc.Flash, user: Option[models.User])
 @import helper._
 
 <div class="tab-header">
     <h3>Invite new users</h3>
 </div>
 
-@form(action = routes.Spaces.inviteToSpace(space.id), 'enctype -> "multipart/form-data", 'class -> "form-horizontal", 'autocomplete -> "off", 'method -> "POST") {
+@form(action = routes.Spaces.inviteToSpace(space.id), 'id -> "invitecreate", 'enctype -> "multipart/form-data", 'class -> "form-horizontal", 'autocomplete -> "off", 'method -> "POST") {
     <fieldset class="email-new-users">
+        @inputText(myForm("addressList"),'id -> "addressList", '_label -> "Email addresses (comma-separated)", 'type -> "Email", 'multiple -> "true", '_error -> "Force an error",
+            '_showErrors -> true, '_showConstraints -> true)
+        <span class="error hiddencomplete" id="addresserror"> Please enter at least one email address.</span><br>
 
-        @inputText(myForm("addressList"), '_label -> "Email addresses (comma-separated)", 'type -> "Email", 'multiple -> "true")
         @select(myForm("role"), options(roleList), 'id -> "role_list", '_label -> "Role", 'placeholder -> "Select a default role for all recipients")
         @textarea(myForm("message"), '_label -> "Message")
 
 
     </fieldset>
-    <div class="form-actions">
-        <input type="submit" class="btn btn-primary" value="Send"/>
-    </div>
+
+}
+<button class="btn btn-primary"> value="Send"</button>
+
+<h3>Invitations to Space @space.name</h3>
+@for(v <- invite){
+    <li>
+        @v.email as @v.role
+    </li>
 }
 
+<script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
 <script language="javascript">
-$('form').submit(function() {
+
+
+
+$('button').click(function() {
+
+    if(!$('#addressList').val()){
+        $('#addresserror').show();
+        console.log("no email");
+    }else{
+
+
     var addrList = $('#addressList').val().split(',');
     for(var i = 0; i < addrList.length; i++){
         $('form fieldset').append('<input type="hidden" name="addresses['+i+']" value='+addrList[i]+' />');
     }
+   $('form').submit();
+    }
 });
+
+
+
 </script>
 
 <style type="text/css">
