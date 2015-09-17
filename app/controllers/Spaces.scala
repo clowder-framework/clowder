@@ -78,7 +78,6 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
       "role" -> nonEmptyText,
       "message" -> optional(text)
       )
-      //(spaceInviteData.apply)(spaceInviteData.unapply _)
       (( addresses, role, message ) => spaceInviteData(addresses = addresses, role = role, message = message))
       ((d:spaceInviteData) => Some(d.addresses, d.role, d.message))
   )
@@ -251,14 +250,20 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
         users.listRoles().map{
           role => roleList = role.name :: roleList
         }
-
-        val inviteBySpace = spaces.getInvitationBySpace(s.id)
+        //get the list of invitation, and also change the role from Role.id to Role.name
+        val inviteBySpace = spaces.getInvitationBySpace(s.id) map(v => v.copy(role = users.findRole(v.role) match {
+          case Some(r) => r.name
+          case _ => "Undefined Role"
+        }
+          ))
         Ok(views.html.spaces.users(spaceInviteForm, Utils.decodeSpaceElements(s), creator, userRoleMap, externalUsers.toList, roleList.sorted, inviteBySpace))
       }
       case None => InternalServerError("Space not found")
     }
   }
 
+
+//TODO: delete this function if not usied anymore
 //  def invite(id:UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
 //    implicit val user = request.user
 //    spaces.get(id) match {
@@ -277,7 +282,6 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
       spaces.get(id) match {
         case Some(s) => {
           val roleList: List[String] = users.listRoles().map( role=> role.name)
-          val inviteBySpace = spaces.getInvitationBySpace(s.id)
           spaceInviteForm.bindFromRequest.fold(
           errors => InternalServerError(errors.toString()),
             //BadRequest(views.html.spaces.invite(errors, s, roleList.sorted, inviteBySpace)),

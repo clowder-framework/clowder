@@ -7,8 +7,7 @@
 
 @form(action = routes.Spaces.inviteToSpace(space.id), 'id -> "invitecreate", 'enctype -> "multipart/form-data", 'class -> "form-horizontal", 'autocomplete -> "off", 'method -> "POST") {
     <fieldset class="email-new-users">
-        @inputText(myForm("addressList"),'id -> "addressList", '_label -> "Email addresses (comma-separated)", 'type -> "Email", 'multiple -> "true", '_error -> "Force an error",
-            '_showErrors -> true, '_showConstraints -> true)
+        @inputText(myForm("addressList"),'id -> "addressList", '_label -> "Email addresses (comma-separated)", 'type -> "Email", 'multiple -> "true")
         <span class="error hiddencomplete" id="addresserror"> Please enter at least one email address.<br></span>
 
         @select(myForm("role"), options(roleList), 'id -> "role_list", '_label -> "Role", 'placeholder -> "Select a default role for all recipients")
@@ -20,7 +19,7 @@
         <input id="submitbutton" type="submit" class="btn btn-primary" value="Send"/>
     </div>
 }
-<button class="btn btn-primary"> Send</button>
+<button class="btn btn-primary" id="invitebutton"> Send</button>
 
 <h3>Invitations to Space @space.name</h3>
 @for(v <- invite){
@@ -34,7 +33,7 @@
 
 $('#submitbutton').hide();
 
-$('button').click(function() {
+$('#invitebutton').click(function() {
     $('#addresserror').hide();
     if(!$('#addressList').val()){
         $('#addresserror').show();
