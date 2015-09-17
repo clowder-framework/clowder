@@ -5,7 +5,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFS
 import services.MultimediaQueryService
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import com.novus.salat.dao.{SalatMongoCursor, ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import models.{UUID, TempFile, MultimediaFeatures}
@@ -134,8 +134,8 @@ def getFile(id: UUID): Option[TempFile] = {
     MultimediaFeaturesDAO.save(multimediaFeature)
   }
 
-  def listAll(): List[MultimediaFeatures] = {
-    MultimediaFeaturesDAO.find(MongoDBObject()).toList
+  def listAll(): SalatMongoCursor[MultimediaFeatures] = {
+    MultimediaFeaturesDAO.find(MongoDBObject())
   }
 }
 
