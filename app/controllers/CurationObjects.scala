@@ -258,15 +258,20 @@ class CurationObjects @Inject()( curations: CurationService,
               "Repository" -> Json.toJson("Ideals"),
               "Preferences" -> Json.toJson(
                 Map(
-                  "key1" -> Json.toJson("val1"),
-                  "key2" -> Json.toJson("val2")
-                ))
-              ,
-              "Aggregation" -> Json.toJson (
-                Map(
-                  "Identifier" -> Json.toJson(hostIp +"/api/curations/" + curationId),
-                  "@id" -> Json.toJson(hostUrl),
-                  "Title" -> Json.toJson(c.name)
+                  "Repository" -> Json.toJson("Ideals"),
+                  "Preferences" -> Json.toJson(
+                    Map(
+                      "key1" -> Json.toJson("val1"),
+                      "key2" -> Json.toJson("val2")
+                    ))
+                  ,
+                  "Aggregation" -> Json.toJson (
+                    Map(
+                      "Identifier" -> Json.toJson(curationId),
+                      "@id" -> Json.toJson(hostUrl),
+                      "Title" -> Json.toJson(c.name)
+                    )
+                  )
                 )
 
               )

@@ -37,19 +37,20 @@ class CurationObjects @Inject()(datasets: DatasetService,
           val hostUrl = hostIp + "/api/curations/" + curationId + "/ore"
           val filesJson = c.datasets(0).files.map { file =>
             Json.toJson(Map(
-              "Identifier" -> Json.toJson(hostIp + "/files/" + file.id),
+              "Identifier" -> Json.toJson(hostIp+"/files/" +file.id),
+              "@id" -> Json.toJson(hostIp+"/files/" +file.id),
               "Creation Date" -> Json.toJson(format.format(file.uploadDate)),
-              "Label" -> Json.toJson(""),
+              "Label" -> Json.toJson(file.filename),
               "Title" -> Json.toJson(file.filename),
-              "Uploaded By" -> Json.toJson(file.author.avatarUrl.getOrElse("")),
-              "Abstract" -> Json.toJson(""),
-              "Creator" -> Json.toJson(file.author.fullName + ": " + file.author.avatarUrl.getOrElse("")),
+              "Uploaded By" -> Json.toJson(userService.findByIdentity(file.author).map ( usr => Json.toJson(file.author.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id))),
+              "Abstract" -> Json.toJson(file.userMetadata.get("Abstract").getOrElse("").toString),
+              "Creator" -> Json.toJson(userService.findByIdentity(file.author).map ( usr => usr.profile.map(prof => prof.orcidID.map(oid=> oid)))),
               "Publication Date" -> Json.toJson(""),
               "External Identifier" -> Json.toJson(""),
               "Keyword" -> Json.toJson(file.tags.map(_.name)),
-              "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2007/Dataset")),
-              "Version Of" -> Json.toJson(""),
-              "Has Part" -> Json.toJson("")
+              "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2007/File")),
+              "Version Of" -> Json.toJson(hostIp + "/files/" + file.id),
+              "Has Part" ->Json.toJson("")
             ))
           }
 
@@ -69,7 +70,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "comment_body" -> Json.toJson(comm.text),
               "comment_date" -> Json.toJson(format.format(comm.posted)),
               "Identifier" -> Json.toJson(comm.id),
-              "comment_author" -> Json.toJson(comm.author.fullName)
+              "comment_author" -> Json.toJson(userService.findByIdentity(comm.author).map ( usr => Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id)))
             ))
           }
 
@@ -152,13 +153,11 @@ class CurationObjects @Inject()(datasets: DatasetService,
                 Json.toJson(Map(
                   "Identifier" -> Json.toJson(hostIp + "/api/curations/" + c.id),
                   "Creation Date" -> Json.toJson(format.format(c.created)),
-                  "Label" -> Json.toJson(""),
+                  "Label" -> Json.toJson(c.name),
                   "Title" -> Json.toJson(c.name),
-                  "Uploaded By" -> Json.toJson(c.author.fullName),
-                  "Abstract" -> Json.toJson("This is an abstract"),
-                  "Creator" -> Json.toJson(Seq(
-                    Json.toJson(c.author.fullName + ": " + c.author.avatarUrl.getOrElse(""))
-                  )),
+                  "Uploaded By" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id))),
+                  "Abstract" -> Json.toJson(c.datasets(0).userMetadata.get("Abstract").getOrElse("").toString),
+                  "Creator" -> Json.toJson(userService.findByIdentity(c.author).map(usr => JsArray(Seq(Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/"), Json.toJson(usr.profile.map(prof => prof.orcidID.map(oid=> oid))))))),
                   "Publication Date" -> Json.toJson(format.format(c.created)),
                   "Comment" -> Json.toJson(JsArray(commentsJson)),
                   "Published In" -> Json.toJson(""),
@@ -169,15 +168,15 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     Json.toJson(c.datasets(0).tags.map(_.name))
                   ),
                   "@id" -> Json.toJson(hostIp + "/api/curations/" + c.id + "/ore#aggregation"),
-                  "@type" -> Json.toJson(Seq("Aggregation", "http://cet.ncsa.uiuc.edu/2007/Collection")),
-                  "Is Version of" -> Json.toJson(""),
-                  "similarTo" -> Json.toJson(""),
+                  "@type" -> Json.toJson(Seq("Aggregation", "http://cet.ncsa.uiuc.edu/2007/Dataset")),
+                  "Is Version of" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id ),
+                  "similarTo" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id ),
                   "aggregates" -> Json.toJson(JsArray(filesJson)),
                   "Has Part" -> Json.toJson("")
 
                 )),
               "Creation Date" -> Json.toJson(format.format(c.created)),
-              "Creator" -> Json.toJson(c.author.fullName),
+              "Creator" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id))),
               "@type" -> Json.toJson("ResourceMap"),
               "@id" -> Json.toJson(hostUrl)
 
