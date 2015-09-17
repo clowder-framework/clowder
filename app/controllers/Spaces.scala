@@ -67,20 +67,14 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
         )
   )
 
-  def nonEmptyList[T]: Constraint[List[T]] = Constraint[List[T]]("constraint.required") { o =>
-    if (o.isEmpty) {
-      Invalid(ValidationError("error.required"))
-    }  else  {
-      Valid
-    }
-  }
 
   /**
-   * Invite to space form bindings.
+   * Invite to space form bindings. we are not using play.api.data.Forms.list(email) for addresses since the constraints
+   * of front-end and back-end are different.
    */
   val spaceInviteForm = Form(
     mapping(
-      "addresses" -> play.api.data.Forms.list(email).verifying(nonEmptyList),
+      "addresses" -> play.api.data.Forms.list(nonEmptyText),
       "role" -> nonEmptyText,
       "message" -> optional(text)
       )
