@@ -24,4 +24,3 @@ case class CurationObject (
 )
 
 
-

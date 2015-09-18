@@ -10,6 +10,7 @@ import play.api.Logger
 import play.api.data.{Forms, Form}
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
+import play.api.libs.json.JsArray
 import services._
 import util.RequiredFieldsConfig
 import play.api.Play._
@@ -253,32 +254,32 @@ class CurationObjects @Inject()( curations: CurationService,
         case Some(c) =>
           //TODO : Submit the curationId to the repository. This probably needs the repository as input
           var success = false
+          var repository: String = ""
+          c.repository match {
+            case Some (s) => repository = s
+            case None => Ok(views.html.spaces.curationSubmitted( c, "No Repository Provided", success))
+          }
           val hostIp = Utils.baseUrl(request)
           val hostUrl = hostIp + "/api/curations/" + curationId + "/ore#aggregation"
+          val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => pref._1-> Json.toJson(pref._2.toString().split(",").toList))).getOrElse(Map.empty)
+//          var userPreferences = Json.toJson(userPrefMap.map(pref => pref.map(cval => Json.toJson(Map(cval._1 -> Json.toJson(cval._2))))).getOrElse(Json.toJson(Map("Repository" -> Json.toJson(c.repository)))))
+          val userPreferences = userPrefMap + ("Repository" -> Json.toJson(repository))
+
           val valuetoSend = Json.toJson(
             Map(
-              "Repository" -> Json.toJson("Ideals"),
-              "Preferences" -> Json.toJson(
-                Map(
-                  "Repository" -> Json.toJson("Ideals"),
-                  "Preferences" -> Json.toJson(
-                    Map(
-                      "key1" -> Json.toJson("val1"),
-                      "key2" -> Json.toJson("val2")
-                    ))
-                  ,
-                  "Aggregation" -> Json.toJson (
-                    Map(
-                      "Identifier" -> Json.toJson(curationId),
-                      "@id" -> Json.toJson(hostUrl),
-                      "Title" -> Json.toJson(c.name)
-                    )
+                "Repository" -> Json.toJson("Ideals"),
+                "Preferences" -> Json.toJson(
+                  userPreferences
+                ),
+                "Aggregation" -> Json.toJson(
+                  Map(
+                    "Identifier" -> Json.toJson(curationId),
+                    "@id" -> Json.toJson(hostUrl),
+                    "Title" -> Json.toJson(c.name)
                   )
                 )
-
               )
             )
-          )
 
           var endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
           val httpPost = new HttpPost(endpoint)
@@ -292,7 +293,7 @@ class CurationObjects @Inject()( curations: CurationService,
             success = true
           }
 
-          Ok(views.html.spaces.curationSubmitted( c, "IDEALS", success))
+          Ok(views.html.spaces.curationSubmitted( c, repository, success))
       }
   }
 
