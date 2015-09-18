@@ -1438,12 +1438,14 @@ class Datasets @Inject()(
       case Some(loggedInUser) => {
         datasets.get(id) match {
           case Some(dataset) => {
+
             // Enumerator creates the output stream that we will use to iterate data buffers
             // and chunk the output. This will stream the files directly to the browser,
             // not storing the zip file on disk or in memory
             // The cool part about this is that at this moment right now, the browser dialog pops open and
             // starts downloading the zip file.
             val enumerator = Enumerator.outputStream { os =>
+
               // The ZipOutputStream is fed the Enumerator.outputStream and handles all our "zipping" work
               // This article was very helpful if you are new to ZipOutputStreams:
               // http://blog.bradleywagner.org/2013/08/tips-and-pitfalls-when-using-javas-zipoutputstream/
@@ -1452,11 +1454,13 @@ class Datasets @Inject()(
 
               // for each file in the dataset...
               for (file <- dataset.files) {
+
                 // in the next line, "files" is calling the FileService defined in the class definition for Dataset at the top of this file
                 // "getBytes" gives us an "inputStream" of bytes for that file (and the filename, contentType, and contentLength)
                 // we don't have to worry about the nuts and bolts of streaming files from MongoDB since that is the FileService's job
                 files.getBytes(file.id) match {
                   case Some((inputStream, filename, contentType, contentLength)) => {
+
                     // at this point, a file was found, but we can't just stick this directly into a zip file
                     // Here's an answer on SO that was helpful in understanding this process: http://stackoverflow.com/a/17190212/2083544
                     // you basically want to wrap the inputStream _inside_ a bufferedInputStream
@@ -1489,6 +1493,7 @@ class Datasets @Inject()(
                     // Also note that you have to wrap the expression in curly braces, then the semicolon, then put the variable
                     // at the end so that it _returns_ the value of the new length, which is then compared to "greater than 0"
                     while ({length = bis.read(dataToWrite); length} > 0) {
+
                       // here we are simply writing chunks of data from the bufferedInputStream (in blocks 1024 bytes long)
                       // this is how files actually get written into the zip file
                       zip.write(dataToWrite, 0, length)
@@ -1503,6 +1508,7 @@ class Datasets @Inject()(
                   }
                 }
               }
+
               // lastly, all the files have been added to the zip file, so we close the ZipOutputStream.
               // The browser has had an open stream downloading the zip file this whole time, so now we'll just tell the browser
               // to close the stream.
@@ -1517,12 +1523,14 @@ class Datasets @Inject()(
               "Content-Disposition" -> ("attachment; filename=" + dataset.name + ".zip")
             )
           }
+
           // If the dataset wasn't found by ID
           case None => {
             NotFound
           }
         }
       }
+
       // If the user doesn't have access to download these files
       case None => {
         Unauthorized
