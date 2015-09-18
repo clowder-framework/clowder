@@ -262,7 +262,6 @@ class CurationObjects @Inject()( curations: CurationService,
           val hostIp = Utils.baseUrl(request)
           val hostUrl = hostIp + "/api/curations/" + curationId + "/ore#aggregation"
           val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => pref._1-> Json.toJson(pref._2.toString().split(",").toList))).getOrElse(Map.empty)
-//          var userPreferences = Json.toJson(userPrefMap.map(pref => pref.map(cval => Json.toJson(Map(cval._1 -> Json.toJson(cval._2))))).getOrElse(Json.toJson(Map("Repository" -> Json.toJson(c.repository)))))
           val userPreferences = userPrefMap + ("Repository" -> Json.toJson(repository))
 
           val valuetoSend = Json.toJson(
@@ -298,6 +297,3 @@ class CurationObjects @Inject()( curations: CurationService,
   }
 
 }
-
-
-

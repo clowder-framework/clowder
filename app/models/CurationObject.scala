@@ -22,5 +22,3 @@ case class CurationObject (
   repository: Option[String],
   status: String
 )
-
-
