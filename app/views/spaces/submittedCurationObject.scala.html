@@ -138,11 +138,23 @@
                 <div class="row border-top">
                   <div class="col-md-12">
                     <h4>Community generated metadata</h4>
-                      @*printLevel(file.userMetadata, "No community generated metadata.")*@
-
+                    <ul>
+                    @if(file.metadata.length == 0){
+                      <div>No community generated metadata.</div>
+                    } else {
+                      @printLevel(file.userMetadata)
+                    }
+                    </ul>
                     <h4>System generated metadata</h4>
-                    @*printLevel(file.metadata, "No system generated metadata.")*@
-
+                    <ul>
+                    @if(file.metadata.length == 0){
+                      <div>No system generated metadata.</div>
+                    } else {
+                      @for(i <- 0 until file.metadata.length) {
+                        @printLevel(file.metadata(i))
+                      }
+                    }
+                      </ul>
                     </div>
                   </div>
                 </div>
@@ -152,7 +164,7 @@
                     <button class="tech_md_" type="button">Show XML-uploaded metadata</button>
                     <div style="display:none;">
                       <ul>
-                      @*printLevel(file.xmlMetadata)*@
+                      @printLevel(file.xmlMetadata)
                       </ul>
                     </div>
                   </div>
