@@ -93,17 +93,8 @@ function updateSpaceEditLink(space_id, space_name) {
     $('#space_link').attr("href", jsRoutes.controllers.Spaces.getSpace(space_id).url).text(space_name);
 }
 
-//function removeUserFromSpace(selectId, userId, userName, userEmail) {
-//    //var x = document. document.getElementsByClassName("chosen-select");
-//    var option = document.createElement("OPTION");
-//    option.text = userName +"(" + userEmail +")";
-//    option.value = userId;
-//    $('.chosen-select').chosen().add(option);
-//    $('#a-'+userId).hide();
-//    //this.style.display = 'none';
-//}
 
-    function updateUsersInSpace(spaceId) {
+function updateUsersInSpace(spaceId) {
 	//Generate the string for each level
     var currRole = null;
 	var roleUserMap = {};

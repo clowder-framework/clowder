@@ -1,6 +1,8 @@
 @(myForm: Form[controllers.spaceInviteData], space: ProjectSpace, roleList: List[String], invite:List[SpaceInvite])(implicit  flash: play.api.mvc.Flash, user: Option[models.User])
 @import helper._
 
+
+
 <div class="tab-header">
     <h3>Invite new users</h3>
 </div>
@@ -21,6 +23,7 @@
 }
 <button class="btn btn-primary" id="invitebutton"> Send</button>
 
+<br />
 <h3>Invitations to Space @space.name</h3>
 @for(v <- invite){
     <li>

@@ -141,7 +141,7 @@
 
     $(".remove-user").click(function(){
 
-        $( this ).closest( "LI" ).hide();
+        $( this ).closest( "LI" ).remove();
         var targetId = this.getAttribute("id");
 
         @for(roleLevel <- roleList) {
@@ -151,9 +151,11 @@
 
                     $('#@roleLevel.replaceAll("\\s+", "")').prepend($("<option></option>").attr("value", targetId).text(getName(targetId)
                         + " (" + getEmail(targetId) + ")"));
-                    $('#@roleLevel.replaceAll("\\s+", "")').trigger("chosen:updated");
+                        $('#@roleLevel.replaceAll("\\s+", "")').trigger("chosen:updated");
 
             }
+         $( this ).closest( "UL" ).trigger('contentchange');
+         //console.log($( this ).closest( "UL" ));
 
     });
 </script>
