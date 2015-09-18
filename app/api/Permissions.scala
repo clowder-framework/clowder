@@ -76,6 +76,7 @@ object Permission extends Enumeration {
 		ListThumbnails,
 		DeleteThumbnails,
 		DownloadFiles,
+    DownloadDataset,
     GetUser,
     RelationsWrite,
     RelationsRead,

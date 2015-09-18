@@ -19,10 +19,8 @@ import javax.inject.{Singleton, Inject}
 import com.mongodb.casbah.Imports._
 import org.json.JSONObject
 import Transformation.LidoToCidocConvertion
-import java.io.BufferedWriter
-import java.io.FileWriter
-import play.api.libs.iteratee.Enumerator
-import java.io.FileInputStream
+import java.io.{BufferedInputStream, BufferedWriter, FileWriter, FileInputStream}
+import play.api.libs.iteratee.{Concurrent, Enumerator}
 import play.api.libs.concurrent.Execution.Implicits._
 import services._
 import play.api.libs.json.JsString
@@ -35,8 +33,8 @@ import models.File
 import play.api.Play.configuration
 import controllers.Utils
 import services._
-
 import scala.collection.mutable.ArrayBuffer
+import java.util.zip._
 
 /**
  * Dataset API.
@@ -1432,38 +1430,105 @@ class Datasets @Inject()(
   }
 
   @ApiOperation(value = "Download dataset",
-    notes = "Downloads all files contained in a dataset that the user has permission to download.",
+    notes = "Downloads all files contained in a dataset.",
     responseClass = "None", httpMethod = "GET")
-  def download(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowDatasetsMetadata)) {
-    request =>
-      datasets.get(id) match {
-        case Some(dataset) => {
-          val filelist = ArrayBuffer[String]()
-          for(file <- dataset.files) {
+  def download(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DownloadDataset)) { request =>
+    implicit val user = request.user
+    user match {
+      case Some(loggedInUser) => {
+        datasets.get(id) match {
+          case Some(dataset) => {
+            // Enumerator creates the output stream that we will use to iterate data buffers
+            // and chunk the output. This will stream the files directly to the browser,
+            // not storing the zip file on disk or in memory
+            // The cool part about this is that at this moment right now, the browser dialog pops open and
+            // starts downloading the zip file.
+            val enumerator = Enumerator.outputStream { os =>
+              // The ZipOutputStream is fed the Enumerator.outputStream and handles all our "zipping" work
+              // This article was very helpful if you are new to ZipOutputStreams:
+              // http://blog.bradleywagner.org/2013/08/tips-and-pitfalls-when-using-javas-zipoutputstream/
+              // At this point, we have started the process of creating a "zip file"
+              val zip = new ZipOutputStream(os)
 
-            //Check the license type before doing anything.
-                if (file.licenseData.isDownloadAllowed(request.user)) {
-                  filelist += file.filename.toString()
-//                  files.getBytes(id) match {
-//                    case Some((inputStream, filename, contentType, contentLength)) => {
-//                      Ok(toJson(id))
-//                    }
-//                  }
-                } else {
-                  //Case where the checkLicenseForDownload fails
-                  Logger.error("The file is not able to be downloaded")
-                  BadRequest("The license for this file does not allow it to be downloaded.")
+              // for each file in the dataset...
+              for (file <- dataset.files) {
+                // in the next line, "files" is calling the FileService defined in the class definition for Dataset at the top of this file
+                // "getBytes" gives us an "inputStream" of bytes for that file (and the filename, contentType, and contentLength)
+                // we don't have to worry about the nuts and bolts of streaming files from MongoDB since that is the FileService's job
+                files.getBytes(file.id) match {
+                  case Some((inputStream, filename, contentType, contentLength)) => {
+                    // at this point, a file was found, but we can't just stick this directly into a zip file
+                    // Here's an answer on SO that was helpful in understanding this process: http://stackoverflow.com/a/17190212/2083544
+                    // you basically want to wrap the inputStream _inside_ a bufferedInputStream
+                    // so as new data comes in (ie, the raw contents of a file are being retrieved from MongoDB),
+                    // we stick them into a "buffer". In this way, we don't load a huge file into memory, we can instead
+                    // do it in chunks
+                    val bis = new BufferedInputStream(inputStream)
+
+                    // Now we are going to create a new "entry" in the zip file: we're going to save a spot where we will put the file.
+                    zip.putNextEntry(new ZipEntry(filename))
+
+                    // we create a new byte array, with the length of 1024. The data from the bufferedInputStream
+                    // will get placed into this byte array really quickly before the ZipOutputStream does it's job of putting it into
+                    // the zip file. It puts 1024 bytes into the zipOutputStream at a time. This way, the CPU doesn't block
+                    // while a large zip is created, and we only use 1024 bytes of memory at one time (I think). :/
+                    // I haven't tested this next idea, but we think that we could adjust the value of 1024 to possibly optimize how
+                    // quickly the buffer writes data into the zip file.
+                    val dataToWrite = new Array[Byte](1024)
+
+                    // length gets set to zero so we can start looping through the bufferedInputStream. Remember,
+                    // the bufferedInputStream is just like a pipe of data coming from MongoDB with our file's contents in the pipe
+                    var length = 0
+
+                    // the syntax of this next line is important:
+                    // essentially we are saying, "while there is data to be read in the bufferedInputStream"
+                    // but we are also assigning this to length. "Eh?", you say...
+                    // well, the BufferedInputStream will return the _offset_ when you read data (it gives us an integer),
+                    // so we know specifically _where_ in this seemingly endless stream we left off.
+                    // Also, if we are at the end of this particular file, we know to stop and go to the next file.
+                    // Also note that you have to wrap the expression in curly braces, then the semicolon, then put the variable
+                    // at the end so that it _returns_ the value of the new length, which is then compared to "greater than 0"
+                    while ({length = bis.read(dataToWrite); length} > 0) {
+                      // here we are simply writing chunks of data from the bufferedInputStream (in blocks 1024 bytes long)
+                      // this is how files actually get written into the zip file
+                      zip.write(dataToWrite, 0, length)
+                    }
+
+                    // here we have are simply telling the zipOutputStream that we are finished writing this file to the zip file
+                    zip.closeEntry()
+                  }
+                  // this would handle if there were no files found in the dataset
+                  case None => {
+                    None
+                  }
                 }
+              }
+              // lastly, all the files have been added to the zip file, so we close the ZipOutputStream.
+              // The browser has had an open stream downloading the zip file this whole time, so now we'll just tell the browser
+              // to close the stream.
+              zip.close()
+            }
 
+            // The chunking shouldn't need much explanation, we're just directly passing it to the requestor as we get data
+            // and the enumerator is going to continue until it reaches the "End of File" (ie, the zip.close() gets called above)
+            // The zip file is named after the dataset
+            Ok.chunked(enumerator >>> Enumerator.eof).withHeaders(
+              "Content-Type" -> "application/zip",
+              "Content-Disposition" -> ("attachment; filename=" + dataset.name + ".zip")
+            )
           }
-          Ok(toJson(filelist))
+          // If the dataset wasn't found by ID
+          case None => {
+            NotFound
+          }
         }
-        case None => Logger.error("Error getting dataset" + id); InternalServerError
       }
+      // If the user doesn't have access to download these files
+      case None => {
+        Unauthorized
+      }
+    }
   }
-
-
-
 }
 
 object ActivityFound extends Exception {}

@@ -1,22 +1,14 @@
 @(dataset: Dataset)(implicit user: Option[models.User])
 
 @if(user.isDefined) {
-    <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-    @if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
+    @if(dataset.files.length > 0){
         <div class="btn-group btn-group-xs">
-            <button id="downloadDatasetButton" onclick="download('@(dataset.id)')"
+            <button id="downloadDatasetButton" onclick="window.open(jsRoutes.api.Datasets.download('@(dataset.id)').url, '_blank')"
             type="button" title="Download all files in this dataset as a zip file" class="btn btn-default">
                 <span class="glyphicon glyphicon-download-alt"></span>
                 Download All Files
             </button>
         </div>
-    } else {
-        <div class="btn-group btn-group-xs">
-            <button disabled type="button" title="Log in to download all files in this dataset as a zip file"
-            class="btn btn-default">
-                <span class="glyphicon glyphicon-download-alt"></span>
-                Download All Files
-            </button>
-        </div>
     }
+
 }
