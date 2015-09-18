@@ -788,3 +788,7 @@ table#nested-space-role-pairs>tbody>tr:first-child {
 table#nested-space-role-pairs>tbody>tr>td {
     padding: 0;
 }
+
+table.borderless tbody tr td, table.borderless tbody tr th {
+    border: none;
+}

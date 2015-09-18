@@ -5,14 +5,15 @@
 @import play.api.Play.current
 
 <div class="row">
-    <div class="col-md-12">
+
         @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
 
             @if(space.requests.isEmpty) {
                 <ul class="list-unstyled"><li>No outstanding requests</li></ul>
             } else {
-                <table id="outstanding-requests" class="table">
-                    <tbody>
+                <div class="col-md-6">
+                <table id="outstanding-requests" class="table borderless">
+                    <tbody >
                         @for(user <- space.requests) {
                             <tr id="request-tr-@user.id.stringify">
                                 <td>
@@ -26,9 +27,7 @@
                                             <option value="@aRole">@aRole</option>
                                         }
                                     </select>
-                                </td>
 
-                                <td>
                                     <button class="btn btn-default btn-xs" id="request-accept-@user.id.stringify" title="Accept request" onclick="return acceptSpaceRequest('@space.id', '@user.id.toString')">
                                         Accept
                                     </button>&nbsp;
@@ -41,11 +40,11 @@
                     </tbody>
                 </table>
 
-                <button class="btn btn-default" type="button" id="close-button" title="Close" onClick= "window.location.reload();">Close</button>
-            }
+                </div>
+               }
 
         }
-    </div>
+
 </div>
 
 <script src="@routes.Assets.at("javascripts/spaces/modify.js")" type="text/javascript"></script>

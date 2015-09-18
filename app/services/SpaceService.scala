@@ -201,7 +201,7 @@ trait SpaceService {
   def getInvitation(inviteId: String): Option[SpaceInvite]
 
   /**
-   * Find invitations of a space
+   * Find invitations of a space. Get data from SpaceInviteDao.
    */
   def getInvitationBySpace(space: UUID): List[SpaceInvite]
 
