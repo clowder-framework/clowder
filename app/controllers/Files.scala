@@ -128,7 +128,7 @@ class Files @Inject() (
         
         //Decode the datasets so that their free text will display correctly in the view
         val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
-        val datasetsNotContaining = datasets.findNotContainingFile(file.id).sortBy(_.name)              
+        val datasetsNotContaining = List.empty[Dataset]
         val decodedDatasetsContaining = ListBuffer.empty[models.Dataset]
         val decodedDatasetsNotContaining = ListBuffer.empty[models.Dataset]
         
