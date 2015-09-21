@@ -256,6 +256,8 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
           case _ => "Undefined Role"
         }
           ))
+        spaces.updateUserCount(s.id,usersInSpace.length)
+
         Ok(views.html.spaces.users(spaceInviteForm, Utils.decodeSpaceElements(s), creator, userRoleMap, externalUsers.toList, roleList.sorted, inviteBySpace))
       }
       case None => InternalServerError("Space not found")

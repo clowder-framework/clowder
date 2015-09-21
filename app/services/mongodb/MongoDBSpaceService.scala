@@ -416,6 +416,10 @@ class MongoDBSpaceService @Inject() (
       users.changeUserRoleInSpace(userId, role, space)
   }
 
+  def updateUserCount(space: UUID, numberOfUser:Int):Unit ={
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $set("userCount" ->numberOfUser), false, false, WriteConcern.Safe)
+  }
+
   def addFollower(id: UUID, userId: UUID) {
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
       $addToSet("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)

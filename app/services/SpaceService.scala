@@ -154,6 +154,16 @@ trait SpaceService {
    */
   def changeUserRole(userId: UUID, role: Role, space: UUID)
 
+
+  /**
+   * Update space.userCount if it is not correct.
+   *
+   * @param space The identifier of the space to be updated
+   * @param numberOfUser The number of user in space
+   *
+   */
+  def updateUserCount(space: UUID, numberOfUser:Int)
+
   /**
    * Retrieve the users that are associated with a specific space.
    *
