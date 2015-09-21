@@ -36,6 +36,14 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
     CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("status" -> status), false, false, WriteConcern.Safe)
   }
 
+  def setSubmitted(id: UUID) {
+    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("status" -> "Submitted", "submittedDate" -> Some(new Date())), false, false, WriteConcern.Safe)
+  }
+
+  def setPublished(id: UUID) {
+    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("status" -> "Published", "publishedDate" -> Some(new Date())), false, false, WriteConcern.Safe)
+  }
+
   def remove(id: UUID): Unit = {
     val curation = get(id)
     curation match {
@@ -62,7 +70,7 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
 
   }
 
-  def updateRepositoty(curationId: UUID, repository: String): Unit = {
+  def updateRepository(curationId: UUID, repository: String): Unit = {
     CurationDAO.update(MongoDBObject("_id" -> new ObjectId(curationId.stringify)), $set("repository" -> repository),
       false, false, WriteConcern.Safe)
   }

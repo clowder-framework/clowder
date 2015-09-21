@@ -10,6 +10,7 @@ import play.api.Logger
 import play.api.data.{Forms, Form}
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
+import play.api.libs.json.JsArray
 import services._
 import util.RequiredFieldsConfig
 import play.api.Play._
@@ -92,6 +93,8 @@ class CurationObjects @Inject()( curations: CurationService,
                   author = identity,
                   description = CODesc(0),
                   created = new Date,
+                  submittedDate = None,
+                  publishedDate= None,
                   space = spaceId,
                   datasets = List(newDataset),
                   files = newFiles,
@@ -116,25 +119,22 @@ class CurationObjects @Inject()( curations: CurationService,
     }
   }
 
-  /**
-   * Delete curation object.
-   * TODO: use ResourceRef.space instead if ResourceRef.curationObject in permission check
-   */
-  def deleteCuration(id: UUID) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.curationObject, id))) {
+
+  def deleteCuration(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) {
     implicit request =>
       implicit val user = request.user
 
-          curations.get(id) match {
-            case Some(c) => {
-              Logger.debug("delete Curation object: " + c.id)
-              val spaceId = c.space
-              curations.remove(id)
-              //spaces.get(spaceId) is checked in Space.stagingArea
-              Redirect(routes.Spaces.stagingArea(spaceId))
-            }
-            case None => InternalServerError("Curation Object Not found")
-          }
+      curations.get(id) match {
+        case Some(c) => {
+          Logger.debug("delete Curation object: " + c.id)
+          val spaceId = c.space
+          curations.remove(id)
+          //spaces.get(spaceId) is checked in Space.stagingArea
+          Redirect(routes.Spaces.stagingArea(spaceId))
         }
+        case None => InternalServerError("Curation Object Not found")
+      }
+  }
 
   // This function is actually "updateDatasetUserMetadata", it can rewrite the metadata in curation.dataset and add/ modify/ delte
   // is all done in this function. We use addDatasetUserMetadata to keep consistency with live objects
@@ -184,7 +184,7 @@ class CurationObjects @Inject()( curations: CurationService,
   }
 
 
-  def getCurationObject(curationId: UUID) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.curationObject, curationId))) {    implicit request =>
+  def getCurationObject(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {    implicit request =>
       implicit val user = request.user
           curations.get(curationId) match {
             case Some(c) => {
@@ -192,14 +192,9 @@ class CurationObjects @Inject()( curations: CurationService,
               //dsmetadata is immutable but dsUsrMetadata is mutable
               val dsmetadata = ds.metadata
               val dsUsrMetadata = collection.mutable.Map(ds.userMetadata.toSeq: _*)
-              Logger.debug(dsUsrMetadata.toString());
               val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
               val fileByDataset = getFiles(c, ds)
-              if(c.status == "Submitted"){
-                Ok(views.html.spaces.submittedCurationObject(c,ds, fileByDataset))
-              } else {
-                Ok(views.html.spaces.curationObject(c, dsmetadata, dsUsrMetadata, isRDFExportEnabled, fileByDataset))
-              }
+              Ok(views.html.spaces.curationObject( c, dsmetadata, dsUsrMetadata, isRDFExportEnabled, fileByDataset))
             }
             case None => InternalServerError("Curation Object Not found")
           }
@@ -236,7 +231,7 @@ class CurationObjects @Inject()( curations: CurationService,
 
        curations.get(curationId) match {
          case Some(c) => {
-           curations.updateRepositoty(c.id, repository);
+           curations.updateRepository(c.id, repository);
            //TODO: Make some call to C3-PR?
            //  Ok(views.html.spaces.matchmakerReport())
            val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
@@ -259,26 +254,30 @@ class CurationObjects @Inject()( curations: CurationService,
         case Some(c) =>
           //TODO : Submit the curationId to the repository. This probably needs the repository as input
           var success = false
+          var repository: String = ""
+          c.repository match {
+            case Some (s) => repository = s
+            case None => Ok(views.html.spaces.curationSubmitted( c, "No Repository Provided", success))
+          }
           val hostIp = Utils.baseUrl(request)
           val hostUrl = hostIp + "/api/curations/" + curationId + "/ore#aggregation"
+          val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => pref._1-> Json.toJson(pref._2.toString().split(",").toList))).getOrElse(Map.empty)
+          val userPreferences = userPrefMap + ("Repository" -> Json.toJson(repository))
+
           val valuetoSend = Json.toJson(
             Map(
-              "Repository" -> Json.toJson("Ideals"),
-              "Preferences" -> Json.toJson(
-                Map(
-                  "key1" -> Json.toJson("val1"),
-                  "key2" -> Json.toJson("val2")
-                ))
-              ,
-              "Aggregation" -> Json.toJson (
-                Map(
-                  "Identifier" -> Json.toJson(hostIp +"/api/curations/" + curationId),
-                  "@id" -> Json.toJson(hostUrl),
-                  "Title" -> Json.toJson(c.name)
+                "Repository" -> Json.toJson("Ideals"),
+                "Preferences" -> Json.toJson(
+                  userPreferences
+                ),
+                "Aggregation" -> Json.toJson(
+                  Map(
+                    "Identifier" -> Json.toJson(curationId),
+                    "@id" -> Json.toJson(hostUrl),
+                    "Title" -> Json.toJson(c.name)
+                  )
                 )
-
               )
-            )
             )
 
           var endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
@@ -289,14 +288,12 @@ class CurationObjects @Inject()( curations: CurationService,
           val response = client.execute(httpPost)
           val responseStatus = response.getStatusLine().getStatusCode()
           if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304) {
-            curations.updateStatus(c.id, "Submitted")
+            curations.setSubmitted(c.id)
             success = true
           }
-          Ok(views.html.spaces.curationSubmitted( c, "IDEALS", success))
+
+          Ok(views.html.spaces.curationSubmitted( c, repository, success))
       }
   }
 
 }
-
-
-

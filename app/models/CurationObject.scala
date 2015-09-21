@@ -12,6 +12,8 @@ case class CurationObject (
   author: Identity,
   description: String = "",
   created: Date,
+  submittedDate: Option[Date],
+  publishedDate: Option[Date],
   space: UUID,
   datasets: List[Dataset] =  List.empty,
   collections: List[Collection] = List.empty,
@@ -20,6 +22,3 @@ case class CurationObject (
   repository: Option[String],
   status: String
 )
-
-
-
