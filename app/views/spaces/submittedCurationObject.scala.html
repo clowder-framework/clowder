@@ -1,185 +1,181 @@
 @(curationObject: models.CurationObject, dataset: models.Dataset, files :List[File] )(implicit user: Option[models.User])
 
-@import helper._
-@import collection.JavaConverters._
-@import play.api.Play.current
-@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
-@import api.Permission
+  @import helper._
+  @import collection.JavaConverters._
+  @import play.api.Play.current
+  @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
+  @import api.Permission
 
-@staticPrint(metadata: scala.collection.immutable.Map[String,Any], emptyMessage: String) = {
-   @if(metadata.isEmpty) {
-            <div>@emptyMessage</div>
+  @staticPrint(metadata: scala.collection.immutable.Map[String,Any], emptyMessage: String) = {
+  @if(metadata.isEmpty) {
+    <div>@emptyMessage</div>
+  } else {
+    @printLevel(metadata)
+  }
+  }
+
+
+  @printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
+  @for((key,value) <- metadata) {
+    <li><b>@(key):</b>
+      @if(value.isInstanceOf[String]) {
+        @if(value.asInstanceOf[String].startsWith("http://") || value.asInstanceOf[String].startsWith("https://")) {
+          <a href="@value">@value</a>
         } else {
-            @printLevel(metadata)
+          @value
         }
-}
-
-
-@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
-@for((key,value) <- metadata) {
-  <li><b>@(key):</b>
-    @if(value.isInstanceOf[String]) {
-      @if(value.asInstanceOf[String].startsWith("http://") || value.asInstanceOf[String].startsWith("https://")) {
-        <a href="@value">@value</a>
       } else {
-        @value
-      }
-    } else {
-      @if(value.isInstanceOf[java.lang.Integer] || value.isInstanceOf[java.lang.Double] || value.isInstanceOf[java.lang.Float] ) {
-        @value.toString
-      } else {
-        @if(value.isInstanceOf[com.mongodb.BasicDBList]) {
-          <ul>
-          @printList(value.asInstanceOf[com.mongodb.BasicDBList].toList)
-          </ul>
+        @if(value.isInstanceOf[java.lang.Integer] || value.isInstanceOf[java.lang.Double] || value.isInstanceOf[java.lang.Float] ) {
+          @value.toString
         } else {
-          @if(value.isInstanceOf[com.mongodb.BasicDBObject]) {
+          @if(value.isInstanceOf[com.mongodb.BasicDBList]) {
             <ul>
-            @printLevel(value.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+            @printList(value.asInstanceOf[com.mongodb.BasicDBList].toList)
             </ul>
           } else {
-            @value.toString
+            @if(value.isInstanceOf[com.mongodb.BasicDBObject]) {
+              <ul>
+              @printLevel(value.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+              </ul>
+            } else {
+              @value.toString
+            }
           }
         }
-      }
-    }</li>
-}
-}
+      }</li>
+  }
+  }
 
-@printList(metadata: List[AnyRef])	= {
-@metadata.indices.map { i =>
-  <li><b>@i:</b>
-    @if(metadata(i).isInstanceOf[String]) {
-      @if(metadata(i).asInstanceOf[String].startsWith("http://") || metadata(i).asInstanceOf[String].startsWith("https://")) {
-        <a href="@metadata(i)">@metadata(i)</a>
-      } else {
-        @metadata(i)
-      }
-    } else {
-      @if(metadata(i).isInstanceOf[java.lang.Integer] || metadata(i).isInstanceOf[java.lang.Double] || metadata(i).isInstanceOf[java.lang.Float] ) {
-        @metadata(i).toString
-      } else {
-        @if(metadata(i).isInstanceOf[com.mongodb.BasicDBList]) {
-          <ul>
-          @printList(metadata(i).asInstanceOf[com.mongodb.BasicDBList].toList)
-          </ul>
+  @printList(metadata: List[AnyRef])	= {
+  @metadata.indices.map { i =>
+    <li><b>@i:</b>
+      @if(metadata(i).isInstanceOf[String]) {
+        @if(metadata(i).asInstanceOf[String].startsWith("http://") || metadata(i).asInstanceOf[String].startsWith("https://")) {
+          <a href="@metadata(i)">@metadata(i)</a>
         } else {
-          @if(metadata(i).isInstanceOf[com.mongodb.BasicDBObject]) {
+          @metadata(i)
+        }
+      } else {
+        @if(metadata(i).isInstanceOf[java.lang.Integer] || metadata(i).isInstanceOf[java.lang.Double] || metadata(i).isInstanceOf[java.lang.Float] ) {
+          @metadata(i).toString
+        } else {
+          @if(metadata(i).isInstanceOf[com.mongodb.BasicDBList]) {
             <ul>
-            @printLevel(metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+            @printList(metadata(i).asInstanceOf[com.mongodb.BasicDBList].toList)
             </ul>
           } else {
-            @metadata(i)
+            @if(metadata(i).isInstanceOf[com.mongodb.BasicDBObject]) {
+              <ul>
+              @printLevel(metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+              </ul>
+            } else {
+              @metadata(i)
+            }
           }
         }
-      }
-    }</li>
-}
-}
+      }</li>
+  }
+  }
 
 
 
-@main(curationObject.name) {
-  <div class = "row">
-    <ol class="breadcrumb">
-      <li> <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a></li>
-      <li class= "active"> Submitted Curation</li>
-    </ol>
-  </div>
+  @main(curationObject.name) {
+    <div class = "row">
+      <ol class="breadcrumb">
+        <li> <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a></li>
+        <li class= "active"> Submitted Curation</li>
+      </ol>
+    </div>
 
-  <div class="container row">
-    @*<div class="col-md-4">*@
-   @**@
-    @*</div>*@
-    @*<div class="col-md-9">*@
+    <div class="container row">
+
       <div>
         <h2>@curationObject.name</h2>
-        @curationObject.description<br/>
-        Creator: @curationObject.author.fullName <br/>
-        Uploaded: @curationObject.created.date.format("yyyy-mm-dd hh:mm") <br/>
-        Repository: @curationObject.repository.getOrElse("Not select.") <br/>
-        Submmitted: @{curationObject.submittedDate match {
+        @curationObject.description<br/><br/>
+        <b>Creator</b>: @curationObject.author.fullName <br/>
+        <b>Uploaded</b>: @curationObject.created.date.format("yyyy-mm-dd hh:mm") <br/>
+        <b>Repository</b>: @curationObject.repository.getOrElse("Not select.") <br/>
+        <b>Submmitted</b>: @{curationObject.submittedDate match {
         case Some(d) => d.date.format("yyyy-mm-dd hh:mm")
         case None => "Not published"
       }
       }  <br/>
-        Published: @{curationObject.publishedDate match {
-          case Some(d) => d.date.format("yyyy-mm-dd hh:mm")
-          case None => "Not published"
-          }
-        }  <br/>
+        <b>Published</b>: @{curationObject.publishedDate match {
+        case Some(d) => d.date.format("yyyy-mm-dd hh:mm")
+        case None => "Not published"
+      }
+      }  <br/>
 
 
         <br/>
         <h4>Dataset <a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h4>
         Note: The links in this page redirect to the live objects.<br/>
-        Size: @{curationObject.datasets(0).files.map(_.length).sum /1024} MB <br/>
-        File Formats: @curationObject.datasets(0).files.map(_.contentType).toSet.mkString(", ") <br/>
-        Creator: @curationObject.datasets(0).author.fullName <br/>
+        <b>Size</b>: @{curationObject.datasets(0).files.map(_.length).sum /1024} MB <br/>
+        <b>File Formats</b>: @curationObject.datasets(0).files.map(_.contentType).toSet.mkString(", ") <br/>
+        <b>Creator</b>: @curationObject.datasets(0).author.fullName <br/>
 
 
-          @*if(Permission.checkPermission(Permission.ViewMetadata, ResourceRef(ResourceRef.curationObject, curationObject.id))) {*@
-          <div class="row">
-            <div class="col-md-12 box-white-space">
-              <h5>Community generated metadata</h5>
-              <div  class='usr_md_'>
-              @staticPrint(dataset.userMetadata, "No community generated metadata.")
-              </div>
-              <h5>System generated metadata</h5>
-              @staticPrint(dataset.metadata, "No system generated metadata.")
+        @*if(Permission.checkPermission(Permission.ViewMetadata, ResourceRef(ResourceRef.curationObject, curationObject.id))) {*@
+        <div class="row">
+          <div class="col-md-12 box-white-space">
+            <h5>Community generated metadata</h5>
+            <div  class='usr_md_'>
+            @staticPrint(dataset.userMetadata, "No community generated metadata.")
             </div>
+            <h5>System generated metadata</h5>
+            @staticPrint(dataset.metadata, "No system generated metadata.")
           </div>
-          @*}*@
+        </div>
+        @*}*@
       </div>
 
-    <br/>
-    <br/>
+      <br/>
+      <br/>
       @if(files.size > 0 ){
         <h4> Files</h4>
       }
 
-      @*<div>*@
-        <ul>
-        @for(file<- files) {
+      <ul>
+      @for(file<- files) {
 
-          <li><h4><a href=@routes.Files.file(file.id)>@file.filename</a></h4>
-            <div id ='allMetadata_@(file.id)'>
-              <button class="tech_md_" type="button">Show File metadata</button>
-              <div style="display:none;">
-                <div class="row border-top">
-                  <div class="col-md-12">
-                    <h4>Community generated metadata</h4>
-                    <ul>
-                    @if(file.metadata.length == 0){
-                      <div>No community generated metadata.</div>
-                    } else {
-                      @printLevel(file.userMetadata)
+        <li><h4><a href=@routes.Files.file(file.id)>@file.filename</a></h4>
+          <div id ='allMetadata_@(file.id)'>
+            <button class="tech_md_" type="button">Show File metadata</button>
+            <div style="display:none;">
+              <div class="row border-top">
+                <div class="col-md-12">
+                  <h4>Community generated metadata</h4>
+                  <ul>
+                  @if(file.metadata.length == 0){
+                    <div>No community generated metadata.</div>
+                  } else {
+                    @printLevel(file.userMetadata)
+                  }
+                  </ul>
+                  <h4>System generated metadata</h4>
+                  <ul>
+                  @if(file.metadata.length == 0){
+                    <div>No system generated metadata.</div>
+                  } else {
+                    @for(i <- 0 until file.metadata.length) {
+                      @printLevel(file.metadata(i))
                     }
-                    </ul>
-                    <h4>System generated metadata</h4>
-                    <ul>
-                    @if(file.metadata.length == 0){
-                      <div>No system generated metadata.</div>
-                    } else {
-                      @for(i <- 0 until file.metadata.length) {
-                        @printLevel(file.metadata(i))
-                      }
-                    }
-                      </ul>
-                    </div>
-                  </div>
+                  }
+                  </ul>
                 </div>
+              </div>
+            </div>
 
-                @if(!file.xmlMetadata.isEmpty) {
-                  <div id='xmlMetadata_@(file.id.toString)'>
-                    <button class="tech_md_" type="button">Show XML-uploaded metadata</button>
-                    <div style="display:none;">
-                      <ul>
-                      @printLevel(file.xmlMetadata)
-                      </ul>
-                    </div>
-                  </div>
-                  <script>
+            @if(!file.xmlMetadata.isEmpty) {
+              <div id='xmlMetadata_@(file.id.toString)'>
+                <button class="tech_md_" type="button">Show XML-uploaded metadata</button>
+                <div style="display:none;">
+                  <ul>
+                  @printLevel(file.xmlMetadata)
+                  </ul>
+                </div>
+              </div>
+              <script>
                     $("#xmlMetadata_@(file.id.toString) > button").on('click',function(){
                         if($("#xmlMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
                             $("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
@@ -191,12 +187,12 @@
                         }
                     });
                 </script>
-                }
-              </div>
+            }
+          </div>
 
-          </li>
+        </li>
 
-          <script>
+        <script>
                 $("#allMetadata_@(file.id.toString) > button").on('click', function(){
                     if($("#allMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
                         $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
@@ -208,10 +204,8 @@
                     }
                     });
             </script>
-        }
-        </ul>
-      @*</div>*@
+      }
+      </ul>
     </div>
-  @*</div>*@
 
-}
+  }
