@@ -32,8 +32,8 @@ class Datasets @Inject()(
   sparql: RdfSPARQLService,
   users: UserService,
   previewService: PreviewService,
+  relations: RelationService,
   spaceService: SpaceService) extends SecuredController {
-
 
   object ActivityFound extends Exception {}
 
@@ -286,6 +286,16 @@ class Datasets @Inject()(
               }
           }
 
+          // associated sensors
+          val sensors: List[(String, String)]= current.plugin[PostgresPlugin] match {
+            case Some(db) => {
+              val base = play.api.Play.configuration.getString("geostream.dashboard.url").getOrElse("http://localhost:9000")
+              val ids = relations.findTargets(id.stringify, ResourceType.dataset, ResourceType.sensor)
+              db.getDashboardSensorURLs(ids)
+            }
+            case None => List.empty[(String, String)]
+          }
+
           var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
           dataset.spaces.map{
                   sp => spaceService.get(sp) match {
@@ -302,8 +312,8 @@ class Datasets @Inject()(
           }
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
-          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
-          decodedCollectionsOutside.toList, decodedCollectionsInside.toList, isRDFExportEnabled, Some(decodedSpaces), filesTags, otherSpaces))
+          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filesTags, filteredPreviewers.toList, metadata, userMetadata,
+            decodedCollectionsOutside.toList, decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), otherSpaces))
 
         }
         case None => {

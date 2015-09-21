@@ -1,14 +1,15 @@
 @(dataset: models.Dataset,
-  comments: List[Comment],
-  previews : List[Previewer],
-  md: Map[String,Any],
-  usrmd: scala.collection.mutable.Map[String,Any],
-  collectionsOutside: List[models.Collection],
-  collectionsInside: List[models.Collection],
-  rdfExported: Boolean,
-  datasetSpaces: Option[List[ProjectSpace]],
-  filesTags: Set[String],
-  otherSpaces: List[ProjectSpace])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+        comments: List[Comment],
+        filesTags: Set[String],
+        previews : List[Previewer],
+        md: Map[String,Any],
+        usrmd: scala.collection.mutable.Map[String,Any],
+        collectionsOutside: List[models.Collection],
+        collectionsInside: List[models.Collection],
+        rdfExported: Boolean,
+        relatedSensors: List[(String,String)],
+        datasetSpaces: Option[List[ProjectSpace]],
+        otherSpaces: List[ProjectSpace])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -139,6 +140,9 @@
             @datasets.collections(dataset, collectionsInside, collectionsOutside)
             @if(user.isDefined) {
                 @datasets.userLink(dataset)
+            }
+            @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {
+                @sensors.relatedSensors(relatedSensors, dataset.id.stringify)
             }
 		</div>
 	</div>

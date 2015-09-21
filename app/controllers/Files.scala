@@ -255,7 +255,7 @@ class Files @Inject() (
     implicit val user = request.user
     Ok(views.html.upload(uploadForm))
   }
-  
+
   /**
    * Upload form for extraction.
    */
