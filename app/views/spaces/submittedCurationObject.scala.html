@@ -95,9 +95,20 @@
       <div>
         <h2>@curationObject.name</h2>
         @curationObject.description<br/>
+        Creator: @curationObject.author.fullName <br/>
         Uploaded: @curationObject.created.date.format("yyyy-mm-dd hh:mm") <br/>
         Repository: @curationObject.repository.getOrElse("Not select.") <br/>
-        Creator: @curationObject.author.fullName <br/>
+        Submmitted: @{curationObject.submittedDate match {
+        case Some(d) => d.date.format("yyyy-mm-dd hh:mm")
+        case None => "Not published"
+      }
+      }  <br/>
+        Published: @{curationObject.publishedDate match {
+          case Some(d) => d.date.format("yyyy-mm-dd hh:mm")
+          case None => "Not published"
+          }
+        }  <br/>
+
 
         <br/>
         <h4>Dataset <a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h4>

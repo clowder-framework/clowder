@@ -119,8 +119,10 @@ class CurationObjects @Inject()( curations: CurationService,
     }
   }
 
-
-  def deleteCuration(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) {
+  /**
+   * Delete curation object.
+   */
+  def deleteCuration(id: UUID) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.curationObject, id))) {
     implicit request =>
       implicit val user = request.user
 
@@ -184,7 +186,7 @@ class CurationObjects @Inject()( curations: CurationService,
   }
 
 
-  def getCurationObject(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {    implicit request =>
+  def getCurationObject(curationId: UUID) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.curationObject, curationId))) {    implicit request =>
       implicit val user = request.user
           curations.get(curationId) match {
             case Some(c) => {
@@ -194,7 +196,11 @@ class CurationObjects @Inject()( curations: CurationService,
               val dsUsrMetadata = collection.mutable.Map(ds.userMetadata.toSeq: _*)
               val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
               val fileByDataset = getFiles(c, ds)
-              Ok(views.html.spaces.curationObject( c, dsmetadata, dsUsrMetadata, isRDFExportEnabled, fileByDataset))
+              if(c.status == "Submitted"){
+                Ok(views.html.spaces.submittedCurationObject(c,ds, fileByDataset))
+              } else {
+                Ok(views.html.spaces.curationObject(c, dsmetadata, dsUsrMetadata, isRDFExportEnabled, fileByDataset))
+              }
             }
             case None => InternalServerError("Curation Object Not found")
           }
