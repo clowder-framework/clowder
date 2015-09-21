@@ -7,7 +7,6 @@ import java.io.{PrintStream, File}
 import java.security.MessageDigest
 
 import _root_.util.{PeekIterator, Parsers}
-import models.{UUID, ResourceRef}
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
 import play.api.mvc.{SimpleResult, Request}
