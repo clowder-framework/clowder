@@ -203,7 +203,7 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
       }
   }
 
-  def manageUsers(id: UUID) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+  def manageUsers(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
