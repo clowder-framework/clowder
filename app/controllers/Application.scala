@@ -160,7 +160,9 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Profile.viewProfileUUID,
         controllers.routes.javascript.Files.file,
         controllers.routes.javascript.Datasets.dataset,
+        controllers.routes.javascript.Datasets.newDataset,
         controllers.routes.javascript.Collections.collection,
+        controllers.routes.javascript.Collections.newCollection,
         controllers.routes.javascript.Spaces.acceptRequest,
         controllers.routes.javascript.Spaces.rejectRequest
       )

@@ -41,7 +41,7 @@ class Datasets @Inject()(
    * Display the page that allows users to create new datasets, either by uploading multiple new files,
    * or by selecting multiple existing files.
    */
-  def newDataset() = PermissionAction(Permission.CreateDataset) { implicit request =>
+  def newDataset(space: Option[String]) = PermissionAction(Permission.CreateDataset) { implicit request =>
       implicit val user = request.user
       val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
       var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
@@ -52,9 +52,18 @@ class Datasets @Inject()(
           decodedSpaceList += Utils.decodeSpaceElements(aSpace)
         }
       }
+    space match {
+      case Some(s) => {
+        spaceService.get(UUID(s)) match {
+          case Some(spaceId) => Ok(views.html.newDataset(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, Some(s))).flashing("error" -> "Please select ONE file (upload new or existing)")
+          case None => Ok(views.html.newDataset(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None)).flashing("error" -> "Please select ONE file (upload new or existing)")
+        }
 
-    Ok(views.html.newDataset(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired)).flashing("error" -> "Please select ONE file (upload new or existing)")
+      }
+      case None => Ok(views.html.newDataset(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None)).flashing("error" -> "Please select ONE file (upload new or existing)")
+    }
   }
+
 
   def addToDataset(id: UUID, name: String, desc: String) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       implicit val user = request.user
