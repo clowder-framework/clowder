@@ -35,7 +35,6 @@
                                 <li>
                                     <a href= "@routes.Profile.viewProfileUUID(k.id)" id="@k.id" title="@k.email">
                                         @k.fullName</a>
-                                    @*<button class='remove-user btn btn-inverse btn-xs' id="@k.id" title='Remove User'>x</button>*@
                                     <a class='remove-user' id="@k.id"><span class="glyphicon glyphicon-remove"> </span></a>
                                 </li>
                             }
@@ -149,13 +148,12 @@
                 //Check to see if we are operating on the original target of the event. If so, don't do anything, it handles
                 //it on its own.
 
-                    $('#@roleLevel.replaceAll("\\s+", "")').prepend($("<option></option>").attr("value", targetId).text(getName(targetId)
+                 $('#@roleLevel.replaceAll("\\s+", "")').prepend($("<option></option>").attr("value", targetId).text(getName(targetId)
                         + " (" + getEmail(targetId) + ")"));
-                        $('#@roleLevel.replaceAll("\\s+", "")').trigger("chosen:updated");
+                 $('#@roleLevel.replaceAll("\\s+", "")').trigger("chosen:updated");
 
             }
          $( this ).closest( "UL" ).trigger('contentchange');
-         //console.log($( this ).closest( "UL" ));
 
     });
 </script>
