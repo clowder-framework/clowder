@@ -279,11 +279,10 @@ object Permission extends Enumeration {
 
       case ResourceRef(ResourceRef.curationObject, id) => {
         curations.get(id) match {
-          case None => false
           case Some(curation) => checkPermission(user, permission, ResourceRef(ResourceRef.space, curation.space))
+          case None => false
         }
       }
-
 
       case ResourceRef(resType, id) => {
         Logger.error("Resource type not recognized " + resType)
