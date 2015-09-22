@@ -1,42 +1,60 @@
 @(curationObject: models.CurationObject, properties: Map[String, List[String]], userPreferences:  Map[String,List[String]])(implicit user: Option[models.User] )
 @main("Matchmaker") {
-    <div class = "row">
-        <ol class="breadcrumb">
-            <li> <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a></li>
-            <li> <a  href ="@routes.CurationObjects.getCurationObject(curationObject.id)"> Edit Metadata</a></li>
-            <li class="active"> Find Repositories</li>
-        </ol>
-
-    </div>
     <div class="row">
         <div class="col-md-12">
-            <h1>Find Repositories for @curationObject.name</h1>
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a> >
+                    <a  href ="@routes.CurationObjects.getCurationObject(curationObject.id)"> Edit Metadata</a> >
+                    <u><strong>Select Repository</strong></u> >
+                    Submit to Repository
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row bottom-padding">
+        <div class="col-md-2">
+            <a class="btn btn-default" href ="@routes.CurationObjects.getCurationObject(curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Edit Metadata</a>
+        </div>
+        <div class="col-md-8 text-center">
+            <h1>Select Repository</h1>
+        </div>
+        <div class="col-md-2">
+            <button  class="btn btn-primary pull-right selectRepository">Select Repository <span class="glyphicon glyphicon-chevron-right"></span></button>
         </div>
     </div>
     <div class="row">
         <div class="col-md-3">
             @spaces.curation_summary( curationObject, "Matchmaker", false)
-            <h4><b>Publication Preferences</b></h4>
-            @for((prop, value) <- properties) {
-                <h5>@prop</h5>
-                @for(cur<-value) {
-                    @if(userPreferences.contains(prop.replace(" ", "_").toLowerCase()) && userPreferences(prop.replace(" ", "_").toLowerCase()).contains(cur)) {
-                        <input type="checkbox" name="@prop" value="@cur" checked> @cur <br/>
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <h5>Publication Preferences</h5>
+                    @for((prop, value) <- properties) {
+                        <h5>@prop</h5>
+                        @for(cur<-value) {
+                            @if(userPreferences.contains(prop.replace(" ", "_").toLowerCase()) && userPreferences(prop.replace(" ", "_").toLowerCase()).contains(cur)) {
+                                <input type="checkbox" name="@prop" value="@cur" checked> @cur <br/>
 
-                    } else {
-                        <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
+                            } else {
+                                <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
+                            }
+
+                        }
                     }
-
-                }
-            }
-            <button class="btn btn-sm btn-primary" id="updateResults">Update Results</button>
+                    <div class="center-margin">
+                        <button class="btn btn-sm btn-primary" id="updateResults">Update Results</button>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="col-md-9">
-                <h3>Candidate Repositories</h3>
-                The results below are based on an analysis of the dataset's properties and metadata and the preferences you specified. <br/>
+            <h4>Candidate Repositories</h4>
+            <div>The results below are based on an analysis of the dataset's properties and metadata and
+                the preferences youspecified.
+            </div>
             <span class="error hiddencomplete" id="selecterror"> Please select a repository</span><br>
             @if(curationObject.repository.isDefined && curationObject.repository.get.compareTo("IDEALS") == 0)   {
-            <h4><input type="radio" name="repository" value="IDEALS" checked>1. IDEALS </h4>
+            <h4><input type="radio" name="repository" value="IDEALS" checked> 1. IDEALS </h4>
             } else {
                 <h4><input type="radio" name="repository" value="IDEALS">1. IDEALS </h4>
             }
@@ -87,14 +105,10 @@
         </div>
 
     </div>
-    <div class="row border-top bottom-padding">
-
-        @*<a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> <span class="glyphicon glyphicon-arrow-left"></span>Go Back to Space </a>*@
+    <div class="row bottom-padding">
         <a class="btn btn-default" href ="@routes.CurationObjects.getCurationObject(curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Edit Metadata</a>
-        @*<a class="btn btn-primary pull-right" href=@routes.CurationObjects.compareToRepository(space.id, curationObject.id)> Select Repository <span class="glyphicon glyphicon-chevron-right"></span></a>*@
-        <button  class="btn btn-primary pull-right" id="selectRepository">Select Repository <span class="glyphicon glyphicon-chevron-right"></span></button>
+        <button  class="btn btn-primary pull-right selectRepository">Select Repository <span class="glyphicon glyphicon-chevron-right"></span></button>
     </div>
-
     <script>
         $("#ideals_mm").on('click', function(){
             if($("#ideals_mm > div").attr('style') == 'display:none;'){
@@ -170,7 +184,7 @@
 
             });
         });
-        $('#selectRepository').on('click', function() {
+        $('.selectRepository').on('click', function() {
             var radios = document.getElementsByName('repository');
             var repository = "";
             for (var i = 0, length = radios.length; i < length; i++) {
