@@ -29,6 +29,7 @@ case class ProjectSpace (
   resourceTimeToLive: Long = SpaceConfig.getTimeToLive(),
   isTimeToLiveEnabled: Boolean = SpaceConfig.getIsTimeToLiveEnabled(),
   followers: List[UUID] = List.empty,
+  invitations: List[(UUID, String)] = List.empty,
   requests: List[RequestResource] = List.empty)
 
 

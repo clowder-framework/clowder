@@ -1,0 +1,164 @@
+@(space: ProjectSpace, creator: Option[User], userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String])(implicit user: Option[models.User])
+
+@import api.Permission
+@import play.api.libs.json._
+@import play.api.Play.current
+
+
+<div class="row">
+    <div class="col-md-12">
+        @if(creator.isDefined) {
+            <h3>
+                Owner: <a href= "@routes.Profile.viewProfileUUID(space.creator)" title="@creator.get.email"> @creator.get.fullName</a>
+            </h3>
+
+            <br />
+        }
+
+        <h3>
+            @if(userRoleMap.isEmpty) {
+                No other users
+            } else {
+                @space.userCount users:
+            }
+        </h3>
+        <br />
+
+        <div id="user-list">
+            @for(roleLevel <- roleList){
+                <h4>@roleLevel</h4>
+                @defining(roleLevel.replaceAll("\\s+", "")) { currRole =>
+
+                    <ul id='@currRole.concat("-current")'>
+                        @for((k,v) <- userRoleMap) {
+                            @if(roleLevel == v) {
+                                <li>
+                                    <a href= "@routes.Profile.viewProfileUUID(k.id)" id="@k.id" title="@k.email">
+                                        @k.fullName</a>
+                                    <a class='remove-user' id="@k.id"><span class="glyphicon glyphicon-remove"> </span></a>
+                                </li>
+                            }
+                        }
+                    </ul>
+
+                    <ul>
+                        @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
+                            <li style="list-style: none">
+                                <select class="chosen-select" multiple id='@currRole'>
+                                    @for(extUser <- externalUsers) {
+                                        <option value="@extUser.id">@extUser.fullName (@extUser.email)</option>
+                                    }
+                                </select>
+                            </li>
+                        }
+                    </ul>
+                    <br />
+
+                }
+            }
+            <br />
+        </div>
+
+        @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
+            <button class="btn btn-primary" title="Update" onclick="return updateUsersInSpace('@space.id')">Submit</button>
+            <button class="btn btn-default" title="Cancel" type="button" id="cancel-button" onClick="window.location.reload();">Cancel</button>
+        }
+    </div>
+</div>
+
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
+<script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
+
+<script language="javascript">
+  $(".chosen-select").chosen({
+    width: "500px",
+    placeholder_text_multiple: "Select Users for this Level...",
+    no_results_text: "Sorry, no results match"});
+</script>
+
+<script language="javascript">
+    var idNameObj = {};
+    var idEmailObj = {};
+
+    function isUndefined(value) {
+        return typeof value === 'undefined';
+    }
+
+    function getName(id) {
+        return idNameObj[id];
+    }
+
+    function getEmail(id) {
+        return idEmailObj[id];
+    }
+
+    //Define maps to easily look up names and emails based on the ID that is added or removed
+    $(document).ready(function() {
+        @for(extUser <- externalUsers) {
+            idNameObj["@extUser.id"] = "@extUser.fullName";
+            idEmailObj["@extUser.id"] = "@extUser.email";
+        }
+
+    @for((k,v) <- userRoleMap) {
+            idNameObj["@k.id"] = "@k.fullName";
+            idEmailObj["@k.id"] = "@k.email";
+        }
+    });
+
+    //Handle the change events when a user is added or removed from the selection lists
+    $(".chosen-select").chosen().change(function (event, params) {
+        var targetId = this.getAttribute("id");
+        if (!isUndefined(params.selected)) {
+            //Remove the newly selected ID from the options lists
+            var addedId = params.selected;
+            @for(roleLevel <- roleList) {
+                var currentId = '@roleLevel.replaceAll("\\s+", "")';
+                //Check to see if we are operating on the original target of the event. If so, don't do anything, it handles
+                //it on its own.
+                if (currentId != targetId) {
+                    $('#@roleLevel.replaceAll("\\s+", "") option[value=' + addedId + ']').remove();
+                    $('#@roleLevel.replaceAll("\\s+", "")').trigger("chosen:updated");
+                }
+            }
+        }
+        else if (!isUndefined(params.deselected)) {
+            //Add the newly deselected ID to the options lists
+            var removedId = params.deselected;
+            @for(roleLevel <- roleList) {
+                var currentId = '@roleLevel.replaceAll("\\s+", "")';
+                //Check to see if we are operating on the original target of the event. If so, don't do anything, it handles
+                //it on its own.
+                if (currentId != targetId) {
+                    $('#@roleLevel.replaceAll("\\s+", "")').prepend($("<option></option>").attr("value", params.deselected).text(getName(params.deselected)
+                        + " (" + getEmail(params.deselected) + ")"));
+                    $('#@roleLevel.replaceAll("\\s+", "")').trigger("chosen:updated");
+                }
+            }
+        }
+    });
+
+
+    $(".remove-user").click(function(){
+
+        $( this ).closest( "LI" ).remove();
+        var targetId = this.getAttribute("id");
+
+        @for(roleLevel <- roleList) {
+                var currentId = '@roleLevel.replaceAll("\\s+", "")';
+                //Check to see if we are operating on the original target of the event. If so, don't do anything, it handles
+                //it on its own.
+
+                 $('#@roleLevel.replaceAll("\\s+", "")').prepend($("<option></option>").attr("value", targetId).text(getName(targetId)
+                        + " (" + getEmail(targetId) + ")"));
+                 $('#@roleLevel.replaceAll("\\s+", "")').trigger("chosen:updated");
+
+            }
+         $( this ).closest( "UL" ).trigger('contentchange');
+
+    });
+</script>
+
+<script type="text/javascript">
+    var roleArray = @Html(Json.stringify(Json.toJson(roleList)))
+</script>
+<script src="@routes.Assets.at("javascripts/spaces/modify.js")" type="text/javascript"></script>

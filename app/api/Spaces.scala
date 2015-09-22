@@ -340,44 +340,54 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
               case None => Logger.debug("A role was sent up that doesn't exist. It is " + k)
             }
           }
-          val space = spaces.get(spaceId)
-          for ((k, v) <- roleMap) {
-            //The role needs to exist
-            userService.findRoleByName(k) match {
-              case Some(aRole) => {
-                val idArray: Array[String] = v.split(",").map(_.trim())
+          spaces.get(spaceId) match {
+            case Some(space) => {
+              for ((k, v) <- roleMap) {
+                //The role needs to exist
+                userService.findRoleByName(k) match {
+                  case Some(aRole) => {
+                    val idArray: Array[String] = v.split(",").map(_.trim())
 
-                //Deal with all the ids that were sent up (changes and adds)
-                for (aUserId <- idArray) {
-                  //For some reason, an empty string is getting through as aUserId on length
-                  if (aUserId != "") {
-                    if (existUserRole.contains(aUserId)) {
-                      //The user exists in the space already
-                      existUserRole.get(aUserId) match {
-                        case Some(existRole) => {
-                          if (existRole != k) {
-                            spaces.changeUserRole(UUID(aUserId), aRole, spaceId)
+                    //Deal with all the ids that were sent up (changes and adds)
+                    for (aUserId <- idArray) {
+                      //For some reason, an empty string is getting through as aUserId on length
+                      if (aUserId != "") {
+                        if (existUserRole.contains(aUserId)) {
+                          //The user exists in the space already
+                          existUserRole.get(aUserId) match {
+                            case Some(existRole) => {
+                              if (existRole != k) {
+                                spaces.changeUserRole(UUID(aUserId), aRole, spaceId)
+                              }
+                            }
+                            case None => Logger.debug("This shouldn't happen. A user that is assigned to a space should always have a role.")
                           }
                         }
-                        case None => Logger.debug("This shouldn't happen. A user that is assigned to a space should always have a role.")
+                        else {
+                          //New user completely to the space
+                          spaces.addUser(UUID(aUserId), aRole, spaceId)
+                          val newmember = userService.get(UUID(aUserId))
+                          val theHtml = views.html.spaces.inviteNotificationEmail(spaceId.stringify, space.name, user.get.getMiniUser, newmember.get.getMiniUser.fullName, aRole.name)
+                          controllers.Users.sendEmail("Added to Space", newmember.get.getMiniUser.email.get ,theHtml)
+                        }
+                      }
+                      else {
+                        Logger.debug("There was an empty string that counted as an array...")
                       }
                     }
-                    else {
-                      //New user completely to the space
-                      spaces.addUser(UUID(aUserId), aRole, spaceId)
-                      val newmember = userService.get(UUID(aUserId))
-                      val theHtml = views.html.spaces.inviteNotificationEmail(spaceId.stringify, space.get.name, user.get.getMiniUser, newmember.get.getMiniUser.fullName, aRole.name)
-                      controllers.Users.sendEmail("Added to Space", newmember.get.getMiniUser.email.get ,theHtml)
-                    }
                   }
-                  else {
-                    Logger.debug("There was an empty string that counted as an array...")
-                  }
+                  case None => Logger.debug("A role was sent up that doesn't exist. It is " + k)
                 }
               }
-              case None => Logger.debug("A role was sent up that doesn't exist. It is " + k)
+              if(space.userCount != spaces.getUsersInSpace(space.id).length){
+                spaces.updateUserCount(space.id, spaces.getUsersInSpace(space.id).length)
+              }
             }
+            case None => Logger.error("Errors: " + "Could not find space")
           }
+
+
+
           Ok(Json.obj("status" -> "success"))
         }
         case e: JsError => {
