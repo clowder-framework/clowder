@@ -308,11 +308,11 @@ class CurationObjects @Inject()( curations: CurationService,
 
       (request.body \ "DOI").asOpt[String].map { doi =>
         val DOI_PREFIX = "http://dx.doi.org/";
-        var doiwithPerfix = doi
+        var doiwithPrefix = doi
         if(doi.startsWith("doi:") || doi.startsWith("10.")){
-          doiwithPerfix = DOI_PREFIX + doi.replaceAll("^doi:", "")
+          doiwithPrefix = DOI_PREFIX + doi.replaceAll("^doi:", "")
         }
-        curations.updateDOI(id,  new URL(doiwithPerfix))
+        curations.updateDOI(id,  new URL(doiwithPrefix))
       }
 
       Ok(toJson(
