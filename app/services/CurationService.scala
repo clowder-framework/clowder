@@ -48,4 +48,9 @@ trait CurationService {
    * update the repository selected
    */
   def updateRepository(curationId: UUID, repository: String)
+
+  /**
+   * save doi received from repository
+   */
+  def updateDOI(curationId: UUID, doi: String)
 }

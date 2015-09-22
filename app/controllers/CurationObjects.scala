@@ -2,7 +2,7 @@ package controllers
 
 import java.util.Date
 import javax.inject.Inject
-import api.Permission
+import api.{UserRequest, Permission}
 import models._
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.DefaultHttpClient
@@ -294,6 +294,25 @@ class CurationObjects @Inject()( curations: CurationService,
 
           Ok(views.html.spaces.curationSubmitted( c, repository, success))
       }
+  }
+
+  def savePublishedObject(id: UUID) = UserAction (parse.json) {
+    implicit request =>
+      Logger.debug("get infomation from repository")
+
+
+      (request.body \ "status").asOpt[String].map { status =>
+          curations.updateStatus(id,  status)
+      }
+
+      (request.body \ "DOI").asOpt[String].map { doi =>
+        curations.updateDOI(id,  doi)
+      }
+
+
+      Ok(toJson(
+        Map("status" -> "OK")
+      ))
   }
 
 }
