@@ -146,11 +146,9 @@
                 <div class="col-md-12">
                   <h4>Community generated metadata</h4>
                   <ul>
-                  @if(file.metadata.length == 0){
-                    <div>No community generated metadata.</div>
-                  } else {
-                    @printLevel(file.userMetadata)
-                  }
+
+                    @staticPrint(file.userMetadata, "No community generated metadata.")
+
                   </ul>
                   <h4>System generated metadata</h4>
                   <ul>

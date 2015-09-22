@@ -88,6 +88,7 @@ object Permission extends Enumeration {
   lazy val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
   lazy val users: services.UserService = DI.injector.getInstance(classOf[services.UserService])
   lazy val comments: services.CommentService = DI.injector.getInstance(classOf[services.CommentService])
+  lazy val curations: services.CurationService = DI.injector.getInstance(classOf[services.CurationService])
 
 	def checkServerAdmin(user: Option[Identity]): Boolean = {
 		user.exists(u => u.email.nonEmpty && AppConfiguration.checkAdmin(u.email.get))
@@ -273,6 +274,13 @@ object Permission extends Enumeration {
         }
         else {
           hasPermission getOrElse comment.exists(_.author.email == user.email)
+        }
+      }
+
+      case ResourceRef(ResourceRef.curationObject, id) => {
+        curations.get(id) match {
+          case None => false
+          case Some(curation) => checkPermission(user, permission, ResourceRef(ResourceRef.space, curation.space))
         }
       }
 
