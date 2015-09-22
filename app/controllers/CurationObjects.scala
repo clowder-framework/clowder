@@ -25,7 +25,8 @@ class CurationObjects @Inject()( curations: CurationService,
      files: FileService,
      comments: CommentService,
      sections: SectionService,
-     events: EventService
+     events: EventService,
+     userService: UserService
      ) extends SecuredController {
 
   def newCO(datasetId:UUID, spaceId:String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
@@ -192,6 +193,49 @@ class CurationObjects @Inject()( curations: CurationService,
          curations.get(curationId) match {
            case Some(c) => {
              //TODO: Make some call to C3-PR?
+             var success = false
+             val hostIp = Utils.baseUrl(request)
+             val hostUrl = hostIp + "/api/curations/" + curationId + "/ore#aggregation"
+//             val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => pref._1-> Json.toJson(pref._2.toString().split(",").toList))).getOrElse(Map.empty)
+//             val userPreferences = userPrefMap + ("Repository" -> Json.toJson(c.repository))
+
+             val valuetoSend = Json.toJson(
+               Map(
+                 "Aggregation" -> Json.toJson(
+                  Map(
+                    "Creator" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile.map(prof => prof.orcidID.map(oid=> oid)))),
+                    "similarTo" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id)
+                  )
+                 ),
+                 "Preferences" -> Json.toJson(
+                   Map(
+                     "key1" -> Json.toJson("val1"),
+                     "key2" -> Json.toJson("val2")
+                   ))
+                 ,
+                 "Aggregation" -> Json.toJson (
+                   Map(
+                     "Identifier" -> Json.toJson(hostIp +"/api/curations/" + curationId),
+                     "@id" -> Json.toJson(hostUrl),
+                     "Title" -> Json.toJson(c.name)
+                   )
+                 )
+               )
+
+             )
+
+             var endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
+             val httpPost = new HttpPost(endpoint)
+             httpPost.setHeader("Content-Type", "application/json")
+             httpPost.setEntity(new StringEntity(Json.stringify(valuetoSend)))
+             var client = new DefaultHttpClient
+             val response = client.execute(httpPost)
+             val responseStatus = response.getStatusLine().getStatusCode()
+             if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304) {
+               curations.setSubmitted(c.id, true)
+               success = true
+             }
+
              //  Ok(views.html.spaces.matchmakerReport())
              val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
                "Dissemination Control" -> List("Restricted Use", "Ability to Embargo"),"License" -> List("Creative Commons", "GPL") ,
