@@ -17,6 +17,7 @@ import play.api.Play._
 import org.apache.http.client.methods.HttpPost
 import scala.concurrent.Future
 import play.api.mvc.Results
+import java.net.URL
 
 /**
  * Methods for interacting with the curation objects in the staging area.
@@ -306,9 +307,13 @@ class CurationObjects @Inject()( curations: CurationService,
       }
 
       (request.body \ "DOI").asOpt[String].map { doi =>
-        curations.updateDOI(id,  doi)
+        val DOI_PREFIX = "http://dx.doi.org/";
+        var doiwithPerfix = doi
+        if(doi.startsWith("doi:") || doi.startsWith("10.")){
+          doiwithPerfix = DOI_PREFIX + doi.replaceAll("^doi:", "")
+        }
+        curations.updateDOI(id,  new URL(doiwithPerfix))
       }
-
 
       Ok(toJson(
         Map("status" -> "OK")

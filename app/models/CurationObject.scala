@@ -1,5 +1,6 @@
 package models
 
+import java.net.URL
 import java.util.Date
 import securesocial.core.Identity
 
@@ -21,6 +22,6 @@ case class CurationObject (
   files: List[File] =  List.empty,
   repository: Option[String],
   status: String,
-  doi: Option[String] = None
+  doi: Option[URL] = None
 )
 
