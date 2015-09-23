@@ -1,6 +1,4 @@
-/**
- * Created by lmarini on 2/5/15.
- */
+
 resource_type_enum = {
     DATASET : 0,
     COLLECTION : 1
@@ -95,17 +93,17 @@ function updateSpaceEditLink(space_id, space_name) {
 
 
 function updateUsersInSpace(spaceId) {
-	//Generate the string for each level
+    //Generate the string for each level
     var currRole = null;
-	var roleUserMap = {};
-	for (var i = 0; i < roleArray.length; i++) {
+    var roleUserMap = {};
+    for (var i = 0; i < roleArray.length; i++) {
         currRole = roleArray[i].replace(/ /g, '');
-		console.log("roleList[i] is " + roleArray[i] + " and " + currRole);
+        console.log("roleList[i] is " + roleArray[i] + " and " + currRole);
 
         var idsCurrent = $('#' + currRole + '-current li a').map(function(){ return this.id }).get().join(',');
         console.log('idsCurrent are ' + idsCurrent);
-		var idsSelected = $("#" + currRole + " option:selected").map(function(){ return this.value }).get().join(",");
-		console.log("idsSelected are " + idsSelected);
+        var idsSelected = $("#" + currRole + " option:selected").map(function(){ return this.value }).get().join(",");
+        console.log("idsSelected are " + idsSelected);
 
         if (idsCurrent) {
             if (idsSelected) {
@@ -116,16 +114,16 @@ function updateUsersInSpace(spaceId) {
         } else {
             roleUserMap[roleArray[i]] = idsSelected;
         }
-	}
-	
-	var jsonData = JSON.stringify({"rolesandusers":roleUserMap});
-	var request = jsRoutes.api.Spaces.updateUsers(spaceId).ajax({
+    }
+
+    var jsonData = JSON.stringify({"rolesandusers":roleUserMap});
+    var request = jsRoutes.api.Spaces.updateUsers(spaceId).ajax({
         data: jsonData,
         type: 'POST',
         contentType: "application/json",
     });
-	                        	                        
-    request.done(function (response, textStatus, jqXHR){	    
+
+    request.done(function (response, textStatus, jqXHR){
         console.log("Successful response from updateUsers.")
         window.location.reload();
     });
@@ -133,10 +131,10 @@ function updateUsersInSpace(spaceId) {
 
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occurred: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to update the users contained within a space.";                                
+        var errMsg = "You must be logged in to update the users contained within a space.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-        	console.error("Unhandled error.");
-        }  
+            console.error("Unhandled error.");
+        }
     });
 
     return false;
