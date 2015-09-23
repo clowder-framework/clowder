@@ -462,9 +462,11 @@ class MongoDBSpaceService @Inject() (
   def getInvitationBySpace(space: UUID): List[SpaceInvite] = {
     SpaceInviteDAO.find(MongoDBObject("space" -> new ObjectId(space.stringify))).toList
   }
-  
-  
-  
+
+  def getInvitationByEmail(email: String): List[SpaceInvite] = {
+    SpaceInviteDAO.find(MongoDBObject("email" -> email)).toList
+  }
+
   /**
    * Deletes entry with this space id.
    */
