@@ -256,6 +256,8 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
           case _ => "Undefined Role"
         }
           ))
+
+        //correct space.userCount according to usersInSpace.length
         spaces.updateUserCount(s.id,usersInSpace.length)
 
         Ok(views.html.spaces.users(spaceInviteForm, Utils.decodeSpaceElements(s), creator, userRoleMap, externalUsers.toList, roleList.sorted, inviteBySpace))
@@ -265,19 +267,6 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
   }
 
 
-//TODO: delete this function if not usied anymore
-//  def invite(id:UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
-//    implicit val user = request.user
-//    spaces.get(id) match {
-//      case Some(s) => {
-//        val roleList: List[String] = users.listRoles().map(role => role.name)
-//        val inviteBySpace = spaces.getInvitationBySpace(s.id)
-//        Ok(views.html.spaces.invite(spaceInviteForm, Utils.decodeSpaceElements(s), roleList.sorted, inviteBySpace))
-//      }
-//      case None => InternalServerError("Space not found")
-//    }
-//  }
-
   def inviteToSpace(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) {
     implicit request =>
       implicit val user = request.user
@@ -286,7 +275,6 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
           val roleList: List[String] = users.listRoles().map( role=> role.name)
           spaceInviteForm.bindFromRequest.fold(
           errors => InternalServerError(errors.toString()),
-            //BadRequest(views.html.spaces.invite(errors, s, roleList.sorted, inviteBySpace)),
           formData => {
             users.findRoleByName(formData.role) match {
               case Some(role) => {
