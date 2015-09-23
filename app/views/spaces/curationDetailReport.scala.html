@@ -1,5 +1,14 @@
-@(space: models.ProjectSpace, curationObject: models.CurationObject, properties: Map[String, List[String]])(implicit user: Option[models.User] )
+@(curationObject: models.CurationObject, properties: Map[String, List[String]], repository: String)(implicit user: Option[models.User] )
 @main("Submit to Repository") {
+    <div class = "row">
+        <ol class="breadcrumb">
+            <li> <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a></li>
+            <li> <a  href ="@routes.CurationObjects.getCurationObject(curationObject.id)"> Edit Metadata</a></li>
+            <li> <a  href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)">Find Repositories </a></li>
+            <li class="active"> Submit to Repository</li>
+        </ol>
+
+    </div>
     <div class="row">
         <div class="col-md-12">
             <h1>Submit @curationObject.name to repository</h1>
@@ -7,10 +16,10 @@
     </div>
     <div class="row">
         <div class="col-md-3">
-            @spaces.curation_summary(space, curationObject, "Submit to Repository", false)
+            @spaces.curation_summary(curationObject, "Submit to Repository", false)
         </div>
         <div class="col-md-9">
-           <h3> IDEALS</h3>
+           <h3> @repository</h3>
             <b>Matchmaker Summary</b> <br/>
             Dataset Properties: <br/>
             <span class="green">All requirements are satisfied.</span><br/>
@@ -36,10 +45,8 @@
     </div>
 
     <div class="row border-top bottom-padding">
-
-        @*<a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> <span class="glyphicon glyphicon-arrow-left"></span>Go Back to Space </a>*@
-        <a class="btn btn-default" href="@routes.CurationObjects.findMatchingRepositories(space.id, curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Find Repository</a>
-        <a class = "btn btn-default btn-primary pull-right" href ="@routes.CurationObjects.sendToRepository(space.id, curationObject.id)"> Submit dataset @curationObject.name to Ideals <span class="glyphicon glyphicon-chevron-right"></span></a>
+        <a class="btn btn-default" href="@routes.CurationObjects.findMatchingRepositories( curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Find Repository</a>
+        <a class = "btn btn-default btn-primary pull-right" href ="@routes.CurationObjects.sendToRepository(curationObject.id)"> Submit dataset @curationObject.name to @repository <span class="glyphicon glyphicon-chevron-right"></span></a>
     </div>
 
 

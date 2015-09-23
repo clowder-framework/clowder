@@ -15,9 +15,19 @@ trait CurationService {
   def get(id: UUID): Option[CurationObject]
 
   /**
-   * Update submitted indicator.
+   * Update submition indicator.
    */
-  def setSubmitted(id: UUID, submitted: Boolean)
+  def updateStatus(id: UUID, status: String)
+
+  /**
+   * Set the curation object as submited and set the submitted date to current date
+   */
+  def setSubmitted(id: UUID)
+
+  /**
+   * Set the curation object as Published and set the publish date to current date.
+   */
+  def setPublished(id:UUID)
 
   /**
    * remove curation object, also delete it from staging area.
@@ -28,4 +38,14 @@ trait CurationService {
    * add metadata to curation object, no influence to live object
    */
   def addDatasetUserMetaData(id: UUID, json: String)
+
+  /**
+   * add metadata to curation object, no influence to live object
+   */
+  def addFileUserMetaData(curationId: UUID, file: Int, json: String)
+
+  /**
+   * update the repository selected
+   */
+  def updateRepository(curationId: UUID, repository: String)
 }

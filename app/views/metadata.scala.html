@@ -125,45 +125,23 @@
 		</div>
 	}
 
-@if(curationId.isDefined){
+
 	<script language="javascript">
 
    var topId = "generalUserMetadata_@(dataset.id.stringify)";
-   window["uploadIp"+topId] = "@routes.CurationObjects.addUserMetadata(curationId.get)";
-
+   @if(curationId.isDefined){
+  		window["uploadIp"+topId] = "@routes.CurationObjects.addDatasetUserMetadata(curationId.get)";
+   } else {
+		window["uploadIp"+topId] = "@api.routes.Datasets.addUserMetadata(dataset.id)";
+		window["rdfIp"+topId] = "@api.routes.Datasets.getRDFUserMetadata(dataset.id)";
+   }
    window["modelIp"+topId] = "@(routes.Assets.at("datasetsUserMetadataModel"))";
    </script>
-	<script src="@routes.Assets.at("javascripts/userMetadata.js")" type="text/javascript"></script>
-	@if(!user.isDefined) {
+   <script src="@routes.Assets.at("javascripts/userMetadata.js")" type="text/javascript"></script>
+   @if(!user.isDefined) {
 		<script language="javascript">
    $("#generalUserMetadata_@(dataset.id.stringify) button").css("display","none");
    $("#generalUserMetadata_@(dataset.id.stringify) .rdfbtn").css("display","inline");
-  </script>
-	}
-} else {
-
-<script language="javascript">
-	var topId = "generalUserMetadata_@(dataset.id.stringify)";
-	window["uploadIp"+topId] = "@api.routes.Datasets.addUserMetadata(dataset.id)";
-	window["rdfIp"+topId] = "@api.routes.Datasets.getRDFUserMetadata(dataset.id)";
-	window["modelIp"+topId] = "@(routes.Assets.at("datasetsUserMetadataModel"))";
-</script>
-<script src="@routes.Assets.at("javascripts/userMetadata.js")" type="text/javascript"></script>
-@if(!user.isDefined) {
-   <script language="javascript">
-		$("#generalUserMetadata_@(dataset.id.stringify) button").css("display","none");
-		$("#generalUserMetadata_@(dataset.id.stringify) .rdfbtn").css("display","inline");
    </script>
-}
-}
+	}
 
-
-
-@*@if(user.isDefined) {*@
-	@*@if(!user.get.identityId.userId.equals(dataset.author.identityId.userId)){*@
-			@*<script language="javascript">*@
-				@*$("#generalUserMetadata_@(dataset.id.stringify) button").css("display","none");*@
-				@*$("#generalUserMetadata_@(dataset.id.stringify) .rdfbtn").css("display","inline");*@
-		   @*</script>*@
-	@*}*@
-@*}*@
