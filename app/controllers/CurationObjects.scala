@@ -289,11 +289,11 @@ class CurationObjects @Inject()( curations: CurationService,
                 ))
               }
 
-              val mmResp = jsonResponse.as[List[MatchMakerResponse]].filter(_.orgidentifier != "null")
+              val mmResp = jsonResponse.as[List[MatchMakerResponse]].filter(_.orgidentifier != None)
               user match {
                 case Some(usr) => {
                   val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
-                  Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences, jsonResponse.as[List[MatchMakerResponse]]))
+                  Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences, mmResp))
                 }
                 case None =>Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
               }
