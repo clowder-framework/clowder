@@ -245,7 +245,6 @@ class CurationObjects @Inject()( curations: CurationService,
                     )
               )
               implicit val context = scala.concurrent.ExecutionContext.Implicits.global
-              var mmResponse = ""
               val endpoint = play.Play.application().configuration().getString("matchmaker.uri").replaceAll("/$","")
               val futureResponse = WS.url(endpoint).post(valuetoSend)
               val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
@@ -257,7 +256,6 @@ class CurationObjects @Inject()( curations: CurationService,
               case response =>
                 if(response.status >= 200 && response.status < 300 || response.status == 304) {
                     success = true
-                    mmResponse = response.body
                     jsonResponse = response.json
                   }
               }

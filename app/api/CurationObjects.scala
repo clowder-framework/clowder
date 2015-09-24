@@ -4,7 +4,8 @@ import javax.inject.{Inject, Singleton}
 
 
 import controllers.Utils
-import models.{ResourceRef, UUID}
+import models.{MatchMakerResponse, mmRule, ResourceRef, UUID}
+import play.api.libs.ws.WS
 import services._
 import play.api.libs.json._
 import play.api.libs.json.Json
@@ -12,7 +13,10 @@ import play.api.libs.json.Json._
 import play.api.libs.json.JsResult
 import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
 import play.api.Logger
-  
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+
 /**
  * Manipulates curation objects.
  */
@@ -204,7 +208,79 @@ class CurationObjects @Inject()(datasets: DatasetService,
           case aMap: JsSuccess[Map[String, String]] => {
             val userPreferences: Map[String, String] = aMap.get
             userService.updateRepositoryPreferences(user.get.id, userPreferences)
-            Ok(toJson("success"))
+            val hostIp = Utils.baseUrl(request)
+            val hostUrl = hostIp + "/api/curations/" + curationId + "/ore#aggregation"
+            val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => pref._1-> Json.toJson(pref._2.toString().split(",").toList))).getOrElse(Map.empty)
+            val userPref = userPrefMap + ("Repository" -> Json.toJson(c.repository))
+            val maxDataset = if (!c.files.isEmpty)  c.files.map(_.length).max else 0
+            val totalSize = if (!c.files.isEmpty) c.files.map(_.length).sum else 0
+            val valuetoSend = Json.obj(
+              "Aggregation" ->
+                Map(
+                  "Identifier" -> Json.toJson(hostIp +"/api/curations/" + curationId),
+                  "@id" -> Json.toJson(hostUrl),
+                  "Title" -> Json.toJson(c.name),
+                  "Creator" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile.map(prof => prof.orcidID.map(oid=> oid)))),
+                  "similarTo" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id)
+
+                ),
+              "Preferences" -> userPref ,
+              "Aggregation Statistics" ->
+                Map(
+                  "Max Collection Depth" -> Json.toJson("1"),
+                  "Data Mimetypes" -> Json.toJson(c.files.map(_.contentType).toSet),
+                  "Max Dataset Size" -> Json.toJson(maxDataset.toString),
+                  "Total Size" -> Json.toJson(totalSize.toString)
+                )
+            )
+            implicit val context = scala.concurrent.ExecutionContext.Implicits.global
+            val endpoint = play.Play.application().configuration().getString("matchmaker.uri").replaceAll("/$","")
+            val futureResponse = WS.url(endpoint).post(valuetoSend)
+            val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
+              "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
+              "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
+
+            var jsonResponse: play.api.libs.json.JsValue = new JsArray()
+            val result = futureResponse.map {
+              case response =>
+                if(response.status >= 200 && response.status < 300 || response.status == 304) {
+
+                  jsonResponse = response.json
+                }
+            }
+
+            val rs = Await.result(result, Duration.Inf)
+            implicit object mmRuleFormat extends Format[mmRule] {
+              def reads(json: JsValue): JsResult[mmRule] = JsSuccess(new mmRule(
+                (json \ "Rule Name").as[String],
+                (json \ "Score").as[Int],
+                (json \ "Message").as[String]
+              ))
+
+              def writes(mm: mmRule): JsValue = JsObject(Seq(
+                "Rule Name" -> JsString(mm.rule_name),
+                "Score" -> JsNumber(mm.Score),
+                "Message" -> JsString(mm.Message)
+              ))
+            }
+            implicit object MatchMakerResponseFormat extends Format[MatchMakerResponse]{
+              def reads(json: JsValue): JsResult[MatchMakerResponse] = JsSuccess(new MatchMakerResponse(
+                //TODO: Change to .as[String] currently failing due to a null value in one of the instances (I think).
+                (json \ "orgidentifier").as[Option[String]],
+                (json \  "Per Rule Scores").as[List[mmRule]],
+                (json \ "Total Score").as[Int]
+              ))
+
+              def writes(mm: MatchMakerResponse): JsValue = JsObject(Seq(
+                "orgidentifier" -> JsString(mm.orgidentifier.getOrElse("")),
+                "Per Rule Scores" -> JsArray(mm.per_rule_score.map(toJson(_))),
+                "Total Score" -> JsNumber(mm.total_score)
+              ))
+            }
+
+            val mmResp = jsonResponse.as[List[MatchMakerResponse]].filter(_.orgidentifier != "null")
+
+            Ok(toJson(mmResp))
           }
           case e: JsError => {
             Logger.error("Errors: " + JsError.toFlatJson(e).toString())

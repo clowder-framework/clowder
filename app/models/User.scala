@@ -67,7 +67,9 @@ trait User extends Identity {
 
 object User {
   def anonymous = new ClowderUser(UUID("000000000000000000000000"),
-    new IdentityId("anonymous", ""),
+    new IdentityId("anonymous", "")
+
+    ,
     "Anonymous", "User", "Anonymous User",
     None,
     AuthenticationMethod.UserPassword)
