@@ -12,17 +12,23 @@ import org.apache.http.util.EntityUtils
 import org.json.JSONArray
 import play.api.Logger
 import play.api.data.{Forms, Form}
-import play.api.libs.json.Json
+import play.api.libs.json._
 import play.api.libs.json.Json._
-import play.api.libs.json.JsArray
 import services._
-import util.RequiredFieldsConfig
+import _root_.util.RequiredFieldsConfig
 import play.api.Play._
 import org.apache.http.client.methods.HttpPost
 import scala.concurrent.Future
+import scala.concurrent.Await
 import play.api.mvc.Results
+import play.api.libs.ws._
+import play.api.libs.ws.WS._
 
-import scala.util.parsing.json.JSONObject
+import scala.concurrent.duration._
+import play.api.libs.json.Reads._
+import play.api.libs.json.JsPath.readNullable
+
+
 
 /**
  * Methods for interacting with the curation objects in the staging area.
@@ -219,62 +225,81 @@ class CurationObjects @Inject()( curations: CurationService,
               val userPreferences = userPrefMap + ("Repository" -> Json.toJson(c.repository))
               val maxDataset = if (!c.files.isEmpty)  c.files.map(_.length).max else 0
               val totalSize = if (!c.files.isEmpty) c.files.map(_.length).sum else 0
-              val valuetoSend = Json.toJson(
-                Map(
-                  "Aggregation" -> Json.toJson(
+              val valuetoSend = Json.obj(
+                  "Aggregation" ->
                     Map(
                       "Identifier" -> Json.toJson(hostIp +"/api/curations/" + curationId),
                       "@id" -> Json.toJson(hostUrl),
                       "Title" -> Json.toJson(c.name),
                       "Creator" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile.map(prof => prof.orcidID.map(oid=> oid)))),
                       "similarTo" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id)
-                    )
+
                   ),
-                  "Preferences" -> Json.toJson(
-                    userPreferences)
-                  ,
-                  "Aggregation Statistics" -> Json.toJson (
+                  "Preferences" -> userPreferences ,
+                  "Aggregation Statistics" ->
                     Map(
                       "Max Collection Depth" -> Json.toJson("1"),
                       "Data Mimetypes" -> Json.toJson(c.files.map(_.contentType).toSet),
                       "Max Dataset Size" -> Json.toJson(maxDataset.toString),
                       "Total Size" -> Json.toJson(totalSize.toString)
-
                     )
-                  )
-                )
               )
-
-              var endpoint =play.Play.application().configuration().getString("matchmaker.uri").replaceAll("/$","")
-              val httpPost = new HttpPost(endpoint)
-              httpPost.setHeader("Content-Type", "application/json")
-              httpPost.setEntity(new StringEntity(Json.stringify(valuetoSend)))
-              var client = new DefaultHttpClient
-              val response = client.execute(httpPost)
-              val responseStatus = response.getStatusLine().getStatusCode()
-              var mmResponse = new JSONArray()
-              if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304) {
-
-                success = true
-                val stringEntity = EntityUtils.toString(response.getEntity())
-                mmResponse = new JSONArray(stringEntity)
-
-              }
-              var y = for( idx <- 0 to (mmResponse.length()-1)) yield idx
-              var mmParsedResponseA = for( idx <- 0 to (mmResponse.length()-1)) yield  mmResponse.get(idx)
-              var mmParsedResponseB = mmParsedResponseA.toList
-            //  var mmParsedResponse = mmParsedResponseB.asInstanceOf[List[org.json.JSONObject]].map(item => JSONObject(item).obj)
+              implicit val context = scala.concurrent.ExecutionContext.Implicits.global
+              var mmResponse = ""
+              val endpoint = play.Play.application().configuration().getString("matchmaker.uri").replaceAll("/$","")
+              val futureResponse = WS.url(endpoint).post(valuetoSend)
               val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
                 "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
-              "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
-              //val mmParsedResponse = mmResponse// Json.fromJson(Json.toJson(mmResponse))
+                "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
+
+              var jsonResponse: play.api.libs.json.JsValue = new JsArray()
+              val result = futureResponse.map {
+              case response =>
+                if(response.status >= 200 && response.status < 300 || response.status == 304) {
+                    success = true
+                    mmResponse = response.body
+                    jsonResponse = response.json
+                  }
+              }
+
+              val rs = Await.result(result, Duration.Inf)
+              implicit object mmRuleFormat extends Format[mmRule] {
+                def reads(json: JsValue): JsResult[mmRule] = JsSuccess(new mmRule(
+                  (json \ "Rule Name").as[String],
+                  (json \ "Score").as[Int],
+                  (json \ "Message").as[String]
+                ))
+
+                def writes(mm: mmRule): JsValue = JsObject(Seq(
+                  "Rule Name" -> JsString(mm.rule_name),
+                  "Score" -> JsNumber(mm.Score),
+                  "Message" -> JsString(mm.Message)
+                ))
+              }
+              implicit object MatchMakerResponseFormat extends Format[MatchMakerResponse]{
+                def reads(json: JsValue): JsResult[MatchMakerResponse] = JsSuccess(new MatchMakerResponse(
+                  //TODO: Change to .as[String] currently failing due to a null value in one of the instances (I think).
+                  (json \ "orgidentifier").as[Option[String]],
+                  (json \  "Per Rule Scores").as[List[mmRule]],
+                  (json \ "Total Score").as[Int]
+                ))
+
+                def writes(mm: MatchMakerResponse): JsValue = JsObject(Seq(
+                  "orgidentifier" -> JsString(mm.orgidentifier.getOrElse("")),
+                  "Per Rule Scores" -> JsArray(mm.per_rule_score.map(toJson(_))),
+                  "Total Score" -> JsNumber(mm.total_score)
+                ))
+              }
+
+              val mmResp = jsonResponse.as[List[MatchMakerResponse]].filter(_.orgidentifier != "null")
               user match {
                 case Some(usr) => {
                   val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
-                  Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences, mmParsedResponse))
+                  Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences, jsonResponse.as[List[MatchMakerResponse]]))
                 }
                 case None =>Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
               }
+
 
             }
             case None => InternalServerError("Curation Object not found")
@@ -283,13 +308,14 @@ class CurationObjects @Inject()( curations: CurationService,
 
   }
 
+
   def compareToRepository(curationId: UUID, repository: String) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       implicit val user = request.user
 
           curations.get(curationId) match {
             case Some(c) => {
-              curations.updateRepository(c.id, repository);
+              curations.updateRepository(c.id, repository)
               //TODO: Make some call to C3-PR?
               //  Ok(views.html.spaces.matchmakerReport())
               val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
@@ -302,6 +328,7 @@ class CurationObjects @Inject()( curations: CurationService,
 
         }
       }
+
 
 
   def sendToRepository(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {

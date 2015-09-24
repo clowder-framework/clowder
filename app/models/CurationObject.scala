@@ -1,6 +1,7 @@
 package models
 
 import java.util.Date
+import play.api.libs.json._
 import securesocial.core.Identity
 
 /**
@@ -22,3 +23,13 @@ case class CurationObject (
   repository: Option[String],
   status: String
 )
+
+case class MatchMakerResponse(
+   orgidentifier: Option[String],
+   per_rule_score: List[mmRule],
+   total_score: Int)
+
+case class mmRule(
+   rule_name: String,
+   Score: Int,
+   Message: String)
