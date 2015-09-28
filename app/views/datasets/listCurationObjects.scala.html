@@ -4,11 +4,12 @@
         <div class="col-md-12">
             <h4>Related Curation Objects</h4>
             @for(curObject <- curationObjects) {
+
                 <a href="@routes.CurationObjects.getCurationObject(curObject.id)">
                 @curObject.name
                 </a> <br/>
-            }
 
+            }
         </div>
     </div>
 }
