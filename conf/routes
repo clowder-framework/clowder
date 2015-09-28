@@ -532,6 +532,7 @@ GET            /dataset/:id/curations/new                                       
 POST           /dataset/:datasetId/curations/spaces/:spaceId/submit                     @controllers.CurationObjects.submit(datasetId:UUID, spaceId:UUID)
 GET            /spaces/:id/stagingArea                                                  @controllers.Spaces.stagingArea(id: UUID)
 GET            /spaces/curations/:id                                                    @controllers.CurationObjects.getCurationObject(id: UUID)
+DELETE         /spaces/curations/retract/:id                                            @api.CurationObjects.retractCurationObject(id: UUID)
 DELETE         /spaces/curations/:id                                                    @controllers.CurationObjects.deleteCuration(id: UUID)
 GET            /spaces/curations/:id/compareToRepository                                @controllers.CurationObjects.compareToRepository(id: UUID, repository:String)
 GET            /spaces/curations/:id/sendToRepository                                   @controllers.CurationObjects.sendToRepository(id: UUID)
