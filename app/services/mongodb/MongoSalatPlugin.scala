@@ -51,6 +51,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     
     collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
     collection("uploads.files").ensureIndex(MongoDBObject("tags" -> 1))
+    collection("uploads.files").ensureIndex(MongoDBObject("author.email" -> 1))
+
     collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
     
     collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
