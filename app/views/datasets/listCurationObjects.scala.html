@@ -1,0 +1,14 @@
+@(curationObjects: List[models.CurationObject])(implicit user: Option[models.User])
+@if(curationObjects.size > 0) {
+    <div class="row border-top bottom-padding">
+        <div class="col-md-12">
+            <h4>Related Curation Objects</h4>
+            @for(curObject <- curationObjects) {
+                <a href="@routes.CurationObjects.getCurationObject(curObject.id)">
+                @curObject.name
+                </a> <br/>
+            }
+
+        </div>
+    </div>
+}
