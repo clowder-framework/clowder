@@ -731,9 +731,9 @@
               <ul id="tagList">
 				  <!-- Do the tags need to have [File] and [Section] appeneded to them? -->
                   @file.tags.map { tag =>
-                    <li><a href="@routes.Tags.search(tag.name)" id="@tag.name" data-id="@tag.id" class="tag">@Html(tag.name) [File]</a>
+                    <li class="tag"><a href="@routes.Tags.search(tag.name)" id="@tag.name" data-id="@tag.id">@Html(tag.name) [File]</a>
                         <a href='javascript:void(0);'>
-                            <i style='display:none;' id='@tag.name' data-id='@tag.id' class='glyphicon glyphicon-remove'></i></a></li>
+                            <span style="display:none;" id='@tag.name' data-id='@tag.id' class='glyphicon glyphicon-remove'></span></a></li>
                   }
                   @file.sections.map { section =>
                     @section.tags.map { tag =>
@@ -793,13 +793,13 @@
                   
                   return false;
                 }
-              
+
                 function removeIconMouseIn() {
                   $(this).find(".glyphicon-remove").fadeIn(100);
                 }
 
                 function removeIconMouseOut() {
-                  $(this).find(".glyphicon-remove").fadeOut(100);           
+                  $(this).find(".glyphicon-remove").fadeOut(100);
                 }
 
                 $(function() {
@@ -834,7 +834,7 @@
                       request.done(function (response, textStatus, jqXHR){
                         console.log("Response " + response);
                         var url = jsRoutes.controllers.Tags.search(tag).url;
-                        $newTag = $("<li><a href='" + url + "'id='" + htmlEncode(tag) +"' data-id='newId" + tmpId + "' class='tag'>" + tag + " [File]</a><a href='javascript:void(0);'><i style='display:none;'id='" + htmlEncode(tag) +"' data-id='newId" + tmpId + "' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
+                        $newTag = $("<li class='tag'><a href='" + url + "'id='" + htmlEncode(tag) +"' data-id='newId" + tmpId + "'>" + tag + " [File]</a><a href='javascript:void(0);'><i style='display:none;'id='" + htmlEncode(tag) +"' data-id='newId" + tmpId + "' class='glyphicon glyphicon-remove'></i></a></li>").appendTo('#tagList');
                         $newTag.hover(removeIconMouseIn,removeIconMouseOut);
                         $newTag.find(".glyphicon-remove").click(removeTag);
                         $('#tagField').val("");
