@@ -263,10 +263,11 @@ class CurationObjects @Inject()( curations: CurationService,
           val hostUrl = hostIp + "/api/curations/" + curationId + "/ore#aggregation"
           val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => pref._1-> Json.toJson(pref._2.toString().split(",").toList))).getOrElse(Map.empty)
           val userPreferences = userPrefMap + ("Repository" -> Json.toJson(repository))
-
+          val maxDataset = if (!c.files.isEmpty)  c.files.map(_.length).max else 0
+          val totalSize = if (!c.files.isEmpty) c.files.map(_.length).sum else 0
           val valuetoSend = Json.toJson(
             Map(
-                "Repository" -> Json.toJson("Ideals"),
+                "Repository" -> Json.toJson(repository.toLowerCase()),
                 "Preferences" -> Json.toJson(
                   userPreferences
                 ),
@@ -276,7 +277,15 @@ class CurationObjects @Inject()( curations: CurationService,
                     "@id" -> Json.toJson(hostUrl),
                     "Title" -> Json.toJson(c.name)
                   )
-                )
+                ),
+                "Aggregation Statistics" -> Json.toJson(
+                  Map(
+                    "Max Collection Depth" -> Json.toJson("1"),
+                    "Data Mimetypes" -> Json.toJson(c.files.map(_.contentType).toSet),
+                    "Max Dataset Size" -> Json.toJson(maxDataset.toString),
+                    "Total Size" -> Json.toJson(totalSize.toString)
+                  )),
+                "Publication Callback" -> Json.toJson(hostIp + "/spaces/curations/" + c.id + "/savePublishedObject")
               )
             )
 
