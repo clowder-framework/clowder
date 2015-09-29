@@ -416,6 +416,10 @@ class MongoDBSpaceService @Inject() (
       users.changeUserRoleInSpace(userId, role, space)
   }
 
+  def updateUserCount(space: UUID, numberOfUser:Int):Unit ={
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $set("userCount" ->numberOfUser), false, false, WriteConcern.Safe)
+  }
+
   def addFollower(id: UUID, userId: UUID) {
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
       $addToSet("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
@@ -445,14 +449,18 @@ class MongoDBSpaceService @Inject() (
     SpaceInviteDAO.insert(invite)
   }
 
-  def  removeInvitationToSpace(inviteId: UUID, spaceId: UUID) {
+  def removeInvitationFromSpace(inviteId: UUID, spaceId: UUID) {
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
       $pull("invitations" -> MongoDBObject( "_id" -> new ObjectId(inviteId.stringify))), false, false, WriteConcern.Safe)
     SpaceInviteDAO.removeById(new ObjectId(inviteId.stringify))
   }
 
-  def getInvitationToSpace(inviteId: String): Option[SpaceInvite] = {
+  def getInvitation(inviteId: String): Option[SpaceInvite] = {
     SpaceInviteDAO.findOne(MongoDBObject("invite_id" -> inviteId))
+  }
+
+  def getInvitationBySpace(space: UUID): List[SpaceInvite] = {
+    SpaceInviteDAO.find(MongoDBObject("space" -> new ObjectId(space.stringify))).toList
   }
   
   

@@ -154,6 +154,16 @@ trait SpaceService {
    */
   def changeUserRole(userId: UUID, role: Role, space: UUID)
 
+
+  /**
+   * Update space.userCount if it is not correct.
+   *
+   * @param space The identifier of the space to be updated
+   * @param numberOfUser The number of user in space
+   *
+   */
+  def updateUserCount(space: UUID, numberOfUser:Int)
+
   /**
    * Retrieve the users that are associated with a specific space.
    *
@@ -193,12 +203,17 @@ trait SpaceService {
   /**
    * Remove Invitation to a space
    */
-  def removeInvitationToSpace(inviteId: UUID, spaceId: UUID)
+  def removeInvitationFromSpace(inviteId: UUID, spaceId: UUID)
 
   /**
    * Find an invitation by ID
    */
-  def getInvitationToSpace(inviteId: String): Option[SpaceInvite]
+  def getInvitation(inviteId: String): Option[SpaceInvite]
+
+  /**
+   * Find invitations of a space. Get data from SpaceInviteDao.
+   */
+  def getInvitationBySpace(space: UUID): List[SpaceInvite]
 
   /**
    * Add authorization request to a space.

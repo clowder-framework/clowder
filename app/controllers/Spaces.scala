@@ -6,6 +6,7 @@ import javax.inject.Inject
 
 import api.Permission
 import models._
+import play.api.data.validation._
 import play.api.{Play, Logger}
 import play.api.data.Forms._
 import play.api.data.{Form, Forms}
@@ -38,7 +39,7 @@ case class spaceFormData(
 case class spaceInviteData(
   addresses: List[String],
   role: String,
-  message: String)
+  message: Option[String])
 
 class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users: UserService, events: EventService) extends SecuredController {
 
@@ -66,14 +67,16 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
         )
   )
 
+
   /**
-   * Invite to space form bindings.
+   * Invite to space form bindings. we are not using play.api.data.Forms.list(email) for addresses since the constraints
+   * of front-end and back-end are different.
    */
   val spaceInviteForm = Form(
     mapping(
       "addresses" -> play.api.data.Forms.list(nonEmptyText),
       "role" -> nonEmptyText,
-      "message" -> nonEmptyText
+      "message" -> optional(text)
       )
       (( addresses, role, message ) => spaceInviteData(addresses = addresses, role = role, message = message))
       ((d:spaceInviteData) => Some(d.addresses, d.role, d.message))
@@ -155,12 +158,6 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
 	            case None => Logger.debug("-------- No creator for space found...")
 	        }
 
-
-	        var externalUsers = users.list.to[ArrayBuffer]
-
-	        //inSpaceBuffer += externalUsers(0)
-	        externalUsers --= inSpaceBuffer
-
 	        var userRoleMap: Map[User, String] = Map.empty
 	        for (aUser <- inSpaceBuffer) {
 	            var role = "What"
@@ -185,11 +182,8 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
 	            userRoleMap += (aUser -> role)
 	        }
 	        //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace
-          var roleList: List[String] = List.empty
-          users.listRoles().map{
-            role => roleList = role.name :: roleList
-          }
-	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, creator, userRoleMap, externalUsers.toList, roleList.sorted))
+
+	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, userRoleMap))
       }
       case None => InternalServerError("Space not found")
     }
@@ -209,15 +203,69 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
       }
   }
 
-  def invite(id:UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+  def manageUsers(id: UUID) = PermissionAction(Permission.EditUser, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
-        val roleList: List[String] = users.listRoles().map(role => role.name)
-        Ok(views.html.spaces.invite(spaceInviteForm, Utils.decodeSpaceElements(s), roleList.sorted))}
+        val creator = users.findById(s.creator)
+        var creatorActual: User = null
+        val usersInSpace = spaces.getUsersInSpace(id)
+        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
+        creator match {
+          case Some(theCreator) => {
+            inSpaceBuffer += theCreator
+            creatorActual = theCreator
+          }
+          case None => Logger.debug("-------- No creator for space found...")
+        }
+
+        var externalUsers = users.list.to[ArrayBuffer]
+        //inSpaceBuffer += externalUsers(0)
+        externalUsers --= inSpaceBuffer
+
+        var userRoleMap: Map[User, String] = Map.empty
+        for (aUser <- inSpaceBuffer) {
+          var role = "What"
+          spaces.getRoleForUserInSpace(id, aUser.id) match {
+            case Some(aRole) => {
+              role = aRole.name
+            }
+            case None => {
+              //This case catches spaces that have been created before users and roles were assigned to them.
+              if (aUser == creatorActual) {
+                role = "Admin"
+                users.findRoleByName(role) match {
+                  case Some(realRole) => {
+                    spaces.addUser(aUser.id, realRole, id)
+                  }
+                  case None => Logger.debug("No Admin role found for some reason.")
+                }
+              }
+            }
+          }
+          userRoleMap += (aUser -> role)
+        }
+        //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace
+        var roleList: List[String] = List.empty
+        users.listRoles().map{
+          role => roleList = role.name :: roleList
+        }
+        //get the list of invitation, and also change the role from Role.id to Role.name
+        val inviteBySpace = spaces.getInvitationBySpace(s.id) map(v => v.copy(role = users.findRole(v.role) match {
+          case Some(r) => r.name
+          case _ => "Undefined Role"
+        }
+          ))
+
+        //correct space.userCount according to usersInSpace.length
+        spaces.updateUserCount(s.id,usersInSpace.length)
+
+        Ok(views.html.spaces.users(spaceInviteForm, Utils.decodeSpaceElements(s), creator, userRoleMap, externalUsers.toList, roleList.sorted, inviteBySpace))
+      }
       case None => InternalServerError("Space not found")
     }
   }
+
 
   def inviteToSpace(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) {
     implicit request =>
@@ -226,7 +274,7 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
         case Some(s) => {
           val roleList: List[String] = users.listRoles().map( role=> role.name)
           spaceInviteForm.bindFromRequest.fold(
-          errors => BadRequest(views.html.spaces.invite(errors, s, roleList.sorted)),
+          errors => InternalServerError(errors.toString()),
           formData => {
             users.findRoleByName(formData.role) match {
               case Some(role) => {
@@ -291,7 +339,7 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
           // when permission is public, user can reach the authorization request button, so we check if the request is
           // already inserted
           if(s.requests.contains(RequestResource(user.id))) {
-            Ok(views.html.notAuthorized("Request for access is pending", null, null))
+            Ok(views.html.authorizationMessage("Your prior request is active, and pending"))
           }else{
             Logger.debug("Request submitted in controller.Space.addRequest  ")
             val subject: String = "Request for access from " + AppConfiguration.getDisplayName
@@ -311,7 +359,7 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
               }
             }
             spaces.addRequest(id, user.id, user.fullName)
-            Ok(views.html.notAuthorized("Request for access submitted", null, null))
+            Ok(views.html.authorizationMessage("Request submitted"))
           }
         }
         case None => InternalServerError("Space not found")
