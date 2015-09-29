@@ -32,7 +32,8 @@ class Datasets @Inject()(
   sparql: RdfSPARQLService,
   users: UserService,
   previewService: PreviewService,
-  spaceService: SpaceService) extends SecuredController {
+  spaceService: SpaceService,
+  curationService: CurationService) extends SecuredController {
 
 
   object ActivityFound extends Exception {}
@@ -297,9 +298,11 @@ class Datasets @Inject()(
           val stagingarea = datasetSpaces filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id)))
           val toPublish = ! stagingarea.isEmpty
 
-
+          val curObjectsPublished: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(_.status == 'Published)
+          val curObjectsPermission: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(curation => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id)))
+          val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
-          decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpaces), filesTags, otherSpaces, currentSpace, toPublish))
+          decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpaces), filesTags, otherSpaces, currentSpace, toPublish, curPubObjects))
 
         }
         case None => {

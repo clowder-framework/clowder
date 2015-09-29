@@ -30,22 +30,27 @@ trait CurationService {
   def setPublished(id:UUID)
 
   /**
-   * remove curation object, also delete it from staging area.
+   * Remove curation object, also delete it from staging area.
    */
   def remove(id: UUID): Unit
 
   /**
-   * add metadata to curation object, no influence to live object
+   * Add metadata to curation object, no influence to live object
    */
   def addDatasetUserMetaData(id: UUID, json: String)
 
   /**
-   * add metadata to curation object, no influence to live object
+   * Add metadata to curation object, no influence to live object
    */
   def addFileUserMetaData(curationId: UUID, file: Int, json: String)
 
   /**
-   * update the repository selected
+   * Update the repository selected
    */
   def updateRepository(curationId: UUID, repository: String)
+
+  /**
+   * List curation and published objects a dataset is related to.
+   */
+  def getCurationObjectByDatasetId(datasetId: UUID): List[CurationObject]
 }
