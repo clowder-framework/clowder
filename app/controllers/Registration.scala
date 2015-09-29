@@ -61,9 +61,9 @@ class Registration @Inject()(spaces: SpaceService, users: UserService) extends S
               if ( UsernamePasswordProvider.sendWelcomeEmail ) {
                 Mailer.sendWelcomeEmail(saved)
               }
-              Logger.debug("executing!!!!!!!!!!")
 
-              //Get all invitation to this user, add role according to these invitations.
+              //Code from here to the end of the case is the difference between securesocial and this method. It checks
+              // for an invitation pending to the space. If it finds invitation(s), it then adds the person to the space(s).
               spaces.getInvitationByEmail(t.email).map { invite =>
                 users.findByEmail(invite.email) match {
                   case Some(user) => {
