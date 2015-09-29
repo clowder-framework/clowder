@@ -55,4 +55,8 @@ trait CurationService {
    * save external Identifier received from repository
    */
   def updateExternalIdentifier(curationId: UUID, externalIdentifier: URI)
+  /**
+   * List curation and published objects a dataset is related to.
+   */
+  def getCurationObjectByDatasetId(datasetId: UUID): List[CurationObject]
 }
