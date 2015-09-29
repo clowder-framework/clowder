@@ -120,7 +120,9 @@ class CurationObjects @Inject()( curations: CurationService,
     }
   }
 
-
+  /**
+   * Delete curation object.
+   */
   def deleteCuration(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) {
     implicit request =>
       implicit val user = request.user
@@ -142,13 +144,19 @@ class CurationObjects @Inject()( curations: CurationService,
   def addDatasetUserMetadata(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) (parse.json) { implicit request =>
     implicit val user = request.user
     Logger.debug(s"Adding user metadata to curation's dataset $id")
-    // write metadata to the collection "curationObjects"
-    curations.addDatasetUserMetaData(id, Json.stringify(request.body))
 
-    //add event
+
+
     curations.get(id) match {
       case Some(c) => {
+        if (c.status == "In Curation") {
+          // write metadata to the collection "curationObjects"
+          curations.addDatasetUserMetaData(id, Json.stringify(request.body))
+          //add event
         events.addObjectEvent(user, id, c.name, "addMetadata_curation")
+        } else {
+          InternalServerError("Curation Object already submitted")
+        }
       }
     }
 
@@ -170,6 +178,7 @@ class CurationObjects @Inject()( curations: CurationService,
 
     curations.get(curationId) match {
       case Some(c) => {
+        if (c.status == "In Curation") {
         val newFiles: List[File]= c.files
         val index = newFiles.indexWhere(_.id.equals(fileId))
         Logger.debug(s"Adding user metadata to curation's file No." + index )
@@ -177,7 +186,9 @@ class CurationObjects @Inject()( curations: CurationService,
         curations.addFileUserMetaData(curationId, index, Json.stringify(request.body))
         //add event
         events.addObjectEvent(user, curationId, c.name, "addMetadata_curation")
-      }
+        } else {
+          InternalServerError("Curation Object already submitted")
+        }}
       case None => InternalServerError("Curation Object Not found")
     }
 
@@ -186,19 +197,23 @@ class CurationObjects @Inject()( curations: CurationService,
 
 
   def getCurationObject(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {    implicit request =>
-      implicit val user = request.user
-          curations.get(curationId) match {
-            case Some(c) => {
-              val ds: Dataset = c.datasets(0)
-              //dsmetadata is immutable but dsUsrMetadata is mutable
-              val dsmetadata = ds.metadata
-              val dsUsrMetadata = collection.mutable.Map(ds.userMetadata.toSeq: _*)
-              val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
-              val fileByDataset = getFiles(c, ds)
-              Ok(views.html.spaces.curationObject( c, dsmetadata, dsUsrMetadata, isRDFExportEnabled, fileByDataset))
-            }
-            case None => InternalServerError("Curation Object Not found")
-          }
+    implicit val user = request.user
+    curations.get(curationId) match {
+      case Some(c) => {
+        val ds: Dataset = c.datasets(0)
+        //dsmetadata is immutable but dsUsrMetadata is mutable
+        val dsmetadata = ds.metadata
+        val dsUsrMetadata = collection.mutable.Map(ds.userMetadata.toSeq: _*)
+        val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
+        val fileByDataset = getFiles(c, ds)
+        if (c.status != "In Curation") {
+          Ok(views.html.spaces.submittedCurationObject(c, ds, fileByDataset))
+        } else {
+          Ok(views.html.spaces.curationObject(c, dsmetadata, dsUsrMetadata, isRDFExportEnabled, fileByDataset))
+        }
+      }
+      case None => InternalServerError("Curation Object Not found")
+    }
   }
 
   def findMatchingRepositories(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
@@ -207,6 +222,7 @@ class CurationObjects @Inject()( curations: CurationService,
 
           curations.get(curationId) match {
             case Some(c) => {
+              if (c.status == "In Curation") {
               //TODO: Make some sort of call to the matckmaker
               val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
                 "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
@@ -218,12 +234,12 @@ class CurationObjects @Inject()( curations: CurationService,
                 }
                 case None =>Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
               }
-
+              }else {
+                Results.Redirect(routes.CurationObjects.getCurationObject(c.id))
+              }
             }
             case None => InternalServerError("Curation Object not found")
           }
-
-
   }
 
   def compareToRepository(curationId: UUID, repository: String) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
@@ -308,12 +324,13 @@ class CurationObjects @Inject()( curations: CurationService,
             BadRequest(toJson(Map("status" -> "ERROR", "message" -> "curation object haven't been submitted")))
           } else {
             (request.body \ "status").asOpt[String].map { status =>
-              curations.updateStatus(id,  status)
+              if(status.compareToIgnoreCase("Published") == 0 || status.compareToIgnoreCase("Publish") == 0){
+                curations.setPublished(id)
+              }
             }
 
-            (request.body \ "External").asOpt[String].map { externalIdentifier =>
-
-              curations.updateDOI(id,  new URI(externalIdentifier))
+            (request.body \ "External Identifier").asOpt[String].map { externalIdentifier =>
+              curations.updateExternalIdentifier(id,  new URI(externalIdentifier))
             }
 
             Ok(toJson(Map("status" -> "OK")))

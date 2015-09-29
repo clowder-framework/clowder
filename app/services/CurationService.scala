@@ -52,7 +52,7 @@ trait CurationService {
   def updateRepository(curationId: UUID, repository: String)
 
   /**
-   * save doi received from repository
+   * save external Identifier received from repository
    */
-  def updateDOI(curationId: UUID, externalIdentifier: URI)
+  def updateExternalIdentifier(curationId: UUID, externalIdentifier: URI)
 }
