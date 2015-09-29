@@ -319,10 +319,10 @@ class CurationObjects @Inject()(
       Logger.debug("get infomation from repository")
 
       curations.get(id) match {
-        case None => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "curation object not found")))
+        case None => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object not found.")))
         case Some(c) => {
           if(c.status == "In Curation") {
-            BadRequest(toJson(Map("status" -> "ERROR", "message" -> "curation object haven't been submitted")))
+            BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object hasn't been submitted yet.")))
           } else {
             (request.body \ "status").asOpt[String].map { status =>
               if(status.compareToIgnoreCase("Published") == 0 || status.compareToIgnoreCase("Publish") == 0){
@@ -330,7 +330,7 @@ class CurationObjects @Inject()(
               }
             }
 
-            (request.body \ "External Identifier").asOpt[String].map { externalIdentifier =>
+            (request.body \ "uri").asOpt[String].map { externalIdentifier =>
               curations.updateExternalIdentifier(id,  new URI(externalIdentifier))
             }
 

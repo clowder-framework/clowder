@@ -539,5 +539,5 @@ GET            /spaces/curations/:id/matchmaker                                 
 POST           /spaces/curations/:id/matchmaker                                         @api.CurationObjects.findMatchmakingRepositories(id: UUID)
 POST           /spaces/curations/:id/datasetUsermetadata                                @controllers.CurationObjects.addDatasetUserMetadata(id: UUID)
 POST           /spaces/curations/:curationId/files/:fileId/fileUsermetadata             @controllers.CurationObjects.addFileUserMetadata(curationId:UUID, fileId: UUID)
-POST           /spaces/curations/:id/persistentID                                       @controllers.CurationObjects.savePublishedObject(id: UUID)
+POST           /spaces/curations/:id/status                                             @controllers.CurationObjects.savePublishedObject(id: UUID)
 
