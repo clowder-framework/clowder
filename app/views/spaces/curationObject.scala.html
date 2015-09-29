@@ -68,118 +68,133 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
 }
 }
 @main(curationObject.name) {
-    <div class = "row">
-        <ol class="breadcrumb">
-            <li> <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a></li>
-            <li class= "active"> Edit Metadata</li>
-        </ol>
-
-    </div>
-    <div class="container row">
-    <div class="col-md-3">
-        @spaces.curation_summary( curationObject, curationObject.name, true)
-    </div>
-    <div class="col-md-9">
-    <div>
-        <h2>Dataset <a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h2> <br/>
-        Note: The links in this page redirect to the live objects.
-        @metadata(curationObject.datasets(0), dsMetadata, dsUserMetadata, curationObject.datasets(0).datasetXmlMetadata, rdfExported, Some(curationObject.id))
-    </div>
-    @if(curationObject.datasets(0).files.size > 0 ){
-        <h2> Files</h2>
-    }
-
-    <div>
-        <ul style = "list-style-type: none">
-        @for(file<- files) {
-
-            <li><h3><a href=@routes.Files.file(file.id)>@file.filename</a></h3>
-            <div id ='allMetadata_@(file.id)'>
-                <button class="tech_md_" type="button">Show File metadata</button>
-                <div style="display:none;">
-            <div class="row border-top">
-                <div class="col-md-12">
-                    <h4>Community generated metadata</h4>
-                    @fileusermetadata(file, collection.mutable.Map(file.userMetadata.toSeq: _*) , rdfExported, Some(curationObject.id))
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a> >
+                    <u><strong>Edit Metadata</strong></u> >
+                    <a  href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)">Select Repository</a> >
+                    Submit to Repository
                 </div>
             </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-2">
+            <a class="btn btn-default" href="@routes.Spaces.stagingArea(curationObject.space)"><span class="glyphicon glyphicon-chevron-left"></span>Staging Area</a>
+        </div>
+        <div class="col-md-8 text-center">
+            <h1>Edit Metadata</h1>
+        </div>
+        <div class="col-md-2">
+            <a class="btn btn-primary pull-right" href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)"> Select Repository <span class="glyphicon glyphicon-chevron-right"></span></a>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-3">
+            @spaces.curation_summary( curationObject, curationObject.name, true)
+        </div>
+        <div class="col-md-9">
+        <div>
+            <div>Note: The links in this page redirect to the live objects.</div>
+            @metadata(curationObject.datasets(0), dsMetadata, dsUserMetadata, curationObject.datasets(0).datasetXmlMetadata, rdfExported, Some(curationObject.id))
+        </div>
+        @if(curationObject.datasets(0).files.size > 0 ){
+            <h2> Files</h2>
+        }
 
-            <div class="row border-top">
-                <div class="col-md-12">
-                    <h4>System generated metadata</h4>
-                    <div id='technicalMetadata_@(file.id)'>
-                        <button class="tech_md_ btn btn-link btn-sm" type="button">Show file technical metadata</button>
+        <div>
+            <ul style = "list-style-type: none">
+            @for(file<- files) {
+
+                <li><h3><a href=@routes.Files.file(file.id)>@file.filename</a></h3>
+                <div id ='allMetadata_@(file.id)'>
+                    <button class="tech_md_" type="button">Show File metadata</button>
+                    <div style="display:none;">
+                <div class="row border-top">
+                    <div class="col-md-12">
+                        <h4>Community generated metadata</h4>
+                        @fileusermetadata(file, collection.mutable.Map(file.userMetadata.toSeq: _*) , rdfExported, Some(curationObject.id))
+                    </div>
+                </div>
+
+                <div class="row border-top">
+                    <div class="col-md-12">
+                        <h4>System generated metadata</h4>
+                        <div id='technicalMetadata_@(file.id)'>
+                            <button class="tech_md_ btn btn-link btn-sm" type="button">Show file technical metadata</button>
+                            <div style="display:none;">
+                                <ul>
+                                @for(i <- 0 until file.metadata.length){
+                                    @printLevel(file.metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
+                                }
+                                </ul>
+                            </div>
+                        </div>
+                        <script>
+                            $("#technicalMetadata_@(file.id.toString) > button").on('click',function(){
+                                if($("#technicalMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
+                                    $("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
+                                    $("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file technical metadata";
+                                }
+                                else{
+                                    $("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
+                                    $("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file technical metadata";
+                                }
+                            });
+                        </script>
+                    </div>
+                </div>
+
+                @if(!file.xmlMetadata.isEmpty) {
+                    <div id='xmlMetadata_@(file.id.toString)'>
+                        <button class="tech_md_" type="button">Show XML-uploaded metadata</button>
                         <div style="display:none;">
                             <ul>
-                            @for(i <- 0 until file.metadata.length){
-                                @printLevel(file.metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
-                            }
+                            @printLevel(file.xmlMetadata)
                             </ul>
                         </div>
                     </div>
                     <script>
-                        $("#technicalMetadata_@(file.id.toString) > button").on('click',function(){
-                            if($("#technicalMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
-                                $("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
-                                $("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file technical metadata";
+                        $("#xmlMetadata_@(file.id.toString) > button").on('click',function(){
+                            if($("#xmlMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
+                                $("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
+                                $("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file XML-uploaded metadata";
                             }
                             else{
-                                $("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
-                                $("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file technical metadata";
+                                $("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
+                                $("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file XML-uploaded metadata";
                             }
                         });
                     </script>
+                }
                 </div>
-            </div>
+                </div>
+                    </li>
 
-            @if(!file.xmlMetadata.isEmpty) {
-                <div id='xmlMetadata_@(file.id.toString)'>
-                    <button class="tech_md_" type="button">Show XML-uploaded metadata</button>
-                    <div style="display:none;">
-                        <ul>
-                        @printLevel(file.xmlMetadata)
-                        </ul>
-                    </div>
-                </div>
                 <script>
-                    $("#xmlMetadata_@(file.id.toString) > button").on('click',function(){
-                        if($("#xmlMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
-                            $("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
-                            $("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file XML-uploaded metadata";
+                    $("#allMetadata_@(file.id.toString) > button").on('click', function(){
+                        if($("#allMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
+                            $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
+                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file metadata";
                         }
                         else{
-                            $("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
-                            $("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file XML-uploaded metadata";
+                            $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
+                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file metadata";
                         }
-                    });
+                        });
                 </script>
             }
-            </div>
-            </div>
-                </li>
-
-            <script>
-                $("#allMetadata_@(file.id.toString) > button").on('click', function(){
-                    if($("#allMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
-                        $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
-                        $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file metadata";
-                    }
-                    else{
-                        $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
-                        $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file metadata";
-                    }
-                    });
-            </script>
-        }
-        </ul>
-    </div>
-    </div>
-    </div>
-    <div class="row border-top bottom-padding">
-
-        @*<a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> <span class="glyphicon glyphicon-arrow-left"></span>Go Back to Space </a>*@
-        <a class="btn btn-default" href="@routes.Spaces.stagingArea(curationObject.space)"><span class="glyphicon glyphicon-chevron-left"></span>Staging Area</a>
-        <a class="btn btn-primary pull-right" href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)"> Find Repositories <span class="glyphicon glyphicon-chevron-right"></span></a>
+            </ul>
+        </div>
+        </div>
+        </div>
+    <div class="row bottom-padding">
+        <div class="col-md-12">
+            <a class="btn btn-default" href="@routes.Spaces.stagingArea(curationObject.space)"><span class="glyphicon glyphicon-chevron-left"></span>Staging Area</a>
+            <a class="btn btn-primary pull-right" href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)">Select Repository <span class="glyphicon glyphicon-chevron-right"></span></a>
+        </div>
     </div>
 
 
