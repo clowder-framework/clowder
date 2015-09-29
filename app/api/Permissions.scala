@@ -45,7 +45,7 @@ object Permission extends Enumeration {
     CreatePreview,    // Used by extractors
     MultimediaIndexDocument,
     CreateNote,
-    
+
     // sections
     CreateSection,
     ViewSection,
@@ -68,10 +68,18 @@ object Permission extends Enumeration {
     EditComment,
     
     // geostreaming api
+    CreateSensor,
+    ViewSensor,
+    DeleteSensor,
 	  AddGeoStream,
 	  ViewGeoStream,
 	  DeleteGeoStream,
 	  AddDatapoints,
+
+    // relations
+    CreateRelation,
+    ViewRelation,
+    DeleteRelation,
 
     // users
     ViewUser,
@@ -82,6 +90,7 @@ object Permission extends Enumeration {
 
   lazy val files: FileService = DI.injector.getInstance(classOf[FileService])
   lazy val previews: PreviewService = DI.injector.getInstance(classOf[PreviewService])
+  lazy val relations: RelationService = DI.injector.getInstance(classOf[RelationService])
   lazy val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
   lazy val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   lazy val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
@@ -155,6 +164,14 @@ object Permission extends Enumeration {
               p.section_id.exists(id => checkPermission(user, permission, ResourceRef(ResourceRef.file, id))) ||
               p.dataset_id.exists(id => checkPermission(user, permission, ResourceRef(ResourceRef.file, id))) ||
               p.collection_id.exists(id => checkPermission(user, permission, ResourceRef(ResourceRef.file, id)))
+          }
+          case None => false
+        }
+      }
+      case ResourceRef(ResourceRef.relation, id) => {
+        relations.get(id) match {
+          case Some(r) => {
+            r.source.id == id.stringify || r.target.id == id.stringify
           }
           case None => false
         }

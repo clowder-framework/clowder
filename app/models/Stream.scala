@@ -13,7 +13,7 @@ import services.mongodb.MongoSalatPlugin
  * This is currently not being used and is being replaced by the PostGIS Geotemporal API.
  * The case classes could be updated and used for the Geotemporal API.
  *
- * @author Luigi Marini
+ * @deprecated See services.PostgresPlugin
  */
 case class Stream(
   id: UUID = UUID.generate,

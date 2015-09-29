@@ -128,6 +128,14 @@ POST           /spaces/:id/invite                                               
 POST           /spaces/submit                                                           @controllers.Spaces.submit
 
 # ----------------------------------------------------------------------
+# SENSORS
+# ----------------------------------------------------------------------
+GET            /geostreams                                                              controllers.Geostreams.map
+GET            /geostreams/sensors                                                      controllers.Geostreams.list
+GET            /geostreams/sensors/new                                                  controllers.Geostreams.newSensor
+GET            /geostreams/sensors/:id                                                  controllers.Geostreams.edit(id)
+
+# ----------------------------------------------------------------------
 # TAGS
 # ----------------------------------------------------------------------
 GET            /tags/search                                                             @controllers.Tags.search(tag, start: String ?= "", size: Integer ?= 12, mode: String ?= "")
@@ -221,6 +229,7 @@ GET            /admin/roles/:id/edit                                            
 POST           /admin/roles/update                                                      @controllers.Admin.updateRole
 GET            /admin/extractions                                                       @controllers.Extractors.listAllExtractions
 POST           /admin/theme                                                             @controllers.Admin.setTheme
+GET      	   /admin/dataDumps           												@controllers.Admin.viewDumpers 
 
 # ----------------------------------------------------------------------
 # JAVASCRIPT ENDPOINTS
@@ -261,6 +270,7 @@ GET            /api/files/:id/blob                                              
 POST           /api/files/:id/remove                                                    @api.Files.removeFile(id: UUID)
 GET            /api/files/:id/metadata                                                  @api.Files.get(id: UUID)
 POST           /api/files/:id/metadata                                                  @api.Files.addMetadata(id: UUID)
+POST           /api/files/:id/updateMetadata                                            @api.Files.updateMetadata(id: UUID, extractor_id: String)
 POST           /api/files/:id/versus_metadata                                           @api.Files.addVersusMetadata(id:UUID)
 GET            /api/files/:id/versus_metadata                                           @api.Files.getVersusMetadataJSON(id:UUID)
 GET            /api/files/:id/usermetadatajson                                          @api.Files.getUserMetadataJSON(id: UUID)
@@ -321,6 +331,9 @@ GET            /api/files/:id                                                   
 GET            /api/delete-data                                                         api.Admin.deleteAllData
 POST           /api/remove-admin                                                        api.Admin.removeAdmin
 POST           /api/changeAppearance                                                    api.Admin.submitAppearance
+POST		   /api/dumpFilesMd															@api.Files.dumpFilesMetadata
+POST		   /api/dumpDatasetsMd														@api.Datasets.dumpDatasetsMetadata
+POST		   /api/dumpDatasetGroupings												@api.Datasets.dumpDatasetGroupings
 
 # ----------------------------------------------------------------------
 # SPACES ENDPOINT
@@ -450,6 +463,7 @@ GET            /api/geostreams/cache/:id                                        
 POST           /api/geostreams/sensors                                                  api.Geostreams.createSensor
 GET            /api/geostreams/sensors/update                                           api.Geostreams.updateStatisticsStreamSensor()
 GET            /api/geostreams/sensors/:id                                              api.Geostreams.getSensor(id: String)
+PUT            /api/geostreams/sensors/:id                                              api.Geostreams.updateSensorMetadata(id: String)
 GET            /api/geostreams/sensors/:id/stats                                        api.Geostreams.getSensorStatistics(id: String)
 GET            /api/geostreams/sensors/:id/streams                                      api.Geostreams.getSensorStreams(id: String)
 GET            /api/geostreams/sensors/:id/update                                       api.Geostreams.updateStatisticsSensor(id: String)
@@ -458,12 +472,12 @@ DELETE         /api/geostreams/sensors/:id                                      
 POST           /api/geostreams/streams                                                  api.Geostreams.createStream
 GET            /api/geostreams/streams/update                                           api.Geostreams.updateStatisticsStreamSensor()
 GET            /api/geostreams/streams/:id                                              api.Geostreams.getStream(id: String)
+PUT            /api/geostreams/streams/:id                                              api.Geostreams.patchStreamMetadata(id: String)
 GET            /api/geostreams/streams/:id/update                                       api.Geostreams.updateStatisticsStream(id: String)
 GET            /api/geostreams/streams                                                  api.Geostreams.searchStreams(geocode: Option[String] ?= None, stream_name: Option[String] ?= None)
 DELETE         /api/geostreams/streams/:id                                              api.Geostreams.deleteStream(id: String)
 DELETE         /api/geostreams/dropall                                                  api.Geostreams.deleteAll
 GET            /api/geostreams/counts                                                   api.Geostreams.counts
-GET            /geostreams                                                              controllers.Geostreams.browse
 
 # ----------------------------------------------------------------------
 # THUMBNAILS ENDPOINT
@@ -487,6 +501,15 @@ DELETE         /api/sensors/:id                                                 
 POST           /api/comment/:id                                                         @api.Comments.comment(id: UUID)
 DELETE         /api/comment/:id/removeComment                                           @api.Comments.removeComment(id: UUID)
 POST           /api/comment/:id/editComment                                             @api.Comments.editComment(id: UUID)
+
+# ----------------------------------------------------------------------
+# RELATIONS API
+# ----------------------------------------------------------------------
+GET            /api/relations                                                           @api.Relations.list()
+GET            /api/relations/search                                                    @api.Relations.findTargets(sourceId: String, sourceType: String, targetType: String)
+GET            /api/relations/:id                                                       @api.Relations.get(id: UUID)
+POST           /api/relations                                                           @api.Relations.add()
+DELETE         /api/relations/:id                                                       @api.Relations.delete(id: UUID)
 
 # ----------------------------------------------------------------------
 # MISC./OTHER ENDPOINTS
