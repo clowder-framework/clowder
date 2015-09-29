@@ -241,7 +241,6 @@ object Permission extends Enumeration {
           }
         }
       }
-
       case ResourceRef(ResourceRef.comment, id) => {
         val comment = comments.get(id)
         var hasPermission: Option[Boolean] = None
@@ -280,8 +279,8 @@ object Permission extends Enumeration {
 
       case ResourceRef(ResourceRef.curationObject, id) => {
         curations.get(id) match {
-          case None => false
           case Some(curation) => checkPermission(user, permission, ResourceRef(ResourceRef.space, curation.space))
+          case None => false
         }
       }
 
