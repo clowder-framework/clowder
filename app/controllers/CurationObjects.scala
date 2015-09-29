@@ -252,7 +252,6 @@ class CurationObjects @Inject()( curations: CurationService,
 
       curations.get(curationId) match {
         case Some(c) =>
-          //TODO : Submit the curationId to the repository. This probably needs the repository as input
           var success = false
           var repository: String = ""
           c.repository match {
@@ -285,7 +284,7 @@ class CurationObjects @Inject()( curations: CurationService,
                     "Max Dataset Size" -> Json.toJson(maxDataset.toString),
                     "Total Size" -> Json.toJson(totalSize.toString)
                   )),
-                "Publication Callback" -> Json.toJson(hostIp + "/spaces/curations/" + c.id + "/savePublishedObject")
+                "Publication Callback" -> Json.toJson(hostIp + "/spaces/curations/" + c.id + "/status")
               )
             )
 
