@@ -1,4 +1,7 @@
-@(sensors: List[(String, String)], dataset_id: String)
+@(sensors: List[(String, String)],
+        resource_type: String, // What resource is calling this form? "Collection", "Dataset", or "File"
+        item_id: String // What is the UUID of the resource (for the Collection, Dataset, or File)
+        )
 
 <div class="row ds-section-sm border-top">
     <h4>Sensors</h4>
@@ -9,7 +12,7 @@
     </ul>
     @import play.api.Play.current
     @defining(play.api.Play.configuration.getString("geostream.dashboard.url").getOrElse("http://localhost:9000") + "#detail/location/") { base_url =>
-        <button class="btn btn-default btn-xs" onclick="javascript:associateWithSensor('@dataset_id', '@base_url')">Add</button>
+        <button class="btn btn-default btn-xs" onclick="javascript:associateWithSensor('@resource_type', '@item_id', '@base_url')">Add</button>
     }
 </div>
 <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>

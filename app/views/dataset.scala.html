@@ -121,7 +121,7 @@
             @datasets.collections(dataset, collectionsInside, collectionsOutside)
 
             @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {
-                @sensors.relatedSensors(relatedSensors, dataset.id.stringify)
+                @sensors.relatedSensors(relatedSensors, "Dataset", dataset.id.stringify)
             }
 
         </div>
