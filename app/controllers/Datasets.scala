@@ -300,7 +300,7 @@ class Datasets @Inject()(
 
           val curObjectsPublished: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(_.status == 'Published)
           val curObjectsPermission: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(curation => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id)))
-          var curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
+          val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
           decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpaces), filesTags, otherSpaces, currentSpace, toPublish, curPubObjects))
 

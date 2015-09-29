@@ -50,7 +50,6 @@ trait CurationService {
   def updateRepository(curationId: UUID, repository: String)
 
   /**
-   *
    * List curation and published objects a dataset is related to.
    */
   def getCurationObjectByDatasetId(datasetId: UUID): List[CurationObject]

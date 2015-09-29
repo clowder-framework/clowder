@@ -3,13 +3,13 @@
     <div class="row border-top bottom-padding">
         <div class="col-md-12">
             <h4>Related Curation Objects</h4>
+            <ul class="list-unstyled">
             @for(curObject <- curationObjects) {
-
-                <a href="@routes.CurationObjects.getCurationObject(curObject.id)">
-                @curObject.name
-                </a> <br/>
-
+                <li><a href="@routes.CurationObjects.getCurationObject(curObject.id)">
+                    @curObject.name
+                </a></li>
             }
+            </ul>
         </div>
     </div>
 }
