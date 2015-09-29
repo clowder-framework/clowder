@@ -63,26 +63,20 @@ class Registration @Inject()(spaces: SpaceService, users: UserService) extends S
               }
 
               //Code from here to the end of the case is the difference between securesocial and this method. It checks
-              // for an invitation pending to the space. If it finds an invitation, it then adds the person to the space.
-              spaces.getInvitation(token) match {
-                case Some(invite) => {
-                  users.findByEmail(invite.email) match {
-                    case Some(user) => {
-                     users.findRole(invite.role) match {
-                       case Some(role) => {
-                         spaces.addUser(user.id, role, invite.space)
-                         spaces.removeInvitationFromSpace(UUID(token), invite.space)
-                        }
-                       case None => {
-                         Redirect(RoutesHelper.startSignUp).flashing(Registration.Error -> Messages("Error adding to the invited space. The role assigned doesn't exist"))
-                       }
-                     }
-
+              // for an invitation pending to the space. If it finds invitation(s), it then adds the person to the space(s).
+              spaces.getInvitationByEmail(t.email).map { invite =>
+                users.findByEmail(invite.email) match {
+                  case Some(user) => {
+                    users.findRole(invite.role) match {
+                      case Some(role) => {
+                        spaces.addUser(user.id, role, invite.space)
+                        spaces.removeInvitationFromSpace(UUID(invite.invite_id), invite.space)
+                      }
+                      case None => {
+                        Redirect(RoutesHelper.startSignUp).flashing(Registration.Error -> Messages("Error adding to the invited space. The role assigned doesn't exist"))
+                      }
                     }
                   }
-                }
-                case None => {
-                  Redirect(RoutesHelper.startSignUp).flashing(Registration.Error -> Messages("Error adding to the invited space"))
                 }
               }
 
