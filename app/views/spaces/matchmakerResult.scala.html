@@ -4,15 +4,15 @@
         <div class="col-md-12">
             <div class="panel panel-default">
                 <div class="panel-body">
-                    <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a> >
-                    <a  href ="@routes.CurationObjects.getCurationObject(curationObject.id)"> Edit Metadata</a> >
+                    <a href="@routes.Spaces.stagingArea(curationObject.space)">Staging Area</a> >
+                    <a  href ="@routes.CurationObjects.getCurationObject(curationObject.id)">Edit Metadata</a> >
                     <u><strong>Select Repository</strong></u> >
                     Submit to Repository
                 </div>
             </div>
         </div>
     </div>
-    <div class="row bottom-padding">
+    <div class="row">
         <div class="col-md-2">
             <a class="btn btn-default" href ="@routes.CurationObjects.getCurationObject(curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Edit Metadata</a>
         </div>
@@ -20,7 +20,7 @@
             <h1>Select Repository</h1>
         </div>
         <div class="col-md-2">
-            <button  class="btn btn-primary pull-right selectRepository">Select Repository <span class="glyphicon glyphicon-chevron-right"></span></button>
+            <button  class="btn btn-primary pull-right selectRepository">Submit to Repository <span class="glyphicon glyphicon-chevron-right"></span></button>
         </div>
     </div>
     <div class="row">
@@ -50,7 +50,7 @@
         <div class="col-md-9">
             <h4>Candidate Repositories</h4>
             <div>The results below are based on an analysis of the dataset's properties and metadata and
-                the preferences youspecified.
+                the preferences you specified.
             </div>
             <span class="error hiddencomplete" id="selecterror"> Please select a repository</span><br>
             @if(curationObject.repository.isDefined && curationObject.repository.get.compareTo("IDEALS") == 0)   {
@@ -106,8 +106,10 @@
 
     </div>
     <div class="row bottom-padding">
-        <a class="btn btn-default" href ="@routes.CurationObjects.getCurationObject(curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Edit Metadata</a>
-        <button  class="btn btn-primary pull-right selectRepository">Select Repository <span class="glyphicon glyphicon-chevron-right"></span></button>
+        <div class="col-md-12">
+            <a class="btn btn-default" href ="@routes.CurationObjects.getCurationObject(curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Edit Metadata</a>
+            <button  class="btn btn-primary pull-right selectRepository">Submit to Repository <span class="glyphicon glyphicon-chevron-right"></span></button>
+        </div>
     </div>
     <script>
         $("#ideals_mm").on('click', function(){

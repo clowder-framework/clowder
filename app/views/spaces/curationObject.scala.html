@@ -74,13 +74,13 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
                 <div class="panel-body">
                     <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a> >
                     <u><strong>Edit Metadata</strong></u> >
-                    Select Repository >
+                    <a  href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)">Select Repository</a> >
                     Submit to Repository
                 </div>
             </div>
         </div>
     </div>
-    <div class="row bottom-padding">
+    <div class="row">
         <div class="col-md-2">
             <a class="btn btn-default" href="@routes.Spaces.stagingArea(curationObject.space)"><span class="glyphicon glyphicon-chevron-left"></span>Staging Area</a>
         </div>
@@ -191,8 +191,10 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
         </div>
         </div>
     <div class="row bottom-padding">
-        <a class="btn btn-default" href="@routes.Spaces.stagingArea(curationObject.space)"><span class="glyphicon glyphicon-chevron-left"></span>Staging Area</a>
-        <a class="btn btn-primary pull-right" href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)">Select Repository <span class="glyphicon glyphicon-chevron-right"></span></a>
+        <div class="col-md-12">
+            <a class="btn btn-default" href="@routes.Spaces.stagingArea(curationObject.space)"><span class="glyphicon glyphicon-chevron-left"></span>Staging Area</a>
+            <a class="btn btn-primary pull-right" href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)">Select Repository <span class="glyphicon glyphicon-chevron-right"></span></a>
+        </div>
     </div>
 
 

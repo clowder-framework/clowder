@@ -3,22 +3,19 @@
     <div class="panel panel-default">
         <div class="panel-body">
             <h5><a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h5>
-            Size: @{curationObject.datasets(0).files.map(_.length).sum /1024} MB <br/>
-            File Formats: @curationObject.datasets(0).files.map(_.contentType).toSet.mkString(", ") <br/>
-            Creator: @curationObject.datasets(0).author.fullName <br/>
-            Uploaded: @curationObject.created.date.format("yyyy-mm-dd hh:mm") <br/>
-
+            <ul class="list-unstyled">
+                <li>Size: @{curationObject.datasets(0).files.map(_.length).sum /1024} MB<li/>
+                <li>File Formats: @curationObject.datasets(0).files.map(_.contentType).toSet.mkString(", ")</li>
+                <li>Creator: @curationObject.datasets(0).author.fullName</li>
+                <li>Uploaded: @curationObject.created.date.format("yyyy-mm-dd hh:mm")</li>
+            </ul>
             @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, curationObject.space))){
-
                 @if(!editCurationObject){
-                    <div class="center-margin">
-                        <a class="btn btn-sm btn-default" href ="@routes.CurationObjects.getCurationObject(curationObject.id)"> <span class="glyphicon glyphicon-edit"></span> Edit Metadata</a>
-                    </div>
+                    <a class="btn btn-sm btn-link" href ="@routes.CurationObjects.getCurationObject(curationObject.id)">
+                        <span class="glyphicon glyphicon-edit"></span> Edit Metadata</a>
                 }
-                <div class="center-margin">
-                    <a class="btn btn-sm btn-default danger" onclick="removeCuration('@(curationObject.space)','@(curationObject.id)')"  >
-                        <span class="glyphicon glyphicon-trash"></span> Delete Curation Object</a>
-                </div>
+                <a class="btn btn-sm btn-link" onclick="removeCuration('@(curationObject.space)','@(curationObject.id)')"  >
+                    <span class="glyphicon glyphicon-trash"></span> Delete Curation Object</a>
             }
         </div>
     </div>
