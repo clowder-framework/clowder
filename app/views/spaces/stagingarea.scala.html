@@ -3,7 +3,8 @@
 @main("Staging Area") {
     <div class="row">
         <div class="col-md-12">
-            <h1><a href="@routes.Spaces.getSpace(space.id)">@space.name</a> > Staging Area</h1>
+            <h1>Staging Area</h1>
+            <h5>Space: <a href="@routes.Spaces.getSpace(space.id)">@space.name</a></h5>
         </div>
     </div>
     @util.masonry()
