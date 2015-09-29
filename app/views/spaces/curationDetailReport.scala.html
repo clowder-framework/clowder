@@ -1,17 +1,26 @@
 @(curationObject: models.CurationObject, properties: Map[String, List[String]], repository: String)(implicit user: Option[models.User] )
 @main("Submit to Repository") {
-    <div class = "row">
-        <ol class="breadcrumb">
-            <li> <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a></li>
-            <li> <a  href ="@routes.CurationObjects.getCurationObject(curationObject.id)"> Edit Metadata</a></li>
-            <li> <a  href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)">Find Repositories </a></li>
-            <li class="active"> Submit to Repository</li>
-        </ol>
-
-    </div>
     <div class="row">
         <div class="col-md-12">
-            <h1>Submit @curationObject.name to repository</h1>
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a> >
+                    <a  href ="@routes.CurationObjects.getCurationObject(curationObject.id)"> Edit Metadata</a> >
+                    <a  href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)">Select Repository</a> >
+                    <u><strong>Submit to Repository</strong></u>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-2">
+            <a class="btn btn-default" href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Select Repository</a>
+        </div>
+        <div class="col-md-8 text-center">
+            <h1>Submit to Repository</h1>
+        </div>
+        <div class="col-md-2">
+            <a class="btn btn-default btn-primary pull-right" href="@routes.CurationObjects.sendToRepository(curationObject.id)"> Submit <span class="glyphicon glyphicon-chevron-right"></span></a>
         </div>
     </div>
     <div class="row">
@@ -19,35 +28,31 @@
             @spaces.curation_summary(curationObject, "Submit to Repository", false)
         </div>
         <div class="col-md-9">
-           <h3> @repository</h3>
-            <b>Matchmaker Summary</b> <br/>
-            Dataset Properties: <br/>
-            <span class="green">All requirements are satisfied.</span><br/>
-            Preferences: <br/>
-            <span class="green">All requirements are satisfied.</span><br/>
-            Metadata: <br/>
-            <span class="green">All requirements are satisfied.</span><br/>
-
-            <br/>
-            <b> Acknowledgments</b><br/>
-            Confidentiality<br/>
-            <input type="checkbox" id="confidential_agreement"> Dataset contains confidential info <br/>
-            <br/>
-            Copyrighted material: <br/>
-            <input type="checkbox" checked id="copyright_agreement"> Dataset contains copyrighted material <br/>
-            <br/>
-            Depositor Agreement: <br/>
-            <input type="checkbox" checked id="depositor_agreement"> I agree to IDEALS deposit agreement <br/>
-
-
+            <h3>@repository</h3>
+            <h4>Matchmaker Summary</h4>
+            <ul class="list-unstyled">
+                <li><h5>Dataset Properties</h5><li/>
+                <li><span class="green">All requirements are satisfied</span></li>
+                <li><h5>Preferences</h5></li>
+                <li><span class="green">All requirements are satisfied</span></li>
+                <li><h5>Metadata</h5></li>
+                <li><span class="green">All requirements are satisfied</span></li>
+            </ul>
+            <h4>Acknowledgments</h4>
+            <ul class="list-unstyled">
+                <li><h5>Confidentiality</h5><li/>
+                <li><input type="checkbox" id="confidential_agreement"> Dataset contains confidential info</li>
+            <li><h5>Copyrighted material</h5><li/>
+                <li><input type="checkbox" checked id="copyright_agreement"> Dataset contains copyrighted material</li>
+            <li><h5>Depositor Agreement</h5><li/>
+                <li><input type="checkbox" checked id="depositor_agreement"> I agree to IDEALS deposit agreement</li>
+            </ul>
         </div>
-
     </div>
-
-    <div class="row border-top bottom-padding">
-        <a class="btn btn-default" href="@routes.CurationObjects.findMatchingRepositories( curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Find Repository</a>
-        <a class = "btn btn-default btn-primary pull-right" href ="@routes.CurationObjects.sendToRepository(curationObject.id)"> Submit dataset @curationObject.name to @repository <span class="glyphicon glyphicon-chevron-right"></span></a>
+    <div class="row bottom-padding">
+        <div class="col-md-12">
+            <a class="btn btn-default" href="@routes.CurationObjects.findMatchingRepositories( curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Select Repository</a>
+            <a class = "btn btn-default btn-primary pull-right" href ="@routes.CurationObjects.sendToRepository(curationObject.id)"> Submit <span class="glyphicon glyphicon-chevron-right"></span></a>
+        </div>
     </div>
-
-
 }
