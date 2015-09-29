@@ -111,24 +111,6 @@ object MongoContext {
   }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   /**
    * Casbah URI serializer.
    */
