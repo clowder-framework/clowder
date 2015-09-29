@@ -17,7 +17,7 @@ import play.api.Play._
 import org.apache.http.client.methods.HttpPost
 import scala.concurrent.Future
 import play.api.mvc.Results
-import java.net.URL
+import java.net.URI
 
 /**
  * Methods for interacting with the curation objects in the staging area.
@@ -301,23 +301,26 @@ class CurationObjects @Inject()( curations: CurationService,
     implicit request =>
       Logger.debug("get infomation from repository")
 
+      curations.get(id) match {
+        case None => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "curation object not found")))
+        case Some(c) => {
+          if(c.status == "In Curation") {
+            BadRequest(toJson(Map("status" -> "ERROR", "message" -> "curation object haven't been submitted")))
+          } else {
+            (request.body \ "status").asOpt[String].map { status =>
+              curations.updateStatus(id,  status)
+            }
 
-      (request.body \ "status").asOpt[String].map { status =>
-          curations.updateStatus(id,  status)
-      }
+            (request.body \ "External").asOpt[String].map { externalIdentifier =>
 
-      (request.body \ "DOI").asOpt[String].map { doi =>
-        val DOI_PREFIX = "http://dx.doi.org/";
-        var doiwithPrefix = doi
-        if(doi.startsWith("doi:") || doi.startsWith("10.")){
-          doiwithPrefix = DOI_PREFIX + doi.replaceAll("^doi:", "")
+              curations.updateDOI(id,  new URI(externalIdentifier))
+            }
+
+            Ok(toJson(Map("status" -> "OK")))
+          }
         }
-        curations.updateDOI(id,  new URL(doiwithPrefix))
       }
 
-      Ok(toJson(
-        Map("status" -> "OK")
-      ))
   }
 
 }

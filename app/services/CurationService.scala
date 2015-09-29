@@ -1,6 +1,6 @@
 package services
 
-import java.net.URL
+import java.net.URI
 
 import models._
 
@@ -54,5 +54,5 @@ trait CurationService {
   /**
    * save doi received from repository
    */
-  def updateDOI(curationId: UUID, doi: URL)
+  def updateDOI(curationId: UUID, externalIdentifier: URI)
 }

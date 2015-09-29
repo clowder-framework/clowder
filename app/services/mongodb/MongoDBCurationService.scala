@@ -1,6 +1,6 @@
 package services.mongodb
 
-import java.net.URL
+import java.net.URI
 import javax.inject.{Inject, Singleton}
 
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
@@ -76,8 +76,8 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
       false, false, WriteConcern.Safe)
   }
 
-  def updateDOI(curationId: UUID, doi: URL): Unit = {
-    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(curationId.stringify)), $set("doi" -> doi),
+  def updateDOI(curationId: UUID, externalIdentifier: URI): Unit = {
+    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(curationId.stringify)), $set("externalIdentifier" -> externalIdentifier),
       false, false, WriteConcern.Safe)
   }
 }
