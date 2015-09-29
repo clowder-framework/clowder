@@ -11,7 +11,8 @@
   filesTags: Set[String],
   otherSpaces: List[ProjectSpace],
   currentSpace: Option[String],
-  toPublish :Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  toPublish :Boolean,
+  curationObjects: List[models.CurationObject])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -144,6 +145,9 @@
             @datasets.collections(dataset, collectionsInside, collectionsOutside)
             @if(user.isDefined) {
                 @datasets.userLink(dataset)
+            }
+            @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+                @datasets.listCurationObjects(curationObjects)
             }
 		</div>
 	</div>

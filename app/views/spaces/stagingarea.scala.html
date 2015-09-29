@@ -20,9 +20,9 @@
                     <div class="post-box col-lg-3 col-md-3 coml-sm-3 col-xs-12">
                         <div class = "panel panel-default">
                             @if(curObject.status == "Submitted") {
-                                <div class="panel-heading text-center submitted">
+                                <div id="@curObject.id" class="panel-heading text-center submitted">
                             } else {
-                                <div class="panel-heading text-center in-curation">
+                                <div id="@curObject.id" class="panel-heading text-center in-curation">
                             }
 
                                @curObject.status
@@ -45,6 +45,11 @@
                                 </li>
 
                             </ul>
+                            @if(curObject.status == "Submitted") {
+                                <ul id="ul_@curObject.id" class="list-group">
+                                <li class="list-group-item"><button class="btn btn-default btn-sm btn-danger text-center" onclick="retractCuration('@curObject.id')">Retract Submission</button></li>
+                                </ul>
+                            }
                         </div>
                     </div>
 
