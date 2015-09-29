@@ -327,6 +327,8 @@ class CurationObjects @Inject()(
             (request.body \ "status").asOpt[String].map { status =>
               if(status.compareToIgnoreCase("Published") == 0 || status.compareToIgnoreCase("Publish") == 0){
                 curations.setPublished(id)
+              } else {
+                curations.updateStatus(id, status)
               }
             }
 
