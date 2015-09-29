@@ -22,16 +22,17 @@ import java.net.URI
 /**
  * Methods for interacting with the curation objects in the staging area.
  */
-class CurationObjects @Inject()( curations: CurationService,
-     datasets: DatasetService,
-     collections: CollectionService,
-     spaces: SpaceService,
-     files: FileService,
-     comments: CommentService,
-     sections: SectionService,
-     events: EventService,
-     userService: UserService
-     ) extends SecuredController {
+class CurationObjects @Inject()(
+  curations: CurationService,
+  datasets: DatasetService,
+  collections: CollectionService,
+  spaces: SpaceService,
+  files: FileService,
+  comments: CommentService,
+  sections: SectionService,
+  events: EventService,
+  userService: UserService
+  ) extends SecuredController {
 
   def newCO(datasetId:UUID, spaceId:String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
@@ -72,46 +73,46 @@ class CurationObjects @Inject()( curations: CurationService,
 
         datasets.get(datasetId) match {
           case Some(dataset) => {
-           // val spaceId = UUID(COSpace(0))
+            // val spaceId = UUID(COSpace(0))
             if (spaces.get(spaceId) != None) {
 
-                //copy file list from FileDAO.
-                var newFiles: List[File]= List.empty
-                for ( file <- dataset.files) {
-                   files.get(file.id) match{
-                    case Some(f) => {
-                      newFiles =  f :: newFiles
-                    }
+              //copy file list from FileDAO.
+              var newFiles: List[File]= List.empty
+              for ( file <- dataset.files) {
+                files.get(file.id) match{
+                  case Some(f) => {
+                    newFiles =  f :: newFiles
                   }
                 }
-                //this line can actually be removed since we are not using dataset.files to get file's info.
-                //Just to keep consistency
-                var newDataset = dataset.copy(files = newFiles)
-
-                //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
-                val newCuration = CurationObject(
-                  name = COName(0),
-                  author = identity,
-                  description = CODesc(0),
-                  created = new Date,
-                  submittedDate = None,
-                  publishedDate= None,
-                  space = spaceId,
-                  datasets = List(newDataset),
-                  files = newFiles,
-                  repository = None,
-                  status = "In Curation"
-                )
-
-                // insert curation
-                Logger.debug("create curation object: " + newCuration.id)
-                curations.insert(newCuration)
-
-                Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
               }
-              else {
-                InternalServerError("Space not found")
-              }
+              //this line can actually be removed since we are not using dataset.files to get file's info.
+              //Just to keep consistency
+              var newDataset = dataset.copy(files = newFiles)
+
+              //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
+              val newCuration = CurationObject(
+                name = COName(0),
+                author = identity,
+                description = CODesc(0),
+                created = new Date,
+                submittedDate = None,
+                publishedDate= None,
+                space = spaceId,
+                datasets = List(newDataset),
+                files = newFiles,
+                repository = None,
+                status = "In Curation"
+              )
+
+              // insert curation
+              Logger.debug("create curation object: " + newCuration.id)
+              curations.insert(newCuration)
+
+              Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
+            }
+            else {
+              InternalServerError("Space not found")
+            }
           }
           case None => InternalServerError("Dataset Not found")
         }
@@ -153,7 +154,7 @@ class CurationObjects @Inject()( curations: CurationService,
           // write metadata to the collection "curationObjects"
           curations.addDatasetUserMetaData(id, Json.stringify(request.body))
           //add event
-        events.addObjectEvent(user, id, c.name, "addMetadata_curation")
+          events.addObjectEvent(user, id, c.name, "addMetadata_curation")
         } else {
           InternalServerError("Curation Object already submitted")
         }
@@ -161,10 +162,10 @@ class CurationObjects @Inject()( curations: CurationService,
     }
 
     //datasets.index(id)
-//    configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-//      case "yes" => datasets.setUserMetadataWasModified(id, true)
-//      case _ => Logger.debug("userdfSPARQLStore not enabled")
-//    }
+    //    configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+    //      case "yes" => datasets.setUserMetadataWasModified(id, true)
+    //      case _ => Logger.debug("userdfSPARQLStore not enabled")
+    //    }
     Ok(toJson(Map("status" -> "success")))
   }
 
@@ -179,13 +180,13 @@ class CurationObjects @Inject()( curations: CurationService,
     curations.get(curationId) match {
       case Some(c) => {
         if (c.status == "In Curation") {
-        val newFiles: List[File]= c.files
-        val index = newFiles.indexWhere(_.id.equals(fileId))
-        Logger.debug(s"Adding user metadata to curation's file No." + index )
-        // write metadata to curationObjects
-        curations.addFileUserMetaData(curationId, index, Json.stringify(request.body))
-        //add event
-        events.addObjectEvent(user, curationId, c.name, "addMetadata_curation")
+          val newFiles: List[File]= c.files
+          val index = newFiles.indexWhere(_.id.equals(fileId))
+          Logger.debug(s"Adding user metadata to curation's file No." + index )
+          // write metadata to curationObjects
+          curations.addFileUserMetaData(curationId, index, Json.stringify(request.body))
+          //add event
+          events.addObjectEvent(user, curationId, c.name, "addMetadata_curation")
         } else {
           InternalServerError("Curation Object already submitted")
         }}
@@ -220,46 +221,46 @@ class CurationObjects @Inject()( curations: CurationService,
     implicit request =>
       implicit val user = request.user
 
-          curations.get(curationId) match {
-            case Some(c) => {
-              if (c.status == "In Curation") {
-              //TODO: Make some sort of call to the matckmaker
-              val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
-                "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
+      curations.get(curationId) match {
+        case Some(c) => {
+          if (c.status == "In Curation") {
+            //TODO: Make some sort of call to the matckmaker
+            val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
+              "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
               "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
-              user match {
-                case Some(usr) => {
-                  val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
-                  Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences))
-                }
-                case None =>Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
+            user match {
+              case Some(usr) => {
+                val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
+                Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences))
               }
-              }else {
-                Results.Redirect(routes.CurationObjects.getCurationObject(c.id))
-              }
+              case None =>Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
             }
-            case None => InternalServerError("Curation Object not found")
+          }else {
+            Results.Redirect(routes.CurationObjects.getCurationObject(c.id))
           }
+        }
+        case None => InternalServerError("Curation Object not found")
+      }
   }
 
   def compareToRepository(curationId: UUID, repository: String) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       implicit val user = request.user
 
-       curations.get(curationId) match {
-         case Some(c) => {
-           curations.updateRepository(c.id, repository);
-           //TODO: Make some call to C3-PR?
-           //  Ok(views.html.spaces.matchmakerReport())
-           val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
-             "Dissemination Control" -> List("Restricted Use", "Ability to Embargo"),"License" -> List("Creative Commons", "GPL") ,
-             "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
+      curations.get(curationId) match {
+        case Some(c) => {
+          curations.updateRepository(c.id, repository);
+          //TODO: Make some call to C3-PR?
+          //  Ok(views.html.spaces.matchmakerReport())
+          val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
+            "Dissemination Control" -> List("Restricted Use", "Ability to Embargo"),"License" -> List("Creative Commons", "GPL") ,
+            "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
 
-           Ok(views.html.spaces.curationDetailReport( c, propertiesMap, repository))
-         }
-         case None => InternalServerError("Curation Object not found")
+          Ok(views.html.spaces.curationDetailReport( c, propertiesMap, repository))
+        }
+        case None => InternalServerError("Curation Object not found")
 
-       }
+      }
 
   }
 
@@ -283,19 +284,19 @@ class CurationObjects @Inject()( curations: CurationService,
 
           val valuetoSend = Json.toJson(
             Map(
-                "Repository" -> Json.toJson("Ideals"),
-                "Preferences" -> Json.toJson(
-                  userPreferences
-                ),
-                "Aggregation" -> Json.toJson(
-                  Map(
-                    "Identifier" -> Json.toJson(curationId),
-                    "@id" -> Json.toJson(hostUrl),
-                    "Title" -> Json.toJson(c.name)
-                  )
+              "Repository" -> Json.toJson("Ideals"),
+              "Preferences" -> Json.toJson(
+                userPreferences
+              ),
+              "Aggregation" -> Json.toJson(
+                Map(
+                  "Identifier" -> Json.toJson(curationId),
+                  "@id" -> Json.toJson(hostUrl),
+                  "Title" -> Json.toJson(c.name)
                 )
               )
             )
+          )
 
           var endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
           val httpPost = new HttpPost(endpoint)
