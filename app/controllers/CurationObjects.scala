@@ -254,7 +254,54 @@ class CurationObjects @Inject()( curations: CurationService,
                 "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
               "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
 
-              Ok(views.html.spaces.matchmakerResult(s, c, propertiesMap))
+              var jsonResponse: play.api.libs.json.JsValue = new JsArray()
+              val result = futureResponse.map {
+                case response =>
+                  if(response.status >= 200 && response.status < 300 || response.status == 304) {
+                    success = true
+                    jsonResponse = response.json
+                  }
+              }
+
+              val rs = Await.result(result, Duration.Inf)
+              implicit object mmRuleFormat extends Format[mmRule] {
+                def reads(json: JsValue): JsResult[mmRule] = JsSuccess(new mmRule(
+                  (json \ "Rule Name").as[String],
+                  (json \ "Score").as[Int],
+                  (json \ "Message").as[String]
+                ))
+
+                def writes(mm: mmRule): JsValue = JsObject(Seq(
+                  "Rule Name" -> JsString(mm.rule_name),
+                  "Score" -> JsNumber(mm.Score),
+                  "Message" -> JsString(mm.Message)
+                ))
+              }
+              implicit object MatchMakerResponseFormat extends Format[MatchMakerResponse]{
+                def reads(json: JsValue): JsResult[MatchMakerResponse] = JsSuccess(new MatchMakerResponse(
+
+                  (json \ "orgidentifier").as[String],
+                  (json \ "repositoryName").as[String],
+                  (json \  "Per Rule Scores").as[List[mmRule]],
+                  (json \ "Total Score").as[Int]
+                ))
+
+                def writes(mm: MatchMakerResponse): JsValue = JsObject(Seq(
+                  "orgidentifier" -> JsString(mm.orgidentifier),
+                  "repositoryName" -> JsString(mm.repositoryName),
+                  "Per Rule Scores" -> JsArray(mm.per_rule_score.map(toJson(_))),
+                  "Total Score" -> JsNumber(mm.total_score)
+                ))
+              }
+
+              val mmResp = jsonResponse.as[List[MatchMakerResponse]]
+              user match {
+                case Some(usr) => {
+                  val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
+                  Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences, mmResp))
+                }
+                case None =>Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
+              }
             }
             case None => InternalServerError("Curation Object not found")
           }

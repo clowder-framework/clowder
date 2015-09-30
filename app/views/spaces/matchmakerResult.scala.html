@@ -1,4 +1,4 @@
-@(curationObject: models.CurationObject, properties: Map[String, List[String]], userPreferences:  Map[String,List[String]], mmResponse: List[models.MatchMakerResponse] , mmResponseJson: play.api.libs.json.JsValue)(implicit user: Option[models.User] )
+@(curationObject: models.CurationObject, properties: Map[String, List[String]], userPreferences:  Map[String,List[String]], mmResponse: List[models.MatchMakerResponse])(implicit user: Option[models.User] )
 @main("Matchmaker") {
     <div class="row">
         <div class="col-md-12">
@@ -150,7 +150,7 @@
 
             });
         });
-        $('#selectRepository').on('click', function() {
+        $('.selectRepository').on('click', function() {
             var radios = document.getElementsByName('repository');
             var repository = "";
             for (var i = 0, length = radios.length; i < length; i++) {
