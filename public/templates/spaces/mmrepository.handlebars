@@ -9,10 +9,10 @@
     <div class="indent_20">
 
     <ul class="list-unstyled">
-        {{#each rules}}
-            <li>{{this.[0]}} </li>
-            {{#equal this.[1] 0}}
-                <li><span class="red">{{this.[2]}}</span> <a href ="@routes.CurationObjects.getCurationObject({{curationId}})">Edit Metadata</a><br/> </li>
+        {{#each per_rule_score}}
+            <li>{{this.rule_name}} </li>
+            {{#equal this.score 0}}
+                <li><span class="red">{{this.message}}</span> <a href='{{../../href_metadata}}'> Edit Metadata</a><br/> </li>
             {{else}}
                 <li><span class="green">All Requirements are satisfied.</span></li>
         {{/equal}}
