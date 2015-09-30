@@ -133,8 +133,32 @@
 
     $(".remove-user").click(function(){
         $( this ).closest( "LI" ).remove();
+        var targetId = this.getAttribute("id");
+
+        @for(roleLevel <- roleList) {
+                var currentId = '@roleLevel.replaceAll("\\s+", "")';
+                //Check to see if we are operating on the original target of the event. If so, don't do anything, it handles
+                //it on its own.
+
+                 $('#@roleLevel.replaceAll("\\s+", "")').prepend($("<option></option>").attr("value", targetId).text(getName(targetId)
+                        + " (" + getEmail(targetId) + ")"));
+                 $('#@roleLevel.replaceAll("\\s+", "")').trigger("chosen:updated");
+
+            }
         $( this ).closest( "UL" ).trigger('contentchange');
-        updateUsersInSpace('@space.id');
+
+
+    var request = jsRoutes.api.Spaces.removeUser('@space.id', this.id).ajax({
+        type : 'GET',
+        contentType : "application/json"
+    });
+    request.done ( function ( response, textStatus, jqXHR ) {
+
+        console.log("Successful remove user");
+    });
+    request.fail(function(jqXHR) {
+        console.error("ERROR occurs ");
+    });
     });
 </script>
 

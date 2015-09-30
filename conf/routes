@@ -122,8 +122,8 @@ GET            /spaces/:id/addRequest                                           
 GET            /spaces/:id/acceptRequest                                                @controllers.Spaces.acceptRequest(id:UUID, user:String, role:String)
 GET            /spaces/:id/rejectRequest                                                @controllers.Spaces.rejectRequest(id:UUID, user:String)
 GET            /spaces/:id/users                                                        @controllers.Spaces.manageUsers(id: UUID)
-GET 		   /spaces/:id/extractors						                            @controllers.Spaces.selectExtractors(id: UUID)
-POST		   /spaces/extractors			    							            @controllers.Spaces.updateExtractors
+GET            /spaces/:id/extractors                                                   @controllers.Spaces.selectExtractors(id: UUID)
+POST           /spaces/extractors                                                       @controllers.Spaces.updateExtractors
 POST           /spaces/:id/invite                                                       @controllers.Spaces.inviteToSpace(id: UUID)
 POST           /spaces/submit                                                           @controllers.Spaces.submit
 
@@ -229,7 +229,7 @@ GET            /admin/roles/:id/edit                                            
 POST           /admin/roles/update                                                      @controllers.Admin.updateRole
 GET            /admin/extractions                                                       @controllers.Extractors.listAllExtractions
 POST           /admin/theme                                                             @controllers.Admin.setTheme
-GET      	   /admin/dataDumps           												@controllers.Admin.viewDumpers 
+GET            /admin/dataDumps                                                         @controllers.Admin.viewDumpers
 
 # ----------------------------------------------------------------------
 # JAVASCRIPT ENDPOINTS
@@ -331,9 +331,9 @@ GET            /api/files/:id                                                   
 GET            /api/delete-data                                                         api.Admin.deleteAllData
 POST           /api/remove-admin                                                        api.Admin.removeAdmin
 POST           /api/changeAppearance                                                    api.Admin.submitAppearance
-POST		   /api/dumpFilesMd															@api.Files.dumpFilesMetadata
-POST		   /api/dumpDatasetsMd														@api.Datasets.dumpDatasetsMetadata
-POST		   /api/dumpDatasetGroupings												@api.Datasets.dumpDatasetGroupings
+POST           /api/dumpFilesMd                                                         @api.Files.dumpFilesMetadata
+POST           /api/dumpDatasetsMd                                                      @api.Datasets.dumpDatasetsMetadata
+POST           /api/dumpDatasetGroupings                                                @api.Datasets.dumpDatasetGroupings
 
 # ----------------------------------------------------------------------
 # SPACES ENDPOINT
@@ -347,6 +347,7 @@ POST           /api/spaces/:id/addCollection                                    
 POST           /api/spaces/:id/addDataset                                               @api.Spaces.addDataset(id: UUID)
 POST           /api/spaces/:id/update                                                   @api.Spaces.updateSpace(id: UUID)
 POST           /api/spaces/:id/updateUsers                                              @api.Spaces.updateUsers(id: UUID)
+GET            /api/spaces/:id/removeUser                                               @api.Spaces.removeUser(id: UUID, removeUser: String)
 POST           /api/spaces/addDatasetToSpaces                                           @api.Spaces.addDatasetToSpaces(space_list: List[String] ?= List.empty, dataset_id: UUID)
 POST           /api/spaces/addCollectionToSpaces                                        @api.Spaces.addCollectionToSpaces(space_list: List[String]?= List.empty, collection_id: UUID)
 POST           /api/spaces/:id/follow                                                   @api.Spaces.follow(id: UUID, name: String)
@@ -369,8 +370,8 @@ GET            /api/collections/:coll_id/getDatasets                            
 DELETE         /api/collections/:coll_id                                                @api.Collections.removeCollection(coll_id: UUID)
 POST           /api/collections/:c_id/previews/:p_id                                    @api.Collections.attachPreview(c_id: UUID, p_id: UUID)
 GET            /api/collections/:coll_id                                                @api.Collections.getCollection(coll_id: UUID)
-PUT           /api/collections/:coll_id/title                                           @api.Collections.updateCollectionName(coll_id: UUID)
-PUT           /api/collections/:coll_id/description                                     @api.Collections.updateCollectionDescription(coll_id: UUID)
+PUT            /api/collections/:coll_id/title                                          @api.Collections.updateCollectionName(coll_id: UUID)
+PUT            /api/collections/:coll_id/description                                    @api.Collections.updateCollectionDescription(coll_id: UUID)
 
 # ----------------------------------------------------------------------
 # DATASETS ENDPOINT
@@ -440,7 +441,7 @@ POST           /api/indexes/features                                            
 POST           /api/sections                                                            @api.Sections.add
 GET            /api/sections/:id                                                        @api.Sections.get(id: UUID)
 POST           /api/sections/:id/comments                                               @api.Sections.comment(id: UUID)
-POST    	   /api/sections/:id/description											@api.Sections.description(id: UUID)
+POST           /api/sections/:id/description                                            @api.Sections.description(id: UUID)
 POST           /api/sections/:section_id/thumbnails/:thumbnail_id                       @api.Sections.attachThumbnail(section_id: UUID,thumbnail_id: UUID)
 GET            /api/sections/:id/tags                                                   @api.Sections.getTags(id: UUID)
 POST           /api/sections/:id/tags                                                   @api.Sections.addTags(id: UUID)

@@ -402,6 +402,22 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     }
   }
 
+
+  @ApiOperation(value = "Remove a user from a space", notes = "",
+    responseClass = "None", httpMethod = "GET")
+  def removeUser(spaceId: UUID, removeUser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+    val user = request.user
+    if(spaces.getRoleForUserInSpace(spaceId, UUID(removeUser)) != None){
+      spaces.removeUser(UUID(removeUser), spaceId)
+      Ok(Json.obj("status" -> "success"))
+    } else {
+      Logger.error(s"Remove User $removeUser from space $spaceId does not exist.")
+      BadRequest(toJson(s"The given id $spaceId is not a valid ObjectId."))
+    }
+
+  }
+
+
   @ApiOperation(value = "Follow space",
     notes = "Add user to space followers and add space to user followed spaces.",
     responseClass = "None", httpMethod = "POST")
@@ -432,6 +448,8 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       }
     }
   }
+
+
 
   @ApiOperation(value = "Unfollow space",
     notes = "Remove user from space followers and remove space from user followed spaces.",
