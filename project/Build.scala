@@ -69,7 +69,7 @@ object ApplicationBuild extends Build {
     "org.elasticsearch" % "elasticsearch" % "1.3.4",
     "com.spatial4j" % "spatial4j" % "0.3",
     "org.mongodb" %% "casbah" % "2.6.3",
-    "postgresql" % "postgresql" % "9.1-901.jdbc4",
+    "org.postgresql" % "postgresql" % "9.4-1203-jdbc41",
     "com.wordnik" %% "swagger-play2" % "1.2.6-SNAPSHOT" exclude("org.scala-stm", "scala-stm_2.10.0"),
     "org.reflections" % "reflections" % "0.9.9-RC1",
     "com.google.code.findbugs" % "jsr305" % "2.0.1",
@@ -101,8 +101,6 @@ object ApplicationBuild extends Build {
     "com.googlecode.json-simple" % "json-simple" % "1.1.1",
     "log4j" % "log4j" % "1.2.14",
     "org.codeartisans" % "org.json" % "20131017",
-    "org.postgresql" % "com.springsource.org.postgresql.jdbc4" % "8.3.604",
-    "org.springframework" % "spring" % "2.5.6",
     "org.scalatestplus" % "play_2.10" % "1.0.0" % "test",
     "org.irods.jargon" % "jargon-core" % "3.3.3-beta1",
     "org.julienrf" %% "play-jsonp-filter" % "1.1"
