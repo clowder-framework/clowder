@@ -35,28 +35,14 @@
                 <h3>Candidate Repositories</h3>
                 The results below are based on an analysis of the dataset's properties and metadata and the preferences you specified. <br/>
             <span class="error hiddencomplete" id="selecterror"> Please select a repository</span><br>
-        @for(curRepository <- mmResponse) {
-            @if(curationObject.repository.isDefined && curationObject.repository.get.compareTo(curRepository.orgidentifier.getOrElse("")) == 0) {
-                <h4><input type ="radio" name="repository" value="@curRepository.orgidentifier" checked> @curRepository.orgidentifier</h4>
-            } else {
-                <h4><input type ="radio" name="repository" value="@curRepository.orgidentifier"> @curRepository.orgidentifier</h4>
-            }
-            <div class="indent20" id="@curRepository.orgidentifier">
-                <a><span class="glyphicon glyphicon-chevron-down"> Matchmaker Summary</span></a>
-                <div class="indent_20">
-                    @for(rule <- curRepository.per_rule_score) {
-                        @rule.rule_name <br/>
-                        @if(rule.Score == 0){
-                            <span class="red"> @rule.Message</span> <a href ="@routes.CurationObjects.getCurationObject(curationObject.id)">Edit Metadata</a><br/>
-                        } else {
-                            <span class="green">All requirements are satisfied</span><br/>
-                        }
-                    }
-                </div>
-            </div>
-
-
-        }
+        @*@for(curRepository <- mmResponse) {*@
+            @*@if(curationObject.repository.isDefined && curationObject.repository.get.compareTo(curRepository.orgidentifier.getOrElse("")) == 0) {*@
+                @*<h4><input type ="radio" name="repository" value="@curRepository.orgidentifier" checked> @curRepository.orgidentifier</h4>*@
+            @*} else {*@
+                @*<h4><input type ="radio" name="repository" value="@curRepository.orgidentifier"> @curRepository.orgidentifier</h4>*@
+            @*}*@
+        @*}*@
+            <div id="mmresults"></div>
 
         </div>
 
@@ -68,8 +54,34 @@
         @*<a class="btn btn-primary pull-right" href=@routes.CurationObjects.compareToRepository(space.id, curationObject.id)> Select Repository <span class="glyphicon glyphicon-chevron-right"></span></a>*@
         <button  class="btn btn-primary pull-right" id="selectRepository">Select Repository <span class="glyphicon glyphicon-chevron-right"></span></button>
     </div>
-
+    <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
     <script>
+
+        Handlebars.registerHelper('equal', function(lvalue, rvalue, options) {
+            if (arguments.length < 3)
+                throw new Error("Handlebars Helper equal needs 2 parameters");
+            if( lvalue!=rvalue ) {
+                return options.inverse(this);
+            } else {
+                return options.fn(this);
+            }
+        });
+        var repositoryTemplate = Handlebars.getTemplate('/assets/templates/spaces/mmrepository');
+        @for(curRepository <- mmResponse) {
+            var rules = [];
+            @for(rule <- curRepository.per_rule_score) {
+                rules.push(["@rule.rule_name", "@rule.Score", "@rule.Message"]);
+            }
+            @if(curationObject.repository.isDefined && curationObject.repository.get.compareTo(curRepository.orgidentifier) == 0) {
+                var html =repositoryTemplate({curationId: "@curationObject.id", repositoryName: "@curRepository.repositoryName", orgidentifier: "@curRepository.orgidentifier", rules: rules,  selected: true});
+                $('#mmresults').append(html);
+            } else {
+
+                var html =repositoryTemplate({curationId: "@curationObject.id", repositoryName: "@curRepository.repositoryName",  orgidentifier: "@curRepository.orgidentifier", rules: rules, selected: false});
+                $('#mmresults').append(html);
+            }
+        }
         @for(curRepository <- mmResponse) {
              $("#@curRepository.orgidentifier").on('click', function(){
             if($("#@curRepository.orgidentifier > div").attr('style') == 'display:none;'){
@@ -86,32 +98,6 @@
             });
         }
 
-            $("#iu_cloud_mm").on('click', function(){
-            if($("#iu_cloud_mm > div").attr('style') == 'display:none;'){
-                $("#iu_cloud_mm > div").attr('style', 'display:block;');
-                $("#iu_cloud_mm > a > span").removeClass('glyphicon-chevron-right');
-                $("#iu_cloud_mm > a >span").addClass('glyphicon-chevron-down');
-            }
-            else{
-               $("#iu_cloud_mm> div").attr('style', 'display:none;');
-                $("#iu_cloud_mm > a >span").removeClass('glyphicon-chevron-down');
-                $("#iu_cloud_mm > a >span").addClass('glyphicon-chevron-right');
-
-            }
-            });
-            $("#open_icpsr_mm").on('click', function(){
-            if($("#open_icpsr_mm > div").attr('style') == 'display:none;'){
-                $("#open_icpsr_mm > div").attr('style', 'display:block;');
-                $("#open_icpsr_mm > a >span").removeClass('glyphicon-chevron-right');
-                $("#open_icpsr_mm > a >span").addClass('glyphicon-chevron-down');
-            }
-            else{
-               $("#open_icpsr_mm > div").attr('style', 'display:none;');
-                $("#open_icpsr_mm > a >span").removeClass('glyphicon-chevron-down');
-                $("#open_icpsr_mm > a >span").addClass('glyphicon-chevron-right');
-
-            }
-            });
         $('#updateResults').on('click', function() {
             var access = [];
             $("input[name='Access']:checkbox:checked").each(function(i){
@@ -140,6 +126,11 @@
 
             request.done(function(response, textStatus, jqXHR) {
                 console.log("Updated Data in Preferences");
+                $('#mmresult').html("");
+
+                for(i in response) {
+                    $('#mmresult').html(i);
+                }
                 console.log(response)
             });
             request.fail(function( jqXHR, textStatus, errorThrown) {

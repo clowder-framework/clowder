@@ -226,7 +226,8 @@ class CurationObjects @Inject()( curations: CurationService,
               val maxDataset = if (!c.files.isEmpty)  c.files.map(_.length).max else 0
               val totalSize = if (!c.files.isEmpty) c.files.map(_.length).sum else 0
               val valuetoSend = Json.obj(
-                  "Aggregation" ->
+                "@context" -> Json.toJson("https://w3id.org/ore/context"),
+                "Aggregation" ->
                     Map(
                       "Identifier" -> Json.toJson(hostIp +"/api/curations/" + curationId),
                       "@id" -> Json.toJson(hostUrl),
@@ -276,20 +277,22 @@ class CurationObjects @Inject()( curations: CurationService,
               }
               implicit object MatchMakerResponseFormat extends Format[MatchMakerResponse]{
                 def reads(json: JsValue): JsResult[MatchMakerResponse] = JsSuccess(new MatchMakerResponse(
-                  //TODO: Change to .as[String] currently failing due to a null value in one of the instances (I think).
-                  (json \ "orgidentifier").as[Option[String]],
+
+                  (json \ "orgidentifier").as[String],
+                  (json \ "repositoryName").as[String],
                   (json \  "Per Rule Scores").as[List[mmRule]],
                   (json \ "Total Score").as[Int]
                 ))
 
                 def writes(mm: MatchMakerResponse): JsValue = JsObject(Seq(
-                  "orgidentifier" -> JsString(mm.orgidentifier.getOrElse("")),
+                  "orgidentifier" -> JsString(mm.orgidentifier),
+                  "repositoryName" -> JsString(mm.repositoryName),
                   "Per Rule Scores" -> JsArray(mm.per_rule_score.map(toJson(_))),
                   "Total Score" -> JsNumber(mm.total_score)
                 ))
               }
 
-              val mmResp = jsonResponse.as[List[MatchMakerResponse]].filter(_.orgidentifier != None)
+              val mmResp = jsonResponse.as[List[MatchMakerResponse]]
               user match {
                 case Some(usr) => {
                   val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}

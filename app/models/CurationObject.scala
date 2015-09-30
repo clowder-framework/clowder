@@ -25,7 +25,8 @@ case class CurationObject (
 )
 
 case class MatchMakerResponse(
-   orgidentifier: Option[String],
+   orgidentifier: String,
+   repositoryName: String,
    per_rule_score: List[mmRule],
    total_score: Int)
 

@@ -1,0 +1,22 @@
+{{#if selected}}
+    <h4><input type="radio" name="repository" value="{{orgidentifier}}" checked> {{repositoryName}}</h4>
+{{else}}
+    <h4><input type="radio" name="repository" value="{{orgidentifier}}" > {{repositoryName}}</h4>
+
+{{/if}}
+<div class="indent20" id="{{orgidentifier}}">
+    <a> <span class="glyphicon glyphicon-chevron-down"></span>  Matchmaker Summary </a>
+    <div class="indent_20">
+
+    <ul class="list-unstyled">
+        {{#each rules}}
+            <li>{{this.[0]}} </li>
+            {{#equal this.[1] 0}}
+                <li><span class="red">{{this.[2]}}</span> <a href ="@routes.CurationObjects.getCurationObject({{curationId}})">Edit Metadata</a><br/> </li>
+            {{else}}
+                <li><span class="green">All Requirements are satisfied.</span></li>
+        {{/equal}}
+        {{/each}}
+    </ul>
+    </div>
+</div>
