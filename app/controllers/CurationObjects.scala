@@ -14,6 +14,7 @@ import play.api.Logger
 import play.api.data.{Forms, Form}
 import play.api.libs.json._
 import play.api.libs.json.Json._
+import play.api.libs.json.JsArray
 import services._
 import _root_.util.RequiredFieldsConfig
 import play.api.Play._
@@ -23,6 +24,7 @@ import scala.concurrent.Await
 import play.api.mvc.Results
 import play.api.libs.ws._
 import play.api.libs.ws.WS._
+import play.api.mvc.Results
 
 import scala.concurrent.duration._
 import play.api.libs.json.Reads._
@@ -250,58 +252,9 @@ class CurationObjects @Inject()( curations: CurationService,
               val futureResponse = WS.url(endpoint).post(valuetoSend)
               val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
                 "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
-                "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
+              "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
 
-              var jsonResponse: play.api.libs.json.JsValue = new JsArray()
-              val result = futureResponse.map {
-              case response =>
-                if(response.status >= 200 && response.status < 300 || response.status == 304) {
-                    success = true
-                    jsonResponse = response.json
-                  }
-              }
-
-              val rs = Await.result(result, Duration.Inf)
-              implicit object mmRuleFormat extends Format[mmRule] {
-                def reads(json: JsValue): JsResult[mmRule] = JsSuccess(new mmRule(
-                  (json \ "Rule Name").as[String],
-                  (json \ "Score").as[Int],
-                  (json \ "Message").as[String]
-                ))
-
-                def writes(mm: mmRule): JsValue = JsObject(Seq(
-                  "Rule Name" -> JsString(mm.rule_name),
-                  "Score" -> JsNumber(mm.Score),
-                  "Message" -> JsString(mm.Message)
-                ))
-              }
-              implicit object MatchMakerResponseFormat extends Format[MatchMakerResponse]{
-                def reads(json: JsValue): JsResult[MatchMakerResponse] = JsSuccess(new MatchMakerResponse(
-
-                  (json \ "orgidentifier").as[String],
-                  (json \ "repositoryName").as[String],
-                  (json \  "Per Rule Scores").as[List[mmRule]],
-                  (json \ "Total Score").as[Int]
-                ))
-
-                def writes(mm: MatchMakerResponse): JsValue = JsObject(Seq(
-                  "orgidentifier" -> JsString(mm.orgidentifier),
-                  "repositoryName" -> JsString(mm.repositoryName),
-                  "Per Rule Scores" -> JsArray(mm.per_rule_score.map(toJson(_))),
-                  "Total Score" -> JsNumber(mm.total_score)
-                ))
-              }
-
-              val mmResp = jsonResponse.as[List[MatchMakerResponse]]
-              user match {
-                case Some(usr) => {
-                  val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
-                  Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences, mmResp, jsonResponse))
-                }
-                case None =>Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
-              }
-
-
+              Ok(views.html.spaces.matchmakerResult(s, c, propertiesMap))
             }
             case None => InternalServerError("Curation Object not found")
           }
@@ -309,28 +262,24 @@ class CurationObjects @Inject()( curations: CurationService,
 
   }
 
-
   def compareToRepository(curationId: UUID, repository: String) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       implicit val user = request.user
 
-          curations.get(curationId) match {
-            case Some(c) => {
-              curations.updateRepository(c.id, repository)
-              //TODO: Make some call to C3-PR?
-              //  Ok(views.html.spaces.matchmakerReport())
-              val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
-                "Dissemination Control" -> List("Restricted Use", "Ability to Embargo"), "License" -> List("Creative Commons", "GPL"),
-                "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
+       curations.get(curationId) match {
+         case Some(c) => {
+           curations.updateRepository(c.id, repository);
+           //TODO: Make some call to C3-PR?
+           //  Ok(views.html.spaces.matchmakerReport())
+           val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
+             "Dissemination Control" -> List("Restricted Use", "Ability to Embargo"),"License" -> List("Creative Commons", "GPL") ,
+             "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
 
-              Ok(views.html.spaces.curationDetailReport(c, propertiesMap, repository))
-            }
-            case None => InternalServerError("Curation Object not found")
-
+           Ok(views.html.spaces.curationDetailReport( c, propertiesMap, repository))
         }
+        case None => InternalServerError("Space not found")
       }
-
-
+  }
 
   def sendToRepository(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
@@ -338,7 +287,6 @@ class CurationObjects @Inject()( curations: CurationService,
 
       curations.get(curationId) match {
         case Some(c) =>
-          //TODO : Submit the curationId to the repository. This probably needs the repository as input
           var success = false
           var repository: String = ""
           c.repository match {
@@ -349,10 +297,11 @@ class CurationObjects @Inject()( curations: CurationService,
           val hostUrl = hostIp + "/api/curations/" + curationId + "/ore#aggregation"
           val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => pref._1-> Json.toJson(pref._2.toString().split(",").toList))).getOrElse(Map.empty)
           val userPreferences = userPrefMap + ("Repository" -> Json.toJson(repository))
-
+          val maxDataset = if (!c.files.isEmpty)  c.files.map(_.length).max else 0
+          val totalSize = if (!c.files.isEmpty) c.files.map(_.length).sum else 0
           val valuetoSend = Json.toJson(
             Map(
-                "Repository" -> Json.toJson("Ideals"),
+                "Repository" -> Json.toJson(repository.toLowerCase()),
                 "Preferences" -> Json.toJson(
                   userPreferences
                 ),
@@ -362,7 +311,15 @@ class CurationObjects @Inject()( curations: CurationService,
                     "@id" -> Json.toJson(hostUrl),
                     "Title" -> Json.toJson(c.name)
                   )
-                )
+                ),
+                "Aggregation Statistics" -> Json.toJson(
+                  Map(
+                    "Max Collection Depth" -> Json.toJson("1"),
+                    "Data Mimetypes" -> Json.toJson(c.files.map(_.contentType).toSet),
+                    "Max Dataset Size" -> Json.toJson(maxDataset.toString),
+                    "Total Size" -> Json.toJson(totalSize.toString)
+                  )),
+                "Publication Callback" -> Json.toJson(hostIp + "/spaces/curations/" + c.id + "/status")
               )
             )
 

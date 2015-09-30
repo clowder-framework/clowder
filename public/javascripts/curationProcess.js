@@ -20,3 +20,23 @@ function removeCuration(spaceId, curationId){
     });
 }
 
+function retractCuration(curationId) {
+    console.log("Retracting curation Object: " + curationId);
+
+    var request = jsRoutes.api.CurationObjects.retractCurationObject(curationId).ajax({
+        type: 'Delete'
+    });
+
+    request.done(function(response, texStatus, jqXHR) {
+        $('#'+curationId).removeClass('submitted');
+        $('#'+curationId).addClass('in-curation');
+        $('#'+curationId).html("In Curation");
+        $('#ul_'+curationId).remove();
+    });
+
+    request.fail(function(jqXHR, textStatus, errorThrown) {
+       console.error("The following error ocurred: " + textStatus, errorThrown);
+        notify("The curation object could not be retracted due to: " + errorThrown, "Error" );
+    });
+}
+

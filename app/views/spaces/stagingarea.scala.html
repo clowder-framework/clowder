@@ -1,28 +1,23 @@
 @(space: models.ProjectSpace, curationObjects: List[models.CurationObject])(implicit user: Option[models.User])
 
 @main("Staging Area") {
-    <div class = "row">
-        <ol class="breadcrumb">
-            <li class="active">  Staging Area </li>
-        </ol>
-
-    </div>
     <div class="row">
         <div class="col-md-12">
-            <h1>Staging Area for @space.name</h1>
+            <h1>Staging Area</h1>
+            <h5>Space: <a href="@routes.Spaces.getSpace(space.id)">@space.name</a></h5>
         </div>
     </div>
     @util.masonry()
-    <div class = "row" id="tile-view">
-        <div class = col-md-12>
-            <div id = "masonry">
+    <div class="row" id="tile-view">
+        <div class="col-md-12">
+            <div id="masonry">
                 @curationObjects.map { curObject =>
                     <div class="post-box col-lg-3 col-md-3 coml-sm-3 col-xs-12">
                         <div class = "panel panel-default">
                             @if(curObject.status == "Submitted") {
-                                <div class="panel-heading text-center submitted">
+                                <div id="@curObject.id" class="panel-heading text-center submitted">
                             } else {
-                                <div class="panel-heading text-center in-curation">
+                                <div id="@curObject.id" class="panel-heading text-center in-curation">
                             }
 
                                @curObject.status
@@ -41,17 +36,18 @@
                                     <span class="glyphicon glyphicon glyphicon-th-large" title="@curObject.collections.size collections"></span> @curObject.collections.size
                                     <button onclick="removeCuration('@(space.id)','@(curObject.id)')"  type="button" class="btn btn-link">
                                         <span class="glyphicon glyphicon glyphicon-trash" title="@curObject.collections.size collections"></span></button>
-
                                 </li>
-
                             </ul>
+                            @if(curObject.status == "Submitted") {
+                                <ul id="ul_@curObject.id" class="list-group">
+                                <li class="list-group-item"><button class="btn btn-default btn-sm btn-danger text-center" onclick="retractCuration('@curObject.id')">Retract Submission</button></li>
+                                </ul>
+                            }
                         </div>
                     </div>
-
                 }
             </div>
         </div>
     </div>
-    <a class="btn btn-default" href="@routes.Spaces.getSpace(space.id)"> Go Back to Space </a>
     <script src="@routes.Assets.at("javascripts/curationProcess.js")" type="text/javascript"></script>
 }

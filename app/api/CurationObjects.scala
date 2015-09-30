@@ -6,6 +6,8 @@ import javax.inject.{Inject, Singleton}
 import controllers.Utils
 import models.{MatchMakerResponse, mmRule, ResourceRef, UUID}
 import play.api.libs.ws.WS
+import org.apache.http.client.methods.HttpDelete
+import org.apache.http.impl.client.DefaultHttpClient
 import services._
 import play.api.libs.json._
 import play.api.libs.json.Json
@@ -126,7 +128,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     "Topic" -> Json.toJson("http://purl.org/dc/terms/subject"),
                     "Audience" -> Json.toJson("http://purl.org/dc/terms/audience"),
                     "Bibliographic citation" -> Json.toJson("http://purl.org/dc/terms/bibliographicCitation"),
-                    "http://purl.org/vocab/frbr/core#embodimentOf" -> Json.toJson("http://purl.org/vocab/frbr/core#embodimentOf"),
                     "Coverage" -> Json.toJson("http://purl.org/dc/terms/coverage"),
                     "Published In" -> Json.toJson("http://purl.org/dc/terms/isPartOf"),
                     "Publisher" -> Json.toJson("http://purl.org/dc/terms/publisher"),
@@ -292,6 +293,35 @@ class CurationObjects @Inject()(datasets: DatasetService,
       }
       case None => InternalServerError("Curation Object Not found")
     }
+  }
+  
+  @ApiOperation(value = "Retract the curation object from the repository", notes = "",
+    responseClass = "None", httpMethod = "DELETE")
+  def retractCurationObject(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
+    implicit request =>
+      implicit val user = request.user
+      curations.get(curationId) match {
+        case Some(c) => {
+          var success = false
+          var endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
+          val httpDelete = new HttpDelete(endpoint + "/" + curationId.toString())
+          var client = new DefaultHttpClient
+          val response = client.execute(httpDelete)
+          val responseStatus = response.getStatusLine().getStatusCode()
+          if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304) {
+            curations.updateStatus(curationId, "In Curation")
+            success = true
+          }
+          if(success) {
+            Ok(toJson("Success"))
+          } else {
+            InternalServerError("Could not retract curation Object")
+          }
+        }
+        case None => InternalServerError("Curation Object Not found")
+      }
+
+
   }
 
 }
