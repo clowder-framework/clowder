@@ -259,9 +259,9 @@ class CurationObjects @Inject()(datasets: DatasetService,
               ))
 
               def writes(mm: mmRule): JsValue = JsObject(Seq(
-                "Rule Name" -> JsString(mm.rule_name),
-                "Score" -> JsNumber(mm.Score),
-                "Message" -> JsString(mm.Message)
+                "rule_name" -> JsString(mm.rule_name),
+                "score" -> JsNumber(mm.Score),
+                "message" -> JsString(mm.Message)
               ))
             }
             implicit object MatchMakerResponseFormat extends Format[MatchMakerResponse]{
@@ -275,8 +275,8 @@ class CurationObjects @Inject()(datasets: DatasetService,
               def writes(mm: MatchMakerResponse): JsValue = JsObject(Seq(
                 "orgidentifier" -> JsString(mm.orgidentifier),
                 "repositoryName" -> JsString(mm.repositoryName),
-                "Per Rule Scores" -> JsArray(mm.per_rule_score.map(toJson(_))),
-                "Total Score" -> JsNumber(mm.total_score)
+                "per_rule_score" -> JsArray(mm.per_rule_score.map(toJson(_))),
+                "total_score" -> JsNumber(mm.total_score)
               ))
             }
 

@@ -1,4 +1,4 @@
-@(curationObject: models.CurationObject, properties: Map[String, List[String]], userPreferences:  Map[String,List[String]], mmResponse: List[models.MatchMakerResponse])(implicit user: Option[models.User] )
+@(curationObject: models.CurationObject, properties: Map[String, List[String]], userPreferences:  Map[String,List[String]], mmResponse: List[models.MatchMakerResponse] , mmResponseJson: play.api.libs.json.JsValue)(implicit user: Option[models.User] )
 @main("Matchmaker") {
     <div class = "row">
         <ol class="breadcrumb">
@@ -71,14 +71,14 @@
         @for(curRepository <- mmResponse) {
             var rules = [];
             @for(rule <- curRepository.per_rule_score) {
-                rules.push(["@rule.rule_name", "@rule.Score", "@rule.Message"]);
+                rules.push({rule_name: "@rule.rule_name", score: "@rule.Score", message: "@rule.Message"});
             }
             @if(curationObject.repository.isDefined && curationObject.repository.get.compareTo(curRepository.orgidentifier) == 0) {
-                var html =repositoryTemplate({curationId: "@curationObject.id", repositoryName: "@curRepository.repositoryName", orgidentifier: "@curRepository.orgidentifier", rules: rules,  selected: true});
+                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", repositoryName: "@curRepository.repositoryName", orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules,  selected: true});
                 $('#mmresults').append(html);
             } else {
 
-                var html =repositoryTemplate({curationId: "@curationObject.id", repositoryName: "@curRepository.repositoryName",  orgidentifier: "@curRepository.orgidentifier", rules: rules, selected: false});
+                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", repositoryName: "@curRepository.repositoryName",  orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules, selected: false});
                 $('#mmresults').append(html);
             }
         }
@@ -126,10 +126,14 @@
 
             request.done(function(response, textStatus, jqXHR) {
                 console.log("Updated Data in Preferences");
-                $('#mmresult').html("");
+
+                var repository = $("input[type='radio'][name='repository']:checked").val();
+                $('#mmresults').html("");
 
                 for(i in response) {
-                    $('#mmresult').html(i);
+                    var sel = repository == response[i].orgidentifier;
+                    var html  = repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", repositoryName:response[i].repositoryName, orgidentifier: response[i].orgidentifier, per_rule_score: response[i].per_rule_score, selected: repository == response[i].orgidentifier});
+                    $('#mmresults').append(html);
                 }
                 console.log(response)
             });
