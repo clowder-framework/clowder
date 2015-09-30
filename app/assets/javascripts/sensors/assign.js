@@ -59,6 +59,7 @@ function associateItemWithSensor(resource_type, item_id, sensor_id, sensor_name,
 
         // close modal
         $('#sensors-assign').modal('hide');
+        window.location.reload();
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
