@@ -88,7 +88,8 @@ class Status @Inject()(collections: CollectionService,
     result.put("geostream", current.plugin[PostgresPlugin] match {
       case Some(p) => {
         if (WithPermission(Permission.Admin).isAuthorized(user)) {
-          Json.obj("database" -> p.conn.getSchema)
+          Json.obj("catalog" -> p.conn.getCatalog,
+            "schema" -> p.conn.getSchema)
         } else {
           jsontrue
         }
