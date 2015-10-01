@@ -314,33 +314,54 @@ class CurationObjects @Inject()(
       }
   }
 
+
+  /**
+   * Endpoint for receiving status/ uri from repository.
+   */
   def savePublishedObject(id: UUID) = UserAction (parse.json) {
     implicit request =>
       Logger.debug("get infomation from repository")
 
       curations.get(id) match {
-        case None => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object not found.")))
+
         case Some(c) => {
-          if(c.status == "In Curation") {
-            BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object hasn't been submitted yet.")))
-          } else {
-            (request.body \ "status").asOpt[String].map { status =>
-              if(status.compareToIgnoreCase("Published") == 0 || status.compareToIgnoreCase("Publish") == 0){
-                curations.setPublished(id)
+          c.status match {
+
+            case "In Curation" => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object hasn't been submitted yet.")))
+            //sead2 receives status once from repository,
+            case "Published" | "ERROR" | "Reject" => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object already received status from repository.")))
+            case "Submitted" => {
+              //parse status from request's body
+              val statusList = (request.body \ "status").asOpt[String]
+              if (statusList.size == 1) {
+
+                statusList.map {
+                  status =>
+                    if (status.compareToIgnoreCase("Published") == 0 || status.compareToIgnoreCase("Publish") == 0) {
+                      curations.setPublished(id)
+                    } else {
+                      //other status except Published, such as ERROR, Rejected
+                      curations.updateStatus(id, status)
+                    }
+
+                }
+                (request.body \ "uri").asOpt[String].map {
+                  externalIdentifier =>
+                    curations.updateExternalIdentifier(id, new URI(externalIdentifier))
+                }
+
+                Ok(toJson(Map("status" -> "OK")))
               } else {
-                curations.updateStatus(id, status)
+                BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Receive none / multiple statuses from request.")))
               }
             }
+            case _ => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object has unrecognized status .")))
 
-            (request.body \ "uri").asOpt[String].map { externalIdentifier =>
-              curations.updateExternalIdentifier(id,  new URI(externalIdentifier))
-            }
-
-            Ok(toJson(Map("status" -> "OK")))
           }
         }
+        case None => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object not found.")))
       }
-
   }
+
 
 }
