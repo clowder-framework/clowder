@@ -314,7 +314,6 @@ class CurationObjects @Inject()(
       }
   }
 
-
   /**
    * Endpoint for receiving status/ uri from repository.
    */
