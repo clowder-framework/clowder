@@ -54,6 +54,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     Ok("")
    }
 
+  def apidoc(path: String) = ApiHelpController.getResource("/api-docs.json/" + path)
+
   /**
    * Bookmarklet
    */
