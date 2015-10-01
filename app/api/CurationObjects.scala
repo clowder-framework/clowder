@@ -56,9 +56,8 @@ class CurationObjects @Inject()(datasets: DatasetService,
             ))
           }
 
-          val filesInDataset = c.datasets(0).files.map(f => files.get(f.id).get) //.sortBy(_.uploadDate)
           var commentsByDataset = comments.findCommentsByDatasetId(c.datasets(0).id)
-          filesInDataset.map {
+          c.files.map {
             file =>
 
               commentsByDataset ++= comments.findCommentsByFileId(file.id)
