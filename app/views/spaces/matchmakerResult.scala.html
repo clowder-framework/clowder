@@ -90,21 +90,7 @@
                 $('#mmresults').append(html);
             }
         }
-        @for(curRepository <- mmResponse) {
-             $("#@curRepository.orgidentifier").on('click', function(){
-            if($("#@curRepository.orgidentifier > div").attr('style') == 'display:none;'){
-                $("#@curRepository.orgidentifier > div").attr('style', 'display:block;');
-                $("#@curRepository.orgidentifier > a > span").removeClass('glyphicon-chevron-right');
-                $("#@curRepository.orgidentifier > a >span").addClass('glyphicon-chevron-down');
-            }
-            else{
-               $("#@curRepository.orgidentifier > div").attr('style', 'display:none;');
-                $("#@curRepository.orgidentifier > a >span").removeClass('glyphicon-chevron-down');
-                $("#@curRepository.orgidentifier > a >span").addClass('glyphicon-chevron-right');
 
-            }
-            });
-        }
 
         $('#updateResults').on('click', function() {
             var access = [];
@@ -142,7 +128,9 @@
                     var sel = repository == response[i].orgidentifier;
                     var html  = repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", repositoryName:response[i].repositoryName, orgidentifier: response[i].orgidentifier, per_rule_score: response[i].per_rule_score, selected: repository == response[i].orgidentifier});
                     $('#mmresults').append(html);
+
                 }
+
                 console.log(response)
             });
             request.fail(function( jqXHR, textStatus, errorThrown) {

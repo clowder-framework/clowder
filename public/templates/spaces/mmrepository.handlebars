@@ -5,10 +5,11 @@
 
 {{/if}}
 <div class="indent20" id="{{orgidentifier}}">
-    <a> <span class="glyphicon glyphicon-chevron-down"></span>  Matchmaker Summary </a>
-    <div class="indent_20">
+    <a role= "button" data-toggle="collapse" href="#rules_{{orgidentifier}}" aria-expanded="false" aria-controls="rules_{{orgidentifier}}">
+    <span class="glyphicon glyphicon-chevron-down" ></span>  Matchmaker Summary </a>
+    <div class="collapse in" id="rules_{{orgidentifier}}">
 
-    <ul class="list-unstyled">
+    <ul class="indent_20 list-unstyled">
         {{#each per_rule_score}}
             <li>{{this.rule_name}} </li>
             {{#equal this.score 0}}
