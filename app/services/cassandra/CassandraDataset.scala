@@ -199,7 +199,12 @@ class CassandraDataset extends DatasetService {
 
   def addToSpace(dataset: UUID, space: UUID) {}
 
- def removeFromSpace(dataset: UUID, space: UUID) {}
+  def removeFromSpace(dataset: UUID, space: UUID) {}
+
+  def dumpAllDatasetGroupings(): List[String] = {List.empty}
+  
+  def dumpAllDatasetMetadata(): List[String] = {List.empty}
+
  /**
   * Add follower to a dataset.
   */

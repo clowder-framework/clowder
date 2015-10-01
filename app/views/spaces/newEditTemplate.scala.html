@@ -38,11 +38,12 @@
           </div>
           @inputText(myForm("logoUrl"), '_label-> "Logo URL")
           @inputText(myForm("bannerUrl"), '_label-> "Banner URL")
-          @helper.inputText(myForm("editTime"), '_label -> "Time to live (hours):")
+
           @helper.inputRadioGroup(myForm("expiration"), options("expiretrue"->"On", "expirefalse"->"Off"), '_label -> "Expiration")
           @defining(myForm("isTimeToLiveEnabled")) { isTimeToLiveEnabled =>
             <input type="hidden" name="isTimeToLiveEnabled" id="isTimeToLiveEnabled", value = @isTimeToLiveEnabled.value>
           }
+          @helper.inputText(myForm("editTime"), '_label -> "Time to live (hours):")
           @helper.input(myForm("space_id"), '_label ->"") {(id, name, value, args) =>
             <input type="hidden" name="@id" value="@value">
           }

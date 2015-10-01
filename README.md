@@ -43,7 +43,7 @@ in the custom.conf file. You will need to make sure mongod is running before you
 
 To enable the message passing between Clowder and the extractors you will need RabbitMQ. We currently are supporting
 version 3.4.3 of RabbitMQ. We have not yet tested Clowder with version 4.0 of RabbitMQ. You can set the RabbitMQ
-server using medici2.rabbitmq.uri in the custom.conf file. To enable RabbitMQ you will need to enable the plugin in
+server using clowder.rabbitmq.uri in the custom.conf file. To enable RabbitMQ you will need to enable the plugin in
 play.plugins.
 
 The management plugin is used by the DTS extractor endpoints and will help with debugging. To enable the plugin you

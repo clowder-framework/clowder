@@ -9,8 +9,9 @@ import java.sql.DriverManager
 import java.util.Properties
 import java.sql.Timestamp
 import java.sql.Statement
-import play.api.libs.json.{Json, JsObject}
 import util.Parsers
+import play.api.libs.json._
+
 
 /**
  * Postgres connection and simple geoindex methods.
@@ -174,11 +175,101 @@ class PostgresPlugin(application: Application) extends Plugin {
       None
     } else Some(data)
   }
+
+  def updateSensorMetadata(id: String, data: String): Option[String] = {
+    val query = "SELECT row_to_json(t, true) AS my_sensor FROM (" +
+      "SELECT metadata As properties FROM sensors " +
+      "WHERE gid=?) AS t"
+    val st = conn.prepareStatement(query)
+    st.setInt(1, id.toInt)
+    Logger.debug("Sensors get statement: " + st)
+    val rs = st.executeQuery()
+    var sensorData = ""
+    while (rs.next()) {
+      sensorData += rs.getString(1)
+    }
+    rs.close()
+    st.close()
+
+    val oldDataJson = Json.parse(sensorData).as[JsObject]
+    val newDataJson = Json.parse(data).as[JsObject]
+
+    val jsonTransformer = (__ \ 'properties).json.update(
+      __.read[JsObject].map{ o => o ++ newDataJson }
+    )
+    val updatedJSON = oldDataJson.transform(jsonTransformer).get
+
+    val query2 = "UPDATE sensors SET metadata = CAST(? AS json) WHERE gid = ?"
+    val st2 = conn.prepareStatement(query2)
+    st2.setString(1, Json.stringify((updatedJSON \ "properties")))
+    st2.setInt(2, id.toInt)
+    Logger.debug("Sensors put statement: " + st2)
+    val rs2 = st2.executeUpdate()
+    st2.close()
+    getSensor(id)
+  }
+
+  /**
+   * Operates like the HTTP PATCH method, but uses HTTP PUT.
+   * PUT typically replaces everything in the field getting updated
+   * PATCH typically only modifies the changes you pass in
+   * This will not delete any values in metadata,
+   * even if a single tree of a nested object is passed, all siblings will remain.
+   * @param id stream id [String]
+   * @param data to be updated [JsValue]
+   * @return returns the entire stream response with updated values from getStream(id)
+   */
+  def patchStreamMetadata(id: String, data: String): Option[String] = {
+    val query = "SELECT row_to_json(t, true) AS my_stream FROM (" +
+      "SELECT metadata As properties FROM streams " +
+      "WHERE gid=?) AS t"
+    val st = conn.prepareStatement(query)
+    st.setInt(1, id.toInt)
+    Logger.debug("Streams get statement: " + st)
+    val rs = st.executeQuery()
+    var streamData = ""
+    while (rs.next()) {
+      streamData += rs.getString(1)
+    }
+    rs.close()
+    st.close()
+
+    val oldDataJson = Json.parse(streamData).as[JsObject]
+    val newDataJson = Json.parse(data).as[JsObject]
+
+    val jsonTransformer = (__ \ 'properties).json.update(
+      __.read[JsObject].map{ o => o ++ newDataJson }
+    )
+    val updatedJSON = oldDataJson.transform(jsonTransformer).get
+
+    val query2 = "UPDATE streams SET metadata = CAST(? AS json) WHERE gid = ?"
+    val st2 = conn.prepareStatement(query2)
+    st2.setString(1, Json.stringify((updatedJSON \ "properties")))
+    st2.setInt(2, id.toInt)
+    Logger.debug("Stream put statement: " + st2)
+    val rs2 = st2.executeUpdate()
+    st2.close()
+    getStream(id)
+  }
+
+  /**
+   * Retrieve links for sensor pages on da
+   * @param ids sensor ids
+   * @return a list of tuples, first element is sensor name, second is sensor url on dashboard
+   */
+  def getDashboardSensorURLs(ids: List[String]): List[(String, String)] = {
+    val base = play.api.Play.configuration.getString("geostream.dashboard.url").getOrElse("http://localhost:9000")
+    val sensorsJson = ids.map(id => Json.parse(getSensor(id).getOrElse("{}")))
+    List.tabulate(sensorsJson.size) { i =>
+      val name = (sensorsJson(i) \ "name").as[String]
+      (name, base + "#detail/location/" + name + "/")
+    }
+  }
   
   def getSensorStreams(id: String): Option[String] = {
     var data = ""
     val query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-      "(SELECT streams.gid As stream_id FROM streams WHERE sensor_id=?) As t;"
+      "(SELECT streams.gid As stream_id, streams.name As name FROM streams WHERE sensor_id=?) As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
     Logger.debug("Get streams by sensor statement: " + st)

@@ -2,7 +2,15 @@
 
 <h3>Collections</h3>
 @if(collections.size == 0) {
-    <p>You can add a collection to this space from a collection page.</p>
+    <a id="create-collection"href="@routes.Collections.newCollection(Some(space))" class="btn btn-primary btn-xs">
+
+        Create Collection
+    </a>
 } else {
     @spaces.collectionsGrid(collections, space)
+}
+@if(!user.isDefined) {
+    <script type="text/javascript">
+        $('#create-collection').addClass('disabled');
+    </script>
 }

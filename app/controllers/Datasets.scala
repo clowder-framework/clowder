@@ -33,8 +33,8 @@ class Datasets @Inject()(
   users: UserService,
   previewService: PreviewService,
   spaceService: SpaceService,
-  curationService: CurationService) extends SecuredController {
-
+  curationService: CurationService,
+  relations: RelationService) extends SecuredController {
 
   object ActivityFound extends Exception {}
 
@@ -42,9 +42,8 @@ class Datasets @Inject()(
    * Display the page that allows users to create new datasets, either by uploading multiple new files,
    * or by selecting multiple existing files.
    */
-  def newDataset() = PermissionAction(Permission.CreateDataset) { implicit request =>
+  def newDataset(space: Option[String]) = PermissionAction(Permission.CreateDataset) { implicit request =>
       implicit val user = request.user
-      val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
       val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
       var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
       for (aSpace <- spacesList) {
@@ -54,14 +53,22 @@ class Datasets @Inject()(
           decodedSpaceList += Utils.decodeSpaceElements(aSpace)
         }
       }
+    space match {
+      case Some(s) => {
+        spaceService.get(UUID(s)) match {
+          case Some(spaceId) => Ok(views.html.newDataset(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, Some(s))).flashing("error" -> "Please select ONE file (upload new or existing)")
+          case None => Ok(views.html.newDataset(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None)).flashing("error" -> "Please select ONE file (upload new or existing)")
+        }
 
-    Ok(views.html.newDataset(filesList, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired)).flashing("error" -> "Please select ONE file (upload new or existing)")
+      }
+      case None => Ok(views.html.newDataset(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None)).flashing("error" -> "Please select ONE file (upload new or existing)")
+    }
   }
+
 
   def addToDataset(id: UUID, name: String, desc: String) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       implicit val user = request.user
-      val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
-      Ok(views.html.addToExistingDataset(filesList, id, name, desc)).flashing("error" -> "Cannot add to the dataset")
+      Ok(views.html.addToExistingDataset(id, name, desc)).flashing("error" -> "Cannot add to the dataset")
   }
 
   /**
@@ -226,7 +233,7 @@ class Datasets @Inject()(
           var datasetWithFiles = dataset.copy(files = filesInDataset)
           datasetWithFiles = Utils.decodeDatasetElements(datasetWithFiles)
 
-          val filteredPreviewers = Previewers.findDatasetPreviewers;
+          val filteredPreviewers = Previewers.findDatasetPreviewers
 
           val metadata = datasets.getMetadata(id)
           Logger.debug("Metadata: " + metadata)
@@ -238,7 +245,6 @@ class Datasets @Inject()(
 
           val collectionsOutside = collections.listOutsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
           val collectionsInside = collections.listInsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
-          val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
           var decodedCollectionsOutside = new ListBuffer[models.Collection]()
           var decodedCollectionsInside = new ListBuffer[models.Collection]()
           var filesTags = TreeSet.empty[String]
@@ -281,6 +287,16 @@ class Datasets @Inject()(
               }
           }
 
+          // associated sensors
+          val sensors: List[(String, String)]= current.plugin[PostgresPlugin] match {
+            case Some(db) => {
+              val base = play.api.Play.configuration.getString("geostream.dashboard.url").getOrElse("http://localhost:9000")
+              val ids = relations.findTargets(id.stringify, ResourceType.dataset, ResourceType.sensor)
+              db.getDashboardSensorURLs(ids)
+            }
+            case None => List.empty[(String, String)]
+          }
+
           var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
           dataset.spaces.map{
                   sp => spaceService.get(sp) match {
@@ -291,7 +307,10 @@ class Datasets @Inject()(
                   }
           }
 
-          val otherSpaces: List[ProjectSpace] = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!datasetSpaces.map(_.id).contains(aSpace.id)) aSpace else None).filter(_ != None).asInstanceOf[List[ProjectSpace]]
+          val otherSpaces: List[ProjectSpace] = user match {
+            case Some(usr) => usr.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!datasetSpaces.map(_.id).contains(aSpace.id)) aSpace else None).filter(_ != None).asInstanceOf[List[ProjectSpace]]
+            case None => List.empty
+          }
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
           //dataset is in at least one space with editstagingarea permission, or if the user is the owner of dataset.
@@ -302,8 +321,7 @@ class Datasets @Inject()(
           val curObjectsPermission: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(curation => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id)))
           val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
-          decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, Some(decodedSpaces), filesTags, otherSpaces, currentSpace, toPublish, curPubObjects))
-
+            decodedCollectionsOutside.toList, decodedCollectionsInside.toList, isRDFExportEnabled, Some(decodedSpaces), filesTags, otherSpaces, currentSpace, toPublish, curPubObjects, sensors))
         }
         case None => {
           Logger.error("Error getting dataset" + id)
@@ -586,44 +604,52 @@ class Datasets @Inject()(
   }
   def users(id: UUID) = PermissionAction(Permission.ViewDataset) { implicit request =>
     implicit val user = request.user
+
     datasets.get(id) match {
       case Some(dataset) => {
-        var userList: List[User]=  List.empty
-        var userRoleMap = Map[UUID, String]()
-        var spaceMap = Map[UUID, String]()
-        dataset.spaces.map{
-          space_id => spaceService.get(space_id) match {
-            case Some(projectSpace) => {
-              val space_users: List[User] = spaceService.getUsersInSpace(space_id)
-              var new_users: List[User] = List.empty
-              space_users.map {
-                aUser => if(!userList.contains(aUser)) {
-                  new_users = aUser :: new_users
-                }
-              }
-               userList = userList ::: new_users
-              if(!space_users.isEmpty) {
-                space_users.map { usr =>
-                  spaceService.getRoleForUserInSpace(space_id, usr.id) match {
-                    case Some(role) => {
-                      val cur_role = userRoleMap getOrElse(usr.id, "")
-                      userRoleMap += (usr.id -> (cur_role + ", " + role.name))
-                    }
-                    case None => Redirect(routes.Datasets.dataset(id)).flashing("error"-> s"Error: Role not found for dataset $id user $usr.")
-                  }
-                  val curSpace = spaceMap getOrElse(usr.id, "")
-                  spaceMap += (usr.id -> (curSpace + ", " + projectSpace.name))
-                }
-              }
-            }
-            case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> "Error: Dataset's space not found.")
+        var userList: List[User] = List.empty
+        var userListSpaceRoleTupleMap = Map[UUID, List[Tuple2[String,String]]]() // Map( User-id -> List((Space-name,Role-name)) )
+
+        // Setup userList, add all users of all spaces associated with the dataset
+        dataset.spaces.foreach { spaceId =>
+          spaceService.get(spaceId) match {
+            case Some(spc) => userList = spaceService.getUsersInSpace(spaceId) ::: userList
+            case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No spaces found for dataset $id.")
           }
         }
-        if(!userList.isEmpty) {
-          Ok(views.html.datasets.users(dataset, spaceMap, userRoleMap, userList.sortBy(_.fullName.toLowerCase)))
-        } else { Redirect(routes.Datasets.dataset(id)).flashing("error" -> "Error: Dataset's users not found.") }
+        userList = userList.distinct.sortBy(_.fullName.toLowerCase)
+
+        // Setup userListSpaceRoleTupleMap
+        userList.foreach( usr => userListSpaceRoleTupleMap = userListSpaceRoleTupleMap + (usr.id -> List()) ) // initialize, based upon userList's values
+        dataset.spaces.foreach { spaceId =>
+          spaceService.get(spaceId) match {
+            case Some(spc) => {
+              val usersInCurrSpace: List[User] = spaceService.getUsersInSpace(spaceId)
+              if (usersInCurrSpace.nonEmpty) {
+
+                usersInCurrSpace.foreach { usr =>
+                  spaceService.getRoleForUserInSpace(spaceId, usr.id) match {
+                    case Some(role) => userListSpaceRoleTupleMap += ( usr.id -> ((spc.name,role.name) :: userListSpaceRoleTupleMap(usr.id)) )
+                    case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: Role not found for dataset $id user $usr.")
+                  }
+                }
+
+              }
+            }
+            case None => Redirect (routes.Datasets.dataset(id)).flashing ("error" -> s"Error: No spaces found for dataset $id.");
+          }
+        }
+        // Clean-up, and sort space-names per user
+        userListSpaceRoleTupleMap = userListSpaceRoleTupleMap filter (_._2.nonEmpty) // remove empty-list Values from Map (and corresponding Key)
+        for(k <- userListSpaceRoleTupleMap.keys) userListSpaceRoleTupleMap += ( k -> userListSpaceRoleTupleMap(k).distinct.sortBy(_._1.toLowerCase) )
+
+        if(userList.nonEmpty) {
+          val currUserIsAuthor = user.get.identityId.userId.equals(dataset.author.identityId.userId)
+          Ok(views.html.datasets.users(dataset, userListSpaceRoleTupleMap, currUserIsAuthor, userList))
+        }
+        else Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No users found for dataset $id.")
       }
-      case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> "Error: Dataset not found.")
+      case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: Dataset $id not found.")
     }
 
   }
