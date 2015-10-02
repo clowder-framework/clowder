@@ -96,12 +96,12 @@
         <b>Uploaded</b>: @curationObject.created.date.format("yyyy-mm-dd hh:mm") <br/>
         <b>Repository</b>: @curationObject.repository.getOrElse("Not select.") <br/>
         <b>Submmitted</b>: @{curationObject.submittedDate match {
-        case Some(d) => d.date.format("yyyy-mm-dd hh:mm")
+        case Some(d) => d.format("MMM dd, yyyy")
         case None => "Not submmited"
       }
       }  <br/>
         <b>Published</b>: @{curationObject.publishedDate match {
-        case Some(d) => d.date.format("yyyy-mm-dd hh:mm")
+        case Some(d) => d.format("MMM dd, yyyy")
         case None => "Not published"
       }
       }  <br/>

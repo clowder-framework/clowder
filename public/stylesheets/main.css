@@ -805,3 +805,7 @@ textarea, input[type='text'], input[type='password']{
 .in-curation {
     background-color: #fcf8e3 !important;
 }
+
+.publish {
+    background-color: #dcdcdc !important;
+}
