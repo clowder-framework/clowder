@@ -26,7 +26,7 @@ import org.apache.commons.lang.StringEscapeUtils
 class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService, 
                             spaceService: SpaceService, users: UserService, events: EventService) extends SecuredController {
 
-  def newCollection() = PermissionAction(Permission.CreateCollection) { implicit request =>
+  def newCollection(space: Option[String]) = PermissionAction(Permission.CreateCollection) { implicit request =>
     implicit val user = request.user
     val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
     var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
@@ -37,7 +37,16 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         decodedSpaceList += Utils.decodeSpaceElements(aSpace)
       }
     }
-    Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired))
+    space match {
+      case Some(spaceId) => {
+        spaceService.get(UUID(spaceId)) match {
+          case Some(s) => Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, Some(spaceId)))
+          case None => Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
+        }
+      }
+      case None =>  Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
+    }
+
   }
 
   /**
@@ -196,7 +205,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
               decodedSpaceList += Utils.decodeSpaceElements(aSpace)
             }
             //This case shouldn't happen as it is validated on the client.
-            BadRequest(views.html.newCollection("Name, Description, or Space was missing during collection creation.", decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired))
+            BadRequest(views.html.newCollection("Name, Description, or Space was missing during collection creation.", decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
           }
 
           var collection : Collection = null
@@ -276,7 +285,11 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             }
           }
 
-          val otherSpaces: List[ProjectSpace] = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!collectionSpaces.map(_.id).contains(aSpace.id)) aSpace else None).filter(_ != None).asInstanceOf[List[ProjectSpace]]
+          val otherSpaces: List[ProjectSpace] = user match {
+            case Some(usr) => usr.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!collectionSpaces.map(_.id).contains(aSpace.id)) aSpace else None).filter(_ != None).asInstanceOf[List[ProjectSpace]]
+            case None => List.empty
+          }
+
           val decodedSpaces: List[ProjectSpace] = collectionSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
           Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, Some(decodedSpaces), otherSpaces))
@@ -293,43 +306,54 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
    */
   def users(id: UUID) = PermissionAction(Permission.ViewCollection) { implicit request =>
     implicit val user = request.user
+
     collections.get(id) match {
       case Some(collection) => {
         var userList: List[User] = List.empty
-        var userRoleMap = Map[UUID, String]()
-        var spaceMap = Map[UUID, String]()
-        collection.spaces.map {
-          spaceId => spaceService.get(spaceId) match {
-            case Some(projectSpace) => {
-              val space_users: List[User] = spaceService.getUsersInSpace(spaceId)
-              val new_users: List[User] = space_users.map{aUser => if (!userList.contains(aUser)) aUser else None}.filter(_ != None).asInstanceOf[List[User]]
+        var userListSpaceRoleTupleMap = Map[UUID, List[Tuple2[String,String]]]() // Map( User-id -> List((Space-name,Role-name)) )
 
-              userList = userList ::: new_users
-              if (!space_users.isEmpty) {
-                space_users.map {
-                  usr => spaceService.getRoleForUserInSpace(spaceId, usr.id) match {
-                    case Some(role) => {
-                      val cur_role = userRoleMap getOrElse(usr.id, "")
-                      userRoleMap += (usr.id -> (cur_role + ", " + role.name))
-                    }
-                    case None => Redirect(routes.Collections.collection(id)).flashing("error" -> s"Error Role not found for collection $id user $usr.")
-
-                  }
-                    val curSpace = spaceMap getOrElse(usr.id, "")
-                    spaceMap += (usr.id -> (curSpace + ", " + projectSpace.name))
-                }
-              }
-            }
-            case None => Redirect (routes.Collections.collection(id)).flashing ("error" -> "Error: Collection's space not found.");
+        // Setup userList, add all users of all spaces associated with the collection
+        collection.spaces.foreach { spaceId =>
+          spaceService.get(spaceId) match {
+            case Some(spc) => userList = spaceService.getUsersInSpace(spaceId) ::: userList
+            case None => Redirect (routes.Collections.collection(id)).flashing ("error" -> s"Error: No spaces found for collection $id.");
           }
         }
-        if(!userList.isEmpty){
-          Ok(views.html.collections.users(collection, spaceMap, userRoleMap, userList.sortBy(_.fullName.toLowerCase)))
+        userList = userList.distinct.sortBy(_.fullName.toLowerCase)
 
-         } else { Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Collection's users not found.") }
+        // Setup userListSpaceRoleTupleMap
+        userList.foreach( usr => userListSpaceRoleTupleMap = userListSpaceRoleTupleMap + (usr.id -> List()) ) // initialize, based upon userList's values
+        collection.spaces.foreach { spaceId =>
+          spaceService.get(spaceId) match {
+            case Some(spc) => {
+              val usersInCurrSpace: List[User] = spaceService.getUsersInSpace(spaceId)
+              if (usersInCurrSpace.nonEmpty) {
+
+                usersInCurrSpace.foreach { usr =>
+                  spaceService.getRoleForUserInSpace(spaceId, usr.id) match {
+                    case Some(role) => userListSpaceRoleTupleMap += ( usr.id -> ((spc.name,role.name) :: userListSpaceRoleTupleMap(usr.id)) )
+                    case None => Redirect(routes.Collections.collection(id)).flashing("error" -> s"Error: Role not found for collection $id user $usr.")
+                  }
+                }
+
+              }
+            }
+            case None => Redirect (routes.Collections.collection(id)).flashing ("error" -> s"Error: No spaces found for collection $id.");
+          }
+        }
+        // Clean-up, and sort space-names per user
+        userListSpaceRoleTupleMap = userListSpaceRoleTupleMap filter (_._2.nonEmpty) // remove empty-list Values from Map (and corresponding Key)
+        for(k <- userListSpaceRoleTupleMap.keys) userListSpaceRoleTupleMap += ( k -> userListSpaceRoleTupleMap(k).distinct.sortBy(_._1.toLowerCase) )
+
+        if(userList.nonEmpty) {
+          val currUserIsAuthor = user.get.identityId.userId.equals(collection.author.get.identityId.userId)
+          Ok(views.html.collections.users(collection, userListSpaceRoleTupleMap, currUserIsAuthor, userList))
+        }
+        else Redirect(routes.Collections.collection(id)).flashing("error" -> s"Error: No users found for collection $id.")
       }
-      case None => Redirect(routes.Collections.collection(id)).flashing("error" -> "Error: Collection not found.")
+      case None => Redirect(routes.Collections.collection(id)).flashing("error" -> s"Error: Collection $id not found.")
     }
+
   }
 
   def previews(collection_id: UUID) = PermissionAction(Permission.EditCollection) { implicit request =>

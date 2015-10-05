@@ -1,4 +1,4 @@
-@(theme: String, displayName: String, welcomeMessage: String)(implicit user: Option[models.User])
+@(theme: String, displayName: String, welcomeMessage: String, sensors: String, sensor: String)(implicit user: Option[models.User])
 @main("Administration") {
 	<div class="page-header">
 		<h1>Customize</h1>
@@ -23,7 +23,20 @@
 			    <label for="welcomingField">Welcoming message</label>
 				<textarea name="welcomingField" id="welcomingField" style="width:300%;">@(welcomeMessage)</textarea>
 				<br /><br />
-				<button class="btn btn-default" onclick="return submitAppearance();">Submit</button>	
+                @play.api.Play.current.plugin[services.PostgresPlugin] match {
+                    case Some(db) => {
+                      <label for="sensorsTitle">Sensors title (plural form)</label>
+                      <input id="sensorsTitle" name="sensorsTitle" type="text" value="@(sensors)" />
+                      <span id="sensorsTitle_error" style="display:none;">Sensors must have a title.</span>
+                      <label for="sensorTitle">Sensor title (singular form)</label>
+                      <input id="sensorTitle" name="sensorTitle" type="text" value="@(sensor)" />
+                      <span id="sensorTitle_error" style="display:none;">Sensor must have a title.</span>
+                      <br /><br />
+                    }
+                    case None => {}
+                }
+
+			    <button class="btn btn-default" onclick="return submitAppearance();">Submit</button>
 			  </div>
 			</form>			
 		</div>
@@ -32,7 +45,9 @@
 		function submitAppearance(){
 			var displayName = $("#displayNameField").val().trim();
 			var welcomeMessage = $("#welcomingField").val().trim();
-			
+			var sensorsTitle = $("#sensorsTitle").val() ? $("#sensorsTitle").val().trim() : "";
+            var sensorTitle = $("#sensorTitle").val() ? $("#sensorTitle").val().trim() : "";
+
 			if(displayName == ""){
 				$("#displayNameField_error").css("display","inline");
 				return false;
@@ -45,7 +60,7 @@
 			
 			var request = $.ajax({
 				url:  "@api.routes.Admin.submitAppearance",
-				data: JSON.stringify({ displayName: displayName, welcomeMessage: welcomeMessage}),
+				data: JSON.stringify({ displayName: displayName, welcomeMessage: welcomeMessage, sensors: sensorsTitle, sensor: sensorTitle }),
 				type: "POST",
 				contentType: "application/json"
 	     	});
@@ -57,7 +72,7 @@
 				console.error("The following error occured: " + textStatus, errorThrown);
 				notify("The application preferences was not updated due to : " + errorThrown, "error");
 			});						
-			return false;			
+			return false;
 		}
 	</script>
 }

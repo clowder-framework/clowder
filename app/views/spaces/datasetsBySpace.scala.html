@@ -2,8 +2,14 @@
 
 <h3>Datasets</h3>
 @if(datasets.size == 0) {
-    <p>You can add a dataset to this space from a dataset page.</p>
+    <a id="create-dataset" href="@routes.Datasets.newDataset(Some(space))" class="btn btn-primary btn-xs">
+        Create Dataset
+    </a>
 } else {
     @spaces.datasetsGrid(datasets, space)
 }
-
+@if(!user.isDefined) {
+    <script type="text/javascript">
+        $('#create-dataset').addClass('disabled');
+    </script>
+}

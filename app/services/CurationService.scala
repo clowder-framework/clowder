@@ -17,12 +17,12 @@ trait CurationService {
   def get(id: UUID): Option[CurationObject]
 
   /**
-   * Update submition indicator.
+   * Update status of a curation object.
    */
   def updateStatus(id: UUID, status: String)
 
   /**
-   * Set the curation object as submited and set the submitted date to current date
+   * Set the curation object as submitted and set the submitted date to current date
    */
   def setSubmitted(id: UUID)
 
@@ -32,7 +32,7 @@ trait CurationService {
   def setPublished(id:UUID)
 
   /**
-   * Remove curation object, also delete it from staging area.
+   * remove curation object, also delete it from staging area.
    */
   def remove(id: UUID): Unit
 

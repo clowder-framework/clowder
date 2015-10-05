@@ -23,6 +23,9 @@
 #10091:services.AdminsNotifierPlugin
 #10100:services.TempFilesPlugin
 #10101:services.FileDumpService
+#10102:services.FileMetadataAutodumpService
+#10103:services.DatasetsAutodumpService
+#10104:services.DatasetsMetadataAutodumpService
 #10200:services.RDFExporterPlugin
 #10202:services.RDFUpdateService
 #10500:services.VersusPlugin
@@ -31,3 +34,4 @@
 #10503:services.irods.IRODSPlugin
 #10700:services.ElasticsearchPlugin
 10800:services.StagingAreaPlugin
+

@@ -1,4 +1,4 @@
-@(errorString: String, spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(errorString: String, spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
@@ -53,7 +53,7 @@
             <td style="width: 35%; vertical-align:top;" class="input-table-cell" id="desccell">
                 <select name="space" id="spaceid" class = "chosen-select" multiple style="width: 342px;">
                     @spaces.map { space =>
-                        <option value="@(space.id)">@(space.name)</option>
+                        <option id = "@(space.id)" value="@(space.id)">@(space.name)</option>
                     }
                 </select>
             </td>
@@ -130,5 +130,10 @@
         }
     }
     })
+
+    if(@spaceId.isDefined) {
+        $('#@spaceId').prop('selected','selected');
+        $('#spaceid').trigger("chosen:updated");
+    }
   </script>
 }

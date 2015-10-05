@@ -99,6 +99,8 @@ trait FileService {
   
   def modifyRDFUserMetadata(id: UUID, mappingNumber: String="1")
 
+  def dumpAllFileMetadata(): List[String]
+
   def isInDataset(file: File, dataset: Dataset): Boolean
 
   def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
@@ -180,5 +182,10 @@ trait FileService {
    * Remove follower from a file.
    */
   def removeFollower(id: UUID, userId: UUID)
+
+  /**
+   * Update technical metadata
+   */
+  def updateMetadata(fileId: UUID, metadata: JsValue, extractor_id: String)
 
 }

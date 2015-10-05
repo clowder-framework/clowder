@@ -426,6 +426,10 @@ class MongoDBSpaceService @Inject() (
       $pull("curationObjects" -> new ObjectId(curationObjectId.stringify)), false, false, WriteConcern.Safe)
   }
 
+  def updateUserCount(space: UUID, numberOfUser:Int):Unit ={
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $set("userCount" ->numberOfUser), false, false, WriteConcern.Safe)
+  }
+
   def addFollower(id: UUID, userId: UUID) {
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
       $addToSet("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
@@ -455,15 +459,61 @@ class MongoDBSpaceService @Inject() (
     SpaceInviteDAO.insert(invite)
   }
 
-  def  removeInvitationToSpace(inviteId: UUID, spaceId: UUID) {
+  def removeInvitationFromSpace(inviteId: UUID, spaceId: UUID) {
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
       $pull("invitations" -> MongoDBObject( "_id" -> new ObjectId(inviteId.stringify))), false, false, WriteConcern.Safe)
     SpaceInviteDAO.removeById(new ObjectId(inviteId.stringify))
   }
 
-  def getInvitationToSpace(inviteId: String): Option[SpaceInvite] = {
+  def getInvitation(inviteId: String): Option[SpaceInvite] = {
     SpaceInviteDAO.findOne(MongoDBObject("invite_id" -> inviteId))
   }
+
+  def getInvitationBySpace(space: UUID): List[SpaceInvite] = {
+    SpaceInviteDAO.find(MongoDBObject("space" -> new ObjectId(space.stringify))).toList
+  }
+
+  def getInvitationByEmail(email: String): List[SpaceInvite] = {
+    SpaceInviteDAO.find(MongoDBObject("email" -> email)).toList
+  }
+
+  /**
+   * Deletes entry with this space id.
+   */
+  def deleteAllExtractors(spaceId: UUID): Boolean = {    
+    val query = MongoDBObject("spaceId" -> spaceId.stringify)
+    val result = ExtractorsForSpaceDAO.remove( query )
+    //if one or more deleted - return true
+    val wasDeleted = result.getN >0        
+    wasDeleted
+  }  
+  
+ /**
+   * If entry for this spaceId already exists, adds extractor to it.
+   * Otherwise, creates a new entry with spaceId and extractor.
+   */
+  def addExtractor (spaceId: UUID, extractor: String) {
+	  //will add extractor to the list of extractors for this space, only if it's not there.
+	  val query = MongoDBObject("spaceId" -> spaceId.stringify)	  
+	  ExtractorsForSpaceDAO.update(query, $addToSet("extractors" -> extractor), true, false, WriteConcern.Safe)	   
+  }
+
+  /**
+   * Returns a list of extractors associated with this spaceId.
+   */
+  def getAllExtractors(spaceId: UUID): List[String] = {
+    //Note: in models.ExtractorsForSpace, spaceId must be a String
+    // if space Id is UUID, will compile but throws Box run-time error
+    val query = MongoDBObject("spaceId" -> spaceId.stringify)
+
+    val list = (for (extr <- ExtractorsForSpaceDAO.find(query)) yield extr).toList
+    //get extractors' names for given space id
+    val extractorList: List[String] = list.flatMap(_.extractors)
+    extractorList
+  }
+  
+  
+  
 }
 /**
    * Salat ProjectSpace model companion.
@@ -483,7 +533,8 @@ class MongoDBSpaceService @Inject() (
       case None => throw new RuntimeException("No MongoSalatPlugin");
   case Some(x) => new SalatDAO[UserSpace, ObjectId](collection = x.collection("spaces.users")) {}
     }
-  }
+  } 
+    
 
   object SpaceInviteDAO extends ModelCompanion[SpaceInvite, ObjectId] {
     val dao = current.plugin[MongoSalatPlugin] match {
@@ -491,3 +542,10 @@ class MongoDBSpaceService @Inject() (
       case Some(x) => new SalatDAO[SpaceInvite, ObjectId](collection = x.collection("spaces.invites")) {}
     }
   }
+  
+  object ExtractorsForSpaceDAO extends ModelCompanion[ExtractorsForSpace, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[ExtractorsForSpace, ObjectId](collection = x.collection("spaces.extractors")) {}
+  }
+}

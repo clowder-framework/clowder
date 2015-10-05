@@ -1,0 +1,69 @@
+@()(implicit user: Option[models.User] )
+
+@main("Data dumps") {
+	<div class="page-header">
+		<h1>Data dumps</h1>
+	</div>
+	
+	<div class="row">
+		<div class="col-md-2">
+			<form role="form-horizontal">
+			  <div class="form-group">
+				<button class="btn btn-default dumpBtn" onclick="return fileMdDump();">Metadata of files</button>
+				<button class="btn btn-default dumpBtn" onclick="return dsMdDump();">Metadata of datasets</button>
+				<button class="btn btn-default dumpBtn" onclick="return datasetDump();">Datasets files groupings</button>	
+			  </div>
+			</form>			
+		</div>
+	</div>	
+	<script>
+		function fileMdDump() {		        
+			var request = $.ajax({
+				url:  "@api.routes.Files.dumpFilesMetadata",
+				type: "POST"
+	     	});
+			request.done(function (response) { 
+				console.log("Response: " + response);
+				alert(response);
+			});
+			request.fail(function (jqXHR, textStatus, errorThrown){
+				console.error("The following error occured: " + textStatus, errorThrown);
+				alert("The metadata of the files (some or all of them) were not dumped due to : " + errorThrown);
+			});	
+			return false;
+		}
+		
+		function dsMdDump() {		        
+			var request = $.ajax({
+				url:  "@api.routes.Datasets.dumpDatasetsMetadata",
+				type: "POST"
+	     	});
+			request.done(function (response) { 
+				console.log("Response: " + response);
+				alert(response);
+			});
+			request.fail(function (jqXHR, textStatus, errorThrown){
+				console.error("The following error occured: " + textStatus, errorThrown);
+				alert("The metadata of the datasets (some or all of them) were not dumped due to : " + errorThrown);
+			});	
+			return false;
+		}
+		
+		function datasetDump() {		        
+			var request = $.ajax({
+				url:  "@api.routes.Datasets.dumpDatasetGroupings",
+				type: "POST"
+	     	});
+			request.done(function (response) { 
+				console.log("Response: " + response);
+				alert(response);
+			});
+			request.fail(function (jqXHR, textStatus, errorThrown){
+				console.error("The following error occured: " + textStatus, errorThrown);
+				alert("The file groupings of the datasets (some or all of them) were not dumped due to : " + errorThrown);
+			});	
+			return false;
+		}
+	</script>
+
+}

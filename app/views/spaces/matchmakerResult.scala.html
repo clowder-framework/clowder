@@ -1,4 +1,4 @@
-@(curationObject: models.CurationObject, properties: Map[String, List[String]], userPreferences:  Map[String,List[String]])(implicit user: Option[models.User] )
+@(curationObject: models.CurationObject, properties: Map[String, List[String]], userPreferences:  Map[String,List[String]], mmResponse: List[models.MatchMakerResponse])(implicit user: Option[models.User] )
 @main("Matchmaker") {
     <div class="row">
         <div class="col-md-12">
@@ -48,109 +48,50 @@
             </div>
         </div>
         <div class="col-md-9">
-            <h4>Candidate Repositories</h4>
-            <div>The results below are based on an analysis of the dataset's properties and metadata and
-                the preferences you specified.
-            </div>
+                <h3>Candidate Repositories</h3>
+                The results below are based on an analysis of the dataset's properties and metadata and the preferences you specified. <br/>
             <span class="error hiddencomplete" id="selecterror"> Please select a repository</span><br>
-            @if(curationObject.repository.isDefined && curationObject.repository.get.compareTo("IDEALS") == 0)   {
-            <h4><input type="radio" name="repository" value="IDEALS" checked> 1. IDEALS </h4>
-            } else {
-                <h4><input type="radio" name="repository" value="IDEALS">1. IDEALS </h4>
-            }
-                    <div class="indent_20" id="ideals_mm">
+            <div id="mmresults"></div>
 
-                        <a><span class="glyphicon glyphicon-chevron-down"></span>Matchmaker Summary</a> <br/>
-                        <div class="indent_20">
-                            Dataset properties: <br/>
-                            <span class="green">All requirements are satisfied</span><br/>
-                            Preferences: <br/>
-                            <span class="green"> All requirements are satisfied</span><br/>
-                            Metadata: <br/>
-                            <span class="red"> Coverage is required </span> <a href ="@routes.CurationObjects.getCurationObject(curationObject.id)">Edit Metadata</a>
-                        </div>
-                    </div>
-            @if(curationObject.repository.isDefined && curationObject.repository.get.compareTo("IU Cloud") == 0)   {
-                <h4><input type="radio" name="repository" value="IU Cloud" checked> 2. IU Cloud</h4>
-            } else {
-                <h4><input type="radio" name="repository" value="IU Cloud"> 2. IU Cloud</h4>
-            }
-                    <div class="indent_20" id = "iu_cloud_mm">
-                        <a><span class="glyphicon glyphicon-chevron-down" ></span>Matchmaker Summary</a> <br/>
-                        <div class="indent_20">
-                            Dataset properties: <br/>
-                            <span class="green">All requirements are satisfied</span><br/>
-                            Preferences: <br/>
-                            <span class="red"> Cost: You specified a preference of free. IU Cloudhas a $300 fee</span> <a href ="@routes.CurationObjects.getCurationObject(curationObject.id)">Edit Metadata</a><br/>
-                            Metadata: <br/>
-                            <span class="green"> All requirements are satisfied</span>
-                        </div>
-                    </div>
-            @if(curationObject.repository.isDefined && curationObject.repository.get.compareTo("OpenICPSR") == 0)   {
-                <h4><input type="radio" name="repository" value="OpenICPSR" checked> 3. OpenICPSR<br/></h4>
-            } else {
-                <h4><input type="radio" name="repository" value="OpenICPSR"> 3. OpenICPSR<br/></h4>
-            }
-                    <div class="indent_20" id="open_icpsr_mm">
-                        <a><span class="glyphicon glyphicon-chevron-down" ></span>Matchmaker Summary</a> <br/>
-                        <div class="indent_20">
-                            Dataset properties: <br/>
-                            <span class="red">Filetypes: Dataset containes video files. openICSPR does not allow video files</span><br/>  <a href ="@routes.CurationObjects.getCurationObject( curationObject.id)">Edit Metadata</a>
-                            Preferences: <br/>
-                            <span class="red"> Cost: You specified a preference of free. openICPSR has a $600 fee</span><br/>  <a href ="@routes.CurationObjects.getCurationObject(curationObject.id)">Edit Metadata</a>
-                            Metadata: <br/>
-                            <span class="green"> All requirements are satisfied </span>
-                        </div>
-                    </div>
         </div>
 
     </div>
-    <div class="row bottom-padding">
+   <div class="row bottom-padding">
         <div class="col-md-12">
             <a class="btn btn-default" href ="@routes.CurationObjects.getCurationObject(curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Edit Metadata</a>
             <button  class="btn btn-primary pull-right selectRepository">Submit to Repository <span class="glyphicon glyphicon-chevron-right"></span></button>
         </div>
     </div>
+    <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
     <script>
-        $("#ideals_mm").on('click', function(){
-            if($("#ideals_mm > div").attr('style') == 'display:none;'){
-                $("#ideals_mm > div").attr('style', 'display:block;');
-                $("#ideals_mm > a > span").removeClass('glyphicon-chevron-right');
-                $("#ideals_mm > a >span").addClass('glyphicon-chevron-down');
-            }
-            else{
-               $("#ideals_mm > div").attr('style', 'display:none;');
-                $("#ideals_mm > a >span").removeClass('glyphicon-chevron-down');
-                $("#ideals_mm > a >span").addClass('glyphicon-chevron-right');
 
+        Handlebars.registerHelper('equal', function(lvalue, rvalue, options) {
+            if (arguments.length < 3)
+                throw new Error("Handlebars Helper equal needs 2 parameters");
+            if( lvalue!=rvalue ) {
+                return options.inverse(this);
+            } else {
+                return options.fn(this);
             }
-            });
-            $("#iu_cloud_mm").on('click', function(){
-            if($("#iu_cloud_mm > div").attr('style') == 'display:none;'){
-                $("#iu_cloud_mm > div").attr('style', 'display:block;');
-                $("#iu_cloud_mm > a > span").removeClass('glyphicon-chevron-right');
-                $("#iu_cloud_mm > a >span").addClass('glyphicon-chevron-down');
+        });
+        var repositoryTemplate = Handlebars.getTemplate('/assets/templates/spaces/mmrepository');
+        @for(curRepository <- mmResponse) {
+            var rules = [];
+            @for(rule <- curRepository.per_rule_score) {
+                rules.push({rule_name: "@rule.rule_name", score: "@rule.Score", message: "@rule.Message"});
             }
-            else{
-               $("#iu_cloud_mm> div").attr('style', 'display:none;');
-                $("#iu_cloud_mm > a >span").removeClass('glyphicon-chevron-down');
-                $("#iu_cloud_mm > a >span").addClass('glyphicon-chevron-right');
+            @if(curationObject.repository.isDefined && curationObject.repository.get.compareTo(curRepository.orgidentifier) == 0) {
+                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", repositoryName: "@curRepository.repositoryName", orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules,  selected: true});
+                $('#mmresults').append(html);
+            } else {
 
+                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", repositoryName: "@curRepository.repositoryName",  orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules, selected: false});
+                $('#mmresults').append(html);
             }
-            });
-            $("#open_icpsr_mm").on('click', function(){
-            if($("#open_icpsr_mm > div").attr('style') == 'display:none;'){
-                $("#open_icpsr_mm > div").attr('style', 'display:block;');
-                $("#open_icpsr_mm > a >span").removeClass('glyphicon-chevron-right');
-                $("#open_icpsr_mm > a >span").addClass('glyphicon-chevron-down');
-            }
-            else{
-               $("#open_icpsr_mm > div").attr('style', 'display:none;');
-                $("#open_icpsr_mm > a >span").removeClass('glyphicon-chevron-down');
-                $("#open_icpsr_mm > a >span").addClass('glyphicon-chevron-right');
+        }
 
-            }
-            });
+
         $('#updateResults').on('click', function() {
             var access = [];
             $("input[name='Access']:checkbox:checked").each(function(i){
@@ -179,6 +120,17 @@
 
             request.done(function(response, textStatus, jqXHR) {
                 console.log("Updated Data in Preferences");
+
+                var repository = $("input[type='radio'][name='repository']:checked").val();
+                $('#mmresults').html("");
+
+                for(i in response) {
+                    var sel = repository == response[i].orgidentifier;
+                    var html  = repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", repositoryName:response[i].repositoryName, orgidentifier: response[i].orgidentifier, per_rule_score: response[i].per_rule_score, selected: repository == response[i].orgidentifier});
+                    $('#mmresults').append(html);
+
+                }
+
                 console.log(response)
             });
             request.fail(function( jqXHR, textStatus, errorThrown) {

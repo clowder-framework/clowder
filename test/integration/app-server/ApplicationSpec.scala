@@ -43,7 +43,7 @@ class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUplo
     }
 
     "render index template" in {
-      val html = views.html.index(List.empty, 1, 2, 3, 4, 5, 6, 7, "1234567890", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", List.empty[models.Event])
+      val html = views.html.index(List.empty, 1, 2, 3, 4, 5, 6, 7, 3, "1234567890", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", List.empty[models.Event])
 
       contentType(html) mustEqual ("text/html")
 

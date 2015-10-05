@@ -26,7 +26,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     val theme = AppConfiguration.getTheme
     Logger.debug("Theme id " + theme)
     implicit val user = request.user
-    Ok(views.html.admin(theme, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
+    Ok(views.html.admin(theme, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, AppConfiguration.getSensorsTitle, AppConfiguration.getSensorTitle))
   }
 
   def adminIndex = ServerAdminAction { implicit request =>
@@ -369,6 +369,11 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
         Ok(views.html.roles.createRole(roleForm, getPermissionsMap()))
       }
     }
+  }
+  
+  def viewDumpers() = ServerAdminAction { implicit request =>
+  	implicit val user = request.user
+	Ok(views.html.viewDumpers())
   }
 
   def submitCreateRole() = ServerAdminAction { implicit request =>
