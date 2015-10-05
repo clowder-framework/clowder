@@ -273,7 +273,7 @@ class CurationObjects @Inject()( curations: CurationService,
           jsonResponse = response.json
         }
         else {
-          Logger.error("Error Calling Matchmaker: " + response.json)
+          Logger.error("Error Calling Matchmaker: " + response.getAHCResponse.getResponseBody())
         }
     }
 
