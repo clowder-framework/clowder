@@ -62,17 +62,32 @@ object ApplicationBuild extends Build {
   }
 
   val appDependencies = Seq(
-  	filters,
-    "com.novus" %% "salat" % "1.9.5" exclude("org.scala-stm", "scala-stm_2.10.0"),
+    filters,
+    // login
     "ws.securesocial" %% "securesocial" % "2.1.3" exclude("org.scala-stm", "scala-stm_2.10.0"),
+
+    // messagebus
     "com.rabbitmq" % "amqp-client" % "3.0.0",
+
+    // indexing
     "org.elasticsearch" % "elasticsearch" % "1.3.4",
-    "com.spatial4j" % "spatial4j" % "0.3",
+
+    // mongo storage
+    "com.novus" %% "salat" % "1.9.5" exclude("org.scala-stm", "scala-stm_2.10.0"),
     "org.mongodb" %% "casbah" % "2.6.3",
+
+    // geostreams
     "org.postgresql" % "postgresql" % "9.4-1203-jdbc41",
+
+    // Documentation
     "com.wordnik" %% "swagger-play2" % "1.2.6-SNAPSHOT" exclude("org.scala-stm", "scala-stm_2.10.0"),
-    "org.reflections" % "reflections" % "0.9.9-RC1",
-    "com.google.code.findbugs" % "jsr305" % "2.0.1",
+
+    // Find listing of previewers/stylesheets at runtime
+    //  servlet is needed here since it is not specified in org.reflections.
+    "javax.servlet" % "servlet-api" % "2.5",
+    "org.reflections" % "reflections" % "0.9.10",
+
+    // RDF
     "org.openrdf.sesame" % "sesame-rio-api" % "2.7.8",
     "org.openrdf.sesame" % "sesame-model" % "2.7.8",
     "org.openrdf.sesame" % "sesame-rio-n3" % "2.7.8",
@@ -86,26 +101,35 @@ object ApplicationBuild extends Build {
     "info.aduna.commons" % "aduna-commons-net" % "2.7.0",
     "info.aduna.commons" % "aduna-commons-text" % "2.7.0",
     "info.aduna.commons" % "aduna-commons-xml" % "2.7.0",
+
+    // ??
     "commons-io" % "commons-io" % "2.4",
     "commons-logging" % "commons-logging" % "1.1.1",
+
+    // RDF
     "gr.forth.ics" % "flexigraph" % "1.0",
+
+    // Guice dependency injection
     "com.google.inject" % "guice" % "3.0",
-    "com.google.inject.extensions" % "guice-assistedinject" % "3.0",
-    "com.netflix.astyanax" % "astyanax-core" % "1.56.43" exclude("org.jboss.netty", "netty"),
-    "com.netflix.astyanax" % "astyanax-thrift" % "1.56.43" exclude("org.slf4j", "slf4j-log4j12") exclude("org.jboss.netty", "netty"),
-    "com.netflix.astyanax" % "astyanax-cassandra" % "1.56.43" exclude("org.slf4j", "slf4j-log4j12") exclude("org.jboss.netty", "netty") ,
-    "com.netflix.astyanax" % "astyanax-recipes" % "1.56.43" exclude("org.slf4j", "slf4j-log4j12") exclude("org.jboss.netty", "netty"),
+
+    // ??
     "org.apache.httpcomponents" % "httpclient" % "4.2.3",
     "org.apache.httpcomponents" % "httpcore" % "4.2.3",
     "org.apache.httpcomponents" % "httpmime" % "4.2.3",
+
+    // JSONparser and JSONObject
     "com.googlecode.json-simple" % "json-simple" % "1.1.1",
-    "log4j" % "log4j" % "1.2.14",
     "org.codeartisans" % "org.json" % "20131017",
+
+    // Testing framework
     "org.scalatestplus" % "play_2.10" % "1.0.0" % "test",
+
+    // iRods filestorage
     "org.irods.jargon" % "jargon-core" % "3.3.3-beta1",
+
+    // jsonp return from /api
     "org.julienrf" %% "play-jsonp-filter" % "1.1"
   )
-
 
   // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory 
   def customLessEntryPoints(base: File): PathFinder = (
