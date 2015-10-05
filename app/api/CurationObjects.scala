@@ -4,7 +4,8 @@ import javax.inject.{Inject, Singleton}
 
 
 import controllers.Utils
-import models.{ResourceRef, UUID}
+import models.{MatchMakerResponse, mmRule, ResourceRef, UUID}
+import play.api.libs.ws.WS
 import org.apache.http.client.methods.HttpDelete
 import org.apache.http.impl.client.DefaultHttpClient
 import services._
@@ -14,7 +15,11 @@ import play.api.libs.json.Json._
 import play.api.libs.json.JsResult
 import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
 import play.api.Logger
-  
+import controllers.CurationObjects
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+
 /**
  * Manipulates curation objects.
  */
@@ -26,7 +31,8 @@ class CurationObjects @Inject()(datasets: DatasetService,
       comments: CommentService,
       sections: SectionService,
       spaces: SpaceService,
-      userService: UserService
+      userService: UserService,
+      curationObjectController: controllers.CurationObjects
       ) extends ApiController {
   @ApiOperation(value = " Get Curation object ORE map",
     httpMethod = "GET")
@@ -74,7 +80,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "comment_author" -> Json.toJson(userService.findByIdentity(comm.author).map ( usr => Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id)))
             ))
           }
-
 
           val parsedValue = Json.toJson(
             Map(
@@ -179,8 +184,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "Creator" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id))),
               "@type" -> Json.toJson("ResourceMap"),
               "@id" -> Json.toJson(hostUrl)
-
-
             )
 
           )
@@ -204,7 +207,9 @@ class CurationObjects @Inject()(datasets: DatasetService,
           case aMap: JsSuccess[Map[String, String]] => {
             val userPreferences: Map[String, String] = aMap.get
             userService.updateRepositoryPreferences(user.get.id, userPreferences)
-            Ok(toJson("success"))
+
+            val mmResp = curationObjectController.callMatchmaker(c, Utils.baseUrl(request))
+            Ok(toJson(mmResp))
           }
           case e: JsError => {
             Logger.error("Errors: " + JsError.toFlatJson(e).toString())
@@ -215,7 +220,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
       case None => InternalServerError("Curation Object Not found")
     }
   }
-
+  
   @ApiOperation(value = "Retract the curation object from the repository", notes = "",
     responseClass = "None", httpMethod = "DELETE")
   def retractCurationObject(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {

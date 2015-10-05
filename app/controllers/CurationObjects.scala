@@ -1,22 +1,35 @@
 package controllers
 
+import java.io.InputStreamReader
+import java.io.BufferedReader
 import java.util.Date
 import javax.inject.Inject
-import api.Permission
+import api.{UserRequest, Permission}
 import models._
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.DefaultHttpClient
+import org.apache.http.util.EntityUtils
+import org.json.JSONArray
 import play.api.Logger
 import play.api.data.{Forms, Form}
-import play.api.libs.json.Json
+import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.libs.json.JsArray
 import services._
-import util.RequiredFieldsConfig
+import _root_.util.RequiredFieldsConfig
 import play.api.Play._
 import org.apache.http.client.methods.HttpPost
 import scala.concurrent.Future
-import play.api.mvc.Results
+import scala.concurrent.Await
+import play.api.mvc.{AnyContent, Results}
+import play.api.libs.ws._
+import play.api.libs.ws.WS._
+
+import scala.concurrent.duration._
+import play.api.libs.json.Reads._
+import play.api.libs.json.JsPath.readNullable
+
+
 
 /**
  * Methods for interacting with the curation objects in the staging area.
@@ -203,26 +216,70 @@ class CurationObjects @Inject()( curations: CurationService,
   def findMatchingRepositories(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       implicit val user = request.user
-
           curations.get(curationId) match {
             case Some(c) => {
-              //TODO: Make some sort of call to the matckmaker
               val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
                 "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
-              "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
+                "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
+              val mmResp = callMatchmaker(c, Utils.baseUrl(request))
               user match {
                 case Some(usr) => {
                   val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
-                  Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences))
+                  Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences, mmResp))
                 }
                 case None =>Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
               }
-
             }
             case None => InternalServerError("Curation Object not found")
           }
+  }
+
+  def callMatchmaker(c: CurationObject, hostIp: String ): List[MatchMakerResponse] = {
+    val hostUrl = hostIp + "/api/curations/" + c.id + "/ore#aggregation"
+    val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => pref._1-> Json.toJson(pref._2.toString().split(",").toList))).getOrElse(Map.empty)
+    val userPreferences = userPrefMap + ("Repository" -> Json.toJson(c.repository))
+    val maxDataset = if (!c.files.isEmpty)  c.files.map(_.length).max else 0
+    val totalSize = if (!c.files.isEmpty) c.files.map(_.length).sum else 0
+    val valuetoSend = Json.obj(
+      "@context" -> Json.toJson("https://w3id.org/ore/context"),
+      "Aggregation" ->
+        Map(
+          "Identifier" -> Json.toJson(hostIp +"/api/curations/" + c.id),
+          "@id" -> Json.toJson(hostUrl),
+          "Title" -> Json.toJson(c.name),
+
+          "Creator" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile.map(prof => prof.orcidID.map(oid=> oid)))),
+          "similarTo" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id)
+
+        ),
+      "Preferences" -> userPreferences ,
+      "Aggregation Statistics" ->
+        Map(
+          "Max Collection Depth" -> Json.toJson("1"),
+          "Data Mimetypes" -> Json.toJson(c.files.map(_.contentType).toSet),
+          "Max Dataset Size" -> Json.toJson(maxDataset.toString),
+          "Total Size" -> Json.toJson(totalSize.toString)
+        )
+    )
+    implicit val context = scala.concurrent.ExecutionContext.Implicits.global
+    val endpoint = play.Play.application().configuration().getString("matchmaker.uri").replaceAll("/$","")
+    val futureResponse = WS.url(endpoint).post(valuetoSend)
 
 
+    var jsonResponse: play.api.libs.json.JsValue = new JsArray()
+    val result = futureResponse.map {
+      case response =>
+        if(response.status >= 200 && response.status < 300 || response.status == 304) {
+          jsonResponse = response.json
+        }
+        else {
+          Logger.error("Error Calling Matchmaker: " + response.json)
+        }
+    }
+
+    val rs = Await.result(result, Duration.Inf)
+
+    jsonResponse.as[List[MatchMakerResponse]]
   }
 
   def compareToRepository(curationId: UUID, repository: String) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
@@ -231,7 +288,7 @@ class CurationObjects @Inject()( curations: CurationService,
 
        curations.get(curationId) match {
          case Some(c) => {
-           curations.updateRepository(c.id, repository);
+           curations.updateRepository(c.id, repository)
            //TODO: Make some call to C3-PR?
            //  Ok(views.html.spaces.matchmakerReport())
            val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
@@ -239,11 +296,9 @@ class CurationObjects @Inject()( curations: CurationService,
              "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
 
            Ok(views.html.spaces.curationDetailReport( c, propertiesMap, repository))
-         }
-         case None => InternalServerError("Curation Object not found")
-
-       }
-
+        }
+        case None => InternalServerError("Space not found")
+      }
   }
 
   def sendToRepository(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
