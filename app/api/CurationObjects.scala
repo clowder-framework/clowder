@@ -15,6 +15,7 @@ import play.api.libs.json.Json._
 import play.api.libs.json.JsResult
 import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
 import play.api.Logger
+import controllers.CurationObjects
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -30,7 +31,8 @@ class CurationObjects @Inject()(datasets: DatasetService,
       comments: CommentService,
       sections: SectionService,
       spaces: SpaceService,
-      userService: UserService
+      userService: UserService,
+      curationObjectController: controllers.CurationObjects
       ) extends ApiController {
   @ApiOperation(value = " Get Curation object ORE map",
     httpMethod = "GET")
@@ -79,7 +81,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "comment_author" -> Json.toJson(userService.findByIdentity(comm.author).map ( usr => Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id)))
             ))
           }
-
 
           val parsedValue = Json.toJson(
             Map(
@@ -184,8 +185,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "Creator" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id))),
               "@type" -> Json.toJson("ResourceMap"),
               "@id" -> Json.toJson(hostUrl)
-
-
             )
 
           )
@@ -209,80 +208,8 @@ class CurationObjects @Inject()(datasets: DatasetService,
           case aMap: JsSuccess[Map[String, String]] => {
             val userPreferences: Map[String, String] = aMap.get
             userService.updateRepositoryPreferences(user.get.id, userPreferences)
-            val hostIp = Utils.baseUrl(request)
-            val hostUrl = hostIp + "/api/curations/" + curationId + "/ore#aggregation"
-            val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => pref._1-> Json.toJson(pref._2.toString().split(",").toList))).getOrElse(Map.empty)
-            val userPref = userPrefMap + ("Repository" -> Json.toJson(c.repository))
-            val maxDataset = if (!c.files.isEmpty)  c.files.map(_.length).max else 0
-            val totalSize = if (!c.files.isEmpty) c.files.map(_.length).sum else 0
-            val valuetoSend = Json.obj(
-              "@context" -> Json.toJson("https://w3id.org/ore/context"),
-              "Aggregation" ->
-                Map(
-                  "Identifier" -> Json.toJson(hostIp +"/api/curations/" + curationId),
-                  "@id" -> Json.toJson(hostUrl),
-                  "Title" -> Json.toJson(c.name),
-                  "Creator" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile.map(prof => prof.orcidID.map(oid=> oid)))),
-                  "similarTo" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id)
 
-                ),
-              "Preferences" -> userPreferences ,
-              "Aggregation Statistics" ->
-                Map(
-                  "Max Collection Depth" -> Json.toJson("1"),
-                  "Data Mimetypes" -> Json.toJson(c.files.map(_.contentType).toSet),
-                  "Max Dataset Size" -> Json.toJson(maxDataset.toString),
-                  "Total Size" -> Json.toJson(totalSize.toString)
-                )
-            )
-            implicit val context = scala.concurrent.ExecutionContext.Implicits.global
-            val endpoint = play.Play.application().configuration().getString("matchmaker.uri").replaceAll("/$","")
-            val futureResponse = WS.url(endpoint).post(valuetoSend)
-            val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
-              "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
-              "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
-
-            var jsonResponse: play.api.libs.json.JsValue = new JsArray()
-            val result = futureResponse.map {
-              case response =>
-                if(response.status >= 200 && response.status < 300 || response.status == 304) {
-
-                  jsonResponse = response.json
-                }
-            }
-
-            val rs = Await.result(result, Duration.Inf)
-            implicit object mmRuleFormat extends Format[mmRule] {
-              def reads(json: JsValue): JsResult[mmRule] = JsSuccess(new mmRule(
-                (json \ "Rule Name").as[String],
-                (json \ "Score").as[Int],
-                (json \ "Message").as[String]
-              ))
-
-              def writes(mm: mmRule): JsValue = JsObject(Seq(
-                "rule_name" -> JsString(mm.rule_name),
-                "score" -> JsNumber(mm.Score),
-                "message" -> JsString(mm.Message)
-              ))
-            }
-            implicit object MatchMakerResponseFormat extends Format[MatchMakerResponse]{
-              def reads(json: JsValue): JsResult[MatchMakerResponse] = JsSuccess(new MatchMakerResponse(
-                (json \ "orgidentifier").as[String],
-                (json \ "repositoryName").as[String],
-                (json \  "Per Rule Scores").as[List[mmRule]],
-                (json \ "Total Score").as[Int]
-              ))
-
-              def writes(mm: MatchMakerResponse): JsValue = JsObject(Seq(
-                "orgidentifier" -> JsString(mm.orgidentifier),
-                "repositoryName" -> JsString(mm.repositoryName),
-                "per_rule_score" -> JsArray(mm.per_rule_score.map(toJson(_))),
-                "total_score" -> JsNumber(mm.total_score)
-              ))
-            }
-
-            val mmResp = jsonResponse.as[List[MatchMakerResponse]].filter(_.orgidentifier != "null")
-
+            val mmResp = curationObjectController.callMatchmaker(c, Utils.baseUrl(request))
             Ok(toJson(mmResp))
           }
           case e: JsError => {
