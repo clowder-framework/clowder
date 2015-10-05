@@ -15,7 +15,14 @@ import services._
 import util.RequiredFieldsConfig
 import play.api.Play._
 import org.apache.http.client.methods.HttpPost
-import scala.concurrent.Future
+import scala.concurrent.Await
+import play.api.mvc.{AnyContent, Results}
+import play.api.libs.ws._
+import play.api.libs.ws.WS._
+
+import scala.concurrent.duration._
+import play.api.libs.json.Reads._
+import play.api.libs.json.JsPath.readNullable
 import play.api.mvc.Results
 import java.net.URI
 
@@ -223,22 +230,22 @@ class CurationObjects @Inject()(
 
       curations.get(curationId) match {
         case Some(c) => {
-          if (c.status == "In Curation") {
-            //TODO: Make some sort of call to the matckmaker
-            val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
-              "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
-              "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
-            user match {
-              case Some(usr) => {
-                val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
-                Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences))
-              }
-              case None =>Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
+          val propertiesMap: Map[String, List[String]] = Map("Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
+            "License" -> List("Creative Commons", "GPL"), "Cost" -> List("Free", "$XX Fee"),
+            "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
+          val mmResp = callMatchmaker(c, Utils.baseUrl(request))
+          user match {
+            case Some(usr) => {
+              val repPreferences = usr.repositoryPreferences.map { value => value._1 -> value._2.toString().split(",").toList }
+              Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences, mmResp))
             }
-          }else {
-            Results.Redirect(routes.CurationObjects.getCurationObject(c.id))
+            case None => Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri))
           }
-        }
+
+        } else {
+      Results.Redirect (routes.CurationObjects.getCurationObject (c.id) )
+      }
+
         case None => InternalServerError("Curation Object not found")
       }
   }
@@ -249,7 +256,7 @@ class CurationObjects @Inject()(
 
       curations.get(curationId) match {
         case Some(c) => {
-          curations.updateRepository(c.id, repository);
+          curations.updateRepository(c.id, repository)
           //TODO: Make some call to C3-PR?
           //  Ok(views.html.spaces.matchmakerReport())
           val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
@@ -258,10 +265,8 @@ class CurationObjects @Inject()(
 
           Ok(views.html.spaces.curationDetailReport( c, propertiesMap, repository))
         }
-        case None => InternalServerError("Curation Object not found")
-
+        case None => InternalServerError("Space not found")
       }
-
   }
 
   def sendToRepository(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
