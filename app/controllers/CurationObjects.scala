@@ -358,7 +358,7 @@ class CurationObjects @Inject()(
                 "Publication Callback" -> Json.toJson(hostIp + "/spaces/curations/" + c.id + "/status")
               )
             )
-
+          Logger.debug("Submitting request for publication: " + valuetoSend)
           var endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
           val httpPost = new HttpPost(endpoint)
           httpPost.setHeader("Content-Type", "application/json")
