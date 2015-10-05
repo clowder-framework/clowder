@@ -13,7 +13,7 @@ import play.api.Logger
  */
 @Singleton
 class Application @Inject() (files: FileService, collections: CollectionService, datasets: DatasetService,
-                             spaces: SpaceService, events: EventService) extends SecuredController {
+                             spaces: SpaceService, events: EventService, users: UserService) extends SecuredController {
   /**
    * Redirect any url's that have a trailing /
    * @param path the path minus the slash
@@ -83,6 +83,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         routes.javascript.Admin.editRole,
         routes.javascript.Files.file,
         routes.javascript.Datasets.dataset,
+        routes.javascript.Geostreams.list,
         routes.javascript.Collections.collection,
         routes.javascript.RedirectUtility.authenticationRequiredMessage,
         api.routes.javascript.Admin.removeAdmin,        
@@ -119,6 +120,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Files.unfollow,
         api.routes.javascript.Files.getTechnicalMetadataJSON,
         api.routes.javascript.Files.filePreviewsList,
+        api.routes.javascript.Files.updateMetadata,
+        api.routes.javascript.Files.addMetadata,
         api.routes.javascript.Previews.upload,
         api.routes.javascript.Previews.uploadMetadata,
         api.routes.javascript.Previews.download,
@@ -130,8 +133,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Sections.removeTags,
         api.routes.javascript.Sections.removeAllTags,
         api.routes.javascript.Geostreams.searchSensors,
+        api.routes.javascript.Geostreams.searchStreams,
         api.routes.javascript.Geostreams.getSensorStreams,
         api.routes.javascript.Geostreams.searchDatapoints,
+        api.routes.javascript.Geostreams.deleteSensor,
+        api.routes.javascript.Geostreams.updateSensorMetadata,
+        api.routes.javascript.Geostreams.patchStreamMetadata,
         api.routes.javascript.Collections.attachPreview,
         api.routes.javascript.Collections.attachDataset,
         api.routes.javascript.Collections.removeDataset,

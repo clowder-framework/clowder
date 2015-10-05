@@ -64,10 +64,10 @@ object mmRule {
  * Class for mapping the response from Matchmaker into a Scala Object
  */
 case class MatchMakerResponse(
-                               orgidentifier: String,
-                               repositoryName: String,
-                               per_rule_score: List[mmRule],
-                               total_score: Int)
+   orgidentifier: String,
+   repositoryName: String,
+   per_rule_score: List[mmRule],
+   total_score: Int)
 
 object MatchMakerResponse{
 
