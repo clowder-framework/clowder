@@ -184,8 +184,10 @@ class Search @Inject() (
         // push into priority queues
         feature.features.map { f =>
           Logger.debug("Computing " + f.representation)
-          queries.listAll().map { mf =>
-            Logger.trace("Found multimedia features " + mf.id + " for section " + section_id)
+          val cursor = queries.listAll()
+          while (cursor.hasNext) {
+            val mf = cursor.next          
+            Logger.debug("Found multimedia features " + mf.id + " for section " + section_id)
             mf.features.find(_.representation == f.representation) match {
               case Some(fd) => {
                 val distance = ImageMeasures.getDistance(FeatureType.valueOf(fd.representation), f.descriptor.toArray, fd.descriptor.toArray)
