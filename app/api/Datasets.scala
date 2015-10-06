@@ -1,40 +1,26 @@
-/**
- *
- */
 package api
 
+import java.io._
 import java.util.Date
-import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
-import models._
+import java.util.zip._
+import javax.inject.{Inject, Singleton}
+
+import com.wordnik.swagger.annotations.{Api, ApiOperation}
+import controllers.{Previewers, Utils}
+import jsonutils.JsonUtil
+import models.{File, _}
+import org.json.JSONObject
 import play.api.Logger
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
+import play.api.Play.{configuration, current}
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.iteratee.Enumerator
+import play.api.libs.json.{JsError, JsResult, JsString, JsSuccess, JsValue, Json}
 import play.api.libs.json.Json._
 import play.api.mvc.AnyContent
-import jsonutils.JsonUtil
-import controllers.Previewers
-import org.bson.types.ObjectId
-import play.api.Play.current
-import javax.inject.{Singleton, Inject}
-import com.mongodb.casbah.Imports._
-import org.json.JSONObject
-import Transformation.LidoToCidocConvertion
-import java.io.BufferedWriter
-import java.io.FileWriter
-import play.api.libs.iteratee.Enumerator
-import java.io.FileInputStream
-import play.api.libs.concurrent.Execution.Implicits._
 import services._
-import play.api.libs.json.JsString
-import play.api.libs.json.JsResult
-import play.api.libs.json.JsSuccess
-import play.api.libs.json.JsError
 import util.License
-import scala.Some
-import models.File
-import play.api.Play.configuration
-import controllers.Utils
-import services._
+
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Dataset API.
@@ -1425,6 +1411,115 @@ class Datasets @Inject()(
       }
       case None => {
         List.empty
+      }
+    }
+  }
+
+
+  /**
+   * Enumerator to loop over all files in a dataset and return chunks for the result zip file that will be
+   * streamed to the client. The zip files are streamed and not stored on disk.
+   *
+   * @param dataset dataset from which to get teh files
+   * @param chunkSize chunk size in memory in which to buffer the stream
+   * @param compression java built in compression value. Use 0 for no compression.
+   * @return Enumerator to produce array of bytes from a zipped stream containing the bytes of each file
+   *         in the dataset
+   */
+  def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION)
+      (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
+    implicit val pec = ec.prepare()
+    val inputFiles = dataset.files
+    // which file we are currently processing
+    var count = 0
+    val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
+    val zip = new ZipOutputStream((byteArrayOutputStream))
+    // zip compression level
+    zip.setLevel(compression)
+    var is: Option[InputStream] = addFileToZip(inputFiles(count), zip)
+
+    Enumerator.generateM({
+      is match {
+        case Some(inputStream) => {
+          val buffer = new Array[Byte](chunkSize)
+          val bytesRead = scala.concurrent.blocking {
+            inputStream.read(buffer)
+          }
+          val chunk = bytesRead match {
+            case -1 => {
+              // finished individual file
+              zip.closeEntry()
+              inputStream.close()
+              count = count + 1
+              // more files available
+              if (count < inputFiles.size) {
+                is = addFileToZip(inputFiles(count), zip)
+              } else {
+                // close the zip file and exit
+                zip.close()
+                is = None
+              }
+              Some(byteArrayOutputStream.toByteArray)
+            }
+            case read => {
+              zip.write(buffer, 0, read)
+              Some(byteArrayOutputStream.toByteArray)
+            }
+          }
+          // reset temporary byte array
+          byteArrayOutputStream.reset()
+          Future.successful(chunk)
+        }
+        case None => {
+          Future.successful(None)
+        }
+      }
+    })(pec)
+  }
+
+  /**
+   * Used by enumeratorFromDataset to add an entry to the zip file.
+   * Individual files are added to directories with id of file as the name to resolve naming conflicts.
+   *
+   * @param file file to be added to teh zip file
+   * @param zip zip output stream. One stream per dataset.
+   * @return input stream for input file
+   */
+  private def addFileToZip(file: File, zip: ZipOutputStream): Option[InputStream] = {
+    files.getBytes(file.id) match {
+      case Some((inputStream, filename, contentType, contentLength)) => {
+        zip.putNextEntry(new ZipEntry(file.id + "/" + filename))
+        Some(inputStream)
+      }
+      case None => None
+    }
+  }
+
+  @ApiOperation(value = "Download dataset",
+    notes = "Downloads all files contained in a dataset.",
+    responseClass = "None", httpMethod = "GET")
+  def download(id: UUID, compression: Int) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DownloadDataset)) { request =>
+    implicit val user = request.user
+    user match {
+      case Some(loggedInUser) => {
+        datasets.get(id) match {
+          case Some(dataset) => {
+            // Use custom enumerator to create the zip file on the fly
+            // Use a 1MB in memory byte array
+            Ok.chunked(enumeratorFromDataset(dataset, 1024*1024, compression)).withHeaders(
+              "Content-Type" -> "application/zip",
+              "Content-Disposition" -> ("attachment; filename=" + dataset.name + ".zip")
+            )
+          }
+          // If the dataset wasn't found by ID
+          case None => {
+            NotFound
+          }
+        }
+      }
+      // If the user doesn't have access to download these files
+      case None => {
+        Unauthorized
       }
     }
   }
