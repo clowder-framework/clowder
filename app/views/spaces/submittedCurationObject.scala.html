@@ -217,7 +217,7 @@
 
 
       </div>
-  <div class="col-md-6">
+      <div class="col-md-6">
       <button id="status"> Get Status</button>
       <div id="showStatus"></div>
       <script>
@@ -231,7 +231,9 @@
 
     var o =$.parseJSON(jqXHR.responseText);
     var table = document.createElement('table');
-    table.classList.add('table-striped');
+    table.classList.add('table');
+    table.classList.add('table-bordered');
+    var tbody = document.createElement('tbody');
     for ( var i = 0, l = o.length; i < l; i++){
      var tr = document.createElement('tr');
 
@@ -254,8 +256,9 @@
       tr.appendChild(td3);
       tr.appendChild(td4);
 
-      table.appendChild(tr);
+      tbody.appendChild(tr);
   }
+  table.appendChild(tbody);
 $('#showStatus').replaceWith(table);
     });
     request.fail(function(jqXHR) {
