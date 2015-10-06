@@ -439,14 +439,13 @@ class CurationObjects @Inject()(
           Logger.debug("Submitting request for publication: " + valuetoSend)
 
           implicit val context = scala.concurrent.ExecutionContext.Implicits.global
-          var endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
+          val endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
           val futureResponse = WS.url(endpoint).post(valuetoSend)
-
-
           var jsonResponse: play.api.libs.json.JsValue = new JsArray()
           val result = futureResponse.map {
             case response =>
               if(response.status >= 200 && response.status < 300 || response.status == 304) {
+                curations.setSubmitted(c.id)
                 jsonResponse = response.json
                 success = true
               }
@@ -457,8 +456,6 @@ class CurationObjects @Inject()(
           }
 
           val rs = Await.result(result, Duration.Inf)
-
-
 
           Ok(views.html.spaces.curationSubmitted( c, repository, success))
       }
