@@ -205,7 +205,7 @@ object Geostreams extends ApiController {
               val data = Json.parse(d)
               Json.obj(
                 "range" -> Map[String, JsValue]("min_start_time" -> data \ "min_start_time",
-                                                "max_start_time" -> data \ "max_start_time"),
+                                                "max_end_time" -> data \ "max_end_time"),
                 "parameters" -> data \ "parameters"
               )
             }
