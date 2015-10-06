@@ -45,7 +45,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
           val hostUrl = hostIp + "/api/curations/" + curationId + "/ore"
           val filesJson = c.files.map { file =>
             Json.toJson(Map(
-              "Identifier" -> Json.toJson(hostIp+"/files/" +file.id),
+              "Identifier" -> Json.toJson(file.id),
               "@id" -> Json.toJson(hostIp+"/files/" +file.id),
               "Creation Date" -> Json.toJson(format.format(file.uploadDate)),
               "Label" -> Json.toJson(file.filename),
@@ -58,7 +58,8 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "Keyword" -> Json.toJson(file.tags.map(_.name)),
               "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2007/File")),
               "Version Of" -> Json.toJson(hostIp + "/files/" + file.id),
-              "Has Part" ->Json.toJson("")
+              "similarTo" -> Json.toJson(hostIp + "/api/files/" + file.id + "/blob")
+
             ))
           }
           val fileIds = c.files.map{file => file.id}
