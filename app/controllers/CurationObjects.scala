@@ -289,7 +289,7 @@ class CurationObjects @Inject()(
           jsonResponse = response.json
         }
         else {
-          Logger.error("Error Calling Matchmaker: " + response.json)
+          Logger.error("Error Calling Matchmaker: " + response.toString())
         }
     }
 
@@ -406,8 +406,14 @@ class CurationObjects @Inject()(
 
                 }
                 (request.body \ "uri").asOpt[String].map {
-                  externalIdentifier =>
-                    curations.updateExternalIdentifier(id, new URI(externalIdentifier))
+                  externalIdentifier => {
+                    if (externalIdentifier.startsWith("doi:") || externalIdentifier.startsWith("10.")){
+                      val DOI_PREFIX = "http://dx.doi.org/"
+                      curations.updateExternalIdentifier(id, new URI(DOI_PREFIX + externalIdentifier.replaceAll("^doi:", "")))
+                    } else {
+                      curations.updateExternalIdentifier(id, new URI(externalIdentifier))
+                    }
+                  }
                 }
 
                 Ok(toJson(Map("status" -> "OK")))

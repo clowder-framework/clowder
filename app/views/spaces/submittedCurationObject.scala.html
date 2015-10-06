@@ -106,10 +106,15 @@
       }
       }  <br/>
 
-        <b>External Identifier</b>: @{curationObject.externalIdentifier match {
-        case Some(e) => e
-        case None => "Not Set"
-      }
+        <b>External Identifier</b>: @curationObject.externalIdentifier match {
+        case Some(e) => {
+          @if(e.toString.startsWith("http://") || e.toString.startsWith("https://")) {
+          <a href=@e>@e</a>
+             } else {
+           @e
+          }
+        }
+        case None => {Not Set}
       }  <br/>
 
         <br/>
