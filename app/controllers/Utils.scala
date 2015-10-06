@@ -15,9 +15,7 @@ object Utils {
    * https://localhost:9443 will be returned if it is using https.
    */
   def baseUrl(request: Request[Any]) = {
-    val httpsPort = System.getProperties().getProperty("https.port", "")
-    val protocol = if (httpsPort == request.host.split(':').last)  "https" else "http"
-    protocol + "://" + request.host
+    protocol(request) + "://" + request.host
   }
 
   /**
@@ -25,9 +23,14 @@ object Utils {
    * @param request
    * @return
    */
-  def protocol(request: Request[Any]) = {
-    val httpsPort = System.getProperties().getProperty("https.port", "")
-    if (httpsPort == request.host.split(':').last)  "https" else "http"
+  def protocol(request: Request[Any]): String = {
+    request.headers.get("x-forwarded-proto") match {
+      case Some(p) => p
+      case None => {
+        val httpsPort = System.getProperties().getProperty("https.port", "")
+        if (httpsPort == request.host.split(':').last)  "https" else "http"
+      }
+    }
   }
   
   /**
