@@ -209,7 +209,12 @@ class CurationObjects @Inject()(datasets: DatasetService,
             userService.updateRepositoryPreferences(user.get.id, userPreferences)
 
             val mmResp = curationObjectController.callMatchmaker(c, Utils.baseUrl(request))
-            Ok(toJson(mmResp))
+            if ( mmResp.size > 0) {
+              Ok(toJson(mmResp))
+            } else {
+              InternalServerError("No response from matchmaker")
+            }
+
           }
           case e: JsError => {
             Logger.error("Errors: " + JsError.toFlatJson(e).toString())
