@@ -15,20 +15,22 @@ import play.api.data.{Forms, Form}
 import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.libs.json.JsArray
+import play.libs.F.Promise
 import services._
 import _root_.util.RequiredFieldsConfig
 import play.api.Play._
 import org.apache.http.client.methods.HttpPost
 import scala.concurrent.Future
 import scala.concurrent.Await
-import play.api.mvc.{AnyContent, Results}
+import play.api.mvc.{Action, AnyContent, Results}
 import play.api.libs.ws._
 import play.api.libs.ws.WS._
+import play.api.libs.functional.syntax._
+
 
 import scala.concurrent.duration._
 import play.api.libs.json.Reads._
 import play.api.libs.json.JsPath.readNullable
-import play.api.mvc.Results
 import java.net.URI
 
 /**
@@ -427,6 +429,28 @@ class CurationObjects @Inject()(
         }
         case None => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object not found.")))
       }
+  }
+
+
+
+  def getStatusFromRepository (id: UUID)  = Action.async { implicit request =>
+    implicit val context = scala.concurrent.ExecutionContext.Implicits.global
+    curations.get(id) match {
+
+      case Some(c) => {
+
+        val endpoint = play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$", "") + "/" + id.toString()
+        Logger.debug(endpoint)
+        WS.url(endpoint).get().map { response =>
+
+          (response.json \ "Status").asOpt[JsValue] match {
+            case Some(x) => Ok(x)
+            case None => InternalServerError(toJson("Status object not found."))
+          }
+        }
+      }
+      case None => Future(InternalServerError(toJson("Curation object not found.")))
+    }
   }
 
 

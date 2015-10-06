@@ -27,6 +27,28 @@ case class CurationObject (
   externalIdentifier: Option[URI] = None
 )
 
+case class StatusFromRepository(date: String, reporter: String, message: String, stage: String)
+object StatusFromRepository {
+//  implicit object StatusFromRepositoryWrites extends Writes[StatusFromRepository] {
+//  def writes(s: StatusFromRepository): JsValue = JsObject(Seq(
+//    "date" -> JsString(s.date),
+//    "reporter" ->JsString(s.reporter),
+//    "message" -> JsString(s.message),
+//  "stage" ->JsString(s.stage)
+//  ))
+//}
+
+  implicit object StatusFromRepositoryReads extends Reads[StatusFromRepository]
+  {
+    def reads(json: JsValue): JsResult[StatusFromRepository] = JsSuccess(new StatusFromRepository(
+      (json \ "date").as[String],
+      (json \ "reporter").as[String],
+      (json \ "message").as[String],
+      (json \ "stage").as[String]
+    ))
+  }
+
+}
 /**
  *  Class for mapping the response from Matchmaker into a Scala Object
  */
