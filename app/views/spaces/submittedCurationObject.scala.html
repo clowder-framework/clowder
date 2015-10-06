@@ -263,6 +263,7 @@ $('#showStatus').replaceWith(table);
     });
     request.fail(function(jqXHR) {
         console.error("ERROR occurs ");
+        $('#showStatus').replaceWith("<br/><p>Cannot get status.</p>");
     });
       }
       )
