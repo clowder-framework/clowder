@@ -19,7 +19,11 @@
     <div class="col-md-10">
     </div>
     <div class="col-md-1">
-        <a id="create-dataset" class="btn btn-primary btn-sm pull-right" href="@routes.Datasets.newDataset(space)" title="Create a new dataset">Create</a>
+        @if(user.isDefined) {
+            <a id="create-dataset" class="btn btn-primary btn-sm pull-right" href="@routes.Datasets.newDataset(space)" title="Create a new dataset">Create</a>
+        }
+
+
     </div>
     <div class="col-md-1">
         <div class="btn-group btn-group-sm pull-right">            
@@ -197,10 +201,5 @@
     </div>
 </div>
 
-    @if(!user.isDefined) {
-        <script type="text/javascript">
-        $('#create-dataset').addClass('disabled');
-        </script>
-    }
 
 }

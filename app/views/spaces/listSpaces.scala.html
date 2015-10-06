@@ -19,7 +19,10 @@
         <div class="col-md-10">
         </div>
         <div class="col-md-1">
-            <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new space">Create</a>
+            @if(user.isDefined) {
+                <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new space">Create</a>
+            }
+
         </div>
         <div class="col-md-1">
             <div class="btn-group btn-group-sm pull-right">
