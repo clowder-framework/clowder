@@ -41,8 +41,19 @@ object MDVocabularyDefinition {
           "uri":"http://purl.org/dc/terms/references",
           "type":"string"}"""),
         Json.parse("""{"label":"CSDMS Standard Name",
-          "uri":"http://ecgs.ncsa.illinois.edu/gsis/CSN",
-          "type":"list", "definitions_url":"http://ecgs-dev.ncsa.illinois.edu/gsis/CSN"}""")
+          "uri":"http://csdms.colorado.edu/wiki/CSN_Searchable_List",
+          "type":"list",
+          "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/CSN"}"""),
+        Json.parse("""{
+          "label":"ODM2 Variable Name",
+          "uri":"http://vocabulary.odm2.org/variablename",
+          "type":"list",
+          "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/sn/odm2"}"""),
+        Json.parse("""{
+          "label":"SAS Variable Name (CSDMS / ODM2)",
+          "uri":"http://ecgs.ncsa.illinois.edu/gsis/sas/vars",
+          "type":"sas_vars",
+          "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/vars/list"}""")
     )
     default.map(d => metadataService.addVocabularyDefinition(MDVocabularyDefinition(json = d)))
   }
