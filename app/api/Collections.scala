@@ -35,10 +35,10 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
               (request.body \ "space").asOpt[String].map { space => 
 	              var c : Collection = null
 	              if (space == "default") {
-	                   c = Collection(name = name, description = description, created = new Date(), author=request.user)
+	                   c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author=request.user)
 	              }
 	              else {
-	                   c = Collection(name = name, description = description, created = new Date(), author=request.user, spaces = List(UUID(space)))
+	                   c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author=request.user, spaces = List(UUID(space)))
 	              }
 	              collections.insert(c) match {
 	                case Some(id) => {

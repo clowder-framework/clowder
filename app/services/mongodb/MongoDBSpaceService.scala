@@ -316,7 +316,7 @@ class MongoDBSpaceService @Inject() (
           val difference = currentTime - collectionTime
           if (difference > timeToLive) {
               //It was last modified longer than the time to live, so remiove it.
-              for (colDataset <- aCollection.datasets) {
+              for (colDataset <- datasets.listCollection(aCollection.id.stringify)) {
                   //Remove all the datasets in the collection if they don't have their own space.
                 var datasetOnlyInSpace: Option[Boolean] = None
                 colDataset.spaces.map {

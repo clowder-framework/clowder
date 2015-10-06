@@ -24,11 +24,11 @@
                         <a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a>
                     </div>
                     <div>
-                        @if(collection.datasets.size == 1) {
-                            @collection.datasets.size dataset
+                        @if(collection.datasetCount == 1) {
+                            @collection.datasetCount dataset
                         }
-                        @if(collection.datasets.size != 1) {
-                            @collection.datasets.size datasets
+                        @if(collection.datasetCount != 1) {
+                            @collection.datasetCount datasets
                         }
                         <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
                         @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {

@@ -3,13 +3,11 @@ package models
 import com.mongodb.casbah.Imports._
 import java.util.Date
 import securesocial.core.Identity
+import play.api.libs.json._
+import play.api.libs.functional.syntax._
 
 /**
  * A dataset is a collection of files, and streams.
- *
- *
- * @author Luigi Marini
- *
  */
 case class Dataset(
   id: UUID = UUID.generate,
@@ -32,3 +30,16 @@ case class Dataset(
   lastModifiedDate: Date = new Date(),
   followers: List[UUID] = List.empty)
 
+object Dataset {
+  implicit val datasetWrites = new Writes[Dataset] {
+    def writes(dataset: Dataset): JsValue = {
+      val datasetThumbnail = if(dataset.thumbnail_id.isEmpty) {
+        "None"
+      } else {
+        dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)
+      }
+      Json.obj("id" -> dataset.id.toString, "datasetname" -> dataset.name, "description" -> dataset.description,
+        "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail, "authorId" -> dataset.author.identityId.userId)
+    }
+  }
+}

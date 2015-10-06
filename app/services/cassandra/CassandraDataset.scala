@@ -35,6 +35,26 @@ class CassandraDataset extends DatasetService {
  def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Dataset] = List.empty[Dataset]
 
  /**
+  * Count all datasets in a collection, this does not check for permissions
+  */
+ def countCollection(collection: String): Long = -1
+
+ /**
+  * Return a list of datasets in a collection, this does not check for permissions
+  */
+ def listCollection(collection: String): List[Dataset] = List.empty[Dataset]
+
+ /**
+  * Return a list of datasets in a collection, this does not check for permissions
+  */
+ def listCollection(limit: Integer, collection: String): List[Dataset] = List.empty[Dataset]
+
+ /**
+  * Return a list of datasets in a collection starting at a specific date, this does not check for permissions
+  */
+ def listCollection(date: String, nextPage: Boolean, limit: Integer, collection: String): List[Dataset] = List.empty[Dataset]
+
+ /**
   * Return a count of datasets in a space, this does not check for permissions
   */
  def countAccess(user: Option[User], superAdmin: Boolean): Long = -1
@@ -45,9 +65,19 @@ class CassandraDataset extends DatasetService {
  def listAccess(limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset] = List.empty[Dataset]
 
  /**
+  * Return a list of datasets the user has access to.
+  */
+ def listAccess(limit: Integer, title: String, user: Option[User], superAdmin: Boolean): List[Dataset] = List.empty[Dataset]
+
+ /**
   * Return a list of datasets the user has access to starting at a specific date.
   */
  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset] = List.empty[Dataset]
+
+ /**
+  * Return a list of datasets the user has access to starting at a specific date.
+  */
+ def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], superAdmin: Boolean): List[Dataset] = List.empty[Dataset]
 
  /**
   * Return a count of datasets the user has created.
@@ -76,23 +106,12 @@ class CassandraDataset extends DatasetService {
   /**
    *
    */
-  def listInsideCollection(collectionId: UUID) : List[Dataset] = {
-    List.empty[Dataset]
-  }
-
-  /**
-   *
-   */
   def isInCollection(dataset: Dataset, collection: Collection): Boolean  = {
     false
   }
 
   def getFileId(datasetId: UUID, filename: String): Option[UUID] = {
     None
-  }
-
-  def toJSON(dataset: Dataset): JsValue = {
-    JsNull
   }
 
   def isInCollection(datasetId: UUID, collectionId: UUID): Boolean = {
