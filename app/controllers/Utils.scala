@@ -15,7 +15,7 @@ object Utils {
    * https://localhost:9443 will be returned if it is using https.
    */
   def baseUrl(request: Request[Any]) = {
-    val httpsPort = System.getProperties().getProperty("https.port", "")
+    val httpsPort = System.getProperties().getProperty("https.port", "443")
     val protocol = if (httpsPort == request.host.split(':').last)  "https" else "http"
     protocol + "://" + request.host
   }
