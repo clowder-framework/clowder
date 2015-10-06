@@ -43,7 +43,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
         case Some(c) => {
           val hostIp = Utils.baseUrl(request)
           val hostUrl = hostIp + "/api/curations/" + curationId + "/ore"
-          val filesJson = c.datasets(0).files.map { file =>
+          val filesJson = c.files.map { file =>
             Json.toJson(Map(
               "Identifier" -> Json.toJson(hostIp+"/files/" +file.id),
               "@id" -> Json.toJson(hostIp+"/files/" +file.id),
@@ -61,7 +61,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "Has Part" ->Json.toJson("")
             ))
           }
-
+          val fileIds = c.files.map{file => file.id}
           var commentsByDataset = comments.findCommentsByDatasetId(c.datasets(0).id)
           c.files.map {
             file =>
@@ -180,7 +180,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "Is Version of" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id ),
                   "similarTo" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id ),
                   "aggregates" -> Json.toJson(JsArray(filesJson)),
-                  "Has Part" -> Json.toJson("")
+                  "Has Part" -> Json.toJson(fileIds)
 
                 )),
               "Creation Date" -> Json.toJson(format.format(c.created)),
