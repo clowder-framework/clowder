@@ -215,24 +215,49 @@
       }
       </ul>
 
-
-      </div>
-      <div class="col-md-6">
-      <button id="status"> Get Status</button>
-      <div id="showStatus"></div>
-      <script>
+    </div>
+    <div class="col-md-6">
+    <button id="status" class ="btn"> Get Status</button>
+    <br/><br/>
+    <div id="showStatus"></div>
+    <script>
       $('#status').click(function(){
       var request = jsRoutes.controllers.CurationObjects.getStatusFromRepository('@curationObject.id').ajax({
         type : 'GET',
         contentType : "application/json"
-    });
+       });
     request.done ( function ( response, textStatus, jqXHR) {
-    // document.getElementById("showStatus").innerHTML= jqXHR.responseText;
+    console.log("get status: "+ jqXHR.responseText );
 
     var o =$.parseJSON(jqXHR.responseText);
     var table = document.createElement('table');
     table.classList.add('table');
     table.classList.add('table-bordered');
+
+    var thead = document.createElement('thead');
+    {
+      var tr = document.createElement('tr');
+      var th1 = document.createElement('th');
+      var th2 = document.createElement('th');
+      var th3 = document.createElement('th');
+      var th4 = document.createElement('th');
+
+      var text1 = document.createTextNode("Date");
+      var text2 = document.createTextNode("Reporter");
+      var text3 = document.createTextNode("Stage");
+      var text4 = document.createTextNode("Message");
+
+      th1.appendChild(text1);
+      th2.appendChild(text2);
+      th3.appendChild(text3);
+      th4.appendChild(text4);
+      tr.appendChild(th1);
+      tr.appendChild(th2);
+      tr.appendChild(th3);
+      tr.appendChild(th4);
+
+      thead.appendChild(tr);
+    }
     var tbody = document.createElement('tbody');
     for ( var i = 0, l = o.length; i < l; i++){
      var tr = document.createElement('tr');
@@ -242,9 +267,9 @@
       var td3 = document.createElement('td');
       var td4 = document.createElement('td');
 
-      var text1 = document.createTextNode(o[i].reporter);
-      var text2 = document.createTextNode(o[i].stage);
-      var text3 = document.createTextNode(o[i].data);
+      var text1 = document.createTextNode(o[i].date);
+      var text2 = document.createTextNode(o[i].reporter);
+      var text3 = document.createTextNode(o[i].stage);
       var text4 = document.createTextNode(o[i].message);
 
       td1.appendChild(text1);
@@ -257,9 +282,11 @@
       tr.appendChild(td4);
 
       tbody.appendChild(tr);
-  }
-  table.appendChild(tbody);
-$('#showStatus').replaceWith(table);
+    }
+
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    $('#showStatus').replaceWith(table);
     });
     request.fail(function(jqXHR) {
         console.error("ERROR occurs ");
@@ -270,6 +297,6 @@ $('#showStatus').replaceWith(table);
 
       </script>
   </div>
-    </div>
+</div>
 
   }
