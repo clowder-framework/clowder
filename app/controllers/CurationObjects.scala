@@ -339,6 +339,80 @@ class CurationObjects @Inject()(
           val totalSize = if (!c.files.isEmpty) c.files.map(_.length).sum else 0
           val valuetoSend = Json.toJson(
             Map(
+              "@context" -> Json.toJson(Seq(
+                Json.toJson("https://w3id.org/ore/context"),
+                Json.toJson(
+                  Map(
+                    "Identifier" -> Json.toJson("http://purl.org/dc/elements/1.1/identifier"),
+                    "License" -> Json.toJson("http://purl.org/dc/terms/license"),
+                    "Rights Holder" -> Json.toJson("http://purl.org/dc/terms/rightsHolder"),
+                    "Rights" -> Json.toJson("http://purl.org/dc/terms/rights"),
+                    "Date" -> Json.toJson("http://purl.org/dc/elements/1.1/date"),
+                    "Creation Date" -> Json.toJson("http://purl.org/dc/terms/created"),
+                    "Size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length"),
+                    "Label" -> Json.toJson("http://www.w3.org/2000/01/rdf-schema#label"),
+                    "Mimetype" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
+                    "Description" -> Json.toJson("http://purl.org/dc/elements/1.1/description"),
+                    "Title" -> Json.toJson("http://purl.org/dc/elements/1.1/title"),
+                    "Uploaded By" -> Json.toJson("http://purl.org/dc/elements/1.1/creator"),
+                    "Abstract" -> Json.toJson("http://purl.org/dc/terms/abstract"),
+                    "Contact" -> Json.toJson("http://sead-data.net/terms/contact"),
+                    "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
+                    "Publication Date" -> Json.toJson("http://purl.org/dc/terms/issued"),
+                    "GeoPoint" ->
+                      Json.toJson(
+                        Map(
+
+                          "@id" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/gis/hasGeoPoint"),
+                          "long" -> Json.toJson("http://www.w3.org/2003/01/geo/wgs84_pos#long"),
+                          "lat" -> Json.toJson("http://www.w3.org/2003/01/geo/wgs84_pos#lat")
+                    )),
+                    "Comment" -> Json.toJson(Map(
+
+                      "comment_body" -> Json.toJson("http://purl.org/dc/elements/1.1/description"),
+                      "comment_date" -> Json.toJson("http://purl.org/dc/elements/1.1/date"),
+                      "@id" -> Json.toJson("http://cet.ncsa.uiuc.edu/2007/annotation/hasAnnotation"),
+                      "comment_author" -> Json.toJson("http://purl.org/dc/elements/1.1/creator")
+                    )),
+                    "Where" -> Json.toJson("http://sead-data.net/vocab/demo/where"),
+                    "Has Description" -> Json.toJson("http://purl.org/dc/terms/description"),
+                    "Experiment Site" -> Json.toJson("http://sead-data.net/terms/odm/location"),
+                    "Experimental Method" -> Json.toJson("http://sead-data.net/terms/odm/method"),
+                    "Primary Source" -> Json.toJson("http://www.w3.org/ns/prov#hadPrimarySource"),
+                    "Topic" -> Json.toJson("http://purl.org/dc/terms/subject"),
+                    "Audience" -> Json.toJson("http://purl.org/dc/terms/audience"),
+                    "Bibliographic citation" -> Json.toJson("http://purl.org/dc/terms/bibliographicCitation"),
+                    "Coverage" -> Json.toJson("http://purl.org/dc/terms/coverage"),
+                    "Published In" -> Json.toJson("http://purl.org/dc/terms/isPartOf"),
+                    "Publisher" -> Json.toJson("http://purl.org/dc/terms/publisher"),
+                    "Quality Control Level" -> Json.toJson("http://sead-data.net/terms/odm/QualityControlLevel"),
+                    "Who" -> Json.toJson("http://sead-data.net/vocab/demo/creator"),
+                    "Alternative title" -> Json.toJson("http://purl.org/dc/terms/alternative"),
+                    "External Identifier" -> Json.toJson("http://purl.org/dc/terms/identifier"),
+                    "Proposed for Publication " -> Json.toJson("http://sead-data.net/terms/ProposedForPublication"),
+                    "Start/End Date" -> Json.toJson("http://purl.org/dc/terms/temporal"),
+                    "duplicates" -> Json.toJson("http://cet.ncsa.uiuc.edu/2007/mmdb/duplicates"),
+                    "is derived from" -> Json.toJson("http://www.w3.org/ns/prov#wasDerivedFrom"),
+                    "describes" -> Json.toJson("http://cet.ncsa.uiuc.edu/2007/mmdb/describes"),
+                    "has newer version" -> Json.toJson("http://www.w3.org/ns/prov/#hadRevision"),
+                    "relates to" -> Json.toJson("http://cet.ncsa.uiuc.edu/2007/mmdb/relatesTo"),
+                    "references" -> Json.toJson("http://purl.org/dc/terms/references"),
+                    "is referenced by" -> Json.toJson("http://purl.org/dc/terms/isReferencedBy"),
+                    "has derivative" -> Json.toJson("http://www.w3.org/ns/prov/#hadDerivation"),
+                    "has prior version" -> Json.toJson("http://www.w3.org/ns/prov#wasRevisionOf"),
+                    "keyword" -> Json.toJson("http://www.holygoat.co.uk/owl/redwood/0.1/tags/taggedWithTag"),
+                    "Is Version Of" -> Json.toJson("http://purl.org/dc/terms/isVersionOf"),
+                    "Has Part" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
+                    "Aggregation Statistics" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
+                    "Repository" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
+                    "Preferences" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
+                    "Aggregation" -> Json.toJson("http://purl.org/dc/terms/hasPart")
+
+                  )
+                )
+
+              )),
+
                 "Repository" -> Json.toJson(repository.toLowerCase()),
                 "Preferences" -> Json.toJson(
                   userPreferences
@@ -347,7 +421,9 @@ class CurationObjects @Inject()(
                   Map(
                     "Identifier" -> Json.toJson(curationId),
                     "@id" -> Json.toJson(hostUrl),
-                    "Title" -> Json.toJson(c.name)
+                    "Title" -> Json.toJson(c.name),
+                    "Abstract" -> Json.toJson(c.datasets(0).userMetadata.get("Abstract").getOrElse("").toString),
+                    "Creator" -> Json.toJson(userService.findByIdentity(c.author).map(usr => JsArray(Seq(Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id), Json.toJson(usr.profile.map(prof => prof.orcidID.map(oid=> oid)))))))
                   )
                 ),
                 "Aggregation Statistics" -> Json.toJson(
@@ -361,17 +437,25 @@ class CurationObjects @Inject()(
               )
             )
           Logger.debug("Submitting request for publication: " + valuetoSend)
-          var endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
-          val httpPost = new HttpPost(endpoint)
-          httpPost.setHeader("Content-Type", "application/json")
-          httpPost.setEntity(new StringEntity(Json.stringify(valuetoSend)))
-          var client = new DefaultHttpClient
-          val response = client.execute(httpPost)
-          val responseStatus = response.getStatusLine().getStatusCode()
-          if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304) {
-            curations.setSubmitted(c.id)
-            success = true
+
+          implicit val context = scala.concurrent.ExecutionContext.Implicits.global
+          val endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
+          val futureResponse = WS.url(endpoint).post(valuetoSend)
+          var jsonResponse: play.api.libs.json.JsValue = new JsArray()
+          val result = futureResponse.map {
+            case response =>
+              if(response.status >= 200 && response.status < 300 || response.status == 304) {
+                curations.setSubmitted(c.id)
+                jsonResponse = response.json
+                success = true
+              }
+              else {
+
+                Logger.error("Error Submitting to Repository: " + response.getAHCResponse.getResponseBody())
+              }
           }
+
+          val rs = Await.result(result, Duration.Inf)
 
           Ok(views.html.spaces.curationSubmitted( c, repository, success))
       }

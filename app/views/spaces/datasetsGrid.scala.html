@@ -8,10 +8,12 @@
 <p>
     Most recent datasets:
     <span class="pull-right">
-        <a id ="create-dataset" href="@routes.Datasets.newDataset(Some(space))" class="btn btn-primary btn-xs">
+        @if(user.isDefined &&  Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
+            <a id ="create-dataset" href="@routes.Datasets.newDataset(Some(space))" class="btn btn-primary btn-xs">
 
-            Create Dataset
-        </a>
+                Create Dataset
+            </a>
+        }
         <a href="@(routes.Datasets.list("", "", 12, Some(space)))" class="btn btn-default btn-xs">
             <span class="glyphicon glyphicon-hand-right"></span>
             All Datasets

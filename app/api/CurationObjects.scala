@@ -43,9 +43,9 @@ class CurationObjects @Inject()(datasets: DatasetService,
         case Some(c) => {
           val hostIp = Utils.baseUrl(request)
           val hostUrl = hostIp + "/api/curations/" + curationId + "/ore"
-          val filesJson = c.datasets(0).files.map { file =>
+          val filesJson = c.files.map { file =>
             Json.toJson(Map(
-              "Identifier" -> Json.toJson(hostIp+"/files/" +file.id),
+              "Identifier" -> Json.toJson(file.id),
               "@id" -> Json.toJson(hostIp+"/files/" +file.id),
               "Creation Date" -> Json.toJson(format.format(file.uploadDate)),
               "Label" -> Json.toJson(file.filename),
@@ -58,10 +58,11 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "Keyword" -> Json.toJson(file.tags.map(_.name)),
               "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2007/File")),
               "Version Of" -> Json.toJson(hostIp + "/files/" + file.id),
-              "Has Part" ->Json.toJson("")
+              "similarTo" -> Json.toJson(hostIp + "/api/files/" + file.id + "/blob")
+
             ))
           }
-
+          val fileIds = c.files.map{file => file.id}
           var commentsByDataset = comments.findCommentsByDatasetId(c.datasets(0).id)
           c.files.map {
             file =>
@@ -95,32 +96,34 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     "Creation Date" -> Json.toJson("http://purl.org/dc/terms/created"),
                     "Size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length"),
                     "Label" -> Json.toJson("http://www.w3.org/2000/01/rdf-schema#label"),
+                    "Location" -> Json.toJson( "http://sead-data.net/terms/generatedAt"),
                     "Mimetype" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
                     "Description" -> Json.toJson("http://purl.org/dc/elements/1.1/description"),
+                    "Descriptor" -> Json.toJson("http://purl.org/dc/terms/description"),
+                    "Keyword"-> Json.toJson("http://www.holygoat.co.uk/owl/redwood/0.1/tags/taggedWithTag"),
                     "Title" -> Json.toJson("http://purl.org/dc/elements/1.1/title"),
                     "Uploaded By" -> Json.toJson("http://purl.org/dc/elements/1.1/creator"),
                     "Abstract" -> Json.toJson("http://purl.org/dc/terms/abstract"),
                     "Contact" -> Json.toJson("http://sead-data.net/terms/contact"),
                     "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
                     "Publication Date" -> Json.toJson("http://purl.org/dc/terms/issued"),
-                    "GeoPoint" -> Json.toJson(Seq(
+                    "GeoPoint" ->
                       Json.toJson(
                         Map(
 
                           "@id" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/gis/hasGeoPoint"),
                           "long" -> Json.toJson("http://www.w3.org/2003/01/geo/wgs84_pos#long"),
                           "lat" -> Json.toJson("http://www.w3.org/2003/01/geo/wgs84_pos#lat")
-                        )
-                      )
+
                     )),
-                    "Comment" -> Json.toJson(Seq(Json.toJson(Map(
+                    "Comment" -> Json.toJson(Map(
 
                       "comment_body" -> Json.toJson("http://purl.org/dc/elements/1.1/description"),
                       "comment_date" -> Json.toJson("http://purl.org/dc/elements/1.1/date"),
                       "@id" -> Json.toJson("http://cet.ncsa.uiuc.edu/2007/annotation/hasAnnotation"),
                       "comment_author" -> Json.toJson("http://purl.org/dc/elements/1.1/creator")
-                    )))),
-                    "Where" -> Json.toJson("http:/sead-data.net/vocab/demo/where"),
+                    )),
+                    "Where" -> Json.toJson("http://sead-data.net/vocab/demo/where"),
                     "Has Description" -> Json.toJson("http://purl.org/dc/terms/description"),
                     "Experiment Site" -> Json.toJson("http://sead-data.net/terms/odm/location"),
                     "Experimental Method" -> Json.toJson("http://sead-data.net/terms/odm/method"),
@@ -128,6 +131,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     "Topic" -> Json.toJson("http://purl.org/dc/terms/subject"),
                     "Audience" -> Json.toJson("http://purl.org/dc/terms/audience"),
                     "Bibliographic citation" -> Json.toJson("http://purl.org/dc/terms/bibliographicCitation"),
+                    "FRBR_embodimentOf"-> Json.toJson("http://purl.org/vocab/frbr/core#embodimentOf"),
                     "Coverage" -> Json.toJson("http://purl.org/dc/terms/coverage"),
                     "Published In" -> Json.toJson("http://purl.org/dc/terms/isPartOf"),
                     "Publisher" -> Json.toJson("http://purl.org/dc/terms/publisher"),
@@ -162,9 +166,9 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "Title" -> Json.toJson(c.name),
                   "Uploaded By" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id))),
                   "Abstract" -> Json.toJson(c.datasets(0).userMetadata.get("Abstract").getOrElse("").toString),
-                  "Creator" -> Json.toJson(userService.findByIdentity(c.author).map(usr => JsArray(Seq(Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/"), Json.toJson(usr.profile.map(prof => prof.orcidID.map(oid=> oid))))))),
-                  "Publication Date" -> Json.toJson(format.format(c.created)),
+                  "Creator" -> Json.toJson(userService.findByIdentity(c.author).map(usr => JsArray(Seq(Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id), Json.toJson(usr.profile.map(prof => prof.orcidID.map(oid=> oid))))))),
                   "Comment" -> Json.toJson(JsArray(commentsJson)),
+                  "Publication Date" -> Json.toJson(format.format(c.created)),
                   "Published In" -> Json.toJson(""),
                   "Alternative title" -> Json.toJson(c.name),
                   "External Identifier" -> Json.toJson(""),
@@ -177,7 +181,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "Is Version of" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id ),
                   "similarTo" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id ),
                   "aggregates" -> Json.toJson(JsArray(filesJson)),
-                  "Has Part" -> Json.toJson("")
+                  "Has Part" -> Json.toJson(fileIds)
 
                 )),
               "Creation Date" -> Json.toJson(format.format(c.created)),
