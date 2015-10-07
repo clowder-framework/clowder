@@ -439,7 +439,7 @@ class CurationObjects @Inject()(
 
       case Some(c) => {
 
-        val endpoint = play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$", "") + "/" + id.toString()
+        val endpoint = play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$", "") + "/" +id.toString()
         Logger.debug(endpoint)
         WS.url(endpoint).get().map { response =>
 
