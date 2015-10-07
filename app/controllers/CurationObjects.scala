@@ -528,7 +528,8 @@ class CurationObjects @Inject()(
               }
 
             }
-
+          }
+        }
         case None => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object not found.")))
       }
   }
