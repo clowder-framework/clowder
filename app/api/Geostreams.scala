@@ -1533,6 +1533,10 @@ object Geostreams extends ApiController {
               }
             }
           }
+        } else {
+          for (f <- existingFiles) {
+            filesToRemove += f.getAbsolutePath
+          }
         }
         for (f <- filesToRemove) {
           val file = new File(f)
