@@ -322,7 +322,7 @@ object Geostreams extends ApiController {
             } else {
               plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), 0.0, streamId)
             }
-            cacheInvalidate
+            cacheInvalidate(None, None)
             jsonp(toJson("success"), request)
           }
           case None => pluginNotEnabled
@@ -1472,18 +1472,75 @@ object Geostreams extends ApiController {
   }
 
   /**
-   * Removes all files from the cache
+   * Removes all files from the cache,
+   * or the files associated with either sensor_id or stream_id as query parameters.
+   * Specifying sensor_id and stream_id will only remove caching where both are present
    */
-  def cacheInvalidate = {
+  def cacheInvalidate(sensor_id: Option[String] = None, stream_id: Option[String] = None) = {
     play.api.Play.configuration.getString("geostream.cache") match {
       case Some(x) => {
-        val files = new File(x).listFiles
-        for (f <- new File(x).listFiles) {
-          if (!f.delete) {
-            Logger.error("Could not delete cache file " + f.getAbsolutePath)
+        val existingFiles = new File(x).listFiles
+        val filesToRemove = collection.mutable.ListBuffer.empty[String]
+        if (sensor_id.isDefined && stream_id.isDefined) {
+          for (file <- existingFiles) {
+            val jsonFile = new File(file.getAbsolutePath + ".json")
+            if (jsonFile.exists()) {
+              val data = Json.parse(Source.fromFile(jsonFile).mkString)
+              val ThisSensor = sensor_id.get.toString
+              val ThisStream = stream_id.get.toString
+              Parsers.parseString(data.\("sensor_id")) match {
+                case ThisSensor => {
+                  Parsers.parseString(data.\("stream_id")) match {
+                    case ThisStream => {
+                      filesToRemove += file.getAbsolutePath
+                      filesToRemove += jsonFile.getAbsolutePath
+                    }
+                    case _ => None
+                  }
+                }
+                case _ => None
+              }
+            }
+          }
+        } else if (sensor_id.isDefined) {
+          Logger.debug(sensor_id.toString)
+          for (file <- existingFiles) {
+            val jsonFile = new File(file.getAbsolutePath + ".json")
+            if (jsonFile.exists()) {
+              val data = Json.parse(Source.fromFile(jsonFile).mkString)
+              val ThisSensor = sensor_id.get.toString
+              Parsers.parseString(data.\("sensor_id")) match {
+                case ThisSensor => {
+                  filesToRemove += file.getAbsolutePath
+                  filesToRemove += jsonFile.getAbsolutePath
+                }
+                case _ => None
+              }
+            }
+          }
+        } else if (stream_id.isDefined) {
+          for (file <- existingFiles) {
+            val jsonFile = new File(file.getAbsolutePath + ".json")
+            if (jsonFile.exists()) {
+              val data = Json.parse(Source.fromFile(jsonFile).mkString)
+              val ThisStream = stream_id.get.toString
+              Parsers.parseString(data.\("stream_id")) match {
+                case ThisStream => {
+                  filesToRemove += file.getAbsolutePath
+                  filesToRemove += jsonFile.getAbsolutePath
+                }
+                case _ => None
+              }
+            }
           }
         }
-        files.map { s => s.getAbsolutePath}
+        for (f <- filesToRemove) {
+          val file = new File(f)
+          if (!file.delete) {
+            Logger.error("Could not delete cache file " + file.getAbsolutePath)
+          }
+        }
+        filesToRemove.toArray
       }
       case None => Array.empty[String]
     }
@@ -1492,10 +1549,10 @@ object Geostreams extends ApiController {
   /**
    * Removes all files from the cache
    */
-  def cacheInvalidateAction() = Action { request =>
+  def cacheInvalidateAction(sensor_id: Option[String] = None, stream_id: Option[String] = None) = Action { request =>
     play.api.Play.configuration.getString("geostream.cache") match {
       case Some(x) => {
-        val files = cacheInvalidate
+        val files = cacheInvalidate(sensor_id, stream_id)
         Ok(Json.obj("files" -> Json.toJson(files)))
       }
       case None => {
