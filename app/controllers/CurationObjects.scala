@@ -372,7 +372,7 @@ class CurationObjects @Inject()(
                       "@id" -> Json.toJson("http://cet.ncsa.uiuc.edu/2007/annotation/hasAnnotation"),
                       "comment_author" -> Json.toJson("http://purl.org/dc/elements/1.1/creator")
                     )),
-                    "Where" -> Json.toJson("http:/sead-data.net/vocab/demo/where"),
+                    "Where" -> Json.toJson("http://sead-data.net/vocab/demo/where"),
                     "Has Description" -> Json.toJson("http://purl.org/dc/terms/description"),
                     "Experiment Site" -> Json.toJson("http://sead-data.net/terms/odm/location"),
                     "Experimental Method" -> Json.toJson("http://sead-data.net/terms/odm/method"),
@@ -421,9 +421,7 @@ class CurationObjects @Inject()(
                     "@id" -> Json.toJson(hostUrl),
                     "Title" -> Json.toJson(c.name),
                     "Abstract" -> Json.toJson(c.datasets(0).userMetadata.get("Abstract").getOrElse("").toString),
-                    "Creator" -> Json.toJson(userService.findByIdentity(c.author).map(usr => JsArray(Seq(Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/"), Json.toJson(usr.profile.map(prof => prof.orcidID.map(oid=> oid)))))))
-
-
+                    "Creator" -> Json.toJson(userService.findByIdentity(c.author).map(usr => JsArray(Seq(Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id), Json.toJson(usr.profile.map(prof => prof.orcidID.map(oid=> oid)))))))
                   )
                 ),
                 "Aggregation Statistics" -> Json.toJson(
