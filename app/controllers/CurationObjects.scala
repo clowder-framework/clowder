@@ -516,7 +516,9 @@ class CurationObjects @Inject()(
   }
 
 
-
+  /**
+   * Endpoint for getting status from repository.
+   */
   def getStatusFromRepository (id: UUID)  = Action.async { implicit request =>
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
     curations.get(id) match {
@@ -529,20 +531,17 @@ class CurationObjects @Inject()(
 
         futureResponse.map{
           case response =>
-
-
-          if(response.status >= 200 && response.status < 300 || response.status == 304) {
-            (response.json \ "Status").asOpt[JsValue]
-            Ok(response.json)
-          } else {
-            Logger.error("Error Getting Status: " + response.getAHCResponse.getResponseBody)
-            InternalServerError(toJson("Status object not found."))
-          }
+            if(response.status >= 200 && response.status < 300 || response.status == 304) {
+              (response.json \ "Status").asOpt[JsValue]
+              Ok(response.json)
+            } else {
+              Logger.error("Error Getting Status: " + response.getAHCResponse.getResponseBody)
+              InternalServerError(toJson("Status object not found."))
+            }
         }
       }
       case None => Future(InternalServerError(toJson("Curation object not found.")))
     }
   }
-
 
 }

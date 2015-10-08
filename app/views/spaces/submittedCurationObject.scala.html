@@ -223,85 +223,84 @@
       <script>
 
       $(document).ready(getStatus('@curationObject.id'));
+
       $('#status').click(function(){
         getStatus('@curationObject.id');
       });
 
-
       function getStatus(id){
-      var request = jsRoutes.controllers.CurationObjects.getStatusFromRepository(id).ajax({
-        type : 'GET',
-        contentType : "application/json"
-       });
-      request.done ( function ( response, textStatus, jqXHR) {
-      console.log("get status: "+ jqXHR.responseText );
+        var request = jsRoutes.controllers.CurationObjects.getStatusFromRepository(id).ajax({
+          type : 'GET',
+          contentType : "application/json"
+         });
+        request.done ( function ( response, textStatus, jqXHR) {
+        console.log("get status: "+ jqXHR.responseText );
 
-      var o =response.Status;
-      var table = document.createElement('table');
-      table.classList.add('table');
-      table.classList.add('table-bordered');
-      table.id ='showStatus';
+        var o =response.Status;
+        var table = document.createElement('table');
+        table.classList.add('table');
+        table.classList.add('table-bordered');
+        table.id ='showStatus';
 
-      var thead = document.createElement('thead');
-      {
-        var tr = document.createElement('tr');
-        var th1 = document.createElement('th');
-        var th2 = document.createElement('th');
-        var th3 = document.createElement('th');
-        var th4 = document.createElement('th');
+        var thead = document.createElement('thead');
+        {
+          var tr = document.createElement('tr');
+          var th1 = document.createElement('th');
+          var th2 = document.createElement('th');
+          var th3 = document.createElement('th');
+          var th4 = document.createElement('th');
 
-        var text1 = document.createTextNode("Date");
-        var text2 = document.createTextNode("Reporter");
-        var text3 = document.createTextNode("Stage");
-        var text4 = document.createTextNode("Message");
+          var text1 = document.createTextNode("Date");
+          var text2 = document.createTextNode("Reporter");
+          var text3 = document.createTextNode("Stage");
+          var text4 = document.createTextNode("Message");
 
-        th1.appendChild(text1);
-        th2.appendChild(text2);
-        th3.appendChild(text3);
-        th4.appendChild(text4);
-        tr.appendChild(th1);
-        tr.appendChild(th2);
-        tr.appendChild(th3);
-        tr.appendChild(th4);
+          th1.appendChild(text1);
+          th2.appendChild(text2);
+          th3.appendChild(text3);
+          th4.appendChild(text4);
+          tr.appendChild(th1);
+          tr.appendChild(th2);
+          tr.appendChild(th3);
+          tr.appendChild(th4);
 
-        thead.appendChild(tr);
-      }
-      var tbody = document.createElement('tbody');
-      for ( var i = 0, l = o.length; i < l; i++){
-       var tr = document.createElement('tr');
+          thead.appendChild(tr);
+        }
+        var tbody = document.createElement('tbody');
+        for ( var i = 0, l = o.length; i < l; i++){
+         var tr = document.createElement('tr');
 
-        var td1 = document.createElement('td');
-        var td2 = document.createElement('td');
-        var td3 = document.createElement('td');
-        var td4 = document.createElement('td');
+          var td1 = document.createElement('td');
+          var td2 = document.createElement('td');
+          var td3 = document.createElement('td');
+          var td4 = document.createElement('td');
 
-        var text1 = document.createTextNode(o[i].date);
-        var text2 = document.createTextNode(o[i].reporter);
-        var text3 = document.createTextNode(o[i].stage);
-        var text4 = document.createTextNode(o[i].message);
+          var text1 = document.createTextNode(o[i].date);
+          var text2 = document.createTextNode(o[i].reporter);
+          var text3 = document.createTextNode(o[i].stage);
+          var text4 = document.createTextNode(o[i].message);
 
-        td1.appendChild(text1);
-        td2.appendChild(text2);
-        td3.appendChild(text3);
-        td4.appendChild(text4);
-        tr.appendChild(td1);
-        tr.appendChild(td2);
-        tr.appendChild(td3);
-        tr.appendChild(td4);
+          td1.appendChild(text1);
+          td2.appendChild(text2);
+          td3.appendChild(text3);
+          td4.appendChild(text4);
+          tr.appendChild(td1);
+          tr.appendChild(td2);
+          tr.appendChild(td3);
+          tr.appendChild(td4);
 
-        tbody.appendChild(tr);
-      }
+          tbody.appendChild(tr);
+        }
 
-      table.appendChild(thead);
-      table.appendChild(tbody);
-      $('#showStatus').replaceWith(table);
-    });
-    request.fail(function(jqXHR) {
-        console.error("ERROR occurs ");
-        $('#showStatus').replaceWith("<p id='showStatus'>Cannot get status.</p>");
-    });
-      }
-
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        $('#showStatus').replaceWith(table);
+      });
+      request.fail(function(jqXHR) {
+          console.error("ERROR occurs ");
+          $('#showStatus').replaceWith("<p id='showStatus'>Cannot get status.</p>");
+      });
+    }
 
     </script>
   </div>
