@@ -217,22 +217,30 @@
 
     </div>
     <div class="col-md-6">
-    <button id="status" class ="btn"> Get Status</button>
+    <b>Status from repository</b><button id="status" class ="btn btn-xs"> Update</button>
     <br/><br/>
     <div id="showStatus"></div>
-    <script>
+      <script>
+
+      $(document).ready(getStatus('@curationObject.id'));
       $('#status').click(function(){
-      var request = jsRoutes.controllers.CurationObjects.getStatusFromRepository('@curationObject.id').ajax({
+        getStatus('@curationObject.id');
+      });
+
+
+      function getStatus(id){
+      var request = jsRoutes.controllers.CurationObjects.getStatusFromRepository(id).ajax({
         type : 'GET',
         contentType : "application/json"
        });
     request.done ( function ( response, textStatus, jqXHR) {
     console.log("get status: "+ jqXHR.responseText );
 
-    var o =$.parseJSON(jqXHR.responseText);
+    var o =response.Status;
     var table = document.createElement('table');
     table.classList.add('table');
     table.classList.add('table-bordered');
+    table.id ='showStatus';
 
     var thead = document.createElement('thead');
     {
@@ -290,10 +298,10 @@
     });
     request.fail(function(jqXHR) {
         console.error("ERROR occurs ");
-        $('#showStatus').replaceWith("<br/><p>Cannot get status.</p>");
+        $('#showStatus').replaceWith("<p id='showStatus'>Cannot get status.</p>");
     });
       }
-      )
+
 
       </script>
   </div>
