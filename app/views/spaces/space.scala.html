@@ -16,7 +16,7 @@
 
     <div class="row space-head vertical-align">
 
-            <div class="col-md-12col-lg-12 col-sm-12">
+            <div class="col-md-12 col-lg-12 col-sm-12">
 
             <h1 id="spacenamedisplay">@space.name
 
@@ -36,7 +36,6 @@
             @if(play.api.Play.configuration.getBoolean("enable_expiration").getOrElse(false)) {
                 @spaces.spaceConfiguration(space)
             }
-
         </div>
     </div>
 }
