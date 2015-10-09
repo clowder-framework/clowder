@@ -1,7 +1,6 @@
 @(space: ProjectSpace, collections: List[Collection], datasets: List[Dataset], userRoleMap: Map[User, String])(implicit user: Option[models.User])
 
-@import api.Permission
-@import helper._
+@import play.api.Play.current
 
 @main(space.name) {
 
@@ -16,52 +15,13 @@
     }
 
     <div class="row space-head vertical-align">
-        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))) {
-            <div class="col-md-9 col-lg-9 col-sm-9">
-        } else {
-            <div class="col-md-10 col-lg-10 col-sm-10">
-        }
+
+            <div class="col-md-12col-lg-12 col-sm-12">
+
             <h1 id="spacenamedisplay">@space.name
 
             </h1>
             <p><span id="spacedescdisplay">@space.description</span></p>
-        </div>
-        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))) {
-            <div class="pull-right col-md-3 col-lg-3 col-sm-3 text-center">
-        } else {
-            <div class="pull-right col-md-2 col-lg-2 col-sm-2 text-center">
-        }
-            <!-- If the user can edit users, the following are displayed; otherwise they are displayed and disabled, to provide a consistent UE. -->
-        @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
-            <a href="@routes.Spaces.manageUsers(space.id)" class="btn btn-default btn-xs">
-                <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
-            </a>
-        } else {
-            <a href="@routes.Spaces.manageUsers(space.id)" class="btn btn-default btn-xs disabled">
-                <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
-            </a>
-        }
-
-            <!-- If the user can edit this space, the following are displayed; otherwise they are displayed and disabled, to provide a consistent UE. -->
-            @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
-                <a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-default btn-xs">
-                    <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
-                </a>
-                <a href="@routes.Spaces.selectExtractors(space.id)" class="btn btn-default btn-xs">
-                    <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Extractors
-                </a>
-            } else {
-                <a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-default btn-xs disabled">
-                    <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
-                </a>
-                <a href="@routes.Spaces.selectExtractors(space.id)" class="btn btn-default btn-xs disabled">
-                    <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Extractors
-                </a>
-            }
-            @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))) {
-                <a class = "btn btn-xs btn-default" href="@routes.Spaces.stagingArea(space.id)" title="Staging Area">Staging Area</a>
-            }
-
         </div>
     </div>
 
@@ -73,7 +33,10 @@
         <div class="col-md-4 col-lg-4 col-sm-4 space-col-right">
             @spaces.otherActions(space, userRoleMap)
             @spaces.externalLinks(space.homePage)
-            @spaces.spaceConfiguration(space)
+            @if(play.api.Play.configuration.getBoolean("enable_expiration").getOrElse(false)) {
+                @spaces.spaceConfiguration(space)
+            }
+
         </div>
     </div>
 }
