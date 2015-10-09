@@ -166,7 +166,7 @@
                     <div>No system generated metadata.</div>
                   } else {
                     @for(i <- 0 until file.metadata.length) {
-                      @printLevel(file.metadata(i))
+                      @printLevel(file.metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
                     }
                   }
                   </ul>
@@ -217,7 +217,7 @@
 
     </div>
     <div class="col-md-6">
-    <b>Status from repository</b><button id="status" class ="btn btn-xs"> Update</button>
+    <b>Submission Status in repository &nbsp</b><button id="status" class ="btn btn-xs"> Update</button>
     <br/><br/>
     <div id="showStatus"></div>
       <script>
@@ -297,8 +297,8 @@
         $('#showStatus').replaceWith(table);
       });
       request.fail(function(jqXHR) {
-          console.error("ERROR occurs ");
-          $('#showStatus').replaceWith("<p id='showStatus'>Cannot get status.</p>");
+          console.error("Error getting status from repository");
+          $('#showStatus').replaceWith("<p id='showStatus'>No status available. Try again later.</p>");
       });
     }
 
