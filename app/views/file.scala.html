@@ -780,7 +780,7 @@
 
                   request.done(function (response, textStatus, jqXHR) {
                     console.log("Response " + textStatus);
-                    $("[data-id=" + tagDataId + "].tag").parents("li").remove();
+                    $("[data-id=" + tagDataId + "]").parents("li").remove();
                   });
 
                   request.fail(function (jqXHR, textStatus, errorThrown){
@@ -838,6 +838,7 @@
                         $newTag.hover(removeIconMouseIn,removeIconMouseOut);
                         $newTag.find(".glyphicon-remove").click(removeTag);
                         $('#tagField').val("");
+                        tmpId = tmpId+1;
                        });
                   
                       request.fail(function (jqXHR, textStatus, errorThrown){
