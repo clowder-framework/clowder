@@ -858,3 +858,7 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 .publish {
     background-color: #dcdcdc !important;
 }
+
+#user-space-role .table {
+    margin-bottom: 0px;
+}
