@@ -1,8 +1,8 @@
 Overview
 ============
 
-Medici is designed to support any data format and multiple research domains and contains three major extension points:
-preprocessing, processing and previewing. Information in Medici is organized using the following data model:
+Clowder is designed to support any data format and multiple research domains and contains three major extension points:
+preprocessing, processing and previewing. Information in Clowder is organized using the following data model:
 
 .. image:: _static/datamodel.jpg
 
@@ -18,11 +18,11 @@ extracting EXIF and GPS metadata from the image. If GPS information is available
 the dataset on a map embedded in the page. By making the clients and preprocessing steps independent the system can
 grow and adapt to different user communities and research domains.
 
-Medici uses a variety of technologies to accomplish its goals. The overall architecture of a typical deployment looks
+Clowder uses a variety of technologies to accomplish its goals. The overall architecture of a typical deployment looks
 as follows:
 
 .. image:: _static/architecture.jpg
 
-The web application and individual extractors comprise most of the custom Medici code and the core of the system.
-Most of the other blocks in the diagram are external services Medici depends on. The next section covers how to
+The web application and individual extractors comprise most of the custom Clowder code and the core of the system.
+Most of the other blocks in the diagram are external services Clowder depends on. The next section covers how to
 setup a typical stack.

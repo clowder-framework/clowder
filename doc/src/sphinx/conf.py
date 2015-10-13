@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Medici documentation build configuration file, created by
+# Clowder documentation build configuration file, created by
 # sphinx-quickstart on Wed Mar 26 13:24:40 2014.
 #
 # This file is execfile()d with the current directory set to its
@@ -28,7 +28,7 @@ import os
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = []
+extensions = ['alabaster']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -43,8 +43,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Medici'
-copyright = u'2014, Luigi Marini'
+project = u'Clowder'
+copyright = u'2015, Luigi Marini'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -97,7 +97,7 @@ pygments_style = 'sphinx'
 # -- Options for HTML output ----------------------------------------------
 sys.path.append(os.path.abspath('_themes'))
 html_theme_path = ['_themes']
-html_theme = 'flask'
+html_theme = 'alabaster'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
@@ -109,6 +109,15 @@ html_theme = 'flask'
 #html_theme_options = {
 #  index_logo =
 #}
+html_theme_options = {
+    'logo': 'logo.png',
+    'github_button': 'false',
+    'github_banner': 'false',
+    'analytics_id': 'UA-8681001-8',
+    'link': '#e37238',
+    'narrow_sidebar_link': '#e37238',
+    'sidebar_link': '#e37238',
+}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -149,6 +158,16 @@ html_static_path = ['_static']
 
 # Custom sidebar templates, maps document names to template names.
 #html_sidebars = {}
+html_sidebars = {
+    '**': [
+        'about.html',
+        'navigation.html',
+        'relations.html',
+        'searchbox.html',
+        'donate.html',
+    ]
+}
+
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
@@ -181,7 +200,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Medicidoc'
+htmlhelp_basename = 'Clowderdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -201,7 +220,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'Medici.tex', u'Medici Documentation',
+  ('index', 'Clowder.tex', u'Clowder Documentation',
    u'Luigi Marini', 'manual'),
 ]
 
@@ -231,7 +250,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'medici', u'Medici Documentation',
+    ('index', 'clowder', u'Clowder Documentation',
      [u'Luigi Marini'], 1)
 ]
 
@@ -245,8 +264,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'Medici', u'Medici Documentation',
-   u'Luigi Marini', 'Medici', 'One line description of project.',
+  ('index', 'Clowder', u'Clowder Documentation',
+   u'Luigi Marini', 'Clowder', 'One line description of project.',
    'Miscellaneous'),
 ]
 

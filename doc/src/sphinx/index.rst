@@ -1,8 +1,8 @@
 Clowder
 ==================================
 
-Medici is a web-based content management system that allows users to share, annotate, organize and analyze large
-collections of datasets. Unlike other CMS, Medici focuses on unstructured data in the form of arbitrary files and
+Clowder is a web-based data management system that allows users to share, annotate, organize and analyze large
+collections of datasets. Clowder focuses on unstructured data in the form of arbitrary files and
 structured data in the form of metadata associated with the files.
 
 .. image:: _static/dataset.png

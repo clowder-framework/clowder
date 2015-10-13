@@ -26,7 +26,7 @@ the all the configuration files under the ``/conf`` directory. The following fil
 
 - ``/conf/application.conf`` includes all the basic configuration entries. For example the MongoDB credentials for
   deployments where MongoDB has non default configuration.
-- ``/conf/play.plugins`` is usesd to turn on and off specific functionality in the system. Plugins specific to Medici are
+- ``/conf/play.plugins`` is usesd to turn on and off specific functionality in the system. Plugins specific to Clowder are
   available under ``/app/services``.
 - ``/conf/securesocial.conf`` includes configuration settings for email functionality when signup as well as ways to
   configure the different identity providers (for example Twitter or Facebook). More information can be found on the
