@@ -1481,59 +1481,66 @@ object Geostreams extends ApiController {
       case Some(x) => {
         val existingFiles = new File(x).listFiles
         val filesToRemove = collection.mutable.ListBuffer.empty[String]
-        if (sensor_id.isDefined && stream_id.isDefined) {
-          for (file <- existingFiles) {
-            val jsonFile = new File(file.getAbsolutePath + ".json")
-            if (jsonFile.exists()) {
-              val data = Json.parse(Source.fromFile(jsonFile).mkString)
-              val ThisSensor = sensor_id.get.toString
-              val ThisStream = stream_id.get.toString
-              Parsers.parseString(data.\("sensor_id")) match {
-                case ThisSensor => {
-                  Parsers.parseString(data.\("stream_id")) match {
-                    case ThisStream => {
-                      filesToRemove += file.getAbsolutePath
-                      filesToRemove += jsonFile.getAbsolutePath
-                    }
-                    case _ => None
+        val streams = new ListBuffer[String]()
+        val sensors = new ListBuffer[String]()
+        val errors = new ListBuffer[String]()
+
+        if (sensor_id.isDefined) {
+          sensors += sensor_id.get.toString
+          current.plugin[PostgresPlugin] match {
+            case Some(plugin) => {
+              plugin.getSensorStreams(sensor_id.get.toString) match {
+                case Some(d) => {
+                  val responseJson : JsValue = Json.parse(d)
+                  (responseJson \\ "stream_id").foreach(streams += _.toString)
+                }
+                case None => errors += "Sensor " + sensor_id.get.toString + " does not exist"
+              }
+            }
+            case None => pluginNotEnabled
+          }
+        }
+
+        if (stream_id.isDefined) {
+          streams += stream_id.get.toString
+          current.plugin[PostgresPlugin] match {
+            case Some(plugin) => {
+              plugin.getStream(stream_id.get.toString) match {
+                case Some(d) => {
+                  val responseJson : JsValue = Json.parse(d)
+                  (responseJson \\ "sensor_id").foreach(sensors += _.asInstanceOf[JsString].value.toString)
+                }
+                case None => errors += "Stream " + stream_id.get.toString + " does not exist"
+              }
+            }
+            case None => pluginNotEnabled
+          }
+        }
+
+        for (file <- existingFiles) {
+          val jsonFile = new File(file.getAbsolutePath + ".json")
+          if (jsonFile.exists()) {
+            val data = Json.parse(Source.fromFile(jsonFile).mkString)
+            Parsers.parseJsValues(data.\("sensor_id"), data.\("stream_id")) match {
+              case (sensor_value, stream_value) =>
+                if (sensor_id.isDefined && !stream_id.isDefined) {
+                  if (sensors.contains(sensor_value) || streams.contains(stream_value)) {
+                    filesToRemove += file.getAbsolutePath
+                    filesToRemove += jsonFile.getAbsolutePath
                   }
                 }
-                case _ => None
-              }
-            }
-          }
-        } else if (sensor_id.isDefined) {
-          Logger.debug(sensor_id.toString)
-          for (file <- existingFiles) {
-            val jsonFile = new File(file.getAbsolutePath + ".json")
-            if (jsonFile.exists()) {
-              val data = Json.parse(Source.fromFile(jsonFile).mkString)
-              val ThisSensor = sensor_id.get.toString
-              Parsers.parseString(data.\("sensor_id")) match {
-                case ThisSensor => {
-                  filesToRemove += file.getAbsolutePath
-                  filesToRemove += jsonFile.getAbsolutePath
+                if (!sensor_id.isDefined && stream_id.isDefined) {
+                  if (streams.contains(stream_value) || (sensors.contains(sensor_value) && stream_value.isEmpty)) {
+                    filesToRemove += file.getAbsolutePath
+                    filesToRemove += jsonFile.getAbsolutePath
+                  }
                 }
-                case _ => None
-              }
+              case _ => None
             }
           }
-        } else if (stream_id.isDefined) {
-          for (file <- existingFiles) {
-            val jsonFile = new File(file.getAbsolutePath + ".json")
-            if (jsonFile.exists()) {
-              val data = Json.parse(Source.fromFile(jsonFile).mkString)
-              val ThisStream = stream_id.get.toString
-              Parsers.parseString(data.\("stream_id")) match {
-                case ThisStream => {
-                  filesToRemove += file.getAbsolutePath
-                  filesToRemove += jsonFile.getAbsolutePath
-                }
-                case _ => None
-              }
-            }
-          }
-        } else {
+        }
+
+        if (sensor_id.isEmpty && stream_id.isEmpty) {
           for (f <- existingFiles) {
             filesToRemove += f.getAbsolutePath
           }
@@ -1541,12 +1548,13 @@ object Geostreams extends ApiController {
         for (f <- filesToRemove) {
           val file = new File(f)
           if (!file.delete) {
+            errors += "Could not delete cache file: " + file.getAbsolutePath
             Logger.error("Could not delete cache file " + file.getAbsolutePath)
           }
         }
-        filesToRemove.toArray
+        (filesToRemove.toArray, errors.toArray)
       }
-      case None => Array.empty[String]
+      case None => (Array.empty[String], Array.empty[String])
     }
   }
 
@@ -1556,8 +1564,8 @@ object Geostreams extends ApiController {
   def cacheInvalidateAction(sensor_id: Option[String] = None, stream_id: Option[String] = None) = Action { request =>
     play.api.Play.configuration.getString("geostream.cache") match {
       case Some(x) => {
-        val files = cacheInvalidate(sensor_id, stream_id)
-        Ok(Json.obj("files" -> Json.toJson(files)))
+        val (files, errors) = cacheInvalidate(sensor_id, stream_id)
+        Ok(Json.obj("files" -> Json.toJson(files), "errors" -> Json.toJson(errors)))
       }
       case None => {
         NotFound("Cache is not enabled")

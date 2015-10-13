@@ -59,6 +59,17 @@ object Parsers {
   def parseString(s: String) : String = s.replaceAll("^[\"'](.*)[\"']", "$1")
 
   /**
+   * Given the JsValues, strip off any quotes from beginning and end.
+   *
+   * @param j1 the JsValue to be cleaned
+   * @param j2 the JsValue to be cleaned
+   * @return the cleaned up string.
+   */
+  def parseJsValues(j1: JsValue, j2: JsValue) : (String, String) = {
+    (parseString(j1), parseString(j2))
+  }
+
+  /**
    * Parse the string assuming ISO8601 dateformat and return a date object.
    */
   def fromISO8601(s: String) : Date = {
