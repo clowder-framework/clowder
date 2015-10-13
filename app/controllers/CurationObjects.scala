@@ -262,7 +262,7 @@ class CurationObjects @Inject()(
       "@context" -> Json.toJson("https://w3id.org/ore/context"),
       "Aggregation" ->
         Map(
-          "Identifier" -> Json.toJson(hostIp +"/api/curations/" + c.id),
+          "Identifier" -> Json.toJson(hostIp +"/spaces/curations/" + c.id),
           "@id" -> Json.toJson(hostUrl),
           "Title" -> Json.toJson(c.name),
 
@@ -343,7 +343,7 @@ class CurationObjects @Inject()(
                 Json.toJson("https://w3id.org/ore/context"),
                 Json.toJson(
                   Map(
-                    "Identifier" -> Json.toJson("http://purl.org/dc/elements/1.1/identifier"),
+                    "Identifier" -> Json.toJson("http://www.ietf.org/rfc/rfc4122"),
                     "License" -> Json.toJson("http://purl.org/dc/terms/license"),
                     "Rights Holder" -> Json.toJson("http://purl.org/dc/terms/rightsHolder"),
                     "Rights" -> Json.toJson("http://purl.org/dc/terms/rights"),
@@ -403,10 +403,13 @@ class CurationObjects @Inject()(
                     "keyword" -> Json.toJson("http://www.holygoat.co.uk/owl/redwood/0.1/tags/taggedWithTag"),
                     "Is Version Of" -> Json.toJson("http://purl.org/dc/terms/isVersionOf"),
                     "Has Part" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
-                    "Aggregation Statistics" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
+                    "Aggregation Statistics" -> Json.toJson("http://sead-data.net/terms/aggregationStatistics"),
                     "Repository" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
-                    "Preferences" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
-                    "Aggregation" -> Json.toJson("http://purl.org/dc/terms/hasPart")
+                    "Preferences" -> Json.toJson(Map(
+                      "Affiliations" -> Json.toJson("http://sead-data.net/terms/affiliations"),
+                      "@id" -> Json.toJson("http://cet.ncsa.uiuc.edu/2007/annotation/hasAnnotation")
+                    )),
+                    "Aggregation" -> Json.toJson("http://sead-data.net/terms/aggre")
 
                   )
                 )
@@ -419,19 +422,22 @@ class CurationObjects @Inject()(
                 ),
                 "Aggregation" -> Json.toJson(
                   Map(
-                    "Identifier" -> Json.toJson(curationId),
+                    "Identifier" -> Json.toJson("urn:uuid:"+curationId),
                     "@id" -> Json.toJson(hostUrl),
+                    "@type" -> Json.toJson("Aggregation"),
                     "Title" -> Json.toJson(c.name),
-                    "Abstract" -> Json.toJson(c.datasets(0).userMetadata.get("Abstract").getOrElse("").toString),
+                    "Abstract" -> Json.toJson(c.datasets(0).userMetadata.get("Abstract").getOrElse(c.description).asInstanceOf[com.mongodb.BasicDBList].get(0).toString()),
                     "Creator" -> Json.toJson(userService.findByIdentity(c.author).map(usr => JsArray(Seq(Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id), Json.toJson(usr.profile.map(prof => prof.orcidID.map(oid=> oid)))))))
                   )
                 ),
                 "Aggregation Statistics" -> Json.toJson(
                   Map(
-                    "Max Collection Depth" -> Json.toJson("1"),
+                    "Max Collection Depth" -> Json.toJson("0"),
                     "Data Mimetypes" -> Json.toJson(c.files.map(_.contentType).toSet),
                     "Max Dataset Size" -> Json.toJson(maxDataset.toString),
-                    "Total Size" -> Json.toJson(totalSize.toString)
+                    "Total Size" -> Json.toJson(totalSize.toString),
+                    "Number of Datasets" -> Json.toJson(c.files.length),
+                    "Number of Collections" -> Json.toJson(c.datasets.length)
                   )),
                 "Publication Callback" -> Json.toJson(hostIp + "/spaces/curations/" + c.id + "/status")
               )
