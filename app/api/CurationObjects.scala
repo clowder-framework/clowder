@@ -3,6 +3,7 @@ package api
 import javax.inject.{Inject, Singleton}
 
 
+import com.mongodb.BasicDBList
 import controllers.Utils
 import models.{MatchMakerResponse, mmRule, ResourceRef, UUID}
 import play.api.libs.ws.WS
@@ -44,23 +45,27 @@ class CurationObjects @Inject()(datasets: DatasetService,
           val hostIp = Utils.baseUrl(request)
           val hostUrl = hostIp + "/api/curations/" + curationId + "/ore"
           val filesJson = c.files.map { file =>
-            Json.toJson(Map(
+            //TODO: Add file.metadata
+            val metadata = file.userMetadata ++ file.xmlMetadata
+            val fileMetadata = metadata.map {
+              item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
+            }
+            val tempMap =  Map(
               "Identifier" -> Json.toJson("urn:uuid:"+file.id),
               "@id" -> Json.toJson(hostIp+"/files/" +file.id),
               "Creation Date" -> Json.toJson(format.format(file.uploadDate)),
               "Label" -> Json.toJson(file.filename),
               "Title" -> Json.toJson(file.filename),
               "Uploaded By" -> Json.toJson(userService.findByIdentity(file.author).map ( usr => Json.toJson(file.author.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id))),
-              "Abstract" -> Json.toJson(file.userMetadata.get("Abstract").getOrElse("").asInstanceOf[com.mongodb.BasicDBList].get(0).toString()),
-              "Creator" -> Json.toJson(userService.findByIdentity(file.author).map ( usr => usr.profile.map(prof => prof.orcidID.map(oid=> oid)))),
+
               "Publication Date" -> Json.toJson(""),
               "External Identifier" -> Json.toJson(""),
               "Keyword" -> Json.toJson(file.tags.map(_.name)),
               "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2015/File")),
               "Version Of" -> Json.toJson(hostIp + "/files/" + file.id),
               "similarTo" -> Json.toJson(hostIp + "/api/files/" + file.id + "/blob")
-
-            ))
+            )
+            fileMetadata.toMap ++ tempMap
           }
           val fileIds = c.files.map{file => file.id}
           var commentsByDataset = comments.findCommentsByDatasetId(c.datasets(0).id)
@@ -81,7 +86,10 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "comment_author" -> Json.toJson(userService.findByIdentity(comm.author).map ( usr => Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id)))
             ))
           }
-
+          val metadata = c.datasets(0).metadata ++ c.datasets(0).datasetXmlMetadata.map(metadata => metadata.xmlMetadata) ++ c.datasets(0).userMetadata
+          val metadataJson = metadata.map {
+            item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
+          }
           val parsedValue = Json.toJson(
             Map(
               "@context" -> Json.toJson(Seq(
@@ -159,7 +167,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               )),
               "Rights" -> Json.toJson(c.datasets(0).licenseData.m_licenseText),
               "describes" ->
-                Json.toJson(Map(
+                 Json.toJson( metadataJson.toMap ++ Map(
                   "Identifier" -> Json.toJson("urn:uuid" + c.id),
                   "Creation Date" -> Json.toJson(format.format(c.created)),
                   "Label" -> Json.toJson(c.name),
@@ -180,7 +188,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "@type" -> Json.toJson(Seq("Aggregation", "http://cet.ncsa.uiuc.edu/2015/Dataset")),
                   "Is Version of" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id ),
                   "similarTo" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id ),
-                  "aggregates" -> Json.toJson(JsArray(filesJson)),
+                  "aggregates" -> Json.toJson(filesJson),
                   "Has Part" -> Json.toJson(fileIds)
 
                 )),

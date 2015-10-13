@@ -5,6 +5,7 @@ import java.io.BufferedReader
 import java.util.Date
 import javax.inject.Inject
 import api.{UserRequest, Permission}
+import com.mongodb.BasicDBList
 import models._
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.DefaultHttpClient
@@ -238,7 +239,7 @@ class CurationObjects @Inject()(
             case Some(c) => {
               val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
                 "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
-                "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
+                "Affiliation" -> List("UMich", "IU", "UIUC"))
               val mmResp = callMatchmaker(c, Utils.baseUrl(request))
               user match {
                 case Some(usr) => {
@@ -258,23 +259,40 @@ class CurationObjects @Inject()(
     val userPreferences = userPrefMap + ("Repository" -> Json.toJson(c.repository))
     val maxDataset = if (!c.files.isEmpty)  c.files.map(_.length).max else 0
     val totalSize = if (!c.files.isEmpty) c.files.map(_.length).sum else 0
+    val metadata = c.datasets(0).metadata ++ c.datasets(0).datasetXmlMetadata.map(metadata => metadata.xmlMetadata) ++ c.datasets(0).userMetadata
+    val metadataJson = metadata.map {
+      item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
+    }
+    val aggregation = metadataJson.toMap ++ Map(
+      "Identifier" -> Json.toJson(hostIp +"/spaces/curations/" + c.id),
+      "@id" -> Json.toJson(hostUrl),
+      "Title" -> Json.toJson(c.name),
+      "Creator" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile.map(prof => prof.orcidID.map(oid=> oid)))),
+      "similarTo" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id),
+      "Metadata Terms" -> Json.toJson("")
+      )
     val valuetoSend = Json.obj(
-      "@context" -> Json.toJson("https://w3id.org/ore/context"),
+      "@context" -> Json.toJson(Seq(
+        Json.toJson("https://w3id.org/ore/context"),
+        Json.toJson(Map (
+          "Aggregation Statistics" -> Json.toJson("http://sead-data.net/terms/publicationstatistics"),
+          "Data Mimetypes" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
+          "Affiliations" -> Json.toJson("http://sead-data.net/terms/affiliations"),
+          "Preferences" -> Json.toJson("http://sead-data.net/terms/publicationpreferences"),
+          "Max Collection Depth" -> Json.toJson("http://sead-data.net/terms/maxcollectiondepth"),
+          "Max Total Size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length"),
+          "Max Dataset Size" -> Json.toJson("http://sead-data.net/terms/maxdatasetsize"),
+          "Creator" -> Json.toJson("http://purl.org/dc/terms/creator")
+
+      )))),
       "Aggregation" ->
-        Map(
-          "Identifier" -> Json.toJson(hostIp +"/spaces/curations/" + c.id),
-          "@id" -> Json.toJson(hostUrl),
-          "Title" -> Json.toJson(c.name),
-
-          "Creator" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile.map(prof => prof.orcidID.map(oid=> oid)))),
-          "similarTo" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id)
-
-        ),
+        Json.toJson(aggregation),
       "Preferences" -> userPreferences ,
       "Aggregation Statistics" ->
         Map(
-          "Max Collection Depth" -> Json.toJson("1"),
+
           "Data Mimetypes" -> Json.toJson(c.files.map(_.contentType).toSet),
+          "Max Collection Depth" -> Json.toJson("0"),
           "Max Dataset Size" -> Json.toJson(maxDataset.toString),
           "Total Size" -> Json.toJson(totalSize.toString)
         )
@@ -282,8 +300,7 @@ class CurationObjects @Inject()(
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
     val endpoint = play.Play.application().configuration().getString("matchmaker.uri").replaceAll("/$","")
     val futureResponse = WS.url(endpoint).post(valuetoSend)
-
-
+    Logger.debug("Value to send matchmaker: " + valuetoSend)
     var jsonResponse: play.api.libs.json.JsValue = new JsArray()
     val result = futureResponse.map {
       case response =>
@@ -403,13 +420,13 @@ class CurationObjects @Inject()(
                     "keyword" -> Json.toJson("http://www.holygoat.co.uk/owl/redwood/0.1/tags/taggedWithTag"),
                     "Is Version Of" -> Json.toJson("http://purl.org/dc/terms/isVersionOf"),
                     "Has Part" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
-                    "Aggregation Statistics" -> Json.toJson("http://sead-data.net/terms/aggregationStatistics"),
+                    "Aggregation Statistics" -> Json.toJson("http://sead-data.net/terms/publicationstatistics"),
                     "Repository" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
                     "Preferences" -> Json.toJson(Map(
                       "Affiliations" -> Json.toJson("http://sead-data.net/terms/affiliations"),
                       "@id" -> Json.toJson("http://cet.ncsa.uiuc.edu/2007/annotation/hasAnnotation")
                     )),
-                    "Aggregation" -> Json.toJson("http://sead-data.net/terms/aggre")
+                    "Aggregation" -> Json.toJson("http://sead-data.net/terms/aggregation")
 
                   )
                 )
