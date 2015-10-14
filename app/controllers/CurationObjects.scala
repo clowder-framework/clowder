@@ -268,29 +268,29 @@ class CurationObjects @Inject()(
       "@id" -> Json.toJson(hostUrl),
       "Title" -> Json.toJson(c.name),
       "Creator" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile.map(prof => prof.orcidID.map(oid=> oid)))),
-      "similarTo" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id),
-      "Metadata Terms" -> Json.toJson("")
+      "similarTo" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id)
       )
     val valuetoSend = Json.obj(
       "@context" -> Json.toJson(Seq(
         Json.toJson("https://w3id.org/ore/context"),
         Json.toJson(Map (
+          "Identifier" -> Json.toJson("http://www.ietf.org/rfc/rfc4122"),
           "Aggregation Statistics" -> Json.toJson("http://sead-data.net/terms/publicationstatistics"),
           "Data Mimetypes" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
           "Affiliations" -> Json.toJson("http://sead-data.net/terms/affiliations"),
           "Preferences" -> Json.toJson("http://sead-data.net/terms/publicationpreferences"),
           "Max Collection Depth" -> Json.toJson("http://sead-data.net/terms/maxcollectiondepth"),
-          "Max Total Size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length"),
+          "Total Size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length"),
           "Max Dataset Size" -> Json.toJson("http://sead-data.net/terms/maxdatasetsize"),
-          "Creator" -> Json.toJson("http://purl.org/dc/terms/creator")
-
+          "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
+          "Title" -> Json.toJson("http://purl.org/dc/elements/1.1/title"),
+          "similarTo" -> Json.toJson("http://sead-data.net/terms/similarTo")
       )))),
       "Aggregation" ->
         Json.toJson(aggregation),
       "Preferences" -> userPreferences ,
       "Aggregation Statistics" ->
         Map(
-
           "Data Mimetypes" -> Json.toJson(c.files.map(_.contentType).toSet),
           "Max Collection Depth" -> Json.toJson("0"),
           "Max Dataset Size" -> Json.toJson(maxDataset.toString),
@@ -361,78 +361,24 @@ class CurationObjects @Inject()(
                 Json.toJson(
                   Map(
                     "Identifier" -> Json.toJson("http://www.ietf.org/rfc/rfc4122"),
-                    "License" -> Json.toJson("http://purl.org/dc/terms/license"),
-                    "Rights Holder" -> Json.toJson("http://purl.org/dc/terms/rightsHolder"),
-                    "Rights" -> Json.toJson("http://purl.org/dc/terms/rights"),
-                    "Date" -> Json.toJson("http://purl.org/dc/elements/1.1/date"),
-                    "Creation Date" -> Json.toJson("http://purl.org/dc/terms/created"),
-                    "Size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length"),
-                    "Label" -> Json.toJson("http://www.w3.org/2000/01/rdf-schema#label"),
-                    "Mimetype" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
-                    "Description" -> Json.toJson("http://purl.org/dc/elements/1.1/description"),
-                    "Title" -> Json.toJson("http://purl.org/dc/elements/1.1/title"),
-                    "Uploaded By" -> Json.toJson("http://purl.org/dc/elements/1.1/creator"),
-                    "Abstract" -> Json.toJson("http://purl.org/dc/terms/abstract"),
-                    "Contact" -> Json.toJson("http://sead-data.net/terms/contact"),
-                    "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
-                    "Publication Date" -> Json.toJson("http://purl.org/dc/terms/issued"),
-                    "GeoPoint" ->
-                      Json.toJson(
-                        Map(
-
-                          "@id" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/gis/hasGeoPoint"),
-                          "long" -> Json.toJson("http://www.w3.org/2003/01/geo/wgs84_pos#long"),
-                          "lat" -> Json.toJson("http://www.w3.org/2003/01/geo/wgs84_pos#lat")
-                    )),
-                    "Comment" -> Json.toJson(Map(
-
-                      "comment_body" -> Json.toJson("http://purl.org/dc/elements/1.1/description"),
-                      "comment_date" -> Json.toJson("http://purl.org/dc/elements/1.1/date"),
-                      "@id" -> Json.toJson("http://cet.ncsa.uiuc.edu/2007/annotation/hasAnnotation"),
-                      "comment_author" -> Json.toJson("http://purl.org/dc/elements/1.1/creator")
-                    )),
-                    "Where" -> Json.toJson("http://sead-data.net/vocab/demo/where"),
-                    "Has Description" -> Json.toJson("http://purl.org/dc/terms/description"),
-                    "Experiment Site" -> Json.toJson("http://sead-data.net/terms/odm/location"),
-                    "Experimental Method" -> Json.toJson("http://sead-data.net/terms/odm/method"),
-                    "Primary Source" -> Json.toJson("http://www.w3.org/ns/prov#hadPrimarySource"),
-                    "Topic" -> Json.toJson("http://purl.org/dc/terms/subject"),
-                    "Audience" -> Json.toJson("http://purl.org/dc/terms/audience"),
-                    "Bibliographic citation" -> Json.toJson("http://purl.org/dc/terms/bibliographicCitation"),
-                    "Coverage" -> Json.toJson("http://purl.org/dc/terms/coverage"),
-                    "Published In" -> Json.toJson("http://purl.org/dc/terms/isPartOf"),
-                    "Publisher" -> Json.toJson("http://purl.org/dc/terms/publisher"),
-                    "Quality Control Level" -> Json.toJson("http://sead-data.net/terms/odm/QualityControlLevel"),
-                    "Who" -> Json.toJson("http://sead-data.net/vocab/demo/creator"),
-                    "Alternative title" -> Json.toJson("http://purl.org/dc/terms/alternative"),
-                    "External Identifier" -> Json.toJson("http://purl.org/dc/terms/identifier"),
-                    "Proposed for Publication " -> Json.toJson("http://sead-data.net/terms/ProposedForPublication"),
-                    "Start/End Date" -> Json.toJson("http://purl.org/dc/terms/temporal"),
-                    "duplicates" -> Json.toJson("http://cet.ncsa.uiuc.edu/2007/mmdb/duplicates"),
-                    "is derived from" -> Json.toJson("http://www.w3.org/ns/prov#wasDerivedFrom"),
-                    "describes" -> Json.toJson("http://cet.ncsa.uiuc.edu/2007/mmdb/describes"),
-                    "has newer version" -> Json.toJson("http://www.w3.org/ns/prov/#hadRevision"),
-                    "relates to" -> Json.toJson("http://cet.ncsa.uiuc.edu/2007/mmdb/relatesTo"),
-                    "references" -> Json.toJson("http://purl.org/dc/terms/references"),
-                    "is referenced by" -> Json.toJson("http://purl.org/dc/terms/isReferencedBy"),
-                    "has derivative" -> Json.toJson("http://www.w3.org/ns/prov/#hadDerivation"),
-                    "has prior version" -> Json.toJson("http://www.w3.org/ns/prov#wasRevisionOf"),
-                    "keyword" -> Json.toJson("http://www.holygoat.co.uk/owl/redwood/0.1/tags/taggedWithTag"),
-                    "Is Version Of" -> Json.toJson("http://purl.org/dc/terms/isVersionOf"),
-                    "Has Part" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
                     "Aggregation Statistics" -> Json.toJson("http://sead-data.net/terms/publicationstatistics"),
-                    "Repository" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
-                    "Preferences" -> Json.toJson(Map(
-                      "Affiliations" -> Json.toJson("http://sead-data.net/terms/affiliations"),
-                      "@id" -> Json.toJson("http://cet.ncsa.uiuc.edu/2007/annotation/hasAnnotation")
-                    )),
-                    "Aggregation" -> Json.toJson("http://sead-data.net/terms/aggregation")
-
-                  )
+                    "Data Mimetypes" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
+                    "Affiliations" -> Json.toJson("http://sead-data.net/terms/affiliations"),
+                    "Preferences" -> Json.toJson("http://sead-data.net/terms/publicationpreferences"),
+                    "Max Collection Depth" -> Json.toJson("http://sead-data.net/terms/maxcollectiondepth"),
+                    "Total Size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length"),
+                    "Max Dataset Size" -> Json.toJson("http://sead-data.net/terms/maxdatasetsize"),
+                    "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
+                    "Repository" -> Json.toJson("http://sead-data.net/terms/repository"),
+                    "Aggregation" -> Json.toJson("http://sead-data.net/terms/aggregation"),
+                    "Title" -> Json.toJson("http://purl.org/dc/elements/1.1/title"),
+                    "Abstract" -> Json.toJson("http://purl.org/dc/terms/abstract"),
+                    "Number of Datasets" -> Json.toJson("http://purl.org/dc/terms/numberdatasets"),
+                    "Number of Collections" -> Json.toJson("http://purl.org/dc/terms/numbercollections"),
+                    "Publication Callback" -> Json.toJson("http://purl.org/dc/terms/publicationcallback"),
+                    "Environment Key" -> Json.toJson("http://purl.org/dc/terms/environmentkey")
                 )
-
               )),
-
                 "Repository" -> Json.toJson(repository.toLowerCase()),
                 "Preferences" -> Json.toJson(
                   userPreferences
@@ -459,7 +405,7 @@ class CurationObjects @Inject()(
                 "Publication Callback" -> Json.toJson(hostIp + "/spaces/curations/" + c.id + "/status"),
                 "Environment Key" -> Json.toJson(play.api.Play.configuration.getString("commKey").getOrElse(""))
               )
-            )
+            ))
           Logger.debug("Submitting request for publication: " + valuetoSend)
 
           implicit val context = scala.concurrent.ExecutionContext.Implicits.global

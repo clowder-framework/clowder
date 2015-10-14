@@ -46,7 +46,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
           val hostIp = Utils.baseUrl(request)
           val hostUrl = hostIp + "/api/curations/" + curationId + "/ore"
           val filesJson = c.files.map { file =>
-            //TODO: Add file.metadata
             var fl_md: Map[String, Any] = Map.empty[String,Any]
             for ( i <- 0 to file.metadata.length -1) {
               fl_md = fl_md ++ file.metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap
@@ -72,7 +71,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "External Identifier" -> Json.toJson(""),
               "Keyword" -> Json.toJson(file.tags.map(_.name)),
               "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2015/File")),
-              "Version Of" -> Json.toJson(hostIp + "/files/" + file.id),
+              "Is Version Of" -> Json.toJson(hostIp + "/files/" + file.id),
               "similarTo" -> Json.toJson(hostIp + "/api/files/" + file.id + "/blob")
             )
             fileMetadata.toMap ++ file_md_parsed.toMap++ tempMap
@@ -170,7 +169,9 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     "has prior version" -> Json.toJson("http://www.w3.org/ns/prov#wasRevisionOf"),
                     "keyword" -> Json.toJson("http://www.holygoat.co.uk/owl/redwood/0.1/tags/taggedWithTag"),
                     "Is Version Of" -> Json.toJson("http://purl.org/dc/terms/isVersionOf"),
-                    "Has Part" -> Json.toJson("http://purl.org/dc/terms/hasPart")
+                    "Has Part" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
+                    "similarTo" -> Json.toJson("http://sead-data.net/terms/similarTo"),
+                    "aggregates" -> Json.toJson("http://sead-data.net/terms/aggregates")
                   )
                 )
 
