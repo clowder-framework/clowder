@@ -110,7 +110,7 @@ html_theme = 'alabaster'
 #  index_logo =
 #}
 html_theme_options = {
-    'logo': 'logo.png',
+    'description': 'Clowder is a data management system for the cloud',
     'github_button': 'false',
     'github_banner': 'false',
     'analytics_id': 'UA-8681001-8',
