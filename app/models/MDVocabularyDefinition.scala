@@ -52,7 +52,7 @@ object MDVocabularyDefinition {
         Json.parse("""{
           "label":"SAS Variable Name (CSDMS / ODM2)",
           "uri":"http://ecgs.ncsa.illinois.edu/gsis/sas/vars",
-          "type":"sas_vars",
+          "type":"listjquery",
           "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/vars/list"}""")
     )
     default.map(d => metadataService.addVocabularyDefinition(MDVocabularyDefinition(json = d)))
