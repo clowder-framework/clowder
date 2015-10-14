@@ -378,7 +378,7 @@ class CurationObjects @Inject()(
                     "Publication Callback" -> Json.toJson("http://purl.org/dc/terms/publicationcallback"),
                     "Environment Key" -> Json.toJson("http://purl.org/dc/terms/environmentkey")
                 )
-              )),
+              ))),
                 "Repository" -> Json.toJson(repository.toLowerCase()),
                 "Preferences" -> Json.toJson(
                   userPreferences
@@ -405,7 +405,7 @@ class CurationObjects @Inject()(
                 "Publication Callback" -> Json.toJson(hostIp + "/spaces/curations/" + c.id + "/status"),
                 "Environment Key" -> Json.toJson(play.api.Play.configuration.getString("commKey").getOrElse(""))
               )
-            ))
+            )
           Logger.debug("Submitting request for publication: " + valuetoSend)
 
           implicit val context = scala.concurrent.ExecutionContext.Implicits.global
