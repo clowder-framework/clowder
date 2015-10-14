@@ -456,7 +456,8 @@ class CurationObjects @Inject()(
                     "Number of Datasets" -> Json.toJson(c.files.length),
                     "Number of Collections" -> Json.toJson(c.datasets.length)
                   )),
-                "Publication Callback" -> Json.toJson(hostIp + "/spaces/curations/" + c.id + "/status")
+                "Publication Callback" -> Json.toJson(hostIp + "/spaces/curations/" + c.id + "/status"),
+                "Environment Key" -> Json.toJson(play.api.Play.configuration.getString("commKey").getOrElse(""))
               )
             )
           Logger.debug("Submitting request for publication: " + valuetoSend)
