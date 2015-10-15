@@ -147,13 +147,14 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     }
 
 
-    var collectionsWithThumbnails = List.empty[models.Collection]
-    for (collection <- collectionList) {
-      val collectionThumbnail = collection.datasets.find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
-      val collectionWithThumbnail = collection.copy(thumbnail_id = collectionThumbnail)
-      collectionsWithThumbnails = collectionWithThumbnail +: collectionsWithThumbnails
+    val collectionsWithThumbnails = collectionList.map {c =>
+      if (c.thumbnail_id.isDefined) {
+        c
+      } else {
+        val collectionThumbnail = datasets.listCollection(c.id.stringify).find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
+        c.copy(thumbnail_id = collectionThumbnail)
+      }
     }
-    collectionsWithThumbnails = collectionsWithThumbnails.reverse
 
     //Modifications to decode HTML entities that were stored in an encoded fashion as part
     //of the collection's names or descriptions
@@ -210,16 +211,16 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           var collection : Collection = null
           if (colSpace(0) == "default") {
-              collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null)
+              collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = user)
           }
           else {
             val stringSpaces = colSpace(0).split(",").toList
             val colSpaces: List[UUID] = stringSpaces.map(aSpace => if(aSpace != "") UUID(aSpace) else None).filter(_ != None).asInstanceOf[List[UUID]]
-            collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null, spaces = colSpaces)
+            collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = user, spaces = colSpaces)
           }
 
           Logger.debug("Saving collection " + collection.name)
-          collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, created = collection.created, author = Some(identity), spaces = collection.spaces))
+          collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, datasetCount = 0, created = collection.created, author = Some(identity), spaces = collection.spaces))
 
           //index collection
             val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
@@ -268,7 +269,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
 
           //Decode the datasets so that their free text will display correctly in the view
-          val datasetsInside = datasets.listInsideCollection(id)
+          val datasetsInside = datasets.listCollection(id.stringify)
           val decodedDatasetsInside = ListBuffer.empty[models.Dataset]
           for (aDataset <- datasetsInside) {
             val dDataset = Utils.decodeDatasetElements(aDataset)

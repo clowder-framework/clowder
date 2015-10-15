@@ -189,7 +189,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     var dsCollsId = ""
     var dsCollsName = ""
 
-    for (dataset <- collection.datasets) {
+    for (dataset <- datasets.listCollection(collection.id.stringify)) {
       if (recursive) {
         index(dataset, recursive)
       }

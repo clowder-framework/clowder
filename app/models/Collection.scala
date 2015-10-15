@@ -9,7 +9,7 @@ case class Collection(
   author: Option[Identity],
   description: String = "N/A",
   created: Date,
-  datasets: List[Dataset] = List.empty,
+  datasetCount: Integer,
   thumbnail_id: Option[String] = None,
   previews: List[Preview] = List.empty,
   spaces: List[UUID] = List.empty,
