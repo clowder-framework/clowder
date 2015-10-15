@@ -284,7 +284,28 @@ class CurationObjects @Inject()(
           "Max Dataset Size" -> Json.toJson("http://sead-data.net/terms/maxdatasetsize"),
           "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
           "Title" -> Json.toJson("http://purl.org/dc/elements/1.1/title"),
-          "similarTo" -> Json.toJson("http://sead-data.net/terms/similarTo")
+          "similarTo" -> Json.toJson("http://sead-data.net/terms/similarTo"),
+          "Access" -> Json.toJson("http://sead-data.net/terms/access"),
+          "License" -> Json.toJson("http://purl.org/dc/terms/license"),
+          "Cost" -> Json.toJson("http://sead-data.net/terms/cost"),
+          "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
+          "Alternative title" -> Json.toJson("http://purl.org/dc/terms/alternative"),
+          "Contact" -> Json.toJson("http://sead-data.net/terms/contact"),
+          "name" -> Json.toJson("http://purl.org/dc/terms/name"),
+          "email" -> Json.toJson("http://purl.org/dc/terms/email"),
+          "Description" -> Json.toJson("http://purl.org/dc/elements/1.1/description"),
+          "Audience" -> Json.toJson("http://purl.org/dc/terms/audience"),
+          "Abstract" -> Json.toJson("http://purl.org/dc/terms/abstract"),
+          "Bibliographic citation" -> Json.toJson("http://purl.org/dc/terms/bibliographicCitation"),
+          "Spatial Reference" ->
+            Json.toJson(
+              Map(
+                "@id" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/gis/hasGeoPoint"),
+                "Longitude" -> Json.toJson("http://www.w3.org/2003/01/geo/wgs84_pos#long"),
+                "Latitude" -> Json.toJson("http://www.w3.org/2003/01/geo/wgs84_pos#lat"),
+                "Altitude" -> Json.toJson("http://www.w3.org/2003/01/geo/wgs84_pos#alt")
+
+              ))
       )))),
       "Aggregation" ->
         Json.toJson(aggregation),
@@ -376,7 +397,10 @@ class CurationObjects @Inject()(
                     "Number of Datasets" -> Json.toJson("http://purl.org/dc/terms/numberdatasets"),
                     "Number of Collections" -> Json.toJson("http://purl.org/dc/terms/numbercollections"),
                     "Publication Callback" -> Json.toJson("http://purl.org/dc/terms/publicationcallback"),
-                    "Environment Key" -> Json.toJson("http://purl.org/dc/terms/environmentkey")
+                    "Environment Key" -> Json.toJson("http://purl.org/dc/terms/environmentkey"),
+                    "Access" -> Json.toJson("http://sead-data.net/terms/access"),
+                    "License" -> Json.toJson("http://purl.org/dc/terms/license"),
+                    "Cost" -> Json.toJson("http://sead-data.net/terms/cost")
                 )
               ))),
                 "Repository" -> Json.toJson(repository.toLowerCase()),
