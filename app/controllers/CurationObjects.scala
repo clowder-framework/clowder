@@ -375,6 +375,14 @@ class CurationObjects @Inject()(
           val userPreferences = userPrefMap + ("Repository" -> Json.toJson(repository))
           val maxDataset = if (!c.files.isEmpty)  c.files.map(_.length).max else 0
           val totalSize = if (!c.files.isEmpty) c.files.map(_.length).sum else 0
+          val metadata = c.datasets(0).metadata ++ c.datasets(0).datasetXmlMetadata.map(metadata => metadata.xmlMetadata) ++ c.datasets(0).userMetadata
+          var metadataJson = metadata.map {
+            item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
+          }
+          var metadataToAdd = metadataJson.toMap
+          if(metadataJson.toMap.get("Abstract") == None) {
+            metadataToAdd = metadataJson.toMap.+("Abstract" -> Json.toJson(c.description))
+          }
           val valuetoSend = Json.toJson(
             Map(
               "@context" -> Json.toJson(Seq(
@@ -407,13 +415,12 @@ class CurationObjects @Inject()(
                 "Preferences" -> Json.toJson(
                   userPreferences
                 ),
-                "Aggregation" -> Json.toJson(
+                "Aggregation" -> Json.toJson( metadataToAdd ++
                   Map(
                     "Identifier" -> Json.toJson("urn:uuid:"+curationId),
                     "@id" -> Json.toJson(hostUrl),
                     "@type" -> Json.toJson("Aggregation"),
                     "Title" -> Json.toJson(c.name),
-                    "Abstract" -> Json.toJson(c.datasets(0).userMetadata.get("Abstract").getOrElse(c.description).asInstanceOf[com.mongodb.BasicDBList].get(0).toString()),
                     "Creator" -> Json.toJson(userService.findByIdentity(c.author).map(usr => JsArray(Seq(Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id), Json.toJson(usr.profile.map(prof => prof.orcidID.map(oid=> oid)))))))
                   )
                 ),
