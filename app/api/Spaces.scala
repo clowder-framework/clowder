@@ -94,7 +94,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   @ApiOperation(value = "List spaces a user can add to",
     notes = "Retrieves a list of spaces that the user has permission to add to",
     responseClass = "None", httpMethod = "GET")
-  def listSpacesCanAdd(title: Option[String], date: Option[String], limit: Int)  = UserAction { implicit request =>
+  def listSpacesCanAdd() = UserAction { implicit request =>
     var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
 
     val userSpaces = request.user match {
@@ -111,23 +111,6 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       }
     }
     Ok(toJson(decodedSpaceList.toList.map(spaceToJson)))
-
-
-//    val list = (title, date) match {
-//      case (Some(t), Some(d)) => {
-//        spaces.listAccess(d, true, limit, t, request.user, request.superAdmin)
-//      }
-//      case (Some(t), None) => {
-//        spaces.listAccess(limit, t, request.user, request.superAdmin)
-//      }
-//      case (None, Some(d)) => {
-//        spaces.listAccess(d, true, limit, request.user, request.superAdmin)
-//      }
-//      case (None, None) => {
-//        spaces.listAccess(limit, request.user, request.superAdmin)
-//      }
-//    }
-//    Ok(toJson(list))
   }
 
   def spaceToJson(space: ProjectSpace) = {
@@ -357,54 +340,44 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
               case None => Logger.debug("A role was sent up that doesn't exist. It is " + k)
             }
           }
-          spaces.get(spaceId) match {
-            case Some(space) => {
-              for ((k, v) <- roleMap) {
-                //The role needs to exist
-                userService.findRoleByName(k) match {
-                  case Some(aRole) => {
-                    val idArray: Array[String] = v.split(",").map(_.trim())
+          val space = spaces.get(spaceId)
+          for ((k, v) <- roleMap) {
+            //The role needs to exist
+            userService.findRoleByName(k) match {
+              case Some(aRole) => {
+                val idArray: Array[String] = v.split(",").map(_.trim())
 
-                    //Deal with all the ids that were sent up (changes and adds)
-                    for (aUserId <- idArray) {
-                      //For some reason, an empty string is getting through as aUserId on length
-                      if (aUserId != "") {
-                        if (existUserRole.contains(aUserId)) {
-                          //The user exists in the space already
-                          existUserRole.get(aUserId) match {
-                            case Some(existRole) => {
-                              if (existRole != k) {
-                                spaces.changeUserRole(UUID(aUserId), aRole, spaceId)
-                              }
-                            }
-                            case None => Logger.debug("This shouldn't happen. A user that is assigned to a space should always have a role.")
+                //Deal with all the ids that were sent up (changes and adds)
+                for (aUserId <- idArray) {
+                  //For some reason, an empty string is getting through as aUserId on length
+                  if (aUserId != "") {
+                    if (existUserRole.contains(aUserId)) {
+                      //The user exists in the space already
+                      existUserRole.get(aUserId) match {
+                        case Some(existRole) => {
+                          if (existRole != k) {
+                            spaces.changeUserRole(UUID(aUserId), aRole, spaceId)
                           }
                         }
-                        else {
-                          //New user completely to the space
-                          spaces.addUser(UUID(aUserId), aRole, spaceId)
-                          val newmember = userService.get(UUID(aUserId))
-                          val theHtml = views.html.spaces.inviteNotificationEmail(spaceId.stringify, space.name, user.get.getMiniUser, newmember.get.getMiniUser.fullName, aRole.name)
-                          controllers.Users.sendEmail("Added to Space", newmember.get.getMiniUser.email.get ,theHtml)
-                        }
-                      }
-                      else {
-                        Logger.debug("There was an empty string that counted as an array...")
+                        case None => Logger.debug("This shouldn't happen. A user that is assigned to a space should always have a role.")
                       }
                     }
+                    else {
+                      //New user completely to the space
+                      spaces.addUser(UUID(aUserId), aRole, spaceId)
+                      val newmember = userService.get(UUID(aUserId))
+                      val theHtml = views.html.spaces.inviteNotificationEmail(spaceId.stringify, space.get.name, user.get.getMiniUser, newmember.get.getMiniUser.fullName, aRole.name)
+                      controllers.Users.sendEmail("Added to Space", newmember.get.getMiniUser.email.get ,theHtml)
+                    }
                   }
-                  case None => Logger.debug("A role was sent up that doesn't exist. It is " + k)
+                  else {
+                    Logger.debug("There was an empty string that counted as an array...")
+                  }
                 }
               }
-              if(space.userCount != spaces.getUsersInSpace(space.id).length){
-                spaces.updateUserCount(space.id, spaces.getUsersInSpace(space.id).length)
-              }
+              case None => Logger.debug("A role was sent up that doesn't exist. It is " + k)
             }
-            case None => Logger.error("Errors: " + "Could not find space")
           }
-
-
-
           Ok(Json.obj("status" -> "success"))
         }
         case e: JsError => {
@@ -418,22 +391,6 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       BadRequest(toJson(s"The given id $spaceId is not a valid ObjectId."))
     }
   }
-
-
-  @ApiOperation(value = "Remove a user from a space", notes = "",
-    responseClass = "None", httpMethod = "GET")
-  def removeUser(spaceId: UUID, removeUser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
-    val user = request.user
-    if(spaces.getRoleForUserInSpace(spaceId, UUID(removeUser)) != None){
-      spaces.removeUser(UUID(removeUser), spaceId)
-      Ok(Json.obj("status" -> "success"))
-    } else {
-      Logger.error(s"Remove User $removeUser from space $spaceId does not exist.")
-      BadRequest(toJson(s"The given id $spaceId is not a valid ObjectId."))
-    }
-
-  }
-
 
   @ApiOperation(value = "Follow space",
     notes = "Add user to space followers and add space to user followed spaces.",
@@ -465,8 +422,6 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       }
     }
   }
-
-
 
   @ApiOperation(value = "Unfollow space",
     notes = "Remove user from space followers and remove space from user followed spaces.",
