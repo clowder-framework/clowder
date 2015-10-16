@@ -248,10 +248,6 @@ class Datasets @Inject()(
           var decodedCollectionsInside = new ListBuffer[models.Collection]()
           var filesTags = TreeSet.empty[String]
 
-//          for (aCollection <- collectionsOutside) {
-//              val dCollection = Utils.decodeCollectionElements(aCollection)
-//              decodedCollectionsOutside += dCollection
-//          }
           for (aCollection <- collectionsInside) {
               val dCollection = Utils.decodeCollectionElements(aCollection)
               decodedCollectionsInside += dCollection

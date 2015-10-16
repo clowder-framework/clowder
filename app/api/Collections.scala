@@ -68,7 +68,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           datasetsInCollection = collection.datasetCount
         }
       }
-
+      //datasetsInCollection is the numbe of datsets in this collection, but should not use status.
       Ok(toJson(Map("status" ->  datasetsInCollection )))
     }
       case Failure(t) => InternalServerError
