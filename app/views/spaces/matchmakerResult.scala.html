@@ -111,10 +111,10 @@
                 cost[i] = $(this).val();
             });
             var affiliation = [];
-            $("input[name='Organizational Affiliation']:checkbox:checked").each(function(i){
+            $("input[name='Affiliation']:checkbox:checked").each(function(i){
                 affiliation[i] = $(this).val();
             });
-            var dataMap = {access: access.toString(), license: license.toString(), cost: cost.toString(), organizational_affiliation: affiliation.toString() };
+            var dataMap = {access: access.toString(), license: license.toString(), cost: cost.toString(), affiliation: affiliation.toString() };
 
             var request = jsRoutes.api.CurationObjects.findMatchmakingRepositories('@curationObject.id').ajax({
                 type: 'POST',

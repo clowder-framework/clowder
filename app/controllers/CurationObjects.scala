@@ -5,6 +5,7 @@ import java.io.BufferedReader
 import java.util.Date
 import javax.inject.Inject
 import api.{UserRequest, Permission}
+import com.mongodb.BasicDBList
 import models._
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.DefaultHttpClient
@@ -238,7 +239,7 @@ class CurationObjects @Inject()(
             case Some(c) => {
               val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
                 "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
-                "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
+                "Affiliation" -> List("UMich", "IU", "UIUC"))
               val mmResp = callMatchmaker(c, Utils.baseUrl(request))
               user match {
                 case Some(usr) => {
@@ -258,23 +259,61 @@ class CurationObjects @Inject()(
     val userPreferences = userPrefMap + ("Repository" -> Json.toJson(c.repository))
     val maxDataset = if (!c.files.isEmpty)  c.files.map(_.length).max else 0
     val totalSize = if (!c.files.isEmpty) c.files.map(_.length).sum else 0
+    val metadata = c.datasets(0).metadata ++ c.datasets(0).datasetXmlMetadata.map(metadata => metadata.xmlMetadata) ++ c.datasets(0).userMetadata
+    val metadataJson = metadata.map {
+      item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
+    }
+    val aggregation = metadataJson.toMap ++ Map(
+      "Identifier" -> Json.toJson(hostIp +"/spaces/curations/" + c.id),
+      "@id" -> Json.toJson(hostUrl),
+      "Title" -> Json.toJson(c.name),
+      "Creator" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile.map(prof => prof.orcidID.map(oid=> oid)))),
+      "similarTo" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id)
+      )
     val valuetoSend = Json.obj(
-      "@context" -> Json.toJson("https://w3id.org/ore/context"),
+      "@context" -> Json.toJson(Seq(
+        Json.toJson("https://w3id.org/ore/context"),
+        Json.toJson(Map (
+          "Identifier" -> Json.toJson("http://www.ietf.org/rfc/rfc4122"),
+          "Aggregation Statistics" -> Json.toJson("http://sead-data.net/terms/publicationstatistics"),
+          "Data Mimetypes" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
+          "Affiliations" -> Json.toJson("http://sead-data.net/terms/affiliations"),
+          "Preferences" -> Json.toJson("http://sead-data.net/terms/publicationpreferences"),
+          "Max Collection Depth" -> Json.toJson("http://sead-data.net/terms/maxcollectiondepth"),
+          "Total Size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length"),
+          "Max Dataset Size" -> Json.toJson("http://sead-data.net/terms/maxdatasetsize"),
+          "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
+          "Title" -> Json.toJson("http://purl.org/dc/elements/1.1/title"),
+          "similarTo" -> Json.toJson("http://sead-data.net/terms/similarTo"),
+          "Access" -> Json.toJson("http://sead-data.net/terms/access"),
+          "License" -> Json.toJson("http://purl.org/dc/terms/license"),
+          "Cost" -> Json.toJson("http://sead-data.net/terms/cost"),
+          "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
+          "Alternative title" -> Json.toJson("http://purl.org/dc/terms/alternative"),
+          "Contact" -> Json.toJson("http://sead-data.net/terms/contact"),
+          "name" -> Json.toJson("http://purl.org/dc/terms/name"),
+          "email" -> Json.toJson("http://purl.org/dc/terms/email"),
+          "Description" -> Json.toJson("http://purl.org/dc/elements/1.1/description"),
+          "Audience" -> Json.toJson("http://purl.org/dc/terms/audience"),
+          "Abstract" -> Json.toJson("http://purl.org/dc/terms/abstract"),
+          "Bibliographic citation" -> Json.toJson("http://purl.org/dc/terms/bibliographicCitation"),
+          "Spatial Reference" ->
+            Json.toJson(
+              Map(
+                "@id" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/gis/hasGeoPoint"),
+                "Longitude" -> Json.toJson("http://www.w3.org/2003/01/geo/wgs84_pos#long"),
+                "Latitude" -> Json.toJson("http://www.w3.org/2003/01/geo/wgs84_pos#lat"),
+                "Altitude" -> Json.toJson("http://www.w3.org/2003/01/geo/wgs84_pos#alt")
+
+              ))
+      )))),
       "Aggregation" ->
-        Map(
-          "Identifier" -> Json.toJson(hostIp +"/api/curations/" + c.id),
-          "@id" -> Json.toJson(hostUrl),
-          "Title" -> Json.toJson(c.name),
-
-          "Creator" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile.map(prof => prof.orcidID.map(oid=> oid)))),
-          "similarTo" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id)
-
-        ),
+        Json.toJson(aggregation),
       "Preferences" -> userPreferences ,
       "Aggregation Statistics" ->
         Map(
-          "Max Collection Depth" -> Json.toJson("1"),
           "Data Mimetypes" -> Json.toJson(c.files.map(_.contentType).toSet),
+          "Max Collection Depth" -> Json.toJson("0"),
           "Max Dataset Size" -> Json.toJson(maxDataset.toString),
           "Total Size" -> Json.toJson(totalSize.toString)
         )
@@ -282,8 +321,7 @@ class CurationObjects @Inject()(
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
     val endpoint = play.Play.application().configuration().getString("matchmaker.uri").replaceAll("/$","")
     val futureResponse = WS.url(endpoint).post(valuetoSend)
-
-
+    Logger.debug("Value to send matchmaker: " + valuetoSend)
     var jsonResponse: play.api.libs.json.JsValue = new JsArray()
     val result = futureResponse.map {
       case response =>
@@ -337,103 +375,66 @@ class CurationObjects @Inject()(
           val userPreferences = userPrefMap + ("Repository" -> Json.toJson(repository))
           val maxDataset = if (!c.files.isEmpty)  c.files.map(_.length).max else 0
           val totalSize = if (!c.files.isEmpty) c.files.map(_.length).sum else 0
+          val metadata = c.datasets(0).metadata ++ c.datasets(0).datasetXmlMetadata.map(metadata => metadata.xmlMetadata) ++ c.datasets(0).userMetadata
+          var metadataJson = metadata.map {
+            item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
+          }
+          var metadataToAdd = metadataJson.toMap
+          if(metadataJson.toMap.get("Abstract") == None) {
+            metadataToAdd = metadataJson.toMap.+("Abstract" -> Json.toJson(c.description))
+          }
           val valuetoSend = Json.toJson(
             Map(
               "@context" -> Json.toJson(Seq(
                 Json.toJson("https://w3id.org/ore/context"),
                 Json.toJson(
                   Map(
-                    "Identifier" -> Json.toJson("http://purl.org/dc/elements/1.1/identifier"),
-                    "License" -> Json.toJson("http://purl.org/dc/terms/license"),
-                    "Rights Holder" -> Json.toJson("http://purl.org/dc/terms/rightsHolder"),
-                    "Rights" -> Json.toJson("http://purl.org/dc/terms/rights"),
-                    "Date" -> Json.toJson("http://purl.org/dc/elements/1.1/date"),
-                    "Creation Date" -> Json.toJson("http://purl.org/dc/terms/created"),
-                    "Size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length"),
-                    "Label" -> Json.toJson("http://www.w3.org/2000/01/rdf-schema#label"),
-                    "Mimetype" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
-                    "Description" -> Json.toJson("http://purl.org/dc/elements/1.1/description"),
-                    "Title" -> Json.toJson("http://purl.org/dc/elements/1.1/title"),
-                    "Uploaded By" -> Json.toJson("http://purl.org/dc/elements/1.1/creator"),
-                    "Abstract" -> Json.toJson("http://purl.org/dc/terms/abstract"),
-                    "Contact" -> Json.toJson("http://sead-data.net/terms/contact"),
+                    "Identifier" -> Json.toJson("http://www.ietf.org/rfc/rfc4122"),
+                    "Aggregation Statistics" -> Json.toJson("http://sead-data.net/terms/publicationstatistics"),
+                    "Data Mimetypes" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
+                    "Affiliations" -> Json.toJson("http://sead-data.net/terms/affiliations"),
+                    "Preferences" -> Json.toJson("http://sead-data.net/terms/publicationpreferences"),
+                    "Max Collection Depth" -> Json.toJson("http://sead-data.net/terms/maxcollectiondepth"),
+                    "Total Size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length"),
+                    "Max Dataset Size" -> Json.toJson("http://sead-data.net/terms/maxdatasetsize"),
                     "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
-                    "Publication Date" -> Json.toJson("http://purl.org/dc/terms/issued"),
-                    "GeoPoint" ->
-                      Json.toJson(
-                        Map(
-
-                          "@id" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/gis/hasGeoPoint"),
-                          "long" -> Json.toJson("http://www.w3.org/2003/01/geo/wgs84_pos#long"),
-                          "lat" -> Json.toJson("http://www.w3.org/2003/01/geo/wgs84_pos#lat")
-                    )),
-                    "Comment" -> Json.toJson(Map(
-
-                      "comment_body" -> Json.toJson("http://purl.org/dc/elements/1.1/description"),
-                      "comment_date" -> Json.toJson("http://purl.org/dc/elements/1.1/date"),
-                      "@id" -> Json.toJson("http://cet.ncsa.uiuc.edu/2007/annotation/hasAnnotation"),
-                      "comment_author" -> Json.toJson("http://purl.org/dc/elements/1.1/creator")
-                    )),
-                    "Where" -> Json.toJson("http://sead-data.net/vocab/demo/where"),
-                    "Has Description" -> Json.toJson("http://purl.org/dc/terms/description"),
-                    "Experiment Site" -> Json.toJson("http://sead-data.net/terms/odm/location"),
-                    "Experimental Method" -> Json.toJson("http://sead-data.net/terms/odm/method"),
-                    "Primary Source" -> Json.toJson("http://www.w3.org/ns/prov#hadPrimarySource"),
-                    "Topic" -> Json.toJson("http://purl.org/dc/terms/subject"),
-                    "Audience" -> Json.toJson("http://purl.org/dc/terms/audience"),
-                    "Bibliographic citation" -> Json.toJson("http://purl.org/dc/terms/bibliographicCitation"),
-                    "Coverage" -> Json.toJson("http://purl.org/dc/terms/coverage"),
-                    "Published In" -> Json.toJson("http://purl.org/dc/terms/isPartOf"),
-                    "Publisher" -> Json.toJson("http://purl.org/dc/terms/publisher"),
-                    "Quality Control Level" -> Json.toJson("http://sead-data.net/terms/odm/QualityControlLevel"),
-                    "Who" -> Json.toJson("http://sead-data.net/vocab/demo/creator"),
-                    "Alternative title" -> Json.toJson("http://purl.org/dc/terms/alternative"),
-                    "External Identifier" -> Json.toJson("http://purl.org/dc/terms/identifier"),
-                    "Proposed for Publication " -> Json.toJson("http://sead-data.net/terms/ProposedForPublication"),
-                    "Start/End Date" -> Json.toJson("http://purl.org/dc/terms/temporal"),
-                    "duplicates" -> Json.toJson("http://cet.ncsa.uiuc.edu/2007/mmdb/duplicates"),
-                    "is derived from" -> Json.toJson("http://www.w3.org/ns/prov#wasDerivedFrom"),
-                    "describes" -> Json.toJson("http://cet.ncsa.uiuc.edu/2007/mmdb/describes"),
-                    "has newer version" -> Json.toJson("http://www.w3.org/ns/prov/#hadRevision"),
-                    "relates to" -> Json.toJson("http://cet.ncsa.uiuc.edu/2007/mmdb/relatesTo"),
-                    "references" -> Json.toJson("http://purl.org/dc/terms/references"),
-                    "is referenced by" -> Json.toJson("http://purl.org/dc/terms/isReferencedBy"),
-                    "has derivative" -> Json.toJson("http://www.w3.org/ns/prov/#hadDerivation"),
-                    "has prior version" -> Json.toJson("http://www.w3.org/ns/prov#wasRevisionOf"),
-                    "keyword" -> Json.toJson("http://www.holygoat.co.uk/owl/redwood/0.1/tags/taggedWithTag"),
-                    "Is Version Of" -> Json.toJson("http://purl.org/dc/terms/isVersionOf"),
-                    "Has Part" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
-                    "Aggregation Statistics" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
-                    "Repository" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
-                    "Preferences" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
-                    "Aggregation" -> Json.toJson("http://purl.org/dc/terms/hasPart")
-
-                  )
+                    "Repository" -> Json.toJson("http://sead-data.net/terms/repository"),
+                    "Aggregation" -> Json.toJson("http://sead-data.net/terms/aggregation"),
+                    "Title" -> Json.toJson("http://purl.org/dc/elements/1.1/title"),
+                    "Abstract" -> Json.toJson("http://purl.org/dc/terms/abstract"),
+                    "Number of Datasets" -> Json.toJson("http://purl.org/dc/terms/numberdatasets"),
+                    "Number of Collections" -> Json.toJson("http://purl.org/dc/terms/numbercollections"),
+                    "Publication Callback" -> Json.toJson("http://purl.org/dc/terms/publicationcallback"),
+                    "Environment Key" -> Json.toJson("http://purl.org/dc/terms/environmentkey"),
+                    "Access" -> Json.toJson("http://sead-data.net/terms/access"),
+                    "License" -> Json.toJson("http://purl.org/dc/terms/license"),
+                    "Cost" -> Json.toJson("http://sead-data.net/terms/cost")
                 )
-
-              )),
-
+              ))),
                 "Repository" -> Json.toJson(repository.toLowerCase()),
                 "Preferences" -> Json.toJson(
                   userPreferences
                 ),
-                "Aggregation" -> Json.toJson(
+                "Aggregation" -> Json.toJson( metadataToAdd ++
                   Map(
-                    "Identifier" -> Json.toJson(curationId),
+                    "Identifier" -> Json.toJson("urn:uuid:"+curationId),
                     "@id" -> Json.toJson(hostUrl),
+                    "@type" -> Json.toJson("Aggregation"),
                     "Title" -> Json.toJson(c.name),
-                    "Abstract" -> Json.toJson(c.datasets(0).userMetadata.get("Abstract").getOrElse("").toString),
                     "Creator" -> Json.toJson(userService.findByIdentity(c.author).map(usr => JsArray(Seq(Json.toJson(usr.fullName + ": " + hostIp + "/profile/viewProfile/" + usr.id), Json.toJson(usr.profile.map(prof => prof.orcidID.map(oid=> oid)))))))
                   )
                 ),
                 "Aggregation Statistics" -> Json.toJson(
                   Map(
-                    "Max Collection Depth" -> Json.toJson("1"),
+                    "Max Collection Depth" -> Json.toJson("0"),
                     "Data Mimetypes" -> Json.toJson(c.files.map(_.contentType).toSet),
                     "Max Dataset Size" -> Json.toJson(maxDataset.toString),
-                    "Total Size" -> Json.toJson(totalSize.toString)
+                    "Total Size" -> Json.toJson(totalSize.toString),
+                    "Number of Datasets" -> Json.toJson(c.files.length),
+                    "Number of Collections" -> Json.toJson(c.datasets.length)
                   )),
-                "Publication Callback" -> Json.toJson(hostIp + "/spaces/curations/" + c.id + "/status")
+                "Publication Callback" -> Json.toJson(hostIp + "/spaces/curations/" + c.id + "/status"),
+                "Environment Key" -> Json.toJson(play.api.Play.configuration.getString("commKey").getOrElse(""))
               )
             )
           Logger.debug("Submitting request for publication: " + valuetoSend)
