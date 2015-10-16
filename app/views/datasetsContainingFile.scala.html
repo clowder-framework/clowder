@@ -39,7 +39,7 @@
             },
             processResults: function(data, page) {
                 return {results: data.filter(function(x) {
-                    return $.inArray(x.id, @Html(Json.stringify(Json.toJson(datasets.map(x=>x.id.toString())))));
+                    return $.inArray(x.id, @Html(Json.stringify(Json.toJson(datasets.map(x=>x.id.toString()))))) == -1;
                 }).map(function(x) {
                     return {
                         text: x.datasetname,

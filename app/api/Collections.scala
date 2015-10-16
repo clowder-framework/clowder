@@ -57,7 +57,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   def attachDataset(collectionId: UUID, datasetId: UUID) = PermissionAction(Permission.AddResourceToCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     collections.addDataset(collectionId, datasetId) match {
       case Success(_) => {
-
+        var datasetsInCollection = 0
         collections.get(collectionId) match {
         case Some(collection) => {
           datasets.get(datasetId) match {
@@ -65,10 +65,11 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
               events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "attach_dataset_collection") 
             }
           }
-
+          datasetsInCollection = collection.datasetCount
         }
       }
-      Ok(toJson(Map("status" -> "success")))
+
+      Ok(toJson(Map("status" ->  datasetsInCollection )))
     }
       case Failure(t) => InternalServerError
     }
@@ -114,7 +115,10 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       }
       Ok(toJson(Map("status" -> "success")))
     }
-    case Failure(t) => InternalServerError
+    case Failure(t) => {
+      Logger.error("Error: " + t)
+      InternalServerError
+    }
     }
   }
   
@@ -138,8 +142,21 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "List all collections",
       notes = "",
       responseClass = "None", httpMethod = "GET")
-  def listCollections() = PrivateServerAction { implicit request =>
-    val list = collections.listAccess(0, request.user, request.superAdmin).map(jsonCollection(_))
+  def listCollections(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+    val list = (title, date) match {
+      case (Some(t), Some(d)) => {
+        collections.listAccess(d, true, limit, t, request.user, request.superAdmin)
+      }
+      case (Some(t), None) => {
+        collections.listAccess(limit, t, request.user, request.superAdmin)
+      }
+      case (None, Some(d)) => {
+        collections.listAccess(d, true, limit, request.user, request.superAdmin)
+      }
+      case (None, None) => {
+        collections.listAccess(limit, request.user, request.superAdmin)
+      }
+    }
     Ok(toJson(list))
   }
 

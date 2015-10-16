@@ -248,10 +248,10 @@ class Datasets @Inject()(
           var decodedCollectionsInside = new ListBuffer[models.Collection]()
           var filesTags = TreeSet.empty[String]
 
-          for (aCollection <- collectionsOutside) {
-              val dCollection = Utils.decodeCollectionElements(aCollection)
-              decodedCollectionsOutside += dCollection
-          }
+//          for (aCollection <- collectionsOutside) {
+//              val dCollection = Utils.decodeCollectionElements(aCollection)
+//              decodedCollectionsOutside += dCollection
+//          }
           for (aCollection <- collectionsInside) {
               val dCollection = Utils.decodeCollectionElements(aCollection)
               decodedCollectionsInside += dCollection
@@ -313,7 +313,7 @@ class Datasets @Inject()(
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filesTags, filteredPreviewers.toList, metadata, userMetadata,
-            decodedCollectionsOutside.toList, decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), otherSpaces))
+            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), otherSpaces))
 
         }
         case None => {

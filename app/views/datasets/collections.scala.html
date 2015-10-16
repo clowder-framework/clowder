@@ -1,6 +1,7 @@
-@(dataset: Dataset, collectionsInside: List[models.Collection], collectionsOutside: List[models.Collection])(implicit user: Option[models.User])
+@(dataset: Dataset, collectionsInside: List[models.Collection])(implicit user: Option[models.User])
 
 @import api.Permission
+@import play.api.libs.json.Json
 
 <div class="row border-top bottom-padding">
     <div class="col-md-12">
@@ -32,10 +33,10 @@
                         }
                         <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
                         @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                           | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection('@(collection.id)','@(collection.name)', '@dataset.id', event)" title="Remove from collection">
+                           | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection('@(collection.id)', '@dataset.id', event)" title="Remove from collection">
                                 Remove</a>
                         } else {
-                            <a href="#" class="btn btn-link btn-xs disabled" onclick="removeCollection('@(collection.id)','@(collection.name)', '@dataset.id', event)" title="Remove from collection">
+                            <a href="#" class="btn btn-link btn-xs disabled" onclick="removeCollection('@(collection.id)', '@dataset.id', event)" title="Remove from collection">
                             Remove</a>
                         }
                     </div>
@@ -47,20 +48,17 @@
 
 <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
 @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-    <div class="row row-paddingtop-padding">
-        <div class="col-md-2"></div>
-        <div class="col-md-8">
-            <select id="collectionAddSelect" class="chosen-select">
-                <option value=""></option>
-                @collectionsOutside.map { collection =>
-                    <option value="@(collection.id)">@(collection.name.replace("<br>", "\n"))</option>
-                }
+    <form class="form-inline requiresLogin requiresLoginCommunity">
+        <div class="input-group input-group-sm col-md-8">
+            <select id="collectionAddSelect" class="form-control" style="width: 100%">
             </select>
+            <span class="input-group-btn">
+                <button class="btn btn-default btn-large" id="addCollectionBtn" title="Add Dataset to Collection" onclick="addToCollection('@dataset.id')">
+                    <span class="glyphicon glyphicon-plus"></span>
+                </button>
+            </span>
         </div>
-        <div class="col-md-2">
-            <a href="#" class="btn btn-default btn-xs" onclick="addToCollection('@dataset.id')">Add</a>
-        </div>
-    </div>
+    </form>
 }
 
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
@@ -71,5 +69,32 @@
     disable_search_threshold: 10,
     width: "100%",
     placeholder_text_single: "Add to existing collection"});
+
+
+    $("#collectionAddSelect").select2({
+        theme: "bootstrap",
+        placeholder: "Select a collection",
+        allowClear: true,
+        ajax: {
+            url: function(params) {
+                return jsRoutes.api.Collections.listCollections(params.term, null, 10).url;
+            },
+            data: function(params) {
+                return { title: params.term };
+            },
+            processResults: function(data, page) {
+                return {results: data.filter(function(x) {
+                    return $.inArray(x.id, @Html(Json.stringify(Json.toJson(collectionsInside.map(x=>x.id.toString()))))) == -1;
+                }).map(function(x) {
+                    return {
+                        text: x.collectionname,
+                        id: x.id
+                    }
+                })};
+            }
+        }
+    });
+
+     //$('body').on('click','#addCollectionBtn' addToCollection('@dataset.id'));
 </script>
 <script src="@routes.Assets.at("javascripts/datasets/collections.js")" type="text/javascript"></script>

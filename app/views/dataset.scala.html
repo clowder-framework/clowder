@@ -4,7 +4,6 @@
         previews : List[Previewer],
         md: Map[String,Any],
         usrmd: scala.collection.mutable.Map[String,Any],
-        collectionsOutside: List[models.Collection],
         collectionsInside: List[models.Collection],
         rdfExported: Boolean,
         relatedSensors: List[(String,String)],
@@ -137,7 +136,7 @@
 		<!-- right column -->
 		<div class="col-md-4 col-left-border">
             @datasets.tags(dataset, filesTags)
-            @datasets.collections(dataset, collectionsInside, collectionsOutside)
+            @datasets.collections(dataset, collectionsInside)
             @if(user.isDefined) {
                 @datasets.userLink(dataset)
             }
