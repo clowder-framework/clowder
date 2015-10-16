@@ -94,7 +94,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   @ApiOperation(value = "List spaces a user can add to",
     notes = "Retrieves a list of spaces that the user has permission to add to",
     responseClass = "None", httpMethod = "GET")
-  def listSpacesCanAdd() = UserAction { implicit request =>
+  def listSpacesCanAdd(title: Option[String], date: Option[String], limit: Int)  = UserAction { implicit request =>
     var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
 
     val userSpaces = request.user match {
@@ -111,6 +111,23 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       }
     }
     Ok(toJson(decodedSpaceList.toList.map(spaceToJson)))
+
+
+//    val list = (title, date) match {
+//      case (Some(t), Some(d)) => {
+//        spaces.listAccess(d, true, limit, t, request.user, request.superAdmin)
+//      }
+//      case (Some(t), None) => {
+//        spaces.listAccess(limit, t, request.user, request.superAdmin)
+//      }
+//      case (None, Some(d)) => {
+//        spaces.listAccess(d, true, limit, request.user, request.superAdmin)
+//      }
+//      case (None, None) => {
+//        spaces.listAccess(limit, request.user, request.superAdmin)
+//      }
+//    }
+//    Ok(toJson(list))
   }
 
   def spaceToJson(space: ProjectSpace) = {

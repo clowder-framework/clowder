@@ -1,20 +1,19 @@
 @(resourceId: UUID, resourceType: Symbol, otherSpaces: List[ProjectSpace], resourceSpaces: Option[List[ProjectSpace]])(implicit user: Option[models.User])
-@import api.Permission
+
+@import play.api.libs.json.Json
 
 <div class="row">
-    <select class = "chosen-select2" multiple style="..." id ="spacesAvailable">
-        @for(curOption <- resourceSpaces) {
-            @for(curSpace <- curOption) {
-                <option value="@curSpace.id" id ="@curSpace.name" selected>@curSpace.name</option>
-            }
-        }
-        @for(curSpace <-otherSpaces) {
-            <!-- Ensure that the space options are available only if the user can actually add to them. -->
-            @if(Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, curSpace.id))) {
-                <option value="@curSpace.id" id ="@curSpace.name" >@curSpace.name</option>
-            }
-        }
-    </select>
+    <form class="form-inline requiresLogin requiresLoginCommunity">
+        <div class="input-group input-group-sm col-md-8">
+            <select id="spaceAvailable" class="form-control" style="width: 100%">
+            </select>
+            <span class="input-group-btn">
+                <button class="btn btn-default btn-large" id="addDatasBtn" title="Add File to Dataset">
+                    <span class="glyphicon glyphicon-plus"></span>
+                </button>
+            </span>
+        </div>
+    </form>
 </div>
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
 <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
@@ -27,133 +26,30 @@
 </script>
 
 <script language = "javascript">
-    var idNameObj = {};
 
-    resource_type_enum = {
-    DATASET : 0,
-    COLLECTION : 1
-    };
-
-    function isUndefined(value) {
-        return typeof value === 'undefined';
-    }
-
-    function getName(id) {
-        return idNameObj[id];
-    }
-    $(document).ready(function() {
-        @for(space <- otherSpaces) {
-            idNameObj["@space.name"] = "@space.id";
+$("#spaceAvailable").select2({
+        theme: "bootstrap",
+        placeholder: "Select a dataset",
+        allowClear: true,
+        ajax: {
+            url: function(params) {
+                return jsRoutes.api.Spaces.listSpacesCanAdd(params.term, null, 10).url;
+            },
+            data: function(params) {
+                return { title: params.term };
+            },
+            processResults: function(data, page) {
+                return {results: data.filter(function(x) {
+                    return $.inArray(x.id, @Html(Json.stringify(Json.toJson(resourceSpaces.getOrElse(List.empty)
+                            .map(x=>x.id.toString()))))) == -1;
+                }).map(function(x) {
+                    return {
+                        text: x.datasetname,
+                        id: x.id
+                    }
+                })};
+            }
         }
     });
 
-    $(".chosen-select2").chosen().change(function(event, params) {
-        var targetId = this.getAttribute("id");
-        if(!isUndefined(params.selected)) {
-            var addedId = params.selected;
-            @for(space<-otherSpaces) {
-                var currentId = "@space";
-                if(currentId != targetId) {
-                    $('#@space.id option [value=' + addedId + ']').remove();
-                    $('#@space.id').trigger("chosen:updated");
-                }
-            }
-            $('ul.chosen-choices li.search-field').css("width", "0");
-        }
-        else if(!isUndefined(params.deselected)) {
-            var removedId= params.deselected;
-            @for(space <- otherSpaces) {
-                var currentId = "@space"
-                if(currentId != targetId) {
-                $('#@space.id').prepend($("<option></option>").attr("value", params.deselected).text(getName(params.deselected)));
-                $('#@space.id').trigger("chosen:updated");
-                }
-
-            }
-        }
-
-        $('#spaces_add').click(function() {
-            $('#modalSpaces').modal('hide');
-            @if(resourceType == ResourceRef.dataset) {
-              updateDatasetInSpaces();
-            } else {
-                @if(resourceType == ResourceRef.collection) {
-                    updateCollectionInSpaces();
-                }
-            }
-        })
-
-    });
-
-    function updateCollectionInSpaces(){
-
-        var ids = $('#spacesAvailable option:selected').map(function() { return this.value}).get();
-        var names = $('#spacesAvailable option:selected').map(function() { return this.id}).get();
-        var jsonData = JSON.stringify({"space_ids ": ids, " resource_id ": "@resourceId"});
-        var request = jsRoutes.api.Spaces.addCollectionToSpaces(ids, "@resourceId").ajax({
-            data: jsonData,
-            type: 'POST',
-            contentType: "application/json",
-        });
-
-        request.done(function(response, textStatus, jqXH) {
-            updateSpacesEditLink(ids, names)
-            if($('#spaces a').size() > 0) {
-                $('#collection-users').show();
-            } else
-            {
-                $('#collection-users').hide();
-            }
-        });
-
-        request.fail(function(jqHR, textStatus, errorThrown) {
-            console.error("The following error occurred: " + textStatus, errorThrown);
-        });
-
-    }
-
-    function updateDatasetInSpaces() {
-        var ids = $('#spacesAvailable option:selected').map(function(){ return this.value }).get();
-        var names = $('#spacesAvailable option:selected').map(function(){ return this.id }).get();
-        var jsonData = JSON.stringify({"space_ids": ids, "resource_id": "@resourceId"});
-        var request = jsRoutes.api.Spaces.addDatasetToSpaces(ids,"@resourceId").ajax({
-            data: jsonData,
-            type: 'POST',
-            contentType: "application/json",
-        });
-
-        request.done(function(response, textStatus, jqXH){
-            updateSpacesEditLink(ids, names)
-            if($('#spaces a').size() > 0) {
-                $('#dataset-users').show();
-            } else
-            {
-                $('#dataset-users').hide();
-            }
-        });
-
-        request.fail(function(jqHR, textStatus, errorThrown){
-            console.error("The following error occurred: " + textStatus, errorThrown);
-        })
-    }
-
-    function updateSpacesEditLink(ids, names) {
-        var edit_spaces = $("#editSpaces");
-        $("#spaces").text('');
-        $("#spaces").html(edit_spaces);
-       for(var i=0; i < ids.length; i++){
-       $("<a class = 'space-pills' href="+ jsRoutes.controllers.Spaces.getSpace(ids[i]).url +" > " + names[i] + " </a>").insertBefore('#editSpaces')
-       }
-
-    }
-
-    if($('ul.chosen-choices .search-field input').attr('class') == 'default') {
-        $('ul.chosen-choices li.search-field').css("width", "80%");
-        $('ul.chosen-choices li.search-field input[type="text"]').css("width", "100%");
-    }
-
-    function spaceAddDataset() {
-        var ids = $('#spacesAvailable option:selected').map(function(){ return this.value }).get()
-
-    }
 </script>
