@@ -77,14 +77,14 @@
         allowClear: true,
         ajax: {
             url: function(params) {
-                return jsRoutes.api.Collections.listCollections(params.term, null, 10).url;
+                return jsRoutes.api.Collections.listCollectionsCanAdd(params.term, null, 10).url;
             },
             data: function(params) {
                 return { title: params.term };
             },
             processResults: function(data, page) {
                 return {results: data.filter(function(x) {
-                    return $.inArray(x.id, @Html(Json.stringify(Json.toJson(collectionsInside.map(x=>x.id.toString()))))) == -1;
+                    return $.inArray(x.id, @Html(Json.stringify(Json.toJson(collectionsInside.map(x=>x.id.toString()))))) == -1
                 }).map(function(x) {
                     return {
                         text: x.collectionname,
@@ -95,6 +95,5 @@
         }
     });
 
-     //$('body').on('click','#addCollectionBtn' addToCollection('@dataset.id'));
 </script>
 <script src="@routes.Assets.at("javascripts/datasets/collections.js")" type="text/javascript"></script>

@@ -69,7 +69,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         }
       }
       //datasetsInCollection is the numbe of datsets in this collection, but should not use status.
-      Ok(toJson(Map("status" ->  datasetsInCollection )))
+      Ok(Json.obj("status" -> "success", "datasetsInCollection" -> Json.toJson(datasetsInCollection) ))
     }
       case Failure(t) => InternalServerError
     }
@@ -158,6 +158,30 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       }
     }
     Ok(toJson(list))
+  }
+
+
+  @ApiOperation(value = "List all collections",
+    notes = "",
+    responseClass = "None", httpMethod = "GET")
+  def listCollectionsCanAdd(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+    val list = (title, date) match {
+      case (Some(t), Some(d)) => {
+        collections.listAccess(d, true, limit, t, request.user, request.superAdmin)
+      }
+      case (Some(t), None) => {
+        collections.listAccess(limit, t, request.user, request.superAdmin)
+      }
+      case (None, Some(d)) => {
+        collections.listAccess(d, true, limit, request.user, request.superAdmin)
+      }
+      case (None, None) => {
+        collections.listAccess(limit, request.user, request.superAdmin)
+      }
+    }
+    implicit val user = request.user
+    val listCanAdd = list.filter(c => Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.collection, c.id)))
+    Ok(toJson(listCanAdd))
   }
 
   @ApiOperation(value = "Get a specific collection",
