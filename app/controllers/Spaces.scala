@@ -6,6 +6,7 @@ import javax.inject.Inject
 
 import api.Permission
 import models._
+import play.api.data.validation._
 import play.api.{Play, Logger}
 import play.api.data.Forms._
 import play.api.data.{Form, Forms}
@@ -18,6 +19,7 @@ import securesocial.core.providers.{Token, UsernamePasswordProvider}
 import org.joda.time.DateTime
 import play.api.i18n.Messages
 import services.AppConfiguration
+import util.Formatters
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 /**
@@ -37,9 +39,9 @@ case class spaceFormData(
 case class spaceInviteData(
   addresses: List[String],
   role: String,
-  message: String)
+  message: Option[String])
 
-class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventService) extends SecuredController {
+class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users: UserService, events: EventService) extends SecuredController {
 
   /**
    * New/Edit project space form bindings.
@@ -65,19 +67,76 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
         )
   )
 
+
   /**
-   * Invite to space form bindings.
+   * Invite to space form bindings. we are not using play.api.data.Forms.list(email) for addresses since the constraints
+   * of front-end and back-end are different.
    */
   val spaceInviteForm = Form(
     mapping(
       "addresses" -> play.api.data.Forms.list(nonEmptyText),
       "role" -> nonEmptyText,
-      "message" -> nonEmptyText
+      "message" -> optional(text)
       )
       (( addresses, role, message ) => spaceInviteData(addresses = addresses, role = role, message = message))
       ((d:spaceInviteData) => Some(d.addresses, d.role, d.message))
   )
 
+  /**
+   * Gets list of extractors from mongo. Displays the page to add/remove extractors.
+   */
+   def selectExtractors(id:UUID) = AuthenticatedAction {
+    implicit request =>
+      implicit val user = request.user
+      spaces.get(id) match {
+        case Some(s) => {
+          val runningExtractors: List[String] = extractors.getExtractorNames()
+          val selectedExtractors: List[String] = spaces.getAllExtractors(id)
+          Ok(views.html.spaces.updateExtractors(runningExtractors, selectedExtractors, id.stringify))
+        }
+        case None => InternalServerError("Space not found")      
+    }
+  }
+
+  /**
+   * Processes POST request. Updates list of extractors associated with this space in mongo.
+   */
+  def updateExtractors() = PermissionAction(Permission.EditSpace)(parse.multipartFormData) {
+    implicit request =>
+      implicit val user = request.user
+      //form contains space id and list of extractors.
+      var space_id: String = ""
+      var extractors: List[String] = Nil
+
+      val dataParts = request.body.dataParts
+      if (!dataParts.isDefinedAt("space_id")) {
+        Logger.error("space id not defined")
+        BadRequest("Space id not defined")
+      } else {
+        //space id passed as hidden parameter
+        space_id = dataParts("space_id").head
+        spaces.get(new UUID(space_id)) match {
+          case Some(existing_space) => {
+            //1. remove entry with extractors for this space from mongo
+            spaces.deleteAllExtractors(existing_space.id)
+            //2. if extractors are selected, add them 
+            if (dataParts.isDefinedAt("extractors")) {
+              extractors = dataParts("extractors").toList
+              extractors.map(spaces.addExtractor(existing_space.id, _))
+            }
+            Redirect(routes.Spaces.getSpace(new UUID(space_id)))
+          }
+          case None => {
+            BadRequest("The space does not exist")
+          }
+        }
+
+      }
+  }
+  
+                      
+                      
+  
   /**
    * Space main page.
    */
@@ -98,12 +157,6 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 	            }
 	            case None => Logger.debug("-------- No creator for space found...")
 	        }
-
-
-	        var externalUsers = users.list.to[ArrayBuffer]
-
-	        //inSpaceBuffer += externalUsers(0)
-	        externalUsers --= inSpaceBuffer
 
 	        var userRoleMap: Map[User, String] = Map.empty
 	        for (aUser <- inSpaceBuffer) {
@@ -129,11 +182,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 	            userRoleMap += (aUser -> role)
 	        }
 	        //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace
-          var roleList: List[String] = List.empty
-          users.listRoles().map{
-            role => roleList = role.name :: roleList
-          }
-	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, creator, userRoleMap, externalUsers.toList, roleList.sorted))
+
+	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, userRoleMap))
       }
       case None => InternalServerError("Space not found")
     }
@@ -153,15 +203,69 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       }
   }
 
-  def invite(id:UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+  def manageUsers(id: UUID) = PermissionAction(Permission.EditUser, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
-        val roleList: List[String] = users.listRoles().map(role => role.name)
-        Ok(views.html.spaces.invite(spaceInviteForm, Utils.decodeSpaceElements(s), roleList.sorted))}
+        val creator = users.findById(s.creator)
+        var creatorActual: User = null
+        val usersInSpace = spaces.getUsersInSpace(id)
+        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
+        creator match {
+          case Some(theCreator) => {
+            inSpaceBuffer += theCreator
+            creatorActual = theCreator
+          }
+          case None => Logger.debug("-------- No creator for space found...")
+        }
+
+        var externalUsers = users.list.to[ArrayBuffer]
+        //inSpaceBuffer += externalUsers(0)
+        externalUsers --= inSpaceBuffer
+
+        var userRoleMap: Map[User, String] = Map.empty
+        for (aUser <- inSpaceBuffer) {
+          var role = "What"
+          spaces.getRoleForUserInSpace(id, aUser.id) match {
+            case Some(aRole) => {
+              role = aRole.name
+            }
+            case None => {
+              //This case catches spaces that have been created before users and roles were assigned to them.
+              if (aUser == creatorActual) {
+                role = "Admin"
+                users.findRoleByName(role) match {
+                  case Some(realRole) => {
+                    spaces.addUser(aUser.id, realRole, id)
+                  }
+                  case None => Logger.debug("No Admin role found for some reason.")
+                }
+              }
+            }
+          }
+          userRoleMap += (aUser -> role)
+        }
+        //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace
+        var roleList: List[String] = List.empty
+        users.listRoles().map{
+          role => roleList = role.name :: roleList
+        }
+        //get the list of invitation, and also change the role from Role.id to Role.name
+        val inviteBySpace = spaces.getInvitationBySpace(s.id) map(v => v.copy(role = users.findRole(v.role) match {
+          case Some(r) => r.name
+          case _ => "Undefined Role"
+        }
+          ))
+
+        //correct space.userCount according to usersInSpace.length
+        spaces.updateUserCount(s.id,usersInSpace.length)
+
+        Ok(views.html.spaces.users(spaceInviteForm, Utils.decodeSpaceElements(s), creator, userRoleMap, externalUsers.toList, roleList.sorted, inviteBySpace))
+      }
       case None => InternalServerError("Space not found")
     }
   }
+
 
   def inviteToSpace(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) {
     implicit request =>
@@ -170,7 +274,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
         case Some(s) => {
           val roleList: List[String] = users.listRoles().map( role=> role.name)
           spaceInviteForm.bindFromRequest.fold(
-          errors => BadRequest(views.html.spaces.invite(errors, s, roleList.sorted)),
+          errors => InternalServerError(errors.toString()),
           formData => {
             users.findRoleByName(formData.role) match {
               case Some(role) => {
@@ -227,31 +331,43 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
    * Each user with EditSpace permission will see the request on index and receive an email.
    */
    def addRequest(id: UUID) = UserAction { implicit request =>
-      implicit val user = request.user
-      spaces.get(id) match {
-        case Some(s) => {
-          Logger.debug("request submitted in controller.Space.addRequest  " )
-          val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName
-          val body = views.html.spaces.requestemail(user.get, id.toString, s.name)
+      implicit val requestuser = request.user
 
-          for(requestReceiver <- spaces.getUsersInSpace(s.id)){
-            spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
-              case Some(aRole) => {
-                if ( aRole.permissions.contains( "EditSpace" )){
-                    events.addRequestEvent(user, requestReceiver, id, s.name, "postrequest_space")
+    requestuser match{
+      case Some(user) =>  {    spaces.get(id) match {
+        case Some(s) => {
+          // when permission is public, user can reach the authorization request button, so we check if the request is
+          // already inserted
+          if(s.requests.contains(RequestResource(user.id))) {
+            Ok(views.html.authorizationMessage("Your prior request is active, and pending"))
+          }else{
+            Logger.debug("Request submitted in controller.Space.addRequest  ")
+            val subject: String = "Request for access from " + AppConfiguration.getDisplayName
+            val body = views.html.spaces.requestemail(user, id.toString, s.name)
+
+            for (requestReceiver <- spaces.getUsersInSpace(s.id)) {
+              spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
+                case Some(aRole) => {
+                  if (aRole.permissions.contains("EditSpace")) {
+                    events.addRequestEvent(Some(user), requestReceiver, id, s.name, "postrequest_space")
 
                     //sending emails to the space's Admin && Editor
-                    val recipient:String = requestReceiver.email.get.toString
-                    Users.sendEmail(subject, recipient, body )
+                    val recipient: String = requestReceiver.email.get.toString
+                    Users.sendEmail(subject, recipient, body)
+                  }
                 }
               }
             }
+            spaces.addRequest(id, user.id, user.fullName)
+            Ok(views.html.authorizationMessage("Request submitted"))
           }
-          spaces.addRequest(id, user.get.id, user.get.fullName)
-          Ok(views.html.notAuthorized( "Request for authorization submitted", null, null))
         }
         case None => InternalServerError("Space not found")
       }
+    }
+
+    case None => InternalServerError("User not found")
+       }
     }
 
   /**
@@ -383,49 +499,76 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
    /**
    * Show the list page
    */
-  def list(order: Option[String], direction: String, start: Option[String], limit: Int,
-           filter: Option[String], mode: String) = PrivateServerAction { implicit request =>
-      implicit val user = request.user
-      val d = if (direction.toLowerCase.startsWith("a")) {
-        ASC
-      } else if (direction.toLowerCase.startsWith("d")) {
-        DESC
-      } else if (direction == "1") {
-        ASC
-      } else if (direction == "-1") {
-        DESC
-      } else {
-        ASC
-      }
-      val spaceList = spaces.list(order, d, start, limit, filter)
-      var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
-      for (aSpace <- spaceList) {
-        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
-      }
-      val deletePermission = Permission.checkPermission(user, Permission.DeleteDataset)
-      val prev = if (decodedSpaceList.size > 0) {
-        spaces.getPrev(order, d, decodedSpaceList.head.created, limit, filter).getOrElse("")
-      } else {
-        ""
-      }
-      val next = if (decodedSpaceList.size > 0) {
-        spaces.getNext(order, d, decodedSpaceList.last.created, limit, filter).getOrElse("")
-      } else {
-        ""
-      }
-      //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
-      //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
-      //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
-      val viewMode: Option[String] =
-        if (mode == null || mode == "") {
-          request.cookies.get("view-mode") match {
-            case Some(cookie) => Some(cookie.value)
-            case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
-          }
-        } else {
-          Some(mode)
-        }
+   def list(when: String, date: String, limit: Int, mode: String, owner: Option[String], showAll: Boolean) = PrivateServerAction { implicit request =>
+     implicit val user = request.user
 
-      Ok(views.html.spaces.listSpaces(decodedSpaceList.toList, order, direction, start, limit, filter, viewMode, deletePermission, prev, next))
-  }
+     val nextPage = (when == "a")
+     val person = owner.flatMap(o => users.get(UUID(o)))
+
+     val spaceList = person match {
+       case Some(p) => {
+         if (date != "") {
+           spaces.listUser(date, nextPage, limit, request.user, showAll, p)
+         } else {
+           spaces.listUser(limit, request.user, showAll, p)
+         }
+       }
+       case None => {
+         if (date != "") {
+           spaces.listAccess(date, nextPage, limit, request.user, showAll)
+         } else {
+           spaces.listAccess(limit, request.user, showAll)
+         }
+       }
+     }
+
+     // check to see if there is a prev page
+     val prev = if (spaceList.nonEmpty && date != "") {
+       val first = Formatters.iso8601(spaceList.head.created)
+       val space = person match {
+         case Some(p) => spaces.listUser(first, nextPage=false, 1, request.user, showAll, p)
+         case None => spaces.listAccess(first, nextPage = false, 1, request.user, showAll)
+       }
+       if (space.nonEmpty && space.head.id != spaceList.head.id) {
+         first
+       } else {
+         ""
+       }
+     } else {
+       ""
+     }
+
+     // check to see if there is a next page
+     val next = if (spaceList.nonEmpty) {
+       val last = Formatters.iso8601(spaceList.last.created)
+       val ds = person match {
+         case Some(p) => spaces.listUser(last, nextPage=true, 1, request.user, showAll, p)
+         case None => spaces.listAccess(last, nextPage=true, 1, request.user, showAll)
+       }
+       if (ds.nonEmpty && ds.head.id != spaceList.last.id) {
+         last
+       } else {
+         ""
+       }
+     } else {
+       ""
+     }
+
+     val decodedSpaceList = spaceList.map(Utils.decodeSpaceElements)
+     //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+     //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+     //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+     val viewMode: Option[String] =
+       if (mode == null || mode == "") {
+         request.cookies.get("view-mode") match {
+           case Some(cookie) => Some(cookie.value)
+           case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+         }
+       } else {
+         Some(mode)
+       }
+
+     val deletePermission = Permission.checkPermission(user, Permission.DeleteDataset)
+     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, deletePermission, prev, next))
+   }
 }
