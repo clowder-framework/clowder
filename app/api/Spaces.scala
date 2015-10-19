@@ -110,8 +110,6 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       }
     }
 
-    Logger.debug(list.map(s =>s.name+"  ").toString())
-
     var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
 
     val userSpaces = request.user match {

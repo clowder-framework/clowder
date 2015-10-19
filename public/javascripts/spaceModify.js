@@ -25,7 +25,6 @@ function addCollectionToSpace(collection_id, space_id, space_name) {
 }
 
 function addDatasetToSpace(dataset_id, space_id, space_name) {
-    console.log("addDatasetToSpace");
     var request = jsRoutes.api.Spaces.addDataset(space_id).ajax({
         type: 'POST',
         data: JSON.stringify({'dataset_id': dataset_id}),

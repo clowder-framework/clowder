@@ -22,7 +22,7 @@
 </script>
 
 <script language = "javascript">
-    //var otherSpaces;
+
     var idNameObj = {};
 
     resource_type_enum = {
@@ -38,60 +38,32 @@
         return idNameObj[id];
     }
 
-     $(document).ready(function(params) {
-
-   var request = jsRoutes.api.Spaces.listSpacesCanAdd(null, null, 10).ajax({
-        type: 'GET',
-        contentType : "application/json"
-    });
-
-    request.done(function (response, textStatus, jqXHR){
-    //console.log(response[0].name);
-       otherSpaces = response.filter(function(x) {
-                    return $.inArray(x.id, @Html(Json.stringify(Json.toJson(resourceSpaces.getOrElse(List.empty).map(x=>x.id.toString()))))) == -1;
-                });
-                $.map( otherSpaces, function( s ) {
-          console.log(s.name);
-     idNameObj[s.name] = s.id;
-     $('#spacesAvailable').append($("<option></option>").attr("value",s.id).attr("id",s.name).text(s.name));
-
-      });
-    $('#spacesAvailable').trigger("chosen:updated");
-
-    });
-
-    request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
-    });
-
-    });
-
     $(document).ready(function() {
-    console.log(param);
-     var request = jsRoutes.api.Spaces.listSpacesCanAdd().ajax({
-        type: 'GET',
-        contentType : "application/json"
+
+        var request = jsRoutes.api.Spaces.listSpacesCanAdd(null, null, 10).ajax({
+            type: 'GET',
+            contentType : "application/json"
+        });
+
+        request.done(function (response, textStatus, jqXHR){
+           otherSpaces = response.filter(function(x) {
+              return $.inArray(x.id, @Html(Json.stringify(Json.toJson(resourceSpaces.getOrElse(List.empty).map(x=>x.id.toString()))))) == -1;
+           });
+           $.map( otherSpaces, function( s ) {
+
+                idNameObj[s.name] = s.id;
+                $('#spacesAvailable').append($("<option></option>").attr("value",s.id).attr("id",s.name).text(s.name));
+
+           });
+           $('#spacesAvailable').trigger("chosen:updated");
+        });
+
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occured: " + textStatus, errorThrown);
+        });
+
     });
 
-    request.done(function (response, textStatus, jqXHR){
-    //console.log(response[0].name);
-       otherSpaces = response.filter(function(x) {
-                    return $.inArray(x.id, @Html(Json.stringify(Json.toJson(resourceSpaces.getOrElse(List.empty).map(x=>x.id.toString()))))) == -1;
-                });
-                $.map( otherSpaces, function( s ) {
-          console.log(s.name);
-     idNameObj[s.name] = s.id;
-     $('#spacesAvailable').append($("<option></option>").attr("value",s.id).attr("id",s.name).text(s.name));
-
-      });
-    $('#spacesAvailable').trigger("chosen:updated");
-
-    });
-
-    request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
-    });
-    });
 
 
     $(".chosen-select2").chosen().change(function(event, params) {
@@ -154,7 +126,6 @@
     }
 
     function updateDatasetInSpaces() {
-    console.log("updateDatasetInSpaces");
         var ids = $('#spacesAvailable option:selected').map(function(){ return this.value }).get();
         var names = $('#spacesAvailable option:selected').map(function(){ return this.id }).get();
         var jsonData = JSON.stringify({"space_ids": ids, "resource_id": "@resourceId"});
