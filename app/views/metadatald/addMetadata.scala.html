@@ -22,6 +22,52 @@
 <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
+<style>
+  .ui-autocomplete-category {
+    font-weight: bold;
+    padding: .2em .4em;
+    margin: .8em 0 .2em;
+    line-height: 1.5;
+  }
+</style>
+
+<script>
+  $.widget( "custom.catcomplete", $.ui.autocomplete, {
+    _create: function() {
+      this._super();
+      this.widget().menu( "option", "items", "> :not(.ui-autocomplete-category)" );
+    },
+    _renderMenu: function( ul, items ) {
+      var that = this;
+      var currentCategory = "";
+      var category = "";
+      var dispCatMap = new Map();
+      dispCatMap.set("csn", "CSDMS Standard Name");
+      dispCatMap.set("odm2", "ODM2 Variable Name");
+      $.each( items, function( index, item ) {
+        var li;
+        // Each item from an original array of strings was converted to an object { label: "val1", value: "val1" }.
+        var words = item.label.split(":");
+        if (words.length > 0) {
+          category = words[0];
+          // Display only the name part after the name space, but do not change the value.
+          item.label = words[1];
+        }
+        if ( category != currentCategory ) {
+          console.log("category changed from " + currentCategory + " to: " + category);
+          var displayed_cat_name = category;
+          if (dispCatMap.has(category)) {
+              displayed_cat_name = dispCatMap.get(category);
+          }
+          ul.append( "<li class='ui-autocomplete-category'>" + displayed_cat_name + "</li>" );
+          currentCategory = category;
+        }
+        li = that._renderItemData( ul, item );
+      });
+    }
+  });
+</script>
+
 <script language="javascript">
     // submit metadata value to server
     function submit(event){
@@ -114,7 +160,7 @@
 
                     // Find the field with the specific uri.
                     var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
-                    $("#field-value").autocomplete({
+                    $("#field-value").catcomplete({
                         minLength: 3,
                         source: function( request, response ) {
                             $.ajax({
