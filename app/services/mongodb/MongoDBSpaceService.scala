@@ -42,61 +42,70 @@ class MongoDBSpaceService @Inject() (
 
   /** count all spaces */
   def count(): Long = {
-    count(None, nextPage=false, None, showAll=true, None)
+    count(None, nextPage=false, None, None, showAll=true, None)
   }
 
   /** list all spaces */
   def list(): List[ProjectSpace] = {
-    list(None, nextPage=false, 0, None, showAll=true, None)
+    list(None, nextPage=false, 0, None, None, showAll=true, None)
   }
 
   /**
    * Count all spaces the user has access to.
    */
   def countAccess(user: Option[User], showAll: Boolean): Long = {
-    count(None, nextPage=false, user, showAll, None)
+    count(None, nextPage=false, None, user, showAll, None)
   }
 
   /**
    * Return a list of spaces the user has access to.
    */
   def listAccess(limit: Integer, user: Option[User], showAll: Boolean): List[ProjectSpace] = {
-    list(None, nextPage=false, limit, user, showAll, None)
+    list(None, nextPage=false, limit, None, user, showAll, None)
+  }
+
+  def listAccess(limit: Integer, title: String, user: Option[User], showAll: Boolean): List[ProjectSpace] = {
+    list(None, false, limit, Some(title), user, showAll, None)
   }
 
   /**
    * Return a list of spaces the user has access to starting at a specific date.
    */
   def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean): List[ProjectSpace] = {
-    list(Some(date), nextPage, limit, user, showAll, None)
+    list(Some(date), nextPage, limit, None, user, showAll, None)
   }
+
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean): List[ProjectSpace] = {
+    list(Some(date), nextPage, limit, Some(title), user, showAll, None)
+  }
+
 
   /**
    * Count all spaces the user has created.
    */
   def countUser(user: Option[User], showAll: Boolean, owner: User): Long = {
-    count(None, nextPage=false, user, showAll, Some(owner))
+    count(None, nextPage=false, None, user, showAll, Some(owner))
   }
 
   /**
    * Return a list of spaces the user has created.
    */
   def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
-    list(None, nextPage=false, limit, user, showAll, Some(owner))
+    list(None, nextPage=false, limit, None, user, showAll, Some(owner))
   }
 
   /**
    * Return a list of spaces the user has created starting at a specific date.
    */
   def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
-    list(Some(date), nextPage, limit, user, showAll, Some(owner))
+    list(Some(date), nextPage, limit, None, user, showAll, Some(owner))
   }
 
   /**
    * return count based on input
    */
-  private def count(date: Option[String], nextPage: Boolean, user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
-    val (filter, _) = filteredQuery(date, nextPage, user, showAll, owner)
+  private def count(date: Option[String], nextPage: Boolean, title: Option[String], user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
+    val (filter, _) = filteredQuery(date, nextPage, title, user, showAll, owner)
     ProjectSpaceDAO.count(filter)
   }
 
@@ -104,8 +113,8 @@ class MongoDBSpaceService @Inject() (
   /**
    * return list based on input
    */
-  private def list(date: Option[String], nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: Option[User]): List[ProjectSpace] = {
-    val (filter, sort) = filteredQuery(date, nextPage, user, showAll, owner)
+  private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], user: Option[User], showAll: Boolean, owner: Option[User]): List[ProjectSpace] = {
+    val (filter, sort) = filteredQuery(date, nextPage, title, user, showAll, owner)
     if (date.isEmpty || nextPage) {
       ProjectSpaceDAO.find(filter).sort(sort).limit(limit).toList
     } else {
@@ -116,7 +125,7 @@ class MongoDBSpaceService @Inject() (
   /**
    * Monster function, does all the work. Will create a filters and sorts based on the given parameters
    */
-  private def filteredQuery(date: Option[String], nextPage: Boolean, user: Option[User], showAll: Boolean, owner: Option[User]): (DBObject, DBObject) = {
+  private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], user: Option[User], showAll: Boolean, owner: Option[User]): (DBObject, DBObject) = {
     // filter =
     // - owner   == show datasets owned by owner that user can see
     // - space   == show all datasets in space

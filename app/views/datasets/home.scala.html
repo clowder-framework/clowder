@@ -1,4 +1,4 @@
-@(dataset: Dataset, space: Option [List[ProjectSpace]], previewers: List[Previewer], spaceList: List[ProjectSpace])(implicit user: Option[models.User])
+@(dataset: Dataset, space: Option [List[ProjectSpace]], previewers: List[Previewer])(implicit user: Option[models.User])
 @import api.Permission
 <div class="row">
     <div class="col-md-12 box-white-space">
@@ -7,7 +7,7 @@
                 <ul class="list-unstyled">
                     <li>Created by <a href= "@routes.Profile.viewProfile(dataset.author.email)"> @dataset.author.fullName </a></li>
                     <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
-                    <li>Shared with spaces: @spaces.spaceLink(space, ResourceRef.dataset, dataset.id, spaceList)</li>
+                    <li>Shared with spaces: @spaces.spaceLink(space, ResourceRef.dataset, dataset.id)</li>
                 </ul>
             </div>
             <div class="col-md-6">

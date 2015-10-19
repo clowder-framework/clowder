@@ -7,8 +7,7 @@
         collectionsInside: List[models.Collection],
         rdfExported: Boolean,
         relatedSensors: List[(String,String)],
-        datasetSpaces: Option[List[ProjectSpace]],
-        otherSpaces: List[ProjectSpace])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+        datasetSpaces: Option[List[ProjectSpace]])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -93,7 +92,7 @@
                 </ul>
                 <div class="tab-content">
                     <div role="tabpanel" class="tab-pane fade in active" id="tab-home">
-                        @datasets.home(dataset, datasetSpaces, previews, otherSpaces)
+                        @datasets.home(dataset, datasetSpaces, previews)
                     </div>
                   <div role="tabpanel" class="tab-pane" id="tab-files">
                       <div id="add-file-btn">

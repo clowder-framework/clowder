@@ -339,7 +339,7 @@ POST           /api/dumpDatasetGroupings                                        
 # SPACES ENDPOINT
 # ----------------------------------------------------------------------
 GET            /api/spaces                                                              @api.Spaces.list()
-GET            /api/spaces/listSpacesCanAdd                                             @api.Spaces.listSpacesCanAdd
+GET            /api/spaces/listSpacesCanAdd                                             @api.Spaces.listSpacesCanAdd(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 GET            /api/spaces/:id                                                          @api.Spaces.get(id: UUID)
 POST           /api/spaces                                                              @api.Spaces.createSpace()
 DELETE         /api/spaces/:id                                                          @api.Spaces.removeSpace(id: UUID)

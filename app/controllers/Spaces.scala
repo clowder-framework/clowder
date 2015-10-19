@@ -501,7 +501,7 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
    */
    def list(when: String, date: String, limit: Int, mode: String, owner: Option[String], showAll: Boolean) = PrivateServerAction { implicit request =>
      implicit val user = request.user
-
+     Logger.debug("@@@@@@in cCCCCCCCCC!!!!!!!!!!!")
      val nextPage = (when == "a")
      val person = owner.flatMap(o => users.get(UUID(o)))
 

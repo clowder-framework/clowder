@@ -94,12 +94,29 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   @ApiOperation(value = "List spaces a user can add to",
     notes = "Retrieves a list of spaces that the user has permission to add to",
     responseClass = "None", httpMethod = "GET")
-  def listSpacesCanAdd() = UserAction { implicit request =>
+  def listSpacesCanAdd(title: Option[String], date: Option[String], limit: Int) = UserAction { implicit request =>
+    val list = (title, date) match {
+      case (Some(t), Some(d)) => {
+        spaces.listAccess(d, true, limit, t, request.user, request.superAdmin)
+      }
+      case (Some(t), None) => {
+        spaces.listAccess(limit, t, request.user, request.superAdmin)
+      }
+      case (None, Some(d)) => {
+        spaces.listAccess(d, true, limit, request.user, request.superAdmin)
+      }
+      case (None, None) => {
+        spaces.listAccess(limit, request.user, request.superAdmin)
+      }
+    }
+
+    Logger.debug(list.map(s =>s.name+"  ").toString())
+
     var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
 
     val userSpaces = request.user match {
-      case Some(user) => user.spaceandrole.map(_.spaceId).flatMap(spaces.get(_))
-      case None => spaces.list()
+      case Some(user) => list.filter(s => user.spaceandrole.map(_.spaceId).contains(s.id))
+      case None => List.empty
     }
 
     implicit val user = request.user
@@ -110,6 +127,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         decodedSpaceList += Utils.decodeSpaceElements(aSpace)
       }
     }
+
     Ok(toJson(decodedSpaceList.toList.map(spaceToJson)))
   }
 

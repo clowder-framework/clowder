@@ -1,4 +1,4 @@
-@(resourceSpaces: Option[List[ProjectSpace]], resourceType: Symbol, resourceId: UUID, otherSpaces: List[ProjectSpace])(implicit user: Option[models.User])
+@(resourceSpaces: Option[List[ProjectSpace]], resourceType: Symbol, resourceId: UUID)(implicit user: Option[models.User])
 @import api.Permission
 <span id="spaces" >
 @if(user.isDefined) {
@@ -64,7 +64,7 @@ aria-labelledby="myModalLabel" aria-hidden="true">
             </div>
             <div class = "modal-body" style= "padding-left: 30px;">
 
-                @spaces.spaceAllocation(resourceId, resourceType, otherSpaces, resourceSpaces)
+                @spaces.spaceAllocation(resourceId, resourceType,  resourceSpaces)
             </div>
             <div class ="modal-footer">
                 <button class ="btn btn-primary" id="spaces_add" title = "Update Spaces Information">
