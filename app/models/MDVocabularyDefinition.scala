@@ -50,7 +50,7 @@ object MDVocabularyDefinition {
           "type":"list",
           "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/sn/odm2"}"""),
         Json.parse("""{
-          "label":"SAS Variable Name (CSDMS / ODM2)",
+          "label":"SAS Variable Name",
           "uri":"http://ecgs.ncsa.illinois.edu/gsis/sas/vars",
           "type":"listjquery",
           "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/vars/list"}""")
