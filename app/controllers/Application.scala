@@ -88,7 +88,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         routes.javascript.Datasets.dataset,
         routes.javascript.Geostreams.list,
         routes.javascript.Collections.collection,
-        routes.javascript.RedirectUtility.authenticationRequiredMessage,
+        routes.javascript.RedirectUtility.authenticationRequiredMessage,        
         api.routes.javascript.Admin.removeAdmin,        
         api.routes.javascript.Comments.comment,
         api.routes.javascript.Comments.removeComment,
@@ -128,6 +128,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Previews.uploadMetadata,
         api.routes.javascript.Previews.download,
         api.routes.javascript.Previews.getMetadata,
+        api.routes.javascript.Search.searchMultimediaIndex,
         api.routes.javascript.Sections.add,
         api.routes.javascript.Sections.comment,
         api.routes.javascript.Sections.getTags,
@@ -157,7 +158,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Profile.viewProfileUUID,
         controllers.routes.javascript.Files.file,
         controllers.routes.javascript.Datasets.dataset,
-        controllers.routes.javascript.Collections.collection
+        controllers.routes.javascript.Collections.collection        
       )
     ).as(JSON) 
   }

@@ -139,7 +139,7 @@ GET            /notAuthorized                                                   
 
 
 # ----------------------------------------------------------------------
-# SEARCH
+# 
 # ----------------------------------------------------------------------
 GET            /search                                                                  @controllers.Search.search(query: String ?= "")
 GET            /multimediasearch                                                        @controllers.Search.multimediasearch
@@ -148,7 +148,7 @@ GET            /advanced                                                        
 GET            /SearchByText                                                            @controllers.Search.SearchByText(query: String ?= "")
 POST           /uploadquery                                                             @controllers.Search.uploadquery
 GET            /searchbyURL                                                             @controllers.Search.searchbyURL(query:String?="")
-GET            /searchbyfeature/:section_id                                             @controllers.Search.searchMultimediaIndex(section_id: UUID)
+GET            /searchbyfeature/:section_id                                             @controllers.Search.callSearchMultimediaIndexView(section_id: UUID)
 GET            /files/:id/similar                                                       @controllers.Search.findSimilarToExistingFile(id: UUID)
 GET            /queries/:id/similar                                                     @controllers.Search.findSimilarToQueryFile(id: UUID, typeToSearch:String, sectionsSelected:List[String] ?= List.empty )
 POST           /queries/similarWeightedIndexes                                          @controllers.Search.findSimilarWeightedIndexes()
@@ -414,6 +414,10 @@ POST           /api/sections/:id/tags/remove                                    
 POST           /api/sections/:id/tags/remove_all                                        @api.Sections.removeAllTags(id: UUID)
 DELETE         /api/sections/:id/tags                                                   @api.Sections.removeTags(id: UUID)
 
+# ----------------------------------------------------------------------
+# SEARCH ENDPOINT
+# ----------------------------------------------------------------------
+GET           /api/search/multimediasearch                                              @api.Search.searchMultimediaIndex(section_id: UUID)
 
 # ----------------------------------------------------------------------
 # GEOSTREAMS ENDPOINT

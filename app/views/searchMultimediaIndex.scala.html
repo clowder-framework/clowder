@@ -1,4 +1,4 @@
-@(preview: models.Preview, results: scala.collection.mutable.HashMap[String, scala.collection.mutable.ListBuffer[_root_.util.SearchResult]])
+@(section_id: UUID, preview: models.Preview)
 
 @import _root_.util.SearchResult
 
@@ -21,7 +21,29 @@
 </div>
 </div>
 
-<div class="row">
+<script>
+
+$(document).ready(function() {
+
+	var requestObject = jsRoutes.api.Search.searchMultimediaIndex('@section_id')
+	console.log(requestObject);
+	var request = $.ajax({
+		url: requestObject.url,
+	  	type: 'GET',	  	
+	  	dataType: "json"
+	});
+
+	console.log(request);
+
+	request.done(function (response, textStatus, jqXHR){
+		console.log(response);
+		console.log(jqXHR);
+	});
+});
+
+</script>
+
+@*<div class="row">
 	<div class="col-md-4 col-md-offset-4">
 		@results.map { case (key, list) =>
 			<h2>@key</h2>
@@ -38,5 +60,5 @@
 			}
 		}
 	</div>
-</div>
+</div>*@
 }

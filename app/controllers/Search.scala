@@ -170,7 +170,7 @@ class Search @Inject() (
   /**
    * Search MultimediaFeatures.
    */
-  def searchMultimediaIndex(section_id: UUID) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  /*def searchMultimediaIndex(section_id: UUID) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
     Logger.debug("Searching multimedia index " + section_id.stringify)
     // TODO handle multiple previews found
     val preview = previews.findBySectionId(section_id)(0)
@@ -227,6 +227,13 @@ class Search @Inject() (
       }
       case None => InternalServerError("feature not found")
     }
+  }*/
+
+  def callSearchMultimediaIndexView(section_id: UUID) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+    Logger.debug("Searching multimedia index " + section_id.stringify)
+    // TODO handle multiple previews found
+    val preview = previews.findBySectionId(section_id)(0)
+    Ok(views.html.searchMultimediaIndex(section_id, preview))
   }
 
   def advanced() = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
