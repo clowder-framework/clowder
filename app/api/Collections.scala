@@ -108,7 +108,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         case Some(collection) => {
           datasets.get(datasetId) match {
             case Some(dataset) => {
-              events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "remove_dataset_collection") 
+              events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "remove_dataset_collection")
             }
           }
         }

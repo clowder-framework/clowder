@@ -6,11 +6,11 @@
 
 <table id="datasTable">
     @datasets.map { dataset =>
-    <tr><td><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+    <tr><td><a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id' class ="dataset">@Html(dataset.name)</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
         <td><a href="#" style="font-style:italic;" onclick="removeFromDataset('@(dataset.id)','@(dataset.name)',event)">Detach</a></td></tr>
     }
 </table>
-
+<br/>
 @if(user.isDefined) {
     <div class="form-inline requiresLogin requiresLoginCommunity">
         <div class="input-group input-group-sm col-md-8">
@@ -39,7 +39,10 @@
             },
             processResults: function(data, page) {
                 return {results: data.filter(function(x) {
-                    return $.inArray(x.id, @Html(Json.stringify(Json.toJson(datasets.map(x=>x.id.toString()))))) == -1;
+                    var ids = $('.dataset').map(function() {
+                        return $(this).attr('id');
+                    });
+                    return $.inArray(x.id, ids) == -1;
                 }).map(function(x) {
                     return {
                         text: x.datasetname,
@@ -75,20 +78,22 @@
                 while(i <= tableLength && $("#datasTable tbody tr:nth-child("+i+") td:nth-child(1) a").text() < selectedName)
                     i++;
                 if(i <= tableLength)
-                    $("#datasTable tbody tr:nth-child("+i+")").before("<tr><td><a href='" + dsUrl + "'>"+selectedName+"</a>"
+                    $("#datasTable tbody tr:nth-child("+i+")").before("<tr><td><a href='" + dsUrl + "' id='"+ selectedId+ "' class ='dataset'>"+selectedName+"</a>"
                             + "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
                             );
                 else if(tableLength > 0)
-                    $("#datasTable tbody tr:nth-child("+(i-1)+")").after("<tr><td><a href='" + dsUrl + "'>"+selectedName+"</a>"
+                    $("#datasTable tbody tr:nth-child("+(i-1)+")").after("<tr><td><a href='" + dsUrl + "' id='"+ selectedId+ "' class ='dataset'>"+selectedName+"</a>"
                             + "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
                             );
                 else{
                     if($("#datasTable tbody").length == 0)
                         $("#datasTable").append("<tbody></tbody>");
-                    $("#datasTable tbody").append("<tr><td><a href='" + dsUrl + "'>"+selectedName+"</a>"
+                    $("#datasTable tbody").append("<tr><td><a href='" + dsUrl + "' id='"+ selectedId+ "' class ='dataset'>"+selectedName+"</a>"
                             + "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
                             );
                     }
+                $("#datasetAddSelect").select2("val", "");
+
             });
             
             request.fail(function (jqXHR, textStatus, errorThrown){
@@ -107,18 +112,6 @@
             request.done(function (response, textStatus, jqXHR){
                 console.log("Response " + response);
                 $(event.target.parentNode.parentNode).remove();
-                var i = 1;
-                var selectLength = $("#datasetAddSelect option").length;
-                while(i <= selectLength && $("#datasetAddSelect option:nth-child("+i+")").text() < datasetName)
-                    i++;
-                if(i <= selectLength)
-                    $("#datasetAddSelect option:nth-child("+i+")").before("<option value='"+datasetId+"'>"+datasetName+"</option>");
-                else if(selectLength > 0)
-                    $("#datasetAddSelect option:nth-child("+(i-1)+")").after("<option value='"+datasetId+"'>"+datasetName+"</option>");
-                else
-                    $("#datasetAddSelect").append("<option value='"+datasetId+"'>"+datasetName+"</option>");
-
-                $("#datasetAddSelect").combobox();
             });
             request.fail(function (jqXHR, textStatus, errorThrown){
             	console.error("The following error occured: "+textStatus, errorThrown);

@@ -15,14 +15,14 @@
             <div id="col_@collection.id" class="row bottom-padding">
                 <div class="col-md-2">
                     @if(!collection.thumbnail_id.isEmpty){
-                        <a href="@(routes.Collections.collection(collection.id))">
+                        <a href="@(routes.Collections.collection(collection.id))" >
                             <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.get)))" alt="Thumbnail of @Html(collection.name)">
                         </a>
                     }
                 </div>
                 <div class="col-md-10">
                     <div>
-                        <a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a>
+                        <a href="@(routes.Collections.collection(collection.id))" id='@collection.id' class ="collection" >@Html(collection.name)</a>
                     </div>
                     <div>
                         @if(collection.datasetCount == 1) {
@@ -33,7 +33,7 @@
                         }
                         <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
                         @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                           | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection( '@(collection.id)', '@(collection.name)', '@dataset.id', event)" title="Remove from collection">
+                           | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection( '@(collection.id)', '@(collection.name)', '@dataset.id',  event)" title="Remove from collection">
                                 Remove</a>
                         } else {
                             <a href="#" class="btn btn-link btn-xs disabled" onclick="removeCollection('@(collection.id)', '@(collection.name)', '@dataset.id', event)" title="Remove from collection">
@@ -84,7 +84,10 @@
             },
             processResults: function(data, page) {
                 return {results: data.filter(function(x) {
-                    return $.inArray(x.id, @Html(Json.stringify(Json.toJson(collectionsInside.map(x=>x.id.toString()))))) == -1;
+                    var ids = $('.collection').map(function() {
+                        return $(this).attr('id');
+                    });
+                    return $.inArray(x.id, ids) == -1;
                 }).map(function(x) {
                     return {
                         text: x.collectionname,
@@ -92,9 +95,9 @@
                     }
                 })};
             }
-        },
-        cache: true
+        }
     });
+
 
 </script>
 <script src="@routes.Assets.at("javascripts/datasets/collections.js")" type="text/javascript"></script>
