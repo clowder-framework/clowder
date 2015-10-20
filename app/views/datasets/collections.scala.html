@@ -48,17 +48,17 @@
 
 <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
 @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-    <form class="form-inline requiresLogin requiresLoginCommunity">
+    <div class="form-inline requiresLogin requiresLoginCommunity">
         <div class="input-group input-group-sm col-md-8">
             <select id="collectionAddSelect" class="form-control" style="width: 100%">
             </select>
             <span class="input-group-btn">
-                <button class="btn btn-default btn-large" id="addCollectionBtn" title="Add Dataset to Collection" onclick="addToCollection('@dataset.id')">
+                <a href="#" class="btn btn-default btn-large" id="addCollectionBtn" title="Add Dataset to Collection" onclick="addToCollection('@dataset.id')">
                     <span class="glyphicon glyphicon-plus"></span>
-                </button>
+                </a>
             </span>
         </div>
-    </form>
+    </div>
 }
 
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
@@ -84,7 +84,7 @@
             },
             processResults: function(data, page) {
                 return {results: data.filter(function(x) {
-                    return $.inArray(x.id, @Html(Json.stringify(Json.toJson(collectionsInside.map(x=>x.id.toString()))))) == -1
+                    return $.inArray(x.id, @Html(Json.stringify(Json.toJson(collectionsInside.map(x=>x.id.toString()))))) == -1;
                 }).map(function(x) {
                     return {
                         text: x.collectionname,
