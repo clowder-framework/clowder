@@ -32,6 +32,7 @@
 </style>
 
 <script>
+    // Assumption: the input list contains: <cat_short_name>;<cat_display_name> or <cat_short_name>:<var_name>, where <cat_display_name> contains no ":", and <var_name> contains no ";".
   $.widget( "custom.catcomplete", $.ui.autocomplete, {
     _create: function() {
       this._super();
@@ -44,21 +45,24 @@
       var dispCatMap = new Map();
       $.each( items, function( index, item ) {
         //console.log("in renderMenu: item: ", item);
-        var words = item.label.split(";");
-        if (words.length > 1) {
-          console.log("setting ", words[0], " to ", words[1]);
-          dispCatMap.set(words[0], words[1]);
+        var label = item.label;
+        var char_index = label.indexOf(";");
+        if (char_index > -1) {
+            var shortName = label.slice(0, char_index);
+            var displName = label.slice(char_index + 1);
+            console.log("Setting category name '" + shortName + "' to '" + displName + "'");
+            dispCatMap.set(shortName, displName);
         }
       });
       $.each( items, function( index, item ) {
         var li;
         // Each item from an original array of strings was converted to an object { label: "val1", value: "val1" }.
         //console.log("item: ", item);
-        var words = item.label.split(":");
-        if (words.length > 1) {
-          category = words[0];
-          // Display only the name part after the name space, but do not change the value.
-          item.label = words[1];
+        var label = item.label;
+        var char_index = label.indexOf(":");
+        if (char_index > -1) {
+            category = label.slice(0, char_index);
+            item.label = label.slice(char_index + 1);
         }
         if ( category != currentCategory ) {
           console.log("category changed from " + currentCategory + " to: " + category);
@@ -69,7 +73,8 @@
           ul.append( "<li class='ui-autocomplete-category'>" + displayed_cat_name + "</li>" );
           currentCategory = category;
         }
-        if (words.length > 1) {
+        // Display only the items containing ":".
+        if (char_index > -1) {
           li = that._renderItemData( ul, item );
         }
       });
