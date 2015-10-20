@@ -33,10 +33,10 @@
                         }
                         <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
                         @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                           | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection('@(collection.id)', '@dataset.id', event)" title="Remove from collection">
+                           | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection( '@(collection.id)', '@(collection.name)', '@dataset.id', event)" title="Remove from collection">
                                 Remove</a>
                         } else {
-                            <a href="#" class="btn btn-link btn-xs disabled" onclick="removeCollection('@(collection.id)', '@dataset.id', event)" title="Remove from collection">
+                            <a href="#" class="btn btn-link btn-xs disabled" onclick="removeCollection('@(collection.id)', '@(collection.name)', '@dataset.id', event)" title="Remove from collection">
                             Remove</a>
                         }
                     </div>
@@ -92,7 +92,8 @@
                     }
                 })};
             }
-        }
+        },
+        cache: true
     });
 
 </script>

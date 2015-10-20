@@ -12,17 +12,17 @@
 </table>
 
 @if(user.isDefined) {
-    <form class="form-inline requiresLogin requiresLoginCommunity">
+    <div class="form-inline requiresLogin requiresLoginCommunity">
         <div class="input-group input-group-sm col-md-8">
             <select id="datasetAddSelect" class="form-control" style="width: 100%">
             </select>
             <span class="input-group-btn">
-                <button class="btn btn-default btn-large" id="addDatasBtn" title="Add File to Dataset">
+                <a href="#" class="btn btn-default btn-large" id="addDatasBtn" title="Add File to Dataset">
                     <span class="glyphicon glyphicon-plus"></span>
-                </button>
+                </a>
             </span>
         </div>
-    </form>
+    </div>
 }
 
 <script>

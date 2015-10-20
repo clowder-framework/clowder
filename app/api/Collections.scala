@@ -139,25 +139,29 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     Ok(toJson(Map("status" -> "success")))
   }
 
+  private def list(title: Option[String], date: Option[String], limit: Int,  user: Option[User], showAll: Boolean):List[Collection] = {
+    (title, date) match {
+      case (Some(t), Some(d)) => {
+        collections.listAccess(d, true, limit, t, user, showAll)
+      }
+      case (Some(t), None) => {
+        collections.listAccess(limit, t, user, showAll)
+      }
+      case (None, Some(d)) => {
+        collections.listAccess(d, true, limit, user, showAll)
+      }
+      case (None, None) => {
+        collections.listAccess(limit, user, showAll)
+      }
+    }
+  }
+
   @ApiOperation(value = "List all collections",
       notes = "",
       responseClass = "None", httpMethod = "GET")
   def listCollections(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    val list = (title, date) match {
-      case (Some(t), Some(d)) => {
-        collections.listAccess(d, true, limit, t, request.user, request.superAdmin)
-      }
-      case (Some(t), None) => {
-        collections.listAccess(limit, t, request.user, request.superAdmin)
-      }
-      case (None, Some(d)) => {
-        collections.listAccess(d, true, limit, request.user, request.superAdmin)
-      }
-      case (None, None) => {
-        collections.listAccess(limit, request.user, request.superAdmin)
-      }
-    }
-    Ok(toJson(list))
+
+    Ok(toJson(list(title, date, limit, request.user, request.superAdmin)))
   }
 
 
@@ -165,22 +169,10 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     notes = "",
     responseClass = "None", httpMethod = "GET")
   def listCollectionsCanAdd(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    val list = (title, date) match {
-      case (Some(t), Some(d)) => {
-        collections.listAccess(d, true, limit, t, request.user, request.superAdmin)
-      }
-      case (Some(t), None) => {
-        collections.listAccess(limit, t, request.user, request.superAdmin)
-      }
-      case (None, Some(d)) => {
-        collections.listAccess(d, true, limit, request.user, request.superAdmin)
-      }
-      case (None, None) => {
-        collections.listAccess(limit, request.user, request.superAdmin)
-      }
-    }
+
     implicit val user = request.user
-    val listCanAdd = list.filter(c => Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.collection, c.id)))
+    val listCanAdd = list(title, date, limit, request.user, request.superAdmin)
+      .filter(c => Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.collection, c.id)))
     Ok(toJson(listCanAdd))
   }
 

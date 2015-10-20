@@ -20,6 +20,7 @@ function addToCollection(datasetId) {
         '<div class="col-md-10"><div><a href="'+jsRoutes.controllers.Collections.collection(selectedId).url+'">'+selectedName+'</a></div><div>' +
             o.datasetsInCollection+' datasets | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection(\''+selectedId+'\',\''+selectedName+'\', \''+datasetId+'\', event)" title="Remove from collection">' +
         ' Remove</a></div></div></div>');
+
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
@@ -33,7 +34,7 @@ function addToCollection(datasetId) {
     return false;
 }
 
-function removeCollection(collectionId, datasetId, event){
+function removeCollection(collectionId, collectionName, datasetId, event){
 
     var request = jsRoutes.api.Collections.removeDataset(collectionId, datasetId, "True").ajax({
         type: 'POST'
@@ -41,6 +42,7 @@ function removeCollection(collectionId, datasetId, event){
 
     request.done(function (response, textStatus, jqXHR){
         $('#col_'+collectionId).remove();
+
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
