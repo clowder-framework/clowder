@@ -42,13 +42,20 @@
       var currentCategory = "";
       var category = "";
       var dispCatMap = new Map();
-      dispCatMap.set("csn", "CSDMS Standard Name");
-      dispCatMap.set("odm2", "ODM2 Variable Name");
+      $.each( items, function( index, item ) {
+        //console.log("in renderMenu: item: ", item);
+        var words = item.label.split(";");
+        if (words.length > 1) {
+          console.log("setting ", words[0], " to ", words[1]);
+          dispCatMap.set(words[0], words[1]);
+        }
+      });
       $.each( items, function( index, item ) {
         var li;
         // Each item from an original array of strings was converted to an object { label: "val1", value: "val1" }.
+        //console.log("item: ", item);
         var words = item.label.split(":");
-        if (words.length > 0) {
+        if (words.length > 1) {
           category = words[0];
           // Display only the name part after the name space, but do not change the value.
           item.label = words[1];
@@ -62,7 +69,9 @@
           ul.append( "<li class='ui-autocomplete-category'>" + displayed_cat_name + "</li>" );
           currentCategory = category;
         }
-        li = that._renderItemData( ul, item );
+        if (words.length > 1) {
+          li = that._renderItemData( ul, item );
+        }
       });
     }
   });
@@ -168,7 +177,10 @@
                                 dataType: "jsonp",
                                 data: { term: request.term },
                                 success: function( data ) {
-                                    var searchspace = data;
+                                    console.log("data: ", data);
+                                    // The vars list is now in the "vars_data" part of the entire data, and the info on the groups are in the "cat_data" part. Filter the vars list, but not on the cat_data. Returns cat_data together with the filtering results.
+                                    //var searchspace = data;
+                                    var searchspace = data.vars_data;
                                     // Split by space.
                                     var searchwords = request.term.split(" ");
 
@@ -176,9 +188,12 @@
                                         searchspace = $.ui.autocomplete.filter(searchspace, this);
                                     });
 
+                                    // Now returns the entire filtered results without limiting the number.
                                     // Limit the results returned in case searchspace is large.
-                                    var mySlice = searchspace.slice(0, 20);
-                                    response(mySlice);
+                                    //var mySlice = searchspace.slice(0, 20);
+                                    //var res = data.cat_data.concat(mySlice);
+                                    var res = data.cat_data.concat(searchspace);
+                                    response(res);
                                 }
                             });
                         }
