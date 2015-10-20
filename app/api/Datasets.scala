@@ -102,6 +102,26 @@ class Datasets @Inject()(
 
 
   /**
+   * List all datasets outside a collection.
+   */
+  @ApiOperation(value = "List all datasets outside a collection",
+    notes = "Returns list of datasets and descriptions.",
+    responseClass = "None", httpMethod = "GET")
+  def listOutsideCollection(collectionId: UUID) = PrivateServerAction { implicit request =>
+    collections.get(collectionId) match {
+      case Some(collection) => {
+        val list = for (dataset <- datasets.listAccess(0, request.user, request.superAdmin); if (!datasets.isInCollection(dataset, collection)))
+          yield dataset
+        Ok(toJson(list))
+      }
+      case None => {
+        val list = datasets.listAccess(0, request.user, request.superAdmin)
+        Ok(toJson(list))
+      }
+    }
+  }
+
+  /**
    * Create new dataset
    */
   @ApiOperation(value = "Create new dataset",
