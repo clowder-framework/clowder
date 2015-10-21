@@ -232,7 +232,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           collection("collections").save(c, WriteConcern.Safe)
 
           datasets.foreach {d =>
-            collection("datasets").update(MongoDBObject("_id" -> d.asInstanceOf[DBObject].get("_id")), $push("collections" -> c._id.toString))
+            if (c._id.isDefined) {
+              collection("datasets").update(MongoDBObject("_id" -> d.asInstanceOf[DBObject].get("_id")), $addToSet("collections" -> c._id.get.toString))
+            }
           }
         }
         appConfig.addPropertyValue("mongodb.updates", "removed-datasets-collection")
