@@ -77,7 +77,7 @@
         allowClear: true,
         ajax: {
             url: function(params) {
-                return jsRoutes.api.Collections.listCollectionsCanAdd(params.term, null, 10).url;
+                return jsRoutes.api.Collections.list(params.term, null, 10).url;
             },
             data: function(params) {
                 return { title: params.term };
