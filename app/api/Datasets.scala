@@ -57,6 +57,24 @@ class Datasets @Inject()(
   spaces: SpaceService,
   userService: UserService) extends ApiController {
 
+
+  private def listDataset(title: Option[String], date: Option[String], limit: Int,  user: Option[User], showAll: Boolean):List[Dataset] = {
+    (title, date) match {
+      case (Some(t), Some(d)) => {
+        datasets.listAccess(d, true, limit, t, user, showAll)
+      }
+      case (Some(t), None) => {
+        datasets.listAccess(limit, t, user, showAll)
+      }
+      case (None, Some(d)) => {
+        datasets.listAccess(d, true, limit, user, showAll)
+      }
+      case (None, None) => {
+        datasets.listAccess(limit, user, showAll)
+      }
+    }
+  }
+
   /**
    * List all datasets.
    */
@@ -64,39 +82,43 @@ class Datasets @Inject()(
     notes = "Returns list of datasets and descriptions.",
     responseClass = "None", httpMethod = "GET")
   def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    val list = (title, date) match {
-      case (Some(t), Some(d)) => {
-        datasets.listAccess(d, true, limit, t, request.user, request.superAdmin)
-      }
-      case (Some(t), None) => {
-        datasets.listAccess(limit, t, request.user, request.superAdmin)
-      }
-      case (None, Some(d)) => {
-        datasets.listAccess(d, true, limit, request.user, request.superAdmin)
-      }
-      case (None, None) => {
-        datasets.listAccess(limit, request.user, request.superAdmin)
-      }
-    }
-    Ok(toJson(list))
+    Ok(toJson(listDataset(title, date, limit, request.user, request.superAdmin)))
+  }
+
+
+
+  /**
+   * List all datasets user can add resources(mostly files).
+   */
+  @ApiOperation(value = "List all datasets",
+    notes = "Returns list of datasets and descriptions.",
+    responseClass = "None", httpMethod = "GET")
+  def listDatasetsCanAdd(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+    implicit val user = request.user
+    val listCanAdd = listDataset(title, date, limit, request.user, request.superAdmin)
+      .filter(d => Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.dataset, d.id)))
+    Ok(toJson(listCanAdd))
   }
 
 
   /**
    * List all datasets outside a collection.
    */
+  @ApiOperation(value = "List all datasets outside a collection",
+    notes = "Returns list of datasets and descriptions.",
+    responseClass = "None", httpMethod = "GET")
   def listOutsideCollection(collectionId: UUID) = PrivateServerAction { implicit request =>
-      collections.get(collectionId) match {
-        case Some(collection) => {
-          val list = for (dataset <- datasets.listAccess(0, request.user, request.superAdmin); if (!datasets.isInCollection(dataset, collection)))
-            yield dataset
-          Ok(toJson(list))
-        }
-        case None => {
-          val list = datasets.listAccess(0, request.user, request.superAdmin)
-          Ok(toJson(list))
-        }
+    collections.get(collectionId) match {
+      case Some(collection) => {
+        val list = for (dataset <- datasets.listAccess(0, request.user, request.superAdmin); if (!datasets.isInCollection(dataset, collection)))
+          yield dataset
+        Ok(toJson(list))
       }
+      case None => {
+        val list = datasets.listAccess(0, request.user, request.superAdmin)
+        Ok(toJson(list))
+      }
+    }
   }
 
   /**

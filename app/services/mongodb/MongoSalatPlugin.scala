@@ -223,7 +223,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   private def updateMongoRemoveDatasetCollection {
     val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
-    if (!appConfig.hasPropertyValue("mongodb.updates", "removed-datasets-collectin")) {
+    if (!appConfig.hasPropertyValue("mongodb.updates", "removed-datasets-collection")) {
       if (System.getProperty("MONGOUPDATE") != null) {
         collection("collections").foreach {c =>
           val datasets = c.getAsOrElse[MongoDBList]("datasets", MongoDBList.empty)
@@ -235,7 +235,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
             collection("datasets").update(MongoDBObject("_id" -> d.asInstanceOf[DBObject].get("_id")), $push("collections" -> c._id.toString))
           }
         }
-        appConfig.addPropertyValue("mongodb.updates", "removed-datasets-collectin")
+        appConfig.addPropertyValue("mongodb.updates", "removed-datasets-collection")
       } else {
         Logger.warn("[MongoDBUpdate] : Missing fix to remove datasets from collection.")
       }

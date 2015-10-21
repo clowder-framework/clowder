@@ -18,7 +18,7 @@ case class Collection(
   followers: List[UUID] = List.empty)
 
 object Collection {
-  implicit val datasetWrites = new Writes[Collection] {
+  implicit val collectionWrites = new Writes[Collection] {
     def writes(collection: Collection): JsValue = {
       val collectionThumbnail = if(collection.thumbnail_id.isEmpty) {
         "None"
