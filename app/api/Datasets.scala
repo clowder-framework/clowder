@@ -59,34 +59,27 @@ class Datasets @Inject()(
 
 
   /**
-   * Generic function to call the right method to return a list of datasets. This will allow to search for
-   * specific datasets if date and/or title are given.
-   */
-  private def listDataset(title: Option[String], date: Option[String], limit: Int,  user: Option[User], showAll: Boolean):List[Dataset] = {
-    (title, date) match {
-      case (Some(t), Some(d)) => {
-        datasets.listAccess(d, true, limit, t, user, showAll)
-      }
-      case (Some(t), None) => {
-        datasets.listAccess(limit, t, user, showAll)
-      }
-      case (None, Some(d)) => {
-        datasets.listAccess(d, true, limit, user, showAll)
-      }
-      case (None, None) => {
-        datasets.listAccess(limit, user, showAll)
-      }
-    }
-  }
-
-  /**
    * List all datasets.
    */
   @ApiOperation(value = "List all datasets",
     notes = "Returns list of datasets and descriptions.",
     responseClass = "None", httpMethod = "GET")
   def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(listDataset(title, date, limit, request.user, request.superAdmin)))
+    val list = (title, date) match {
+      case (Some(t), Some(d)) => {
+        datasets.listAccess(d, true, limit, t, request.user, request.superAdmin)
+      }
+      case (Some(t), None) => {
+        datasets.listAccess(limit, t, request.user, request.superAdmin)
+      }
+      case (None, Some(d)) => {
+        datasets.listAccess(d, true, limit, request.user, request.superAdmin)
+      }
+      case (None, None) => {
+        datasets.listAccess(limit, request.user, request.superAdmin)
+      }
+    }
+    Ok(toJson(list))
   }
 
   /**
