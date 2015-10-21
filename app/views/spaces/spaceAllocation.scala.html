@@ -40,7 +40,7 @@
 
     $(document).ready(function() {
 
-        var request = jsRoutes.api.Spaces.listSpacesCanAdd(null, null, 10).ajax({
+        var request = jsRoutes.api.Spaces.list(null, null, 10).ajax({
             type: 'GET',
             contentType : "application/json"
         });
