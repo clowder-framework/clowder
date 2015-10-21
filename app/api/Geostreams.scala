@@ -1521,7 +1521,7 @@ object Geostreams extends ApiController {
           val jsonFile = new File(file.getAbsolutePath + ".json")
           if (jsonFile.exists()) {
             val data = Json.parse(Source.fromFile(jsonFile).mkString)
-            Parsers.parseJsValues(data.\("sensor_id"), data.\("stream_id")) match {
+            (Parsers.parseString(data.\("sensor_id")), Parsers.parseString(data.\("stream_id"))) match {
               case (sensor_value, stream_value) =>
                 if (sensor_id.isDefined && !stream_id.isDefined) {
                   if (sensors.contains(sensor_value) || streams.contains(stream_value)) {
