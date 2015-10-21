@@ -258,9 +258,14 @@ class MongoDBDatasetService @Inject() (
   def getFileId(datasetId: UUID, filename: String): Option[UUID] = {
     get(datasetId) match {
       case Some(dataset) => {
-        for (file <- dataset.files) {
-          if (file.filename.equals(filename)) {
-            return Some(file.id)
+        for (fileId <- dataset.files) {
+          files.get(fileId) match {
+            case Some(file) => {
+              if(file.filename.equals(filename)) {
+                return Some(fileId)
+              }
+            }
+            case None => Logger.debug(s"Error getting file $fileId")
           }
         }
         Logger.error("File does not exist in dataset" + datasetId); return None
@@ -429,7 +434,7 @@ class MongoDBDatasetService @Inject() (
     get(datasetId) match {
       case Some(dataset) => {
         val filesInDataset = dataset.files map {
-          f => files.get(f.id).getOrElse(None)
+          f => files.get(f).getOrElse(None)
         }
         for (file <- filesInDataset) {
           if (file.isInstanceOf[models.File]) {
@@ -450,7 +455,7 @@ class MongoDBDatasetService @Inject() (
     get(datasetId) match {
       case Some(dataset) => {
         // TODO cleanup
-        val filesInDataset = dataset.files.map(f => files.get(f.id).getOrElse(None))
+        val filesInDataset = dataset.files.map(f => files.get(f).getOrElse(None))
         for (file <- filesInDataset) {
           if (file.isInstanceOf[File]) {
             val theFile = file.asInstanceOf[File]
@@ -467,11 +472,11 @@ class MongoDBDatasetService @Inject() (
   }
 
   def findOneByFileId(file_id: UUID): Option[Dataset] = {
-    Dataset.dao.findOne(MongoDBObject("files._id" -> new ObjectId(file_id.stringify)))
+    Dataset.dao.findOne(MongoDBObject("files" -> new ObjectId(file_id.stringify)))
   }
 
   def findByFileId(file_id: UUID): List[Dataset] = {
-    Dataset.dao.find(MongoDBObject("files._id" -> new ObjectId(file_id.stringify))).toList
+    Dataset.dao.find(MongoDBObject("files" -> new ObjectId(file_id.stringify))).toList
   }
 
   def findNotContainingFile(file_id: UUID): List[Dataset] = {
@@ -929,10 +934,7 @@ class MongoDBDatasetService @Inject() (
   }
 
   def addFile(datasetId: UUID, file: File) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $addToSet("files" -> FileDAO.toDBObject(file)), false, false, WriteConcern.Safe)
-    if (!file.xmlMetadata.isEmpty) {
-      addXMLMetadata(datasetId, file.id, getXMLMetadataJSON(file.id))
-    }
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $addToSet("files" -> new ObjectId(file.id.stringify)), false, false, WriteConcern.Safe)
   }
 
   def addCollection(datasetId: UUID, collectionId: UUID) {
@@ -944,7 +946,7 @@ class MongoDBDatasetService @Inject() (
   }
 
   def removeFile(datasetId: UUID, fileId: UUID) {
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("files" -> MongoDBObject("_id" -> new ObjectId(fileId.stringify))), false, false, WriteConcern.Safe)
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("files" -> new ObjectId(fileId.stringify)), false, false, WriteConcern.Safe)
     removeXMLMetadata(datasetId, fileId)
   }
 
@@ -953,7 +955,7 @@ class MongoDBDatasetService @Inject() (
       case Some(dataset) => {
         val filesInDataset = dataset.files map {
           f => {
-            files.get(f.id).getOrElse {
+            files.get(f).getOrElse {
               None
             }
           }
@@ -981,9 +983,9 @@ class MongoDBDatasetService @Inject() (
           comments.removeComment(comment)
         }
         for (f <- dataset.files) {
-          var notTheDataset = for (currDataset <- findByFileId(f.id) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
+          var notTheDataset = for (currDataset <- findByFileId(f) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
           if (notTheDataset.size == 0)
-            files.removeFile(f.id)
+            files.removeFile(f)
         }
         for (follower <- dataset.followers) {
           userService.unfollowDataset(follower, id)
@@ -1005,7 +1007,7 @@ class MongoDBDatasetService @Inject() (
 
         val tagsJson = new JSONArray(tagListBuffer.toList)
 
-        Logger.debug("tagStr=" + tagsJson);
+        Logger.debug("tagStr=" + tagsJson)
 
         val commentsByDataset = for (comment <- comments.findCommentsByDatasetId(id, false)) yield {
           comment.text
@@ -1025,9 +1027,10 @@ class MongoDBDatasetService @Inject() (
 
         var fileDsId = ""
         var fileDsName = ""
-        for(file <- dataset.files){
-          fileDsId = fileDsId + file.id.stringify + "  "
-          fileDsName = fileDsName + file.filename + "  "
+        for(fileId <- dataset.files){
+          fileDsId = fileDsId + fileId.stringify + "  "
+          files.get(fileId).foreach(file =>  fileDsName = fileDsName + file.filename + "  ")
+
         }
 
         var dsCollsId = ""
@@ -1167,8 +1170,10 @@ class MongoDBDatasetService @Inject() (
 				  groupingFile.getParentFile().mkdirs()
 				  
 				  val filePrintStream =  new PrintStream(groupingFile)
-				  for(file <- dataset.files){
-				    filePrintStream.println("id:"+file.id.toString+" "+"filename:"+file.filename)
+				  for(fileId <- dataset.files){
+            files.get(fileId).foreach(file =>
+				      filePrintStream.println("id:"+file.id.toString+" "+"filename:"+file.filename)
+            )
 				  }
 				  filePrintStream.close()
 				  

@@ -141,6 +141,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   def updateDatabase() {
     val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
+    //Change Files in datasets from List[File] to List[UUID]
+    updateReplaceFilesInDataset
     // migrate users to new model
     if (!appConfig.hasPropertyValue("mongodb.updates", "fixing-typehint-users")) {
       if (System.getProperty("MONGOUPDATE") != null) {
@@ -203,4 +205,25 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       }
     }
   }
+
+  private def updateReplaceFilesInDataset{
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", "replace-dataset-files-with-id")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        collection("datasets").foreach { ds =>
+          val files = ds.getAsOrElse[MongoDBList]("files", MongoDBList.empty)
+          ds.removeField("files")
+          val fileIds = files.map(file => new ObjectId(file.asInstanceOf[BasicDBObject].get("_id").toString)).toList
+          ds.put("files", fileIds)
+          collection("datasets").save(ds, WriteConcern.Safe)
+
+        }
+      }
+      appConfig.addPropertyValue("mongodb.updates", "replace-dataset-files-with-id")
+    } else {
+      Logger.warn("[MongoDBUpdate : Missing fix to replace the files in the dataset with UUIDs")
+    }
+  }
+
 }

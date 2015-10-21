@@ -460,10 +460,16 @@ class Datasets @Inject()(
   def datasetFilesGetIdByDatasetAndFilename(datasetId: UUID, filename: String): Option[String] = {
     datasets.get(datasetId) match {
       case Some(dataset) => {
-        for (file <- dataset.files) {
-          if (file.filename.equals(filename)) {
-            return Some(file.id.toString)
+        for (fileId <- dataset.files) {
+          files.get(fileId) match {
+            case Some(file) => {
+                if (file.filename.equals(filename)) {
+                  return Some(file.id.toString)
+                }
+            }
+            case None =>  Logger.debug(s"Error getting file $fileId.")
           }
+
         }
         Logger.error(s"File does not exist in dataset $datasetId.")
         None
@@ -478,7 +484,10 @@ class Datasets @Inject()(
   def datasetFilesList(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       datasets.get(id) match {
         case Some(dataset) => {
-          val list = for (f <- dataset.files) yield jsonFile(f)
+          val list: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
+            case Some(file) => jsonFile(file)
+            case None => Logger.debug(s"Error getting File $fileId")
+          }).asInstanceOf[List[JsValue]]
           Ok(toJson(list))
         }
         case None => Logger.error("Error getting dataset" + id); InternalServerError
@@ -1123,7 +1132,7 @@ class Datasets @Inject()(
   def isBeingProcessed(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       datasets.get(id) match {
         case Some(dataset) => {
-          val filesInDataset = dataset.files map {f => files.get(f.id).get}
+          val filesInDataset:List[File] = dataset.files.map{f => files.get(f).foreach(file => file)}.asInstanceOf[List[File]]
 
           var isActivity = "false"
           try {
@@ -1180,11 +1189,11 @@ class Datasets @Inject()(
   def getPreviews(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       datasets.get(id) match {
         case Some(dataset) => {
-          val innerFiles = dataset.files map {f => files.get(f.id).get}
-          val datasetWithFiles = dataset.copy(files = innerFiles)
+          val datasetWithFiles = dataset.copy(files = dataset.files)
+          val datasetFiles = datasetWithFiles.files.map {f => files.get(f).foreach(file => file)}.asInstanceOf[List[File]]
           val previewers = Previewers.findPreviewers
           //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
-          val previewslist = for (f <- datasetWithFiles.files; if (f.showPreviews.equals("DatasetLevel"))) yield {
+          val previewslist = for (f <- datasetFiles; if (f.showPreviews.equals("DatasetLevel"))) yield {
             val pvf = for (p <- previewers; pv <- f.previews; if (p.contentType.contains(pv.contentType))) yield {
               (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
             }
@@ -1228,7 +1237,7 @@ class Datasets @Inject()(
           datasets.get(id) match{
               case Some(dataset) => {                  
                   for (f <- dataset.files) {                      
-                    detachFileHelper(dataset.id, f.id, dataset, request.user)
+                    detachFileHelper(dataset.id, f, dataset, request.user)
                   }
             	  deleteDatasetHelper(dataset.id, request)
             	  Ok(toJson(Map("status" -> "success")))
@@ -1263,7 +1272,7 @@ class Datasets @Inject()(
           }
           
           for(file <- dataset.files)
-        	  files.index(file.id)
+        	  files.index(file)
                     
           current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Dataset","removed",dataset.id.stringify, dataset.name)}
           Ok(toJson(Map("status"->"success")))

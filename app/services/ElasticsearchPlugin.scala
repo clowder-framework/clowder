@@ -21,11 +21,6 @@ import org.elasticsearch.action.admin.indices.create.CreateIndexRequest
 /**
  * Elasticsearch plugin.
  *
- * @author Luigi Marini
- * @author Smruti Padhy
- * @author Rob Kooper
- * @authhor Constantinos Sophocleous
- *
  */
 class ElasticsearchPlugin(application: Application) extends Plugin {
   val comments: CommentService = DI.injector.getInstance(classOf[CommentService])
@@ -241,12 +236,18 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     var fileDsId = ""
     var fileDsName = ""
-    for (file <- dataset.files) {
-      if (recursive) {
-        index(file)
+    for (fileId <- dataset.files) {
+      files.get(fileId) match {
+        case Some(f) => {
+          if (recursive) {
+            index(f)
+          }
+          fileDsId = fileDsId + f.id.stringify + "  "
+          fileDsName = fileDsName + f.filename + "  "
+        }
+        case None => Logger.debug(s"Error getting file $fileId")
+
       }
-      fileDsId = fileDsId + file.id.stringify + "  "
-      fileDsName = fileDsName + file.filename + "  "
     }
 
     var dsCollsId = ""

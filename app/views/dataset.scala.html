@@ -9,7 +9,8 @@
         rdfExported: Boolean,
         relatedSensors: List[(String,String)],
         datasetSpaces: Option[List[ProjectSpace]],
-        otherSpaces: List[ProjectSpace])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+        otherSpaces: List[ProjectSpace],
+        fileList: List[File])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -111,7 +112,7 @@
                           </a>
                       }
                       </div>
-                      @files.grid(dataset.files, dataset.id)
+                      @files.grid(fileList, dataset.id)
                   </div>
                   <div role="tabpanel" class="tab-pane fade" id="tab-comments">
                       <!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->
@@ -136,7 +137,7 @@
 
 		<!-- right column -->
 		<div class="col-md-4 col-left-border">
-            @datasets.tags(dataset, filesTags)
+            @datasets.tags(dataset, fileList, filesTags)
             @datasets.collections(dataset, collectionsInside, collectionsOutside)
             @if(user.isDefined) {
                 @datasets.userLink(dataset)

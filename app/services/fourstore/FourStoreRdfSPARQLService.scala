@@ -11,12 +11,12 @@ import java.util.ArrayList
 import org.apache.http.NameValuePair
 import org.apache.http.message.BasicNameValuePair
 import org.apache.http.client.entity.UrlEncodedFormEntity
-import services.{RdfSPARQLService, DI, DatasetService}
+import services.{FileService, RdfSPARQLService, DI, DatasetService}
 import javax.inject.{Inject, Singleton}
 import models.UUID
 
 @Singleton
-class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService) extends RdfSPARQLService {
+class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: FileService) extends RdfSPARQLService {
 
   def addFileToGraph(fileId: UUID, selectedGraph:String = "rdfXMLGraphName"): Null = {
     	
@@ -45,7 +45,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService) extends Rdf
     
         return null	
   }
-  
+
   def addDatasetToGraph(datasetId: UUID, selectedGraph: String = "rdfXMLGraphName"): Null = {
     
 		val queryUrl = play.api.Play.configuration.getString("rdfEndpoint").getOrElse("") + "/data/"
@@ -178,17 +178,27 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService) extends Rdf
           case Some(dataset)=> {
                 var filesString = "" 
 	            for(f <- dataset.files){
-				      var notTheDataset = for(currDataset<- datasets.findByFileId(f.id) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
+				      var notTheDataset = for(currDataset<- datasets.findByFileId(f) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
 				      if(notTheDataset.size == 0){
-				        if(f.filename.endsWith(".xml")){
-				        	removeFileFromGraphs(f.id, "rdfXMLGraphName")
-				        }
-				        removeFileFromGraphs(f.id, "rdfCommunityGraphName")
+                    files.get(f) match  {
+                      case Some(file) => {
+                        if (file.filename.endsWith(".xml")) {
+                          removeFileFromGraphs(f, "rdfXMLGraphName")
+                        }
+                        removeFileFromGraphs(f, "rdfCommunityGraphName")
+                      }
+                      case None => Logger.debug(s"Unabel to find file $f")
+                    }
 				      }
 				      else{
-				        if(f.filename.endsWith(".xml")){
-				        	detachFileFromDataset(f.id, datasetId, "rdfXMLGraphName")
-				        }
+                    files.get(f) match {
+                      case Some(file) => {
+                        if(file.filename.endsWith(".xml")){
+                          detachFileFromDataset(f, datasetId, "rdfXMLGraphName")
+                        }
+                      }
+                      case None => Logger.debug(s"Unabel to find file $f")
+                    }
 				      }
 				    }                
 	        

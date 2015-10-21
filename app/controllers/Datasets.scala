@@ -152,12 +152,12 @@ class Datasets @Inject()(
 
     val commentMap = datasetList.map { dataset =>
       var allComments = comments.findCommentsByDatasetId(dataset.id)
-      dataset.files.map { file =>
-        allComments ++= comments.findCommentsByFileId(file.id)
-        sections.findByFileId(file.id).map { section =>
-          allComments ++= comments.findCommentsBySectionId(section.id)
-        }
-      }
+//      dataset.files.map { file =>
+////        allComments ++= comments.findCommentsByFileId(file)
+////        sections.findByFileId(file).map { section =>
+////          allComments ++= comments.findCommentsBySectionId(section.id)
+////        }
+//      }
       dataset.id -> allComments.size
     }.toMap
 
@@ -227,9 +227,12 @@ class Datasets @Inject()(
         case Some(dataset) => {
 
           // get files info sorted by date
-          val filesInDataset = dataset.files.map(f => files.get(f.id).get).sortBy(_.uploadDate)
+          val filesInDataset = dataset.files.map(f => files.get(f) match {
+            case Some(file) => file
+            case None => Logger.debug(s"Unable to find file $f")
+          }).asInstanceOf[List[File]].sortBy(_.uploadDate)
 
-          var datasetWithFiles = dataset.copy(files = filesInDataset)
+          var datasetWithFiles = dataset.copy(files = filesInDataset.map(_.id))
           datasetWithFiles = Utils.decodeDatasetElements(datasetWithFiles)
 
           val filteredPreviewers = Previewers.findDatasetPreviewers
@@ -311,9 +314,13 @@ class Datasets @Inject()(
             case None => List.empty
           }
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
+          val fileList: List[File] = dataset.files.map(fileId => files.get(fileId) match {
+            case Some(file) => file
+            case None => Logger.debug(s"Unable to find file $fileId")
+          }).asInstanceOf[List[File]]
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filesTags, filteredPreviewers.toList, metadata, userMetadata,
-            decodedCollectionsOutside.toList, decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), otherSpaces))
+            decodedCollectionsOutside.toList, decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), otherSpaces, fileList))
 
         }
         case None => {
@@ -414,7 +421,7 @@ class Datasets @Inject()(
                 }
               }
 
-              Logger.debug("Datset submit, new file - uploading file " + nameOfFile)
+              Logger.debug("Dataset submit, new file - uploading file " + nameOfFile)
 
               // store file
               Logger.info("Adding file" + identity)
