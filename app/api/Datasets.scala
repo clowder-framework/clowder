@@ -58,6 +58,10 @@ class Datasets @Inject()(
   userService: UserService) extends ApiController {
 
 
+  /**
+   * Generic function to call the right method to return a list of datasets. This will allow to search for
+   * specific datasets if date and/or title are given.
+   */
   private def listDataset(title: Option[String], date: Option[String], limit: Int,  user: Option[User], showAll: Boolean):List[Dataset] = {
     (title, date) match {
       case (Some(t), Some(d)) => {
@@ -84,22 +88,6 @@ class Datasets @Inject()(
   def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
     Ok(toJson(listDataset(title, date, limit, request.user, request.superAdmin)))
   }
-
-
-
-  /**
-   * List all datasets user can add resources(mostly files).
-   */
-  @ApiOperation(value = "List all datasets",
-    notes = "Returns list of datasets and descriptions.",
-    responseClass = "None", httpMethod = "GET")
-  def listDatasetsCanAdd(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    implicit val user = request.user
-    val listCanAdd = listDataset(title, date, limit, request.user, request.superAdmin)
-      .filter(d => Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.dataset, d.id)))
-    Ok(toJson(listCanAdd))
-  }
-
 
   /**
    * List all datasets outside a collection.
