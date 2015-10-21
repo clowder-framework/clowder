@@ -111,6 +111,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("dtsrequests").ensureIndex(MongoDBObject("file_id" -> -1))
     collection("versus.descriptors").ensureIndex(MongoDBObject("fileId" -> 1))
 
+    collection("multimedia.distances").ensureIndex(MongoDBObject("distance" -> 1))
+
   }
 
   override def onStop() {
