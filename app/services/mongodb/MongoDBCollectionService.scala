@@ -167,7 +167,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       case None => MongoDBObject()
     }
     val filterSpace = space match {
-      case Some(s) => MongoDBObject()
+      case Some(s) => MongoDBObject("spaces" -> new ObjectId(s))
       case None => MongoDBObject()
     }
     val filterTitle = titleSearch match {
