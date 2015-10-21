@@ -1,5 +1,6 @@
 package services
 
+import api.Permission.Permission
 import models.{User, UUID, Dataset, Collection}
 import scala.util.Try
 
@@ -44,6 +45,11 @@ trait CollectionService {
    * Return a list of collections the user has access to.
    */
   def listAccess(limit: Integer, title: String, user: Option[User], showAll: Boolean): List[Collection]
+
+  /**
+   * Return a list of collections the user has access to with specific permissions.
+   */
+  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection]
 
   /**
    * Return a list of collections the user has access to starting at a specific date.

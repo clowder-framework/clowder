@@ -3,6 +3,7 @@
  */
 package services.mongodb
 
+import api.Permission.Permission
 import com.mongodb.casbah.WriteConcern
 import models.{User, UUID, Collection, Dataset}
 import com.mongodb.casbah.commons.MongoDBObject
@@ -80,6 +81,13 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   }
 
   /**
+   * Return a list of collections the user has access to.
+   */
+  def listAccess(limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection] = {
+    list(None, false, limit, Some(title), None, permissions, user, showAll, None)
+  }
+
+  /**
    * Return a list of collections the user has access to starting at a specific date.
    */
   def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean): List[Collection] = {
@@ -118,7 +126,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
    * Return count of the requested collections
    */
   private def count(date: Option[String], nextPage: Boolean, title: Option[String], space: Option[String], user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
-    val (filter, _) = filteredQuery(date, nextPage, title, space, user, showAll, owner)
+    val (filter, _) = filteredQuery(date, nextPage, title, space, Set.empty[Permission],user, showAll, owner)
     Collection.count(filter)
   }
 
@@ -126,7 +134,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
    * Return a list of the requested collections
    */
   private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], space: Option[String], user: Option[User], showAll: Boolean, owner: Option[User]): List[Collection] = {
-    val (filter, sort) = filteredQuery(date, nextPage, title, space, user, showAll, owner)
+    list(date, nextPage, limit, title, space, Set.empty[Permission], user, showAll, owner)
+  }
+
+  private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): List[Collection] = {
+    val (filter, sort) = filteredQuery(date, nextPage, title, space, permissions, user, showAll, owner)
     println("db.collections.find(" + MongoUtils.mongoQuery(filter) + ").sort(" + MongoUtils.mongoQuery(sort) + ")")
     if (date.isEmpty || nextPage) {
       Collection.find(filter).sort(sort).limit(limit).toList
@@ -138,7 +150,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   /**
    * Monster function, does all the work. Will create a filters and sorts based on the given parameters
    */
-  private def filteredQuery(date: Option[String], nextPage: Boolean,  titleSearch: Option[String], space: Option[String], user: Option[User], showAll: Boolean, owner: Option[User]):(DBObject, DBObject) = {
+  private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]):(DBObject, DBObject) = {
     // filter =
     // - owner   == show collections owned by owner that user can see
     // - space   == show all collections in space
@@ -153,10 +165,12 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     } else {
       user match {
         case Some(u) => {
+          val pstring = permissions.map(_.toString)
+          val okspaces = u.spaceandrole.filter(x => pstring.isEmpty || x.role.permissions.intersect(pstring).nonEmpty)
           if (user == owner) {
-            $or(public, emptySpaces, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+            $or(public, emptySpaces, ("spaces" $in okspaces.map(x => new ObjectId(x.spaceId.stringify))))
           } else {
-            $or(public, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+            $or(public, ("spaces" $in okspaces.map(x => new ObjectId(x.spaceId.stringify))))
           }
         }
         case None => MongoDBObject()

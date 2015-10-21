@@ -1,5 +1,6 @@
 package api
 
+import api.Permission.Permission
 import play.api.Logger
 import play.api.Play.current
 import models._
@@ -8,6 +9,7 @@ import play.api.libs.json._
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
 import javax.inject.{ Singleton, Inject }
+import scala.collection.immutable.HashSet
 import scala.util.{Try, Success, Failure}
 import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
@@ -148,7 +150,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         collections.listAccess(d, true, limit, t, request.user, request.superAdmin)
       }
       case (Some(t), None) => {
-        collections.listAccess(limit, t, request.user, request.superAdmin)
+        collections.listAccess(limit, t, Set[Permission](Permission.AddResourceToCollection), request.user, request.superAdmin)
       }
       case (None, Some(d)) => {
         collections.listAccess(d, true, limit, request.user, request.superAdmin)
