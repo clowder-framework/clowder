@@ -90,6 +90,7 @@ POST           /uploaddnd/:id                                                   
 #POST  	       /reactiveUpload					                                        @controllers.Files.reactiveUpload
 POST           /uploadDragDrop                                                          @controllers.Files.uploadDragDrop
 GET            /fileThumbnail/:id/blob                                                  @controllers.Files.thumbnail(id: UUID)
+GET            /file_by_section/:id                                                 	@controllers.Files.fileBySection(id: UUID)
 
 # ----------------------------------------------------------------------
 # DATASETS

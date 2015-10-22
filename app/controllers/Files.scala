@@ -1144,6 +1144,22 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
   	Ok(views.html.fileGeneralMetadataSearch()) 
   }
 
+  /**
+   * File by section.
+   */
+  def fileBySection(section_id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowFile)) {
+    request =>
+      sections.get(section_id) match {
+        case Some(section) => {
+          files.findOneByFileId(section.file_id) match {
+            case Some(file) => Redirect(routes.Files.file(file.id))
+            case None => InternalServerError("File not found")
+          }
+        }
+        case None => InternalServerError("Section not found")
+      }
+  }
+
   ///////////////////////////////////
   //
   //  def myPartHandler: BodyParsers.parse.Multipart.PartHandler[MultipartFormData.FilePart[Result]] = {

@@ -525,6 +525,10 @@ class MongoDBFileService @Inject() (
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("xmlMetadata" -> md), false, false, WriteConcern.Safe)
   }
 
+  def findOneByFileId(file_id: UUID): Option[File] = {
+    FileDAO.dao.findOne(MongoDBObject("_id" -> new ObjectId(file_id.stringify)))
+  }
+
 
   def findByTag(tag: String): List[File] = {
     FileDAO.find(MongoDBObject("tags.name" -> tag)).toList

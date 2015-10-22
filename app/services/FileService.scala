@@ -127,6 +127,8 @@ trait FileService {
 
   def addXMLMetadata(id: UUID, json: String)
 
+  def findOneByFileId(file_id: UUID): Option[File]
+
   def findByTag(tag: String): List[File]
 
   def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean): List[File]
