@@ -21,23 +21,47 @@
 </div>
 </div>
 
+<div id="descriptors"></div>
+
 <script>
 
 $(document).ready(function() {
 
-	var requestObject = jsRoutes.api.Search.searchMultimediaIndex('@section_id')
-	console.log(requestObject);
+	var objSearch = jsRoutes.api.Search.searchMultimediaIndex('@section_id')
 	var request = $.ajax({
-		url: requestObject.url,
-	  	type: 'GET',	  	
+		url: objSearch.url,
+	  	type: 'GET',
 	  	dataType: "json"
 	});
 
-	console.log(request);
+	request.done(function (response, textStatus, jqXHR){		
 
-	request.done(function (response, textStatus, jqXHR){
-		console.log(response);
-		console.log(jqXHR);
+		for (var descriptor in response) {
+
+			$("#descriptors").append(
+				"<div class='row'>" +
+					"<div id='" + descriptor + "' class='col-md-4 col-md-offset-4'>" +
+						"<h2>" + descriptor + "</h2>" + 
+					"</div>" +
+				"</div>");
+
+			for (var section in response[descriptor]) {
+
+				var section_id = response[descriptor][section]["section_id"];
+				var preview_id = response[descriptor][section]["preview_id"];
+				var distance = Number(response[descriptor][section]["distance"]).toFixed(4);				
+
+				$("#" + descriptor).append(
+					"<div class='row'>" + 
+						"<div class='col-md-12'>" +
+							"<a href='" + jsRoutes.controllers.Datasets.datasetBySection(section_id).url + " '>" +							
+				  				"<img src='" + jsRoutes.api.Previews.download(preview_id).url + "' class='img-thumbnail'></img>" +
+				    		"</a>" + 
+				  			"<p>Distance: " + distance.toString() + "</p>" +
+						"</div>" + 
+					"</div>");
+			}
+		}
 	});
 });
 
