@@ -116,7 +116,13 @@
         });
 
         request.done(function(response, textStatus, jqXH) {
-            updateSpacesEditLink(ids, names)
+            updateSpacesEditLink(ids, names);
+            if($('#spaces a').size() > 0) {
+                $('#collection-users').show();
+            } else
+            {
+                $('#collection-users').hide();
+            }
         });
 
         request.fail(function(jqHR, textStatus, errorThrown) {
@@ -136,7 +142,13 @@
         });
 
         request.done(function(response, textStatus, jqXH){
-            updateSpacesEditLink(ids, names)
+            updateSpacesEditLink(ids, names);
+            if($('#spaces a').size() > 0) {
+                $('#dataset-users').show();
+            } else
+            {
+                $('#dataset-users').hide();
+            }
         });
 
         request.fail(function(jqHR, textStatus, errorThrown){

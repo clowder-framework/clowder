@@ -99,6 +99,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
                   case Some(fdset) => {
                     followedDatasets = followedDatasets.++(List((fdset.id, fdset.name, fdset.description.substring(0, Math.min(maxDescLength, fdset.description.length())))))
                   }
+                  case None => Logger.error("Followed dataset not found")
                 }
               } else if (tidObject.objectType == "collection") {
                 var followedCollection = collections.get(tidObject.id)

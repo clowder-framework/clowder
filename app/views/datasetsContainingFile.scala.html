@@ -32,7 +32,12 @@
         allowClear: true,
         ajax: {
             url: function(params) {
-                return jsRoutes.api.Datasets.list(params.term, null, 10).url;
+             if(params.term){
+                return jsRoutes.api.Datasets.list(params.term, null, 5).url;
+             }else {
+                return jsRoutes.api.Datasets.list("", null, 5).url;
+             }
+
             },
             data: function(params) {
                 return { title: params.term };

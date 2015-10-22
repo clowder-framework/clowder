@@ -242,9 +242,7 @@ class Datasets @Inject()(
           val userMetadata = datasets.getUserMetadata(id)
           Logger.debug("User metadata: " + userMetadata.toString)
 
-          val collectionsOutside = collections.listOutsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
           val collectionsInside = collections.listInsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
-          var decodedCollectionsOutside = new ListBuffer[models.Collection]()
           var decodedCollectionsInside = new ListBuffer[models.Collection]()
           var filesTags = TreeSet.empty[String]
 

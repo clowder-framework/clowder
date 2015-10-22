@@ -1,5 +1,6 @@
 package services.cassandra
 
+import api.Permission.Permission
 import api.UserRequest
 import models._
 import services.DatasetService
@@ -67,7 +68,7 @@ class CassandraDataset extends DatasetService {
  /**
   * Return a list of datasets the user has access to.
   */
- def listAccess(limit: Integer, title: String, user: Option[User], superAdmin: Boolean): List[Dataset] = List.empty[Dataset]
+ def listAccess(limit: Integer, title: String, permissions: Set[Permission], user: Option[User], superAdmin: Boolean): List[Dataset] = List.empty[Dataset]
 
  /**
   * Return a list of datasets the user has access to starting at a specific date.

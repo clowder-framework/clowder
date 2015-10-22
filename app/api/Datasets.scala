@@ -4,6 +4,7 @@
 package api
 
 import java.util.Date
+import api.Permission.Permission
 import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
 import models._
 import play.api.Logger
@@ -70,7 +71,7 @@ class Datasets @Inject()(
         datasets.listAccess(d, true, limit, t, request.user, request.superAdmin)
       }
       case (Some(t), None) => {
-        datasets.listAccess(limit, t, request.user, request.superAdmin)
+        datasets.listAccess(limit, t, Set[Permission](Permission.AddResourceToDataset), request.user, request.superAdmin)
       }
       case (None, Some(d)) => {
         datasets.listAccess(d, true, limit, request.user, request.superAdmin)
@@ -85,9 +86,6 @@ class Datasets @Inject()(
   /**
    * List all datasets outside a collection.
    */
-  @ApiOperation(value = "List all datasets outside a collection",
-    notes = "Returns list of datasets and descriptions.",
-    responseClass = "None", httpMethod = "GET")
   def listOutsideCollection(collectionId: UUID) = PrivateServerAction { implicit request =>
     collections.get(collectionId) match {
       case Some(collection) => {

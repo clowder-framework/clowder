@@ -1,5 +1,6 @@
 package services
 
+import api.Permission.Permission
 import models._
 import play.api.libs.json.JsValue
 import com.mongodb.casbah.Imports._
@@ -65,7 +66,7 @@ trait DatasetService {
   /**
    * Return a list of datasets the user has access to.
    */
-  def listAccess(limit: Integer, title: String, user: Option[User], showAll: Boolean): List[Dataset]
+  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset]
 
   /**
    * Return a list of datasets the user has access to starting at a specific date.

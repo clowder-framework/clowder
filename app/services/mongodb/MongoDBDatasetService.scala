@@ -6,6 +6,7 @@ import java.util.{ArrayList, Date}
 import javax.inject.{Inject, Singleton}
 
 import Transformation.LidoToCidocConvertion
+import api.Permission.Permission
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
@@ -18,13 +19,9 @@ import org.json.JSONObject
 import org.bson.types.ObjectId
 import play.api.Logger
 import play.api.Play._
-import play.api.Play.configuration
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json._
 import services._
 import services.mongodb.MongoContext.context
 import util.{Formatters, Parsers}
-
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
@@ -120,8 +117,8 @@ class MongoDBDatasetService @Inject() (
   /**
    * Return a list of datasets the user has access to.
    */
-  def listAccess(limit: Integer, title: String, user: Option[User], showAll: Boolean): List[Dataset] = {
-    list(None, false, limit, Some(title), None, None, user, showAll, None)
+  def listAccess(limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset] = {
+    list(None, false, limit, Some(title), None, None, permissions, user, showAll, None)
   }
 
   /**
@@ -163,7 +160,7 @@ class MongoDBDatasetService @Inject() (
    * return count based on input
    */
   private def count(date: Option[String], nextPage: Boolean, title: Option[String], collection: Option[String], space: Option[String], user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
-    val (filter, _) = filteredQuery(date, nextPage, title, collection, space, user, showAll, owner)
+    val (filter, _) = filteredQuery(date, nextPage, title, collection, space, Set.empty[Permission], user, showAll, owner)
     Dataset.count(filter)
   }
 
@@ -172,7 +169,11 @@ class MongoDBDatasetService @Inject() (
    * return list based on input
    */
   private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], collection: Option[String], space: Option[String], user: Option[User], showAll: Boolean, owner: Option[User]): List[Dataset] = {
-    val (filter, sort) = filteredQuery(date, nextPage, title, collection, space, user, showAll, owner)
+    list(date, nextPage, limit, title, collection, space, Set.empty[Permission], user, showAll, owner)
+  }
+
+    private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], collection: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): List[Dataset] = {
+    val (filter, sort) = filteredQuery(date, nextPage, title, collection, space, permissions, user, showAll, owner)
     //println("db.datasets.find(" + MongoUtils.mongoQuery(filter) + ").sort(" + MongoUtils.mongoQuery(sort) + ").limit(" + limit + ")")
     if (date.isEmpty || nextPage) {
       Dataset.find(filter).sort(sort).limit(limit).toList
@@ -184,7 +185,7 @@ class MongoDBDatasetService @Inject() (
   /**
    * Monster function, does all the work. Will create a filters and sorts based on the given parameters
    */
-  private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], collection: Option[String], space: Option[String], user: Option[User], showAll: Boolean, owner: Option[User]): (DBObject, DBObject) = {
+  private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], collection: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): (DBObject, DBObject) = {
     // filter =
     // - owner   == show datasets owned by owner that user can see
     // - space   == show all datasets in space
@@ -199,10 +200,12 @@ class MongoDBDatasetService @Inject() (
     } else {
       user match {
         case Some(u) => {
+          val pstring = permissions.map(_.toString)
+          val okspaces = u.spaceandrole.filter(x => pstring.isEmpty || x.role.permissions.intersect(pstring).nonEmpty)
           if (user == owner) {
-            $or(public, emptySpaces, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+            $or(public, emptySpaces, ("spaces" $in okspaces.map(x => new ObjectId(x.spaceId.stringify))))
           } else {
-            $or(public, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+            $or(public, ("spaces" $in okspaces.map(x => new ObjectId(x.spaceId.stringify))))
           }
         }
         case None => public

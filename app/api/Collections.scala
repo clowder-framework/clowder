@@ -70,7 +70,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           datasetsInCollection = collection.datasetCount
         }
       }
-      //datasetsInCollection is the numbe of datasets in this collection
+      //datasetsInCollection is the number of datasets in this collection
       Ok(Json.obj("datasetsInCollection" -> Json.toJson(datasetsInCollection) ))
     }
       case Failure(t) => InternalServerError

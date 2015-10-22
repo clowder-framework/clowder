@@ -359,8 +359,6 @@ GET            /api/collections                                                 
 POST           /api/collections                                                         @api.Collections.createCollection()
 # deprecrated
 GET            /api/collections/list                                                    @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
-# deprecrated
-GET            /api/collections/listCollectionsCanAdd                                   @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 POST           /api/collections/:id/follow                                              @api.Collections.follow(id: UUID, name: String)
 POST           /api/collections/:id/unfollow                                            @api.Collections.unfollow(id: UUID, name: String)
 GET            /api/collections/:coll_id/datasets                                       @api.Datasets.listInCollection(coll_id: UUID)
