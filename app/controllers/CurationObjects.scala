@@ -263,11 +263,15 @@ class CurationObjects @Inject()(
     val metadataJson = metadata.map {
       item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
     }
+    val creator = Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile.map(prof => prof.orcidID match {
+      case Some(oid)=> Json.toJson(oid);
+      case None => Json.toJson(hostIp + "/api/users/" + usr.id )
+    })))
     val aggregation = metadataJson.toMap ++ Map(
       "Identifier" -> Json.toJson(hostIp +"/spaces/curations/" + c.id),
       "@id" -> Json.toJson(hostUrl),
       "Title" -> Json.toJson(c.name),
-      "Creator" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile.map(prof => prof.orcidID.map(oid=> oid)))),
+      "Creator" -> creator,
       "similarTo" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id)
       )
     val valuetoSend = Json.obj(

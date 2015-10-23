@@ -51,10 +51,10 @@ class CurationObjects @Inject()(datasets: DatasetService,
               fl_md = fl_md ++ file.metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap
             }
 
-            val file_md_parsed = fl_md.map(
-              it => it._1 -> Json.toJson( it._2.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap.map(
-              item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
-              )))
+//            val file_md_parsed = fl_md.map(
+//              it => it._1 -> Json.toJson( it._2.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap.map(
+//              item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
+//              )))
             val metadata = file.userMetadata ++ file.xmlMetadata
             val fileMetadata = metadata.map {
               item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
@@ -74,7 +74,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "Is Version Of" -> Json.toJson(hostIp + "/files/" + file.id),
               "similarTo" -> Json.toJson(hostIp + "/api/files/" + file.id + "/blob")
             )
-            fileMetadata.toMap ++ file_md_parsed.toMap++ tempMap
+            fileMetadata.toMap ++ tempMap
           }
           val fileIds = c.files.map{file => file.id}
           var commentsByDataset = comments.findCommentsByDatasetId(c.datasets(0).id)
