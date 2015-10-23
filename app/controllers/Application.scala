@@ -2,6 +2,8 @@ package controllers
 
 import javax.inject.{Inject, Singleton}
 
+import api.Permission
+import api.Permission._
 import play.api.{Logger, Routes}
 import play.api.mvc.Action
 import services._
@@ -33,7 +35,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val datasetsCountAccess = datasets.countAccess(user, request.superAdmin)
     val filesCount = files.count()
     val collectionsCount = collections.count()
-    val collectionsCountAccess = collections.countAccess(user, request.superAdmin)
+    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.superAdmin)
     val spacesCount = spaces.count()
     val spacesCountAccess = spaces.countAccess(user, request.superAdmin)
     val usersCount = users.count();
@@ -142,6 +144,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Geostreams.updateSensorMetadata,
         api.routes.javascript.Geostreams.patchStreamMetadata,
         api.routes.javascript.Collections.list,
+        api.routes.javascript.Collections.listCanEdit,
         api.routes.javascript.Collections.attachPreview,
         api.routes.javascript.Collections.attachDataset,
         api.routes.javascript.Collections.removeDataset,

@@ -68,12 +68,7 @@
         allowClear: true,
         ajax: {
             url: function(params) {
-            if(params.term){
-                return jsRoutes.api.Collections.list(params.term, null, 5).url;
-            } else {
-                return jsRoutes.api.Collections.list("", null, 5).url;
-            }
-
+                return jsRoutes.api.Collections.listCanEdit(params.term, null, 5).url;
             },
             data: function(params) {
                 return { title: params.term };

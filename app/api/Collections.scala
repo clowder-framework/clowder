@@ -141,25 +141,38 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     Ok(toJson(Map("status" -> "success")))
   }
 
-  @ApiOperation(value = "List all collections",
-      notes = "",
-      responseClass = "None", httpMethod = "GET")
+  @ApiOperation(value = "List all collections the user can view",
+    notes = "This will check for Permission.ViewCollection",
+    responseClass = "None", multiValueResponse=true, httpMethod = "GET")
   def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    val list = (title, date) match {
+    Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)))
+  }
+
+  @ApiOperation(value = "List all collections the user can edit",
+    notes = "This will check for Permission.AddResourceToCollection and Permission.EditCollection",
+    responseClass = "None", httpMethod = "GET")
+  def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+    Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), request.user, request.superAdmin)))
+  }
+
+  /**
+   * Returns list of collections based on parameters and permissions.
+   */
+  private def lisCollections(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Collection] = {
+    (title, date) match {
       case (Some(t), Some(d)) => {
-        collections.listAccess(d, true, limit, t, request.user, request.superAdmin)
+        collections.listAccess(d, true, limit, t, permission, user, superAdmin)
       }
       case (Some(t), None) => {
-        collections.listAccess(limit, t, Set[Permission](Permission.AddResourceToCollection), request.user, request.superAdmin)
+        collections.listAccess(limit, t, permission, user, superAdmin)
       }
       case (None, Some(d)) => {
-        collections.listAccess(d, true, limit, request.user, request.superAdmin)
+        collections.listAccess(d, true, limit, permission, user, superAdmin)
       }
       case (None, None) => {
-        collections.listAccess(limit, request.user, request.superAdmin)
+        collections.listAccess(limit, permission, user, superAdmin)
       }
     }
-    Ok(toJson(list))
   }
 
   @ApiOperation(value = "Get a specific collection",
