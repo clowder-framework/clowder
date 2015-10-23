@@ -5,7 +5,6 @@ package services.mongodb
 
 import api.Permission
 import api.Permission.Permission
-import api.Permission.Permission
 import com.mongodb.casbah.WriteConcern
 import models.{User, UUID, Collection, Dataset}
 import com.mongodb.casbah.commons.MongoDBObject

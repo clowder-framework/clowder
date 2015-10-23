@@ -382,6 +382,7 @@ PUT            /api/collections/:coll_id/description                            
 # DATASETS ENDPOINT
 # ----------------------------------------------------------------------
 GET            /api/datasets                                                            @api.Datasets.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
+GET            /api/datasets/canEdit                                                    @api.Datasets.listCanEdit(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 POST           /api/datasets                                                            @api.Datasets.createDataset
 POST           /api/datasets/createempty                                                @api.Datasets.createEmptyDataset
 POST           /api/datasets/attachmultiple                                             @api.Datasets.attachMultipleFiles
