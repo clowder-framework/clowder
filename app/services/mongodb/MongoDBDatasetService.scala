@@ -265,7 +265,7 @@ class MongoDBDatasetService @Inject() (
                 return Some(fileId)
               }
             }
-            case None => Logger.debug(s"Error getting file $fileId")
+            case None => Logger.error(s"Error getting file $fileId")
           }
         }
         Logger.error("File does not exist in dataset" + datasetId); return None

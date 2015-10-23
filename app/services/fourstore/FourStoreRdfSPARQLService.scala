@@ -187,7 +187,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
                         }
                         removeFileFromGraphs(f, "rdfCommunityGraphName")
                       }
-                      case None => Logger.debug(s"Unabel to find file $f")
+                      case None => Logger.error(s"Unable to find file $f")
                     }
 				      }
 				      else{
@@ -197,7 +197,7 @@ class FourStoreRdfSPARQLService @Inject() (datasets: DatasetService, files: File
                           detachFileFromDataset(f, datasetId, "rdfXMLGraphName")
                         }
                       }
-                      case None => Logger.debug(s"Unabel to find file $f")
+                      case None => Logger.error(s"Unable to find file $f")
                     }
 				      }
 				    }                

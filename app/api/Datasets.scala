@@ -467,7 +467,7 @@ class Datasets @Inject()(
                   return Some(file.id.toString)
                 }
             }
-            case None =>  Logger.debug(s"Error getting file $fileId.")
+            case None =>  Logger.error(s"Error getting file $fileId.")
           }
 
         }
@@ -486,7 +486,7 @@ class Datasets @Inject()(
         case Some(dataset) => {
           val list: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
             case Some(file) => jsonFile(file)
-            case None => Logger.debug(s"Error getting File $fileId")
+            case None => Logger.error(s"Error getting File $fileId")
           }).asInstanceOf[List[JsValue]]
           Ok(toJson(list))
         }

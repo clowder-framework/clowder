@@ -245,7 +245,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           fileDsId = fileDsId + f.id.stringify + "  "
           fileDsName = fileDsName + f.filename + "  "
         }
-        case None => Logger.debug(s"Error getting file $fileId")
+        case None => Logger.error(s"Error getting file $fileId")
 
       }
     }
