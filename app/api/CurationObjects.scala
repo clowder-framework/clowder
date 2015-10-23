@@ -46,10 +46,11 @@ class CurationObjects @Inject()(datasets: DatasetService,
           val hostIp = Utils.baseUrl(request)
           val hostUrl = hostIp + "/api/curations/" + curationId + "/ore"
           val filesJson = c.files.map { file =>
-            var fl_md: Map[String, Any] = Map.empty[String,Any]
-            for ( i <- 0 to file.metadata.length -1) {
-              fl_md = fl_md ++ file.metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap
-            }
+            // TODO: Add file.metadata to ORE Map when we change to JSON-LD
+//            var fl_md: Map[String, Any] = Map.empty[String,Any]
+//            for ( i <- 0 to file.metadata.length -1) {
+//              fl_md = fl_md ++ file.metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap
+//            }
 
 //            val file_md_parsed = fl_md.map(
 //              it => it._1 -> Json.toJson( it._2.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap.map(
