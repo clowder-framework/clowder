@@ -8,7 +8,7 @@ import models._
 import play.api.Logger
 import controllers.Utils
 import play.api.Play._
-import play.api.libs.json._
+import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import play.api.libs.json.Json.toJson
 import services.{EventService, AdminsNotifierPlugin, SpaceService, UserService, DatasetService, CollectionService}

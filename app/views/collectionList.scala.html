@@ -109,7 +109,7 @@
                     <!-- Collection Info -->
                     <ul class="list-group">
                         <li class="list-group-item">
-                            <span class="glyphicon glyphicon glyphicon-file" title="@collection.datasets.size datasets"></span> @collection.datasets.size
+                            <span class="glyphicon glyphicon glyphicon-file" title="@collection.datasetCount datasets"></span> @collection.datasetCount
                             @if(user.isDefined) {
 	                            <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->   
 	                            @if(collection.author.isDefined && user.get.identityId.userId.equals(collection.author.get.identityId.userId)){

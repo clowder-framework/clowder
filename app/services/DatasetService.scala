@@ -1,5 +1,6 @@
 package services
 
+import api.Permission.Permission
 import models._
 import play.api.libs.json.JsValue
 import com.mongodb.casbah.Imports._
@@ -33,6 +34,26 @@ trait DatasetService {
   def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Dataset]
 
   /**
+   * Return a count of datasets in a collection, this does not check for permissions
+   */
+  def countCollection(collection: String): Long
+
+  /**
+   * Return a list of datasets in a collection, this does not check for permissions
+   */
+  def listCollection(collection: String): List[Dataset]
+
+  /**
+   * Return a list of datasets in a collection, this does not check for permissions
+   */
+  def listCollection(limit: Integer, collection: String): List[Dataset]
+
+  /**
+   * Return a list of datasets in a collection starting at a specific date, this does not check for permissions
+   */
+  def listCollection(date: String, nextPage: Boolean, limit: Integer, collection: String): List[Dataset]
+
+  /**
    * Return a count of datasets the user has access to.
    */
   def countAccess(user: Option[User], showAll: Boolean): Long
@@ -43,9 +64,19 @@ trait DatasetService {
   def listAccess(limit: Integer, user: Option[User], showAll: Boolean): List[Dataset]
 
   /**
+   * Return a list of datasets the user has access to.
+   */
+  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset]
+
+  /**
    * Return a list of datasets the user has access to starting at a specific date.
    */
   def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean): List[Dataset]
+
+  /**
+   * Return a list of datasets the user has access to starting at a specific date.
+   */
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean): List[Dataset]
 
   /**
    * Return a count of datasets the user has created.
@@ -73,11 +104,6 @@ trait DatasetService {
   def insert(dataset: Dataset): Option[String]
 
   /**
-   *
-   */
-  def listInsideCollection(collectionId: UUID) : List[Dataset]
-
-  /**
    * Check if a dataset is in a specific collection.
    */
   def isInCollection(dataset: Dataset, collection: Collection): Boolean
@@ -86,11 +112,6 @@ trait DatasetService {
    * Get the id of a file based on its filename and dataset it belongs to.
    */
   def getFileId(datasetId: UUID, filename: String): Option[UUID]
-
-  /**
-   * Get JSON representation.
-   */
-  def toJSON(dataset: Dataset): JsValue
 
   /**
    * Check if dataset belongs to a collection.
