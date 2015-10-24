@@ -17,11 +17,10 @@ function addCollectionToSapce(id) {
 
     request.done(function (response, textStatus, jqXHR) {
         var o =$.parseJSON(jqXHR.responseText);
-        // TODO retrieve more information about collection from API and show it in the GUI
         $("#spacesList").append('<div id="col_'+selectedId+'" class="row bottom-padding">' +
             '<div class="col-md-2"></div>' +
             '<div class="col-md-10"><div><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+' class ="space">'+selectedName+'</a></div><div>' +
-            o.collectionInSpace+' datasets | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection(\''+selectedId+'\',\''+selectedName+'\', \''+datasetId+'\', event)" title="Remove collection from space">' +
+            o.collectionInSpace+' collections | <a href="#" class="btn btn-link btn-xs" onclick="removeCollectionFromSpace(\''+selectedId+'\',\''+selectedName+'\', \''+id+'\', event)" title="Remove from space">' +
             ' Remove</a></div></div></div>');
         $("#spaceAddSelect").select2("val", "");
     });
@@ -40,7 +39,7 @@ function addCollectionToSapce(id) {
 
 function removeCollectionFromSpace(spaceId, spaceName, id, event){
 
-    var request = jsRoutes.api.Spaces.removeDataset(spaceId, id).ajax({
+    var request = jsRoutes.api.Spaces.removeCollection(spaceId, id).ajax({
         type: 'POST'
     });
 
@@ -65,26 +64,25 @@ function addDatasetToSapce(id) {
     var selectedName = $("#spaceAddSelect option:selected").text();
     selectedName = selectedName.replace(/\n/g, "<br>");
 
-    var request = jsRoutes.api.Spaces.addDatasetToSpace(selectedId, datasetId).ajax({
+    var request = jsRoutes.api.Spaces.addDatasetToSpace(selectedId, id).ajax({
         type: 'POST'
     });
 
     request.done(function (response, textStatus, jqXHR) {
         var o =$.parseJSON(jqXHR.responseText);
-        // TODO retrieve more information about collection from API and show it in the GUI
-        $("#collectionsList").append('<div id="col_'+selectedId+'" class="row bottom-padding">' +
+        $("#spacesList").append('<div id="col_'+selectedId+'" class="row bottom-padding">' +
             '<div class="col-md-2"></div>' +
-            '<div class="col-md-10"><div><a href="'+jsRoutes.controllers.Collections.collection(selectedId).url+'" id='+selectedId+' class ="collection">'+selectedName+'</a></div><div>' +
-            o.datasetsInSpace+' datasets | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection(\''+selectedId+'\',\''+selectedName+'\', \''+datasetId+'\', event)" title="Remove from collection">' +
+            '<div class="col-md-10"><div><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+' class ="space">'+selectedName+'</a></div><div>' +
+            o.datasetsInSpace+' datasets | <a href="#" class="btn btn-link btn-xs" onclick="removeDatasetFromSpace(\''+selectedId+'\',\''+selectedName+'\', \''+id+'\', event)" title="Remove from space">' +
             ' Remove</a></div></div></div>');
         $("#spaceAddSelect").select2("val", "");
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to add a dataset to a collection.";
+        var errMsg = "You must be logged in to add a dataset to a space.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("The dataset was not added to the collection due to the following : " + errorThrown, "error");
+            notify("The dataset was not added to the space due to the following : " + errorThrown, "error");
         }
     });
 
@@ -94,7 +92,7 @@ function addDatasetToSapce(id) {
 
 function removeDatasetFromSpace(spaceId, spaceName, id, event){
 
-    var request = jsRoutes.api.Collections.removeDataset(spaceId, id).ajax({
+    var request = jsRoutes.api.Spaces.removeDataset(spaceId, id).ajax({
         type: 'POST'
     });
 

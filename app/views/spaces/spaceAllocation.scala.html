@@ -3,7 +3,11 @@
 @import play.api.libs.json.Json
     <div class="row bottom-padding">
         <div class="col-md-12">
+        @if(resourceType == ResourceRef.collection) {
+            <h4>Spaces containing the collection</h4>
+        } else {
             <h4>Spaces containing the dataset</h4>
+        }
         </div>
     </div>
 
@@ -11,6 +15,7 @@
         <div id="spacesList" class="col-md-12">
         @resourceSpaces.map { s =>
             <div id="col_@s.id" class="row bottom-padding">
+                <div class="col-md-2"></div>
                 <div class="col-md-10">
                     <div>
                         <a href="@routes.Spaces.getSpace(s.id)" id='@s.id' class ="space">@Html(s.name)</a>
@@ -91,11 +96,11 @@
                     var ids = $('.space').map(function() {
                         return $(this).attr('id');
                     });
-                    return $.inArray(x.id, ids) == -1;
+                    return $.inArray(x["id"], ids) == -1;
                 }).map(function(x) {
                     return {
-                        text: x.spacename,
-                        id: x.id
+                        text: x["name"],
+                        id: x["id"]
                     }
                 })};
             }

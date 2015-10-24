@@ -124,8 +124,10 @@ class MongoDBSpaceService @Inject() (
   private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): List[ProjectSpace] = {
     val (filter, sort) = filteredQuery(date, nextPage, title, permissions, user, showAll, owner)
     if (date.isEmpty || nextPage) {
+      Logger.debug(ProjectSpaceDAO.find(filter).sort(sort).limit(limit).toList.length.toString)
       ProjectSpaceDAO.find(filter).sort(sort).limit(limit).toList
     } else {
+      Logger.debug(ProjectSpaceDAO.find(filter).sort(sort).limit(limit).toList.length.toString)
       ProjectSpaceDAO.find(filter).sort(sort).limit(limit).toList.reverse
     }
   }
@@ -133,7 +135,7 @@ class MongoDBSpaceService @Inject() (
   /**
    * Monster function, does all the work. Will create a filters and sorts based on the given parameters
    */
-  private def filteredQuery(date: Option[String], nextPage: Boolean, title: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): (DBObject, DBObject) = {
+  private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): (DBObject, DBObject) = {
     // filter =
     // - owner   == show datasets owned by owner that user can see
     // - space   == show all datasets in space
@@ -170,6 +172,10 @@ class MongoDBSpaceService @Inject() (
         }
       }
     }
+    val filterTitle = titleSearch match {
+      case Some(title) =>  MongoDBObject("name" -> ("(?i)" + title).r)
+      case None => MongoDBObject()
+    }
     val filterDate = date match {
       case Some(d) => {
         if (nextPage) {
@@ -189,7 +195,7 @@ class MongoDBSpaceService @Inject() (
       MongoDBObject("created" -> -1) ++ MongoDBObject("name" -> 1)
     }
 
-    (filter ++ filterDate, sort)
+    (filter ++ filterTitle ++ filterDate, sort)
   }
 
   /**
@@ -333,7 +339,7 @@ class MongoDBSpaceService @Inject() (
           val difference = currentTime - collectionTime
           if (difference > timeToLive) {
               //It was last modified longer than the time to live, so remiove it.
-              for (colDataset <- aCollection.datasets) {
+              for (colDataset <- datasets.listCollection(aCollection.id.stringify)) {
                   //Remove all the datasets in the collection if they don't have their own space.
                 var datasetOnlyInSpace: Option[Boolean] = None
                 colDataset.spaces.map {

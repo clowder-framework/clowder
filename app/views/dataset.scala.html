@@ -165,9 +165,10 @@
 		<div class="col-md-4 col-left-border">
             @spaces.spaceAllocation(dataset.id, ResourceRef.dataset, datasetSpaces.getOrElse(List.empty))
             @if(user.isDefined) {
+                <br/>
                 @datasets.userLink(dataset)
             }
-            @datasets.collections(dataset, collectionsInside, collectionsOutside)
+            @datasets.collections(dataset, collectionsInside)
             @datasets.tags(dataset, filesTags)
 
             @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {

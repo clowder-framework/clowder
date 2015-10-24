@@ -13,6 +13,9 @@ import play.api.libs.json.Json._
 import play.api.libs.json.Json.toJson
 import services.{EventService, AdminsNotifierPlugin, SpaceService, UserService, DatasetService, CollectionService}
 import scala.collection.mutable.ListBuffer
+import play.api.libs.json.JsResult
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsError
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
@@ -120,12 +123,12 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   )
   def addCollectionToSapce(spaceId: UUID, collectionId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) {
     implicit request =>
-      spaces.get(spaceId) match {
-        case Some(s) => {
+      (spaces.get(spaceId), collectionService.get(collectionId)) match {
+        case (Some(s), Some(c)) => {
           spaces.addCollection(collectionId, spaceId)
           Ok(Json.obj("collectionInSpace" -> s.collectionCount.toString))
         }
-        case None => NotFound
+        case (_, _) => NotFound
       }
   }
 
@@ -135,12 +138,12 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   )
   def addDatasetToSpace(spaceId: UUID, datasetId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) {
     implicit request =>
-      spaces.get(spaceId) match {
-        case Some(s) => {
+      (spaces.get(spaceId), datasetService.get(datasetId)) match {
+        case (Some(s), Some(d)) => {
           spaces.addDataset(datasetId, spaceId)
           Ok(Json.obj("datasetsInSpace" -> s.datasetCount.toString))
         }
-        case None => NotFound
+        case (_, _) => NotFound
       }
   }
 
@@ -148,18 +151,26 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     notes = "",
     responseClass = "None", httpMethod = "POST")
   def removeCollection(spaceId: UUID, collectionId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
-
-    spaces.removeCollection(collectionId, spaceId)
-    Ok(toJson("success"))
+    (spaces.get(spaceId), collectionService.get(collectionId)) match {
+      case (Some(s), Some(c)) => {
+        spaces.removeCollection(collectionId, spaceId)
+        Ok(toJson("success"))
+      }
+      case (_, _) => NotFound
+    }
   }
 
   @ApiOperation(value = "Remove a dataset from a space",
   notes = "",
   responseClass = "None", httpMethod = "POST")
   def removeDataset(spaceId: UUID, datasetId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
-
-    spaces.removeDataset(datasetId, spaceId)
-    Ok(toJson("success"))
+    (spaces.get(spaceId), datasetService.get(datasetId)) match {
+      case (Some(s), Some(d)) => {
+        spaces.removeDataset(datasetId, spaceId)
+        Ok(toJson("success"))
+      }
+      case (_, _) => NotFound
+    }
   }
 
 
