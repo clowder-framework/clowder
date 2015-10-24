@@ -80,7 +80,7 @@
                     }
 
                 </div>
-            </div>
+
 
 
                         <div class="col-md-6">
@@ -112,9 +112,9 @@
                     @datasets.deleteButton(dataset)
                     @datasets.follow(dataset)
                 </div>
+            </div>
 
-
-
+            <br/>
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
                 <ul class="nav nav-tabs">
                     <li role="presentation" class="active"><a href="#tab-files" role="tab" data-toggle="tab">Files (@dataset.files.size)</a></li>
@@ -157,7 +157,8 @@
                       @notesform(dataset.id.toString, api.routes.Datasets.setNotesHTML(dataset.id).toString, dataset.notesHTML.getOrElse(""))
                       </div>
                   }
-                </div>
+
+            </div>
 			</div>
 		</div>
 
