@@ -45,9 +45,7 @@
 						<dd><a href= "@routes.Profile.viewProfile(collection.author.get.email)"> @collection.author.get.fullName </a></dd>
 					}
                     <dt>Shared with spaces:</dt>
-                    <dd>
-                        @spaces.spaceLink(collectionSpaces, ResourceRef.collection, collection.id, otherSpaces)
-                    </dd>
+
 					<dt>Description:</dt>
 					<dd ><p id="collection_desc"  class="inline">@Html(collection.description)</p>
 						@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {

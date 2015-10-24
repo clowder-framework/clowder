@@ -306,14 +306,10 @@ class Datasets @Inject()(
                   }
           }
 
-          val otherSpaces: List[ProjectSpace] = user match {
-            case Some(usr) => usr.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!datasetSpaces.map(_.id).contains(aSpace.id)) aSpace else None).filter(_ != None).asInstanceOf[List[ProjectSpace]]
-            case None => List.empty
-          }
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filesTags, filteredPreviewers.toList, metadata, userMetadata,
-            decodedCollectionsOutside.toList, decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), otherSpaces))
+            decodedCollectionsOutside.toList, decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces)))
 
         }
         case None => {

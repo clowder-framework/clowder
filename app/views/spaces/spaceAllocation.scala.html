@@ -1,159 +1,105 @@
-@(resourceId: UUID, resourceType: Symbol, otherSpaces: List[ProjectSpace], resourceSpaces: Option[List[ProjectSpace]])(implicit user: Option[models.User])
+@(resourceId: UUID, resourceType: Symbol, resourceSpaces: List[ProjectSpace])(implicit user: Option[models.User])
 @import api.Permission
+@import play.api.libs.json.Json
+    <div class="row bottom-padding">
+        <div class="col-md-12">
+            <h4>Spaces containing the dataset</h4>
+        </div>
+    </div>
 
-<div class="row">
-    <select class = "chosen-select2" multiple style="..." id ="spacesAvailable">
-        @for(curOption <- resourceSpaces) {
-            @for(curSpace <- curOption) {
-                <option value="@curSpace.id" id ="@curSpace.name" selected>@curSpace.name</option>
-            }
+    <div class="row">
+        <div id="spacesList" class="col-md-12">
+        @resourceSpaces.map { s =>
+            <div id="col_@s.id" class="row bottom-padding">
+                <div class="col-md-10">
+                    <div>
+                        <a href="@routes.Spaces.getSpace(s.id)" id='@s.id' class ="space">@Html(s.name)</a>
+                    </div>
+                    <div>
+                        @if(resourceType == ResourceRef.dataset) {
+                            @s.datasetCount datasets
+                            @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
+                                | <a href="#" class="btn btn-link btn-xs" onclick="removeDatasetFromSpace( '@(s.id)', '@(s.name)', '@resourceId', event)" title="Remove from space">
+                                Remove</a>
+                            } else {
+                                    <a href="#" class="btn btn-link btn-xs disabled" title="Remove dataset from space">
+                                    Remove</a>
+                            }
+                        }
+                        @if(resourceType == ResourceRef.collection) {
+                            @s.collectionCount collections
+
+                            @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
+                                | <a href="#" class="btn btn-link btn-xs" onclick="removeCollectionFromSpace('@(s.id)', '@(s.name)', '@resourceId', event)" title="Remove from space">
+                                    Remove</a>
+                            } else {
+                                <a href="#" class="btn btn-link btn-xs disabled" title="Remove collection from space">
+                                    Remove</a>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
         }
-        @for(curSpace <-otherSpaces) {
-            <!-- Ensure that the space options are available only if the user can actually add to them. -->
-            @if(Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, curSpace.id))) {
-                <option value="@curSpace.id" id ="@curSpace.name" >@curSpace.name</option>
-            }
-        }
-    </select>
-</div>
+        </div>
+    </div>
+
+
+
+    <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
+    @if(user.isDefined) {
+        <div class="form-inline">
+            <div class="input-group input-group-sm col-md-8">
+                <select id="spaceAddSelect" class="form-control" style="width: 100%">
+                </select>
+                @if(resourceType == ResourceRef.dataset) {
+                    <span class="input-group-btn">
+                    <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add dataset to Space" onclick="addDatasetToSapce('@resourceId')">
+                        <span class="glyphicon glyphicon-plus"></span>
+                    </a>
+                    </span>
+                } else {
+                    <span class="input-group-btn">
+                    <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add collection to Space" onclick="addCollectionToSapce('@resourceId')">
+                        <span class="glyphicon glyphicon-plus"></span>
+                    </a>
+                    </span>
+                }
+            </div>
+        </div>
+    }
+
+
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
 <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/spaceModify.js")" type="text/javascript"></script>
 
 <script language="javascript">
-    $(".chosen-select2").chosen({
-        width: "90%",
-        placeholder_text_multiple: "Select spaces"
-    });
-</script>
-
-<script language = "javascript">
-    var idNameObj = {};
-
-    resource_type_enum = {
-    DATASET : 0,
-    COLLECTION : 1
-    };
-
-    function isUndefined(value) {
-        return typeof value === 'undefined';
-    }
-
-    function getName(id) {
-        return idNameObj[id];
-    }
-    $(document).ready(function() {
-        @for(space <- otherSpaces) {
-            idNameObj["@space.name"] = "@space.id";
-        }
-    });
-
-    $(".chosen-select2").chosen().change(function(event, params) {
-        var targetId = this.getAttribute("id");
-        if(!isUndefined(params.selected)) {
-            var addedId = params.selected;
-            @for(space<-otherSpaces) {
-                var currentId = "@space";
-                if(currentId != targetId) {
-                    $('#@space.id option [value=' + addedId + ']').remove();
-                    $('#@space.id').trigger("chosen:updated");
-                }
-            }
-            $('ul.chosen-choices li.search-field').css("width", "0");
-        }
-        else if(!isUndefined(params.deselected)) {
-            var removedId= params.deselected;
-            @for(space <- otherSpaces) {
-                var currentId = "@space"
-                if(currentId != targetId) {
-                $('#@space.id').prepend($("<option></option>").attr("value", params.deselected).text(getName(params.deselected)));
-                $('#@space.id').trigger("chosen:updated");
-                }
-
+    $("#spaceAddSelect").select2({
+        theme: "bootstrap",
+        placeholder: "Select a space",
+        allowClear: true,
+        ajax: {
+            url: function(params) {
+                return jsRoutes.api.Spaces.listCanEdit(params.term, null, 5).url;
+            },
+            data: function(params) {
+                return { title: params.term };
+            },
+            processResults: function(data, page) {
+                return {results: data.filter(function(x) {
+                    var ids = $('.space').map(function() {
+                        return $(this).attr('id');
+                    });
+                    return $.inArray(x.id, ids) == -1;
+                }).map(function(x) {
+                    return {
+                        text: x.spacename,
+                        id: x.id
+                    }
+                })};
             }
         }
-
-        $('#spaces_add').click(function() {
-            $('#modalSpaces').modal('hide');
-            @if(resourceType == ResourceRef.dataset) {
-              updateDatasetInSpaces();
-            } else {
-                @if(resourceType == ResourceRef.collection) {
-                    updateCollectionInSpaces();
-                }
-            }
-        })
-
     });
 
-    function updateCollectionInSpaces(){
-
-        var ids = $('#spacesAvailable option:selected').map(function() { return this.value}).get();
-        var names = $('#spacesAvailable option:selected').map(function() { return this.id}).get();
-        var jsonData = JSON.stringify({"space_ids ": ids, " resource_id ": "@resourceId"});
-        var request = jsRoutes.api.Spaces.addCollectionToSpaces(ids, "@resourceId").ajax({
-            data: jsonData,
-            type: 'POST',
-            contentType: "application/json",
-        });
-
-        request.done(function(response, textStatus, jqXH) {
-            updateSpacesEditLink(ids, names)
-            if($('#spaces a').size() > 0) {
-                $('#collection-users').show();
-            } else
-            {
-                $('#collection-users').hide();
-            }
-        });
-
-        request.fail(function(jqHR, textStatus, errorThrown) {
-            console.error("The following error occurred: " + textStatus, errorThrown);
-        });
-
-    }
-
-    function updateDatasetInSpaces() {
-        var ids = $('#spacesAvailable option:selected').map(function(){ return this.value }).get();
-        var names = $('#spacesAvailable option:selected').map(function(){ return this.id }).get();
-        var jsonData = JSON.stringify({"space_ids": ids, "resource_id": "@resourceId"});
-        var request = jsRoutes.api.Spaces.addDatasetToSpaces(ids,"@resourceId").ajax({
-            data: jsonData,
-            type: 'POST',
-            contentType: "application/json",
-        });
-
-        request.done(function(response, textStatus, jqXH){
-            updateSpacesEditLink(ids, names)
-            if($('#spaces a').size() > 0) {
-                $('#dataset-users').show();
-            } else
-            {
-                $('#dataset-users').hide();
-            }
-        });
-
-        request.fail(function(jqHR, textStatus, errorThrown){
-            console.error("The following error occurred: " + textStatus, errorThrown);
-        })
-    }
-
-    function updateSpacesEditLink(ids, names) {
-        var edit_spaces = $("#editSpaces");
-        $("#spaces").text('');
-        $("#spaces").html(edit_spaces);
-       for(var i=0; i < ids.length; i++){
-       $("<a class = 'space-pills' href="+ jsRoutes.controllers.Spaces.getSpace(ids[i]).url +" > " + names[i] + " </a>").insertBefore('#editSpaces')
-       }
-
-    }
-
-    if($('ul.chosen-choices .search-field input').attr('class') == 'default') {
-        $('ul.chosen-choices li.search-field').css("width", "80%");
-        $('ul.chosen-choices li.search-field input[type="text"]').css("width", "100%");
-    }
-
-    function spaceAddDataset() {
-        var ids = $('#spacesAvailable option:selected').map(function(){ return this.value }).get()
-
-    }
 </script>

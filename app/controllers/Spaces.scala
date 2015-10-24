@@ -5,6 +5,7 @@ import java.util.Date
 import javax.inject.Inject
 
 import api.Permission
+import api.Permission._
 import models._
 import play.api.data.validation._
 import play.api.{Play, Logger}
@@ -515,9 +516,9 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
        }
        case None => {
          if (date != "") {
-           spaces.listAccess(date, nextPage, limit, request.user, showAll)
+           spaces.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewSpace), request.user, showAll)
          } else {
-           spaces.listAccess(limit, request.user, showAll)
+           spaces.listAccess(limit, Set[Permission](Permission.ViewSpace), request.user, showAll)
          }
        }
      }
@@ -527,7 +528,7 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
        val first = Formatters.iso8601(spaceList.head.created)
        val space = person match {
          case Some(p) => spaces.listUser(first, nextPage=false, 1, request.user, showAll, p)
-         case None => spaces.listAccess(first, nextPage = false, 1, request.user, showAll)
+         case None => spaces.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewSpace), request.user, showAll)
        }
        if (space.nonEmpty && space.head.id != spaceList.head.id) {
          first
@@ -543,7 +544,7 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
        val last = Formatters.iso8601(spaceList.last.created)
        val ds = person match {
          case Some(p) => spaces.listUser(last, nextPage=true, 1, request.user, showAll, p)
-         case None => spaces.listAccess(last, nextPage=true, 1, request.user, showAll)
+         case None => spaces.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewSpace), request.user, showAll)
        }
        if (ds.nonEmpty && ds.head.id != spaceList.last.id) {
          last
