@@ -173,7 +173,6 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     }
   }
 
-
   /**
    * REST endpoint: POST call to update the configuration information associated with a specific Space
    *
