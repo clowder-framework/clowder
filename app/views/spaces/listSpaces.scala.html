@@ -69,16 +69,19 @@
                     $('#allspace').click(function(){
                         $('#allspace').addClass('active');
                         $('#myspace' ).removeClass('active');
-                        $('#masonry').prepend( notmyspace );
-                        notmyspace = null;
+                        $('#masonry').append( notmyspacetile );
                         $('#masonry').masonry('destroy');
                         $('#masonry').masonry();
+                        $('table').append(notmyspacelist);
+                        notmyspacetile = null;
+                        notmyspacelist = null;
                     });
 
                     $('#myspace').click(function(){
                         $('#myspace').addClass('active');
                         $('#allspace' ).removeClass('active');
-                        notmyspace = $('.notmyspace').detach();
+                        notmyspacetile = $('.notmyspacetile').detach();
+                        notmyspacelist = $('.notmyspacelist').detach();
                         $('#masonry').masonry('destroy');
                         $('#masonry').masonry();
                     });
@@ -119,7 +122,7 @@
                         @if(Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, space.id))){
                             <div class="post-box col-lg-3 col-md-3 col-sm-3 col-xs-12">
                             } else {
-                            <div class="post-box col-lg-3 col-md-3 col-sm-3 col-xs-12 notmyspace">
+                            <div class="post-box col-lg-3 col-md-3 col-sm-3 col-xs-12 notmyspacetile">
                             }
                     <div class="panel panel-default">
                         <div class="pull-right">
@@ -185,7 +188,11 @@
                         </thead>
                         <tbody>
                         @spaces.map { space =>
-                            <tr>
+                            @if(Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, space.id))){
+                                <tr>
+                                } else {
+                                <tr class="notmyspacelist">
+                                }
                                 <td>
                                     @if(!space.logoURL.isEmpty) {
                                         <img src="@(space.logoURL)" alt="Thumbnail of @(space.name)" width="120">
