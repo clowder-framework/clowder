@@ -275,85 +275,96 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
     user match {        
       case Some(identity) => {
         request.body.file("File").map { f =>
-	          var nameOfFile = f.filename
-	          var flags = ""
-	          if(nameOfFile.toLowerCase().endsWith(".ptm")){
-		          var thirdSeparatorIndex = nameOfFile.indexOf("__")
-	              if(thirdSeparatorIndex >= 0){
-	                var firstSeparatorIndex = nameOfFile.indexOf("_")
-	                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
-	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
-	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-	              }
-	          }
-	        
-	        Logger.debug("Uploading file " + nameOfFile)
+          try {
+            var nameOfFile = f.filename
+            var flags = ""
+            if (nameOfFile.toLowerCase().endsWith(".ptm")) {
+              var thirdSeparatorIndex = nameOfFile.indexOf("__")
+              if (thirdSeparatorIndex >= 0) {
+                var firstSeparatorIndex = nameOfFile.indexOf("_")
+                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
+                flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
+                nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
+              }
+            }
 
-	        var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
+            Logger.debug("Uploading file " + nameOfFile)
 
-	        // store file       
-	        val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
-	        val uploadedFile = f
-	        file match {
-	          case Some(f) => {
-		        current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
-	            
-	            if(showPreviews.equals("FileLevel"))
-	                	flags = flags + "+filelevelshowpreviews"
-	            else if(showPreviews.equals("None"))
-	                	flags = flags + "+nopreviews"
-	             var fileType = f.contentType
-				    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
-				          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
-                if (fileType.startsWith("ERROR: ")) {
-                  Logger.error(fileType.substring(7))
-                  InternalServerError(fileType.substring(7))
+            var showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
+
+            // store file
+            val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+            val uploadedFile = f
+            file match {
+              case Some(f) => {
+                current.plugin[FileDumpService].foreach {
+                  _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))
                 }
+
+                if (showPreviews.equals("FileLevel"))
+                  flags = flags + "+filelevelshowpreviews"
+                else if (showPreviews.equals("None"))
+                  flags = flags + "+nopreviews"
+                var fileType = f.contentType
+                if (fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")) {
+                  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")
+                  if (fileType.startsWith("ERROR: ")) {
+                    Logger.error(fileType.substring(7))
+                    InternalServerError(fileType.substring(7))
+                  }
+                }
+
+                // TODO RK need to replace unknown with the server name
+                val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+
+                val host = Utils.baseUrl(request)
+                val id = f.id
+                val extra = Map("filename" -> f.filename)
+                current.plugin[RabbitmqPlugin].foreach {
+                  _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))
+                }
+                /** *** Inserting DTS Requests   **/
+                val clientIP = request.remoteAddress
+                val domain = request.domain
+                val keysHeader = request.headers.keys
+
+                Logger.debug("clientIP:" + clientIP + "   domain:= " + domain + "  keysHeader=" + keysHeader.toString + "\n")
+                Logger.debug("Origin: " + request.headers.get("Origin") + "  Referer=" + request.headers.get("Referer") + " Connections=" + request.headers.get("Connection") + "\n \n")
+                val serverIP = request.host
+                dtsrequests.insertRequest(serverIP, clientIP, f.filename, id, fileType, f.length, f.uploadDate)
+
+                /** **************************/
+                //for metadata files
+                if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
+                  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+                  files.addXMLMetadata(id, xmlToJSON)
+
+                  Logger.debug("xmlmd=" + xmlToJSON)
+
+                  current.plugin[ElasticsearchPlugin].foreach {
+                    _.index("data", "file", id, List(("filename", f.filename), ("contentType", f.contentType), ("datasetId", ""), ("datasetName", ""), ("xmlmetadata", xmlToJSON)))
+                  }
+                }
+                else {
+                  current.plugin[ElasticsearchPlugin].foreach {
+                    _.index("data", "file", id, List(("filename", f.filename), ("contentType", f.contentType), ("datasetId", ""), ("datasetName", "")))
+                  }
+                }
+                current.plugin[VersusPlugin].foreach {
+                  _.index(f.id.toString, fileType)
+                }
+
+                // redirect to extract page
+                Ok(views.html.extract(f.id))
               }
-
-              // TODO RK need to replace unknown with the server name
-              val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-
-              val host = Utils.baseUrl(request)
-              val id = f.id
-              val extra = Map("filename" -> f.filename)
-	          current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))}
-              /***** Inserting DTS Requests   **/  
-              val clientIP=request.remoteAddress
-              val domain=request.domain
-              val keysHeader=request.headers.keys
-
-              Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
-              Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
-       		  val serverIP= request.host
-              dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
-              /****************************/ 
-              //for metadata files
-              if(fileType.equals("application/xml") || fileType.equals("text/xml")){
-            	  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-            			  files.addXMLMetadata(id, xmlToJSON)
-
-            			  Logger.debug("xmlmd=" + xmlToJSON)
-
-            			  current.plugin[ElasticsearchPlugin].foreach{
-            		  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",""),("datasetName",""), ("xmlmetadata", xmlToJSON)))
-            	  }
+              case None => {
+                Logger.error("Could not retrieve file that was just saved.")
+                InternalServerError("Error uploading file")
               }
-              else{
-            	  current.plugin[ElasticsearchPlugin].foreach{
-            		  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType),("datasetId",""),("datasetName","")))
-            	  }
-              }
-	          current.plugin[VersusPlugin].foreach{ _.index(f.id.toString,fileType) }
-	        
-	           // redirect to extract page
-	          Ok(views.html.extract(f.id))
-	          }
-	         case None => {
-	           Logger.error("Could not retrieve file that was just saved.")
-	           InternalServerError("Error uploading file")
-	         }
-	        }
+            }
+          } finally {
+            f.ref.clean()
+          }
 	      }.getOrElse {
 	         BadRequest("File not attached.")
 	
@@ -794,97 +805,105 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
     }  
     //END OF: processing searching within files or sections of files or both    
     request.body.file("File").map { f =>
+      try {
         var nameOfFile = f.filename
-      	var flags = ""
-      	if(nameOfFile.toLowerCase().endsWith(".ptm")){
-      			  var thirdSeparatorIndex = nameOfFile.indexOf("__")
-	              if(thirdSeparatorIndex >= 0){
-	                var firstSeparatorIndex = nameOfFile.indexOf("_")
-	                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
-	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" +
-                        nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" +
-                        nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
-	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-	              }
-      	}        
+        var flags = ""
+        if (nameOfFile.toLowerCase().endsWith(".ptm")) {
+          var thirdSeparatorIndex = nameOfFile.indexOf("__")
+          if (thirdSeparatorIndex >= 0) {
+            var firstSeparatorIndex = nameOfFile.indexOf("_")
+            var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
+            flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" +
+              nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" +
+              nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
+            nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
+          }
+        }
         Logger.debug("Controllers/Files Uploading file " + nameOfFile)
-        
+
         // store file       
         Logger.info("uploadSelectQuery")
-         val file = queries.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType)
-         val uploadedFile = f
-        
+        val file = queries.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType)
+        val uploadedFile = f
+
         file match {
           case Some(f) => {
-                       
+
             var fileType = f.contentType
-			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
-			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
-			          if(fileType.startsWith("ERROR: ")){
-			             Logger.error(fileType.substring(7))
-			             InternalServerError(fileType.substring(7))
-			          }
-			          if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped")|| fileType.equals("multi/files-ptm-zipped") ){
-			        	  		if(fileType.equals("multi/files-ptm-zipped")){
-	            				    fileType = "multi/files-zipped";
-	            				  }
-			            
-				              var thirdSeparatorIndex = nameOfFile.indexOf("__")
-				              if(thirdSeparatorIndex >= 0){
-				                var firstSeparatorIndex = nameOfFile.indexOf("_")
-				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
-				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
-				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-				            	files.renameFile(f.id, nameOfFile)
-				              }
-				              files.setContentType(f.id, fileType)
-				      }
-			    }
-            
-            current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
-            
+            if (fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")) {
+              fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")
+              if (fileType.startsWith("ERROR: ")) {
+                Logger.error(fileType.substring(7))
+                InternalServerError(fileType.substring(7))
+              }
+              if (fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") || fileType.equals("multi/files-ptm-zipped")) {
+                if (fileType.equals("multi/files-ptm-zipped")) {
+                  fileType = "multi/files-zipped";
+                }
+
+                var thirdSeparatorIndex = nameOfFile.indexOf("__")
+                if (thirdSeparatorIndex >= 0) {
+                  var firstSeparatorIndex = nameOfFile.indexOf("_")
+                  var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
+                  flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
+                  nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
+                  files.renameFile(f.id, nameOfFile)
+                }
+                files.setContentType(f.id, fileType)
+              }
+            }
+
+            current.plugin[FileDumpService].foreach {
+              _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))
+            }
+
             // TODO RK need to replace unknown with the server name
             //key needs to contain 'query' when uploading a query
             //since the thumbnail extractor during processing will need to upload to correct mongo collection.
-            val key = "unknown." + "query."+ fileType.replace("/", ".")           
+            val key = "unknown." + "query." + fileType.replace("/", ".")
             val host = Utils.baseUrl(request)
             val id = f.id
-            val path=f.path
+            val path = f.path
 
             // TODO replace null with None
-            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))}
-            
-            val dateFormat = new SimpleDateFormat("dd/MM/yyyy") 
-            
+            current.plugin[RabbitmqPlugin].foreach {
+              _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))
+            }
+
+            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+
             //for metadata files
-	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
-	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-	              files.addXMLMetadata(id, xmlToJSON)	              
-	              Logger.debug("xmlmd=" + xmlToJSON)	              
-	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
-		            }
-	            }
-	            else{
-		            current.plugin[ElasticsearchPlugin].foreach{
-		            	_.index("files", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date()))))
-		            }
-	            }	            
-	            //add file to RDF triple store if triple store is used
-	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
-	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
-		             case "yes" => sparql.addFileToGraph(f.id)
-		             case _ => {}
-	             }
-	            }            
-	            // redirect to file page
-	            Redirect(routes.Search.findSimilarToQueryFile(f.id, typeToSearch, sections))
+            if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
+              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+              files.addXMLMetadata(id, xmlToJSON)
+              Logger.debug("xmlmd=" + xmlToJSON)
+              current.plugin[ElasticsearchPlugin].foreach {
+                _.index("files", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
+              }
+            }
+            else {
+              current.plugin[ElasticsearchPlugin].foreach {
+                _.index("files", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date()))))
+              }
+            }
+            //add file to RDF triple store if triple store is used
+            if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
+              play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+                case "yes" => sparql.addFileToGraph(f.id)
+                case _ => {}
+              }
+            }
+            // redirect to file page
+            Redirect(routes.Search.findSimilarToQueryFile(f.id, typeToSearch, sections))
           }
           case None => {
             Logger.error("Could not retrieve file that was just saved.")
             InternalServerError("Error uploading file")
           }
         }
+      } finally {
+        f.ref.clean()
+      }
     }.getOrElse {
       BadRequest("File not attached.")
     }
@@ -892,94 +911,102 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
 
   /* Drag and drop */
   def uploadDragDrop() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
-      request.body.file("File").map { f =>
+    request.body.file("File").map { f =>
+      try {
         var nameOfFile = f.filename
-      	var flags = ""
-      	if(nameOfFile.toLowerCase().endsWith(".ptm")){
-      			  var thirdSeparatorIndex = nameOfFile.indexOf("__")
-	              if(thirdSeparatorIndex >= 0){
-	                var firstSeparatorIndex = nameOfFile.indexOf("_")
-	                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
-	            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
-	            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-	              }
-      	}
-        
+        var flags = ""
+        if (nameOfFile.toLowerCase().endsWith(".ptm")) {
+          var thirdSeparatorIndex = nameOfFile.indexOf("__")
+          if (thirdSeparatorIndex >= 0) {
+            var firstSeparatorIndex = nameOfFile.indexOf("_")
+            var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
+            flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
+            nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
+          }
+        }
+
         Logger.debug("Uploading file " + nameOfFile)
-        
+
         // store file
         Logger.info("uploadDragDrop")
         val file = queries.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType)
         val uploadedFile = f
         file match {
           case Some(f) => {
-                       
-             var fileType = f.contentType
-			    if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
-			          fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")			          
-			          if(fileType.startsWith("ERROR: ")){
-			             Logger.error(fileType.substring(7))
-			             InternalServerError(fileType.substring(7))
-			          }
-			          if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped")|| fileType.equals("multi/files-ptm-zipped") ){
-			        	  		if(fileType.equals("multi/files-ptm-zipped")){
-	            				    fileType = "multi/files-zipped";
-	            				  }
-			            
-				              var thirdSeparatorIndex = nameOfFile.indexOf("__")
-				              if(thirdSeparatorIndex >= 0){
-				                var firstSeparatorIndex = nameOfFile.indexOf("_")
-				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
-				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
-				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-				            	files.renameFile(f.id, nameOfFile)
-				              }
-				              files.setContentType(f.id, fileType)
-				      }
-			    }
-             
-             current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
-            
+
+            var fileType = f.contentType
+            if (fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")) {
+              fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")
+              if (fileType.startsWith("ERROR: ")) {
+                Logger.error(fileType.substring(7))
+                InternalServerError(fileType.substring(7))
+              }
+              if (fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") || fileType.equals("multi/files-ptm-zipped")) {
+                if (fileType.equals("multi/files-ptm-zipped")) {
+                  fileType = "multi/files-zipped";
+                }
+
+                var thirdSeparatorIndex = nameOfFile.indexOf("__")
+                if (thirdSeparatorIndex >= 0) {
+                  var firstSeparatorIndex = nameOfFile.indexOf("_")
+                  var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
+                  flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
+                  nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
+                  files.renameFile(f.id, nameOfFile)
+                }
+                files.setContentType(f.id, fileType)
+              }
+            }
+
+            current.plugin[FileDumpService].foreach {
+              _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))
+            }
+
             // TODO RK need to replace unknown with the server name
-            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
+            val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
 
             val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
             val id = f.id
             val extra = Map("filename" -> f.filename)
 
             // TODO replace null with None
-            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))}
-            
+            current.plugin[RabbitmqPlugin].foreach {
+              _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))
+            }
+
             val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-            
+
             //for metadata files
-	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
-	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-	              files.addXMLMetadata(id, xmlToJSON)	              
-	              Logger.debug("xmlmd=" + xmlToJSON)	              
-	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
-		            }
-	            }
-	            else{
-		            current.plugin[ElasticsearchPlugin].foreach{
-		            	_.index("data", "file", id, List(("filename",nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date()))))
-		            }
-	            }	            
-	            //add file to RDF triple store if triple store is used
-	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
-	             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
-		             case "yes" => sparql.addFileToGraph(f.id)
-		             case _ => {}
-	             }
-	            }            
-           Ok(f.id.toString)         
-         }
+            if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
+              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+              files.addXMLMetadata(id, xmlToJSON)
+              Logger.debug("xmlmd=" + xmlToJSON)
+              current.plugin[ElasticsearchPlugin].foreach {
+                _.index("data", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
+              }
+            }
+            else {
+              current.plugin[ElasticsearchPlugin].foreach {
+                _.index("data", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date()))))
+              }
+            }
+            //add file to RDF triple store if triple store is used
+            if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
+              play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+                case "yes" => sparql.addFileToGraph(f.id)
+                case _ => {}
+              }
+            }
+            Ok(f.id.toString)
+          }
           case None => {
             Logger.error("Could not retrieve file that was just saved.")
             InternalServerError("Error uploading file")
           }
         }
+      } finally {
+        f.ref.clean()
+      }
     }.getOrElse {
       BadRequest("File not attached.")
     }
@@ -992,145 +1019,159 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
         datasets.get(dataset_id) match {
           case Some(dataset) => {
             request.body.file("File").map { f =>
-			      var nameOfFile = f.filename
-			      var flags = ""
-			      if(nameOfFile.toLowerCase().endsWith(".ptm")){
-			    	  var thirdSeparatorIndex = nameOfFile.indexOf("__")
-		              if(thirdSeparatorIndex >= 0){
-		                var firstSeparatorIndex = nameOfFile.indexOf("_")
-		                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
-		            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
-		            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-		              }
-			      }	
-			    
-				  Logger.debug("Uploading file " + nameOfFile)
-				  val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
-				  // store file
-				  val file = files.save(new FileInputStream(f.ref.file), nameOfFile,f.contentType, identity, showPreviews)
-				  val uploadedFile = f
-				  
-				  // submit file for extraction			
-				  file match {
-				  case Some(f) => {
-				    				    
-	                if(showPreviews.equals("FileLevel"))
-	                	flags = flags + "+filelevelshowpreviews"
-	                else if(showPreviews.equals("None"))
-	                	flags = flags + "+nopreviews"
-					  var fileType = f.contentType
-					  if(fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")){
-						  fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "dataset")			          
-						  if(fileType.startsWith("ERROR: ")){
-								Logger.error(fileType.substring(7))
-								InternalServerError(fileType.substring(7))
-								}
-						  if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped")|| fileType.equals("multi/files-ptm-zipped") ){
-							  if(fileType.equals("multi/files-ptm-zipped")){
-	            				    fileType = "multi/files-zipped";
-	            				  }
-						    
-				              var thirdSeparatorIndex = nameOfFile.indexOf("__")
-				              if(thirdSeparatorIndex >= 0){
-				                var firstSeparatorIndex = nameOfFile.indexOf("_")
-				                var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
-				            	flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
-				            	nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
-				            	files.renameFile(f.id, nameOfFile)
-				              }
-				              files.setContentType(f.id, fileType)
-						  }
-					  }
-	                
-	                current.plugin[FileDumpService].foreach{_.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))}
-				  	  
-					  // TODO RK need to replace unknown with the server name
-					  val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
+              try {
+                var nameOfFile = f.filename
+                var flags = ""
+                if (nameOfFile.toLowerCase().endsWith(".ptm")) {
+                  var thirdSeparatorIndex = nameOfFile.indexOf("__")
+                  if (thirdSeparatorIndex >= 0) {
+                    var firstSeparatorIndex = nameOfFile.indexOf("_")
+                    var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
+                    flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
+                    nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
+                  }
+                }
 
-							  val host = Utils.baseUrl(request) + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
-							  val id = f.id
-							  
-							  /***** Inserting DTS Requests   **/  
-	            
-						            val clientIP=request.remoteAddress
-					                val domain=request.domain
-					                val keysHeader=request.headers.keys
-					                //request.
-					                Logger.debug("---\n \n")
-					            
-					                Logger.debug("clientIP:"+clientIP+ "   domain:= "+domain+ "  keysHeader="+ keysHeader.toString +"\n")
-					                Logger.debug("Origin: "+request.headers.get("Origin") + "  Referer="+ request.headers.get("Referer")+ " Connections="+request.headers.get("Connection")+"\n \n")
-					                
-					                Logger.debug("----")
-					                val serverIP= request.host
-						            dtsrequests.insertRequest(serverIP,clientIP, f.filename, id, fileType, f.length,f.uploadDate)
-						      
-						      /****************************/
+                Logger.debug("Uploading file " + nameOfFile)
+                val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
+                // store file
+                val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
+                val uploadedFile = f
 
-		            val extra = Map("filename" -> f.filename)
-							  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, dataset_id, flags))}
-					  
-					  val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+                // submit file for extraction
+                file match {
+                  case Some(f) => {
 
-					  //for metadata files
-					  if(fileType.equals("application/xml") || fileType.equals("text/xml")){
-						  		  val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
-								  files.addXMLMetadata(id, xmlToJSON)
+                    if (showPreviews.equals("FileLevel"))
+                      flags = flags + "+filelevelshowpreviews"
+                    else if (showPreviews.equals("None"))
+                      flags = flags + "+nopreviews"
+                    var fileType = f.contentType
+                    if (fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")) {
+                      fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "dataset")
+                      if (fileType.startsWith("ERROR: ")) {
+                        Logger.error(fileType.substring(7))
+                        InternalServerError(fileType.substring(7))
+                      }
+                      if (fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") || fileType.equals("multi/files-ptm-zipped")) {
+                        if (fileType.equals("multi/files-ptm-zipped")) {
+                          fileType = "multi/files-zipped";
+                        }
 
-								  Logger.debug("xmlmd=" + xmlToJSON)
+                        var thirdSeparatorIndex = nameOfFile.indexOf("__")
+                        if (thirdSeparatorIndex >= 0) {
+                          var firstSeparatorIndex = nameOfFile.indexOf("_")
+                          var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
+                          flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
+                          nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
+                          files.renameFile(f.id, nameOfFile)
+                        }
+                        files.setContentType(f.id, fileType)
+                      }
+                    }
 
-								  current.plugin[ElasticsearchPlugin].foreach{
-						  			  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",dataset.id.toString()),("datasetName",dataset.name), ("xmlmetadata", xmlToJSON)))
-						  		  }
-					  }
-					  else{
-						  current.plugin[ElasticsearchPlugin].foreach{
-							  _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",dataset.id.toString()),("datasetName",dataset.name)))
-						  }
-					  }
-					  
-					  // add file to dataset
-					  // TODO create a service instead of calling salat directly
-					  val theFile = files.get(f.id).get
-					  datasets.addFile(dataset.id, theFile)
-					  if(!theFile.xmlMetadata.isEmpty){
-						  datasets.index(dataset_id)
-					  }
-					  
-					// TODO RK need to replace unknown with the server name and dataset type
- 			    	val dtkey = "unknown." + "dataset."+ "unknown"
-			    	
-			        current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString, dataset_id, ""))}
- 			    	
- 			    	//add file to RDF triple store if triple store is used
- 			    	if(fileType.equals("application/xml") || fileType.equals("text/xml")){
-		             play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match{      
-			             case "yes" => {
-                     sparql.addFileToGraph(f.id)
-                     sparql.linkFileToDataset(f.id, dataset_id)
-			             }
-			             case _ => {}
-		             }
- 			    	}
-		
-					  // redirect to dataset page
-					  Logger.info("Uploading Completed")
-					  
-					  Redirect(routes.Datasets.dataset(dataset_id))
-				  	}
-				  	case None => {
-					  Logger.error("Could not retrieve file that was just saved.")
-					  InternalServerError("Error uploading file")
-				  	}
-				  }
-			  }.getOrElse {
-				  BadRequest("File not attached.")
-			  }
-		  }
-		  case None => {Logger.error("Error getting dataset" + dataset_id); InternalServerError}
-      	}
+                    current.plugin[FileDumpService].foreach {
+                      _.dump(DumpOfFile(uploadedFile.ref.file, f.id.toString, nameOfFile))
+                    }
+
+                    // TODO RK need to replace unknown with the server name
+                    val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+
+                    val host = Utils.baseUrl(request) + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
+                    val id = f.id
+
+                    /** *** Inserting DTS Requests   **/
+
+                    val clientIP = request.remoteAddress
+                    val domain = request.domain
+                    val keysHeader = request.headers.keys
+                    //request.
+                    Logger.debug("---\n \n")
+
+                    Logger.debug("clientIP:" + clientIP + "   domain:= " + domain + "  keysHeader=" + keysHeader.toString + "\n")
+                    Logger.debug("Origin: " + request.headers.get("Origin") + "  Referer=" + request.headers.get("Referer") + " Connections=" + request.headers.get("Connection") + "\n \n")
+
+                    Logger.debug("----")
+                    val serverIP = request.host
+                    dtsrequests.insertRequest(serverIP, clientIP, f.filename, id, fileType, f.length, f.uploadDate)
+
+                    /** **************************/
+
+                    val extra = Map("filename" -> f.filename)
+                    current.plugin[RabbitmqPlugin].foreach {
+                      _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, dataset_id, flags))
+                    }
+
+                    val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+
+                    //for metadata files
+                    if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
+                      val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
+                      files.addXMLMetadata(id, xmlToJSON)
+
+                      Logger.debug("xmlmd=" + xmlToJSON)
+
+                      current.plugin[ElasticsearchPlugin].foreach {
+                        _.index("data", "file", id, List(("filename", f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId", dataset.id.toString()), ("datasetName", dataset.name), ("xmlmetadata", xmlToJSON)))
+                      }
+                    }
+                    else {
+                      current.plugin[ElasticsearchPlugin].foreach {
+                        _.index("data", "file", id, List(("filename", f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId", dataset.id.toString()), ("datasetName", dataset.name)))
+                      }
+                    }
+
+                    // add file to dataset
+                    // TODO create a service instead of calling salat directly
+                    val theFile = files.get(f.id).get
+                    datasets.addFile(dataset.id, theFile)
+                    if (!theFile.xmlMetadata.isEmpty) {
+                      datasets.index(dataset_id)
+                    }
+
+                    // TODO RK need to replace unknown with the server name and dataset type
+                    val dtkey = "unknown." + "dataset." + "unknown"
+
+                    current.plugin[RabbitmqPlugin].foreach {
+                      _.extract(ExtractorMessage(dataset_id, dataset_id, host, dtkey, Map.empty, f.length.toString, dataset_id, ""))
+                    }
+
+                    //add file to RDF triple store if triple store is used
+                    if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
+                      play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+                        case "yes" => {
+                          sparql.addFileToGraph(f.id)
+                          sparql.linkFileToDataset(f.id, dataset_id)
+                        }
+                        case _ => {}
+                      }
+                    }
+
+                    // redirect to dataset page
+                    Logger.info("Uploading Completed")
+
+                    Redirect(routes.Datasets.dataset(dataset_id))
+                  }
+                  case None => {
+                    Logger.error("Could not retrieve file that was just saved.")
+                    InternalServerError("Error uploading file")
+                  }
+                }
+              } finally {
+                f.ref.clean()
+              }
+            }.getOrElse {
+              BadRequest("File not attached.")
+            }
+          }
+          case None => {
+            Logger.error("Error getting dataset" + dataset_id); InternalServerError
+          }
+        }
       }
-      case None => { Logger.error("Error getting dataset" + dataset_id); InternalServerError }
+      case None => {
+        Logger.error("Error getting dataset" + dataset_id); InternalServerError
+      }
     }
   }
 
