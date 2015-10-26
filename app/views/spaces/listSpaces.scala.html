@@ -1,7 +1,7 @@
 @(spaces: List[models.ProjectSpace], when: String, date: String, limit: Int, owner: Option[String], showAll: Boolean, mode: Option[String], deletePermission: Boolean, prev: String, next: String)(implicit user: Option[models.User])
 
 @import _root_.util.Formatters.ellipsize
-    @import api.Permission
+@import api.Permission
 
 @main("Spaces") {
 
@@ -24,8 +24,8 @@
             </div>
             <div class="col-md-2">
                 <div class="btn-group btn-group-sm pull-right">
-                    <a class="btn btn-default active" href="#" id="allspace">All Space</a>
-                    <a class="btn btn-default" href="#" id="myspace">My Space</a>
+                    <a class="btn btn-default active" href="#" id="allspace">All Spaces</a>
+                    <a class="btn btn-default" href="#" id="myspace">My Spaces</a>
                 </div>
             </div>
             <div class="col-md-1">
