@@ -31,6 +31,11 @@ trait SectionService {
   def setDescription(id: UUID, descr: String)
 
   /**
+   * Return a list of tags and counts found in sections
+   */
+  def getTags(): List[(String, Long)]
+
+  /**
    * Update thumbnail used to represent this section.
    */
   def updateThumbnail(sectionId: UUID, thumbnailId: UUID)

@@ -1,4 +1,4 @@
-@(weightedTags: List[(String,Integer)])(implicit user: Option[models.User])
+@(weightedTags: List[(String,Long)])(implicit user: Option[models.User])
 
 @main("Tag cloud") {
     <script src="@routes.Assets.at("javascripts/tagcanvas.js")" type="text/javascript"></script>
