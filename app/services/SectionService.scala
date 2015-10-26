@@ -33,7 +33,7 @@ trait SectionService {
   /**
    * Return a list of tags and counts found in sections
    */
-  def getTags(): List[(String, Long)]
+  def getTags(): Map[String, Long]
 
   /**
    * Update thumbnail used to represent this section.

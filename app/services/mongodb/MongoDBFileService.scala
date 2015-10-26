@@ -223,10 +223,10 @@ class MongoDBFileService @Inject() (
   /**
    * Return a list of tags and counts found in sections
    */
-  def getTags(): List[(String, Long)] = {
+  def getTags(): Map[String, Long] = {
     val x = FileDAO.dao.collection.aggregate(MongoDBObject("$unwind" -> "$tags"),
       MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-    x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toList
+    x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
   }
 
   def modifyRDFOfMetadataChangedFiles() {

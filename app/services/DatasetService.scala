@@ -95,7 +95,7 @@ trait DatasetService {
   /**
    * Return a list of tags and counts found in sections
    */
-  def getTags(): List[(String, Long)]
+  def getTags(): Map[String, Long]
 
   def modifyRDFOfMetadataChangedDatasets()
   
