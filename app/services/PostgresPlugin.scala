@@ -412,7 +412,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     rs.close()
     st.close()
     Logger.debug("Searching streams result: " + data)
-    if (data == "null") { // FIXME
+    if (data == "null" || data == "") { // FIXME
       Logger.debug("Searching NONE")
       None
     } else Some(data)
