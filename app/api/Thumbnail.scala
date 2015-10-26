@@ -62,21 +62,25 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
    * Upload a file thumbnail.
    */  
   def uploadThumbnail() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.AddThumbnail)) { request => 
-      request.body.file("File").map { f =>
-        f.ref.file.length() match{
+    request.body.file("File").map { f =>
+      try {
+        f.ref.file.length() match {
           case 0L => {
             BadRequest(toJson("File is empty."))
           }
           case _ => {
             Logger.info("Uploading thumbnail " + f.filename)
-	        // store file
-	        val id = thumbnails.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
-	        Ok(toJson(Map("id"->id))) 
+            // store file
+            val id = thumbnails.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
+            Ok(toJson(Map("id" -> id)))
           }
-        }  
-      }.getOrElse {
-         BadRequest(toJson("File not attached."))
+        }
+      } finally {
+        f.ref.clean()
       }
+    }.getOrElse {
+       BadRequest(toJson("File not attached."))
+    }
   }
 
 
