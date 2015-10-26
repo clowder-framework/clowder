@@ -151,55 +151,65 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
   }
 
   def createTagList() = {
-    val tagMap = collection.mutable.Map.empty[Char, collection.mutable.Map[String, Integer]]
+    val tagMap = collection.mutable.Map.empty[Char, collection.mutable.Map[String, Long]]
 
     // TODO allow for tags in collections
     //    for(collection <- collections.listCollections(); tag <- collection.tags) {
     //      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.collection").getOrElse(1)
     //    }
 
-    for(dataset <- datasets.listDatasets; tag <- dataset.tags) {
-      var firstChar = if (tag.name(0).isLetter) tag.name(0).toUpper else '#'
-      if (!tagMap.contains(firstChar)) tagMap(firstChar) = collection.mutable.Map.empty[String, Integer].withDefaultValue(0)
-      val map = tagMap(firstChar)
-      map(tag.name) = map(tag.name) + 1
+    datasets.getTags().foreach { case (tag: String, count: Long) =>
+      val firstChar = if (tag(0).isLetter) tag(0).toUpper else '#'
+      if (!tagMap.contains(firstChar)) {
+        val map = collection.mutable.Map[String, Long]((tag, count)).withDefaultValue(0)
+        tagMap(firstChar) = map
+      } else {
+        val map = tagMap(firstChar)
+        map(tag) = map(tag) + count
+      }
     }
-
-    for(file <- files.listFiles; tag <- file.tags) {
-      var firstChar = if (tag.name(0).isLetter) tag.name(0).toUpper else '#'
-      if (!tagMap.contains(firstChar)) tagMap(firstChar) = collection.mutable.Map.empty[String, Integer].withDefaultValue(0)
-      val map = tagMap(firstChar)
-      map(tag.name) = map(tag.name) + 1
+    files.getTags().foreach { case (tag: String, count: Long) =>
+      val firstChar = if (tag(0).isLetter) tag(0).toUpper else '#'
+      if (!tagMap.contains(firstChar)) {
+        val map = collection.mutable.Map[String, Long]((tag, count)).withDefaultValue(0)
+        tagMap(firstChar) = map
+      } else {
+        val map = tagMap(firstChar)
+        map(tag) = map(tag) + count
+      }
     }
-
-    for(section <- sections.listSections; tag <- section.tags) {
-      var firstChar = if (tag.name(0).isLetter) tag.name(0).toUpper else '#'
-      if (!tagMap.contains(firstChar)) tagMap(firstChar) = collection.mutable.Map.empty[String, Integer].withDefaultValue(0)
-      val map = tagMap(firstChar)
-      map(tag.name) = map(tag.name) + 1
+    sections.getTags().foreach { case (tag: String, count: Long) =>
+      val firstChar = if (tag(0).isLetter) tag(0).toUpper else '#'
+      if (!tagMap.contains(firstChar)) {
+        val map = collection.mutable.Map[String, Long]((tag, count)).withDefaultValue(0)
+        tagMap(firstChar) = map
+      } else {
+        val map = tagMap(firstChar)
+        map(tag) = map(tag) + count
+      }
     }
 
     tagMap.map{ case (k, v) => (k, v.toMap)}.toMap
   }
 
   def computeTagWeights() = {
-    val weightedTags = collection.mutable.Map.empty[String, Integer].withDefaultValue(0)
+    val weightedTags = collection.mutable.Map.empty[String, Long].withDefaultValue(0)
 
     // TODO allow for tags in collections
 //    for(collection <- collections.listCollections(); tag <- collection.tags) {
 //      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.collection").getOrElse(1)
 //    }
 
-    for(dataset <- datasets.listDatasets; tag <- dataset.tags) {
-      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.dataset").getOrElse(1)
+    datasets.getTags().foreach { case (tag: String, count: Long) =>
+      weightedTags(tag) = weightedTags(tag) + count * current.configuration.getInt("tags.weight.dataset").getOrElse(1)
     }
 
-    for(file <- files.listFiles; tag <- file.tags) {
-      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.files").getOrElse(1)
+    files.getTags().foreach { case (tag: String, count: Long) =>
+      weightedTags(tag) = weightedTags(tag) + count * current.configuration.getInt("tags.weight.files").getOrElse(1)
     }
 
-    for(section <- sections.listSections; tag <- section.tags) {
-      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.sections").getOrElse(1)
+    sections.getTags().foreach { case (tag: String, count: Long) =>
+      weightedTags(tag) = weightedTags(tag) + count * current.configuration.getInt("tags.weight.sections").getOrElse(1)
     }
 
     Logger.debug("thelist: "+ weightedTags.toList.toString)
