@@ -478,7 +478,10 @@ class Datasets @Inject()(
                   val dsId = dataset.id
                   val dsName = dataset.name
 
-                  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dsId, flags))}
+                  // Adding filename to the extractor message. Needed by PyClowder.
+                  val extra = Map("filename" -> f.filename)
+
+                  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, dsId, flags))}
 
                   val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
 
