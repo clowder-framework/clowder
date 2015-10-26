@@ -1,9 +1,9 @@
 @(spaces: List[models.ProjectSpace], when: String, date: String, limit: Int, owner: Option[String], showAll: Boolean, mode: Option[String], deletePermission: Boolean, prev: String, next: String)(implicit user: Option[models.User])
 
-    @import _root_.util.Formatters.ellipsize
+@import _root_.util.Formatters.ellipsize
     @import api.Permission
 
-    @main("Spaces") {
+@main("Spaces") {
 
         @util.masonry()
 
@@ -70,6 +70,7 @@
                         $('#allspace').addClass('active');
                         $('#myspace' ).removeClass('active');
                         $('#masonry').append( notmyspacetile );
+                        //use .masonry('reload'); we we upgrade the version of masonry
                         $('#masonry').masonry('destroy');
                         $('#masonry').masonry();
                         $('table').append(notmyspacelist);
@@ -82,6 +83,7 @@
                         $('#allspace' ).removeClass('active');
                         notmyspacetile = $('.notmyspacetile').detach();
                         notmyspacelist = $('.notmyspacelist').detach();
+                        //use .masonry('reload'); we we upgrade the version of masonry
                         $('#masonry').masonry('destroy');
                         $('#masonry').masonry();
                     });
@@ -242,4 +244,4 @@
             $('#create-space').addClass('disabled');
         </script>
     }
-    }
+}
