@@ -114,15 +114,12 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
 
   def tagCloud() = AuthenticatedAction { implicit request =>
     implicit val user = request.user
-
-    Ok(views.html.tagCloud(computeTagWeights(user)))
+    Ok(views.html.tagCloud(computeTagWeights()))
   }
 
   def tagListWeighted() = AuthenticatedAction { implicit request =>
     implicit val user = request.user
-
-    val tags = computeTagWeights(user)
-
+    val tags = computeTagWeights()
     if (tags.isEmpty) {
       Ok(views.html.tagList(List.empty[(String, Double)]))
     } else {
@@ -139,7 +136,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
   def tagListOrdered() = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
-    Ok(views.html.tagListChar(createTagList(user)))
+    Ok(views.html.tagListChar(createTagList()))
   }
 
   def createTagList() = {

@@ -1571,7 +1571,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Download dataset",
     notes = "Downloads all files contained in a dataset.",
     responseClass = "None", httpMethod = "GET")
-  def download(id: UUID, compression: Int) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.DownloadDataset)) { request =>
+  def download(id: UUID, compression: Int) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(loggedInUser) => {

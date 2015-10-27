@@ -271,7 +271,8 @@ class Files @Inject() (
     Ok(views.html.uploadExtract(extractForm))
   }
   
-def uploadExtract() = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
+def uploadExtract() =
+  PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
     implicit val user = request.user
     user match {        
       case Some(identity) => {
@@ -929,9 +930,9 @@ def uploadExtract() = PermissionAction(Permission.AddFile)(parse.multipartFormDa
         Logger.info("uploadDragDrop")
         val file = queries.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType)
         val uploadedFile = f
+        try {
         file match {
           case Some(f) => {
-
             var fileType = f.contentType
             if (fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")) {
               fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, nameOfFile, "file")

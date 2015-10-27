@@ -56,7 +56,8 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
   /**
    * Download preview bytes.
    */
-  def download(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.preview, id))) { implicit request =>
+  def download(id: UUID) =
+    PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.preview, id))) { implicit request =>
         previews.getBlob(id) match {
 
           case Some((inputStream, filename, contentType, contentLength)) => {
@@ -101,9 +102,10 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
   /**
    * Upload a preview.
    */
-  def upload(iipKey: String = "") = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
-        request.body.file("File").map {
-          f =>
+  def upload(iipKey: String = "") =
+    PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
+        request.body.file("File").map { f =>
+          try {
             Logger.debug("Uploading file " + f.filename)
             Logger.debug("########Uploading Preview----" + f.filename)
             // store file
