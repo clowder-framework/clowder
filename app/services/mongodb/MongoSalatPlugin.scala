@@ -1,5 +1,6 @@
 package services.mongodb
 
+import com.mongodb.CommandFailureException
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import play.api.{ Plugin, Logger, Application }
@@ -41,6 +42,20 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     // update database if needed
     updateDatabase()
 
+    // drop old indices
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("datasets").dropIndex("tags.name_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("tags.name_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("tags_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("sections").dropIndex("tags.name_1")
+    }
+
     // create indices.
     Logger.debug("Ensuring indices exist")
     collection("collections").ensureIndex(MongoDBObject("created" -> -1))
@@ -51,7 +66,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("datasets").ensureIndex(MongoDBObject("tags.name" -> "text"))
 
     collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
-    collection("uploads.files").ensureIndex(MongoDBObject("tags" -> 1))
     collection("uploads.files").ensureIndex(MongoDBObject("author.email" -> 1))
     collection("uploads.files").ensureIndex(MongoDBObject("tags.name" -> "text"))
 
