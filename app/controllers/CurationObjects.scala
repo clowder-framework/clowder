@@ -409,7 +409,7 @@ class CurationObjects @Inject()(
                     "Number of Datasets" -> Json.toJson("http://purl.org/dc/terms/numberdatasets"),
                     "Number of Collections" -> Json.toJson("http://purl.org/dc/terms/numbercollections"),
                     "Publication Callback" -> Json.toJson("http://purl.org/dc/terms/publicationcallback"),
-                    "Environment Key" -> Json.toJson("http://purl.org/dc/terms/environmentkey"),
+                    "Environment Key" -> Json.toJson("http://sead-data.net/terms/environmentkey"),
                     "Access" -> Json.toJson("http://sead-data.net/terms/access"),
                     "License" -> Json.toJson("http://purl.org/dc/terms/license"),
                     "Cost" -> Json.toJson("http://sead-data.net/terms/cost")
