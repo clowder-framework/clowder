@@ -8,19 +8,21 @@ import javax.inject.Inject
 import services.ThreeDService
 
 class ThreeDTexture @Inject()(threeD: ThreeDService) extends Controller with ApiController {
-  
-    /**
+  /**
    * Upload a 3D texture file.
    */  
-  def uploadTexture() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.Add3DTexture)) { request => 
-      request.body.file("File").map { f =>        
+  def uploadTexture() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.Add3DTexture)) { request =>
+    request.body.file("File").map { f =>
+      try {
         Logger.info("Uploading 3D texture file " + f.filename)
         // store file
         val id = threeD.save(new FileInputStream(f.ref.file), f.filename, f.contentType)
-        Ok(toJson(Map("id"->id)))   
-      }.getOrElse {
-         BadRequest(toJson("File not attached."))
+        Ok(toJson(Map("id" -> id)))
+      } finally {
+        f.ref.clean()
       }
+    }.getOrElse {
+      BadRequest(toJson("File not attached."))
+    }
   }
-
 }

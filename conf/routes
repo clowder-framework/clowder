@@ -224,10 +224,7 @@ GET            /javascriptRoutes                                                
 # API DOCUMENTATION USING SWAGGER
 # ----------------------------------------------------------------------
 GET            /api-docs.json                                                           controllers.ApiHelpController.getResources
-GET            /api-docs.json/datasets                                                  controllers.ApiHelpController.getResource(path = "/api-docs.json/datasets")
-GET            /api-docs.json/files                                                     controllers.ApiHelpController.getResource(path = "/api-docs.json/files")
-GET            /api-docs.json/collections                                               controllers.ApiHelpController.getResource(path = "/api-docs.json/collections")
-GET            /api-docs.json/extractions                                               controllers.ApiHelpController.getResource(path = "/api-docs.json/extractions")
+GET            /api-docs.json/:path                                                     @controllers.Application.apidoc(path: String)
 
 # ----------------------------------------------------------------------
 # RESTful API
@@ -362,6 +359,7 @@ GET            /api/datasets/:id/technicalmetadatajson                          
 GET            /api/datasets/:id/xmlmetadatajson                                        @api.Datasets.getXMLMetadataJSON(id: UUID)
 GET            /api/datasets/:id/usermetadatajson                                       @api.Datasets.getUserMetadataJSON(id: UUID)
 GET            /api/datasets/:id/listFiles                                              @api.Datasets.datasetFilesList(id: UUID)
+GET            /api/datasets/:id/download                                               @api.Datasets.download(id: UUID, compression: Int ?= -1)
 POST           /api/datasets/:id/comment                                                @api.Datasets.comment(id: UUID)
 POST           /api/datasets/:id/setNotesHTML                                           @api.Datasets.setNotesHTML(id: UUID)
 POST           /api/datasets/:id/reindex                                                @api.Datasets.reindex(id:UUID, recursive: Boolean ?= true)
@@ -427,7 +425,7 @@ GET            /api/geostreams/datapoints/trends                                
 GET            /api/geostreams/datapoints/bin/:time/:depth                              api.Geostreams.binDatapoints(time, depth: Double, raw: Boolean ?= false, since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty)
 GET            /api/geostreams/datapoints/:id                                           api.Geostreams.getDatapoint(id: String)
 GET            /api/geostreams/cache                                                    api.Geostreams.cacheListAction
-GET            /api/geostreams/cache/invalidate                                         api.Geostreams.cacheInvalidateAction
+GET            /api/geostreams/cache/invalidate                                         api.Geostreams.cacheInvalidateAction(sensor_id: Option[String] ?= None, stream_id: Option[String] ?= None)
 GET            /api/geostreams/cache/:id                                                api.Geostreams.cacheFetchAction(id)
 POST           /api/geostreams/sensors                                                  api.Geostreams.createSensor
 GET            /api/geostreams/sensors/update                                           api.Geostreams.updateStatisticsStreamSensor()

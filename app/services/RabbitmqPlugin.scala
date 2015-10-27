@@ -55,7 +55,7 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   override def onStart() {
     Logger.debug("Starting Rabbitmq Plugin")
     val configuration = play.api.Play.configuration
-    rabbitmquri = configuration.getString("medici2.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
+    rabbitmquri = configuration.getString("clowder.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
     Logger.debug("uri= "+ rabbitmquri)
 
     try {
@@ -121,8 +121,8 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     if (!factory.isDefined) return true
 
     val configuration = play.api.Play.configuration
-    val exchange = configuration.getString("medici2.rabbitmq.exchange").getOrElse("medici")
-    val mgmtPort = configuration.getString("medici2.rabbitmq.managmentPort").getOrElse("15672")
+    val exchange = configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
+    val mgmtPort = configuration.getString("clowder.rabbitmq.managmentPort").getOrElse("15672")
 
     try {
       val protocol = if (factory.get.isSSL) "https://" else "http://"

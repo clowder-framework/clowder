@@ -1,10 +1,6 @@
 package controllers
 
 import play.api.Logger
-import play.api.data.Form
-import play.api.data.Forms._
-import play.api.libs.json.Json
-import play.api.mvc.Cookie
 import java.io.FileInputStream
 import play.api.Play.current
 import play.api.libs.json.Json._
@@ -16,8 +12,6 @@ import models._
 import fileutils.FilesUtils
 import api.Permission
 import javax.inject.Inject
-import scala.Some
-import scala.xml.Utility
 import services.ExtractorMessage
 import api.WithPermission
 import scala.collection.mutable.ListBuffer
@@ -492,7 +486,10 @@ class Datasets @Inject()(
                   val dsId = dataset.id
                   val dsName = dataset.name
 
-                  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dsId, flags))}
+                  // Adding filename to the extractor message. Needed by PyClowder.
+                  val extra = Map("filename" -> f.filename)
+
+                  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, dsId, flags))}
 
                   val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
 
@@ -632,4 +629,3 @@ class Datasets @Inject()(
       Ok(views.html.generalMetadataSearch())
   }
 }
-

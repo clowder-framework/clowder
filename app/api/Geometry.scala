@@ -9,17 +9,21 @@ import services.ThreeDService
 
 class Geometry @Inject()(threeD: ThreeDService) extends Controller with ApiController {
 
-    /**
+  /**
    * Upload a 3D binary geometry file.
    */  
   def uploadGeometry() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateFiles)) { request =>
-      request.body.file("File").map { f =>        
+    request.body.file("File").map { f =>
+      try {
         Logger.info("Uploading binary geometry file " + f.filename)
         // store file
         val id = threeD.saveGeometry(new FileInputStream(f.ref.file), f.filename, f.contentType)
-        Ok(toJson(Map("id"->id)))   
-      }.getOrElse {
-         BadRequest(toJson("File not attached."))
+        Ok(toJson(Map("id" -> id)))
+      } finally {
+        f.ref.clean()
       }
+    }.getOrElse {
+       BadRequest(toJson("File not attached."))
+    }
   }
 }

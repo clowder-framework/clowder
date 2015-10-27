@@ -292,7 +292,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     			"SELECT sensor_id, start_time, end_time, unnest(params) AS param FROM streams WHERE sensor_id=?" +
     			") " +
     			"SELECT row_to_json(t, true) AS my_sensor FROM (" +
-    			"SELECT to_char(min(start_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') As min_start_time, to_char(max(start_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') As max_start_time, array_agg(distinct param) AS parameters FROM stream_info" +
+    			"SELECT to_char(min(start_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') As min_start_time, to_char(max(end_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') As max_end_time, array_agg(distinct param) AS parameters FROM stream_info" +
     			") As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
@@ -412,7 +412,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     rs.close()
     st.close()
     Logger.debug("Searching streams result: " + data)
-    if (data == "null") { // FIXME
+    if (data == "null" || data == "") { // FIXME
       Logger.debug("Searching NONE")
       None
     } else Some(data)

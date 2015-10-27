@@ -107,18 +107,18 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
   def upload(iipKey: String = "") =
     SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.CreateFiles)) {
       implicit request =>
-        request.body.file("File").map {
-          f =>
+        request.body.file("File").map { f =>
+          try {
             Logger.debug("Uploading file " + f.filename)
             Logger.debug("########Uploading Preview----" + f.filename)
             // store file
             //change stored preview type for zoom.it previews to avoid messup with uploaded XML metadata files
             var realContentType = f.contentType
-            if(f.contentType.getOrElse("application/octet-stream").equals("application/xml"))
+            if (f.contentType.getOrElse("application/octet-stream").equals("application/xml"))
               realContentType = Some("application/dzi")
-            
+
             val id = UUID(previews.save(new FileInputStream(f.ref.file), f.filename, realContentType))
-            Logger.debug("ctp: "+realContentType)
+            Logger.debug("ctp: " + realContentType)
             // for IIP server references, store the IIP URL, key and filename on the IIP server for possible later deletion of the previewed file
             if (f.filename.endsWith(".imageurl")) {
               val iipRefReader = new BufferedReader(new FileReader(f.ref.file));
@@ -137,8 +137,11 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
 
               previews.setIIPReferences(id, iipURL, iipImage, iipKey)
             }
-            Logger.debug("Preview ID^^^^^"+id.toString);
+            Logger.debug("Preview ID^^^^^" + id.toString);
             Ok(toJson(Map("id" -> id.stringify)))
+          } finally {
+            f.ref.clean()
+          }
         }.getOrElse {
           BadRequest(toJson("File not attached."))
         }

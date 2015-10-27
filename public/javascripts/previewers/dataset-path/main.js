@@ -1,8 +1,11 @@
 (function($, Configuration) {
 
 	function countRoutes(data) {
-		var count = Object.keys(data["Route and Green Index Extractor"]["Data"]["Routes"]).length;
-		return count;
+		if ("Route and Green Index Extractor" in data) {
+			return Object.keys(data["Route and Green Index Extractor"]["Data"]["Routes"]).length;
+		} else {
+			return 0;
+		}
 	}
     
     var dataset_id = Configuration.dataset_id;
