@@ -1,8 +1,12 @@
 package services.mongodb
 
+import java.net.URL
+import java.util.Date
+
 import com.mongodb.CommandFailureException
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
+import models._
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
 import com.mongodb.casbah.MongoURI
@@ -14,9 +18,6 @@ import services.{DI, AppConfigurationService}
 
 /**
  * Mongo Salat service.
- *
- * @author Rob Kooper
- *
  */
 class MongoSalatPlugin(app: Application) extends Plugin {
   // URI to the mongodatabase, for example mongodb://127.0.0.1:27017/medici
@@ -35,6 +36,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       Logger.info("no connection to mongo specified in , will use default URI mongodb://127.0.0.1:27017/medici")
       MongoURI("mongodb://127.0.0.1:27017/medici")
     }
+    Logger.info("Connecting to : " + mongoURI.toString())
 
     // connect to the database
     mongoConnection = mongoURI.connect.fold(l => throw l, r => r)
@@ -58,12 +60,24 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // create indices.
     Logger.debug("Ensuring indices exist")
+    collection("spaces.projects").ensureIndex(MongoDBObject("created" -> -1))
+    collection("spaces.projects").ensureIndex(MongoDBObject("public" -> 1))
+    collection("spaces.projects").ensureIndex(MongoDBObject("creator" -> 1))
+
     collection("collections").ensureIndex(MongoDBObject("created" -> -1))
-    
+    collection("collections").ensureIndex(MongoDBObject("spaces" -> 1))
+    collection("collections").ensureIndex(MongoDBObject("datasets._id" -> 1))
+    collection("collections").ensureIndex(MongoDBObject("public" -> 1))
+    collection("collections").ensureIndex(MongoDBObject("author.identityId.userId" -> 1, "author.identityId.providerId" -> 1))
+
     collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
     collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("files._id" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("tags.name" -> "text"))
+
+    collection("datasets").ensureIndex(MongoDBObject("spaces" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("public" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("author.identityId.userId" -> 1, "author.identityId.providerId" -> 1))
 
     collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
     collection("uploads.files").ensureIndex(MongoDBObject("author.email" -> 1))
@@ -136,6 +150,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("uploads.files").drop()
     collection("uploadquery.files").drop()
     collection("versus.descriptors").drop()
+    collection("spaces.projects").drop()
+    collection("spaces.users").drop()
     Logger.debug("**DANGER** Data deleted **DANGER**")
   }
 
@@ -155,6 +171,55 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         appConfig.addPropertyValue("mongodb.updates", "fixing-typehint-users")
       } else {
         Logger.warn("[MongoDBUpdate] : Missing fix _typeHint for users.")
+      }
+    }
+
+    // add a space if none exists
+    if (!appConfig.hasPropertyValue("mongodb.updates", "convert-to-spaces")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        val spaces = ProjectSpaceDAO.count(new MongoDBObject())
+        if (spaces == 0) {
+          val datasets = Dataset.count(new MongoDBObject())
+          val collections = Collection.count(new MongoDBObject())
+          val users = SocialUserDAO.count(new MongoDBObject())
+          if ((datasets != 0) || (collections != 0)) {
+            Logger.info("[MongoDBUpdate] : Found datasets/collections, will add all to default space")
+
+            // create roles (this is called before Global)
+            if (RoleDAO.count() == 0) {
+              RoleDAO.save(Role.Admin)
+              RoleDAO.save(Role.Editor)
+              RoleDAO.save(Role.Viewer)
+            }
+
+            // create the space
+            val spacename = java.net.InetAddress.getLocalHost.getHostName
+            val newspace = new ProjectSpace(name=spacename, description="", created=new Date(), creator=UUID("000000000000000000000000"),
+              homePage=List.empty[URL], logoURL=None, bannerURL=None, metadata=List.empty[Metadata],
+              collectionCount=collections.toInt, datasetCount=datasets.toInt, userCount=users.toInt)
+            ProjectSpaceDAO.save(newspace)
+            val spaceId = new ObjectId(newspace.id.stringify)
+
+            // add space to all datasets/collections
+            val q = MongoDBObject()
+            val o = MongoDBObject("$set" -> MongoDBObject("spaces" -> List[ObjectId](spaceId)))
+            collection("datasets").update(q ,o, multi=true)
+            collection("collections").update(q ,o, multi=true)
+
+            // add all users as admin
+            val adminRole = collection("roles").findOne(MongoDBObject("name" -> "Admin"))
+            val spaceRole = MongoDBObject("_typeHint" -> "models.UserSpaceAndRole", "spaceId" -> spaceId, "role" -> adminRole)
+            collection("social.users").update(MongoDBObject(), $push("spaceandrole" -> spaceRole), multi=true)
+
+          } else {
+            Logger.info("[MongoDBUpdate] : No datasets/collections found, will not create default space")
+          }
+        } else {
+          Logger.info("[MongoDBUpdate] : Found spaces, will not create default space")
+        }
+        appConfig.addPropertyValue("mongodb.updates", "convert-to-spaces")
+      } else {
+        Logger.warn("[MongoDBUpdate] : Missing fix to convert to spaces.")
       }
     }
   }

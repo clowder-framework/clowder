@@ -1,5 +1,6 @@
 @(dataset: models.Dataset, metadata: Map[String,Any], userMetadata: scala.collection.mutable.Map[String,Any], xmlMetadata: List[models.DatasetXMLMetadata], rdfExported: Boolean)(implicit user: Option[models.User])
 
+@import api.Permission
 @import com.mongodb.casbah.Imports.DBObject
 @import collection.JavaConverters._
 
@@ -94,29 +95,32 @@
 		</ul>
 	}
 
-    <div class="row">
-        <div class="col-md-12 box-white-space">
-            <h4>Community generated metadata</h4>
-            <div id='generalUserMetadata_@(dataset.id.stringify)' class='usr_md_'>
-                <button class="usr_md_ btn btn-link btn-sm" type="button">Add property</button>
-                @printLevelUserMetadata(userMetadata)
-                <button class="usr_md_submit btn btn-default btn-xs" type="button">Submit</button>
-                @if(rdfExported){
-                    <button class="usr_md_submit btn btn-primary rdfbtn" type="button">Get as RDF</button>
-                }
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-12 box-white-space">
-            <h4>System generated metadata</h4>
-            @if(metadata.isEmpty) {
-                <div>No system generated metadata available yet</div>
-            } else {
-                <div>@printLevel(metadata)</div>
-            }
-        </div>
-    </div>
+	<!-- If the user can view metadata for this dataset, display what is available, otherwise display nothing. -->
+	@if(Permission.checkPermission(Permission.ViewMetadata, ResourceRef(ResourceRef.dataset, dataset.id))) {
+		<div class="row">
+			<div class="col-md-12 box-white-space">
+				<h4>Community generated metadata</h4>
+				<div id='generalUserMetadata_@(dataset.id.stringify)' class='usr_md_'>
+					<button class="usr_md_ btn btn-link btn-sm" type="button">Add property</button>
+					@printLevelUserMetadata(userMetadata)
+					<button class="usr_md_submit btn btn-default btn-xs" type="button">Submit</button>
+					@if(rdfExported) {
+						<button class="usr_md_submit btn btn-primary rdfbtn" type="button">Get as RDF</button>
+					}
+				</div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-12 box-white-space">
+				<h4>System generated metadata</h4>
+				@if(metadata.isEmpty) {
+					<div>No system generated metadata available yet</div>
+				} else {
+					<div>@printLevel(metadata)</div>
+				}
+			</div>
+		</div>
+	}
 
 <script language="javascript">
 	var topId = "generalUserMetadata_@(dataset.id.stringify)"; 

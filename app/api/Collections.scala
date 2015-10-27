@@ -28,20 +28,25 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Create a collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def createCollection() = SecuredAction(authorization=WithPermission(Permission.CreateCollections)) {
-    request =>
+  def createCollection() = PermissionAction(Permission.CreateCollection)(parse.json) { implicit request =>
       Logger.debug("Creating new collection")
-      (request.body \ "name").asOpt[String].map {
-        name =>
-          (request.body \ "description").asOpt[String].map {
-            description =>
-              val c = Collection(name = name, description = description, created = new Date())
-              collections.insert(c) match {
-                case Some(id) => {
-                 Ok(toJson(Map("id" -> id)))
-                }
-                case None => Ok(toJson(Map("status" -> "error")))
-              }
+      (request.body \ "name").asOpt[String].map { name =>
+          (request.body \ "description").asOpt[String].map { description =>
+              (request.body \ "space").asOpt[String].map { space => 
+	              var c : Collection = null
+	              if (space == "default") {
+	                   c = Collection(name = name, description = description, created = new Date(), author=request.user)
+	              }
+	              else {
+	                   c = Collection(name = name, description = description, created = new Date(), author=request.user, spaces = List(UUID(space)))
+	              }
+	              collections.insert(c) match {
+	                case Some(id) => {
+	                 Ok(toJson(Map("id" -> id)))
+	                }
+	                case None => Ok(toJson(Map("status" -> "error")))
+	              }
+              }.getOrElse(BadRequest(toJson("Missing parameter [space]")))
           }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
       }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
@@ -49,9 +54,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Add dataset to collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def attachDataset(collectionId: UUID, datasetId: UUID) = SecuredAction(parse.anyContent,
-                    authorization=WithPermission(Permission.CreateCollections), resourceId = Some(collectionId)) { request =>
-    
+  def attachDataset(collectionId: UUID, datasetId: UUID) = PermissionAction(Permission.AddResourceToCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     collections.addDataset(collectionId, datasetId) match {
       case Success(_) => {
 
@@ -78,9 +81,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Reindex a collection",
     notes = "Reindex the existing collection, if recursive is set to true it will also reindex all datasets and files.",
     httpMethod = "GET")
-  def reindex(id: UUID, recursive: Boolean) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.CreateCollections)) {
-    request =>
+  def reindex(id: UUID, recursive: Boolean) = PermissionAction(Permission.CreateCollection, Some(ResourceRef(ResourceRef.collection, id))) {  implicit request =>
       collections.get(id) match {
         case Some(coll) => {
           current.plugin[ElasticsearchPlugin].foreach {
@@ -98,9 +99,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Remove dataset from collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: String) = SecuredAction(parse.anyContent,
-                    authorization=WithPermission(Permission.CreateCollections), resourceId = Some(collectionId)) { request =>
-
+  def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: String) = PermissionAction(Permission.CreateCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     collections.removeDataset(collectionId, datasetId, Try(ignoreNotFound.toBoolean).getOrElse(true)) match {
       case Success(_) => {
 
@@ -122,8 +121,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Remove collection",
       notes = "Does not delete the individual datasets in the collection.",
       responseClass = "None", httpMethod = "POST")
-  def removeCollection(collectionId: UUID) = SecuredAction(parse.anyContent,
-    authorization=WithPermission(Permission.DeleteCollections), resourceId = Some(collectionId)) { request =>
+  def removeCollection(collectionId: UUID) = PermissionAction(Permission.DeleteCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     collections.get(collectionId) match {
       case Some(collection) => {
         events.addObjectEvent(request.user , collection.id, collection.name, "delete_collection") 
@@ -140,16 +138,14 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "List all collections",
       notes = "",
       responseClass = "None", httpMethod = "GET")
-  def listCollections() = SecuredAction(parse.anyContent,
-                                        authorization=WithPermission(Permission.ListCollections)) { request =>
-    val list = for (collection <- collections.listCollections()) yield jsonCollection(collection)
+  def listCollections() = PrivateServerAction { implicit request =>
+    val list = collections.listAccess(0, request.user, request.superAdmin).map(jsonCollection(_))
     Ok(toJson(list))
   }
 
   @ApiOperation(value = "Get a specific collection",
     responseClass = "Collection", httpMethod = "GET")
-  def getCollection(collectionId: UUID) = SecuredAction(parse.anyContent,
-    authorization=WithPermission(Permission.ShowCollection)) { request =>
+  def getCollection(collectionId: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     collections.get(collectionId) match {
       case Some(x) => Ok(jsonCollection(x))
       case None => BadRequest(toJson("collection not found"))
@@ -161,14 +157,81 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
                "created" -> collection.created.toString))
   }
 
+  @ApiOperation(value = "Update a collection name",
+  notes= "Takes one argument, a UUID of the collection. Request body takes a key-value pair for the name",
+  responseClass = "None", httpMethod = "PUT")
+  def updateCollectionName(id: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, id)))(parse.json) {
+    implicit request =>
+      implicit val user = request.user
+      if (UUID.isValid(id.stringify)) {
+        var name: String = null
+        val aResult = (request.body \ "name").validate[String]
+        aResult match {
+          case s: JsSuccess[String] => {
+            name = s.get
+          }
+          case e: JsError => {
+            Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+            BadRequest(toJson(s"name data is missing"))
+          }
+        }
+        Logger.debug(s"Update title for dataset with id $id. New name: $name")
+        collections.updateName(id, name)
+        collections.get(id) match {
+          case Some(collection) => {
+            events.addObjectEvent(user, id, collection.name, "update_collection_information")
+          }
+
+        }
+        Ok(Json.obj("status" -> "success"))
+      }
+      else {
+        Logger.error(s"The given id $id is not a valid ObjectId.")
+        BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
+      }
+  }
+
+  @ApiOperation(value = "Update collection description",
+  notes = "Takes one argument, a UUID of the collection. Request body takes key-value pair for the description",
+  responseClass = "None", httpMethod = "PUT")
+  def updateCollectionDescription(id: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, id)))(parse.json) {
+    implicit request =>
+      implicit val user = request.user
+      if (UUID.isValid(id.stringify)) {
+        var description: String = null
+        val aResult = (request.body \ "description").validate[String]
+        aResult match {
+          case s: JsSuccess[String] => {
+            description = s.get
+          }
+          case e: JsError => {
+            Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+            BadRequest(toJson(s"description data is missing"))
+          }
+        }
+        Logger.debug(s"Update title for dataset with id $id. New description: $description")
+        collections.updateDescription(id, description)
+        collections.get(id) match {
+          case Some(collection) => {
+            events.addObjectEvent(user, id, collection.name, "update_collection_information")
+          }
+
+        }
+        Ok(Json.obj("status" -> "success"))
+      }
+      else {
+        Logger.error(s"The given id $id is not a valid ObjectId.")
+        BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
+      }
+
+  }
   /**
    * Add preview to file.
    */
   @ApiOperation(value = "Attach existing preview to collection",
     notes = "",
     responseClass = "None", httpMethod = "POST")
-  def attachPreview(collection_id: UUID, preview_id: UUID) = SecuredAction(authorization = WithPermission(Permission.EditCollection)) {
-    request =>
+  def attachPreview(collection_id: UUID, preview_id: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, collection_id)))(parse.json) { implicit request =>
       // Use the "extractor_id" field contained in the POST data.  Use "Other" if absent.
       val eid = (request.body \ "extractor_id").asOpt[String]
       val extractor_id = if (eid.isDefined) {
@@ -210,9 +273,8 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Follow collection.",
     notes = "Add user to collection followers and add collection to user followed collections.",
     responseClass = "None", httpMethod = "POST")
-  def follow(id: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
-    request =>
-      val user = request.user
+  def follow(id: UUID, name: String) = AuthenticatedAction { implicit request =>
+      implicit val user = request.user
 
       user match {
         case Some(loggedInUser) => {
@@ -242,9 +304,8 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Unfollow collection.",
     notes = "Remove user from collection followers and remove collection from user followed collections.",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(id: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) {
-    request =>
-      val user = request.user
+  def unfollow(id: UUID, name: String) = AuthenticatedAction { implicit request =>
+      implicit val user = request.user
 
       user match {
         case Some(loggedInUser) => {

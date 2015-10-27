@@ -20,6 +20,7 @@ import com.typesafe.plugin._
 
  case class Event(
  	user: MiniUser,
+  targetuser : Option[MiniUser] = None,
  	object_id: Option[UUID] = None,
  	object_name: Option[String] = None,
  	source_id: Option[UUID] = None,

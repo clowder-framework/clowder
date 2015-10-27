@@ -1,5 +1,7 @@
-@(files: List[models.File], datasetsCount: Long, filesCount: Long, collectionCount: Long,
+@(files: List[models.File], datasetsCount: Long, datasetsCountAccess: Long, filesCount: Long,
+        collectionsCount: Long, collectionsCountAccess: Long, spacesCount: Long, spacesCountAccess: Long, usersCount: Long,
         displayedName: String, welcomeMessage: String, newsfeed: List[models.Event])(implicit user: Option[models.User])
+
 @import _root_.util.Formatters
 
 @main(displayedName) {
@@ -37,17 +39,20 @@
               </div>
               <div class="panel-body">
                   <ul class="list-group">
-                      <li class="list-group-item">
-                          <span class="badge">@collectionCount</span>
-                          <a href="@routes.Collections.list("")">Collections</a>
+                      <li class="list-group-item" title="Access to @spacesCountAccess spaces">
+                          <a href="@routes.Spaces.list()">Project Spaces <span class="badge pull-right">@spacesCount</span></a>
+                      </li>
+                      <li class="list-group-item" title="Access to @collectionsCountAccess collections">
+                          <a href="@routes.Collections.list("")">Collections <span class="badge pull-right">@collectionsCount</span></a>
+                      </li>
+                      <li class="list-group-item" title="Access to @datasetsCountAccess datasets">
+                          <a href="@routes.Datasets.list("")">Datasets <span class="badge pull-right">@datasetsCount</span></a>
                       </li>
                       <li class="list-group-item">
-                          <span class="badge">@datasetsCount</span>
-                          <a href="@routes.Datasets.list("")">Datasets</a>
+                          Files <span class="badge pull-right">@filesCount</span>
                       </li>
                       <li class="list-group-item">
-                          <span class="badge">@filesCount</span>
-                          <a href="@routes.Files.list("")">Files</a>
+                          Users <span class="badge pull-right">@usersCount</span>
                       </li>
                   </ul>
               </div>

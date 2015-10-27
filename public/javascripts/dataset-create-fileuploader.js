@@ -27,6 +27,7 @@ function disableFields() {
 	$('#name').addClass("hiddenholdspace");
 	$('#description').addClass("hiddenholdspace");	
 	$("input[name=radiogroup]").attr('disabled', true);
+	$("#spaceid").attr('disabled', true);
 	$('#namelabel').html(htmlEncode(name).replace(/\n/g, "<br>"));
 	$('#namelabel').show();
 	$('#desclabel').html(htmlEncode(desc).replace(/\n/g, "<br>"));
@@ -39,7 +40,8 @@ function enableFields() {
 	$('#desclabel').hide();
 	$('#name').removeClass("hiddenholdspace");
     $('#description').removeClass("hiddenholdspace");
-    $("input[name=radiogroup]").attr('disabled', false);                    	
+    $("input[name=radiogroup]").attr('disabled', false);
+    $("#spaceid").attr('disabled', false);
 }
 
 //Remove the error messages that are provided to the user
@@ -133,8 +135,12 @@ function createEmptyDataset(data) {
 	
 	//Update the input we are adding to the form programmatically      
 	var name = $('#name');
-    var desc = $('#description');    
-    
+	var desc = $('#description');
+
+	var spaceList = [];
+	$('#spaceid').find(":selected").each(function(i, selected) {
+		spaceList[i] = $(selected).val();
+	});
     //Add errors and return false if validation fails. Validation comes from the host page, passing in the isNameRequired and isDescRequired
     //variables.
     var error = false;
@@ -174,8 +180,10 @@ function createEmptyDataset(data) {
     $('#hiddenid').val(id);
    
     if (id == "__notset") {
-    	//Case for the primary file that is submitted. It will create the dataset and obtain the id.        	
-    	var jsonData = JSON.stringify({"name":encName, "description":encDescription});
+    	//Case for the primary file that is submitted. It will create the dataset and obtain the id.     
+    	console.log("spaces are " + spaceList);
+    	var jsonData = JSON.stringify({"name":encName, "description":encDescription, "space":spaceList});
+    	console.log("jsondata is " + jsonData);
         var request = null;		                         	                        
         request = jsRoutes.api.Datasets.createEmptyDataset().ajax({
             data: jsonData,
@@ -263,6 +271,10 @@ function attachFiles() {
 		//Update the input we are adding to the form programmatically      
 		var name = $('#name');
 	    var desc = $('#description');
+		var spaceList = [];
+		$('#spaceid').find(":selected").each(function(i, selected) {
+			spaceList[i] = $(selected).val();
+		});
 	    
 	    console.log("isNameRequried is " + isNameRequired);
 	    console.log("isDescRequired is " + isDescRequired);
@@ -288,10 +300,10 @@ function attachFiles() {
 		var encDescription = htmlEncode(desc.val());
 	    
 		if (ids.length == 0) {
-			jsonData = JSON.stringify({"name":encName, "description":encDescription});
+			jsonData = JSON.stringify({"name":encName, "description":encDescription, "space":spaceList});
 		}
 		else {
-			jsonData = JSON.stringify({"name":encName, "description":encDescription, "existingfiles":ids});
+			jsonData = JSON.stringify({"name":encName, "description":encDescription, "space":spaceList, "existingfiles":ids});
 		}	
 	    	                         	                        
 	    request = jsRoutes.api.Datasets.createEmptyDataset().ajax({

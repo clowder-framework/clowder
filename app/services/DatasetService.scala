@@ -7,7 +7,7 @@ import models.File
 
 /**
  * Generic dataset service.
- * 
+ *
  * @author Luigi Marini
  *
  */
@@ -18,35 +18,50 @@ trait DatasetService {
   def count(): Long
 
   /**
-   * List all datasets in the system.
+   * Return a count of datasets in a space, this does not check for permissions
    */
-  def listDatasets(): List[Dataset]
-  
-  /**
-   * List all datasets in the system in reverse chronological order.
-   */
-  def listDatasetsChronoReverse(): List[Dataset]
-  
-  /**
-   * List datasets after a specified date.
-   */
-  def listDatasetsAfter(date: String, limit: Int): List[Dataset]
-  
-  /**
-   * List datasets before a specified date.
-   */
-  def listDatasetsBefore(date: String, limit: Int): List[Dataset]
+  def countSpace(space: String): Long
 
-    /**
-   * List datasets after a specified date for a specific user.
-   */
-  def listUserDatasetsAfter(date: String, limit: Int, email: String): List[Dataset]
-  
   /**
-   * List datasets before a specified date for a specific user.
+   * Return a list of datasets in a space, this does not check for permissions
    */
-  def listUserDatasetsBefore(date: String, limit: Int, email: String): List[Dataset]
-  
+  def listSpace(limit: Integer, space: String): List[Dataset]
+
+  /**
+   * Return a list of datasets in a space starting at a specific date, this does not check for permissions
+   */
+  def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Dataset]
+
+  /**
+   * Return a count of datasets the user has access to.
+   */
+  def countAccess(user: Option[User], showAll: Boolean): Long
+
+  /**
+   * Return a list of datasets the user has access to.
+   */
+  def listAccess(limit: Integer, user: Option[User], showAll: Boolean): List[Dataset]
+
+  /**
+   * Return a list of datasets the user has access to starting at a specific date.
+   */
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean): List[Dataset]
+
+  /**
+   * Return a count of datasets the user has created.
+   */
+  def countUser(user: Option[User], showAll: Boolean, owner: User): Long
+
+  /**
+   * Return a list of datasets the user has created.
+   */
+  def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Dataset]
+
+  /**
+   * Return a list of datasets the user has created starting at a specific date.
+   */
+  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Dataset]
+
   /**
    * Get dataset.
    */
@@ -58,25 +73,15 @@ trait DatasetService {
   def insert(dataset: Dataset): Option[String]
 
   /**
-   * Lastest dataset in chronological order.
-   */
-  def latest(): Option[Dataset]
-
-  /**
-   * First dataset in chronological order.
-   */
-  def first(): Option[Dataset]
-  
-  /**
-   * 
+   *
    */
   def listInsideCollection(collectionId: UUID) : List[Dataset]
-  
+
   /**
    * Check if a dataset is in a specific collection.
    */
   def isInCollection(dataset: Dataset, collection: Collection): Boolean
-  
+
   /**
    * Get the id of a file based on its filename and dataset it belongs to.
    */
@@ -98,7 +103,7 @@ trait DatasetService {
   def getTags(): Map[String, Long]
 
   def modifyRDFOfMetadataChangedDatasets()
-  
+
   def dumpAllDatasetGroupings(): List[String]
   
   def dumpAllDatasetMetadata(): List[String]
@@ -194,21 +199,25 @@ trait DatasetService {
   def newThumbnail(datasetId: UUID)
 
   def update(dataset: Dataset)
-  
+
   /**
-   * Update the administrative information associated with the dataset. This information includes the owner, the 
+   * Update the administrative information associated with the dataset. This information includes the owner, the
    * description, and the date created. Currently, only the description is editable. In the future, other items
    * or new data may be added that will be editable.
-   * 
+   *
    * id: The id of the dataset
    * description: A String that represents the updated information for the dataset description.
    * name: A String that represents the updated name for this dataset.
    */
   def updateInformation(id: UUID, description: String, name: String)
 
+  def updateName(id: UUID, name: String)
+
+  def updateDescription(id: UUID, description: String)
+
   /**
    * Update the license data that is currently associated with the dataset.
-   * 
+   *
    * id: The id of the dataset
    * licenseType: A String representing the type of license
    * rightsHolder: A String that is the free-text describing the owner of the license. Only required for certain license types
@@ -219,6 +228,16 @@ trait DatasetService {
   def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String)
 
   def setNotesHTML(id: UUID, notesHTML: String)
+
+  /**
+   * Associate a dataset with a space
+   */
+  def addToSpace(dataset: UUID, space: UUID)
+
+  /**
+   * Remove association between dataset and space
+   */
+  def removeFromSpace(dataset:UUID, space:UUID)
 
   /**
    * Add follower to a dataset.

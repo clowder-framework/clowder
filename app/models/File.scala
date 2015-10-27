@@ -1,7 +1,7 @@
 package models
 
 import java.util.Date
-import api.{WithPermission, Permission}
+
 import securesocial.core.Identity
 
 

@@ -12,9 +12,7 @@ GET            /*path/                                                          
 # ----------------------------------------------------------------------
 # HOME PAGE
 # ----------------------------------------------------------------------
-
 GET            /                                                                        @controllers.Application.index
-
 
 # ----------------------------------------------------------------------
 # Map static resources from the /public folder to the /assets URL path
@@ -39,7 +37,6 @@ GET            /profile/viewProfile/:uuid                                       
 GET            /profile/editProfile                                                     @controllers.Profile.editProfile
 GET            /profile/submitChanges                                                   @controllers.Profile.submitChanges
 GET            /profile/:uuid                                                           @controllers.Profile.viewProfileUUID(uuid: UUID)
-
 
 # ----------------------------------------------------------------------
 # UTILITIES
@@ -94,24 +91,41 @@ GET            /fileThumbnail/:id/blob                                          
 # ----------------------------------------------------------------------
 # DATASETS
 # ----------------------------------------------------------------------
-GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "")
-GET            /datasets/userDatasets                                                   @controllers.Datasets.userDatasets(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "", email: String)
-GET            /datasets/new                                                            @controllers.Datasets.newDataset
+GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
+GET            /datasets/new                                                            @controllers.Datasets.newDataset(space: Option[String])
 GET            /datasets/addToDataset/:id/:name/:desc                                   @controllers.Datasets.addToDataset(id: UUID, name: String, desc: String)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
 GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID)
+GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
 POST           /dataset/submit                                                          @controllers.Datasets.submit
 
 # ----------------------------------------------------------------------
 # COLLECTIONS
 # ----------------------------------------------------------------------
-GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "")
-GET            /collections/new                                                         @controllers.Collections.newCollection
+GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
+GET            /collections/new                                                         @controllers.Collections.newCollection(space: Option[String])
 POST           /collection/submit                                                       @controllers.Collections.submit
 GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)
+GET            /collection/:id/users                                                    @controllers.Collections.users(id: UUID)
 GET            /collections/:collection_id/previews                                     @controllers.Collections.previews(collection_id: UUID)
+
+# ----------------------------------------------------------------------
+# Spaces
+# ----------------------------------------------------------------------
+GET            /spaces                                                                  @controllers.Spaces.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "", owner: Option[String] ?= None, showAll: Boolean ?= true)
+GET            /spaces/new                                                              @controllers.Spaces.newSpace
+GET            /spaces/:id                                                              @controllers.Spaces.getSpace(id: UUID, size: Int ?= 9, direction: String ?= "desc")
+GET            /spaces/:id/updateSpace                                                  @controllers.Spaces.updateSpace(id:UUID)
+GET            /spaces/:id/addRequest                                                   @controllers.Spaces.addRequest(id:UUID)
+GET            /spaces/:id/acceptRequest                                                @controllers.Spaces.acceptRequest(id:UUID, user:String, role:String)
+GET            /spaces/:id/rejectRequest                                                @controllers.Spaces.rejectRequest(id:UUID, user:String)
+GET            /spaces/:id/users                                                        @controllers.Spaces.manageUsers(id: UUID)
+GET            /spaces/:id/extractors                                                   @controllers.Spaces.selectExtractors(id: UUID)
+POST           /spaces/extractors                                                       @controllers.Spaces.updateExtractors
+POST           /spaces/:id/invite                                                       @controllers.Spaces.inviteToSpace(id: UUID)
+POST           /spaces/submit                                                           @controllers.Spaces.submit
 
 # ----------------------------------------------------------------------
 # SENSORS
@@ -129,14 +143,12 @@ GET            /tags/list/ordered                                               
 GET            /tags/list/weighted                                                      @controllers.Tags.tagListWeighted
 GET            /tags/cloud                                                              @controllers.Tags.tagCloud
 
-
 # ----------------------------------------------------------------------
 # AUTHENTICATION
 # ----------------------------------------------------------------------
 GET            /loginTest                                                               controllers.Authentication.login
 POST           /loginTest                                                               controllers.Authentication.loginSubmit
-GET            /notAuthorized                                                           controllers.Authentication.notAuthorized
-
+GET            /notAuthorized                                                           controllers.Authentication.notAuthorized(msg:String,  id:String, resourceType:String )
 
 # ----------------------------------------------------------------------
 # SEARCH
@@ -158,7 +170,6 @@ POST           /queries/similarWeightedIndexes                                  
 # ----------------------------------------------------------------------
 GET            /previewers/list                                                         controllers.Previewers.list
 
-
 # ----------------------------------------------------------------------
 # SECURE SOCIAL
 # ----------------------------------------------------------------------
@@ -174,7 +185,7 @@ GET            /logout                                                          
 GET            /signup                                                                  securesocial.controllers.Registration.startSignUp
 POST           /signup                                                                  securesocial.controllers.Registration.handleStartSignUp
 GET            /signup/:token                                                           securesocial.controllers.Registration.signUp(token)
-POST           /signup/:token                                                           securesocial.controllers.Registration.handleSignUp(token)
+POST           /signup/:token                                                           @controllers.Registration.handleSignUp(token)
 GET            /reset                                                                   securesocial.controllers.Registration.startResetPassword
 POST           /reset                                                                   securesocial.controllers.Registration.handleStartResetPassword
 GET            /reset/:token                                                            securesocial.controllers.Registration.resetPassword(token)
@@ -210,10 +221,15 @@ POST           /admin/createIndex                                               
 POST           /admin/index/:id/build                                                   @controllers.Admin.buildIndex(id:String)
 DELETE         /admin/index/:id                                                         @controllers.Admin.deleteIndex(id:String)
 DELETE         /admin/index                                                             @controllers.Admin.deleteAllIndexes
+GET            /admin/roles                                                             @controllers.Admin.listRoles
+GET            /admin/roles/new                                                         @controllers.Admin.createRole
+POST           /admin/roles/submitNew                                                   @controllers.Admin.submitCreateRole
+DELETE         /admin/roles/delete/:id                                                  @controllers.Admin.removeRole(id: UUID)
+GET            /admin/roles/:id/edit                                                    @controllers.Admin.editRole(id: UUID)
+POST           /admin/roles/update                                                      @controllers.Admin.updateRole
 GET            /admin/extractions                                                       @controllers.Extractors.listAllExtractions
 POST           /admin/theme                                                             @controllers.Admin.setTheme
-
-GET      	   /admin/dataDumps           												@controllers.Admin.viewDumpers 
+GET            /admin/dataDumps                                                         @controllers.Admin.viewDumpers
 
 # ----------------------------------------------------------------------
 # JAVASCRIPT ENDPOINTS
@@ -278,7 +294,6 @@ POST           /api/files/:id/reindex                                           
 GET            /api/extractors                                                          @api.Extractions.listExtractors()
 GET            /api/extractors/:id                                                      @api.Extractions.getExtractorInfo(id: UUID)
 POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
-
 GET            /api/extractions/requests                                                @api.Extractions.getDTSRequests()
 GET            /api/extractions/servers_ips                                             @api.Extractions.getExtractorServersIP()
 GET            /api/extractions/extractors_names                                        @api.Extractions.getExtractorNames()
@@ -313,11 +328,27 @@ GET            /api/files/:id                                                   
 GET            /api/delete-data                                                         api.Admin.deleteAllData
 POST           /api/remove-admin                                                        api.Admin.removeAdmin
 POST           /api/changeAppearance                                                    api.Admin.submitAppearance
+POST           /api/dumpFilesMd                                                         @api.Files.dumpFilesMetadata
+POST           /api/dumpDatasetsMd                                                      @api.Datasets.dumpDatasetsMetadata
+POST           /api/dumpDatasetGroupings                                                @api.Datasets.dumpDatasetGroupings
 
-POST		   /api/dumpFilesMd															@api.Files.dumpFilesMetadata
-POST		   /api/dumpDatasetsMd														@api.Datasets.dumpDatasetsMetadata
-POST		   /api/dumpDatasetGroupings												@api.Datasets.dumpDatasetGroupings
-
+# ----------------------------------------------------------------------
+# SPACES ENDPOINT
+# ----------------------------------------------------------------------
+GET            /api/spaces                                                              @api.Spaces.list()
+GET            /api/spaces/listSpacesCanAdd                                             @api.Spaces.listSpacesCanAdd()
+GET            /api/spaces/:id                                                          @api.Spaces.get(id: UUID)
+POST           /api/spaces                                                              @api.Spaces.createSpace()
+DELETE         /api/spaces/:id                                                          @api.Spaces.removeSpace(id: UUID)
+POST           /api/spaces/:id/addCollection                                            @api.Spaces.addCollection(id: UUID)
+POST           /api/spaces/:id/addDataset                                               @api.Spaces.addDataset(id: UUID)
+POST           /api/spaces/:id/update                                                   @api.Spaces.updateSpace(id: UUID)
+POST           /api/spaces/:id/updateUsers                                              @api.Spaces.updateUsers(id: UUID)
+GET            /api/spaces/:id/removeUser                                               @api.Spaces.removeUser(id: UUID, removeUser: String)
+POST           /api/spaces/addDatasetToSpaces                                           @api.Spaces.addDatasetToSpaces(space_list: List[String] ?= List.empty, dataset_id: UUID)
+POST           /api/spaces/addCollectionToSpaces                                        @api.Spaces.addCollectionToSpaces(space_list: List[String]?= List.empty, collection_id: UUID)
+POST           /api/spaces/:id/follow                                                   @api.Spaces.follow(id: UUID, name: String)
+POST           /api/spaces/:id/unfollow                                                 @api.Spaces.unfollow(id: UUID, name: String)
 
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT
@@ -336,7 +367,8 @@ GET            /api/collections/:coll_id/getDatasets                            
 DELETE         /api/collections/:coll_id                                                @api.Collections.removeCollection(coll_id: UUID)
 POST           /api/collections/:c_id/previews/:p_id                                    @api.Collections.attachPreview(c_id: UUID, p_id: UUID)
 GET            /api/collections/:coll_id                                                @api.Collections.getCollection(coll_id: UUID)
-
+PUT            /api/collections/:coll_id/title                                          @api.Collections.updateCollectionName(coll_id: UUID)
+PUT            /api/collections/:coll_id/description                                    @api.Collections.updateCollectionDescription(coll_id: UUID)
 
 # ----------------------------------------------------------------------
 # DATASETS ENDPOINT
@@ -371,6 +403,8 @@ POST           /api/datasets/:id/tags                                           
 POST           /api/datasets/:id/tags/remove                                            @api.Datasets.removeTags(id: UUID)
 POST           /api/datasets/:id/tags/remove_all                                        @api.Datasets.removeAllTags(id: UUID)
 DELETE         /api/datasets/:id/tags                                                   @api.Datasets.removeTags(id: UUID)
+PUT            /api/datasets/:id/title                                                  @api.Datasets.updateName(id:UUID)
+PUT            /api/datasets/:id/description                                            @api.Datasets.updateDescription(id: UUID)
 POST           /api/datasets/:id/editing                                                @api.Datasets.updateInformation(id: UUID)
 POST           /api/datasets/:id/license                                                @api.Datasets.updateLicense(id: UUID)
 GET            /api/datasets/:id/isBeingProcessed                                       @api.Datasets.isBeingProcessed(id: UUID)
@@ -379,7 +413,6 @@ POST           /api/datasets/:ds_id/files/:file_id                              
 GET            /api/datasets/:id                                                        @api.Datasets.datasetFilesList(id: UUID)
 DELETE         /api/datasets/:id                                                        @api.Datasets.deleteDataset(id: UUID)
 POST           /api/datasets/:id/detachdelete                                           @api.Datasets.detachAndDeleteDataset(id: UUID)
-
 
 # ----------------------------------------------------------------------
 # PREVIEWS ENDPOINT
@@ -406,14 +439,13 @@ POST           /api/indexes/features                                            
 POST           /api/sections                                                            @api.Sections.add
 GET            /api/sections/:id                                                        @api.Sections.get(id: UUID)
 POST           /api/sections/:id/comments                                               @api.Sections.comment(id: UUID)
-POST    	   /api/sections/:id/description											@api.Sections.description(id: UUID)
+POST           /api/sections/:id/description                                            @api.Sections.description(id: UUID)
 POST           /api/sections/:section_id/thumbnails/:thumbnail_id                       @api.Sections.attachThumbnail(section_id: UUID,thumbnail_id: UUID)
 GET            /api/sections/:id/tags                                                   @api.Sections.getTags(id: UUID)
 POST           /api/sections/:id/tags                                                   @api.Sections.addTags(id: UUID)
 POST           /api/sections/:id/tags/remove                                            @api.Sections.removeTags(id: UUID)
 POST           /api/sections/:id/tags/remove_all                                        @api.Sections.removeAllTags(id: UUID)
 DELETE         /api/sections/:id/tags                                                   @api.Sections.removeTags(id: UUID)
-
 
 # ----------------------------------------------------------------------
 # GEOSTREAMS ENDPOINT
@@ -453,7 +485,6 @@ POST           /api/fileThumbnail                                               
 GET            /api/thumbnails                                                          @api.Thumbnails.list
 DELETE         /api/thumbnails/:id                                                      @api.Thumbnails.removeThumbnail(id: UUID)
 
-
 # ----------------------------------------------------------------------
 # SENSORS ENDPOINT
 # ----------------------------------------------------------------------
@@ -490,7 +521,6 @@ POST           /api/sparqlquery                                                 
 POST           /api/projects/addproject                                                 @api.Projects.addproject(project: String)
 POST           /api/institutions/addinstitution                                         @api.Institutions.addinstitution(institution: String)
 
-
 # ----------------------------------------------------------------------
 # USERS API
 # ----------------------------------------------------------------------
@@ -504,7 +534,6 @@ POST           /api/users/createNewListInUser                                   
 POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
 POST           /api/users/follow                                                        @api.Users.follow(followeeUUID: UUID, name: String)
 POST           /api/users/unfollow                                                      @api.Users.unfollow(followeeUUID: UUID, name: String)
-
 
 # ----------------------------------------------------------------------
 # MEDICI STATUS API

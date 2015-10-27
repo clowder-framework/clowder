@@ -1,5 +1,5 @@
-@(dataset: Dataset, previewers: List[Previewer])(implicit user: Option[models.User])
-
+@(dataset: Dataset, space: Option [List[ProjectSpace]], previewers: List[Previewer], spaceList: List[ProjectSpace])(implicit user: Option[models.User])
+@import api.Permission
 <div class="row">
     <div class="col-md-12 box-white-space">
         <div class="row">
@@ -7,17 +7,25 @@
                 <ul class="list-unstyled">
                     <li>Created by <a href= "@routes.Profile.viewProfile(dataset.author.email)"> @dataset.author.fullName </a></li>
                     <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
+                    <li>Shared with spaces: @spaces.spaceLink(space, ResourceRef.dataset, dataset.id, spaceList)</li>
                 </ul>
             </div>
             <div class="col-md-6">
                 <ul class="list-unstyled">
-                    <li><span id="licensetextdata">blank</span> <span id="rightsholderdata">blank</span></li>
+                    <li class="inline"><span id="licensetextdata">blank</span> <span id="rightsholderdata">blank</span></li>
+                    @datasets.editLicense(dataset)
                 </ul>
             </div>
         </div>
     </div>
     <div class="col-md-12 box-white-space" id="aboutdesc">
-        @Html(dataset.description)
+        <p id ="ds_description" class="inline">@Html(dataset.description)</p>
+		@if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+			<a id="edit-description" href="javascript:updateDescription()">
+				<span class="edit-tab glyphicon glyphicon-edit" aria-hidden="true"></span>
+			</a>
+		}
+
     </div>
 
     @datasets.previews(dataset, previewers)
@@ -30,7 +38,45 @@
         @datasets.follow(dataset)
     </div>
 
-
-
-
 </div>
+<script src="/assets/javascripts/htmlEncodeDecode.js" language="javascript"></script>
+<script>
+    function updateDescription() {
+		var cur_description = $('#ds_description').text().trim();
+		$('<div class="edit_desc"> </div>').insertAfter($('#ds_description'));
+		$('.edit_desc').append('<textarea id = "desc_input" class="form-control"/>');
+		$('.edit_desc').append('<br/>');
+		$('.edit_desc').append('<button id = "update_desc" class= "btn btn-sm btn-primary" onclick = "saveDescription()"> Save </button>')
+		$('#desc_input').val(cur_description);
+		$('#ds_description').text("");
+		$('#edit-description').css("display", "none");
+	}
+
+	function saveDescription() {
+		var description = $('#desc_input').val();
+		var encDescription = htmlEncode(description);
+		jsonData = JSON.stringify({"description": description});
+
+		var request = jsRoutes.api.Datasets.updateDescription("@dataset.id").ajax({
+			data: jsonData,
+			type: 'PUT',
+			contentType: "application/json"
+		});
+
+		request.done(function(response, textStatus,jqXHR) {
+			$('#ds_description').text(encDescription);
+			$('.edit_desc').remove();
+			$('#edit-description').css("display", "inline");
+			$('#ds_description').css("display", "inline");
+
+		});
+
+		request.fail(function(jqXHR, textStatus, errorThrown) {
+			console.error("The following error occurred: " + textStatus, errorThrown);
+			var errMsg = " You must be logged in to update the information about a collection.";
+			if(!checkErrorAndRedirect(jqXHR, errMsg)) {
+				notify("The collection information was not updated due to: " + errorThrown, "error");
+			}
+		});
+	}
+</script>

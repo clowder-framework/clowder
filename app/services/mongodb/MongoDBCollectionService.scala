@@ -3,10 +3,13 @@
  */
 package services.mongodb
 
-import models.{UUID, Collection, Dataset}
+import com.mongodb.casbah.WriteConcern
+import models.{User, UUID, Collection, Dataset}
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
+import org.bson.types.ObjectId
 import play.api.Logger
+import util.Formatters
 import scala.util.Try
 import services._
 import javax.inject.{Singleton, Inject}
@@ -31,50 +34,228 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
    * Count all collections
    */
   def count(): Long = {
-    Collection.count(MongoDBObject())
+    Collection.count( MongoDBObject())
   }
 
   /**
-   * List all collections in the system.
+   * Return the count of collections in a space, this does not check for permissions
    */
-  def listCollections(): List[Collection] = {
-    (for (collection <- Collection.find(MongoDBObject())) yield collection).toList
+  def countSpace(space: String): Long = {
+    count(None, false, Some(space), None, showAll=false, None)
   }
 
   /**
-   * List all collections in the system in reverse chronological order.
+   * Return a list of collections in a space, this does not check for permissions
    */
-  def listCollectionsChronoReverse(): List[Collection] = {
+  def listSpace(limit: Integer, space: String): List[Collection] = {
+    list(None, false, limit, Some(space), None, showAll=false, None)
+  }
+
+  /**
+   * Return a list of collections in a space starting at a specific date, this does not check for permissions
+   */
+  def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Collection] = {
+    list(Some(date), nextPage, limit, Some(space), None, showAll=false, None)
+  }
+
+  /**
+   * Return the count of collections the user has access to.
+   */
+  def countAccess(user: Option[User], showAll: Boolean): Long = {
+    count(None, false, None, user, showAll, None)
+  }
+
+  /**
+   * Return a list of collections the user has access to.
+   */
+  def listAccess(limit: Integer, user: Option[User], showAll: Boolean): List[Collection] = {
+    list(None, false, limit, None, user, showAll, None)
+  }
+
+  /**
+   * Return a list of collections the user has access to starting at a specific date.
+   */
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean): List[Collection] = {
+    list(Some(date), nextPage, limit, None, user, showAll, None)
+  }
+
+  /**
+   * Return the count of collections the user has created.
+   */
+  def countUser(user: Option[User], showAll: Boolean, owner: User): Long = {
+    count(None, false, None, user, showAll, Some(owner))
+  }
+
+  /**
+   * Return a list of collections the user has created.
+   */
+  def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Collection] = {
+    list(None, false, limit, None, user, showAll, Some(owner))
+  }
+
+  /**
+   * Return a list of collections the user has created starting at a specific date.
+   */
+  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Collection] = {
+    list(Some(date), nextPage, limit, None, user, showAll, Some(owner))
+  }
+
+  /**
+   * Return count of the requested collections
+   */
+  private def count(date: Option[String], nextPage: Boolean, space: Option[String], user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
+    val (filter, _) = filteredQuery(date, nextPage, space, user, showAll, owner)
+    Collection.count(filter)
+  }
+
+  /**
+   * Return a list of the requested collections
+   */
+  private def list(date: Option[String], nextPage: Boolean, limit: Integer, space: Option[String], user: Option[User], showAll: Boolean, owner: Option[User]): List[Collection] = {
+    val (filter, sort) = filteredQuery(date, nextPage, space, user, showAll, owner)
+    if (date.isEmpty || nextPage) {
+      Collection.find(filter).sort(sort).limit(limit).toList
+    } else {
+      Collection.find(filter).sort(sort).limit(limit).toList.reverse
+    }
+  }
+
+  /**
+   * Monster function, does all the work. Will create a filters and sorts based on the given parameters
+   */
+  private def filteredQuery(date: Option[String], nextPage: Boolean, space: Option[String], user: Option[User], showAll: Boolean, owner: Option[User]):(DBObject, DBObject) = {
+    // filter =
+    // - owner   == show collections owned by owner that user can see
+    // - space   == show all collections in space
+    // - access  == show all collections the user can see
+    // - default == public only
+    val public = MongoDBObject("public" -> true)
+    val emptySpaces = MongoDBObject("spaces" -> List.empty)
+    val filter = owner match {
+      case Some(o) => {
+        val author = MongoDBObject("author.identityId.userId" -> o.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> o.identityId.providerId)
+        if (showAll) {
+          author
+        } else {
+          user match {
+            case Some(u) => {
+              if (u == o) {
+                author ++ $or(public, emptySpaces, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+              } else {
+                author ++ $or(public, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+              }
+            }
+            case None => {
+              author ++ public
+            }
+          }
+        }
+      }
+      case None => {
+        space match {
+          case Some(s) => MongoDBObject("spaces" -> new ObjectId(s))
+          case None => {
+            if (showAll) {
+              MongoDBObject()
+            } else {
+              user match {
+                case Some(u) => {
+                  val author = $and(MongoDBObject("author.identityId.userId" -> u.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> u.identityId.providerId))
+                  $or(author, public, ("spaces" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+                }
+                case None => public
+              }
+            }
+          }
+        }
+      }
+    }
+    val filterDate = date match {
+      case Some(d) => {
+        if (nextPage) {
+          ("created" $lt Formatters.iso8601(d))
+        } else {
+          ("created" $gt Formatters.iso8601(d))
+        }
+      }
+      case None => {
+        MongoDBObject()
+      }
+    }
+
+    val sort = if (date.isDefined && !nextPage) {
+      MongoDBObject("created"-> 1) ++ MongoDBObject("name" -> 1)
+    } else {
+      MongoDBObject("created" -> -1) ++ MongoDBObject("name" -> 1)
+    }
+    (filter ++ filterDate, sort)
+  }
+
+  /**
+   * List collections in the system.
+   */
+  def listCollections(order: Option[String], limit: Option[Integer], space: Option[String]): List[Collection] = {
+    if (order.exists(_.equals("desc"))) { return listCollectionsChronoReverse(limit, space) }
+
+    val filter = space match {
+      case Some(s) => MongoDBObject("spaces" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
+    limit match {
+      case Some(l) => Collection.find(filter).limit(l).toList
+      case None => Collection.find(filter).toList
+    }
+  }
+
+  /**
+   * List collections in the system in reverse chronological order.
+   */
+  def listCollectionsChronoReverse(limit: Option[Integer], space: Option[String]): List[Collection] = {
     val order = MongoDBObject("created" -> -1)
-    Collection.findAll.sort(order).toList
+    val filter = space match {
+      case Some(s) => MongoDBObject("spaces" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
+    limit match {
+      case Some(l) => Collection.find(filter).sort(order).limit(l).toList
+      case None => Collection.find(filter).sort(order).toList
+    }
   }
 
   /**
    * List collections after a specified date.
    */
-  def listCollectionsAfter(date: String, limit: Int): List[Collection] = {
+  def listCollectionsAfter(date: String, limit: Int, space: Option[String]): List[Collection] = {
     val order = MongoDBObject("created" -> -1)
+    val filter = space match {
+      case Some(s) => MongoDBObject("spaces" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
     if (date == "") {
-    	Collection.findAll.sort(order).limit(limit).toList
+    	Collection.find(filter).sort(order).limit(limit).toList
     } else {
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("After " + sinceDate)
-      Collection.find("created" $lt sinceDate).sort(order).limit(limit).toList
+      Collection.find(filter ++ ("created" $lt sinceDate)).sort(order).limit(limit).toList
     }
   }
 
   /**
    * List collections before a specified date.
    */
-  def listCollectionsBefore(date: String, limit: Int): List[Collection] = {
+  def listCollectionsBefore(date: String, limit: Int, space: Option[String]): List[Collection] = {
     var order = MongoDBObject("created" -> -1)
+    val filter = space match {
+      case Some(s) => MongoDBObject("spaces" -> new ObjectId(s))
+      case None => MongoDBObject()
+    }
     if (date == "") {
-    	Collection.findAll.sort(order).limit(limit).toList
+    	Collection.find(filter).sort(order).limit(limit).toList
     } else {
       order = MongoDBObject("created" -> 1)
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date)
       Logger.info("Before " + sinceDate)
-      Collection.find("created" $gt sinceDate).sort(order).limit(limit).toList.reverse
+      Collection.find(filter ++ ("created" $gt sinceDate)).sort(order).limit(limit).toList.reverse
     }
   }
 
@@ -123,22 +304,6 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     Collection.findOneById(new ObjectId(id.stringify))
   }
 
-  def latest(): Option[Collection] = {
-    val results = Collection.find(MongoDBObject()).sort(MongoDBObject("created" -> -1)).limit(1).toList
-    if (results.size > 0)
-      Some(results(0))
-    else
-      None
-  }
-
-  def first(): Option[Collection] = {
-    val results = Collection.find(MongoDBObject()).sort(MongoDBObject("created" -> 1)).limit(1).toList
-    if (results.size > 0)
-      Some(results(0))
-    else
-      None
-  }
-
   def insert(collection: Collection): Option[String] = {
     Collection.insert(collection).map(_.toString)
   }
@@ -146,15 +311,15 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   /**
    * List all collections outside a dataset.
    */
-  def listOutsideDataset(datasetId: UUID): List[Collection] = {
+  def listOutsideDataset(datasetId: UUID, user: Option[User], showAll: Boolean): List[Collection] = {
     Dataset.findOneById(new ObjectId(datasetId.stringify)) match {
       case Some(dataset) => {
-        val list = for (collection <- listCollections(); if (!isInDataset(dataset, collection))) yield collection
+        val list = for (collection <- listAccess(0, user, showAll); if (!isInDataset(dataset, collection))) yield collection
         return list.reverse
       }
       case None => {
-        val list = for (collection <- listCollections()) yield collection
-        return list.reverse
+        Logger.debug(s"Dataset $datasetId not found")
+        List.empty
       }
     }
   }
@@ -162,15 +327,15 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   /**
    * List all collections inside a dataset.
    */
-  def listInsideDataset(datasetId: UUID): List[Collection] = {
+  def listInsideDataset(datasetId: UUID, user: Option[User], showAll: Boolean): List[Collection] = {
     Dataset.findOneById(new ObjectId(datasetId.stringify)) match {
       case Some(dataset) => {
-        val list = for (collection <- listCollections(); if (isInDataset(dataset, collection))) yield collection
+        val list = for (collection <- listAccess(0, user, showAll); if (isInDataset(dataset, collection))) yield collection
         return list.reverse
       }
       case None => {
-        val list = for (collection <- listCollections()) yield collection
-        return list.reverse
+        Logger.debug(s"Dataset $datasetId not found")
+        List.empty
       }
     }
   }
@@ -351,6 +516,31 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       }
       case None => Logger.error("Collection not found: " + id.stringify)
     }
+  }
+
+  def addToSpace(collectionId: UUID, spaceId: UUID): Unit = {
+      val result = Collection.update(
+        MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+        $addToSet("spaces" -> Some(new ObjectId(spaceId.stringify))),
+        false, false)
+  }
+
+  def removeFromSpace(collectionId: UUID, spaceId: UUID): Unit = {
+    val result = Collection.update(
+    MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+    $pull("spaces" -> Some(new ObjectId(spaceId.stringify))),
+    false, false)
+
+  }
+
+   def updateName(collectionId: UUID, name: String){
+     val result = Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+     $set("name" -> name), false, false, WriteConcern.Safe)
+   }
+
+  def updateDescription(collectionId: UUID, description: String){
+    val result = Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+      $set("description" -> description), false, false, WriteConcern.Safe)
   }
 
   /**

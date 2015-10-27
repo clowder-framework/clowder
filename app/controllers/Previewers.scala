@@ -3,7 +3,7 @@
  */
 package controllers
 
-import api.{Permission, WithPermission}
+import api.Permission
 import models.Previewer
 import play.api.Play.current
 import play.api.libs.json.Json
@@ -16,13 +16,9 @@ import scala.io.Source
 
 /**
  * Previewers.
- *
- * @author Luigi Marini
- * @author Rob Kooper
- *
  */
 object Previewers extends Controller with SecuredController {
-  def list = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { implicit request =>
+  def list = PermissionAction(Permission.ViewFile) { implicit request =>
     Ok(views.html.previewers(findPreviewers()))
   }
 
@@ -85,9 +81,10 @@ object Previewers extends Controller with SecuredController {
             (json \ "main").as[String],
             (json \ "contentType").as[List[String]],
             (json \ "supported_previews").asOpt[List[String]].getOrElse(List.empty[String]),
+            false,
             (json \ "dataset").asOpt[Boolean].getOrElse(false)
           )
-          if (preview.collection) result +:= preview
+          if (preview.dataset) result +:= preview
         }
         case None => {
           Logger.warn("Thought I saw previewer " + previewer)

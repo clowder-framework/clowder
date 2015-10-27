@@ -1,28 +1,30 @@
 package controllers
 
 import play.api.Logger
+import play.api.data.Form
+import play.api.data.Forms._
+import play.api.libs.json.Json
+import play.api.mvc.Cookie
 import java.io.FileInputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import javax.inject.Inject
+
+import api.Permission
+import fileutils.FilesUtils
+import models._
+import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.Json._
 import services._
-import java.util.Date
-import java.text.SimpleDateFormat
-import views.html.defaultpages.badRequest
-import models._
-import fileutils.FilesUtils
-import api.Permission
-import javax.inject.Inject
-import services.ExtractorMessage
-import api.WithPermission
+import util.{Formatters, RequiredFieldsConfig}
+
+import scala.collection.immutable._
 import scala.collection.mutable.ListBuffer
-import util.RequiredFieldsConfig
 
 
 /**
  * A dataset is a collection of files and streams.
- *
- * @author Luigi Marini
- *
  */
 class Datasets @Inject()(
   datasets: DatasetService,
@@ -35,7 +37,8 @@ class Datasets @Inject()(
   sparql: RdfSPARQLService,
   users: UserService,
   previewService: PreviewService,
-  relations: RelationService) extends SecuredController {
+  relations: RelationService,
+  spaceService: SpaceService) extends SecuredController {
 
   object ActivityFound extends Exception {}
 
@@ -43,176 +46,149 @@ class Datasets @Inject()(
    * Display the page that allows users to create new datasets, either by uploading multiple new files,
    * or by selecting multiple existing files.
    */
-  def newDataset() = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) {
-    implicit request =>
+  def newDataset(space: Option[String]) = PermissionAction(Permission.CreateDataset) { implicit request =>
       implicit val user = request.user
-      val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
-      Ok(views.html.newDataset(filesList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired)).flashing("error" -> "Please select ONE file (upload new or existing)")
+      val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
+      var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
+      for (aSpace <- spacesList) {
+        //For each space in the list, check if the user has permission to add something to it, if so
+        //decode it and add it to the list to pass back to the view.
+        if (Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, aSpace.id))) {
+          decodedSpaceList += Utils.decodeSpaceElements(aSpace)
+        }
+      }
+    space match {
+      case Some(s) => {
+        spaceService.get(UUID(s)) match {
+          case Some(spaceId) => Ok(views.html.newDataset(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, Some(s))).flashing("error" -> "Please select ONE file (upload new or existing)")
+          case None => Ok(views.html.newDataset(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None)).flashing("error" -> "Please select ONE file (upload new or existing)")
+        }
+
+      }
+      case None => Ok(views.html.newDataset(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None)).flashing("error" -> "Please select ONE file (upload new or existing)")
+    }
   }
-  
-  def addToDataset(id: UUID, name: String, desc: String) = SecuredAction(authorization = WithPermission(Permission.CreateDatasets)) {
-    implicit request =>
+
+
+  def addToDataset(id: UUID, name: String, desc: String) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       implicit val user = request.user
-      val filesList = for (file <- files.listFilesNotIntermediate.sortBy(_.filename)) yield (file.id.toString(), file.filename)
-      Ok(views.html.addToExistingDataset(filesList, id, name, desc)).flashing("error" -> "Cannot add to the dataset")
+      Ok(views.html.addToExistingDataset(id, name, desc)).flashing("error" -> "Cannot add to the dataset")
   }
 
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int, mode: String) = SecuredAction(authorization = WithPermission(Permission.ListDatasets)) {
-    implicit request =>      
-      implicit val user = request.user
-      var direction = "b"
-      if (when != "") direction = when
-      val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
-      var prev, next = ""
-      var datasetList = List.empty[models.Dataset]
-      if (direction == "b") {
-        datasetList = datasets.listDatasetsBefore(date, limit)
-      } else if (direction == "a") {
-        datasetList = datasets.listDatasetsAfter(date, limit)
-      } else {
-        badRequest
-      }
-      
-      // latest object
-      val latest = datasets.latest()
-      // first object
-      val first = datasets.first()
-      var firstPage = false
-      var lastPage = false
-      if (latest.size == 1) {
-        firstPage = datasetList.exists(_.id.equals(latest.get.id))
-        lastPage = datasetList.exists(_.id.equals(first.get.id))
-        Logger.debug("latest " + latest.get.id + " first page " + firstPage)
-        Logger.debug("first " + first.get.id + " last page " + lastPage)
-      }
-      if (datasetList.size > 0) {
-        if (date != "" && !firstPage) {
-          // show prev button
-          prev = formatter.format(datasetList.head.created)
-        }
-        if (!lastPage) {
-          // show next button
-          next = formatter.format(datasetList.last.created)
-        }
-      }
+  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String]) = PrivateServerAction { implicit request =>
+    implicit val user = request.user
 
-      val commentMap = datasetList.map{dataset =>
-        var allComments = comments.findCommentsByDatasetId(dataset.id)
-        dataset.files.map { file =>
-          allComments ++= comments.findCommentsByFileId(file.id)
-          sections.findByFileId(file.id).map { section =>
-            allComments ++= comments.findCommentsBySectionId(section.id)
-          }
-        }
-        dataset.id -> allComments.size
-      }.toMap
+    val nextPage = (when == "a")
+    val person = owner.flatMap(o => users.get(UUID(o)))
 
-      //Modifications to decode HTML entities that were stored in an encoded fashion as part
-      //of the datasets names or descriptions
-      val decodedDatasetList = ListBuffer.empty[models.Dataset]
-      for (aDataset <- datasetList) {
-        decodedDatasetList += Utils.decodeDatasetElements(aDataset)
-      }
-      
-        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
-        //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
-        //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14   
-        val viewMode: Option[String] = 
-        if (mode == null || mode == "") {
-          request.cookies.get("view-mode") match {
-              case Some(cookie) => Some(cookie.value)
-              case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
-          }
+    val datasetList = person match {
+      case Some(p) => {
+        if (date != "") {
+          datasets.listUser(date, nextPage, limit, request.user, request.superAdmin, p)
         } else {
-            Some(mode)
-        }
-      
-      //Pass the viewMode into the view
-      Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode))
-  }
-  def userDatasets(when: String, date: String, limit: Int, mode: String, email: String) = SecuredAction(authorization = WithPermission(Permission.ListDatasets)) {
-    implicit request =>
-      implicit val user = request.user
-      var direction = "b"
-      if (when != "") direction = when
-      val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
-      var prev, next = ""
-      var datasetList = List.empty[models.Dataset]
-      if (direction == "b") {
-        datasetList = datasets.listUserDatasetsBefore(date, limit, email)
-      } else if (direction == "a") {
-        datasetList = datasets.listUserDatasetsAfter(date, limit, email)
-      } else {
-        badRequest
-      }
-      // latest object
-      val latest = datasets.latest()
-      // first object
-      val first = datasets.first()
-      var firstPage = false
-      var lastPage = false
-      if (latest.size == 1) {
-        firstPage = datasetList.exists(_.id.equals(latest.get.id))
-        lastPage = datasetList.exists(_.id.equals(first.get.id))
-        Logger.debug("latest " + latest.get.id + " first page " + firstPage)
-        Logger.debug("first " + first.get.id + " last page " + lastPage)
-      }
-      if (datasetList.size > 0) {
-        if (date != "" && !firstPage) {
-          // show prev button
-          prev = formatter.format(datasetList.head.created)
-        }
-        if (!lastPage) {
-          // show next button
-          next = formatter.format(datasetList.last.created)
+          datasets.listUser(limit, request.user, request.superAdmin, p)
         }
       }
-      
+      case None => {
+        space match {
+          case Some(s) => {
+            if (date != "") {
+              datasets.listSpace(date, nextPage, limit, s)
+            } else {
+              datasets.listSpace(limit, s)
+            }
+          }
+          case None => {
+            if (date != "") {
+              datasets.listAccess(date, nextPage, limit, request.user, request.superAdmin)
+            } else {
+              datasets.listAccess(limit, request.user, request.superAdmin)
+            }
 
-      
-
-      val commentMap = datasetList.map{dataset =>
-        var allComments = comments.findCommentsByDatasetId(dataset.id)
-        dataset.files.map { file =>
-          allComments ++= comments.findCommentsByFileId(file.id)
-          sections.findByFileId(file.id).map { section =>
-            allComments ++= comments.findCommentsBySectionId(section.id)
           }
         }
-        dataset.id -> allComments.size
-      }.toMap
+      }
+    }
 
-      //Modifications to decode HTML entities that were stored in an encoded fashion as part
-      //of the datasets names or descriptions
-      val decodedDatasetList = ListBuffer.empty[models.Dataset]
-      for (aDataset <- datasetList) {
-        decodedDatasetList += Utils.decodeDatasetElements(aDataset)
+    // check to see if there is a prev page
+    val prev = if (datasetList.nonEmpty && date != "") {
+      val first = Formatters.iso8601(datasetList.head.created)
+      val ds = person match {
+        case Some(p) => datasets.listUser(first, nextPage=false, 1, request.user, request.superAdmin, p)
+        case None => {
+          space match {
+            case Some(s) => datasets.listSpace(first, nextPage = false, 1, s)
+            case None => datasets.listAccess(first, nextPage = false, 1, request.user, request.superAdmin)
+          }
+        }
+      }
+      if (ds.nonEmpty && ds.head.id != datasetList.head.id) {
+        first
+      } else {
+        ""
+      }
+    } else {
+      ""
+    }
+
+    // check to see if there is a next page
+    val next = if (datasetList.nonEmpty) {
+      val last = Formatters.iso8601(datasetList.last.created)
+      val ds = person match {
+        case Some(p) => datasets.listUser(last, nextPage=true, 1, request.user, request.superAdmin, p)
+        case None => {
+          space match {
+            case Some(s) => datasets.listSpace(last, nextPage=true, 1, s)
+            case None => datasets.listAccess(last, nextPage=true, 1, request.user, request.superAdmin)
+          }
+        }
+      }
+      if (ds.nonEmpty && ds.head.id != datasetList.last.id) {
+        last
+      } else {
+        ""
+      }
+    } else {
+      ""
+    }
+
+    val commentMap = datasetList.map { dataset =>
+      var allComments = comments.findCommentsByDatasetId(dataset.id)
+      dataset.files.map { file =>
+        allComments ++= comments.findCommentsByFileId(file.id)
+        sections.findByFileId(file.id).map { section =>
+          allComments ++= comments.findCommentsBySectionId(section.id)
+        }
+      }
+      dataset.id -> allComments.size
+    }.toMap
+
+    //Modifications to decode HTML entities that were stored in an encoded fashion as part
+    //of the datasets names or descriptions
+    val decodedDatasetList = ListBuffer.empty[models.Dataset]
+    for (aDataset <- datasetList) {
+      decodedDatasetList += Utils.decodeDatasetElements(aDataset)
+    }
+
+    //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+    //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+    val viewMode: Option[String] =
+      if (mode == null || mode == "") {
+        request.cookies.get("view-mode") match {
+          case Some(cookie) => Some(cookie.value)
+          case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+        }
+      } else {
+        Some(mode)
       }
 
-        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
-        //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
-        //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14   
-        var viewMode: Option[String] = Some(mode);    
-        //If the mode String passed in is null or empty, use the cookie (this should be the majority of cases)
-        if (mode == null || mode == "") {
-            request.cookies.get("view-mode") match {
-                case Some(cookie) => { 
-                    viewMode = Some(cookie.value)
-                }
-                case None => {
-                    //If there is no cookie, and a mode was not passed in, default it to tile                
-                    viewMode = None
-                
-                }
-            }
-        }                       
-      
-      Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode))
+    //Pass the viewMode into the view
+    Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space))
   }
-
 
   def addViewer(id: UUID, user: Option[securesocial.core.Identity]) = {
       user match{
@@ -248,13 +224,10 @@ class Datasets @Inject()(
   /**
    * Dataset.
    */
-  def dataset(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowDataset)) { implicit request =>
-    implicit val user = request.user match {
-      case Some(x: User) => Some(x)
-      case _ => None
-    }
+  def dataset(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
 
-      Previewers.findPreviewers.foreach(p => Logger.info("Previewer found " + p.id))
+      implicit val user = request.user
+      Previewers.findPreviewers.foreach(p => Logger.debug("Previewer found " + p.id))
       datasets.get(id) match {
         case Some(dataset) => {
 
@@ -264,55 +237,62 @@ class Datasets @Inject()(
           var datasetWithFiles = dataset.copy(files = filesInDataset)
           datasetWithFiles = Utils.decodeDatasetElements(datasetWithFiles)
 
-          // previews
-//          val filteredPreviewers = for (
-//              previewer <- Previewers.findDatasetPreviewers;
-//              preview <- previewService.findByDatasetId(id);
-//              if (previewer.dataset);
-//              if (previewer.supportedPreviews.contains(preview.preview_type.get) || previewer.supportedPreviews.isEmpty)
-//            ) yield {
-//              previewer
-//            }
-
-          val filteredPreviewers = Previewers.findDatasetPreviewers;
+          val filteredPreviewers = Previewers.findDatasetPreviewers
 
           val metadata = datasets.getMetadata(id)
           Logger.debug("Metadata: " + metadata)
           for (md <- metadata) {
-            Logger.debug(md.toString)
+              Logger.debug(md.toString)
           }
           val userMetadata = datasets.getUserMetadata(id)
           Logger.debug("User metadata: " + userMetadata.toString)
 
-	          val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
-	          val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
-	          val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
-            val decodedCollectionsOutside = ListBuffer.empty[models.Collection]
-            val decodedCollectionsInside = ListBuffer.empty[models.Collection]
+          val collectionsOutside = collections.listOutsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
+          val collectionsInside = collections.listInsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
+          var decodedCollectionsOutside = new ListBuffer[models.Collection]()
+          var decodedCollectionsInside = new ListBuffer[models.Collection]()
+          var filesTags = TreeSet.empty[String]
 
-            for (aCollection <- collectionsOutside) {
+          for (aCollection <- collectionsOutside) {
               val dCollection = Utils.decodeCollectionElements(aCollection)
               decodedCollectionsOutside += dCollection
-            }
-            for (aCollection <- collectionsInside) {
+          }
+          for (aCollection <- collectionsInside) {
               val dCollection = Utils.decodeCollectionElements(aCollection)
               decodedCollectionsInside += dCollection
-            }
+          }
 
           var commentsByDataset = comments.findCommentsByDatasetId(id)
-	          filesInDataset.map {
-	            file =>
-	              commentsByDataset ++= comments.findCommentsByFileId(file.id)
-	              sections.findByFileId(UUID(file.id.toString)).map { section =>
-	                commentsByDataset ++= comments.findCommentsBySectionId(section.id)
-	              }
-	          }
-	          commentsByDataset = commentsByDataset.sortBy(_.posted)
-	          
-	          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
+          filesInDataset.map {
+              file =>
+
+              commentsByDataset ++= comments.findCommentsByFileId(file.id)
+              sections.findByFileId(UUID(file.id.toString)).map { section =>
+                commentsByDataset ++= comments.findCommentsBySectionId(section.id)
+              }
+          }
+          commentsByDataset = commentsByDataset.sortBy(_.posted)
+
+          //Decode the comments so that their free text will display correctly in the view
+          var decodedCommentsByDataset = ListBuffer.empty[Comment]
+          for (aComment <- commentsByDataset) {
+            val dComment = Utils.decodeCommentElements(aComment)
+            decodedCommentsByDataset += dComment
+          }
+
+          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
+
+
+          filesInDataset.map
+          {
+            file =>
+              file.tags.map {
+                tag => filesTags += tag.name
+              }
+          }
 
           // associated sensors
-          var sensors: List[(String, String)]= current.plugin[PostgresPlugin] match {
+          val sensors: List[(String, String)]= current.plugin[PostgresPlugin] match {
             case Some(db) => {
               val base = play.api.Play.configuration.getString("geostream.dashboard.url").getOrElse("http://localhost:9000")
               val ids = relations.findTargets(id.stringify, ResourceType.dataset, ResourceType.sensor)
@@ -321,21 +301,37 @@ class Datasets @Inject()(
             case None => List.empty[(String, String)]
           }
 
+          var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
+          dataset.spaces.map{
+                  sp => spaceService.get(sp) match {
+                    case Some(s) => {
+                      datasetSpaces = s :: datasetSpaces
+                    }
+                    case None => Logger.error(s"space with id $sp on dataset $id doesn't exist.")
+                  }
+          }
 
-          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
-            decodedCollectionsOutside.toList, decodedCollectionsInside.toList, filesOutside, isRDFExportEnabled, sensors))
+          val otherSpaces: List[ProjectSpace] = user match {
+            case Some(usr) => usr.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!datasetSpaces.map(_.id).contains(aSpace.id)) aSpace else None).filter(_ != None).asInstanceOf[List[ProjectSpace]]
+            case None => List.empty
+          }
+          val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
+
+          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filesTags, filteredPreviewers.toList, metadata, userMetadata,
+            decodedCollectionsOutside.toList, decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), otherSpaces))
+
         }
         case None => {
-          Logger.error("Error getting dataset" + id); InternalServerError
+          Logger.error("Error getting dataset" + id)
+          InternalServerError
         }
-      }
+    }
   }
 
   /**
    * Dataset by section.
    */
-  def datasetBySection(section_id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowDataset)) {
-    request =>
+  def datasetBySection(section_id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.section, section_id))) { implicit request =>
       sections.get(section_id) match {
         case Some(section) => {
           datasets.findOneByFileId(section.file_id) match {
@@ -349,7 +345,7 @@ class Datasets @Inject()(
 
   /**
    * TODO where is this used?
-  def upload = Action(parse.temporaryFile) { request =>
+  def upload = Action(parse.temporaryFile) { implicit request =>
     request.body.moveTo(new File("/tmp/picture"))
     Ok("File uploaded")
   }
@@ -361,7 +357,7 @@ class Datasets @Inject()(
    * the checks are made here as well. 
    * 
    */
-  def submit() = SecuredAction(parse.multipartFormData, authorization=WithPermission(Permission.CreateDatasets)) { implicit request =>
+  def submit() = PermissionAction(Permission.CreateDataset)(parse.multipartFormData) { implicit request =>
     implicit val user = request.user
     Logger.debug("------- in Datasets.submit ---------")
     var dsName = request.body.asFormUrlEncoded.getOrElse("name", null)
@@ -604,16 +600,64 @@ class Datasets @Inject()(
       case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
     }
   }
-	
+  def users(id: UUID) = PermissionAction(Permission.ViewDataset) { implicit request =>
+    implicit val user = request.user
 
-  def metadataSearch() = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) {
-    implicit request =>
+    datasets.get(id) match {
+      case Some(dataset) => {
+        var userList: List[User] = List.empty
+        var userListSpaceRoleTupleMap = Map[UUID, List[Tuple2[String,String]]]() // Map( User-id -> List((Space-name,Role-name)) )
+
+        // Setup userList, add all users of all spaces associated with the dataset
+        dataset.spaces.foreach { spaceId =>
+          spaceService.get(spaceId) match {
+            case Some(spc) => userList = spaceService.getUsersInSpace(spaceId) ::: userList
+            case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No spaces found for dataset $id.")
+          }
+        }
+        userList = userList.distinct.sortBy(_.fullName.toLowerCase)
+
+        // Setup userListSpaceRoleTupleMap
+        userList.foreach( usr => userListSpaceRoleTupleMap = userListSpaceRoleTupleMap + (usr.id -> List()) ) // initialize, based upon userList's values
+        dataset.spaces.foreach { spaceId =>
+          spaceService.get(spaceId) match {
+            case Some(spc) => {
+              val usersInCurrSpace: List[User] = spaceService.getUsersInSpace(spaceId)
+              if (usersInCurrSpace.nonEmpty) {
+
+                usersInCurrSpace.foreach { usr =>
+                  spaceService.getRoleForUserInSpace(spaceId, usr.id) match {
+                    case Some(role) => userListSpaceRoleTupleMap += ( usr.id -> ((spc.name,role.name) :: userListSpaceRoleTupleMap(usr.id)) )
+                    case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: Role not found for dataset $id user $usr.")
+                  }
+                }
+
+              }
+            }
+            case None => Redirect (routes.Datasets.dataset(id)).flashing ("error" -> s"Error: No spaces found for dataset $id.");
+          }
+        }
+        // Clean-up, and sort space-names per user
+        userListSpaceRoleTupleMap = userListSpaceRoleTupleMap filter (_._2.nonEmpty) // remove empty-list Values from Map (and corresponding Key)
+        for(k <- userListSpaceRoleTupleMap.keys) userListSpaceRoleTupleMap += ( k -> userListSpaceRoleTupleMap(k).distinct.sortBy(_._1.toLowerCase) )
+
+        if(userList.nonEmpty) {
+          val currUserIsAuthor = user.get.identityId.userId.equals(dataset.author.identityId.userId)
+          Ok(views.html.datasets.users(dataset, userListSpaceRoleTupleMap, currUserIsAuthor, userList))
+        }
+        else Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No users found for dataset $id.")
+      }
+      case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: Dataset $id not found.")
+    }
+
+  }
+
+  def metadataSearch() = PermissionAction(Permission.ViewDataset) { implicit request =>
       implicit val user = request.user
       Ok(views.html.metadataSearch())
   }
 
-  def generalMetadataSearch() = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) {
-    implicit request =>
+  def generalMetadataSearch() = PermissionAction(Permission.ViewDataset) { implicit request =>
       implicit val user = request.user
       Ok(views.html.generalMetadataSearch())
   }

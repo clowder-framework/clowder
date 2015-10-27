@@ -1,13 +1,14 @@
+import api.Permission
 import play.api.{GlobalSettings, Application}
 import play.api.Logger
 
 import play.filters.gzip.GzipFilter
 
 import play.libs.Akka
-import services.AppConfiguration
+import services.{UserService, DI, AppConfiguration}
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
-import models.{ServerStartTime, CORSFilter, ExtractionInfoSetUp, JobsScheduler}
+import models.{Role, ServerStartTime, CORSFilter, ExtractionInfoSetUp, JobsScheduler}
 import java.util.Calendar
 import play.api.mvc.WithFilters
 import akka.actor.Cancellable
@@ -29,6 +30,16 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
     // set admins
     AppConfiguration.setDefaultAdmins()
+
+    // create default roles
+    val users: UserService = DI.injector.getInstance(classOf[UserService])
+    if (users.listRoles().isEmpty) {
+      Logger.debug("Ensuring roles exist")
+      users.updateRole(Role.Admin)
+      users.updateRole(Role.Editor)
+      users.updateRole(Role.Viewer)
+    }
+
 
     extractorTimer = Akka.system().scheduler.schedule(0 minutes, 5 minutes) {
       ExtractionInfoSetUp.updateExtractorsInfo()

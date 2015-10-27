@@ -1,6 +1,12 @@
-@(datasetsInCollection: List[models.Dataset], collection: models.Collection, previewers: List[Previewer])(implicit user: Option[models.User])
+@(datasetsInCollection: List[models.Dataset],
+  collection: models.Collection,
+  previewers: List[Previewer],
+  collectionSpaces: Option[List[ProjectSpace]],
+  otherSpaces: List[ProjectSpace])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
+@import models.ResourceRef
 @import models.UUID
+@import api.Permission
 
 @showPreview(name: String, url: String, collection_id: String) = {
 <script>
@@ -20,98 +26,120 @@
 <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
 
 <div class="page-header">
-  <h1>@Html(collection.name)</h1>
+  <h1 id ="collectiontitle" class="inline">@Html(collection.name)</h1>
+	@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
+		<h3 class="inline align-right">
+			<a id="edit-title" href="javascript:updateTitle()">
+				<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+			</a>
+		</h3>
+	}
+
 </div>
+
 <div class="row">
-	<div class="col-md-2">
-	
-	</div>
 	<div class="col-md-12">
 				<dl class="dl-horizontal">
 					@if(!collection.author.isEmpty){
 						<dt>Author:</dt>
-						<dd>@collection.author.get.fullName</dd>
+						<dd><a href= "@routes.Profile.viewProfile(collection.author.get.email)"> @collection.author.get.fullName </a></dd>
 					}
+                    <dt>Shared with spaces:</dt>
+                    <dd>
+                        @spaces.spaceLink(collectionSpaces, ResourceRef.collection, collection.id, otherSpaces)
+                    </dd>
 					<dt>Description:</dt>
-					<dd>@Html(collection.description)</dd>
+					<dd ><p id="collection_desc"  class="inline">@Html(collection.description)</p>
+						@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
+							<a id="edit-description" href="javascript:updateDescription()">
+								<span class="glyphicon glyphicon-edit edit-tab" aria-hidden="true"></span>
+							</a>
+						}
+					</dd>
 				</dl>
+		<div class="col-md-12">
+
+				@if(user.isDefined && collectionSpaces.isDefined && !collectionSpaces.get.isEmpty){
+					<div id="collection-users">
+							<a href="@routes.Collections.users(collection.id)">
+								<span class="glyphicon glyphicon-hand-right"></span> Users with access to the collection
+							</a>
+							<br /> <br />
+							<div class="alert-danger inner-item">
+								@flash.get("error")
+							</div>
+					</div>
+				}
+
+				<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+				@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
+						<button id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')"
+								style="margin-right:15px;" class="btn btn-primary btn-xs" title="Delete Collection but not Enclosed Datasets">
+						<span class="glyphicon glyphicon-trash"></span> Delete</button>
+				} else {
+						<button disabled id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')"
+								style="margin-right:15px;" class="btn btn-primary btn-xs" title="Delete Collection but not Enclosed Datasets">
+						<span class="glyphicon glyphicon-trash"></span> Delete</button>
+				}
 				@if(user.isDefined) {
-                            <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                            @if(collection.author.isDefined && user.get.identityId.userId.equals(collection.author.get.identityId.userId)){                    
-                                <span class="align-right">
-                                    <button id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" 
-                                            style="margin-right:15px;" class="btn btn-primary" title="Delete Collection but not Enclosed Datasets">
-                                    <span class="glyphicon glyphicon-trash"></span> Delete</button>
-                                </span>
-                            } else {
-                                <span class="align-right">
-                                    <button disabled id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" 
-                                            style="margin-right:15px;" class="btn btn-primary" title="Delete Collection but not Enclosed Datasets">
-                                    <span class="glyphicon glyphicon-trash"></span> Delete</button>
-                                </span>
-                            }
+					@if(!collection.followers.contains(user.get.id)) {
+						<button id="followButton"
+						class="btn btn-success followButton btn-xs"
+						objectId="@collection.id"
+						objectName="@collection.name"
+						objectType="collection">
+							Follow
+						</button>
+					} else {
+						<button id="followButton"
+						class="btn btn-danger followButton btn-xs"
+						objectId="@collection.id"
+						objectName="@collection.name"
+						objectType="collection">
+							Unfollow
+						</button>
+					}
+				}
+			</div>
+				<div style="clear: both;"></div>
 
-                            <span class="align-right" style="margin-right: 10px;">
-                                @if(!collection.followers.contains(user.get.id)) {
-                                    <button id="followButton"
-                                            class="btn btn-success followButton"
-                                            objectId="@collection.id"
-                                            objectName="@collection.name"
-                                            objectType="collection">
-                                        Follow
-                                    </button>
-                                } else {
-                                    <button id="followButton"
-                                            class="btn btn-danger followButton"
-                                            objectId="@collection.id"
-                                            objectName="@collection.name"
-                                            objectType="collection">
-                                        Unfollow
-                                    </button>
-                                }
-                            </span>
+				<div id="recommendPanel"
+						class="panel panel-default"
+						style="margin-top: 20px; display : none;">
+					<div class="panel-heading">
+						<h4 class="panel-title">
+							<a data-parent="#accordion"
+							href="#collapseThree"
+							aria-expanded="true"
+							style="float:left;">
+								Also follow these?
+							</a>
+							<a style="float:right;" href="javascript:$('#recommendPanel').slideToggle('slow');">x</a>
+							<div style="clear : both;"></div>
+						</h4>
+					</div>
+					<div id="collapseThree" class="panel-collapse collapse in" aria-expanded="true">
+						<div id="recommendDiv" class="panel-body">
+						</div>
+					</div>
+				</div>
 
-                            <div style="clear: both;"></div>
-
-                            <div id="recommendPanel"
-                                    class="panel panel-default"
-                                    style="margin-top: 20px; display : none;">
-                                <div class="panel-heading">
-                                    <h4 class="panel-title">
-                                        <a data-parent="#accordion"
-                                        href="#collapseThree"
-                                        aria-expanded="true"
-                                        style="float:left;">
-                                            Also follow these?
-                                        </a>
-                                        <a style="float:right;" href="javascript:$('#recommendPanel').slideToggle('slow');">x</a>
-                                        <div style="clear : both;"></div>
-                                    </h4>
-                                </div>
-                                <div id="collapseThree" class="panel-collapse collapse in" aria-expanded="true">
-                                    <div id="recommendDiv" class="panel-body">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <script src="@routes.Assets.at("javascripts/recommendation.js")" type="text/javascript"></script>
-                            <script>
-                                $(document).on('click', '.followButton', function() {
-                                    var id = $(this).attr('objectId');
-                                    var name = $(this).attr('objectName');
-                                    var type = $(this).attr('objectType');
-                                    if ($(this).attr('id') === '') {
-                                      followHandler.call(this, jsRoutes, id, name, type, undefined, undefined);
-                                    } else {
-                                      followHandler.call(this, jsRoutes, id, name, type, function(data) {
-                                            recommendationHandler(jsRoutes, $('#recommendPanel'), $('#recommendDiv'),
-                                                          data['recommendations']);
-                                        }, undefined);
-                                    }
-                                });
-                            </script>
-                        }
-				
+				<script src="@routes.Assets.at("javascripts/recommendation.js")" type="text/javascript"></script>
+				<script>
+					$(document).on('click', '.followButton', function() {
+						var id = $(this).attr('objectId');
+						var name = $(this).attr('objectName');
+						var type = $(this).attr('objectType');
+						if ($(this).attr('id') === '') {
+						  followHandler.call(this, jsRoutes, id, name, type, undefined, undefined);
+						} else {
+						  followHandler.call(this, jsRoutes, id, name, type, function(data) {
+								recommendationHandler(jsRoutes, $('#recommendPanel'), $('#recommendDiv'),
+											  data['recommendations']);
+							}, undefined);
+						}
+					});
+				</script>
 	</div>
 </div>
 <div class="row">
@@ -154,17 +182,15 @@
 							@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
 							@if(dataset.thumbnail_id.isEmpty){No thumbnail available}
 						</td>
-						<td class="requiresLogin"><a href="#!" onclick="removeDataset('@(dataset.id.toString)',event)">Remove</a>
-						    @if(user.isDefined) {                             
-                                <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->   
-                                @if(collection.author.isDefined && user.get.identityId.userId.equals(collection.author.get.identityId.userId)){
-                                    <button onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Detach the Dataset">
-                                    <span class="glyphicon glyphicon-trash"></span></button>
-                                } else {
-                                    <button disabled onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Detach the Dataset">
-                                    <span class="glyphicon glyphicon-trash"></span></button>
-                                }                                                                                                                                           
-                            }
+						<td><a href="#!" onclick="removeDataset('@(dataset.id.toString)',event)">Remove</a>
+							<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+							@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
+								<button onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Detach the Dataset">
+								<span class="glyphicon glyphicon-trash"></span></button>
+							} else {
+								<button disabled onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Detach the Dataset">
+								<span class="glyphicon glyphicon-trash"></span></button>
+							}
 						</td>
 					</tr>
 				}
@@ -174,8 +200,16 @@
 			<li class="previous" id="datasetsPagerPrev" style="visibility:hidden;"><a href="#!">Previous</a></li>
   			<li class ="next" id="datasetsPagerNext" style="visibility:hidden;"><a href="#!">Next</a></li>
 		</ul>
-		<button id="addDatasetBtn" class="btn btn-default requiresLogin" type="button" title="View Dataset List"><span class="glyphicon glyphicon-plus"></span> Add</button>
-		<button id="hideAddDatasetBtn" class="btn btn-default" type="button" style="display:none;" title="Close Dataset List"><span class="glyphicon glyphicon-remove"></span></button>
+		<!-- If the user can edit the collection, the buttons are enabled, otherwise the buttons are present but disabled to provide consistent UE. -->
+		@if(Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.collection, collection.id))) {
+			<button id="addDatasetBtn" class="btn btn-default" type="button" title="View Dataset List"><span class="glyphicon glyphicon-plus"></span>
+				Add</button>
+			<button id="hideAddDatasetBtn" class="btn btn-default" type="button" style="display : none ;" title="Close Dataset List"><span class="glyphicon glyphicon-remove"></span></button>
+		} else {
+			<button disabled id="addDatasetBtn" class="btn btn-default" type="button" title="View Dataset List"><span class="glyphicon glyphicon-plus"></span>
+				Add</button>
+			<button disabled id="hideAddDatasetBtn" class="btn btn-default" type="button" style="display : none ;" title="Close Dataset List"><span class="glyphicon glyphicon-remove"></span></button>
+		}
 		<br />
 		<br />		
 		<table id='addDatasetsTable' class="table table-bordered table-hover" style="display:none;">
@@ -196,7 +230,7 @@
   			<li class ="next" id="addPagerNext" style="visibility:hidden;"><a href="#!">Next</a></li>
 		</ul>
 	</div>
-</div>
+
 <script language="javascript">
 	@if(user.isDefined) {
 		@if(collection.author.isDefined){
@@ -211,6 +245,91 @@
 
 	var queryIp = "@api.routes.Datasets.listOutsideCollection(collection.id)";
 	var collectionId = "@collection.id.stringify";
+
+	function updateTitle() {
+	 var cur_title = $('#collectiontitle').text();
+	 $('<input type = "text" id="title_input" class="form-control"/>').insertAfter($('#collectiontitle'));
+	 $('<button id="update_title" class="btn btn-sm btn-primary" onclick="saveTitle()"> Save </button>').insertAfter($('#title_input'));
+	 $('#title_input').val(cur_title);
+	 $('#collectiontitle').text("");
+	 $('#edit-title').css("display", "none");
+	}
+	function saveTitle() {
+		var name = $('#title_input').val();
+		var encName = htmlEncode(name);
+		jsonData = JSON.stringify({"name": encName});
+
+		var request = jsRoutes.api.Collections.updateCollectionName(collectionId).ajax({
+			data: jsonData,
+			type: 'PUT',
+			contentType: "application/json"
+		});
+
+		request.done(function(response, textStatus, jqXHR) {
+			$('#collectiontitle').text(encName.replace(/\n/g, "<br>"));
+			$('#title_input').remove();
+			$('#update_title').remove();
+			$('#edit-title').css("display", "inline");
+			$('#collectiontitle').css("display", "inline");
+		});
+
+		request.fail(function(jqXHR, textStatus, errorThrown) {
+			console.error("The following error occurred: " + textStatus, errorThrown);
+			var errMsg = "Yoy must be logged in to update the information about a collection.";
+			if(!checkErrorAndRedirect(jqXHR, errMsg)) {
+				notify("The collection information was not updated due to: "+ errorThrown, "error");
+			}
+		});
+
+	}
+
+	function updateDescription() {
+		var cur_description = $('#collection_desc').text().trim();
+		$('<div class = "edit_desc"></div>').insertAfter($('#collection_desc'));
+		$(".edit_desc").append('<textarea type ="text" id = "desc_input" class="form-control"/>')
+		$(".edit_desc").append('<br/>');
+		$(".edit_desc").append('<button id = "update_desc" class = "btn btn-sm btn-primary" onclick = "saveDescription()"> Save </button>');
+		$('#desc_input').val(cur_description);
+		$('#collection_desc').text("");
+		$('#edit-description').css("display", "none");
+	}
+
+	function saveDescription() {
+		var description = $('#desc_input').val();
+		var encDescription = htmlEncode(description);
+		jsonData = JSON.stringify({"description": description});
+
+		var request = jsRoutes.api.Collections.updateCollectionDescription(collectionId).ajax({
+			data: jsonData,
+			type: 'PUT',
+			contentType: "application/json"
+		});
+
+		request.done(function(response, textStatus,jqXHR) {
+			$('#collection_desc').text(encDescription.replace(/\n/g, "<br>"));
+			$('.edit_desc').remove();
+			$('#edit-description').css("display", "inline");
+			$('#collection_desc').css("display", "inline");
+
+		});
+
+		request.fail(function(jqXHR, textStatus, errorThrown) {
+			console.error("The following error occurred: " + textStatus, errorThrown);
+			var errMsg = " You must be logged in to update the information about a collection.";
+			if(!checkErrorAndRedirect(jqXHR, errMsg)) {
+				notify("The collection information was not updated due to: " + errorThrown, "error");
+			}
+		});
+	}
+	$(document).ready(function(){
+		if(@collection.spaces.size < 1 ) {
+			$('#collection-users').hide();
+		}
+
+	});
 </script>
+    <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/spaceModify.js")" type="text/javascript"></script>
 
 }

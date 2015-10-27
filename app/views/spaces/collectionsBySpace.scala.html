@@ -1,0 +1,16 @@
+@(collections: List[Collection], space: String)(implicit user: Option[models.User])
+
+<h3>Collections</h3>
+@if(collections.size == 0) {
+    <a id="create-collection"href="@routes.Collections.newCollection(Some(space))" class="btn btn-primary btn-xs">
+
+        Create Collection
+    </a>
+} else {
+    @spaces.collectionsGrid(collections, space)
+}
+@if(!user.isDefined) {
+    <script type="text/javascript">
+        $('#create-collection').addClass('disabled');
+    </script>
+}

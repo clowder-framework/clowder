@@ -1,17 +1,20 @@
 package controllers
 
-import api.{Permission, WithPermission}
-import services.{ UserService, FileService, DatasetService, CollectionService, EventService }
-import services.mongodb.MongoDBProjectService
-import services.mongodb.MongoDBInstitutionService
 import services._
 import play.api.data.Form
 import play.api.data.Forms._
 import models._
-import play.api.Logger
 import javax.inject.Inject
+import play.api.Logger
+import play.api.data.Form
+import play.api.data.Forms._
+import services.UserService
+import services.mongodb.{MongoDBInstitutionService, MongoDBProjectService}
 
-class Profile @Inject() (users: UserService, files: FileService, datasets: DatasetService, collections: CollectionService, institutions: MongoDBInstitutionService, projects: MongoDBProjectService, events: EventService, scheduler: SchedulerService) extends SecuredController {
+// TODO CATS-66 remove MongoDBInstitutionService, make part of UserService?
+class Profile @Inject() (users: UserService, files: FileService, datasets: DatasetService, collections: CollectionService,
+                         institutions: MongoDBInstitutionService, projects: MongoDBProjectService, events: EventService,
+                         scheduler: SchedulerService, spaces: SpaceService) extends SecuredController {
 
   val bioForm = Form(
     mapping(
@@ -26,7 +29,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
     )(Profile.apply)(Profile.unapply)
   )
 
-  def editProfile() = SecuredAction(authorization = WithPermission(Permission.LoggedIn)) { implicit request =>
+  def editProfile() = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
     user match {
@@ -43,7 +46,8 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
     }
   }
 
-  def viewProfileUUID(uuid: UUID) = SecuredAction() { request =>
+
+  def viewProfileUUID(uuid: UUID) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     val viewerUser = request.user
     var followers: List[(UUID, String, String, String)] = List.empty
@@ -51,9 +55,11 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
     var followedFiles: List[(UUID, String, String)] = List.empty
     var followedDatasets: List[(UUID, String, String)] = List.empty
     var followedCollections: List[(UUID, String, String)] = List.empty
+    var followedSpaces: List[(UUID, String, String)] = List.empty
     var myFiles : List[(UUID, String, String)] = List.empty
     var myDatasets: List[(UUID, String, String)] = List.empty
     var myCollections: List[(UUID, String, String)] = List.empty
+    var mySpaces: List[(UUID, String, String)] = List.empty
     var maxDescLength = 50
     var ownProfile: Option[Boolean] = None
     var muser = users.findById(uuid)
@@ -101,6 +107,13 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
                     followedCollections = followedCollections.++(List((fcoll.id, fcoll.name, fcoll.description.substring(0, Math.min(maxDescLength, fcoll.description.length())))))
                   }
                 }
+              } else if (tidObject.objectType == "'space") {
+                var followedSpace = spaces.get(tidObject.id)
+                followedSpace match {
+                  case Some(fspace) => {
+                    followedSpaces = followedSpaces.++(List((fspace.id, fspace.name, fspace.description.substring(0, Math.min(maxDescLength, fspace.description.length())))))
+                  }
+                }
               }
             }
 
@@ -116,10 +129,10 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
 
             existingUser.email match {
               case Some(addr) => {
-                var userDatasets: List[Dataset] = datasets.listUserDatasetsAfter("", 12, addr.toString())
-                var userCollections: List[Collection] = collections.listUserCollectionsAfter("", 12, addr.toString())
+                var userDatasets: List[Dataset] = datasets.listUser(12, request.user, request.superAdmin, existingUser)
+                var userCollections: List[Collection] = collections.listUser(12, request.user, request.superAdmin, existingUser)
                 var userFiles : List[File] = files.listUserFilesAfter("", 12, addr.toString())
-                
+
                 for (dset <- userDatasets) {
                   myDatasets = myDatasets.++(List((dset.id, dset.name, dset.description.substring(0, Math.min(maxDescLength, dset.description.length())))))
                 }
@@ -132,7 +145,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
               }
               case None => {}
             }
-            Ok(views.html.profile(existingUser, ownProfile, followers, followedUsers, followedFiles, followedDatasets, followedCollections, myFiles, myDatasets, myCollections))
+            Ok(views.html.profile(existingUser, ownProfile, followers, followedUsers, followedFiles, followedDatasets, followedCollections, followedSpaces, myFiles, myDatasets, myCollections))
         
       }
       case None => {
@@ -141,9 +154,8 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
       }
     }
   }
-
-  /** @deprecated use viewProfileUUID(uuid) */
-  def viewProfile(email: Option[String]) = SecuredAction() { request =>
+                /** @deprecated use viewProfileUUID(uuid) */
+  def viewProfile(email: Option[String]) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
     users.findByEmail(email.getOrElse("")) match {
@@ -155,7 +167,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
     }
   }
 
-  def submitChanges = SecuredAction(authorization = WithPermission(Permission.LoggedIn)) { implicit request =>
+  def submitChanges = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(x: User) => {

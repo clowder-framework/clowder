@@ -1,0 +1,12 @@
+@(space: ProjectSpace, userRoleMap: Map[User, String])(implicit user: Option[models.User])
+
+@import play.api.Play.current
+
+<!-- User is permitted to request access if:  'permissions' is set to 'public' && is logged in && doesn't have access -->
+@if( (current.configuration.getString("permissions").getOrElse("public").compareTo("public") == 0) &&
+    user.isDefined && !(userRoleMap contains user.get) ) {
+        <a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed" href="@(routes.Spaces.addRequest(space.id))">
+            <span class="glyphicon glyphicon-envelope"></span> Request Authorization
+        </a>
+}
+

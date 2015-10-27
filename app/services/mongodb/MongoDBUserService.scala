@@ -6,6 +6,8 @@ import java.util.Date
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.commons.TypeImports._
+import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import com.mongodb.util.JSON
 import com.novus.salat._
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
@@ -14,6 +16,14 @@ import org.bson.types.ObjectId
 import securesocial.core.Identity
 import play.api.Application
 import play.api.Play.current
+import MongoContext.context
+import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.Imports._
+import models.Role
+import models.UserSpaceAndRole
+import models.UserSpaceAndRole
+import scala.collection.mutable.ListBuffer
+import play.api.Logger
 import securesocial.core.providers.Token
 import securesocial.core._
 import services.{FileService, DatasetService, CollectionService}
@@ -149,6 +159,131 @@ class MongoDBUserService @Inject() (
 
   override def createNewListInUser(email: String, field: String, fieldList: List[Any]) {
     UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldList))
+  }
+  
+  /**
+   * @see app.services.UserService
+   * 
+   * Implementation of the UserService trait.
+   * 
+   */
+  def addUserToSpace(userId: UUID, role: Role, spaceId: UUID): Unit = {
+      Logger.debug("add user to space")
+      val spaceData = UserSpaceAndRole(spaceId, role)
+      val result = UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)), $push("spaceandrole" -> UserSpaceAndRoleData.toDBObject(spaceData)));  
+  }
+ 
+  /**
+   * @see app.services.UserService
+   * 
+   * Implementation of the UserService trait.
+   * 
+   */
+  def removeUserFromSpace(userId: UUID, spaceId: UUID): Unit = {
+      Logger.debug("remove user from space")
+      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)),
+    		  $pull("spaceandrole" ->  MongoDBObject( "spaceId" -> new ObjectId(spaceId.stringify))), false, false, WriteConcern.Safe)
+  }
+  
+  /**
+   * @see app.services.UserService
+   * 
+   * Implementation of the UserService trait.
+   * 
+   */
+  def changeUserRoleInSpace(userId: UUID, role: Role, spaceId: UUID): Unit = {
+      removeUserFromSpace(userId, spaceId)
+      addUserToSpace(userId, role, spaceId)
+  }
+  
+  /**
+   * @see app.services.UserService
+   * 
+   * Implementation of the UserService trait.
+   * 
+   */
+  def getUserRoleInSpace(userId: UUID, spaceId: UUID): Option[Role] = {
+      var retRole: Option[Role] = None
+      var found = false
+      
+      findById(userId) match {
+          case Some(aUser) => {              
+              for (aSpaceAndRole <- aUser.spaceandrole) {                  
+                  if (!found) {
+                      if (aSpaceAndRole.spaceId == spaceId) {
+                          retRole = Some(aSpaceAndRole.role)
+                          found = true
+                      }	                  
+                  }
+              }
+          }
+          case None => Logger.debug("No user found for getRoleInSpace")
+      }
+      
+      retRole
+  }
+  
+  /**
+   * @see app.services.UserService
+   * 
+   * Implementation of the UserService trait.
+   * 
+   */
+  def listUsersInSpace(spaceId: UUID): List[User] = {
+      val retList: ListBuffer[User] = ListBuffer.empty
+      for (aUser <- UserDAO.dao.find(MongoDBObject())) {
+         for (aSpaceAndRole <- aUser.spaceandrole) {
+             if (aSpaceAndRole.spaceId == spaceId) {
+                 retList += aUser
+             }             
+         }
+      }      
+      retList.toList
+  }
+
+  /**
+   * List user roles.
+   */
+  def listRoles(): List[Role] = {
+    RoleDAO.findAll().toList
+  }
+
+  /**
+   * Add new role.
+   */
+  def addRole(role: Role): Unit = {
+    RoleDAO.insert(role)
+  }
+
+  /**
+   * Find existing role.
+   */
+  def findRole(id: String): Option[Role] = {
+    RoleDAO.findById(id)
+  }
+
+  def findRoleByName(name: String): Option[Role] = {
+    RoleDAO.findByName(name)
+  }
+  /**
+   * Delete role.
+   */
+  def deleteRole(id: String): Unit = {
+    RoleDAO.removeById(id)
+  }
+
+  def updateRole(role: Role): Unit = {
+    RoleDAO.save(role)
+  }
+
+  override def followResource(followerId: UUID, resourceRef: ResourceRef) {
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
+      $addToSet("followedEntities" -> TypedIDDAO.toDBObject(new TypedID(resourceRef.id, resourceRef.resourceType.toString()))))
+  }
+
+  override def unfollowResource(followerId: UUID, resourceRef: ResourceRef) {
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
+      $pull("followedEntities" -> TypedIDDAO.toDBObject(new TypedID(resourceRef.id, resourceRef.resourceType.toString()))))
   }
 
   override def followFile(followerId: UUID, fileId: UUID) {
@@ -337,3 +472,36 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
     }
   }
 }
+
+object RoleDAO extends ModelCompanion[Role, ObjectId] {
+
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[Role, ObjectId](collection = x.collection("roles")) {}
+  }
+
+  def findById(id: String): Option[Role] = {
+    dao.findOne(MongoDBObject("_id" -> new ObjectId(id)))
+  }
+
+  def removeById(id: String) {
+    dao.remove(MongoDBObject("_id" -> new ObjectId(id)), WriteConcern.Normal)
+  }
+
+  def findByName(name: String): Option[Role] = {
+    dao.findOne(MongoDBObject("name" -> name))
+  }
+}
+
+/**
+ * ModelCompanion object for the models.UserSpaceAndRole class. Specific to MongoDB implementation, so should either
+ * be in it's own utility class within services, or, as it is currently implemented, within one of the common
+ * services classes that utilize it.
+ */
+object UserSpaceAndRoleData extends ModelCompanion[UserSpaceAndRole, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[UserSpaceAndRole, ObjectId](collection = x.collection("spaceandrole")) {}
+  }
+}
+

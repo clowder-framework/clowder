@@ -1,0 +1,66 @@
+@(space: ProjectSpace, collections: List[Collection], datasets: List[Dataset], userRoleMap: Map[User, String])(implicit user: Option[models.User])
+
+@import api.Permission
+@import helper._
+
+@main(space.name) {
+
+    @if(space.bannerURL.isDefined) {
+        <div class="row">
+            <div class="space-banner nopadding col-md-12 col-lg-12 col-sm-12" style="background-image:url('@(space.bannerURL)');">
+                @if(space.logoURL.isDefined) {
+                    <img class="space-banner-logo pull-left" src="@(space.logoURL)" alt="Thumbnail of @(space.name)">
+                }
+            </div>
+        </div>
+    }
+
+    <div class="row space-head vertical-align">
+        <div class="col-md-8 col-lg-8 col-sm-8">
+            <h1 id="spacenamedisplay">@space.name</h1>
+            <p><span id="spacedescdisplay">@space.description</span></p>
+        </div>
+
+        <div class="pull-right col-md-4 col-lg-4 col-sm-4 text-center">
+            <!-- If the user can edit users, the following are displayed; otherwise they are displayed and disabled, to provide a consistent UE. -->
+            @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
+                <a href="@routes.Spaces.manageUsers(space.id)" class="btn btn-default btn-xs">
+                    <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
+                </a>
+            } else {
+                <a href="@routes.Spaces.manageUsers(space.id)" class="btn btn-default btn-xs disabled">
+                    <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
+                </a>
+            }
+
+            <!-- If the user can edit this space, the following are displayed; otherwise they are displayed and disabled, to provide a consistent UE. -->
+            @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
+                <a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-default btn-xs">
+                    <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
+                </a>
+                <a href="@routes.Spaces.selectExtractors(space.id)" class="btn btn-default btn-xs">
+                    <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Extractors
+                </a>
+            } else {
+                <a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-default btn-xs disabled">
+                    <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
+                </a>
+                <a href="@routes.Spaces.selectExtractors(space.id)" class="btn btn-default btn-xs disabled">
+                    <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Extractors
+                </a>
+            }
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 col-lg-8 col-sm-8 space-col-left">
+            @spaces.collectionsBySpace(collections, space.id.stringify)
+            @spaces.datasetsBySpace(datasets, space.id.stringify)
+        </div>
+        <div class="col-md-4 col-lg-4 col-sm-4 space-col-right">
+            @spaces.otherActions(space, userRoleMap)
+            @spaces.externalLinks(space.homePage)
+            @spaces.spaceConfiguration(space)
+        </div>
+    </div>
+}

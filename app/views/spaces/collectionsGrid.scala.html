@@ -1,0 +1,58 @@
+@(collections: List[Collection], space: String)(implicit user: Option[models.User])
+
+@import _root_.util.Formatters.ellipsize
+
+<p>
+    Most recent collections:
+    <span class="pull-right">
+        <a id="create-collection" href="@routes.Collections.newCollection(Some(space))" class="btn btn-primary btn-xs">
+            Create Collection
+        </a>
+        <a href="@(routes.Collections.list("", "", 12, Some(space)))" class="btn btn-default btn-xs">
+            <span class="glyphicon glyphicon-hand-right"></span>
+            All Collections
+        </a>
+    </span>
+
+</p>
+
+@util.masonry()
+
+<div class="row" id="tile-view">
+    <div class="col-md-12">
+        <div id="masonry">
+        @collections.map { collection =>
+            <div class="post-box col-lg-4 col-md-4 col-sm-4">
+                <div class="panel panel-default">
+                    <div class="pull-right">
+                        <a href="#" title="Bookmark" class="pull-right bookmark-link"><span class="glyphicon glyphicon-bookmark bookmark"></span></a>
+                    </div>
+                    <div class="panel-body">
+                        @if(!collection.thumbnail_id.isEmpty){
+                            <a href="@(routes.Collections.collection(collection.id))">
+                                <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(collection.name)">
+                            </a>
+                        }
+                    <div class="caption break-word">
+                        <h4><a href="@(routes.Collections.collection(collection.id))">@collection.name</a></h4>
+                        <p>@ellipsize(collection.description, 200)</p>
+                    </div>
+                    </div>
+                        <!-- Collection Info -->
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <span class="glyphicon glyphicon glyphicon-file" title="@collection.datasets.size datasets"></span> @collection.datasets.size
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        }
+        </div>
+    </div>
+</div>
+
+@if(!user.isDefined) {
+    <script type="text/javascript">
+        $('#create-collection').addClass('disabled');
+    </script>
+}

@@ -1,0 +1,11 @@
+@(user:models.User, spaceid: String, spacename:String)(implicit request: RequestHeader)
+@import securesocial.core.IdentityProvider
+<html>
+  <body>
+    <p>Hello,</p>
+
+    <p>
+            <a href="@routes.Profile.viewProfile(user.email).absoluteURL(IdentityProvider.sslEnabled)">@user.fullName</a> submitted an authorization request to your space "<a href="@routes.Spaces.getSpace(UUID(spaceid)).absoluteURL(IdentityProvider.sslEnabled)">@spacename</a>".
+    </p>
+  </body>
+</html>

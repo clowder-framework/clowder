@@ -1,4 +1,6 @@
-@(dataset: Dataset)(implicit user: Option[models.User])
+@(dataset: Dataset, filesTags: Set[String])(implicit user: Option[models.User])
+
+@import api.Permission
 
 <div class="row bottom-padding">
     <div class="col-md-12">
@@ -6,31 +8,52 @@
     </div>
 </div>
 
-<div class="row bottom-padding">
-    <div id ="tagList" class="col-md-12">
+<!-- If the user can view tags for this dataset, they are displayed, the area is present but empty to provide a consistent UE. -->
+@if(Permission.checkPermission(Permission.ViewTags, ResourceRef(ResourceRef.dataset, dataset.id))) {
+    <div class="row bottom-padding">
+        <div id ="tagList" class="col-md-12">
+        <!-- The data-id attribute is needed since a) the removeTag for some reason is based off the tag name (text), which is what the id attribute is
+             and b) identifiying elements by the tag text can sometimes break, especially in the special cases where there are characters that need encoding.
+        -->
         @dataset.tags.map { tag =>
-            <div id='@tag.name' class="tag">
-                <a href="@routes.Tags.search(tag.name)">@tag.name</a>
-                @if(user.isDefined) {
-                    <a href="#"> <span id="@tag.name" class="glyphicon glyphicon-remove tag-delete"></span></a>
+            <div id='@tag.name' class="tag" data-id="@tag.id">
+                <a href="@routes.Tags.search(tag.name)">@Html(tag.name)</a>
+                <!-- If the user can delete the tag, the link is enabled, otherwise the link is not present to save space. -->
+                @if(Permission.checkPermission(Permission.DeleteTag, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                    <a href="#"> <span id="@tag.name" data-id="@tag.id" class="glyphicon glyphicon-remove tag-delete"></span></a>
                 }
             </div>
         }
+        </div>
     </div>
-</div>
+}
 
 <div class="row bottom-padding">
     <div class="col-md-12">
-        <form class="form-inline requiresLogin requiresLoginCommunity">
-            <div class="input-group input-group-sm">
-                <input type="text" id="tagField" class="form-control">
-                <span class="input-group-btn">
-                    <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
-                        <span class="glyphicon glyphicon-tag"></span> Tag
-                    </button>
-                </span>
-            </div>
-        </form>
+        <!-- If the user can add tags to the dataset, the form is enabled, otherwise the form is present but disabled to provide consistent UE. -->
+        @if(Permission.checkPermission(Permission.AddTag, ResourceRef(ResourceRef.dataset, dataset.id))) {
+            <form class="form-inline requiresLogin requiresLoginCommunity">
+                <div class="input-group input-group-sm">
+                    <input type="text" id="tagField" class="form-control">
+                    <span class="input-group-btn">
+                        <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
+                            <span class="glyphicon glyphicon-tag"></span> Tag
+                        </button>
+                    </span>
+                </div>
+            </form>
+        } else {
+            <form class="form-inline requiresLogin requiresLoginCommunity">
+                <div class="input-group input-group-sm">
+                    <input disabled type="text" id="tagField" class="form-control">
+                    <span class="input-group-btn">
+                        <button disabled class="btn btn-default btn-large" id="tagB" title="Add Tag">
+                            <span class="glyphicon glyphicon-tag"></span> Tag
+                        </button>
+                    </span>
+                </div>
+            </form>
+        }
     </div>
 </div>
 
@@ -41,20 +64,26 @@
         </a>
         <div class="collapse" id="tagsFromFiles">
             <div class="well">
-                @dataset.files.map { file =>
-                    @file.tags.map { tag =>
+
+                <!-- If the user can view tags for this dataset, they are displayed, the area is present but empty to provide a consistent UE. -->
+                @if(Permission.checkPermission(Permission.ViewTags, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                    @filesTags.map { tag =>
                         <div class="tag">
-                            <a href="@routes.Tags.search(tag.name)">@tag.name</a>
+                            <a href="@routes.Tags.search(tag)">@tag</a>
                         </div>
                     }
-                    @file.sections.map { section =>
-                        @section.tags.map { tag =>
-                            <div class="tag">
-                                <a href="@routes.Tags.search(tag.name)">@tag.name</a>
-                            </div>
+                    @dataset.files.map { file =>
+                        @file.sections.map { section =>
+                            @section.tags.map { tag =>
+                                <div class="tag">
+                                    <a href="@routes.Tags.search(tag.name)">@Html(tag.name)</a>
+                                </div>
+                            }
                         }
                     }
                 }
+
+
             </div>
         </div>
     </div>
@@ -73,9 +102,17 @@
 }
 
 <script language="javascript">
+    //The removeTag code is almost exactly the same as that in files.scala.html. It should probably be unified.
     function removeTag(){
         var tagId = $(this).attr("id");
         console.log("Removing tag " + tagId);
+        //The data-id attribute is needed since a) the removeTag for some reason is based off the tag name (text), which is what the id attribute is
+        //and b) identifiying elements by the tag text can sometimes break, especially in the special cases where there are characters that need encoding.
+        //
+        //The real question is since that tags have UUIDs, why aren't they simply removed in that manner. In the add, the dom element isn't added until success
+        //so the ID could be returned there and added into the elements as needed.
+        var tagDataId = $(this).attr("data-id");
+        console.log("data-id to remove is " + tagDataId);
 
         var request = jsRoutes.api.Datasets.removeTags('@dataset.id').ajax({
             data: JSON.stringify({"tags":[tagId]}),
@@ -85,7 +122,7 @@
 
         request.done(function (response, textStatus, jqXHR) {
             console.log("Response " + textStatus);
-            $("div#" + tagId + ".tag").remove();
+            $("[data-id=" + tagDataId + "].tag").remove();
         });
 
         request.fail(function (jqXHR, textStatus, errorThrown) {
@@ -101,10 +138,13 @@
 
     $(function() {
 
+        var tmpId = 1;
+
         $("#tagList").find(".glyphicon-remove").click(removeTag);
 
         $('#tagB').click(function() {
             var tag = $('#tagField').val();
+            tag = htmlEncode(tag);
 
             var isTagPresent = false;
             $("#tagList").children("div").each(function (index, tagLi) {
@@ -123,8 +163,14 @@
 
                 request.done(function (response, textStatus, jqXHR){
                     console.log("Response " + response);
-                    var url = "../tags/search?tag=" + tag;
-                    $newTag = $("<div id='"+tag+"' class='tag'><a href='" + url + "'>" + tag + "</a><a href='#'> <span id='" + tag +"' class='glyphicon glyphicon-remove tag-delete'></span></a></div>").appendTo('#tagList');
+                    var url = jsRoutes.controllers.Tags.search(tag).url;
+                    //The data-id attribute is needed since a) the removeTag for some reason is based off the tag name (text), which is what the id attribute is
+                    //and b) identifiying elements by the tag text can sometimes break, especially in the special cases where there are characters that need encoding.
+                    //
+                    //The real question is since that tags have UUIDs, why aren't they simply removed in that manner. In the add, the dom element isn't added until success
+                    //so the ID could be returned there and added into the elements as needed.
+                    $newTag = $("<div id='"+htmlEncode(tag)+"' class='tag' data-id='newId"+tmpId+"'><a href='" + url + "'>" + tag + "</a><a href='#'> <span id='" + htmlEncode(tag) +"' data-id='newId" + tmpId + "' class='glyphicon glyphicon-remove tag-delete'></span></a></div>").appendTo('#tagList');
+                    tmpId++;
                     $newTag.find(".glyphicon-remove").click(removeTag);
                     $('#tagField').val("");
                 });
