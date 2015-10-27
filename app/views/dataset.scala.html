@@ -98,25 +98,22 @@
                     </div>
                   <div role="tabpanel" class="tab-pane" id="tab-files">
                       <div id="add-file-btn">
-                      <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                      @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                          <a href="@(routes.Datasets.addToDataset(dataset.id, dataset.name, dataset.description))"
-                          class="btn btn-primary btn-sm" id="fileUploadBtn" title="Add File to Dataset" role="button">
-                              <span class="glyphicon glyphicon-export"></span> Add File
-                          </a>
-                      } else {
-                          <a href="@(routes.Datasets.addToDataset(dataset.id, dataset.name, dataset.description))"
-                          class="btn btn-primary btn-sm disabled" id="fileUploadBtn" title="Add File to Dataset" role="button">
-                              <span class="glyphicon glyphicon-export"></span> Add File
-                          </a>
-                      }
+
                       </div>
                       @if(user.isDefined) {
                           <div id="file-pane-buttons">
-                              <a href="@(routes.Datasets.addToDataset(dataset.id, dataset.name, dataset.description))"
-                              class="btn btn-primary btn-sm requiresLogin" id="fileUploadBtn" title="Add File to Dataset" role="button">
-                                  <span class="glyphicon glyphicon-export"></span> Add File
-                              </a>
+                              <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                              @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                                  <a href="@(routes.Datasets.addToDataset(dataset.id, dataset.name, dataset.description))"
+                                  class="btn btn-primary btn-sm" id="fileUploadBtn" title="Add File to Dataset" role="button">
+                                      <span class="glyphicon glyphicon-export"></span> Add File
+                                  </a>
+                              } else {
+                                  <a href="@(routes.Datasets.addToDataset(dataset.id, dataset.name, dataset.description))"
+                                  class="btn btn-primary btn-sm disabled" id="fileUploadBtn" title="Add File to Dataset" role="button">
+                                      <span class="glyphicon glyphicon-export"></span> Add File
+                                  </a>
+                              }
                               @if(dataset.files.length > 0) {
                                   <a id='download-dataset-url' href="#"
                                   onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id').url, '_blank');"
