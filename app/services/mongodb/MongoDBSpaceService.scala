@@ -359,7 +359,7 @@ class MongoDBSpaceService @Inject() (
   def updateSpaceConfiguration(spaceId: UUID, name: String, description: String, timeToLive: Long, expireEnabled: Boolean) {
       val result = ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
           $set("description" -> description, "name" -> name, "resourceTimeToLive" -> timeToLive, "isTimeToLiveEnabled" -> expireEnabled),
-          false, false, WriteConcern.Safe);
+          false, false, WriteConcern.Safe)
   }
 
   /**
@@ -414,6 +414,16 @@ class MongoDBSpaceService @Inject() (
    */
   def changeUserRole(userId: UUID, role: Role, space: UUID): Unit = {
       users.changeUserRoleInSpace(userId, role, space)
+  }
+
+  def addCurationObject(spaceId: UUID, curationObjectId: UUID) {
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
+    $addToSet("curationObjects" -> new ObjectId(curationObjectId.stringify)), false, false, WriteConcern.Safe)
+  }
+
+  def removeCurationObject(spaceId: UUID, curationObjectId: UUID) {
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
+      $pull("curationObjects" -> new ObjectId(curationObjectId.stringify)), false, false, WriteConcern.Safe)
   }
 
   def updateUserCount(space: UUID, numberOfUser:Int):Unit ={

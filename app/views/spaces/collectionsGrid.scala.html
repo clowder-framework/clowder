@@ -1,13 +1,16 @@
 @(collections: List[Collection], space: String)(implicit user: Option[models.User])
 
 @import _root_.util.Formatters.ellipsize
-
+@import api.Permission
 <p>
     Most recent collections:
     <span class="pull-right">
-        <a id="create-collection" href="@routes.Collections.newCollection(Some(space))" class="btn btn-primary btn-xs">
-            Create Collection
-        </a>
+        @if(user.isDefined && Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
+            <a id="create-collection" href="@routes.Collections.newCollection(Some(space))" class="btn btn-primary btn-xs">
+                Create Collection
+            </a>
+        }
+
         <a href="@(routes.Collections.list("", "", 12, Some(space)))" class="btn btn-default btn-xs">
             <span class="glyphicon glyphicon-hand-right"></span>
             All Collections

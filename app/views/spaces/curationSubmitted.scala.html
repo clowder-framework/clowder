@@ -1,0 +1,52 @@
+@(curationObject: models.CurationObject, repository: String, success: Boolean)(implicit user: Option[models.User] )
+
+@main("Submitted"){
+    <div class="row">
+        <div class="col-md-12">
+            @if(success) {
+                <h1>Submitted</h1>
+                <div class="alert alert-success" role="alert">
+                    <a href="@routes.CurationObjects.getCurationObject(curationObject.id)">@curationObject.name</a>
+                    has been successfully submitted to repository <strong>@repository</strong>.
+                </div>
+            } else {
+                <h1>Error</h1>
+                <div class="alert alert-danger" role="alert">
+                    There was an error submitting
+                        <a href="@routes.CurationObjects.getCurationObject(curationObject.id)"> @curationObject.name</a>.
+                        Please try again later.
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <a class="btn btn-primary" href="@routes.Spaces.getSpace(curationObject.space)"> Go Back to Space </a>
+            <a class="btn btn-primary" href="@routes.Spaces.stagingArea(curationObject.space)"> Go Back to Staging Area </a>
+            @if(success) {
+                <a id="retract-curation" class="btn btn-danger" onclick="retractCuration('@curationObject.id')">Retract Submission</a>
+            }
+        </div>
+    </div>
+    <script src="@routes.Assets.at("javascripts/curationProcess.js")" type="text/javascript"></script>
+    <script>
+        function retractCuration(curationId) {
+            console.log("Retracting curation Object: " + curationId);
+
+            var request = jsRoutes.api.CurationObjects.retractCurationObject(curationId).ajax({
+                type: 'Delete'
+            });
+
+            request.done(function(response, texStatus, jqXHR) {
+                $('#retract-curation').addClass('disabled');
+                notify("Curation retracted");
+            });
+
+            request.fail(function(jqXHR, textStatus, errorThrown) {
+               console.error("The following error ocurred: " + textStatus, errorThrown);
+                notify("The curation object could not be retracted due to: " + errorThrown, "Error" );
+            });
+        }
+    </script>
+}

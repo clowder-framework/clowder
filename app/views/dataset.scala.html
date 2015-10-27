@@ -1,15 +1,18 @@
 @(dataset: models.Dataset,
-        comments: List[Comment],
-        filesTags: Set[String],
-        previews : List[Previewer],
-        md: Map[String,Any],
-        usrmd: scala.collection.mutable.Map[String,Any],
-        collectionsOutside: List[models.Collection],
-        collectionsInside: List[models.Collection],
-        rdfExported: Boolean,
-        relatedSensors: List[(String,String)],
-        datasetSpaces: Option[List[ProjectSpace]],
-        otherSpaces: List[ProjectSpace])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  comments: List[Comment],
+  previews : List[Previewer],
+  md: Map[String,Any],
+  usrmd: scala.collection.mutable.Map[String,Any],
+  collectionsOutside: List[models.Collection],
+  collectionsInside: List[models.Collection],
+  rdfExported: Boolean,
+  datasetSpaces: Option[List[ProjectSpace]],
+  filesTags: Set[String],
+  otherSpaces: List[ProjectSpace],
+  currentSpace: Option[String],
+  toPublish :Boolean,
+  curationObjects: List[models.CurationObject], 
+  relatedSensors: List[(String,String)])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -76,9 +79,11 @@
                 <div class="col-md-12" id="ds-title">
                     <h1 id="datasettitle" class="inline">@Html(dataset.name)</h1>
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                        <h3 class="inline align-right"><a id ="edit-title" href = "javascript:updateTitle()">
+                        <h3 class="inline align-right">
+                            <a id ="edit-title" href = "javascript:updateTitle()">
                             <span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
-                        </a></h3>
+                            </a>
+                        </h3>
                     }
 
                 </div>
@@ -94,7 +99,7 @@
                 </ul>
                 <div class="tab-content">
                     <div role="tabpanel" class="tab-pane fade in active" id="tab-home">
-                        @datasets.home(dataset, datasetSpaces, previews, otherSpaces)
+                        @datasets.home(dataset, datasetSpaces, previews, otherSpaces, currentSpace, toPublish)
                     </div>
                   <div role="tabpanel" class="tab-pane" id="tab-files">
                       <div id="add-file-btn">
@@ -135,7 +140,7 @@
                          @comment(comments)</div>
                   </div>
                   <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
-                    @metadata(dataset, md, usrmd, dataset.datasetXmlMetadata, rdfExported)
+                    @metadata(dataset, md, usrmd, dataset.datasetXmlMetadata, rdfExported, None)
                   </div>
                   <!-- If the user can create a note on this dataset, display this tab. Otherwise, remove it. Is there a better way to do this? -->
                   @if(Permission.checkPermission(Permission.CreateNote, ResourceRef(ResourceRef.dataset, dataset.id))) {
@@ -153,6 +158,9 @@
             @datasets.collections(dataset, collectionsInside, collectionsOutside)
             @if(user.isDefined) {
                 @datasets.userLink(dataset)
+            }
+            @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+                @datasets.listCurationObjects(curationObjects)
             }
             @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {
                 @sensors.relatedSensors(relatedSensors, dataset.id.stringify)

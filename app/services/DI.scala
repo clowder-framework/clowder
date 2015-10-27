@@ -47,8 +47,8 @@ class ConfigurationModule extends AbstractModule {
     bind(classOf[RelationService]).to(get("service.relations", "services.mongodb.MongoDBRelationService"))
     bind(classOf[EventService]).to(get("service.events", "services.mongodb.MongoDBEventService"))
     bind(classOf[SchedulerService]).to(get("service.jobs", "services.mongodb.MongoDBSchedulerService"))
+    bind(classOf[CurationService]).to(get("service.curationObjs", "services.mongodb.MongoDBCurationService"))
     bind(classOf[UserService]).to(get("service.users", "services.mongodb.MongoDBUserService"))
-
   }
 
   protected def get[T](key: String, missing: String) : Class[T] = {

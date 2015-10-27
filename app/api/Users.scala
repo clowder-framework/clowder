@@ -159,11 +159,32 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
   }
 
   def userToJSON(user: User): JsValue = {
+    var profile: Map[String, JsValue] = Map.empty
+    if(user.profile.isDefined) {
+      if(user.profile.get.biography.isDefined) {
+        profile  = profile + ("biography" -> Json.toJson(user.profile.get.biography))
+      }
+      if(user.profile.get.institution.isDefined) {
+        profile = profile + ( "institution" -> Json.toJson(user.profile.get.institution))
+      }
+      if(user.profile.get.orcidID.isDefined) {
+        profile = profile + ("orcidId" -> Json.toJson(user.profile.get.orcidID))
+      }
+      if(user.profile.get.position.isDefined) {
+        profile = profile + ("position" -> Json.toJson(user.profile.get.position))
+      }
+      if(user.profile.get.institution.isDefined) {
+        profile = profile + ("institution" -> Json.toJson(user.profile.get.institution))
+      }
+
+    }
     Json.obj("id" -> user.id.stringify,
       "firstName" -> user.firstName,
       "lastName" -> user.lastName,
       "fullName" -> user.fullName,
       "email" -> user.email,
-      "avatar" -> user.getAvatarUrl())
+      "avatar" -> user.getAvatarUrl(),
+      "profile" -> Json.toJson(profile)
+     )
   }
 }

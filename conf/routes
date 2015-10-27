@@ -96,7 +96,7 @@ GET            /datasets/new                                                    
 GET            /datasets/addToDataset/:id/:name/:desc                                   @controllers.Datasets.addToDataset(id: UUID, name: String, desc: String)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
-GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID)
+GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
 POST           /dataset/submit                                                          @controllers.Datasets.submit
@@ -534,6 +534,7 @@ POST           /api/users/createNewListInUser                                   
 POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
 POST           /api/users/follow                                                        @api.Users.follow(followeeUUID: UUID, name: String)
 POST           /api/users/unfollow                                                      @api.Users.unfollow(followeeUUID: UUID, name: String)
+GET            /api/curations/:curationId/ore                                           @api.CurationObjects.getCurationObjectOre(curationId: UUID)
 
 # ----------------------------------------------------------------------
 # MEDICI STATUS API
@@ -546,3 +547,23 @@ GET            /api/status                                                      
 # ----------------------------------------------------------------------
 GET            /rss                                                                     @controllers.RSS.siteRSS(limit: Option[Int])
 GET            /rss/:etype                                                              @controllers.RSS.siteRSSOfType(limit: Option[Int], etype: String)
+
+# ----------------------------------------------------------------------
+# CURATIONS ENDPOINT
+# ----------------------------------------------------------------------
+
+GET            /dataset/:id/curations/new                                               @controllers.CurationObjects.newCO(id:UUID, space:String ?= "")
+POST           /dataset/:datasetId/curations/spaces/:spaceId/submit                     @controllers.CurationObjects.submit(datasetId:UUID, spaceId:UUID)
+GET            /spaces/:id/stagingArea                                                  @controllers.Spaces.stagingArea(id: UUID)
+GET            /spaces/curations/:id                                                    @controllers.CurationObjects.getCurationObject(id: UUID)
+DELETE         /spaces/curations/retract/:id                                            @api.CurationObjects.retractCurationObject(id: UUID)
+DELETE         /spaces/curations/:id                                                    @controllers.CurationObjects.deleteCuration(id: UUID)
+GET            /spaces/curations/:id/compareToRepository                                @controllers.CurationObjects.compareToRepository(id: UUID, repository:String)
+GET            /spaces/curations/:id/sendToRepository                                   @controllers.CurationObjects.sendToRepository(id: UUID)
+GET            /spaces/curations/:id/matchmaker                                         @controllers.CurationObjects.findMatchingRepositories(id: UUID)
+POST           /spaces/curations/:id/matchmaker                                         @api.CurationObjects.findMatchmakingRepositories(id: UUID)
+POST           /spaces/curations/:id/datasetUsermetadata                                @controllers.CurationObjects.addDatasetUserMetadata(id: UUID)
+POST           /spaces/curations/:curationId/files/:fileId/fileUsermetadata             @controllers.CurationObjects.addFileUserMetadata(curationId:UUID, fileId: UUID)
+POST           /spaces/curations/:id/status                                             @controllers.CurationObjects.savePublishedObject(id: UUID)
+GET            /spaces/curations/:id/getStatusFromRepository                            @controllers.CurationObjects.getStatusFromRepository(id: UUID)
+

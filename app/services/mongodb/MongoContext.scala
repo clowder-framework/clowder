@@ -1,6 +1,7 @@
 package services.mongodb
 
 import java.net.URL
+import java.net.URI
 
 import com.mongodb.casbah.commons.conversions.MongoConversionHelper
 import com.novus.salat.transformers.CustomTransformer
@@ -25,6 +26,7 @@ object MongoContext {
         typeHint = "_typeHint")
       registerCustomTransformer(UUIDTransformer)
       registerCustomTransformer(URLTransformer)
+      registerCustomTransformer(URITransformer)
       registerCustomTransformer(JodaDateTimeTransformer)
       registerGlobalKeyOverride(remapThis = "id", toThisInstead = "_id")
       registerClassLoader(Play.classloader)
@@ -105,6 +107,81 @@ object MongoContext {
     def serialize(url: URL) = {
       Logger.trace("Serializing URL to String :" + url)
       url.toString
+    }
+  }
+
+
+  /**
+   * Casbah URI serializer.
+   */
+  trait URISerializer extends MongoConversionHelper {
+    private val transformer = new Transformer {
+      Logger.trace("Encoding a URI.")
+
+      def transform(o: AnyRef): AnyRef = o match {
+        case uri: URI => uri.toString
+        case _ => o
+      }
+    }
+
+    override def register() {
+      Logger.debug("Setting up URI Serializer")
+
+      BSON.addEncodingHook(classOf[URI], transformer)
+
+      super.register()
+    }
+  }
+
+  /**
+   * Casbah URI deserializer.
+   */
+  trait URIDeserializer extends MongoConversionHelper {
+
+    private val transformer = new Transformer {
+      Logger.trace("Decoding URI.")
+
+      def transform(o: AnyRef): AnyRef = o match {
+        case uri: String => {
+          new URI(uri)
+        }
+        case _ => {
+          o
+        }
+      }
+    }
+
+    override def register() {
+      Logger.trace("Hooking up URI deserializer")
+
+      BSON.addDecodingHook(classOf[URI], transformer)
+
+      super.register()
+    }
+  }
+
+  object RegisterURIDeserializer extends URIDeserializer {
+    Logger.trace("Registering URI deserializer")
+    def apply() = super.register()
+  }
+
+  object RegisterURISerializer extends URISerializer {
+    Logger.trace("Registering URI serializer")
+    def apply() = super.register()
+  }
+
+  RegisterURIDeserializer()
+  RegisterURISerializer()
+
+  object URITransformer extends CustomTransformer[URI, String] {
+    def deserialize(uri: String) = {
+      Logger.trace("Deserializing String to URI :" + uri)
+      new URI(uri)
+    }
+
+    def serialize(uri: URI) = {
+      Logger.trace("Serializing URI to String :" + uri)
+      uri.toString
     }
   }
 

@@ -194,9 +194,9 @@ code {
   padding:10px;
 }
 
-.usr_md_search_list {
-	list-style-type:none;
-}
+/*.usr_md_search_list {*/
+	/*list-style-type:none;*/
+/*}*/
 
 .usr_md_search_list_not {
 	margin-left:58px;
@@ -818,4 +818,47 @@ table#nested-space-role-pairs>tbody>tr>td {
 
 table.borderless tbody tr td, table.borderless tbody tr th {
     border: none;
+}
+
+.center-glyphicon{
+    display:block;
+    text-align: center;
+}
+
+.center-margin {
+    text-align: center;
+    margin: 0.5em;
+}
+/*.black-border {*/
+    /*border: 2px solid black;*/
+    /*display:block;*/
+    /*padding:10px;*/
+/*}*/
+
+.green{
+    color: green;
+}
+
+.red {
+    color: red;
+}
+
+.indent_20{
+    margin-left: 20px;
+}
+
+.submitted {
+    background-color: #dff0d8 !important;
+}
+
+.in-curation {
+    background-color: #fcf8e3 !important;
+}
+
+.publish {
+    background-color: #dcdcdc !important;
+}
+
+#user-space-role .table {
+    margin-bottom: 0px;
 }

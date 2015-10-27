@@ -500,7 +500,7 @@
             <div class="row border-top">
                 <div class="col-md-12">
                     <h4>Community generated metadata</h4>
-                    @fileusermetadata(file, usrmd, rdfExported)
+                    @fileusermetadata(file, usrmd, rdfExported, None)
                 </div>
             </div>
 
@@ -780,7 +780,7 @@
 
                   request.done(function (response, textStatus, jqXHR) {
                     console.log("Response " + textStatus);
-                    $("[data-id=" + tagDataId + "].tag").parents("li").remove();
+                    $("[data-id=" + tagDataId + "]").parents("li").remove();
                   });
 
                   request.fail(function (jqXHR, textStatus, errorThrown){
@@ -838,6 +838,7 @@
                         $newTag.hover(removeIconMouseIn,removeIconMouseOut);
                         $newTag.find(".glyphicon-remove").click(removeTag);
                         $('#tagField').val("");
+                        tmpId = tmpId+1;
                        });
                   
                       request.fail(function (jqXHR, textStatus, errorThrown){

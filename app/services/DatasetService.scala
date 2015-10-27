@@ -248,5 +248,6 @@ trait DatasetService {
    * Remove follower from a dataset.
    */
   def removeFollower(id: UUID, userId: UUID)
+
 }
 
