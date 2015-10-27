@@ -55,11 +55,12 @@ function associateItemWithSensor(resource_type, item_id, sensor_id, sensor_name,
         console.log('Done associating ' + resource_type + ' ' + item_id + ' to sensor ' + sensor_id + " / " + sensor_name);
 
         // append new element to list
-        $('#sensors-list').append('<li><a href="' + dashboard_url + sensor_name + '/">' +sensor_name+'</a></li>');
+        $('#sensors-list').append('<li><a href="' + dashboard_url + sensor_name + '/">' +sensor_name+'</a>' +
+          ' | <a href="#" onclick="javascript:removeRelation(\'' + response.id + '\')">Remove</a></li>');
 
         // close modal
         $('#sensors-assign').modal('hide');
-        window.location.reload();
+
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
