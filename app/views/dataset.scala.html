@@ -100,12 +100,12 @@
                       <div id="add-file-btn">
                       <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                       @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                          <a href="@(routes.Datasets.addToDataset(dataset.id, dataset.name, dataset.description))"
+                          <a href="@(routes.Datasets.addToDataset(dataset.id))"
                           class="btn btn-primary btn-sm" id="fileUploadBtn" title="Add File to Dataset" role="button">
                               <span class="glyphicon glyphicon-export"></span> Add File
                           </a>
                       } else {
-                          <a href="@(routes.Datasets.addToDataset(dataset.id, dataset.name, dataset.description))"
+                          <a href="@(routes.Datasets.addToDataset(dataset.id))"
                           class="btn btn-primary btn-sm disabled" id="fileUploadBtn" title="Add File to Dataset" role="button">
                               <span class="glyphicon glyphicon-export"></span> Add File
                           </a>
