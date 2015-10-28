@@ -66,8 +66,10 @@ object Geostreams extends ApiController {
         case (name, geoType, longlat, metadata) => {
           current.plugin[PostgresPlugin] match {
             case Some(plugin) => {
-              plugin.createSensor(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata))
-              jsonp(toJson("success"), request)
+              plugin.createSensor(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata)) match {
+                case Some(d) => jsonp(d, request)
+                case None => jsonp(Json.parse("""{"status":"Failed to create sensor"}"""), request)
+              }
             }
             case None => pluginNotEnabled
           }
@@ -223,8 +225,10 @@ object Geostreams extends ApiController {
         case (name, geoType, longlat, metadata, sensor_id) => {
           current.plugin[PostgresPlugin] match {
             case Some(plugin) => {
-              val id = plugin.createStream(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata), sensor_id)
-              jsonp(Json.obj("status"->"ok","id"->id), request)
+              plugin.createStream(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata), sensor_id) match {
+                case Some(d) => jsonp(d, request)
+                case None => jsonp(Json.parse( """{"status":"Failed to create stream"}"""), request)
+              }
             }
             case None => pluginNotEnabled
           }

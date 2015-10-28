@@ -69,15 +69,22 @@ class PostgresPlugin(application: Application) extends Plugin {
     ps.close()
   }
 
-  def createSensor(name: String, geoType: String, lat: Double, lon: Double, alt: Double, metadata: String) {
-    val ps = conn.prepareStatement("INSERT INTO sensors(name, geog, created, metadata) VALUES(?, ST_SetSRID(ST_MakePoint(?, ?, ?), 4326), NOW(), CAST(? AS json));")
+  def createSensor(name: String, geoType: String, lat: Double, lon: Double, alt: Double, metadata: String): Option[String] = {
+    val ps = conn.prepareStatement("INSERT INTO sensors(name, geog, created, metadata) VALUES(?, ST_SetSRID(ST_MakePoint(?, ?, ?), 4326), NOW(), CAST(? AS json));", Statement.RETURN_GENERATED_KEYS)
     ps.setString(1, name)
     ps.setDouble(2, lon)
     ps.setDouble(3, lat)
     ps.setDouble(4, alt)
     ps.setString(5, metadata)
     ps.executeUpdate()
+    val rs = ps.getGeneratedKeys
+    var sensorID = ""
+    if (rs.next()) {
+      sensorID = rs.getInt(1).toString
+    }
+    rs.close()
     ps.close()
+    getSensor(sensorID)
   }
 
   def searchSensors(geocode: Option[String], sensor_name: Option[String]): Option[String] = {
@@ -312,7 +319,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     } else Some(data)
   }
 
-  def createStream(name: String, geotype: String, lat: Double, lon: Double, alt: Double, metadata: String, stream_id: String): String = {
+  def createStream(name: String, geotype: String, lat: Double, lon: Double, alt: Double, metadata: String, stream_id: String): Option[String] = {
     val ps = conn.prepareStatement("INSERT INTO streams(name, geog, created, metadata, sensor_id) VALUES(?, ST_SetSRID(ST_MakePoint(?, ?, ?), 4326), NOW(), CAST(? AS json), ?);", Statement.RETURN_GENERATED_KEYS)
     ps.setString(1, name)
     ps.setDouble(2, lon)
@@ -322,12 +329,13 @@ class PostgresPlugin(application: Application) extends Plugin {
     ps.setInt(6, stream_id.toInt)
     ps.executeUpdate()
     val rs = ps.getGeneratedKeys
-    rs.next()
-    val generatedKey = rs.getInt(1)
-    Logger.debug("Key returned from getGeneratedKeys(): "+ generatedKey)
+    var streamID = ""
+    if (rs.next()) {
+      streamID = rs.getInt(1).toString
+    }
     rs.close()
     ps.close()
-    generatedKey.toString
+    getStream(streamID)
   }
 
   def searchStreams(geocode: Option[String], stream_name: Option[String]): Option[String] = {
