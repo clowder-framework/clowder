@@ -177,31 +177,15 @@
                     $("#field-value").catcomplete({
                         minLength: 3,
                         source: function( request, response ) {
+
+                            var useSyn = $("#useSynonyms").prop("checked");
                             $.ajax({
                                 url: field[0].json.definitions_url,
                                 dataType: "jsonp",
-                                // Added the query term "useSynonyms".
-                                data: { term: request.term, useSynonyms: 1 },
+                                data: { term: request.term, useSynonyms: useSyn },
                                 success: function( data ) {
-                                    console.log("data: ", data);
-                                    // The vars list is now in the "vars_data" part of the entire data, and the info on the groups are in the "cat_data" part. Filter the vars list, but not on the cat_data. Returns cat_data together with the filtering results.
-                                    //var searchspace = data;
-                                    var searchspace = data.vars_data;
-                                    // Assume that "listjquery" will use a URL that returns filtered data, so we don't need to filter again. So comment this block out.
-                                    /*
-                                    // Split by space.
-                                    var searchwords = request.term.split(" ");
-
-                                    $.each(searchwords, function() {
-                                        searchspace = $.ui.autocomplete.filter(searchspace, this);
-                                    });
-                                    */
-                                    // Now returns the entire filtered results without limiting the number.
-                                    // Limit the results returned in case searchspace is large.
-                                    //var mySlice = searchspace.slice(0, 20);
-                                    //var res = data.cat_data.concat(mySlice);
-                                    var res = data.cat_data.concat(searchspace);
-                                    //var res = searchspace;
+                                    // The vars list is now in the data.vars_data, and the categories in data.cat_data. Assuming that "listjquery" will use a URL that returns filtered data, we don't need to filter again. Returns cat_data with the vars list.
+                                    var res = data.cat_data.concat(data.vars_data);
                                     response(res);
                                 }
                             });
