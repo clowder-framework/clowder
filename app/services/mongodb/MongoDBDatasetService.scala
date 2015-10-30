@@ -976,7 +976,7 @@ class MongoDBDatasetService @Inject() (
   def removeDataset(id: UUID) {
     Dataset.findOneById(new ObjectId(id.stringify)) match {
       case Some(dataset) => {
-        dataset.collections.foreach(c => collections.removeDataset(UUID(c), dataset.id))
+        dataset.collections.foreach(c => collections.removeDataset(c, dataset.id))
         for (comment <- comments.findCommentsByDatasetId(id)) {
           comments.removeComment(comment)
         }
@@ -1034,7 +1034,7 @@ class MongoDBDatasetService @Inject() (
         var dsCollsName = ""
 
         dataset.collections.foreach(c => {
-          collections.get(UUID(c)) match {
+          collections.get(c) match {
             case Some(collection) => {
               dsCollsId = dsCollsId + collection.id.stringify + " %%% "
               dsCollsName = dsCollsName + collection.name + " %%% "

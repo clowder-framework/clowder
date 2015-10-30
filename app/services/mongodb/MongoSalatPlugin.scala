@@ -13,6 +13,7 @@ import com.mongodb.casbah.MongoConnection
 import com.mongodb.casbah.MongoDB
 import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.gridfs.GridFS
+import org.bson.types.ObjectId
 import services.{DI, AppConfigurationService}
 
 /**
@@ -140,7 +141,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   // ----------------------------------------------------------------------
   def updateDatabase() {
     val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
-
+    updateCollectionsInDatasetStringToUUID
     // migrate users to new model
     if (!appConfig.hasPropertyValue("mongodb.updates", "fixing-typehint-users")) {
       if (System.getProperty("MONGOUPDATE") != null) {
@@ -203,4 +204,48 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       }
     }
   }
+
+
+
+  private def updateCollectionsInDatasetStringToUUID{
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", "replace-dataset-collections-string-uuid")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        collection("datasets").foreach { ds =>
+          val collection_string = ds.getAsOrElse[MongoDBList]("collections", MongoDBList.empty)
+          ds.removeField("collections")
+          val collection_uuids = collection_string.map(col => new ObjectId(col.toString)).toList
+          ds.put("collections", collection_uuids)
+          collection("datasets").save(ds, WriteConcern.Safe)
+
+        }
+      }
+      appConfig.addPropertyValue("mongodb.updates", "replace-dataset-collections-string-uuid")
+    } else {
+      Logger.warn("[MongoDBUpdate : Missing fix to replace the files in the dataset with UUIDs")
+    }
+  }
+
+  private def updateCollectionsInDatasetUUIDToString{
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", "replace-dataset-collections-uuid-string")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        collection("datasets").foreach { ds =>
+          val collection_uuid = ds.getAsOrElse[MongoDBList]("collections", MongoDBList.empty)
+          ds.removeField("collections")
+          val collection_string = collection_uuid.map(col => col.toString()).toList
+          ds.put("collections", collection_string)
+          collection("datasets").save(ds, WriteConcern.Safe)
+
+        }
+      }
+      appConfig.addPropertyValue("mongodb.updates", "replace-dataset-collections-uuid-string")
+    } else {
+      Logger.warn("[MongoDBUpdate : Missing fix to replace the files in the dataset with UUIDs")
+    }
+  }
+
+
 }

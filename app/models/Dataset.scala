@@ -22,7 +22,7 @@ case class Dataset(
   tags: List[Tag] = List.empty,
   metadata: Map[String, Any] = Map.empty,
   userMetadata: Map[String, Any] = Map.empty,
-  collections: List[String] = List.empty,
+  collections: List[UUID] = List.empty,
   thumbnail_id: Option[String] = None,
   datasetXmlMetadata: List[DatasetXMLMetadata] = List.empty,
   userMetadataWasModified: Option[Boolean] = None,
