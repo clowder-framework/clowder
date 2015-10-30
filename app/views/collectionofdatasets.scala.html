@@ -157,19 +157,11 @@
 		<table id='collectionDatasetsTable' class="table table-bordered table-hover">
 			<thead>
 				<tr>
-					@if(user.isDefined) {
 						<th style="width: 27%">Name</th>
 						<th style="width: 17%">Created</th>
 						<th style="width: 36%">Description</th>
 						<th style="width: 10%"></th>
 						<th style="width: 10%"></th>
-					}
-					@if(!user.isDefined) {
-						<th style="width: 27%">Name</th>
-						<th style="width: 17%">Created</th>
-						<th style="width: 36%">Description</th>
-						<th style="width: 20%"></th>
-					}
 				</tr>
 			</thead>
 			<tbody>
