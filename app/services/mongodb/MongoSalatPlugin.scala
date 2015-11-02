@@ -6,6 +6,7 @@ import java.util.Date
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import models._
+import org.bson.BSONException
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
 import com.mongodb.casbah.MongoURI
@@ -207,6 +208,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
 
 
+
   private def updateCollectionsInDatasetStringToUUID{
     val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
@@ -216,8 +218,14 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           val collection_string = ds.getAsOrElse[MongoDBList]("collections", MongoDBList.empty)
           ds.removeField("collections")
           val collection_uuids = collection_string.map(col => new ObjectId(col.toString)).toList
-          ds.put("collections", collection_uuids)
-          collection("datasets").save(ds, WriteConcern.Safe)
+
+          try {
+            ds.put("collections", collection_uuids)
+            collection("datasets").save(ds, WriteConcern.Safe)
+          } catch {
+            case e: BSONException =>  Logger.error("Failed to refactor collections (String -> UUID) in  dataset with id" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString())
+          }
+
 
         }
       }
@@ -236,8 +244,14 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           val collection_uuid = ds.getAsOrElse[MongoDBList]("collections", MongoDBList.empty)
           ds.removeField("collections")
           val collection_string = collection_uuid.map(col => col.toString()).toList
-          ds.put("collections", collection_string)
-          collection("datasets").save(ds, WriteConcern.Safe)
+          try {
+            ds.put("collections", collection_string)
+            collection("datasets").save(ds, WriteConcern.Safe)
+          } catch {
+            case e: BSONException => Logger.error("Failed to refactor collections (UUID -> String) in dataset with id" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString())
+          }
+
+
 
         }
       }
