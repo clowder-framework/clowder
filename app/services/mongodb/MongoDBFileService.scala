@@ -534,7 +534,6 @@ class MongoDBFileService @Inject() (
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("xmlMetadata" -> md), false, false, WriteConcern.Safe)
   }
 
-
   def findByTag(tag: String): List[File] = {
     FileDAO.find(MongoDBObject("tags.name" -> tag)).toList
   }
