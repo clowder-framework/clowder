@@ -23,8 +23,14 @@
                     <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
                 </div>
                 <div class="btn-group btn-group-sm pull-right">
-                    <a class="btn btn-default active" href="#" id="allspace">All Spaces</a>
-                    <a class="btn btn-default" href="#" id="myspace">My Spaces</a>
+                    <a class="btn btn-default active" id="allspace">All Spaces</a>
+                    @if(user.isDefined) {
+                        <a class="btn btn-default" id="myspace">
+                            My Spaces</a>
+                    } else {
+                        <a class="btn btn-default" href='@securesocial.controllers.routes.LoginPage.login()' id="myspace">
+                            My Spaces</a>
+                    }
                 </div>
                 <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new space">Create</a>
             </div>
@@ -59,30 +65,25 @@
                         //Utilizing library from https://github.com/carhartl/jquery-cookie/tree/v1.4.1
                         $.cookie("view-mode", "list", { path: '/' });
                     });
+                    $('#myspace').click(function(){
+                        var path;
+
+                        if(window.location.search == ""){
+                            path = '/spaces?showAll=false'
+                        } else {
+                            path = (location.pathname+location.search)+';showAll=false'
+                        }
+                        window.location.assign( path);
+                    });
+
+                     $('#allspace').click(function(){
+                        // this will leave a semi-colon in the path. but it should be a problem. Otherwise, we have to care about
+                        // '/spaces?showAll=false;when=.....', where we should remove the one char after showAll not the one before.
+                        var path=(location.pathname+location.search).replace('showAll=false', '');
+                        window.location.assign( path);
+                     });
 
                 });
-
-                    $('#allspace').click(function(){
-                        $('#allspace').addClass('active');
-                        $('#myspace' ).removeClass('active');
-                        $('#masonry').append( notmyspacetile );
-                        //use .masonry('reload'); we we upgrade the version of masonry
-                        $('#masonry').masonry('destroy');
-                        $('#masonry').masonry();
-                        $('table').append(notmyspacelist);
-                        notmyspacetile = null;
-                        notmyspacelist = null;
-                    });
-
-                    $('#myspace').click(function(){
-                        $('#myspace').addClass('active');
-                        $('#allspace' ).removeClass('active');
-                        notmyspacetile = $('.notmyspacetile').detach();
-                        notmyspacelist = $('.notmyspacelist').detach();
-                        //use .masonry('reload'); we we upgrade the version of masonry
-                        $('#masonry').masonry('destroy');
-                        $('#masonry').masonry();
-                    });
 
                 $(document).ready (function () {
                     //Set the cookie, for the case when it is passed in by the parameter
@@ -102,6 +103,7 @@
                     updatePage();
                 });
 
+
                 //Function to unify the changing of the href for the next/previous links. Called on button activation for
                 //viewMode style, as well as on initial load of page.
                 function updatePage() {
@@ -114,12 +116,8 @@
             <div class="col-md-12">
                 <div id="masonry">
                     @spaces.map { space =>
-                        @if(Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, space.id))){
-                            <div class="post-box col-lg-3 col-md-3 col-sm-3 col-xs-12">
-                            } else {
-                            <div class="post-box col-lg-3 col-md-3 col-sm-3 col-xs-12 notmyspacetile">
-                            }
-                    <div class="panel panel-default">
+                        <div class="post-box col-lg-3 col-md-3 col-sm-3 col-xs-12">
+                        <div class="panel panel-default">
                         <div class="pull-right">
                             <a href="#" title="Bookmark" class="pull-right bookmark-link"><span class="glyphicon glyphicon-bookmark bookmark"></span></a>
                         </div>
@@ -183,11 +181,7 @@
                         </thead>
                         <tbody>
                         @spaces.map { space =>
-                            @if(Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, space.id))){
                                 <tr>
-                                } else {
-                                <tr class="notmyspacelist">
-                                }
                                 <td>
                                     @if(!space.logoURL.isEmpty) {
                                         <img src="@(space.logoURL)" alt="Thumbnail of @(space.name)" width="120">
