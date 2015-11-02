@@ -39,7 +39,6 @@
                 var viewMode = '@mode.getOrElse("tile")';
                 $.cookie.raw = true;
                 $.cookie.json = true;
-                var notmyspace;
                 $(function() {
                     $('#tile-view-btn').click(function() {
                         $('#tile-view').removeClass ('hidden');
@@ -102,7 +101,6 @@
                     }
                     updatePage();
                 });
-
 
                 //Function to unify the changing of the href for the next/previous links. Called on button activation for
                 //viewMode style, as well as on initial load of page.
