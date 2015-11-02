@@ -1151,7 +1151,7 @@ def uploadExtract() = SecuredAction(parse.multipartFormData, authorization = Wit
     request =>
       sections.get(section_id) match {
         case Some(section) => {
-          files.findOneByFileId(section.file_id) match {
+          files.get(section.file_id) match {
             case Some(file) => Redirect(routes.Files.file(file.id))
             case None => InternalServerError("File not found")
           }

@@ -125,9 +125,7 @@ trait FileService {
 
   def addUserMetadata(id: UUID, json: String)
 
-  def addXMLMetadata(id: UUID, json: String)
-
-  def findOneByFileId(file_id: UUID): Option[File]
+  def addXMLMetadata(id: UUID, json: String)  
 
   def findByTag(tag: String): List[File]
 
