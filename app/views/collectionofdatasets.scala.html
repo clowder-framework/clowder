@@ -40,10 +40,8 @@
 <div class="row">
 	<div class="col-md-12">
 				<dl class="dl-horizontal">
-					@if(!collection.author.isEmpty){
-						<dt>Author:</dt>
-						<dd><a href= "@routes.Profile.viewProfile(collection.author.get.email)"> @collection.author.get.fullName </a></dd>
-					}
+					<dt>Author:</dt>
+					<dd><a href= "@routes.Profile.viewProfile(collection.author.email)"> @collection.author.fullName </a></dd>
                     <dt>Shared with spaces:</dt>
                     <dd>
                         @spaces.spaceLink(collectionSpaces, ResourceRef.collection, collection.id, otherSpaces)
@@ -233,10 +231,8 @@
 
 <script language="javascript">
 	@if(user.isDefined) {
-		@if(collection.author.isDefined){
-			@if(!(user.get.identityId.userId.equals(collection.author.get.identityId.userId))){
+			@if(!(user.get.identityId.userId.equals(collection.author.identityId.userId))){
 				$(".requiresLogin:not(.requiresLoginCommunity)").css("display","none");
-			}
 		}					
 	}
 	@if(!user.isDefined) {
