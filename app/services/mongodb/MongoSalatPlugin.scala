@@ -250,9 +250,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           } catch {
             case e: BSONException => Logger.error("Failed to refactor collections (UUID -> String) in dataset with id" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString())
           }
-
-
-
         }
       }
       appConfig.addPropertyValue("mongodb.updates", "replace-dataset-collections-uuid-string")
