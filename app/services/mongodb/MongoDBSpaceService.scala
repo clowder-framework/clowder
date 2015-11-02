@@ -125,7 +125,7 @@ class MongoDBSpaceService @Inject() (
     val public = MongoDBObject("public" -> true)
     val filter = owner match {
       case Some(o) => {
-        val author = MongoDBObject("author.identityId.userId" -> o.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> o.identityId.providerId)
+        val author = MongoDBObject("creator" -> new ObjectId(o.id.stringify))
         if (showAll) {
           author
         } else {

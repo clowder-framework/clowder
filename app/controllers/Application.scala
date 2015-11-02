@@ -8,12 +8,15 @@ import services._
 import models.{User, Event}
 import play.api.Logger
 
+import scala.collection.mutable.ListBuffer
+
 /**
  * Main application controller.
  */
 @Singleton
 class Application @Inject() (files: FileService, collections: CollectionService, datasets: DatasetService,
-                             spaces: SpaceService, events: EventService, users: UserService) extends SecuredController {
+                             spaces: SpaceService, events: EventService, comments: CommentService,
+                             sections: SectionService, users: UserService) extends SecuredController {
   /**
    * Redirect any url's that have a trailing /
    * @param path the path minus the slash
@@ -36,13 +39,53 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val collectionsCountAccess = collections.countAccess(user, request.superAdmin)
     val spacesCount = spaces.count()
     val spacesCountAccess = spaces.countAccess(user, request.superAdmin)
-    val usersCount = users.count();
+    val usersCount = users.count()
     //newsfeedEvents is the combination of followedEntities and requestevents, then take the most recent 20 of them.
     var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)).sorted(Ordering.by((_: Event).created).reverse))
     newsfeedEvents =  (newsfeedEvents ::: events.getRequestEvents(user, Some(20)))
-          .sorted(Ordering.by((_: Event).created).reverse).take(20)
-        Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess,
-          spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, newsfeedEvents))
+      .sorted(Ordering.by((_: Event).created).reverse).take(20)
+    user match {
+      case Some(usr) => {
+        users.findById(usr.id) match {
+          case Some(clowderUser) => {
+            val datasetsUser = datasets.listUser(2, Some(clowderUser), request.superAdmin, clowderUser)
+            val datasetcommentMap = datasetsUser.map { dataset =>
+              var allComments = comments.findCommentsByDatasetId(dataset.id)
+              dataset.files.map { file =>
+                allComments ++= comments.findCommentsByFileId(file.id)
+                sections.findByFileId(file.id).map { section =>
+                  allComments ++= comments.findCommentsBySectionId(section.id)
+                }
+              }
+              dataset.id -> allComments.size
+            }.toMap
+            val collectionList = collections.listUser(2, Some(clowderUser), request.superAdmin, clowderUser)
+            var collectionsWithThumbnails = List.empty[models.Collection]
+            for (collection <- collectionList) {
+              val collectionThumbnail = collection.datasets.find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
+              val collectionWithThumbnail = collection.copy(thumbnail_id = collectionThumbnail)
+              collectionsWithThumbnails = collectionWithThumbnail +: collectionsWithThumbnails
+            }
+            collectionsWithThumbnails = collectionsWithThumbnails.reverse
+
+            //Modifications to decode HTML entities that were stored in an encoded fashion as part
+            //of the collection's names or descriptions
+            val decodedCollections = ListBuffer.empty[models.Collection]
+            for (aCollection <- collectionsWithThumbnails) {
+              decodedCollections += Utils.decodeCollectionElements(aCollection)
+            }
+            val spacesUser = spaces.listUser(2, Some(clowderUser),request.superAdmin, clowderUser)
+            Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser, datasetcommentMap, decodedCollections.toList, spacesUser, true))
+          }
+          case None =>  Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess,
+            spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, newsfeedEvents))
+
+        }
+      }
+      case None => Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess,
+        spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, newsfeedEvents))
+    }
+
   }
   
   def options(path:String) = UserAction { implicit request =>

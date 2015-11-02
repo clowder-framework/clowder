@@ -568,7 +568,7 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
          Some(mode)
        }
 
-     val deletePermission = Permission.checkPermission(user, Permission.DeleteDataset)
+     val deletePermission = Permission.checkPermission(user, Permission.DeleteSpace)
      Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, deletePermission, prev, next))
    }
 }
