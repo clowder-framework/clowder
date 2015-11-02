@@ -73,8 +73,9 @@
                     ul.append( "<li class='ui-autocomplete-category'>" + displayed_cat_name + "</li>" );
                     currentCategory = category;
                 }
-                // Display only the items containing ":".
-                if (char_index > -1) {
+                // Used to be: Display only the items containing ":".
+                // Don't display the items containing ";".
+                if (label.indexOf(";") <= 0) {
                     li = that._renderItemData( ul, item );
                 }
             });
@@ -185,8 +186,12 @@
                                 data: { term: request.term, useSynonyms: useSyn },
                                 success: function( data ) {
                                     // The vars list is now in the data.vars_data, and the categories in data.cat_data. Assuming that "listjquery" will use a URL that returns filtered data, we don't need to filter again. Returns cat_data with the vars list.
-                                    var res = data.cat_data.concat(data.vars_data);
-                                    response(res);
+                                    if ('cat_data' in data) {
+                                        var res = data.cat_data.concat(data.vars_data);
+                                        response(res);
+                                    } else {
+                                        response(data);
+                                    }
                                 }
                             });
                         }
