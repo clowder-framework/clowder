@@ -152,12 +152,12 @@ class Datasets @Inject()(
 
     val commentMap = datasetList.map { dataset =>
       var allComments = comments.findCommentsByDatasetId(dataset.id)
-//      dataset.files.map { file =>
-////        allComments ++= comments.findCommentsByFileId(file)
-////        sections.findByFileId(file).map { section =>
-////          allComments ++= comments.findCommentsBySectionId(section.id)
-////        }
-//      }
+      dataset.files.map { file =>
+        allComments ++= comments.findCommentsByFileId(file)
+        sections.findByFileId(file).map { section =>
+          allComments ++= comments.findCommentsBySectionId(section.id)
+        }
+      }
       dataset.id -> allComments.size
     }.toMap
 
