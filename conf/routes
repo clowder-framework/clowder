@@ -338,8 +338,7 @@ POST           /api/dumpDatasetGroupings                                        
 # ----------------------------------------------------------------------
 # SPACES ENDPOINT
 # ----------------------------------------------------------------------
-GET            /api/spaces                                                              @api.Spaces.list()
-GET            /api/spaces/listSpacesCanAdd                                             @api.Spaces.listSpacesCanAdd()
+GET            /api/spaces                                                              @api.Spaces.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 GET            /api/spaces/:id                                                          @api.Spaces.get(id: UUID)
 POST           /api/spaces                                                              @api.Spaces.createSpace()
 DELETE         /api/spaces/:id                                                          @api.Spaces.removeSpace(id: UUID)
@@ -356,16 +355,22 @@ POST           /api/spaces/:id/unfollow                                         
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT
 # ----------------------------------------------------------------------
-GET            /api/collections                                                         @api.Collections.listCollections
+GET            /api/collections                                                         @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
+GET            /api/collections/canEdit                                                 @api.Collections.listCanEdit(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 POST           /api/collections                                                         @api.Collections.createCollection()
-GET            /api/collections/list                                                    @api.Collections.listCollections
+# deprecrated
+GET            /api/collections/list                                                    @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 POST           /api/collections/:id/follow                                              @api.Collections.follow(id: UUID, name: String)
 POST           /api/collections/:id/unfollow                                            @api.Collections.unfollow(id: UUID, name: String)
+GET            /api/collections/:coll_id/datasets                                       @api.Datasets.listInCollection(coll_id: UUID)
 POST           /api/collections/:coll_id/datasets/:ds_id                                @api.Collections.attachDataset(coll_id: UUID, ds_id: UUID)
+# deprecrated use DELETE
 POST           /api/collections/:coll_id/datasetsRemove/:ds_id/:ignoreNotFound          @api.Collections.removeDataset(coll_id: UUID, ds_id: UUID,ignoreNotFound)
 DELETE         /api/collections/:coll_id/datasets/:ds_id                                @api.Collections.removeDataset(coll_id: UUID, ds_id: UUID, ignoreNotFound ?= "True")
+# deprecrated use DELETE
 POST           /api/collections/:coll_id/remove                                         @api.Collections.removeCollection(coll_id: UUID)
 POST           /api/collections/:coll_id/reindex                                        @api.Collections.reindex(coll_id: UUID, recursive: Boolean ?= true)
+# deprecrated use datasets
 GET            /api/collections/:coll_id/getDatasets                                    @api.Datasets.listInCollection(coll_id: UUID)
 DELETE         /api/collections/:coll_id                                                @api.Collections.removeCollection(coll_id: UUID)
 POST           /api/collections/:c_id/previews/:p_id                                    @api.Collections.attachPreview(c_id: UUID, p_id: UUID)
@@ -376,7 +381,8 @@ PUT            /api/collections/:coll_id/description                            
 # ----------------------------------------------------------------------
 # DATASETS ENDPOINT
 # ----------------------------------------------------------------------
-GET            /api/datasets                                                            @api.Datasets.list
+GET            /api/datasets                                                            @api.Datasets.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
+GET            /api/datasets/canEdit                                                    @api.Datasets.listCanEdit(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 POST           /api/datasets                                                            @api.Datasets.createDataset
 POST           /api/datasets/createempty                                                @api.Datasets.createEmptyDataset
 POST           /api/datasets/attachmultiple                                             @api.Datasets.attachMultipleFiles

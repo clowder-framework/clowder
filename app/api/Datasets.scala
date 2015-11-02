@@ -4,6 +4,7 @@
 package api
 
 import java.util.Date
+import api.Permission.Permission
 import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
 import models._
 import play.api.Logger
@@ -57,32 +58,55 @@ class Datasets @Inject()(
   spaces: SpaceService,
   userService: UserService) extends ApiController {
 
+  @ApiOperation(value = "List all datasets the user can view",
+    notes = "This will check for Permission.ViewDataset",
+    responseClass = "None", multiValueResponse=true, httpMethod = "GET")
+  def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+    Ok(toJson(lisDatasets(title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)))
+  }
+
+  @ApiOperation(value = "List all datasets the user can edit",
+    notes = "This will check for Permission.AddResourceToDataset and Permission.EditDataset",
+    responseClass = "None", httpMethod = "GET")
+  def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+    Ok(toJson(lisDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.superAdmin)))
+  }
+
   /**
-   * List all datasets.
+   * Returns list of datasets based on parameters and permissions.
    */
-  @ApiOperation(value = "List all datasets",
-      notes = "Returns list of datasets and descriptions.",
-      responseClass = "None", httpMethod = "GET")
-  def list = PrivateServerAction { implicit request =>
-      val list = datasets.listAccess(0, request.user, request.superAdmin).map(datasets.toJSON(_))
-      Ok(toJson(list))
+  private def lisDatasets(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Dataset] = {
+    (title, date) match {
+      case (Some(t), Some(d)) => {
+        datasets.listAccess(d, true, limit, t, permission, user, superAdmin)
+      }
+      case (Some(t), None) => {
+        datasets.listAccess(limit, t, permission, user, superAdmin)
+      }
+      case (None, Some(d)) => {
+        datasets.listAccess(d, true, limit, permission, user, superAdmin)
+      }
+      case (None, None) => {
+        datasets.listAccess(limit, permission, user, superAdmin)
+      }
+    }
   }
 
   /**
    * List all datasets outside a collection.
    */
   def listOutsideCollection(collectionId: UUID) = PrivateServerAction { implicit request =>
-      collections.get(collectionId) match {
-        case Some(collection) => {
-          val list = for (dataset <- datasets.listAccess(0, request.user, request.superAdmin); if (!datasets.isInCollection(dataset, collection)))
-          yield datasets.toJSON(dataset)
-          Ok(toJson(list))
-        }
-        case None => {
-          val list = datasets.listAccess(0, request.user, request.superAdmin).map(datasets.toJSON(_))
-          Ok(toJson(list))
-        }
+    collections.get(collectionId) match {
+      case Some(collection) => {
+        val list = for (dataset <- datasets.listAccess(0, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin); if (!datasets.isInCollection(dataset, collection)))
+          yield dataset
+        Ok(toJson(list))
       }
+      case None => {
+        val list = datasets.listAccess(0, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
+        Ok(toJson(list))
+      }
+    }
   }
 
   /**
@@ -417,13 +441,7 @@ class Datasets @Inject()(
 
   @ApiOperation(value = "List all datasets in a collection", notes = "Returns list of datasets and descriptions.", responseClass = "None", httpMethod = "GET")
   def listInCollection(collectionId: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
-      collections.get(collectionId) match {
-        case Some(collection) => {
-          val list = for (dataset <- datasets.listInsideCollection(collectionId)) yield datasets.toJSON(dataset)
-          Ok(toJson(list))
-        }
-        case None => Logger.error("Error getting collection" + collectionId); InternalServerError
-      }
+    Ok(toJson(datasets.listCollection(collectionId.stringify)))
   }
 
   @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
@@ -1097,7 +1115,7 @@ class Datasets @Inject()(
 
       Logger.debug("Search completed. Returning datasets list.")
 
-      val list = for (dataset <- searchQuery) yield datasets.toJSON(dataset)
+      val list = for (dataset <- searchQuery) yield dataset
       Logger.debug("thelist: " + toJson(list))
       Ok(toJson(list))
   }
@@ -1118,7 +1136,7 @@ class Datasets @Inject()(
 
       Logger.debug("Search completed. Returning datasets list.")
 
-      val list = for (dataset <- searchQuery) yield datasets.toJSON(dataset)
+      val list = for (dataset <- searchQuery) yield dataset
       Logger.debug("thelist: " + toJson(list))
       Ok(toJson(list))
   }

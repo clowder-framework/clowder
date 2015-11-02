@@ -119,7 +119,7 @@ class Search @Inject() (
                   collections.get(UUID(hit.getId())) match {
                     case Some(collection) =>
                       Logger.debug("Search result found collection" + hit.getId());
-                      val collectionThumbnail = collection.datasets.find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
+                      val collectionThumbnail = datasets.listCollection(collection.id.stringify).find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
                       val collectionWithThumbnail = collection.copy(thumbnail_id = collectionThumbnail)
                       listOfcollections += collectionWithThumbnail
                     case None => {

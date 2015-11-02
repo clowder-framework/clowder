@@ -6,6 +6,7 @@ import java.util.Date
 import javax.inject.Inject
 
 import api.Permission
+import api.Permission.Permission
 import fileutils.FilesUtils
 import models._
 import play.api.Logger
@@ -98,9 +99,9 @@ class Datasets @Inject()(
           }
           case None => {
             if (date != "") {
-              datasets.listAccess(date, nextPage, limit, request.user, request.superAdmin)
+              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
             } else {
-              datasets.listAccess(limit, request.user, request.superAdmin)
+              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
             }
 
           }
@@ -116,7 +117,7 @@ class Datasets @Inject()(
         case None => {
           space match {
             case Some(s) => datasets.listSpace(first, nextPage = false, 1, s)
-            case None => datasets.listAccess(first, nextPage = false, 1, request.user, request.superAdmin)
+            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
           }
         }
       }
@@ -137,7 +138,7 @@ class Datasets @Inject()(
         case None => {
           space match {
             case Some(s) => datasets.listSpace(last, nextPage=true, 1, s)
-            case None => datasets.listAccess(last, nextPage=true, 1, request.user, request.superAdmin)
+            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
           }
         }
       }
@@ -245,16 +246,10 @@ class Datasets @Inject()(
           val userMetadata = datasets.getUserMetadata(id)
           Logger.debug("User metadata: " + userMetadata.toString)
 
-          val collectionsOutside = collections.listOutsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
           val collectionsInside = collections.listInsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
-          var decodedCollectionsOutside = new ListBuffer[models.Collection]()
           var decodedCollectionsInside = new ListBuffer[models.Collection]()
           var filesTags = TreeSet.empty[String]
 
-          for (aCollection <- collectionsOutside) {
-              val dCollection = Utils.decodeCollectionElements(aCollection)
-              decodedCollectionsOutside += dCollection
-          }
           for (aCollection <- collectionsInside) {
               val dCollection = Utils.decodeCollectionElements(aCollection)
               decodedCollectionsInside += dCollection
@@ -309,10 +304,6 @@ class Datasets @Inject()(
                   }
           }
 
-          val otherSpaces: List[ProjectSpace] = user match {
-            case Some(usr) => usr.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!datasetSpaces.map(_.id).contains(aSpace.id)) aSpace else None).filter(_ != None).asInstanceOf[List[ProjectSpace]]
-            case None => List.empty
-          }
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
           val fileList: List[File] = dataset.files.map(fileId => files.get(fileId) match {
             case Some(file) => file
@@ -320,7 +311,7 @@ class Datasets @Inject()(
           }).asInstanceOf[List[File]]
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filesTags, filteredPreviewers.toList, metadata, userMetadata,
-            decodedCollectionsOutside.toList, decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), otherSpaces, fileList))
+            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces)))
 
         }
         case None => {

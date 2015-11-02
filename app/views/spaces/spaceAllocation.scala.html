@@ -1,17 +1,12 @@
-@(resourceId: UUID, resourceType: Symbol, otherSpaces: List[ProjectSpace], resourceSpaces: Option[List[ProjectSpace]])(implicit user: Option[models.User])
+@(resourceId: UUID, resourceType: Symbol, resourceSpaces: Option[List[ProjectSpace]])(implicit user: Option[securesocial.core.Identity])
 @import api.Permission
+@import play.api.libs.json.Json
 
 <div class="row">
     <select class = "chosen-select2" multiple style="..." id ="spacesAvailable">
         @for(curOption <- resourceSpaces) {
             @for(curSpace <- curOption) {
                 <option value="@curSpace.id" id ="@curSpace.name" selected>@curSpace.name</option>
-            }
-        }
-        @for(curSpace <-otherSpaces) {
-            <!-- Ensure that the space options are available only if the user can actually add to them. -->
-            @if(Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, curSpace.id))) {
-                <option value="@curSpace.id" id ="@curSpace.name" >@curSpace.name</option>
             }
         }
     </select>
@@ -27,6 +22,7 @@
 </script>
 
 <script language = "javascript">
+
     var idNameObj = {};
 
     resource_type_enum = {
@@ -41,32 +37,55 @@
     function getName(id) {
         return idNameObj[id];
     }
+
     $(document).ready(function() {
-        @for(space <- otherSpaces) {
-            idNameObj["@space.name"] = "@space.id";
-        }
+
+        var request = jsRoutes.api.Spaces.list(null, null, 10).ajax({
+            type: 'GET',
+            contentType : "application/json"
+        });
+
+        request.done(function (response, textStatus, jqXHR){
+           otherSpaces = response.filter(function(x) {
+              return $.inArray(x.id, @Html(Json.stringify(Json.toJson(resourceSpaces.getOrElse(List.empty).map(x=>x.id.toString()))))) == -1;
+           });
+           $.map( otherSpaces, function( s ) {
+
+                idNameObj[s.name] = s.id;
+                $('#spacesAvailable').append($("<option></option>").attr("value",s.id).attr("id",s.name).text(s.name));
+
+           });
+           $('#spacesAvailable').trigger("chosen:updated");
+        });
+
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occured: " + textStatus, errorThrown);
+        });
+
     });
+
+
 
     $(".chosen-select2").chosen().change(function(event, params) {
         var targetId = this.getAttribute("id");
         if(!isUndefined(params.selected)) {
             var addedId = params.selected;
-            @for(space<-otherSpaces) {
-                var currentId = "@space";
+            for(space in otherSpaces) {
+                var currentId = space;
                 if(currentId != targetId) {
-                    $('#@space.id option [value=' + addedId + ']').remove();
-                    $('#@space.id').trigger("chosen:updated");
+                    $('#space.id option [value=' + addedId + ']').remove();
+                    $('#space.id').trigger("chosen:updated");
                 }
             }
             $('ul.chosen-choices li.search-field').css("width", "0");
         }
         else if(!isUndefined(params.deselected)) {
             var removedId= params.deselected;
-            @for(space <- otherSpaces) {
-                var currentId = "@space"
+            for(space in otherSpaces) {
+                var currentId = space
                 if(currentId != targetId) {
-                $('#@space.id').prepend($("<option></option>").attr("value", params.deselected).text(getName(params.deselected)));
-                $('#@space.id').trigger("chosen:updated");
+                $('#space.id').prepend($("<option></option>").attr("value", params.deselected).text(getName(params.deselected)));
+                $('#space.id').trigger("chosen:updated");
                 }
 
             }
@@ -97,7 +116,7 @@
         });
 
         request.done(function(response, textStatus, jqXH) {
-            updateSpacesEditLink(ids, names)
+            updateSpacesEditLink(ids, names);
             if($('#spaces a').size() > 0) {
                 $('#collection-users').show();
             } else
@@ -123,7 +142,7 @@
         });
 
         request.done(function(response, textStatus, jqXH){
-            updateSpacesEditLink(ids, names)
+            updateSpacesEditLink(ids, names);
             if($('#spaces a').size() > 0) {
                 $('#dataset-users').show();
             } else

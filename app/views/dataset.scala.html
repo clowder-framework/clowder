@@ -4,13 +4,10 @@
         previews : List[Previewer],
         md: Map[String,Any],
         usrmd: scala.collection.mutable.Map[String,Any],
-        collectionsOutside: List[models.Collection],
         collectionsInside: List[models.Collection],
         rdfExported: Boolean,
         relatedSensors: List[(String,String)],
-        datasetSpaces: Option[List[ProjectSpace]],
-        otherSpaces: List[ProjectSpace],
-        fileList: List[File])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+        datasetSpaces: Option[List[ProjectSpace]])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -95,7 +92,7 @@
                 </ul>
                 <div class="tab-content">
                     <div role="tabpanel" class="tab-pane fade in active" id="tab-home">
-                        @datasets.home(dataset, datasetSpaces, previews, otherSpaces)
+                        @datasets.home(dataset, datasetSpaces, previews)
                     </div>
                   <div role="tabpanel" class="tab-pane" id="tab-files">
                       <div id="add-file-btn">
@@ -137,8 +134,8 @@
 
 		<!-- right column -->
 		<div class="col-md-4 col-left-border">
-            @datasets.tags(dataset, fileList, filesTags)
-            @datasets.collections(dataset, collectionsInside, collectionsOutside)
+            @datasets.tags(dataset, filesTags)
+            @datasets.collections(dataset, collectionsInside)
             @if(user.isDefined) {
                 @datasets.userLink(dataset)
             }
