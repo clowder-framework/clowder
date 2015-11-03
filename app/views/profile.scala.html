@@ -1,4 +1,4 @@
-@(profile: User, ownProfile: Option[Boolean], followers: List[(UUID, String, String, String)], followedUsers: List[(UUID, String, String, String)], followedFiles: List[(UUID, String, String)], followedDatasets: List[(UUID, String, String)], followedCollections: List[(UUID, String, String)], followedSpaces: List[(UUID, String, String)], myFiles : List[(UUID, String, String)], myDatasets : List[(UUID, String, String)], myCollections : List[(UUID, String, String)] )(implicit user: Option[models.User] = None)
+@(profile: User, ownProfile: Option[Boolean])(implicit user: Option[models.User] = None)
 @main("Profile") {
 <div class="page-header">
   <table>

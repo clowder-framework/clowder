@@ -50,20 +50,9 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
   def viewProfileUUID(uuid: UUID) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     val viewerUser = request.user
-    var followers: List[(UUID, String, String, String)] = List.empty
-    var followedUsers: List[(UUID, String, String, String)] = List.empty
-    var followedFiles: List[(UUID, String, String)] = List.empty
-    var followedDatasets: List[(UUID, String, String)] = List.empty
-    var followedCollections: List[(UUID, String, String)] = List.empty
-    var followedSpaces: List[(UUID, String, String)] = List.empty
-    var myFiles : List[(UUID, String, String)] = List.empty
-    var myDatasets: List[(UUID, String, String)] = List.empty
-    var myCollections: List[(UUID, String, String)] = List.empty
-    var mySpaces: List[(UUID, String, String)] = List.empty
-    var maxDescLength = 50
     var ownProfile: Option[Boolean] = None
     var muser = users.findById(uuid)
-    
+
     muser match {
       case Some(existingUser) => {
         viewerUser match {
@@ -77,75 +66,8 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
             ownProfile = None
           }
         }
-        
-        for (tidObject <- existingUser.followedEntities) {
-              if (tidObject.objectType == "user") {
-                var followedUser = users.get(tidObject.id)
-                followedUser match {
-                  case Some(fuser) => {
-                    followedUsers = followedUsers.++(List((fuser.id, fuser.fullName, fuser.email.get, fuser.getAvatarUrl())))
-                  }
-                }
-              } else if (tidObject.objectType == "file") {
-                var followedFile = files.get(tidObject.id)
-                followedFile match {
-                  case Some(ffile) => {
-                    followedFiles = followedFiles.++(List((ffile.id, ffile.filename, ffile.contentType)))
-                  }
-                }
-              } else if (tidObject.objectType == "dataset") {
-                var followedDataset = datasets.get(tidObject.id)
-                followedDataset match {
-                  case Some(fdset) => {
-                    followedDatasets = followedDatasets.++(List((fdset.id, fdset.name, fdset.description.substring(0, Math.min(maxDescLength, fdset.description.length())))))
-                  }
-                }
-              } else if (tidObject.objectType == "collection") {
-                var followedCollection = collections.get(tidObject.id)
-                followedCollection match {
-                  case Some(fcoll) => {
-                    followedCollections = followedCollections.++(List((fcoll.id, fcoll.name, fcoll.description.substring(0, Math.min(maxDescLength, fcoll.description.length())))))
-                  }
-                }
-              } else if (tidObject.objectType == "'space") {
-                var followedSpace = spaces.get(tidObject.id)
-                followedSpace match {
-                  case Some(fspace) => {
-                    followedSpaces = followedSpaces.++(List((fspace.id, fspace.name, fspace.description.substring(0, Math.min(maxDescLength, fspace.description.length())))))
-                  }
-                }
-              }
-            }
 
-            for (followerID <- existingUser.followers) {
-              var userFollower = users.findById(followerID)
-              userFollower match {
-                case Some(uFollower) => {
-                  var ufEmail = uFollower.email.getOrElse("")
-                  followers = followers.++(List((uFollower.id, ufEmail, uFollower.getAvatarUrl(), uFollower.fullName)))
-                }
-              }
-            }
-
-            existingUser.email match {
-              case Some(addr) => {
-                var userDatasets: List[Dataset] = datasets.listUser(12, request.user, request.superAdmin, existingUser)
-                var userCollections: List[Collection] = collections.listUser(12, request.user, request.superAdmin, existingUser)
-                var userFiles : List[File] = files.listUserFilesAfter("", 12, addr.toString())
-
-                for (dset <- userDatasets) {
-                  myDatasets = myDatasets.++(List((dset.id, dset.name, dset.description.substring(0, Math.min(maxDescLength, dset.description.length())))))
-                }
-                for (cset <- userCollections) {
-                  myCollections = myCollections.++(List((cset.id, cset.name, cset.description.substring(0, Math.min(maxDescLength, cset.description.length())))))
-                }
-                for (fset <- userFiles) {
-                  myFiles = myFiles.++(List((fset.id, fset.filename, fset.contentType)))
-                }
-              }
-              case None => {}
-            }
-            Ok(views.html.profile(existingUser, ownProfile, followers, followedUsers, followedFiles, followedDatasets, followedCollections, followedSpaces, myFiles, myDatasets, myCollections))
+        Ok(views.html.profile(existingUser, ownProfile))
         
       }
       case None => {
