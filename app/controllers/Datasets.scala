@@ -311,7 +311,7 @@ class Datasets @Inject()(
           }).asInstanceOf[List[File]]
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filesTags, filteredPreviewers.toList, metadata, userMetadata,
-            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces)))
+            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), fileList))
 
         }
         case None => {

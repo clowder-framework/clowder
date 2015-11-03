@@ -7,7 +7,8 @@
         collectionsInside: List[models.Collection],
         rdfExported: Boolean,
         relatedSensors: List[(String,String)],
-        datasetSpaces: Option[List[ProjectSpace]])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+        datasetSpaces: Option[List[ProjectSpace]],
+        fileList: List[File])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -134,7 +135,7 @@
 
 		<!-- right column -->
 		<div class="col-md-4 col-left-border">
-            @datasets.tags(dataset, filesTags)
+            @datasets.tags(dataset, fileList, filesTags)
             @datasets.collections(dataset, collectionsInside)
             @if(user.isDefined) {
                 @datasets.userLink(dataset)
