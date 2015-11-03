@@ -11,7 +11,11 @@
 
     <div class="row">
         <div class="col-md-12">
-            <h1>Datasets</h1>
+            @if(user.isDefined) {
+                <h1>@{user.get.firstName}'s Datasets</h1>
+            } else {
+                <h1>Datasets</h1>
+            }
         </div>
     </div>
 
