@@ -6,6 +6,7 @@ import java.util.Date
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import models._
+import org.bson.BSONException
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
 import com.mongodb.casbah.MongoURI
@@ -246,6 +247,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
+  /**
+   * Replaces the files in the datasets from acopy of the files tojust the file UUID's.
+   */
   private def updateReplaceFilesInDataset{
     val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
@@ -255,8 +259,14 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           val files = ds.getAsOrElse[MongoDBList]("files", MongoDBList.empty)
           ds.removeField("files")
           val fileIds = files.map(file => new ObjectId(file.asInstanceOf[BasicDBObject].get("_id").toString)).toList
-          ds.put("files", fileIds)
-          collection("datasets").save(ds, WriteConcern.Safe)
+          try {
+            ds.put("files", fileIds)
+            collection("datasets").save(ds, WriteConcern.Safe)
+          }
+          catch {
+            case e: BSONException => Logger.error("Unable to update files in dataset:" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString() )
+          }
+
 
         }
       }
