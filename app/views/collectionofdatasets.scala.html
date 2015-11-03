@@ -182,6 +182,7 @@
 							@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
 							@if(dataset.thumbnail_id.isEmpty){No thumbnail available}
 						</td>
+						@if(user.isDefined) {
 						<td><a href="#!" onclick="removeDataset('@(dataset.id.toString)',event)">Remove</a>
 							<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 							@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
@@ -192,6 +193,7 @@
 								<span class="glyphicon glyphicon-trash"></span></button>
 							}
 						</td>
+						}
 					</tr>
 				}
 			</tbody>
