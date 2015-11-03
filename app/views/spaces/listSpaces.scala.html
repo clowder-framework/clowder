@@ -22,28 +22,20 @@
                     <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
                     <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
                 </div>
-                @if(showAll == false) {
-                    <div class="btn-group btn-group-sm pull-right">
-                        <a class="btn btn-default" id="allspace">All Spaces</a>
-                        @if(user.isDefined) {
-                            <a class="btn btn-default active" id="myspace">
-                                My Spaces</a>
-                        } else {
-                            <a class="btn btn-default active" href='@securesocial.controllers.routes.LoginPage.login()' id="myspace">
-                                My Spaces</a>
-                        }
-                    </div>
-                } else {
-                    <div class="btn-group btn-group-sm pull-right">
-                        <a class="btn btn-default active" id="allspace">All Spaces</a>
-                        @if(user.isDefined) {
-                            <a class="btn btn-default" id="myspace">
-                                My Spaces</a>
-                        } else {
-                            <a class="btn btn-default" href='@securesocial.controllers.routes.LoginPage.login()' id="myspace">
-                                My Spaces</a>
-                        }
-                    </div>
+                @if(user.isDefined) {
+                    @if(showAll == false) {
+                        <div class="btn-group btn-group-sm pull-right">
+                            <a class="btn btn-default" id="allspace">All Spaces</a>
+                                <a class="btn btn-default active" id="myspace">
+                                    My Spaces</a>
+                        </div>
+                    } else {
+                        <div class="btn-group btn-group-sm pull-right">
+                            <a class="btn btn-default active" id="allspace">All Spaces</a>
+                                <a class="btn btn-default" id="myspace">
+                                    My Spaces</a>
+                        </div>
+                    }
                 }
                 <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new space">Create</a>
             </div>
