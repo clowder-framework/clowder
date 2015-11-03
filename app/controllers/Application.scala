@@ -32,7 +32,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   	implicit val user = request.user
   	val latestFiles = files.latest(5)
     val datasetsCount = datasets.count()
-    val datasetsCountAccess = datasets.countAccess(user, request.superAdmin)
+    val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.superAdmin)
     val filesCount = files.count()
     val collectionsCount = collections.count()
     val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.superAdmin)
@@ -93,6 +93,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Comments.removeComment,
         api.routes.javascript.Comments.editComment,
         api.routes.javascript.Datasets.list,
+        api.routes.javascript.Datasets.listCanEdit,
         api.routes.javascript.Datasets.comment,
         api.routes.javascript.Datasets.createEmptyDataset,
         api.routes.javascript.Datasets.attachExistingFile,

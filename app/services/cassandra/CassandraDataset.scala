@@ -58,12 +58,12 @@ class CassandraDataset extends DatasetService {
  /**
   * Return a count of datasets in a space, this does not check for permissions
   */
- def countAccess(user: Option[User], superAdmin: Boolean): Long = -1
+ def countAccess(permisions: Set[Permission], user: Option[User], superAdmin: Boolean): Long = -1
 
  /**
   * Return a list of datasets the user has access to.
   */
- def listAccess(limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset] = List.empty[Dataset]
+ def listAccess(limit: Integer, permisions: Set[Permission], user: Option[User], superAdmin: Boolean): List[Dataset] = List.empty[Dataset]
 
  /**
   * Return a list of datasets the user has access to.
@@ -73,12 +73,12 @@ class CassandraDataset extends DatasetService {
  /**
   * Return a list of datasets the user has access to starting at a specific date.
   */
- def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], superAdmin: Boolean): List[Dataset] = List.empty[Dataset]
+ def listAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], user: Option[User], superAdmin: Boolean): List[Dataset] = List.empty[Dataset]
 
  /**
   * Return a list of datasets the user has access to starting at a specific date.
   */
- def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], superAdmin: Boolean): List[Dataset] = List.empty[Dataset]
+ def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], user: Option[User], superAdmin: Boolean): List[Dataset] = List.empty[Dataset]
 
  /**
   * Return a count of datasets the user has created.

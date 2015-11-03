@@ -6,6 +6,8 @@ import java.util.Date
 import javax.inject.Inject
 
 import api.Permission
+import api.Permission
+import api.Permission.Permission
 import fileutils.FilesUtils
 import models._
 import play.api.Logger
@@ -98,9 +100,9 @@ class Datasets @Inject()(
           }
           case None => {
             if (date != "") {
-              datasets.listAccess(date, nextPage, limit, request.user, request.superAdmin)
+              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
             } else {
-              datasets.listAccess(limit, request.user, request.superAdmin)
+              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
             }
 
           }
@@ -116,7 +118,7 @@ class Datasets @Inject()(
         case None => {
           space match {
             case Some(s) => datasets.listSpace(first, nextPage = false, 1, s)
-            case None => datasets.listAccess(first, nextPage = false, 1, request.user, request.superAdmin)
+            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
           }
         }
       }
@@ -137,7 +139,7 @@ class Datasets @Inject()(
         case None => {
           space match {
             case Some(s) => datasets.listSpace(last, nextPage=true, 1, s)
-            case None => datasets.listAccess(last, nextPage=true, 1, request.user, request.superAdmin)
+            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
           }
         }
       }

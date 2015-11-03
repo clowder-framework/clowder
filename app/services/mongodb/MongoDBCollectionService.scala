@@ -5,7 +5,6 @@ package services.mongodb
 
 import api.Permission
 import api.Permission.Permission
-import api.Permission.Permission
 import com.mongodb.casbah.WriteConcern
 import models.{User, UUID, Collection, Dataset}
 import com.mongodb.casbah.commons.MongoDBObject
@@ -151,7 +150,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     val emptySpaces = MongoDBObject("spaces" -> List.empty)
 
     // create access filter
-    val filterAccess = if (showAll || configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public") {
+    val filterAccess = if (showAll || (configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewCollection))) {
       MongoDBObject()
     } else {
       user match {
