@@ -141,36 +141,35 @@ class MongoDBSpaceService @Inject() (
     // - space   == show all datasets in space
     // - access  == show all datasets the user can see
     // - default == public only
-    val public = MongoDBObject("public" -> true)
-    val filter = owner match {
-      case Some(o) => {
-        val author = MongoDBObject("author.identityId.userId" -> o.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> o.identityId.providerId)
-        if (showAll) {
-          author
-        } else {
-          user match {
-            case Some(u) => {
-              author ++ $or(public, ("_id" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
-            }
-            case None => {
-              author ++ public
-            }
+    // create access filter
+    val filterAccess = if (showAll || (configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewSpace))) {
+      MongoDBObject()
+    } else {
+      user match {
+        case Some(u) => {
+          val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
+          if (permissions.contains(Permission.ViewSpace)) {
+            orlist += MongoDBObject("public" -> true)
           }
-        }
-      }
-      case None => {
-        if (showAll) {
-          MongoDBObject()
-        } else {
-          user match {
-            case Some(u) => {
-              val author = $and(MongoDBObject("author.identityId.userId" -> u.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> u.identityId.providerId))
-              $or(author, public, ("_id" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
-            }
-            case None => public
+          if (user == owner) {
+            orlist += MongoDBObject("spaces" -> List.empty)
           }
+          val permissionsString = permissions.map(_.toString)
+          val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(permissionsString).nonEmpty)
+          if (okspaces.nonEmpty) {
+            orlist += ("spaces" $in okspaces.map(x => new ObjectId(x.spaceId.stringify)))
+          }
+          if (orlist.isEmpty) {
+            orlist += MongoDBObject("doesnotexist" -> true)
+          }
+          $or(orlist.map(_.asDBObject))
         }
+        case None => MongoDBObject()
       }
+    }
+    val filterOwner = owner match {
+      case Some(o) => MongoDBObject("author.identityId.userId" -> o.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> o.identityId.providerId)
+      case None => MongoDBObject()
     }
     val filterTitle = titleSearch match {
       case Some(title) =>  MongoDBObject("name" -> ("(?i)" + title).r)
@@ -195,7 +194,7 @@ class MongoDBSpaceService @Inject() (
       MongoDBObject("created" -> -1) ++ MongoDBObject("name" -> 1)
     }
 
-    (filter ++ filterTitle ++ filterDate, sort)
+    (filterAccess ++ filterOwner ++ filterTitle ++ filterDate, sort)
   }
 
   /**
