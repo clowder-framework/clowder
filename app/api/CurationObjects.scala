@@ -21,6 +21,7 @@ import controllers.CurationObjects
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import collection.JavaConverters._
+import play.api.Play.current
 
 /**
  * Manipulates curation objects.
@@ -38,7 +39,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
       ) extends ApiController {
   @ApiOperation(value = " Get Curation object ORE map",
     httpMethod = "GET")
-  def getCurationObjectOre(curationId: UUID) = PrivateServerAction {
+  def getCurationObjectOre(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
       curations.get(curationId) match {
@@ -56,13 +57,14 @@ class CurationObjects @Inject()(datasets: DatasetService,
 //              it => it._1 -> Json.toJson( it._2.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap.map(
 //              item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
 //              )))
+            val key = play.api.Play.configuration.getString("commKey").getOrElse("")
             val metadata = file.userMetadata ++ file.xmlMetadata
             val fileMetadata = metadata.map {
               item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
             }
             val tempMap =  Map(
               "Identifier" -> Json.toJson("urn:uuid:"+file.id),
-              "@id" -> Json.toJson(hostIp+"/files/" +file.id),
+              "@id" -> Json.toJson(hostIp+"/files/" +file.id +"?key=" + key),
               "Creation Date" -> Json.toJson(format.format(file.uploadDate)),
               "Label" -> Json.toJson(file.filename),
               "Title" -> Json.toJson(file.filename),

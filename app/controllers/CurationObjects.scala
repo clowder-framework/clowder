@@ -373,8 +373,9 @@ class CurationObjects @Inject()(
             case Some (s) => repository = s
             case None => Ok(views.html.spaces.curationSubmitted( c, "No Repository Provided", success))
           }
+          val key = play.api.Play.configuration.getString("commKey").getOrElse("")
           val hostIp = Utils.baseUrl(request)
-          val hostUrl = hostIp + "/api/curations/" + curationId + "/ore#aggregation"
+          val hostUrl = hostIp + "/api/curations/" + curationId + "/ore" + "?key=" + key
           val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => pref._1-> Json.toJson(pref._2.toString().split(",").toList))).getOrElse(Map.empty)
           val userPreferences = userPrefMap + ("Repository" -> Json.toJson(repository))
           val maxDataset = if (!c.files.isEmpty)  c.files.map(_.length).max else 0
@@ -437,7 +438,7 @@ class CurationObjects @Inject()(
                     "Number of Datasets" -> Json.toJson(c.files.length),
                     "Number of Collections" -> Json.toJson(c.datasets.length)
                   )),
-                "Publication Callback" -> Json.toJson(hostIp + "/spaces/curations/" + c.id + "/status"),
+                "Publication Callback" -> Json.toJson(hostIp + "/spaces/curations/" + c.id + "/status?key=" + key ),
                 "Environment Key" -> Json.toJson(play.api.Play.configuration.getString("commKey").getOrElse(""))
               )
             )
