@@ -126,7 +126,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       (spaces.get(spaceId), collectionService.get(collectionId)) match {
         case (Some(s), Some(c)) => {
           spaces.addCollection(collectionId, spaceId)
-          Ok(Json.obj("collectionInSpace" -> s.collectionCount.toString))
+          Ok(Json.obj("collectionInSpace" -> (s.collectionCount +1).toString))
         }
         case (_, _) => NotFound
       }
@@ -141,7 +141,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       (spaces.get(spaceId), datasetService.get(datasetId)) match {
         case (Some(s), Some(d)) => {
           spaces.addDataset(datasetId, spaceId)
-          Ok(Json.obj("datasetsInSpace" -> s.datasetCount.toString))
+          Ok(Json.obj("datasetsInSpace" -> (s.datasetCount+1).toString))
         }
         case (_, _) => NotFound
       }

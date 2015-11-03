@@ -53,8 +53,6 @@
 							}
 						</dd>
 					}
-                    <dt>Shared with spaces:</dt>
-
 					<dt>Description:</dt>
 					<dd ><p id="collection_desc"  class="inline">@Html(collection.description)</p>
 						@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
@@ -189,6 +187,7 @@
 							@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
 							@if(dataset.thumbnail_id.isEmpty){No thumbnail available}
 						</td>
+						@if(user.isDefined) {
 						<td><a href="#!" onclick="removeDataset('@(dataset.id.toString)',event)">Remove</a>
 							<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 							@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
@@ -199,6 +198,7 @@
 								<span class="glyphicon glyphicon-trash"></span></button>
 							}
 						</td>
+						}
 					</tr>
 				}
 			</tbody>
@@ -206,6 +206,35 @@
 		<ul class="pager" id="datasetsPager">
 			<li class="previous" id="datasetsPagerPrev" style="visibility:hidden;"><a href="#!">Previous</a></li>
   			<li class ="next" id="datasetsPagerNext" style="visibility:hidden;"><a href="#!">Next</a></li>
+		</ul>
+		<!-- If the user can edit the collection, the buttons are enabled, otherwise the buttons are present but disabled to provide consistent UE. -->
+		@if(Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.collection, collection.id))) {
+			<button id="addDatasetBtn" class="btn btn-default" type="button" title="View Dataset List"><span class="glyphicon glyphicon-plus"></span>
+				Add</button>
+			<button id="hideAddDatasetBtn" class="btn btn-default" type="button" style="display : none ;" title="Close Dataset List"><span class="glyphicon glyphicon-remove"></span></button>
+		} else {
+			<button disabled id="addDatasetBtn" class="btn btn-default" type="button" title="View Dataset List"><span class="glyphicon glyphicon-plus"></span>
+				Add</button>
+			<button disabled id="hideAddDatasetBtn" class="btn btn-default" type="button" style="display : none ;" title="Close Dataset List"><span class="glyphicon glyphicon-remove"></span></button>
+		}
+		<br />
+		<br />
+		<table id='addDatasetsTable' class="table table-bordered table-hover" style="display:none;">
+			<thead>
+				<tr>
+					<th style="width: 27%">Name</th>
+					<th style="width: 17%">Created</th>
+					<th style="width: 36%">Description</th>
+					<th style="width: 10%"></th>
+					<th style="width: 10%"></th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+		<ul class="pager" id="addPager">
+  			<li class="previous" id="addPagerPrev" style="visibility:hidden;"><a href="#!">Previous</a></li>
+  			<li class ="next" id="addPagerNext" style="visibility:hidden;"><a href="#!">Next</a></li>
 		</ul>
 	</div>
 		</div>
