@@ -121,7 +121,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   notes = "",
   responseClass = "None", httpMethod="POST"
   )
-  def addCollectionToSapce(spaceId: UUID, collectionId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) {
+  def addCollectionToSpace(spaceId: UUID, collectionId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) {
     implicit request =>
       (spaces.get(spaceId), collectionService.get(collectionId)) match {
         case (Some(s), Some(c)) => {

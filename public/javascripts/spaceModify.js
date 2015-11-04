@@ -11,7 +11,7 @@ function addCollectionToSapce(id) {
     var selectedName = $("#spaceAddSelect option:selected").text();
     selectedName = selectedName.replace(/\n/g, "<br>");
 
-    var request = jsRoutes.api.Spaces.addCollectionToSapce(selectedId, id).ajax({
+    var request = jsRoutes.api.Spaces.addCollectionToSpace(selectedId, id).ajax({
         type: 'POST'
     });
 
