@@ -5,7 +5,7 @@ resource_type_enum = {
 }
 
 
-function addCollectionToSapce(id) {
+function addCollectionToSpace(id) {
 
     var selectedId = $("#spaceAddSelect").val();
     var selectedName = $("#spaceAddSelect option:selected").text();
@@ -58,7 +58,7 @@ function removeCollectionFromSpace(spaceId, spaceName, id, event){
 }
 
 
-function addDatasetToSapce(id) {
+function addDatasetToSpace(id) {
 
     var selectedId = $("#spaceAddSelect").val();
     var selectedName = $("#spaceAddSelect option:selected").text();
