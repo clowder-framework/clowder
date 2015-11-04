@@ -974,7 +974,7 @@ class Files @Inject()(
                 if (dataset.thumbnail_id.isEmpty) {
                   datasets.updateThumbnail(dataset.id, thumbnail_id)
                   dataset.collections.foreach(c => {
-                    collections.get(UUID(c)).foreach(col => {
+                    collections.get(c).foreach(col => {
                       if (col.thumbnail_id.isEmpty) {
                         collections.updateThumbnail(col.id, thumbnail_id)
                       }
