@@ -190,8 +190,9 @@
                 </div>
             </div>
             <div class="row">
-                <div class="post-box col-lg-12 col-md-12 col-sm-12 col-xs-12">
+
                 @for(row <- followers) {
+                    <div class="post-box col-lg-4 col-md-4 col-sm-4 col-xs-6">
                     <div class = "img_wrapper">
                         <div class = "img_hover">
                             <a href="@routes.Profile.viewProfileUUID(row._1)">
@@ -200,8 +201,9 @@
                         </div>
                         <img src="@row._3" class="img_thumbnail">
                     </div>
+                    </div>
                 }
-                </div>
+
             </div>
 
             <div class="row">
@@ -223,6 +225,7 @@
                             <div class="panel-body caption break-word">
                                 <div class="row" style="margin-top : 15px;">
                                 @for(userInfo <- followedUsers) {
+                                    <div class="post-box col-lg-4 col-md-4 col-sm-4 col-xs-6">
                                     <div class = "img_wrapper">
                                         <div class = "img_hover">
                                             <a href="@routes.Profile.viewProfileUUID(userInfo._1)">
@@ -258,6 +261,7 @@
                                             </div>
                                         </div>
                                         <img src=@userInfo._4 class="img_thumbnail">
+                                    </div>
                                     </div>
                                 }
                                 </div>
