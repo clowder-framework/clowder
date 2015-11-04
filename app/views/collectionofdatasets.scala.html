@@ -40,208 +40,180 @@
 				}
 
 			</div>
-<div class="row">
-	<div class="col-md-12">
-				<dl class="dl-horizontal">
-					@if(!collection.author.isEmpty){
-						<dt>Author:</dt>
-						<dd>
-							@if( collection.author.isDefined){
-								<a href= "@routes.Profile.viewProfile(collection.author.get.email)"> @collection.author.get.fullName </a>
-							} else {
-								Author not Defined.
-							}
-						</dd>
-					}
-					<dt>Description:</dt>
-					<dd ><p id="collection_desc"  class="inline">@Html(collection.description)</p>
-						@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
-							<a id="edit-description" href="javascript:updateDescription()">
-								<span class="glyphicon glyphicon-edit edit-tab" aria-hidden="true"></span>
-							</a>
-						}
-					</dd>
-				</dl>
-		<div class="col-md-12">
+			<div class="row">
+				<div class="col-md-12">
+							<dl class="dl-horizontal">
+								@if(!collection.author.isEmpty){
+									<dt>Author:</dt>
+									<dd>
+										@if( collection.author.isDefined){
+											<a href= "@routes.Profile.viewProfile(collection.author.get.email)"> @collection.author.get.fullName </a>
+										} else {
+											Author not Defined.
+										}
+									</dd>
+								}
+								<dt>Description:</dt>
+								<dd ><p id="collection_desc"  class="inline">@Html(collection.description)</p>
+									@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
+										<a id="edit-description" href="javascript:updateDescription()">
+											<span class="glyphicon glyphicon-edit edit-tab" aria-hidden="true"></span>
+										</a>
+									}
+								</dd>
+							</dl>
+					<div class="col-md-12">
 
-				@if(user.isDefined && collectionSpaces.isDefined && !collectionSpaces.get.isEmpty){
-					<div id="collection-users">
-							<a href="@routes.Collections.users(collection.id)">
-								<span class="glyphicon glyphicon-hand-right"></span> Users with access to the collection
-							</a>
-							<br /> <br />
-							<div class="alert-danger inner-item">
-								@flash.get("error")
-							</div>
-					</div>
-				}
 
-				<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-				@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
-						<button id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')"
-								style="margin-right:15px;" class="btn btn-primary btn-xs" title="Delete Collection but not Enclosed Datasets">
-						<span class="glyphicon glyphicon-trash"></span> Delete</button>
-				} else {
-						<button disabled id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')"
-								style="margin-right:15px;" class="btn btn-primary btn-xs" title="Delete Collection but not Enclosed Datasets">
-						<span class="glyphicon glyphicon-trash"></span> Delete</button>
-				}
-				@if(user.isDefined) {
-					@if(!collection.followers.contains(user.get.id)) {
-						<button id="followButton"
-						class="btn btn-success followButton btn-xs"
-						objectId="@collection.id"
-						objectName="@collection.name"
-						objectType="collection">
-							Follow
-						</button>
-					} else {
-						<button id="followButton"
-						class="btn btn-danger followButton btn-xs"
-						objectId="@collection.id"
-						objectName="@collection.name"
-						objectType="collection">
-							Unfollow
-						</button>
-					}
-				}
-			</div>
-				<div style="clear: both;"></div>
 
-				<div id="recommendPanel"
-						class="panel panel-default"
-						style="margin-top: 20px; display : none;">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							<a data-parent="#accordion"
-							href="#collapseThree"
-							aria-expanded="true"
-							style="float:left;">
-								Also follow these?
-							</a>
-							<a style="float:right;" href="javascript:$('#recommendPanel').slideToggle('slow');">x</a>
-							<div style="clear : both;"></div>
-						</h4>
-					</div>
-					<div id="collapseThree" class="panel-collapse collapse in" aria-expanded="true">
-						<div id="recommendDiv" class="panel-body">
-						</div>
-					</div>
-				</div>
-
-				<script src="@routes.Assets.at("javascripts/recommendation.js")" type="text/javascript"></script>
-				<script>
-					$(document).on('click', '.followButton', function() {
-						var id = $(this).attr('objectId');
-						var name = $(this).attr('objectName');
-						var type = $(this).attr('objectType');
-						if ($(this).attr('id') === '') {
-						  followHandler.call(this, jsRoutes, id, name, type, undefined, undefined);
-						} else {
-						  followHandler.call(this, jsRoutes, id, name, type, function(data) {
-								recommendationHandler(jsRoutes, $('#recommendPanel'), $('#recommendDiv'),
-											  data['recommendations']);
-							}, undefined);
-						}
-					});
-				</script>
-	</div>
-</div>
-<div class="row">
-    <div class="col-md-12">
-        @for((p,i) <- previewers.zipWithIndex) {
-            <h3>@p.id</h3>
-            <div class="previewDiv" id="previewer_@(p.id)_@i"></div>
-            @showPreview(p.id + "_" + i, routes.Assets.at("javascripts/previewers") + "/" + p.id + "/" + p.main, collection.id.stringify)
-        }
-    </div>
-</div>
-
-	<div class="col-md-12">
-		<h3>Datasets in the collection</h3>
-		<table id='collectionDatasetsTable' class="table table-bordered table-hover">
-			<thead>
-				<tr>
-					@if(user.isDefined) {
-						<th style="width: 27%">Name</th>
-						<th style="width: 17%">Created</th>
-						<th style="width: 36%">Description</th>
-						<th style="width: 10%"></th>
-						<th style="width: 10%"></th>
-					}
-					@if(!user.isDefined) {
-						<th style="width: 27%">Name</th>
-						<th style="width: 17%">Created</th>
-						<th style="width: 36%">Description</th>
-						<th style="width: 20%"></th>
-					}
-				</tr>
-			</thead>
-			<tbody>
-				@datasetsInCollection.map { dataset =>
-					<tr data-datasetId="@(dataset.id.toString)">
-						<td><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></td>
-						<td>@dataset.created.format("MMM dd, yyyy")</td>
-						<td>@Html(dataset.description)</td>
-						<td>
-							@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
-							@if(dataset.thumbnail_id.isEmpty){No thumbnail available}
-						</td>
-						@if(user.isDefined) {
-						<td><a href="#!" onclick="removeDataset('@(dataset.id.toString)',event)">Remove</a>
 							<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 							@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
-								<button onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Detach the Dataset">
-								<span class="glyphicon glyphicon-trash"></span></button>
+									<button id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')"
+											style="margin-right:15px;" class="btn btn-primary btn-xs" title="Delete Collection but not Enclosed Datasets">
+									<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							} else {
-								<button disabled onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Detach the Dataset">
-								<span class="glyphicon glyphicon-trash"></span></button>
+									<button disabled id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')"
+											style="margin-right:15px;" class="btn btn-primary btn-xs" title="Delete Collection but not Enclosed Datasets">
+									<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							}
-						</td>
+							@if(user.isDefined) {
+								@if(!collection.followers.contains(user.get.id)) {
+									<button id="followButton"
+									class="btn btn-success followButton btn-xs"
+									objectId="@collection.id"
+									objectName="@collection.name"
+									objectType="collection">
+										Follow
+									</button>
+								} else {
+									<button id="followButton"
+									class="btn btn-danger followButton btn-xs"
+									objectId="@collection.id"
+									objectName="@collection.name"
+									objectType="collection">
+										Unfollow
+									</button>
+								}
+							}
+						</div>
+							<div style="clear: both;"></div>
+
+							<div id="recommendPanel"
+									class="panel panel-default"
+									style="margin-top: 20px; display : none;">
+								<div class="panel-heading">
+									<h4 class="panel-title">
+										<a data-parent="#accordion"
+										href="#collapseThree"
+										aria-expanded="true"
+										style="float:left;">
+											Also follow these?
+										</a>
+										<a style="float:right;" href="javascript:$('#recommendPanel').slideToggle('slow');">x</a>
+										<div style="clear : both;"></div>
+									</h4>
+								</div>
+								<div id="collapseThree" class="panel-collapse collapse in" aria-expanded="true">
+									<div id="recommendDiv" class="panel-body">
+									</div>
+								</div>
+							</div>
+
+							<script src="@routes.Assets.at("javascripts/recommendation.js")" type="text/javascript"></script>
+							<script>
+								$(document).on('click', '.followButton', function() {
+									var id = $(this).attr('objectId');
+									var name = $(this).attr('objectName');
+									var type = $(this).attr('objectType');
+									if ($(this).attr('id') === '') {
+									  followHandler.call(this, jsRoutes, id, name, type, undefined, undefined);
+									} else {
+									  followHandler.call(this, jsRoutes, id, name, type, function(data) {
+											recommendationHandler(jsRoutes, $('#recommendPanel'), $('#recommendDiv'),
+														  data['recommendations']);
+										}, undefined);
+									}
+								});
+							</script>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-12">
+					@for((p,i) <- previewers.zipWithIndex) {
+						<h3>@p.id</h3>
+						<div class="previewDiv" id="previewer_@(p.id)_@i"></div>
+						@showPreview(p.id + "_" + i, routes.Assets.at("javascripts/previewers") + "/" + p.id + "/" + p.main, collection.id.stringify)
+					}
+				</div>
+			</div>
+
+			<div class="col-md-12">
+				<h3>Datasets in the collection</h3>
+				<table id='collectionDatasetsTable' class="table table-bordered table-hover">
+					<thead>
+						<tr>
+							@if(user.isDefined) {
+								<th style="width: 27%">Name</th>
+								<th style="width: 17%">Created</th>
+								<th style="width: 36%">Description</th>
+								<th style="width: 10%"></th>
+								<th style="width: 10%"></th>
+							}
+							@if(!user.isDefined) {
+								<th style="width: 27%">Name</th>
+								<th style="width: 17%">Created</th>
+								<th style="width: 36%">Description</th>
+								<th style="width: 20%"></th>
+							}
+						</tr>
+					</thead>
+					<tbody>
+						@datasetsInCollection.map { dataset =>
+							<tr data-datasetId="@(dataset.id.toString)">
+								<td><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></td>
+								<td>@dataset.created.format("MMM dd, yyyy")</td>
+								<td>@Html(dataset.description)</td>
+								<td>
+									@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
+									@if(dataset.thumbnail_id.isEmpty){No thumbnail available}
+								</td>
+								@if(user.isDefined) {
+								<td><a href="#!" onclick="removeDataset('@(dataset.id.toString)',event)">Remove</a>
+									<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+									@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
+										<button onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Detach the Dataset">
+										<span class="glyphicon glyphicon-trash"></span></button>
+									} else {
+										<button disabled onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Detach the Dataset">
+										<span class="glyphicon glyphicon-trash"></span></button>
+									}
+								</td>
+								}
+							</tr>
 						}
-					</tr>
-				}
-			</tbody>
-		</table>
-		<ul class="pager" id="datasetsPager">
-			<li class="previous" id="datasetsPagerPrev" style="visibility:hidden;"><a href="#!">Previous</a></li>
-  			<li class ="next" id="datasetsPagerNext" style="visibility:hidden;"><a href="#!">Next</a></li>
-		</ul>
-		<!-- If the user can edit the collection, the buttons are enabled, otherwise the buttons are present but disabled to provide consistent UE. -->
-		@if(Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.collection, collection.id))) {
-			<button id="addDatasetBtn" class="btn btn-default" type="button" title="View Dataset List"><span class="glyphicon glyphicon-plus"></span>
-				Add</button>
-			<button id="hideAddDatasetBtn" class="btn btn-default" type="button" style="display : none ;" title="Close Dataset List"><span class="glyphicon glyphicon-remove"></span></button>
-		} else {
-			<button disabled id="addDatasetBtn" class="btn btn-default" type="button" title="View Dataset List"><span class="glyphicon glyphicon-plus"></span>
-				Add</button>
-			<button disabled id="hideAddDatasetBtn" class="btn btn-default" type="button" style="display : none ;" title="Close Dataset List"><span class="glyphicon glyphicon-remove"></span></button>
-		}
-		<br />
-		<br />
-		<table id='addDatasetsTable' class="table table-bordered table-hover" style="display:none;">
-			<thead>
-				<tr>
-					<th style="width: 27%">Name</th>
-					<th style="width: 17%">Created</th>
-					<th style="width: 36%">Description</th>
-					<th style="width: 10%"></th>
-					<th style="width: 10%"></th>
-				</tr>
-			</thead>
-			<tbody>
-			</tbody>
-		</table>
-		<ul class="pager" id="addPager">
-  			<li class="previous" id="addPagerPrev" style="visibility:hidden;"><a href="#!">Previous</a></li>
-  			<li class ="next" id="addPagerNext" style="visibility:hidden;"><a href="#!">Next</a></li>
-		</ul>
-	</div>
+					</tbody>
+				</table>
+				<ul class="pager" id="datasetsPager">
+					<li class="previous" id="datasetsPagerPrev" style="visibility:hidden;"><a href="#!">Previous</a></li>
+					<li class ="next" id="datasetsPagerNext" style="visibility:hidden;"><a href="#!">Next</a></li>
+				</ul>
+			</div>
 		</div>
 	<!-- right column -->
 	<div class="col-md-4 col-left-border">
 		@spaces.spaceAllocation(collection.id, ResourceRef.collection, collectionSpaces.getOrElse(List.empty))
-
+		<br />
+		@if(user.isDefined && collectionSpaces.isDefined && !collectionSpaces.get.isEmpty){
+			<div id="collection-users">
+				<a href="@routes.Collections.users(collection.id)">
+					<span class="glyphicon glyphicon-hand-right"></span> Users with access to the collection
+				</a>
+				<br /> <br />
+				<div class="alert-danger inner-item">
+				@flash.get("error")
+				</div>
+			</div>
+		}
 	</div>
 	</div>
 
