@@ -147,7 +147,6 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     // - access  == show all collections the user can see
     // - default == public only
     val public = MongoDBObject("public" -> true)
-    val emptySpaces = MongoDBObject("spaces" -> List.empty)
 
     // create access filter
     val filterAccess = if (showAll) {
@@ -170,7 +169,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
           }
           $or(orlist.map(_.asDBObject))
         }
-        case None => MongoDBObject()
+        case None => public
       }
     }
     val filterOwner = owner match {
