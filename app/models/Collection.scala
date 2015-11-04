@@ -6,7 +6,7 @@ import securesocial.core.Identity
 case class Collection(
   id: UUID = UUID.generate,
   name: String = "N/A",
-  author: Option[Identity],
+  author: Identity,
   description: String = "N/A",
   created: Date,
   datasets: List[Dataset] = List.empty,
