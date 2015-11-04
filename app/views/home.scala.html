@@ -185,9 +185,12 @@
             }
             </div>
             <div class="row">
-                <h4> Followers</h4>
+                <div class="post-box col-lg-6 col-md-6 col-sm-6 col-xs-12">
+                    <h4> Followers </h4>
+                </div>
             </div>
             <div class="row">
+                <div class="post-box col-lg-12 col-md-12 col-sm-12 col-xs-12">
                 @for(row <- followers) {
                     <div class = "img_wrapper">
                         <div class = "img_hover">
@@ -198,12 +201,16 @@
                         <img src="@row._3" class="img_thumbnail">
                     </div>
                 }
+                </div>
             </div>
 
             <div class="row">
-                <h4> Following</h4>
+                <div class="post-box col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                    <h4> Following</h4>
+                </div>
             </div>
             <div class="row">
+                <div class="post-box col-lg-12 col-md-12 col-sm-12 col-xs-12">
                 <div class="panel-group" id="accordion" style="margin-top: 15px">
 
                     <div class="panel panel-default">
@@ -520,6 +527,7 @@
                             </div>
                         </div>
                     </div>
+                </div>
                 </div>
             </div>
 
