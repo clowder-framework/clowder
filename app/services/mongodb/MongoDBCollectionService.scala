@@ -150,7 +150,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     val emptySpaces = MongoDBObject("spaces" -> List.empty)
 
     // create access filter
-    val filterAccess = if (showAll || (configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewCollection))) {
+    val filterAccess = if (showAll) {
       MongoDBObject()
     } else {
       user match {
@@ -159,9 +159,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
           if (permissions.contains(Permission.ViewCollection)) {
             orlist += MongoDBObject("public" -> true)
           }
-          if (user == owner) {
-            orlist += MongoDBObject("spaces" -> List.empty)
-          }
+          orlist += MongoDBObject("spaces" -> List.empty, "author.identityId.userId" -> user.get.identityId.userId )
           val permissionsString = permissions.map(_.toString)
           val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(permissionsString).nonEmpty)
           if (okspaces.nonEmpty) {

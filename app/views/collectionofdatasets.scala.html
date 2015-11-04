@@ -146,7 +146,7 @@
 					}
 				</div>
 			</div>
-
+			<div class="row">
 			<div class="col-md-12">
 				<h3>Datasets in the collection</h3>
 				<table id='collectionDatasetsTable' class="table table-bordered table-hover">
@@ -199,8 +199,9 @@
 				</ul>
 			</div>
 		</div>
+		</div>
 	<!-- right column -->
-	<div class="col-md-4 col-left-border">
+	<div class="col-md-4">
 		@spaces.spaceAllocation(collection.id, ResourceRef.collection, collectionSpaces.getOrElse(List.empty))
 		<br />
 		@if(user.isDefined && collectionSpaces.isDefined && !collectionSpaces.get.isEmpty){
