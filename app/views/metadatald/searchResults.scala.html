@@ -1,0 +1,29 @@
+@(key: String, value: String, datasets: List[Dataset], files: List[File])
+
+@main("Search Results") {
+    <div class="row">
+        <div class="col-lg-12 col-md-12">
+            <h2>Metadata query: <i><u>@key = @value</u></i></h2>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-6 col-md-6">
+            <h2>Datasets</h2>
+            @for(d <- datasets) {
+                <a href="@routes.Datasets.dataset(d.id)">@d.name</a>
+            }
+            @if(datasets.size == 0) {
+                No datasets found
+            }
+        </div>
+        <div class="col-lg-6 col-md-6">
+            <h2>Files</h2>
+            @for(f <- files) {
+                <a href="@routes.Files.file(f.id)">@f.filename</a>
+            }
+            @if(files.size == 0) {
+                No files found
+            }
+        </div>
+    </div>
+}

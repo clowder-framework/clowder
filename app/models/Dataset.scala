@@ -2,6 +2,7 @@ package models
 
 import com.mongodb.casbah.Imports._
 import java.util.Date
+import play.api.libs.json.{JsObject, Writes, Json}
 import securesocial.core.Identity
 
 /**
@@ -32,3 +33,12 @@ case class Dataset(
   space: Option[UUID] = None,
   followers: List[UUID] = List.empty)
 
+object Dataset {
+  implicit object DatasetWrites extends Writes[Dataset] {
+    def writes(dataset: Dataset): JsObject = {
+      Json.obj(
+        "id" -> dataset.id,
+        "name" -> dataset.name)
+    }
+  }
+}

@@ -3,7 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import api.{WithPermission, Permission}
-import models.{ResourceRef, UUID}
+import models.{Dataset, ResourceRef, UUID}
 import services._
 
 /**
@@ -47,5 +47,9 @@ class Metadata @Inject() (
       }
       case None => NotFound
     }
+  }
+
+  def search() = SecuredAction(authorization = WithPermission(Permission.ShowFilesMetadata)) {implicit request =>
+    Ok(views.html.metadatald.search())
   }
 }

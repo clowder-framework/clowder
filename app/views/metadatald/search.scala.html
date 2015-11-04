@@ -1,0 +1,63 @@
+@main("Search metadata") {
+    <h2>Search by metadata</h2>
+    <form class="form-inline top-padding">
+        <div class="form-group">
+            <label for="k"><strong>Metadata Key:</strong></label>
+            <input type="text" class="form-control" id="k" placeholder="Abstract">
+        </div>
+        <div class="form-group">
+            <label for="v"><strong>Metadata Value:</strong></label>
+            <input type="text" class="form-control" id="v" placeholder="This is an abstract">
+        </div>
+        <button type="submit" class="btn btn-default">Search</button>
+        <span id="mt-search-feedback"></span>
+    </form>
+    <div class="row top-padding">
+        <div class="col-lg-6"><h2>Datasets</h2><div id="datasets-results"></div></div>
+        <div class="col-lg-6"><h2>Files</h2><div id="files-results"></div></div>
+    </div>
+    <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
+    <script>
+        $( "form" ).submit(function( event ) {
+            event.preventDefault();
+            var k = $( "#k" ).val();
+            var v = $( "#v" ).val();
+            if ( k != "" && v != "" ) {
+
+                var request = jsRoutes.api.Metadata.searchByKeyValue(k, v).ajax({
+                    type: 'GET',
+                    contentType: "application/json"
+                });
+
+                request.done(function (response, textStatus, jqXHR){
+                    $( "#datasets-results" ).empty();
+                    $( "#files-results" ).empty();
+                    var datasets = response.datasets;
+                    var files = response.files;
+                    if (datasets.length == 0) $('#datasets-results').append("No datasets found");
+                    for (var i=0; i<datasets.length; i++) {
+                        var modalTemplate = Handlebars.getTemplate('/assets/templates/metadata/search_dataset_result');
+                        var html = modalTemplate({'url': jsRoutes.controllers.Datasets.dataset(datasets[i].id).url, 'name': datasets[i].name});
+                        $('#datasets-results').append(html);
+                    }
+                    if (files.length == 0) $('#files-results').append("No files found");
+                    for (var i=0; i<files.length; i++) {
+                        var modalTemplate = Handlebars.getTemplate('/assets/templates/metadata/search_file_result');
+                        var html = modalTemplate({'url': jsRoutes.controllers.Files.file(files[i].id).url, 'name': files[i].name});
+                        $('#files-results').append(html);
+                    }
+                });
+
+                request.fail(function (jqXHR, textStatus, errorThrown){
+                    console.error("The following error occured: " + textStatus, errorThrown);
+                });
+
+                return;
+            }
+
+            $( "#mt-search-feedback" ).text( "Not valid!" ).show().fadeOut( 2000 );
+
+        });
+    </script>
+}

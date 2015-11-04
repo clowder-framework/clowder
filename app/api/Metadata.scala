@@ -12,7 +12,7 @@ import play.api.libs.json.Json._
 import models._
 import play.api.libs.ws.WS
 import play.api.mvc.Action
-import services.{UserService, ContextLDService, MetadataService}
+import services._
 import play.api.Play.configuration
 
 import scala.concurrent.Future
@@ -21,12 +21,37 @@ import scala.concurrent.Future
  * Manipulate generic metadata.
  */
 @Singleton
-class Metadata @Inject()(metadataService: MetadataService, contextService: ContextLDService, userService: UserService) extends ApiController {
+class Metadata @Inject()(
+  metadataService: MetadataService,
+  contextService: ContextLDService,
+  userService: UserService,
+  datasets: DatasetService,
+  files: FileService) extends ApiController {
   
   def search() = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { request =>
     Logger.debug("Searching metadata")
     val results = metadataService.search(request.body)
     Ok(toJson(results))
+  }
+
+  def searchByKeyValue(key: Option[String], value: Option[String]) = Action {
+    implicit request =>
+      val response = for {
+        k <- key
+        v <- value
+      } yield {
+        val results = metadataService.search(k, v)
+        val datasetsResults = results.flatMap { d =>
+          if (d.resourceType == ResourceRef.dataset) datasets.get(d.id) else None
+        }
+        val filesResults = results.flatMap { f =>
+          if (f.resourceType == ResourceRef.file) files.get(f.id) else None
+        }
+        import Dataset.DatasetWrites
+        import File.FileWrites
+        Ok(JsObject(Seq("datasets" -> toJson(datasetsResults), "files" -> toJson(filesResults))))
+      }
+      response getOrElse BadRequest(toJson("You must specify key and value"))
   }
   
   def getVocabularies() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.AddMetadata)) {
