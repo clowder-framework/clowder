@@ -36,18 +36,24 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           (request.body \ "description").asOpt[String].map { description =>
               (request.body \ "space").asOpt[String].map { space => 
 	              var c : Collection = null
-	              if (space == "default") {
-	                   c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author=request.user)
-	              }
-	              else {
-	                   c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author=request.user, spaces = List(UUID(space)))
-	              }
-	              collections.insert(c) match {
-	                case Some(id) => {
-	                 Ok(toJson(Map("id" -> id)))
-	                }
-	                case None => Ok(toJson(Map("status" -> "error")))
-	              }
+                implicit val user = request.user
+                user match {
+                  case Some(identity) => {
+                    if (space == "default") {
+                      c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity)
+                    }
+                    else {
+                      c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)))
+                    }
+                    collections.insert(c) match {
+                      case Some(id) => {
+                        Ok(toJson(Map("id" -> id)))
+                      }
+                      case None => Ok(toJson(Map("status" -> "error")))
+                    }
+                  }
+                  case None => InternalServerError("User Not found")
+                }
               }.getOrElse(BadRequest(toJson("Missing parameter [space]")))
           }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
       }.getOrElse(BadRequest(toJson("Missing parameter [name]")))

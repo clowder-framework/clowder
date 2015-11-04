@@ -25,10 +25,8 @@ object Collection {
       } else {
         collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1)
       }
-      val collectionAuthor = collection.author match{
-        case Some(i) =>i.identityId.userId
-        case None => "None"
-      }
+      val collectionAuthor = collection.author.identityId.userId
+
       Json.obj("id" -> collection.id.toString, "collectionname" -> collection.name, "description" -> collection.description,
         "created" -> collection.created.toString, "thumbnail" -> collectionThumbnail, "authorId" -> collectionAuthor)
     }
