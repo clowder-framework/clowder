@@ -29,7 +29,7 @@
                             }
 
                             @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
-                                | <a href="#" class="btn btn-link btn-xs" onclick="removeDatasetFromSpace( '@(s.id)', '@(s.name)', '@resourceId', event)" title="Remove from space">
+                                | <a href="#" class="btn btn-link btn-xs" onclick="removeDatasetFromSpace( '@(s.id)', '@resourceId', event)" title="Remove from space">
                                 Remove</a>
                             } else {
                                     <a href="#" class="btn btn-link btn-xs disabled" title="Remove dataset from space">

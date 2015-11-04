@@ -37,7 +37,7 @@ function addCollectionToSpace(id) {
 }
 
 
-function removeCollectionFromSpace(spaceId, spaceName, id, event){
+function removeCollectionFromSpace(spaceId, id, event){
 
     var request = jsRoutes.api.Spaces.removeCollection(spaceId, id).ajax({
         type: 'POST'
@@ -73,7 +73,7 @@ function addDatasetToSpace(id) {
         $("#spacesList").append('<div id="col_'+selectedId+'" class="row bottom-padding">' +
             '<div class="col-md-2"></div>' +
             '<div class="col-md-10"><div><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+' class ="space">'+selectedName+'</a></div><div>' +
-            o.datasetsInSpace+' dataset(s) | <a href="#" class="btn btn-link btn-xs" onclick="removeDatasetFromSpace(\''+selectedId+'\',\''+selectedName+'\', \''+id+'\', event)" title="Remove from space">' +
+            o.datasetsInSpace+' dataset(s) | <a href="#" class="btn btn-link btn-xs" onclick="removeDatasetFromSpace(\''+selectedId+'\', \''+id+'\', event)" title="Remove from space">' +
             ' Remove</a></div></div></div>');
         $("#spaceAddSelect").select2("val", "");
     });
@@ -90,7 +90,7 @@ function addDatasetToSpace(id) {
 }
 
 
-function removeDatasetFromSpace(spaceId, spaceName, id, event){
+function removeDatasetFromSpace(spaceId, id, event){
 
     var request = jsRoutes.api.Spaces.removeDataset(spaceId, id).ajax({
         type: 'POST'
