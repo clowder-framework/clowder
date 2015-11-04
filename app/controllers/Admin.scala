@@ -2,7 +2,7 @@ package controllers
 
 import api.{WithPermission, Permission}
 import models.{UUID, VersusIndexTypeName}
-import services.{SectionIndexInfoService, AppConfiguration, VersusPlugin}
+import services.{SectionIndexInfoService, AppConfiguration, VersusPlugin, MetadataService}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{Json, JsValue}
@@ -21,7 +21,7 @@ import play.api.data.Forms._
  */
 
 @Singleton
-class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends SecuredController {
+class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, metadataService: MetadataService) extends SecuredController {
 
   def main = SecuredAction(authorization = WithPermission(Permission.Admin)) { request =>
     val theme = AppConfiguration.getTheme
@@ -364,6 +364,20 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService) extends Secure
         if (x.email.nonEmpty && AppConfiguration.checkAdmin(x.email.get)) {
           val admins = AppConfiguration.getAdmins
           Ok(views.html.listAdmins(admins))
+        } else {
+          Unauthorized("Not authorized")
+        }
+      }
+    }
+  }
+
+  def listMetadata() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(x) => {
+        if (x.email.nonEmpty && AppConfiguration.checkAdmin(x.email.get)) {
+          val metadata = metadataService.getVocabularies()
+          Ok(views.html.listMetadata(metadata.toList))
         } else {
           Unauthorized("Not authorized")
         }

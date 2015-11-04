@@ -53,6 +53,25 @@ class Metadata @Inject()(metadataService: MetadataService, contextService: Conte
     }
   }
 
+  def addVocabulary() = SecuredAction(authorization = WithPermission(Permission.AddMetadata)) {
+    implicit request =>
+      request.user match {
+        case Some(user) => {
+          val body = request.body
+
+          if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
+            val definition = MDVocabularyDefinition(json = body)
+            metadataService.addVocabularyDefinition(definition)
+            Ok(JsObject(Seq("status" -> JsString("ok"))))
+          } else {
+            BadRequest(toJson("Invalid resource type"))
+          }
+
+        }
+        case None => BadRequest(toJson("Invalid user"))
+      }
+  }
+
   def addUserMetadata() = SecuredAction(authorization = WithPermission(Permission.AddMetadata)) {
     implicit request =>
       request.user match {

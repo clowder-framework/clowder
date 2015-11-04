@@ -1,0 +1,180 @@
+@(metadata: List[models.MDVocabularyDefinition])(implicit user: Option[models.User])
+
+@main("Metadata") {
+    <script src="@routes.Assets.at("javascripts/metadata/manageVocabulary.js")" type="text/javascript"></script>
+	<script>
+        $(document).ready(function() {
+            $("#type").change(function() {
+                var definitions = $("#definitions_url");
+                var validateButton = $("#validateButton");
+                if ($(this).val() == "string") {
+                    definitions.attr("disabled", true);
+                    validateButton.attr("disabled", true);
+                } else {
+                    definitions.removeAttr("disabled");
+                    validateButton.removeAttr("disabled");
+                }
+            });
+            $(function () {
+                $('[data-toggle="popover"]').popover({
+                    trigger: 'focus'
+                })
+            });
+
+            $("#validateButton").click(function(e){
+                e.preventDefault();
+                var definitionsValue = $("#definitions_url").val();
+                if (definitionsValue) {
+                    var request = $.ajax({
+                        url: definitionsValue,
+                        dataType: 'jsonp',
+                        timeout: 1500,
+                        error: function() {
+                            $("#validationResults").html(
+                                '<div class="alert alert-danger fade in">' +
+                                '<a href="#" class="close" data-dismiss="alert">&times;</a>' +
+                                '<strong>Error!</strong> Data was not found at the URL!</div>');
+                        }
+                    });
+
+                    request.done(function(data, textStatus) {
+                        if (data && data.length) {
+                            $("#validationResults").html(
+                                '<div class="alert alert-success fade in">' +
+                                '<a href="#" class="close" data-dismiss="alert">&times;</a>' +
+                                '<strong>Success!</strong> Data was found at the URL: (<a href=' +
+                                definitionsValue + ' target="_blank">' + data.length + ' items</a>)</div>');
+                        }
+                    });
+                }
+            });
+
+            $("#addVocabulary").submit(function(e){
+                e.preventDefault();
+                var data = {};
+                $(this.elements).each(function(index, element){
+                    var value = $(element).val();
+                    if (value) {
+                        data[$(element).attr('id')] = value;
+                    }
+                });
+                if (data.type == "list" || data.type == "listjquery") {
+                    if (!data.definitions_url) {
+                        $("#validationResults").html(
+                            '<div class="alert alert-danger fade in">' +
+                            '<a href="#" class="close" data-dismiss="alert">&times;</a>' +
+                            '<strong>Error!</strong> Definitions URL is required for Lists</div>');
+                        return false;
+                    }
+                }
+                addVocabulary(data);
+            });
+        });
+
+    </script>
+
+	<div class="page-header">
+		<h1>Metadata Definitions</h1>
+        <p>The following metadata definitions will be available throughout Clowder.</p>
+	</div>
+	@if(metadata.size == 0) {
+	<div class="row">
+		<div class="col-md-12">
+			No metadata present.
+		</div>
+	</div>
+	}
+	@if(metadata.size > 0) {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Label <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Label" data-content="A label or name that users will see when selecting this as a type of metadata."><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                    <th>URI <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="URI" data-content="A unique URI where this metadata is defined. This is not queried or used to populate metadata values, only for reference."><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                    <th>Type <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Metadata Type" data-content="A string is free-form, plain-text field. A list should also include Definitions URL that contains the available metadata options that a user can select from. A Query-able List is just like a list, except that you can pass an argument to the URL to filter values."><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                    <th>Definitions URL <a tabindex="0" role="button" data-toggle="popover" title="Metadata Definitions URL" data-content="This URL should return a list of values that the user can select from as possible options for this metadata definition." aria-hidden="true" ><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for(m <- metadata) {
+                    <tr>
+                        <td>
+                            @((m.json \ "label").asOpt[String].getOrElse(""))
+                        </td>
+                        <td>
+                            @((m.json \ "uri").asOpt[String].getOrElse(""))
+                        </td>
+                        <td>
+                            @((m.json \ "type").asOpt[String].getOrElse(""))
+                        </td>
+                        <td>
+                            @((m.json \ "definitions_url").asOpt[String].getOrElse(""))
+                        </td>
+                        <td><a href="#" onclick="editVocabulary('@(m.id)', '@(m.json)', this);">Edit</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+	}
+
+    <hr/>
+    <br/>
+
+    <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="headingOne">
+                <h4 class="panel-title">
+                    <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                        <span class="vocabularyAction">Add</span> a Metadata Definition <span class="caret"></span>
+                    </a>
+                </h4>
+            </div>
+            <div id="collapseOne" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
+                <div class="panel-body">
+                    <form id="addVocabulary" class="form-horizontal">
+                        <div class="form-group has-feedback">
+                            <label for="label" class="col-sm-2">Label</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" id="label" placeholder="Label" required />
+                                <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="uri" class="col-sm-2">URI</label>
+                            <div class="col-sm-10">
+                                <input type="url" class="form-control" id="uri" placeholder="http://" required />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="type" class="col-sm-2">Type</label>
+                            <div class="col-sm-4">
+                                <select name="type" id="type" class="form-control">
+                                    <option value="string">String</option>
+                                    <option value="list">List</option>
+                                    <option value="listjquery">Query-able List</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="definitions_url" class="col-sm-2">Definitions URL</label>
+                            <div class="col-sm-8">
+                                <input type="url" class="form-control" id="definitions_url" placeholder="http://" disabled />
+                            </div>
+                            <div class="col-sm-2">
+                                <button class="btn btn-info" id="validateButton" disabled>Validate URL</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-2"></div>
+                            <div class="col-sm-8" id="validationResults"></div>
+                        </div>
+                        <hr/>
+                        <a href="#" class="btn btn-default pull-left" id="cancelButton" onclick="reset(this)" style="display:none;">Cancel</a>
+                        <button type="submit" class="btn btn-primary pull-right"><span class="vocabularyAction">Add</span></button>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
