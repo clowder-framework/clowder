@@ -37,7 +37,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val collectionsCount = collections.count()
     val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.superAdmin)
     val spacesCount = spaces.count()
-    val spacesCountAccess = spaces.countAccess(user, request.superAdmin)
+    val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.superAdmin)
     val usersCount = users.count();
     //newsfeedEvents is the combination of followedEntities and requestevents, then take the most recent 20 of them.
     var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)).sorted(Ordering.by((_: Event).created).reverse))
@@ -157,15 +157,16 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Spaces.get,
         api.routes.javascript.Spaces.removeSpace,
         api.routes.javascript.Spaces.list,
-        api.routes.javascript.Spaces.addCollection,
-        api.routes.javascript.Spaces.addDataset,
+        api.routes.javascript.Spaces.listCanEdit,
+        api.routes.javascript.Spaces.addCollectionToSpace,
+        api.routes.javascript.Spaces.addDatasetToSpace,
+        api.routes.javascript.Spaces.removeCollection,
+        api.routes.javascript.Spaces.removeDataset,
         api.routes.javascript.Spaces.updateSpace,
         api.routes.javascript.Spaces.updateUsers,
         api.routes.javascript.Spaces.removeUser,
         api.routes.javascript.Spaces.follow,
         api.routes.javascript.Spaces.unfollow,
-        api.routes.javascript.Spaces.addDatasetToSpaces,
-        api.routes.javascript.Spaces.addCollectionToSpaces,
         api.routes.javascript.Users.getUser,
         api.routes.javascript.Users.follow,
         api.routes.javascript.Users.unfollow,

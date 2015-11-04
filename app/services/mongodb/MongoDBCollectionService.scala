@@ -129,7 +129,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
    */
   private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): List[Collection] = {
     val (filter, sort) = filteredQuery(date, nextPage, title, space, permissions, user, showAll, owner)
-    println("db.collections.find(" + MongoUtils.mongoQuery(filter) + ").sort(" + MongoUtils.mongoQuery(sort) + ")")
+    //println("db.collections.find(" + MongoUtils.mongoQuery(filter) + ").sort(" + MongoUtils.mongoQuery(sort) + ")")
     if (date.isEmpty || nextPage) {
       Collection.find(filter).sort(sort).limit(limit).toList
     } else {
@@ -146,9 +146,6 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     // - space   == show all collections in space
     // - access  == show all collections the user can see
     // - default == public only
-    val public = MongoDBObject("public" -> true)
-    val emptySpaces = MongoDBObject("spaces" -> List.empty)
-
     // create access filter
     val filterAccess = if (showAll || (configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewCollection))) {
       MongoDBObject()
@@ -282,13 +279,13 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     val order = MongoDBObject("created"-> -1)
     if (date == "") {
       var collectionList = Collection.findAll.sort(order).limit(limit).toList
-      collectionList= collectionList.filter(x=> x.author.get.email.toString == "Some(" +email +")")
+      collectionList= collectionList.filter(x=> x.author.email.toString == "Some(" +email +")")
       collectionList
     } else {
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
       Logger.info("After " + sinceDate)
       var collectionList = Collection.find("created" $lt sinceDate).sort(order).limit(limit).toList
-      collectionList= collectionList.filter(x=> x.author.get.email.toString == "Some(" +email +")")
+      collectionList= collectionList.filter(x=> x.author.email.toString == "Some(" +email +")")
       collectionList
     }
   }
@@ -300,7 +297,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     var order = MongoDBObject("created"-> -1)
     if (date == "") {
       var collectionList = Collection.findAll.sort(order).limit(limit).toList
-      collectionList= collectionList.filter(x=> x.author.get.email.toString == "Some(" +email +")")
+      collectionList= collectionList.filter(x=> x.author.email.toString == "Some(" +email +")")
       collectionList
     } else {
       order = MongoDBObject("created"-> 1)
@@ -308,7 +305,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       Logger.info("Before " + sinceDate)
       var collectionList = Collection.find("created" $gt sinceDate).sort(order).limit(limit + 1).toList.reverse
       collectionList = collectionList.filter(_ != collectionList.last)
-      collectionList= collectionList.filter(x=> x.author.get.email.toString == "Some(" +email +")")
+      collectionList= collectionList.filter(x=> x.author.email.toString == "Some(" +email +")")
       collectionList
     }
   }
@@ -358,10 +355,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
 
   def isInDataset(dataset: Dataset, collection: Collection): Boolean = {
     for (dsColls <- dataset.collections  ) {
-      if (dsColls == collection.id.stringify)
+      if (dsColls.stringify == collection.id.stringify)
         return true
     }
     return false
+
   }
 
   def addDataset(collectionId: UUID, datasetId: UUID) = Try {

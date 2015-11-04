@@ -66,9 +66,17 @@ class Datasets @Inject()(
   }
 
 
-  def addToDataset(id: UUID, name: String, desc: String) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def addToDataset(id: UUID) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       implicit val user = request.user
-      Ok(views.html.addToExistingDataset(id, name, desc)).flashing("error" -> "Cannot add to the dataset")
+     datasets.get(id) match {
+       case Some(dataset) => {
+         Ok(views.html.addToExistingDataset(id, dataset.name, dataset.description)).flashing("error" -> "Cannot add to the dataset")
+       }
+       case None => {
+         InternalServerError(s"Dataset $id not found")
+       }
+     }
+
   }
 
   /**

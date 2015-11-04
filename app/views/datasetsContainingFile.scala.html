@@ -1,116 +1,44 @@
 @(file: models.File, datasets: List[models.Dataset])(implicit user: Option[models.User])
 
-@import play.api.libs.json.Json
+@import api.Permission
 
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
 
-<table id="datasTable">
-    @datasets.map { dataset =>
-    <tr><td><a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id' class ="dataset">@Html(dataset.name)</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
-        <td><a href="#" style="font-style:italic;" onclick="removeFromDataset('@(dataset.id)','@(dataset.name)',event)">Detach</a></td></tr>
-    }
-</table>
-<br/>
-@if(user.isDefined) {
-    <div class="form-inline requiresLogin requiresLoginCommunity">
-        <div class="input-group input-group-sm col-md-8">
-            <select id="datasetAddSelect" class="form-control" style="width: 100%">
-            </select>
-            <span class="input-group-btn">
-                <a href="#" class="btn btn-default btn-large" id="addDatasBtn" title="Add File to Dataset">
-                    <span class="glyphicon glyphicon-plus"></span>
-                </a>
-            </span>
+<div id="datasetsList" class="col-md-12">
+@datasets.map { dataset =>
+    <div id="ds_@dataset.id" class="row bottom-padding">
+        <div class="col-md-2">
+        @if(!dataset.thumbnail_id.isEmpty){
+            <a href="@(routes.Datasets.dataset(dataset.id))">
+                <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.get)))" alt="Thumbnail of @Html(dataset.name)">
+            </a>
+        }
+        </div>
+        <div class="col-md-10">
+            <div>
+                <a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id' class ="btn btn-link btn-xs">@Html(dataset.name)</a>
+            </div>
+            <div>
+            <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
+                @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                    <a href="#" class="btn btn-link btn-xs" onclick="removeFromDataset('@(dataset.id)','@(dataset.name)',event)" title="Remove from dataset">Remove</a>
+                } else {
+                    <a href="#" class="btn btn-link btn-xs disabled" onclick="return false;" title="Remove from dataset">Remove</a>
+                }
+            </div>
         </div>
     </div>
-}
+    }
+</div>
 
 <script>
-    $("#datasetAddSelect").select2({
-        theme: "bootstrap",
-        placeholder: "Select a dataset",
-        allowClear: true,
-        ajax: {
-            url: function(params) {
-                return jsRoutes.api.Datasets.listCanEdit(params.term, null, 5).url;
-            },
-            data: function(params) {
-                return { title: params.term };
-            },
-            processResults: function(data, page) {
-                return {results: data.filter(function(x) {
-                    var ids = $('.dataset').map(function() {
-                        return $(this).attr('id');
-                    });
-                    return $.inArray(x.id, ids) == -1;
-                }).map(function(x) {
-                    return {
-                        text: x.datasetname,
-                        id: x.id
-                    }
-                })};
-            }
-        }
-    });
-</script>
-<script>
-        $('body').on('click','#addDatasBtn',function(e){
-            if($("#doesNotExistErrorDatasets").css('display') == 'inline')
-                return;
-            if($("#selectingInputDatasets").val() == ""){
-                $("#doesNotExistErrorDatasets").css('display','inline');
-                return;
-            }
-
-            var selectedId = $("#datasetAddSelect").val();
-            var selectedName = $("#datasetAddSelect option:selected").text();
-            var request = jsRoutes.api.Datasets.attachExistingFile(selectedId, "@file.id").ajax({
-                   type: 'POST',                   
-                 });
-            
-            request.done(function (response, textStatus, jqXHR){
-                console.log("Response " + response);
-                $("#datasetAddSelect option[value=" + selectedId + "]").remove();
-                $("#selectingInputDatasets").val("");
-                var i = 1;
-                var tableLength = $("#datasTable tbody tr").length;
-                var dsUrl = jsRoutes.controllers.Datasets.dataset(selectedId).url
-                while(i <= tableLength && $("#datasTable tbody tr:nth-child("+i+") td:nth-child(1) a").text() < selectedName)
-                    i++;
-                if(i <= tableLength)
-                    $("#datasTable tbody tr:nth-child("+i+")").before("<tr><td><a href='" + dsUrl + "' id='"+ selectedId+ "' class ='dataset'>"+selectedName+"</a>"
-                            + "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
-                            );
-                else if(tableLength > 0)
-                    $("#datasTable tbody tr:nth-child("+(i-1)+")").after("<tr><td><a href='" + dsUrl + "' id='"+ selectedId+ "' class ='dataset'>"+selectedName+"</a>"
-                            + "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
-                            );
-                else{
-                    if($("#datasTable tbody").length == 0)
-                        $("#datasTable").append("<tbody></tbody>");
-                    $("#datasTable tbody").append("<tr><td><a href='" + dsUrl + "' id='"+ selectedId+ "' class ='dataset'>"+selectedName+"</a>"
-                            + "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
-                            );
-                    }
-                $("#datasetAddSelect").select2("val", "");
-
-            });
-            
-            request.fail(function (jqXHR, textStatus, errorThrown){
-            	console.error("The following error occured: "+textStatus, errorThrown);
-                var errMsg = "You must be logged in to add a file to a dataset.";                    
-                if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                    notify("The file was not added to the dataset due to : " + errorThrown, "error");
-                }
-            });
-        });
-
         function removeFromDataset(datasetId, datasetName,event){
             var request = jsRoutes.api.Datasets.detachFile(datasetId, "@file.id").ajax({
                    type: 'DELETE'
                  });
             request.done(function (response, textStatus, jqXHR){
                 console.log("Response " + response);
+                $('#ds_'+datasetId).remove();
                 $(event.target.parentNode.parentNode).remove();
             });
             request.fail(function (jqXHR, textStatus, errorThrown){
@@ -123,9 +51,3 @@
         }
 
 </script>
-
-@if(!user.isDefined) {
-    <script language="javascript">
-	    $(".requiresLogin").css("display", "none");
-    </script>
-}

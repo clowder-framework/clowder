@@ -223,16 +223,11 @@ object Permission extends Enumeration {
               }
             }
             hasPermission getOrElse {
-              collection.author match {
-                case Some(realAuthor) => {
                   val r = for {
-                    e1 <- realAuthor.email
+                    e1 <- collection.author.email
                     e2 <- user.email}
                     yield e1 == e2
                   return r getOrElse false
-                }
-                case None => false
-              }
             }
           }
         }

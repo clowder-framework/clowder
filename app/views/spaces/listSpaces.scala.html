@@ -1,32 +1,46 @@
 @(spaces: List[models.ProjectSpace], when: String, date: String, limit: Int, owner: Option[String], showAll: Boolean, mode: Option[String], deletePermission: Boolean, prev: String, next: String)(implicit user: Option[models.User])
 
 @import _root_.util.Formatters.ellipsize
+@import api.Permission
 
 @main("Spaces") {
 
-    @util.masonry()
+        @util.masonry()
 
-    <script src="@routes.Assets.at("javascripts/spaceListProcess.js")" type="text/javascript"></script>
-    <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("javascripts/spaceListProcess.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
 
-    <div class="row">
-        <div class="col-md-12">
-            <h1>Spaces</h1>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-10">
-        </div>
-        <div class="col-md-1">
-            <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new space">Create</a>
-        </div>
-        <div class="col-md-1">
-            <div class="btn-group btn-group-sm pull-right">
-                <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
-                <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Spaces</h1>
             </div>
-            <script>
+        </div>
+
+        <div class="row">
+            <div class="btn-toolbar">
+                <div class="btn-group btn-group-sm pull-right">
+                    <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
+                    <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
+                </div>
+                @if(user.isDefined) {
+                    @if(showAll == false) {
+                        <div class="btn-group btn-group-sm pull-right">
+                            <a class="btn btn-default" id="allspace">All Spaces</a>
+                                <a class="btn btn-default active" id="myspace">
+                                    My Spaces</a>
+                        </div>
+                    } else {
+                        <div class="btn-group btn-group-sm pull-right">
+                            <a class="btn btn-default active" id="allspace">All Spaces</a>
+                                <a class="btn btn-default" id="myspace">
+                                    My Spaces</a>
+                        </div>
+                    }
+                }
+                <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new space">Create</a>
+            </div>
+        </div>
+                <script>
                 var viewMode = '@mode.getOrElse("tile")';
                 $.cookie.raw = true;
                 $.cookie.json = true;
@@ -55,6 +69,24 @@
                         //Utilizing library from https://github.com/carhartl/jquery-cookie/tree/v1.4.1
                         $.cookie("view-mode", "list", { path: '/' });
                     });
+                    $('#myspace').click(function(){
+                        var path;
+
+                        if(window.location.search == ""){
+                            path = '/spaces?showAll=false'
+                        } else {
+                            path = (location.pathname+location.search)+';showAll=false'
+                        }
+                        window.location.assign( path);
+                    });
+
+                     $('#allspace').click(function(){
+                        // this will leave a semi-colon in the path. but it should be a problem. Otherwise, we have to care about
+                        // '/spaces?showAll=false;when=.....', where we should remove the one char after showAll not the one before.
+                        var path=(location.pathname+location.search).replace('showAll=false', '');
+                        window.location.assign( path);
+                     });
+
                 });
 
                 $(document).ready (function () {
@@ -82,16 +114,13 @@
                     $('#prevlink').attr('href', "@(routes.Spaces.list("b", prev, limit, "", owner, showAll))");
                 }
             </script>
-        </div>
-    </div>
 
-
-    <div class="row hidden" id="tile-view">
-        <div class="col-md-12">
-            <div id="masonry">
-            @spaces.map { space =>
-                <div class="post-box col-lg-3 col-md-3 col-sm-3 col-xs-12">
-                    <div class="panel panel-default">
+        <div class="row hidden" id="tile-view">
+            <div class="col-md-12">
+                <div id="masonry">
+                    @spaces.map { space =>
+                        <div class="post-box col-lg-3 col-md-3 col-sm-3 col-xs-12">
+                        <div class="panel panel-default">
                         <div class="pull-right">
                             <a href="#" title="Bookmark" class="pull-right bookmark-link"><span class="glyphicon glyphicon-bookmark bookmark"></span></a>
                         </div>
@@ -106,7 +135,7 @@
                             <p>@ellipsize(space.description, 200)</p>
                         </div>
                         </div>
-                        <!-- Space Info -->
+                            <!-- Space Info -->
                         <ul class="list-group">
                             <li class="list-group-item">
                                 <span class="glyphicon glyphicon-file" title="@space.datasetCount datasets"></span> @space.datasetCount
@@ -124,85 +153,85 @@
                                         </button>
                                     }
                                 }
-                            </li>
-                        </ul>
+                    </li>
+                    </ul>
                     </div>
+                    </div>
+                    }
                 </div>
-            }
+                </div>
             </div>
-        </div>
-    </div>
 
-    <div class="row hidden" id="list-view">
-        <div class="col-md-12">
-            <table class="table table-bordered table-hover">
-                <thead>
-                    <tr>
-                        @if(user.isDefined) {
-                            <th style="width : 15%">Logo</th>
-                            <th style="width : 25%">Name</th>
-                            <th style="width : 40%">Description</th>
-                            <th style="width : 15%">Created</th>
-                            <th style="width : 5%">Delete</th>
+            <div class="row hidden" id="list-view">
+                <div class="col-md-12">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                @if(user.isDefined) {
+                                    <th style="width : 15%">Logo</th>
+                                    <th style="width : 25%">Name</th>
+                                    <th style="width : 40%">Description</th>
+                                    <th style="width : 15%">Created</th>
+                                    <th style="width : 5%">Delete</th>
+                                }
+                                @if(!user.isDefined) {
+                                    <th style="width : 15%">Logo</th>
+                                    <th style="width : 25%">Name</th>
+                                    <th style="width : 45%">Description</th>
+                                    <th style="width : 15%">Created</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @spaces.map { space =>
+                                <tr>
+                                <td>
+                                    @if(!space.logoURL.isEmpty) {
+                                        <img src="@(space.logoURL)" alt="Thumbnail of @(space.name)" width="120">
+                                    }
+                                    @if(space.logoURL.isEmpty) {No thumbnail available}
+                                </td>
+                                <td><a href="@routes.Spaces.getSpace(space.id)">@space.name</a></td>
+                                <td style="white-space : pre-line">@space.description</td>
+                                <td>@space.created.format("MMM dd, yyyy")</td>
+                                <td class="requiresLogin">
+                                @if(user.isDefined) {
+                                        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                                    @if(deletePermission || user.get.identityId.userId.equals(space.creator)){
+                                        <button onclick="removeSpaceAndRedirect('@(space.id)', '@(routes.Spaces.list())')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
+                                            <span class="glyphicon glyphicon-trash"></span>
+                                        </button>
+                                    } else {
+                                        <button disabled class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
+                                            <span class="glyphicon glyphicon-trash"></span>
+                                        </button>
+                                    }
+                                }
+                                </td>
+                            </tr>
                         }
-                        @if(!user.isDefined) {
-                            <th style="width : 15%">Logo</th>
-                            <th style="width : 25%">Name</th>
-                            <th style="width : 45%">Description</th>
-                            <th style="width : 15%">Created</th>
-                        }
-                    </tr>
-                </thead>
-                <tbody>
-                @spaces.map { space =>
-                    <tr>
-                        <td>
-                            @if(!space.logoURL.isEmpty) {
-                                <img src="@(space.logoURL)" alt="Thumbnail of @(space.name)" width="120">
-                            }
-                            @if(space.logoURL.isEmpty) {No thumbnail available}
-                        </td>
-                        <td><a href="@routes.Spaces.getSpace(space.id)">@space.name</a></td>
-                        <td style="white-space : pre-line">@space.description</td>
-                        <td>@space.created.format("MMM dd, yyyy")</td>
-                        <td class="requiresLogin">
-                        @if(user.isDefined) {
-                                <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                            @if(deletePermission || user.get.identityId.userId.equals(space.creator)){
-                                <button onclick="removeSpaceAndRedirect('@(space.id)', '@(routes.Spaces.list())')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
-                                    <span class="glyphicon glyphicon-trash"></span>
-                                </button>
-                            } else {
-                                <button disabled class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
-                                    <span class="glyphicon glyphicon-trash"></span>
-                                </button>
-                            }
-                        }
-                        </td>
-                    </tr>
-                }
-                </tbody>
-            </table>
-        </div>
-    </div>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-    <div class="row">
-        <div class="col-md-12">
-            <ul class="pager">
-                @if(prev != "") {
-                    <li class="previous"><a id="prevlink" title="Page backwards" href="#">Previous</a></li>
-                }
-                @if(next != "") {
-                    <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next</a></li>
-                }
-            </ul>
-        </div>
-    </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <ul class="pager">
+                        @if(prev != "") {
+                            <li class="previous"><a id="prevlink" title="Page backwards" href="#">Previous</a></li>
+                        }
+                        @if(next != "") {
+                            <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next</a></li>
+                        }
+                    </ul>
+                </div>
+            </div>
 
-    @if(!user.isDefined) {
-        <script type="text/javascript">
-            $ ( ".requiresLogin" ).css ( "display", "none" ) ;
-            $('#create-space').addClass('disabled');
-        </script>
-    }
+            @if(!user.isDefined) {
+                <script type="text/javascript">
+                    $ ( ".requiresLogin" ).css ( "display", "none" ) ;
+                    $('#create-space').addClass('disabled');
+                </script>
+             }
 }

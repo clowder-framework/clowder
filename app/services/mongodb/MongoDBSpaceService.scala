@@ -3,6 +3,9 @@ package services.mongodb
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.{Inject, Singleton}
+import api.Permission
+import api.Permission.Permission
+import api.Permission.Permission
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
@@ -42,70 +45,75 @@ class MongoDBSpaceService @Inject() (
 
   /** count all spaces */
   def count(): Long = {
-    count(None, nextPage=false, None, None, showAll=true, None)
+    count(None, nextPage=false, Set[Permission](Permission.ViewSpace), None, showAll=true, None)
   }
 
   /** list all spaces */
   def list(): List[ProjectSpace] = {
-    list(None, nextPage=false, 0, None, None, showAll=true, None)
+    list(None, nextPage=false, 0, None, Set[Permission](Permission.ViewSpace), None, showAll=true, None)
   }
 
   /**
    * Count all spaces the user has access to.
    */
-  def countAccess(user: Option[User], showAll: Boolean): Long = {
-    count(None, nextPage=false, None, user, showAll, None)
+  def countAccess(permissions: Set[Permission], user: Option[User], showAll: Boolean): Long = {
+    count(None, nextPage=false, permissions, user, showAll, None)
   }
 
   /**
    * Return a list of spaces the user has access to.
    */
-  def listAccess(limit: Integer, user: Option[User], showAll: Boolean): List[ProjectSpace] = {
-    list(None, nextPage=false, limit, None, user, showAll, None)
+  def listAccess(limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace] = {
+    list(None, nextPage=false, limit, None, permissions, user, showAll, None)
   }
 
-  def listAccess(limit: Integer, title: String, user: Option[User], showAll: Boolean): List[ProjectSpace] = {
-    list(None, false, limit, Some(title), user, showAll, None)
+  /**
+   * Return a list of spaces the user has access to.
+   */
+  def listAccess(limit: Integer, title:String, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace] = {
+    list(None, nextPage=false, limit, Some(title), permissions, user, showAll, None)
   }
 
   /**
    * Return a list of spaces the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean): List[ProjectSpace] = {
-    list(Some(date), nextPage, limit, None, user, showAll, None)
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace] = {
+    list(Some(date), nextPage, limit, None, permissions, user, showAll, None)
   }
 
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean): List[ProjectSpace] = {
-    list(Some(date), nextPage, limit, Some(title), user, showAll, None)
+  /**
+   * Return a list of spaces the user has access to starting at a specific date.
+   */
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace] = {
+    list(Some(date), nextPage, limit, Some(title), permissions, user, showAll, None)
   }
-
 
   /**
    * Count all spaces the user has created.
    */
   def countUser(user: Option[User], showAll: Boolean, owner: User): Long = {
-    count(None, nextPage=false, None, user, showAll, Some(owner))
+    count(None, nextPage=false, Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
   }
 
   /**
    * Return a list of spaces the user has created.
    */
   def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
-    list(None, nextPage=false, limit, None, user, showAll, Some(owner))
+    list(None, nextPage=false, limit, None, Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
   }
 
   /**
    * Return a list of spaces the user has created starting at a specific date.
    */
   def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
-    list(Some(date), nextPage, limit, None, user, showAll, Some(owner))
+    list(Some(date), nextPage, limit, None, Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
   }
 
   /**
    * return count based on input
    */
-  private def count(date: Option[String], nextPage: Boolean, title: Option[String], user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
-    val (filter, _) = filteredQuery(date, nextPage, title, user, showAll, owner)
+  private def count(date: Option[String], nextPage: Boolean, permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
+    val (filter, _) = filteredQuery(date, nextPage, None, permissions, user, showAll, owner)
     ProjectSpaceDAO.count(filter)
   }
 
@@ -113,8 +121,8 @@ class MongoDBSpaceService @Inject() (
   /**
    * return list based on input
    */
-  private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], user: Option[User], showAll: Boolean, owner: Option[User]): List[ProjectSpace] = {
-    val (filter, sort) = filteredQuery(date, nextPage, title, user, showAll, owner)
+  private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): List[ProjectSpace] = {
+    val (filter, sort) = filteredQuery(date, nextPage, title, permissions, user, showAll, owner)
     if (date.isEmpty || nextPage) {
       ProjectSpaceDAO.find(filter).sort(sort).limit(limit).toList
     } else {
@@ -125,7 +133,7 @@ class MongoDBSpaceService @Inject() (
   /**
    * Monster function, does all the work. Will create a filters and sorts based on the given parameters
    */
-  private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], user: Option[User], showAll: Boolean, owner: Option[User]): (DBObject, DBObject) = {
+  private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): (DBObject, DBObject) = {
     // filter =
     // - owner   == show datasets owned by owner that user can see
     // - space   == show all datasets in space
@@ -140,7 +148,7 @@ class MongoDBSpaceService @Inject() (
         } else {
           user match {
             case Some(u) => {
-              author ++ $or(public, ("_id" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+              author ++ $or(public, ("_id" $in u.spaceandrole.filter(_.role.permissions.intersect(permissions.map(_.toString)).nonEmpty).map(x => new ObjectId(x.spaceId.stringify))))
             }
             case None => {
               author ++ public
@@ -155,12 +163,16 @@ class MongoDBSpaceService @Inject() (
           user match {
             case Some(u) => {
               val author = $and(MongoDBObject("author.identityId.userId" -> u.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> u.identityId.providerId))
-              $or(author, public, ("_id" $in u.spaceandrole.map(x => new ObjectId(x.spaceId.stringify))))
+              $or(author, public, ("_id" $in u.spaceandrole.filter(_.role.permissions.intersect(permissions.map(_.toString)).nonEmpty).map(x => new ObjectId(x.spaceId.stringify))))
             }
             case None => public
           }
         }
       }
+    }
+    val filterTitle = titleSearch match {
+      case Some(title) =>  MongoDBObject("name" -> ("(?i)" + title).r)
+      case None => MongoDBObject()
     }
     val filterDate = date match {
       case Some(d) => {
@@ -181,7 +193,7 @@ class MongoDBSpaceService @Inject() (
       MongoDBObject("created" -> -1) ++ MongoDBObject("name" -> 1)
     }
 
-    (filter ++ filterDate, sort)
+    (filter ++ filterTitle ++ filterDate, sort)
   }
 
   /**
