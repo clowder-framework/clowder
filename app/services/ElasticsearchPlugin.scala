@@ -253,7 +253,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     var dsCollsName = ""
 
     dataset.collections.foreach(c => {
-      collections.get(UUID(c)).foreach(collection => {
+      collections.get(c).foreach(collection => {
         dsCollsId = dsCollsId + collection.id.stringify + " %%% "
         dsCollsName = dsCollsName + collection.name + " %%% "
       })

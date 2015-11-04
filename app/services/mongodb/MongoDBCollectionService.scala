@@ -355,10 +355,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
 
   def isInDataset(dataset: Dataset, collection: Collection): Boolean = {
     for (dsColls <- dataset.collections  ) {
-      if (dsColls == collection.id.stringify)
+      if (dsColls.stringify == collection.id.stringify)
         return true
     }
     return false
+
   }
 
   def addDataset(collectionId: UUID, datasetId: UUID) = Try {

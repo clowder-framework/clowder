@@ -313,7 +313,7 @@ class Datasets @Inject()(
                 datasets.updateThumbnail(dataset.id, UUID(file.thumbnail_id.get))
                 
                 for(collectionId <- dataset.collections){
-                  collections.get(UUID(collectionId)) match{
+                  collections.get(collectionId) match{
                     case Some(collection) =>{
                     	if(collection.thumbnail_id.isEmpty){ 
                     		collections.updateThumbnail(collection.id, UUID(file.thumbnail_id.get))
@@ -405,7 +405,7 @@ class Datasets @Inject()(
 						  datasets.createThumbnail(dataset.id)
 
 						  for(collectionId <- dataset.collections){
-							  collections.get(UUID(collectionId)) match{
+							  collections.get(collectionId) match{
 							  case Some(collection) =>{		                              
 								  if(!collection.thumbnail_id.isEmpty){
 									  if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
