@@ -171,7 +171,7 @@
                 @datasets.userLink(dataset)
             }
             @datasets.collections(dataset, collectionsInside)
-            @datasets.tags(dataset, filesTags)
+            @datasets.tags(dataset, fileList, filesTags)
 
             @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {
                 @sensors.relatedSensors(relatedSensors, dataset.id.stringify)
