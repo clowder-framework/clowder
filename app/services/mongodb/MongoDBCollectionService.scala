@@ -146,10 +146,8 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     // - space   == show all collections in space
     // - access  == show all collections the user can see
     // - default == public only
-    val public = MongoDBObject("public" -> true)
-
     // create access filter
-    val filterAccess = if (showAll) {
+    val filterAccess = if (showAll || (configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewCollection))) {
       MongoDBObject()
     } else {
       user match {
@@ -158,7 +156,9 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
           if (permissions.contains(Permission.ViewCollection)) {
             orlist += MongoDBObject("public" -> true)
           }
-          orlist += MongoDBObject("spaces" -> List.empty, "author.identityId.userId" -> user.get.identityId.userId )
+          if (user == owner) {
+            orlist += MongoDBObject("spaces" -> List.empty)
+          }
           val permissionsString = permissions.map(_.toString)
           val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(permissionsString).nonEmpty)
           if (okspaces.nonEmpty) {
@@ -169,7 +169,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
           }
           $or(orlist.map(_.asDBObject))
         }
-        case None => public
+        case None => MongoDBObject()
       }
     }
     val filterOwner = owner match {
