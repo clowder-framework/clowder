@@ -279,13 +279,13 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     val order = MongoDBObject("created"-> -1)
     if (date == "") {
       var collectionList = Collection.findAll.sort(order).limit(limit).toList
-      collectionList= collectionList.filter(x=> x.author.get.email.toString == "Some(" +email +")")
+      collectionList= collectionList.filter(x=> x.author.email.toString == "Some(" +email +")")
       collectionList
     } else {
       val sinceDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(date)
       Logger.info("After " + sinceDate)
       var collectionList = Collection.find("created" $lt sinceDate).sort(order).limit(limit).toList
-      collectionList= collectionList.filter(x=> x.author.get.email.toString == "Some(" +email +")")
+      collectionList= collectionList.filter(x=> x.author.email.toString == "Some(" +email +")")
       collectionList
     }
   }
@@ -297,7 +297,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     var order = MongoDBObject("created"-> -1)
     if (date == "") {
       var collectionList = Collection.findAll.sort(order).limit(limit).toList
-      collectionList= collectionList.filter(x=> x.author.get.email.toString == "Some(" +email +")")
+      collectionList= collectionList.filter(x=> x.author.email.toString == "Some(" +email +")")
       collectionList
     } else {
       order = MongoDBObject("created"-> 1)
@@ -305,7 +305,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       Logger.info("Before " + sinceDate)
       var collectionList = Collection.find("created" $gt sinceDate).sort(order).limit(limit + 1).toList.reverse
       collectionList = collectionList.filter(_ != collectionList.last)
-      collectionList= collectionList.filter(x=> x.author.get.email.toString == "Some(" +email +")")
+      collectionList= collectionList.filter(x=> x.author.email.toString == "Some(" +email +")")
       collectionList
     }
   }
