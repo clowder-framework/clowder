@@ -384,31 +384,29 @@
 				  	</div>
 			  	</div>
 				
-				@if(!navOnSectionClick){
-					<script>
-					    document.addEventListener("DOMContentLoaded", function () {
-							if ($("#ourvideo").length>0) {
-						        var pop = Popcorn("#ourvideo");
-	
-								@sections.map { s =>
-						  			@if(s.startTime.isDefined) {
-								   		pop.code({
-									        start: @s.startTime,
-									        onStart: function() {
-									          var frame = @s.order - 1;
-									          console.log("Jumping to " + frame + " " + @s.startTime);
-									          $('#galleria').data('galleria').show(frame);
-									        },
-									        onEnd: function() {
-									          //console.log("end");
-									       }
-									    });
-									}
-							    }
-							}
-					    });
-			         </script>
-		         }
+				<script>
+				    document.addEventListener("DOMContentLoaded", function () {
+						if ($("#ourvideo").length>0) {
+					        var pop = Popcorn("#ourvideo");
+
+							@sections.map { s =>
+					  			@if(s.startTime.isDefined) {
+							   		pop.code({
+								        start: @s.startTime,
+								        onStart: function() {
+								          var frame = @s.order - 1;
+								          console.log("Jumping to " + frame + " " + @s.startTime);
+								          $('#galleria').data('galleria').show(frame);
+								        },
+								        onEnd: function() {
+								          //console.log("end");
+								       }
+								    });
+								}
+						    }
+						}
+				    });
+		        </script>
 			    
 			    <script>
 			    	$(function() {
