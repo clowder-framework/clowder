@@ -48,7 +48,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
       case Some(usr) => {
         users.findById(usr.id) match {
           case Some(clowderUser) => {
-            val datasetsUser = datasets.listUser(2, Some(clowderUser), request.superAdmin, clowderUser)
+            val datasetsUser = datasets.listUser(4, Some(clowderUser), request.superAdmin, clowderUser)
             val datasetcommentMap = datasetsUser.map { dataset =>
               var allComments = comments.findCommentsByDatasetId(dataset.id)
               dataset.files.map { file =>
@@ -59,7 +59,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
               }
               dataset.id -> allComments.size
             }.toMap
-            val collectionList = collections.listUser(2, Some(clowderUser), request.superAdmin, clowderUser)
+            val collectionList = collections.listUser(4, Some(clowderUser), request.superAdmin, clowderUser)
             var collectionsWithThumbnails = List.empty[models.Collection]
             for (collection <- collectionList) {
               val collectionThumbnail = collection.datasets.find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
@@ -74,7 +74,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
             for (aCollection <- collectionsWithThumbnails) {
               decodedCollections += Utils.decodeCollectionElements(aCollection)
             }
-            val spacesUser = spaces.listUser(2, Some(clowderUser),request.superAdmin, clowderUser)
+            val spacesUser = spaces.listUser(4, Some(clowderUser),request.superAdmin, clowderUser)
             var followers: List[(UUID, String, String, String)] = List.empty
             for (followerID <- clowderUser.followers) {
               var userFollower = users.findById(followerID)
