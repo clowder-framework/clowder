@@ -5,13 +5,13 @@ resource_type_enum = {
 }
 
 
-function addCollectionToSapce(id) {
+function addCollectionToSpace(id) {
 
     var selectedId = $("#spaceAddSelect").val();
     var selectedName = $("#spaceAddSelect option:selected").text();
     selectedName = selectedName.replace(/\n/g, "<br>");
 
-    var request = jsRoutes.api.Spaces.addCollectionToSapce(selectedId, id).ajax({
+    var request = jsRoutes.api.Spaces.addCollectionToSpace(selectedId, id).ajax({
         type: 'POST'
     });
 
@@ -58,7 +58,7 @@ function removeCollectionFromSpace(spaceId, spaceName, id, event){
 }
 
 
-function addDatasetToSapce(id) {
+function addDatasetToSpace(id) {
 
     var selectedId = $("#spaceAddSelect").val();
     var selectedName = $("#spaceAddSelect option:selected").text();

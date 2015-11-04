@@ -349,7 +349,7 @@ POST           /api/spaces/:id/update                                           
 POST           /api/spaces/:id/updateUsers                                              @api.Spaces.updateUsers(id: UUID)
 GET            /api/spaces/:id/removeUser                                               @api.Spaces.removeUser(id: UUID, removeUser: String)
 POST           /api/spaces/:spaceId/addDatasetToSpace/:datasetId                        @api.Spaces.addDatasetToSpace(spaceId: UUID, datasetId: UUID)
-POST           /api/spaces/:spaceId/addCollectionToSpace/:collectionId                  @api.Spaces.addCollectionToSapce(spaceId: UUID, collectionId: UUID)
+POST           /api/spaces/:spaceId/addCollectionToSpace/:collectionId                  @api.Spaces.addCollectionToSpace(spaceId: UUID, collectionId: UUID)
 POST           /api/spaces/:id/follow                                                   @api.Spaces.follow(id: UUID, name: String)
 POST           /api/spaces/:id/unfollow                                                 @api.Spaces.unfollow(id: UUID, name: String)
 
