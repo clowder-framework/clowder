@@ -371,13 +371,13 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, metadataServic
     }
   }
 
-  def listMetadata() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+  def getMetadataDefinitions() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(x) => {
         if (x.email.nonEmpty && AppConfiguration.checkAdmin(x.email.get)) {
-          val metadata = metadataService.getVocabularies()
-          Ok(views.html.listMetadata(metadata.toList))
+          val metadata = metadataService.getDefinitions()
+          Ok(views.html.manageMetadataDefinitions(metadata.toList))
         } else {
           Unauthorized("Not authorized")
         }

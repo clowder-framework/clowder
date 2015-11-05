@@ -1,6 +1,6 @@
-function addVocabulary(data){
+function addDefinition(data, pageURL){
 
-  var request = jsRoutes.api.Metadata.addVocabulary().ajax({
+  var request = jsRoutes.api.Metadata.addDefinition().ajax({
     type: 'POST',
     data: JSON.stringify(data),
     contentType: "application/json"
@@ -9,21 +9,23 @@ function addVocabulary(data){
   request.done(function (response, textStatus, jqXHR){
     console.log("Response " + response);
 
-    if(textStatus == "success")
-      notify("Metadata added.", "success");
+    if(textStatus == "success") {
+      window.location.href = window.location.href.split('#')[0];
+    }
+
   });
   request.fail(function (jqXHR, textStatus, errorThrown){
     console.error(
       "The following error occured: "+
       textStatus, errorThrown
     );
-    notify("ERROR: " + errorThrown +". Metadata not added.", error);
+    notify("ERROR: " + errorThrown +". Metadata Definition not added.", error);
   });
 }
 
-function editVocabulary(id, json, element) {
+function editDefinition(id, json, element) {
   reset();
-  $(".vocabularyAction").text("Edit");
+  $(".definitionAction").text("Edit");
   json = JSON.parse(json);
   if (json.label) {
     $("#label").val(json.label);
@@ -48,5 +50,6 @@ function reset(element) {
   element = element || $("#cancelButton");
   $(':input').val('');
   $(element).hide();
-  $('.vocabularyAction').text('Add');
+  $("#validationResults").empty();
+  $('.definitionAction').text('Add');
 }
