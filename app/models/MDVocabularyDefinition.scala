@@ -53,7 +53,8 @@ object MDVocabularyDefinition {
           "label":"SAS Variable Name",
           "uri":"http://ecgs.ncsa.illinois.edu/gsis/sas/vars",
           "type":"listjquery",
-          "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/vars/map"}""")
+          "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/vars/map",
+          "query_parameter": "term"}""")
     )
     default.map(d => metadataService.addVocabularyDefinition(MDVocabularyDefinition(json = d)))
   }
