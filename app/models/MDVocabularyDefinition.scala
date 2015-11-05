@@ -53,12 +53,14 @@ object MDVocabularyDefinition {
           "label":"SAS Variable Name",
           "uri":"http://ecgs.ncsa.illinois.edu/gsis/sas/vars",
           "type":"listjquery",
-          "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/vars/map"}"""),
+          "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/vars/map",
+          "query_parameter": "term"}"""),
         Json.parse("""{
           "label":"SAS Spatial Geocode",
           "uri":"http://ecgs.ncsa.illinois.edu/gsis/sas/geocode",
           "type":"listgeocode",
-          "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/geocode"}""")
+          "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/geocode",
+          "query_parameter": "loc"}""")
     )
     default.map(d => metadataService.addVocabularyDefinition(MDVocabularyDefinition(json = d)))
   }
