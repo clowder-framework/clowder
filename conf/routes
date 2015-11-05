@@ -260,7 +260,7 @@ GET            /api/files/:id/metadata.jsonld                                   
 POST           /api/metadata.jsonld                                                     @api.Metadata.addUserMetadata()
 #GET            /api/metadata.jsonld                                                     @api.Metadata.getUserMetadata()
 
-GET            /api/metadata/search                                                     @api.Metadata.searchByKeyValue(mdkey: Option[String], mdvalue: Option[String])
+GET            /api/metadata/search                                                     @api.Metadata.searchByKeyValue(mdkey: Option[String], mdvalue: Option[String], count: Int ?= 10)
 POST           /api/metadata/search                                                     @api.Metadata.search()
 
 GET            /api/metadata/vocabularies                                               @api.Metadata.getVocabularies()

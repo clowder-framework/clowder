@@ -120,9 +120,9 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
     resources
   }
 
-  def search(key: String, value: String): List[ResourceRef] = {
+  def search(key: String, value: String, count: Int): List[ResourceRef] = {
     val doc = MongoDBObject("content." + key -> value)
-    val resources: List[ResourceRef] = MetadataDAO.find(doc).map(_.attachedTo).toList
+    val resources: List[ResourceRef] = MetadataDAO.find(doc).limit(count).map(_.attachedTo).toList
     resources
   }
 

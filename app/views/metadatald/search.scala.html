@@ -3,24 +3,31 @@
 @main("Search metadata") {
     <h2>Search by metadata</h2>
     <div class="row">
-    <form class="form top-padding">
-        <div class="form-group col-md-4">
-            <select id="add-metadata-select">
-                <option value=""></option>
-            </select>
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <form class="form top-padding">
+                    <div class="form-group col-lg-4 col-md-4">
+                        <select id="add-metadata-select">
+                            <option value=""></option>
+                        </select>
+                    </div>
+                    <div class="form-group col-lg-4 col-md-4">
+                        <input type="text" class="form-control" id="v" placeholder="Type value here">
+                    </div>
+                    <div class="form-group col-lg-4 col-md-4">
+                        <button type="submit" class="btn btn-default">Search</button>
+                        <span id="mt-search-feedback"></span>
+                    </div>
+                </form>
+            </div>
         </div>
-        <div class="form-group col-md-4">
-            <input type="text" class="form-control" id="v" placeholder="Type value here">
-        </div>
-        <div class="form-group col-md-4">
-            <button type="submit" class="btn btn-default">Search</button>
-            <span id="mt-search-feedback"></span>
-        </div>
-    </form>
     </div>
     <div class="row top-padding">
-        <div class="col-lg-6"><h2>Datasets</h2><div id="datasets-results"></div></div>
-        <div class="col-lg-6"><h2>Files</h2><div id="files-results"></div></div>
+        <div class="col-lg-6 col-md-6"><h2>Datasets</h2><div id="datasets-results"></div></div>
+        <div class="col-lg-6 col-md-6"><h2>Files</h2><div id="files-results"></div></div>
+    </div>
+    <div class="row top-padding">
+        <div id="getmore" class="col-lg-12 col-md-12 text-center"></div>
     </div>
     <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
     <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
@@ -36,7 +43,6 @@
         request.done(function (response, textStatus, jqXHR) {
             var fields = response;
             for (var i = 0; i < fields.length; i++) {
-
                 var elem = $("<option></option>");
                 elem.attr("data-type", fields[i].json.type);
                 elem.attr("data-id", fields[i].id);
@@ -52,23 +58,9 @@
                 placeholder_text_single: "Select or type field key"});
         });
 
-        request.fail(function (jqXHR, textStatus, errorThrown){
-            console.error("The following error occured: " + textStatus, errorThrown);
-            var errMsg = "You must be logged in to retrieve metadata definitions";
-            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                notify("Metadata was not added due to : " + errorThrown, "error");
-            }
-        });
-
-        // form submission
-        $( "form" ).submit(function( event ) {
-            event.preventDefault();
-            var k = $("#add-metadata-select option:selected").text();
-            var predicate = $("#add-metadata-select option:selected").val();
-            var v = $( "#v" ).val();
-            if ( k != "" && v != "" ) {
-
-                var request = jsRoutes.api.Metadata.searchByKeyValue(k, v).ajax({
+        function search(key, value, count) {
+            if ( key != "" && value != "" ) {
+                var request = jsRoutes.api.Metadata.searchByKeyValue(key, value, count).ajax({
                     type: 'GET',
                     contentType: "application/json"
                 });
@@ -90,6 +82,8 @@
                         var html = modalTemplate({'url': jsRoutes.controllers.Files.file(files[i].id).url, 'name': files[i].name});
                         $('#files-results').append(html);
                     }
+                    $('#getmore').html('<a id="showmore" class="btn btn-default">Show more results</a>');
+                    $('#showmore').click( function() { search(key, value, count+10); } );
                 });
 
                 request.fail(function (jqXHR, textStatus, errorThrown){
@@ -100,7 +94,23 @@
             }
 
             $( "#mt-search-feedback" ).text( "Not valid!" ).show().fadeOut( 2000 );
+        }
 
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occured: " + textStatus, errorThrown);
+            var errMsg = "You must be logged in to retrieve metadata definitions";
+            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                notify("Metadata was not added due to : " + errorThrown, "error");
+            }
+        });
+
+        // form submission
+        $( "form" ).submit(function( event ) {
+            event.preventDefault();
+            var k = $("#add-metadata-select option:selected").text();
+            var predicate = $("#add-metadata-select option:selected").val();
+            var v = $( "#v" ).val();
+            search(k, v);
         });
     </script>
 }

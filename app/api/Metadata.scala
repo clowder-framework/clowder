@@ -34,14 +34,14 @@ class Metadata @Inject()(
     Ok(toJson(results))
   }
 
-  def searchByKeyValue(key: Option[String], value: Option[String]) =
+  def searchByKeyValue(key: Option[String], value: Option[String], count: Int = 0) =
     SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Public)) {
       implicit request =>
         val response = for {
           k <- key
           v <- value
         } yield {
-          val results = metadataService.search(k, v)
+          val results = metadataService.search(k, v, count)
           val datasetsResults = results.flatMap { d =>
             if (d.resourceType == ResourceRef.dataset) datasets.get(d.id) else None
           }
