@@ -15,7 +15,11 @@
         <div id="spacesList" class="col-md-12">
         @resourceSpaces.map { s =>
             <div id="col_@s.id" class="row bottom-padding">
-                <div class="col-md-2"></div>
+                <div class="col-md-2">
+                    @if(s.logoURL.isDefined) {
+                        <img src="@s.logoURL.get" width="100%">
+                    }
+                </div>
                 <div class="col-md-10">
                     <div>
                         <a href="@routes.Spaces.getSpace(s.id)" id='@s.id' class ="space">@Html(s.name)</a>
