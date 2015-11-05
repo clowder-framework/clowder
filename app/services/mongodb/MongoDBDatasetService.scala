@@ -226,7 +226,7 @@ class MongoDBDatasetService @Inject() (
       case None => MongoDBObject()
     }
     val filterCollection = collection match {
-      case Some(c) => MongoDBObject("collections" -> c)
+      case Some(c) => MongoDBObject("collections" -> new ObjectId(c))
       case None => MongoDBObject()
     }
     val filterTitle = titleSearch match {
