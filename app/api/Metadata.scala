@@ -34,35 +34,31 @@ class Metadata @Inject()(
     Ok(toJson(results))
   }
 
-  def searchByKeyValue(key: Option[String], value: Option[String]) = Action {
-    implicit request =>
-      val response = for {
-        k <- key
-        v <- value
-      } yield {
-        val results = metadataService.search(k, v)
-        val datasetsResults = results.flatMap { d =>
-          if (d.resourceType == ResourceRef.dataset) datasets.get(d.id) else None
+  def searchByKeyValue(key: Option[String], value: Option[String]) =
+    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Public)) {
+      implicit request =>
+        val response = for {
+          k <- key
+          v <- value
+        } yield {
+          val results = metadataService.search(k, v)
+          val datasetsResults = results.flatMap { d =>
+            if (d.resourceType == ResourceRef.dataset) datasets.get(d.id) else None
+          }
+          val filesResults = results.flatMap { f =>
+            if (f.resourceType == ResourceRef.file) files.get(f.id) else None
+          }
+          import Dataset.DatasetWrites
+          import File.FileWrites
+          Ok(JsObject(Seq("datasets" -> toJson(datasetsResults), "files" -> toJson(filesResults))))
         }
-        val filesResults = results.flatMap { f =>
-          if (f.resourceType == ResourceRef.file) files.get(f.id) else None
-        }
-        import Dataset.DatasetWrites
-        import File.FileWrites
-        Ok(JsObject(Seq("datasets" -> toJson(datasetsResults), "files" -> toJson(filesResults))))
-      }
-      response getOrElse BadRequest(toJson("You must specify key and value"))
+        response getOrElse BadRequest(toJson("You must specify key and value"))
   }
   
-  def getVocabularies() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.AddMetadata)) {
+  def getVocabularies() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.SearchDatasets)) {
     implicit request =>
-      request.user match {
-        case Some(user) => {
-          val vocabularies = metadataService.getVocabularies()
-          Ok(toJson(vocabularies))
-        }
-        case None => BadRequest(toJson("Invalid user"))
-      }
+      val vocabularies = metadataService.getVocabularies()
+      Ok(toJson(vocabularies))
   }
 
   def getVocabulary(id: UUID) = Action.async { implicit request =>

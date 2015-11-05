@@ -1,27 +1,70 @@
+@()(implicit user: Option[models.User])
+
 @main("Search metadata") {
     <h2>Search by metadata</h2>
-    <form class="form-inline top-padding">
-        <div class="form-group">
-            <label for="k"><strong>Metadata Key:</strong></label>
-            <input type="text" class="form-control" id="k" placeholder="Abstract">
+    <div class="row">
+    <form class="form top-padding">
+        <div class="form-group col-md-4">
+            <select id="add-metadata-select">
+                <option value=""></option>
+            </select>
         </div>
-        <div class="form-group">
-            <label for="v"><strong>Metadata Value:</strong></label>
-            <input type="text" class="form-control" id="v" placeholder="This is an abstract">
+        <div class="form-group col-md-4">
+            <input type="text" class="form-control" id="v" placeholder="Type value here">
         </div>
-        <button type="submit" class="btn btn-default">Search</button>
-        <span id="mt-search-feedback"></span>
+        <div class="form-group col-md-4">
+            <button type="submit" class="btn btn-default">Search</button>
+            <span id="mt-search-feedback"></span>
+        </div>
     </form>
+    </div>
     <div class="row top-padding">
         <div class="col-lg-6"><h2>Datasets</h2><div id="datasets-results"></div></div>
         <div class="col-lg-6"><h2>Files</h2><div id="files-results"></div></div>
     </div>
+    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
+    <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
     <script>
+        // metadata definitions
+        var request = jsRoutes.api.Metadata.getVocabularies().ajax({
+            type: 'GET',
+            contentType: "application/json"
+        });
+
+        request.done(function (response, textStatus, jqXHR) {
+            var fields = response;
+            for (var i = 0; i < fields.length; i++) {
+
+                var elem = $("<option></option>");
+                elem.attr("data-type", fields[i].json.type);
+                elem.attr("data-id", fields[i].id);
+                elem.attr("value", fields[i].json.uri);
+                elem.text(fields[i].json.label);
+                $("#add-metadata-select").append(elem);
+            }
+            // chosen pulldown configuration
+            $("#add-metadata-select").chosen({
+                no_results_text: "Press enter to define new key",
+                search_contains: true,
+                width: "100%",
+                placeholder_text_single: "Select or type field key"});
+        });
+
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occured: " + textStatus, errorThrown);
+            var errMsg = "You must be logged in to retrieve metadata definitions";
+            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                notify("Metadata was not added due to : " + errorThrown, "error");
+            }
+        });
+
+        // form submission
         $( "form" ).submit(function( event ) {
             event.preventDefault();
-            var k = $( "#k" ).val();
+            var k = $("#add-metadata-select option:selected").text();
+            var predicate = $("#add-metadata-select option:selected").val();
             var v = $( "#v" ).val();
             if ( k != "" && v != "" ) {
 

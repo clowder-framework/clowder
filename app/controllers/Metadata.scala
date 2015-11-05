@@ -49,7 +49,8 @@ class Metadata @Inject() (
     }
   }
 
-  def search() = SecuredAction(authorization = WithPermission(Permission.ShowFilesMetadata)) {implicit request =>
+  def search() = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) {implicit request =>
+    implicit val user = request.user
     Ok(views.html.metadatald.search())
   }
 }
