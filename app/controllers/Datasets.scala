@@ -6,6 +6,7 @@ import java.util.Date
 import javax.inject.Inject
 
 import api.Permission
+import api.Permission.Permission
 import fileutils.FilesUtils
 import models._
 import play.api.Logger
@@ -65,9 +66,17 @@ class Datasets @Inject()(
   }
 
 
-  def addToDataset(id: UUID, name: String, desc: String) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def addToDataset(id: UUID) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       implicit val user = request.user
-      Ok(views.html.addToExistingDataset(id, name, desc)).flashing("error" -> "Cannot add to the dataset")
+     datasets.get(id) match {
+       case Some(dataset) => {
+         Ok(views.html.addToExistingDataset(id, dataset.name, dataset.description)).flashing("error" -> "Cannot add to the dataset")
+       }
+       case None => {
+         InternalServerError(s"Dataset $id not found")
+       }
+     }
+
   }
 
   /**
@@ -98,9 +107,9 @@ class Datasets @Inject()(
           }
           case None => {
             if (date != "") {
-              datasets.listAccess(date, nextPage, limit, request.user, request.superAdmin)
+              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
             } else {
-              datasets.listAccess(limit, request.user, request.superAdmin)
+              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
             }
 
           }
@@ -116,7 +125,7 @@ class Datasets @Inject()(
         case None => {
           space match {
             case Some(s) => datasets.listSpace(first, nextPage = false, 1, s)
-            case None => datasets.listAccess(first, nextPage = false, 1, request.user, request.superAdmin)
+            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
           }
         }
       }
@@ -137,7 +146,7 @@ class Datasets @Inject()(
         case None => {
           space match {
             case Some(s) => datasets.listSpace(last, nextPage=true, 1, s)
-            case None => datasets.listAccess(last, nextPage=true, 1, request.user, request.superAdmin)
+            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
           }
         }
       }
@@ -153,8 +162,8 @@ class Datasets @Inject()(
     val commentMap = datasetList.map { dataset =>
       var allComments = comments.findCommentsByDatasetId(dataset.id)
       dataset.files.map { file =>
-        allComments ++= comments.findCommentsByFileId(file.id)
-        sections.findByFileId(file.id).map { section =>
+        allComments ++= comments.findCommentsByFileId(file)
+        sections.findByFileId(file).map { section =>
           allComments ++= comments.findCommentsBySectionId(section.id)
         }
       }
@@ -227,9 +236,12 @@ class Datasets @Inject()(
         case Some(dataset) => {
 
           // get files info sorted by date
-          val filesInDataset = dataset.files.map(f => files.get(f.id).get).sortBy(_.uploadDate)
+          val filesInDataset = dataset.files.map(f => files.get(f) match {
+            case Some(file) => file
+            case None => Logger.debug(s"Unable to find file $f")
+          }).asInstanceOf[List[File]].sortBy(_.uploadDate)
 
-          var datasetWithFiles = dataset.copy(files = filesInDataset)
+          var datasetWithFiles = dataset.copy(files = filesInDataset.map(_.id))
           datasetWithFiles = Utils.decodeDatasetElements(datasetWithFiles)
 
           val filteredPreviewers = Previewers.findDatasetPreviewers
@@ -242,16 +254,10 @@ class Datasets @Inject()(
           val userMetadata = datasets.getUserMetadata(id)
           Logger.debug("User metadata: " + userMetadata.toString)
 
-          val collectionsOutside = collections.listOutsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
           val collectionsInside = collections.listInsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
-          var decodedCollectionsOutside = new ListBuffer[models.Collection]()
           var decodedCollectionsInside = new ListBuffer[models.Collection]()
           var filesTags = TreeSet.empty[String]
 
-          for (aCollection <- collectionsOutside) {
-              val dCollection = Utils.decodeCollectionElements(aCollection)
-              decodedCollectionsOutside += dCollection
-          }
           for (aCollection <- collectionsInside) {
               val dCollection = Utils.decodeCollectionElements(aCollection)
               decodedCollectionsInside += dCollection
@@ -306,14 +312,14 @@ class Datasets @Inject()(
                   }
           }
 
-          val otherSpaces: List[ProjectSpace] = user match {
-            case Some(usr) => usr.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!datasetSpaces.map(_.id).contains(aSpace.id)) aSpace else None).filter(_ != None).asInstanceOf[List[ProjectSpace]]
-            case None => List.empty
-          }
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
+          val fileList: List[File] = dataset.files.map(fileId => files.get(fileId) match {
+            case Some(file) => file
+            case None => Logger.debug(s"Unable to find file $fileId")
+          }).asInstanceOf[List[File]]
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filesTags, filteredPreviewers.toList, metadata, userMetadata,
-            decodedCollectionsOutside.toList, decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), otherSpaces))
+            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), fileList))
 
         }
         case None => {
@@ -414,7 +420,7 @@ class Datasets @Inject()(
                 }
               }
 
-              Logger.debug("Datset submit, new file - uploading file " + nameOfFile)
+              Logger.debug("Dataset submit, new file - uploading file " + nameOfFile)
 
               // store file
               Logger.info("Adding file" + identity)

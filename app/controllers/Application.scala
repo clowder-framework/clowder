@@ -2,6 +2,8 @@ package controllers
 
 import javax.inject.{Inject, Singleton}
 
+import api.Permission
+import api.Permission._
 import play.api.{Logger, Routes}
 import play.api.mvc.Action
 import services._
@@ -33,12 +35,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   	implicit val user = request.user
   	val latestFiles = files.latest(5)
     val datasetsCount = datasets.count()
-    val datasetsCountAccess = datasets.countAccess(user, request.superAdmin)
+    val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.superAdmin)
     val filesCount = files.count()
     val collectionsCount = collections.count()
-    val collectionsCountAccess = collections.countAccess(user, request.superAdmin)
+    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.superAdmin)
     val spacesCount = spaces.count()
-    val spacesCountAccess = spaces.countAccess(user, request.superAdmin)
+    val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.superAdmin)
     val usersCount = users.count()
     //newsfeedEvents is the combination of followedEntities and requestevents, then take the most recent 20 of them.
     var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)).sorted(Ordering.by((_: Event).created).reverse))
@@ -188,12 +190,15 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Comments.comment,
         api.routes.javascript.Comments.removeComment,
         api.routes.javascript.Comments.editComment,
+        api.routes.javascript.Datasets.list,
+        api.routes.javascript.Datasets.listCanEdit,
         api.routes.javascript.Datasets.comment,
         api.routes.javascript.Datasets.createEmptyDataset,
         api.routes.javascript.Datasets.attachExistingFile,
         api.routes.javascript.Datasets.attachMultipleFiles,
         api.routes.javascript.Datasets.deleteDataset,
         api.routes.javascript.Datasets.detachAndDeleteDataset,
+        api.routes.javascript.Datasets.datasetFilesList,
         api.routes.javascript.Datasets.getTags,
         api.routes.javascript.Datasets.addTags,
         api.routes.javascript.Datasets.removeTag,
@@ -237,34 +242,36 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Geostreams.deleteSensor,
         api.routes.javascript.Geostreams.updateSensorMetadata,
         api.routes.javascript.Geostreams.patchStreamMetadata,
+        api.routes.javascript.Collections.list,
+        api.routes.javascript.Collections.listCanEdit,
         api.routes.javascript.Collections.attachPreview,
         api.routes.javascript.Collections.attachDataset,
         api.routes.javascript.Collections.removeDataset,
         api.routes.javascript.Collections.removeCollection,
+        api.routes.javascript.Collections.follow,
+        api.routes.javascript.Collections.unfollow,
+        api.routes.javascript.Collections.updateCollectionName,
+        api.routes.javascript.Collections.updateCollectionDescription,
         api.routes.javascript.Spaces.get,
         api.routes.javascript.Spaces.removeSpace,
         api.routes.javascript.Spaces.list,
-        api.routes.javascript.Spaces.listSpacesCanAdd,
-        api.routes.javascript.Spaces.addCollection,
-        api.routes.javascript.Spaces.addDataset,
+        api.routes.javascript.Spaces.listCanEdit,
+        api.routes.javascript.Spaces.addCollectionToSpace,
+        api.routes.javascript.Spaces.addDatasetToSpace,
+        api.routes.javascript.Spaces.removeCollection,
+        api.routes.javascript.Spaces.removeDataset,
         api.routes.javascript.Spaces.updateSpace,
         api.routes.javascript.Spaces.updateUsers,
         api.routes.javascript.Spaces.removeUser,
         api.routes.javascript.Spaces.follow,
         api.routes.javascript.Spaces.unfollow,
-        api.routes.javascript.Collections.follow,
-        api.routes.javascript.Collections.unfollow,
-        api.routes.javascript.Collections.updateCollectionName,
-        api.routes.javascript.Collections.updateCollectionDescription,
+        api.routes.javascript.Users.getUser,
         api.routes.javascript.Users.follow,
         api.routes.javascript.Users.unfollow,
         api.routes.javascript.Relations.findTargets,
         api.routes.javascript.Relations.add,
         api.routes.javascript.Projects.addproject,
         api.routes.javascript.Institutions.addinstitution,
-        api.routes.javascript.Users.getUser,
-        api.routes.javascript.Spaces.addDatasetToSpaces,
-        api.routes.javascript.Spaces.addCollectionToSpaces,
         controllers.routes.javascript.Profile.viewProfileUUID,
         controllers.routes.javascript.Files.file,
         controllers.routes.javascript.Datasets.dataset,

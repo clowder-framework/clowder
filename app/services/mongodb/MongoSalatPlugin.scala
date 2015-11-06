@@ -6,6 +6,7 @@ import java.util.Date
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import models._
+import org.bson.BSONException
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
 import com.mongodb.casbah.MongoURI
@@ -13,6 +14,7 @@ import com.mongodb.casbah.MongoConnection
 import com.mongodb.casbah.MongoDB
 import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.gridfs.GridFS
+import org.bson.types.ObjectId
 import services.{DI, AppConfigurationService}
 
 /**
@@ -60,6 +62,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("datasets").ensureIndex(MongoDBObject("files._id" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("spaces" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("public" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("name" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("author.identityId.userId" -> 1, "author.identityId.providerId" -> 1))
 
     collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
@@ -140,8 +143,23 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   // ----------------------------------------------------------------------
   def updateDatabase() {
     val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+    updateCollectionsInDatasetStringToUUID
 
+    //Change Files in datasets from List[File] to List[UUID]
+    updateReplaceFilesInDataset
     // migrate users to new model
+    updateMongoChangeUserType
+
+    // add a space if none exists
+    updateMongoAddFirstSpace
+
+    // remove datasets from collection
+    updateMongoRemoveDatasetCollection
+  }
+
+  private def updateMongoChangeUserType {
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
     if (!appConfig.hasPropertyValue("mongodb.updates", "fixing-typehint-users")) {
       if (System.getProperty("MONGOUPDATE") != null) {
         Logger.info("[MongoDBUpdate] : Fixing _typeHint for users.")
@@ -153,8 +171,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         Logger.warn("[MongoDBUpdate] : Missing fix _typeHint for users.")
       }
     }
+  }
 
-    // add a space if none exists
+  private def updateMongoAddFirstSpace {
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
     if (!appConfig.hasPropertyValue("mongodb.updates", "convert-to-spaces")) {
       if (System.getProperty("MONGOUPDATE") != null) {
         val spaces = ProjectSpaceDAO.count(new MongoDBObject())
@@ -203,4 +224,112 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       }
     }
   }
+
+  private def updateMongoRemoveDatasetCollection {
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", "removed-datasets-collection")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        collection("collections").foreach {c =>
+          val datasets = c.getAsOrElse[MongoDBList]("datasets", MongoDBList.empty)
+          c.removeField("datasets")
+          c.put("datasetCount", datasets.length)
+          collection("collections").save(c, WriteConcern.Safe)
+
+          datasets.foreach {d =>
+            if (c._id.isDefined) {
+              collection("datasets").update(MongoDBObject("_id" -> d.asInstanceOf[DBObject].get("_id")), $addToSet("collections" -> c._id.get.toString))
+            }
+          }
+        }
+        appConfig.addPropertyValue("mongodb.updates", "removed-datasets-collection")
+      } else {
+        Logger.warn("[MongoDBUpdate] : Missing fix to remove datasets from collection.")
+      }
+    }
+  }
+
+
+
+
+  private def updateCollectionsInDatasetStringToUUID{
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", "replace-dataset-collections-string-uuid")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        collection("datasets").foreach { ds =>
+          val collection_string = ds.getAsOrElse[MongoDBList]("collections", MongoDBList.empty)
+          ds.removeField("collections")
+          val collection_uuids = collection_string.map(col => new ObjectId(col.toString)).toList
+
+          try {
+            ds.put("collections", collection_uuids)
+            collection("datasets").save(ds, WriteConcern.Safe)
+          } catch {
+            case e: BSONException =>  Logger.error("Failed to refactor collections (String -> UUID) in  dataset with id" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString())
+          }
+
+
+        }
+      }
+      appConfig.addPropertyValue("mongodb.updates", "replace-dataset-collections-string-uuid")
+    } else {
+      Logger.warn("[MongoDBUpdate : Missing fix to replace the files in the dataset with UUIDs")
+    }
+  }
+
+  private def updateCollectionsInDatasetUUIDToString{
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", "replace-dataset-collections-uuid-string")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        collection("datasets").foreach { ds =>
+          val collection_uuid = ds.getAsOrElse[MongoDBList]("collections", MongoDBList.empty)
+          ds.removeField("collections")
+          val collection_string = collection_uuid.map(col => col.toString()).toList
+          try {
+            ds.put("collections", collection_string)
+            collection("datasets").save(ds, WriteConcern.Safe)
+          } catch {
+            case e: BSONException => Logger.error("Failed to refactor collections (UUID -> String) in dataset with id" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString())
+          }
+        }
+      }
+      appConfig.addPropertyValue("mongodb.updates", "replace-dataset-collections-uuid-string")
+    } else {
+      Logger.warn("[MongoDBUpdate : Missing fix to replace the files in the dataset with UUIDs")
+    }
+  }
+
+
+
+  /**
+   * Replaces the files in the datasets from acopy of the files tojust the file UUID's.
+   */
+  private def updateReplaceFilesInDataset{
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", "replace-dataset-files-with-id")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        collection("datasets").foreach { ds =>
+          val files = ds.getAsOrElse[MongoDBList]("files", MongoDBList.empty)
+          ds.removeField("files")
+          val fileIds = files.map(file => new ObjectId(file.asInstanceOf[BasicDBObject].get("_id").toString)).toList
+          try {
+            ds.put("files", fileIds)
+            collection("datasets").save(ds, WriteConcern.Safe)
+          }
+          catch {
+            case e: BSONException => Logger.error("Unable to update files in dataset:" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString() )
+          }
+
+
+        }
+      }
+      appConfig.addPropertyValue("mongodb.updates", "replace-dataset-files-with-id")
+    } else {
+      Logger.warn("[MongoDBUpdate : Missing fix to replace the files in the dataset with UUIDs")
+    }
+  }
+
 }
