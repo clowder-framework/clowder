@@ -54,21 +54,22 @@ class Application @Inject() (files: FileService, collections: CollectionService,
             val datasetcommentMap = datasetsUser.map { dataset =>
               var allComments = comments.findCommentsByDatasetId(dataset.id)
               dataset.files.map { file =>
-                allComments ++= comments.findCommentsByFileId(file.id)
-                sections.findByFileId(file.id).map { section =>
+                allComments ++= comments.findCommentsByFileId(file)
+                sections.findByFileId(file).map { section =>
                   allComments ++= comments.findCommentsBySectionId(section.id)
                 }
               }
               dataset.id -> allComments.size
             }.toMap
             val collectionList = collections.listUser(4, Some(clowderUser), request.superAdmin, clowderUser)
-            var collectionsWithThumbnails = List.empty[models.Collection]
-            for (collection <- collectionList) {
-              val collectionThumbnail = collection.datasets.find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
-              val collectionWithThumbnail = collection.copy(thumbnail_id = collectionThumbnail)
-              collectionsWithThumbnails = collectionWithThumbnail +: collectionsWithThumbnails
+            var collectionsWithThumbnails = collectionList.map {c =>
+              if (c.thumbnail_id.isDefined) {
+                c
+              } else {
+                val collectionThumbnail = datasets.listCollection(c.id.stringify).find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
+                c.copy(thumbnail_id = collectionThumbnail)
+              }
             }
-            collectionsWithThumbnails = collectionsWithThumbnails.reverse
 
             //Modifications to decode HTML entities that were stored in an encoded fashion as part
             //of the collection's names or descriptions
