@@ -6,10 +6,13 @@
 @import _root_.util.Formatters.ellipsize
 
 @main(displayedName) {
-    <h2 class="featurette-heading">@profile.fullName</h2> <a href="@routes.Profile.viewProfileUUID(profile.id)">Profile</a>
+    <script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/spaceListProcess.js")" type="text/javascript"></script>
     <div class="row featurette">
         <div class="col-md-6">
-
+            <h1 class="featurette-heading">@profile.fullName</h1> <a href="@routes.Profile.viewProfileUUID(profile.id)">Profile</a>
+            <h2> My Events </h2>
             @for(event <- newsfeed) {
                 <div class="panel panel-default">
                     <div class="panel-body">
@@ -31,6 +34,10 @@
                         </div>
                     </div>
                 </div>
+            }
+            @if(newsfeed.size < 1) {
+                <p>You can follow Users, <a href="@routes.Spaces.list("")">Spaces</a>, <a href="@routes.Datasets.list("")">Datasets</a> & <a href="@routes.Collections.list("")">Collections</a>.
+                    Any updates on your followed instances will show here.</p>
             }
         </div>
         <div class="col-md-6" id="resources-panel-container">
@@ -72,16 +79,24 @@
                                     @if(user.isDefined) {
                                             <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                         @if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-                                            <button onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
+                                            <button onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
                                                 <span class="glyphicon glyphicon-trash"></span></button>
                                         } else {
-                                            <button disabled onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
+                                            <button disabled onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
                                                 <span class="glyphicon glyphicon-trash"></span></button>
                                         }
                                     }
                                 </li>
                             </ul>
                         </div>
+                    </div>
+                }
+                @if(datasets.size < 1) {
+                    <div class="col-lg-8 col-md-8 col-sm-8 col-xs-12">
+                       This area will show all datasets you've created.
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+                        <span class="pull-right"> <a class="btn btn-default btn-sm pull-right" href="@routes.Datasets.newDataset(None)" title="Create a new dataset">Create Dataset</a></span>
                     </div>
                 }
             </div>
@@ -120,10 +135,10 @@
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                     @if(user.get.identityId.userId.equals(collection.author.identityId.userId)){
-                                        <button onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
+                                        <button onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     } else {
-                                        <button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
+                                        <button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     }
                                 }
@@ -132,6 +147,14 @@
                     </div>
                 </div>
             }
+                @if(collections.size < 1) {
+                    <div class="col-lg-8 col-md-8 col-sm-8 col-xs-12">
+                        This area will show all collections you've created.
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+                        <span class="pull-right"> <a class="btn btn-default btn-sm pull-right" href="@routes.Collections.newCollection(None)" title="Create a new collection">Create Collection</a></span>
+                    </div>
+                }
             </div>
             <div class="row top-padding">
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
@@ -169,7 +192,7 @@
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                     @if(deletePermission || user.get.identityId.userId.equals(space.creator)){
-                                        <button onclick="removeSpaceAndRedirect ( '@(space.id) ',' @(routes.Spaces.list("", "", 2, "", Some(profile.id.stringify)), "")) ')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
+                                        <button onclick="removeSpaceAndRedirect('@(space.id) ',' @(routes.Application.index())')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
                                             <span class="glyphicon glyphicon-trash"></span>
                                         </button>
                                     } else {
@@ -183,6 +206,14 @@
                     </div>
                 </div>
             }
+                @if(spaces.size < 1) {
+                    <div class="col-lg-8 col-md-8 col-sm-8 col-xs-12">
+                        This area will show all spaces you've created.
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+                        <span class="pull-right"> <a class="btn btn-default btn-sm pull-right" href="@routes.Spaces.newSpace()" title="Create a new space">Create Space</a></span>
+                    </div>
+                }
             </div>
             <div class="row top-padding">
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
@@ -201,6 +232,11 @@
                         </div>
                         <img src="@row._3" class="img_thumbnail">
                     </div>
+                    </div>
+                }
+                @if(followers.size < 1) {
+                    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                        This area will show Users that follow you. Ask other users to follow you <a href="@routes.Profile.viewProfileUUID(profile.id)">here</a>
                     </div>
                 }
 

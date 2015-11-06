@@ -136,14 +136,29 @@ class Application @Inject() (files: FileService, collections: CollectionService,
            followedFiles, followedDatasets, followedCollections,followedSpaces, Some(true)))
           }
           case None =>  Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess,
-            spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, newsfeedEvents))
+            spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
 
         }
       }
       case None => Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess,
-        spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, newsfeedEvents))
+        spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
     }
+  }
 
+  def about = UserAction { implicit request =>
+    implicit val user = request.user
+    val latestFiles = files.latest(5)
+    val datasetsCount = datasets.count()
+    val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.superAdmin)
+    val filesCount = files.count()
+    val collectionsCount = collections.count()
+    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.superAdmin)
+    val spacesCount = spaces.count()
+    val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.superAdmin)
+    val usersCount = users.count()
+
+    Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess,
+        spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
   }
   
   def options(path:String) = UserAction { implicit request =>
