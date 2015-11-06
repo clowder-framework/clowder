@@ -213,7 +213,7 @@ GET            /admin/measures                                                  
 GET            /admin/indexers                                                          @controllers.Admin.getIndexers
 GET            /admin/indexes                                                           @controllers.Admin.getIndexes
 GET            /admin/sections                                                          @controllers.Admin.getSections
-GET            /admin/metadataDefinitions                                               @controllers.Admin.getMetadataDefinitions
+GET            /admin/metadata/definitions                                              @controllers.Admin.getMetadataDefinitions
 GET            /admin/addAdmin                                                          @controllers.Admin.newAdmin
 GET            /admin/listAdmins                                                        @controllers.Admin.listAdmins
 POST           /admin/submitNew                                                         @controllers.Admin.submitNew
