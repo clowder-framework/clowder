@@ -7,8 +7,6 @@ function addDefinition(data, pageURL){
   });
 
   request.done(function (response, textStatus, jqXHR){
-    console.log("Response " + response);
-
     if(textStatus == "success") {
       window.location.href = window.location.href.split('#')[0];
     }
@@ -41,9 +39,6 @@ function editDefinition(id, json, element) {
   }
 
   $("#cancelButton").show();
-  console.log(id);
-  console.log(json);
-  console.log(element);
 }
 
 function reset(element) {
