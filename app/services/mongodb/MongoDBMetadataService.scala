@@ -121,7 +121,12 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
   }
 
   def search(key: String, value: String, count: Int): List[ResourceRef] = {
-    val doc = MongoDBObject("content." + key -> value)
+    val field = "content." + key
+    val trimOr = value.trim().replaceAll(" ", "|")
+    // for some reason "/"+value+"/i" doesn't work because it gets translate to
+    // { "content.Abstract" : { "$regex" : "/test/i"}}
+    val regexp = (s"""(?i).*$trimOr.*""").r
+    val doc = MongoDBObject(field -> regexp)
     val resources: List[ResourceRef] = MetadataDAO.find(doc).limit(count).map(_.attachedTo).toList
     resources
   }
