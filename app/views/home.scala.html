@@ -36,16 +36,16 @@
                 </div>
             }
             @if(newsfeed.size < 1) {
-                <p>You can follow Users, <a href="@routes.Spaces.list("")">Spaces</a>, <a href="@routes.Datasets.list("")">Datasets</a> & <a href="@routes.Collections.list("")">Collections</a>.
+                <p>You can follow users, <a href="@routes.Spaces.list("")">spaces</a>, <a href="@routes.Datasets.list("")">datasets</a> & <a href="@routes.Collections.list("")">collections</a>.
                     Any updates on your followed instances will show here.</p>
             }
         </div>
         <div class="col-md-6" id="resources-panel-container">
             <div class="row">
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <h2> My Datasets </h2>
                 </div>
-                <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-12">
+                <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <span class=" margin-top-h pull-right"> <a href="@routes.Datasets.list("","",12, None, "", Some(profile.id.stringify))">See More</a></span>
                 </div>
 
@@ -92,19 +92,18 @@
                     </div>
                 }
                 @if(datasets.size < 1) {
-                    <div class="col-lg-8 col-md-8 col-sm-8 col-xs-12">
-                       This area will show all datasets you've created.
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
-                        <span class="pull-right"> <a class="btn btn-default btn-sm pull-right" href="@routes.Datasets.newDataset(None)" title="Create a new dataset">Create Dataset</a></span>
+                    <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                      <div>This area will show all datasets you've created.</div>
+
+                         <div> <a class="btn btn-sm" href="@routes.Datasets.newDataset(None)" title="Create a new dataset">Create Dataset</a></div>
                     </div>
                 }
             </div>
             <div class="row top-padding">
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <h2> My Collections </h2>
                 </div>
-                <div class="margin-top-h col-lg-6 col-md-6 col-sm-6 col-xs-12">
+                <div class="margin-top-h col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <span class="pull-right"> <a href="@routes.Collections.list("","",12, None, "", Some(profile.id.stringify))">See More</a></span>
                 </div>
 
@@ -148,19 +147,18 @@
                 </div>
             }
                 @if(collections.size < 1) {
-                    <div class="col-lg-8 col-md-8 col-sm-8 col-xs-12">
-                        This area will show all collections you've created.
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
-                        <span class="pull-right"> <a class="btn btn-default btn-sm pull-right" href="@routes.Collections.newCollection(None)" title="Create a new collection">Create Collection</a></span>
+                    <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                        <div>This area will show all collections you've created</div>
+
+                        <div> <a class="btn btn-sm" href="@routes.Collections.newCollection(None)" title="Create a new collection">Create Collection</a></div>
                     </div>
                 }
             </div>
             <div class="row top-padding">
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <h2> My Spaces </h2>
                 </div>
-                <div class="margin-top-h col-lg-6 col-md-6 col-sm-6 col-xs-12">
+                <div class="margin-top-h col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <span class="pull-right"> <a href="@routes.Spaces.list("","",12, "", Some(profile.id.stringify))">See More</a></span>
                 </div>
 
@@ -207,11 +205,10 @@
                 </div>
             }
                 @if(spaces.size < 1) {
-                    <div class="col-lg-8 col-md-8 col-sm-8 col-xs-12">
-                        This area will show all spaces you've created.
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
-                        <span class="pull-right"> <a class="btn btn-default btn-sm pull-right" href="@routes.Spaces.newSpace()" title="Create a new space">Create Space</a></span>
+                    <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                        <div>This area will show all spaces you've created. </div>
+
+                        <div> <a class="btn btn-sm" href="@routes.Spaces.newSpace()" title="Create a new space">Create Space</a></div>
                     </div>
                 }
             </div>
@@ -235,8 +232,8 @@
                     </div>
                 }
                 @if(followers.size < 1) {
-                    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                        This area will show Users that follow you. Ask other users to follow you <a href="@routes.Profile.viewProfileUUID(profile.id)">here</a>
+                    <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                        This area will show users that follow you. Ask other users to follow you <a href="@routes.Profile.viewProfileUUID(profile.id)">here</a>
                     </div>
                 }
 
