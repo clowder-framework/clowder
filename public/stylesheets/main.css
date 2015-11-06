@@ -41,10 +41,10 @@ span.align-right {
     float:right;
 }
 
-.error { 
-	color: red;
-	padding-left: 10px;
-	text-align:left;
+.error span{
+    color: red;
+    padding-left: 10px;
+    text-align:left;
 }
 
 .success {
@@ -476,7 +476,11 @@ textarea, input[type='text'], input[type='password']{
     padding-top: 7px;
 }
 
-.error {
+span.error{
+    color: red;
+}
+
+.error p{
     color: red;
 }
 
