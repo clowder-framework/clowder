@@ -420,7 +420,7 @@ class MongoDBFileService @Inject() (
 
   def isInDataset(file: File, dataset: Dataset): Boolean = {
     for(dsFile <- dataset.files){
-      if(dsFile.id == file.id)
+      if(dsFile == file.id)
         return true
     }
     return false

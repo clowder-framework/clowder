@@ -155,6 +155,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // replace collection id strings with UUID in datasets
     updateMongoCollectionsInDatasetStringToUUID
+
+    //Change Files in datasets from List[File] to List[UUID]
+    updateReplaceFilesInDataset
   }
 
   private def updateMongoChangeUserType {
@@ -268,6 +271,32 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       } else {
         Logger.warn("[MongoDBUpdate : Missing fix to replace the collections in the dataset with UUIDs")
       }
+    }
+  }
+
+  /**
+   * Replaces the files in the datasets from acopy of the files tojust the file UUID's.
+   */
+  private def updateReplaceFilesInDataset{
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", "replace-dataset-files-with-id")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        collection("datasets").foreach { ds =>
+          val files = ds.getAsOrElse[MongoDBList]("files", MongoDBList.empty)
+          val fileIds = files.map(file => new ObjectId(file.asInstanceOf[BasicDBObject].get("_id").toString)).toList
+          ds.put("files", fileIds)
+          try {
+            collection("datasets").save(ds, WriteConcern.Safe)
+          }
+          catch {
+            case e: BSONException => Logger.error("Unable to update files in dataset:" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString() )
+          }
+        }
+      }
+      appConfig.addPropertyValue("mongodb.updates", "replace-dataset-files-with-id")
+    } else {
+      Logger.warn("[MongoDBUpdate : Missing fix to replace the files in the dataset with UUIDs")
     }
   }
 }
