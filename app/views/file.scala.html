@@ -1,7 +1,7 @@
 @(file: models.File, id: String, comments: List[Comment],
   previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]],
-  sections: List[models.Section], beingProcessed: Boolean, fileDataset: List[models.Dataset],
-  datasetsOutside: List[models.Dataset], usrmd: scala.collection.mutable.Map[String,Any],
+  sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset],
+  usrmd: scala.collection.mutable.Map[String,Any],
   rdfExported: Boolean,
   extractionsStatus: List[Extraction], outputFormats: Option[List[String]])(implicit user: Option[models.User])
 
@@ -869,7 +869,7 @@
 
         <div class="row ds-section-sm border-top">
             <h4>Datasets containing the file</h4>
-            @datasetsContainingFile(file, fileDataset, datasetsOutside)
+            @datasetsContainingFile(file, datasets)
         </div>
 
     </div> @* End of small right hand side column *@

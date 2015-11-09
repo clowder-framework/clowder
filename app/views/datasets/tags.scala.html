@@ -1,10 +1,8 @@
-@(dataset: Dataset, filesTags: Set[String])(implicit user: Option[models.User])
+@(dataset: Dataset, fileList: List[File], filesTags: Set[String])(implicit user: Option[models.User])
 
 @import api.Permission
 
-@import play.api.Play.current
-
-<div class="row bottom-padding">
+<div class="row border-top bottom-padding">
     <div class="col-md-12">
         <h4>Tags</h4>
     </div>
@@ -74,7 +72,7 @@
                             <a href="@routes.Tags.search(tag)">@tag</a>
                         </div>
                     }
-                    @dataset.files.map { file =>
+                    @fileList.map { file =>
                         @file.sections.map { section =>
                             @section.tags.map { tag =>
                                 <div class="tag">

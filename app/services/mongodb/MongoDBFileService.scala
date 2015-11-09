@@ -429,7 +429,7 @@ class MongoDBFileService @Inject() (
 
   def isInDataset(file: File, dataset: Dataset): Boolean = {
     for(dsFile <- dataset.files){
-      if(dsFile.id == file.id)
+      if(dsFile == file.id)
         return true
     }
     return false
@@ -634,7 +634,7 @@ class MongoDBFileService @Inject() (
                 datasets.newThumbnail(fileDataset.id)
                 
                 	for(collectionId <- fileDataset.collections){
-		                          collections.get(new UUID(collectionId)) match{
+		                          collections.get(collectionId) match{
 		                            case Some(collection) =>{		                              
 		                            	if(!collection.thumbnail_id.isEmpty){	                            	  
 		                            		if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){

@@ -128,20 +128,13 @@ class Files @Inject() (
         
         //Decode the datasets so that their free text will display correctly in the view
         val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
-        val datasetsNotContaining = List.empty[Dataset]
         val decodedDatasetsContaining = ListBuffer.empty[models.Dataset]
-        val decodedDatasetsNotContaining = ListBuffer.empty[models.Dataset]
-        
+
         for (aDataset <- datasetsContainingFile) {
         	val dDataset = Utils.decodeDatasetElements(aDataset)
         	decodedDatasetsContaining += dDataset
         }
         
-        for (aDataset <- datasetsNotContaining) {
-        	val dDataset = Utils.decodeDatasetElements(aDataset)
-        	decodedDatasetsNotContaining += dDataset
-        }
-
           val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
           val extractionsByFile = extractions.findByFileId(id)
@@ -162,14 +155,14 @@ class Files @Inject() (
               //get output formats from Polyglot plugin and pass as the last parameter to view
               plugin.getOutputFormats(contentTypeEnding).map(outputFormats =>
                 Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
-                  extractorsActive, decodedDatasetsContaining.toList, decodedDatasetsNotContaining.toList,
+                  extractorsActive, decodedDatasetsContaining.toList,
                   userMetadata, isRDFExportEnabled, extractionsByFile, outputFormats)))
             }
             case None =>
               Logger.debug("Polyglot plugin not found")
               //passing None as the last parameter (list of output formats)
               Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
-                extractorsActive, decodedDatasetsContaining.toList, decodedDatasetsNotContaining.toList,
+                extractorsActive, decodedDatasetsContaining.toList,
                 userMetadata, isRDFExportEnabled, extractionsByFile, None)))
           }              
       }

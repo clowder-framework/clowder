@@ -1,6 +1,6 @@
 @(dataset: Dataset)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
-<div id='dataset-users' class="row border-top bottom-padding">
+<div id='dataset-users' class="row bottom-padding">
     <div class="col-md-12">
         <a href="@routes.Datasets.users(dataset.id)">
             <span class="glyphicon glyphicon-hand-right"></span> Users with access to the dataset

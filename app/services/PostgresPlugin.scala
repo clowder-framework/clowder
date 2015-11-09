@@ -473,7 +473,6 @@ class PostgresPlugin(application: Application) extends Plugin {
     val rs = st.executeQuery()
     while (rs.next()) {
       counts = (rs.getInt(1), rs.getInt(2), rs.getInt(3))
-      System.out.println(counts)
     }
     rs.close()
     st.close()

@@ -1,106 +1,45 @@
-@(file: models.File, fileDataset: List[models.Dataset], datasetsOutside: List[models.Dataset])(implicit user: Option[models.User])
+@(file: models.File, datasets: List[models.Dataset])(implicit user: Option[models.User])
+
+@import api.Permission
 
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
 
-<table id="datasTable">
-    @fileDataset.map { dataset =>
-    <tr><td><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
-        <td><a href="#" style="font-style:italic;" onclick="removeFromDataset('@(dataset.id)','@(dataset.name)',event)">Detach</a></td></tr>
-    }
-</table>
-
-@*
-@if(user.isDefined) {
-<div class="ui-widget" id="datasetsUi">
-    <select id="datasetAddSelect" data-inputid="selectingInputDatasets" data-errorid="doesNotExistErrorDatasets">
-        <!-- Empty value to allow default view to be empty -->
-        <option value=""></option>
-        @datasetsOutside.map { dataset =>
-        <option value="@(dataset.id.toString)">@dataset.name.replace("<br>", "\n")</option>
+<div id="datasetsList" class="col-md-12">
+@datasets.map { dataset =>
+    <div id="ds_@dataset.id" class="row bottom-padding">
+        <div class="col-md-2">
+        @if(!dataset.thumbnail_id.isEmpty){
+            <a href="@(routes.Datasets.dataset(dataset.id))">
+                <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.get)))" alt="Thumbnail of @Html(dataset.name)">
+            </a>
         }
-    </select>
-    <button class="btn btn-default btn-xs" id="addDatasBtn" style="vertical-align:top;" title="Add File to Dataset"><span class="glyphicon glyphicon-plus"></span> Add</button>
-    <br>
-    <span style="color:red;display:none;margin-top:10px;font-size:14px;font-family:Helvetica Neue,Helvetica,Arial,sans-serif" id="doesNotExistErrorDatasets" >A dataset must be selectd from the list.</span>
-</div>
-}
-*@
-
-<script src="@routes.Assets.at("javascripts/combobox.js")" type="text/javascript"></script>
-@*
-<script>
-    $("#datasetAddSelect").combobox();
-</script>
-*@
-<script>
-        $('body').on('click','#addDatasBtn',function(e){
-            if($("#doesNotExistErrorDatasets").css('display') == 'inline')
-                return;
-            if($("#selectingInputDatasets").val() == ""){
-                $("#doesNotExistErrorDatasets").css('display','inline');
-                return;
-            }
-
-            var selectedId = $("#datasetAddSelect").val();
-            var selectedName = $("#datasetAddSelect option:selected").text();
-            var request = jsRoutes.api.Datasets.attachExistingFile(selectedId, "@file.id").ajax({
-                   type: 'POST',                   
-                 });
-            
-            request.done(function (response, textStatus, jqXHR){
-                console.log("Response " + response);
-                $("#datasetAddSelect option[value=" + selectedId + "]").remove();
-                $("#selectingInputDatasets").val("");
-                var i = 1;
-                var tableLength = $("#datasTable tbody tr").length;
-                var dsUrl = jsRoutes.controllers.Datasets.dataset(selectedId).url
-                while(i <= tableLength && $("#datasTable tbody tr:nth-child("+i+") td:nth-child(1) a").text() < selectedName)
-                    i++;
-                if(i <= tableLength)
-                    $("#datasTable tbody tr:nth-child("+i+")").before("<tr><td><a href='" + dsUrl + "'>"+selectedName+"</a>"
-                            + "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
-                            );
-                else if(tableLength > 0)
-                    $("#datasTable tbody tr:nth-child("+(i-1)+")").after("<tr><td><a href='" + dsUrl + "'>"+selectedName+"</a>"
-                            + "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
-                            );
-                else{
-                    if($("#datasTable tbody").length == 0)
-                        $("#datasTable").append("<tbody></tbody>");
-                    $("#datasTable tbody").append("<tr><td><a href='" + dsUrl + "'>"+selectedName+"</a>"
-                            + "&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a href='#' style='font-style:italic;' onclick='removeFromDataset(\""+selectedId+"\",\""+selectedName+"\",event)'>Detach</a></td></tr>"
-                            );
-                    }
-            });
-            
-            request.fail(function (jqXHR, textStatus, errorThrown){
-            	console.error("The following error occured: "+textStatus, errorThrown);
-                var errMsg = "You must be logged in to add a file to a dataset.";                    
-                if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                    notify("The file was not added to the dataset due to : " + errorThrown, "error");
+        </div>
+        <div class="col-md-10">
+            <div>
+                <a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id' class ="btn btn-link btn-xs">@Html(dataset.name)</a>
+            </div>
+            <div>
+            <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
+                @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                    <a href="#" class="btn btn-link btn-xs" onclick="removeFromDataset('@(dataset.id)','@(dataset.name)',event)" title="Remove from dataset">Remove</a>
+                } else {
+                    <a href="#" class="btn btn-link btn-xs disabled" onclick="return false;" title="Remove from dataset">Remove</a>
                 }
-            });
-        });
+            </div>
+        </div>
+    </div>
+    }
+</div>
 
+<script>
         function removeFromDataset(datasetId, datasetName,event){
             var request = jsRoutes.api.Datasets.detachFile(datasetId, "@file.id").ajax({
                    type: 'DELETE'
                  });
             request.done(function (response, textStatus, jqXHR){
                 console.log("Response " + response);
+                $('#ds_'+datasetId).remove();
                 $(event.target.parentNode.parentNode).remove();
-                var i = 1;
-                var selectLength = $("#datasetAddSelect option").length;
-                while(i <= selectLength && $("#datasetAddSelect option:nth-child("+i+")").text() < datasetName)
-                    i++;
-                if(i <= selectLength)
-                    $("#datasetAddSelect option:nth-child("+i+")").before("<option value='"+datasetId+"'>"+datasetName+"</option>");
-                else if(selectLength > 0)
-                    $("#datasetAddSelect option:nth-child("+(i-1)+")").after("<option value='"+datasetId+"'>"+datasetName+"</option>");
-                else
-                    $("#datasetAddSelect").append("<option value='"+datasetId+"'>"+datasetName+"</option>");
-
-                $("#datasetAddSelect").combobox();
             });
             request.fail(function (jqXHR, textStatus, errorThrown){
             	console.error("The following error occured: "+textStatus, errorThrown);
@@ -112,9 +51,3 @@
         }
 
 </script>
-
-@if(!user.isDefined) {
-    <script language="javascript">
-	    $(".requiresLogin").css("display", "none");
-    </script>
-}
