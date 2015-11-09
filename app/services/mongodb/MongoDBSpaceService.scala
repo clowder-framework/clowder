@@ -29,8 +29,6 @@ import util.Formatters
 /**
  * Store Spaces in MongoDB.
  *
- * @author Luigi Marini
- *
  */
 @Singleton
 class MongoDBSpaceService @Inject() (
@@ -468,10 +466,6 @@ class MongoDBSpaceService @Inject() (
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(invite.space.stringify)),
       $addToSet("invitations"-> MongoDBObject("_id" -> new ObjectId(invite.id.stringify), "role" -> invite.role )), false, false, WriteConcern.Safe)
     SpaceInviteDAO.insert(invite)
-  }
-
-  def cleanUpInvitationToSpace(): Unit = {
-    SpaceInviteDAO.remove("expirationTime" $lt new Date)
   }
 
   def removeInvitationFromSpace(inviteId: UUID, spaceId: UUID) {

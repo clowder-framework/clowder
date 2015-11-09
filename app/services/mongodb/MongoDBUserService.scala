@@ -22,11 +22,12 @@ import com.mongodb.casbah.Imports._
 import models.Role
 import models.UserSpaceAndRole
 import models.UserSpaceAndRole
+import services.mongodb.SpaceInviteDAO
 import scala.collection.mutable.ListBuffer
 import play.api.Logger
 import securesocial.core.providers.Token
 import securesocial.core._
-import services.{FileService, DatasetService, CollectionService, SpaceService}
+import services.{FileService, DatasetService, CollectionService}
 import services.mongodb.MongoContext.context
 import _root_.util.Direction._
 import javax.inject.Inject
@@ -414,8 +415,7 @@ class MongoDBUserService @Inject() (
   }
 }
 
-class MongoDBSecureSocialUserService(application: Application,
-                                     spaces: SpaceService) extends UserServicePlugin(application) {
+class MongoDBSecureSocialUserService(application: Application) extends UserServicePlugin(application) {
   override def find(id: IdentityId): Option[Identity] = {
     UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> id.userId, "identityId.providerId" -> id.providerId))
   }
@@ -453,7 +453,12 @@ class MongoDBSecureSocialUserService(application: Application,
 
   override def deleteExpiredTokens(): Unit = {
     TokenDAO.remove("expirationTime" $lt new Date)
-    spaces.cleanUpInvitationToSpace()
+    val invites = SpaceInviteDAO.find("expirationTime" $lt new Date)
+    for(inv <- invites) {
+      ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(inv.space.stringify)),
+        $pull("invitations" -> MongoDBObject( "_id" -> new ObjectId(inv.id.stringify))), false, false, WriteConcern.Safe)
+    }
+    SpaceInviteDAO.remove("expirationTime" $lt new Date)
   }
 
   override def findToken(token: String): Option[Token] = {

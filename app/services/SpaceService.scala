@@ -217,11 +217,6 @@ trait SpaceService {
   def removeInvitationFromSpace(inviteId: UUID, spaceId: UUID)
 
   /**
-   * Clean up expired invitations
-   */
-  def cleanUpInvitationToSpace()
-
-  /**
    * Find an invitation by ID
    */
   def getInvitation(inviteId: String): Option[SpaceInvite]
