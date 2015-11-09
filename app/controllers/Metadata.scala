@@ -2,8 +2,8 @@ package controllers
 
 import javax.inject.Inject
 
-import api.{WithPermission, Permission}
-import models.{Dataset, ResourceRef, UUID}
+import api.{Permission, WithPermission}
+import models.{ResourceRef, UUID}
 import services._
 
 /**

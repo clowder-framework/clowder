@@ -59,6 +59,7 @@
         });
 
         function search(key, value, count) {
+            count = count || 10;
             if ( key != "" && value != "" ) {
                 var request = jsRoutes.api.Metadata.searchByKeyValue(key, value, count).ajax({
                     type: 'GET',
