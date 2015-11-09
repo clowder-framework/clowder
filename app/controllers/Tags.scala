@@ -148,33 +148,45 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     //    }
 
     datasets.getTags().foreach { case (tag: String, count: Long) =>
-      val firstChar = if (tag(0).isLetter) tag(0).toUpper else '#'
-      if (!tagMap.contains(firstChar)) {
-        val map = collection.mutable.Map[String, Long]((tag, count)).withDefaultValue(0)
-        tagMap(firstChar) = map
+      if (tag.length == 0) {
+        Logger.error("tag with length 0 : " + tag + " " + count)
       } else {
-        val map = tagMap(firstChar)
-        map(tag) = map(tag) + count
+        val firstChar = if (tag(0).isLetter) tag(0).toUpper else '#'
+        if (!tagMap.contains(firstChar)) {
+          val map = collection.mutable.Map[String, Long]((tag, count)).withDefaultValue(0)
+          tagMap(firstChar) = map
+        } else {
+          val map = tagMap(firstChar)
+          map(tag) = map(tag) + count
+        }
       }
     }
     files.getTags().foreach { case (tag: String, count: Long) =>
-      val firstChar = if (tag(0).isLetter) tag(0).toUpper else '#'
-      if (!tagMap.contains(firstChar)) {
-        val map = collection.mutable.Map[String, Long]((tag, count)).withDefaultValue(0)
-        tagMap(firstChar) = map
+      if (tag.length == 0) {
+        Logger.error("tag with length 0 : " + tag + " " + count)
       } else {
-        val map = tagMap(firstChar)
-        map(tag) = map(tag) + count
+        val firstChar = if (tag(0).isLetter) tag(0).toUpper else '#'
+        if (!tagMap.contains(firstChar)) {
+          val map = collection.mutable.Map[String, Long]((tag, count)).withDefaultValue(0)
+          tagMap(firstChar) = map
+        } else {
+          val map = tagMap(firstChar)
+          map(tag) = map(tag) + count
+        }
       }
     }
     sections.getTags().foreach { case (tag: String, count: Long) =>
-      val firstChar = if (tag(0).isLetter) tag(0).toUpper else '#'
-      if (!tagMap.contains(firstChar)) {
-        val map = collection.mutable.Map[String, Long]((tag, count)).withDefaultValue(0)
-        tagMap(firstChar) = map
+      if (tag.length == 0) {
+        Logger.error("tag with length 0 : " + tag + " " + count)
       } else {
-        val map = tagMap(firstChar)
-        map(tag) = map(tag) + count
+        val firstChar = if (tag(0).isLetter) tag(0).toUpper else '#'
+        if (!tagMap.contains(firstChar)) {
+          val map = collection.mutable.Map[String, Long]((tag, count)).withDefaultValue(0)
+          tagMap(firstChar) = map
+        } else {
+          val map = tagMap(firstChar)
+          map(tag) = map(tag) + count
+        }
       }
     }
 

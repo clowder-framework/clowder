@@ -2,6 +2,8 @@
 
 @import api.Permission
 
+@import play.api.Play.current
+
 <div class="row bottom-padding">
     <div class="col-md-12">
         <h4>Tags</h4>
@@ -34,7 +36,7 @@
         @if(Permission.checkPermission(Permission.AddTag, ResourceRef(ResourceRef.dataset, dataset.id))) {
             <form class="form-inline requiresLogin requiresLoginCommunity">
                 <div class="input-group input-group-sm">
-                    <input type="text" id="tagField" class="form-control">
+                    <input maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" type="text" id="tagField" class="form-control">
                     <span class="input-group-btn">
                         <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
                             <span class="glyphicon glyphicon-tag"></span> Tag

@@ -7,6 +7,7 @@ import com.mongodb.CommandFailureException
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import models._
+import org.bson.BSONException
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
 import com.mongodb.casbah.MongoURI
@@ -46,16 +47,16 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // drop old indices
     scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
-      collection("datasets").dropIndex("tags.name_1")
+      collection("datasets").dropIndex("tags.name_text")
     }
     scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
-      collection("uploads.files").dropIndex("tags.name_1")
+      collection("uploads.files").dropIndex("tags.name_text")
     }
     scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
       collection("uploads.files").dropIndex("tags_1")
     }
     scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
-      collection("sections").dropIndex("tags.name_1")
+      collection("sections").dropIndex("tags.name_text")
     }
 
     // create indices.
@@ -73,7 +74,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
     collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("files._id" -> 1))
-    collection("datasets").ensureIndex(MongoDBObject("tags.name" -> "text"))
+    collection("datasets").ensureIndex(MongoDBObject("tags.name" -> 1))
 
     collection("datasets").ensureIndex(MongoDBObject("spaces" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("public" -> 1))
@@ -81,7 +82,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
     collection("uploads.files").ensureIndex(MongoDBObject("author.email" -> 1))
-    collection("uploads.files").ensureIndex(MongoDBObject("tags.name" -> "text"))
+    collection("uploads.files").ensureIndex(MongoDBObject("tags.name" -> 1))
 
     collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
     
@@ -95,7 +96,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     
     collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
     collection("sections").ensureIndex(MongoDBObject("file_id" -> -1))
-    collection("sections").ensureIndex(MongoDBObject("tags.name" -> "text"))
+    collection("sections").ensureIndex(MongoDBObject("tags.name" -> 1))
 
     collection("dtsrequests").ensureIndex(MongoDBObject("startTime" -> -1, "endTime" -> -1))
     collection("dtsrequests").ensureIndex(MongoDBObject("file_id" -> -1))
@@ -220,6 +221,72 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         appConfig.addPropertyValue("mongodb.updates", "convert-to-spaces")
       } else {
         Logger.warn("[MongoDBUpdate] : Missing fix to convert to spaces.")
+      }
+    }
+
+    updateTagLength()
+  }
+
+  def updateTagLength() {
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    // migrate users to new model
+    if (!appConfig.hasPropertyValue("mongodb.updates", "fixing-taglength")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        Logger.info("[MongoDBUpdate] : Fixing taglength.")
+        val q = MongoDBObject("tags" -> MongoDBObject("$exists" -> true, "$not" -> MongoDBObject("$size" -> 0)))
+        val maxTagLength = play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)
+        Logger.info("[MongoDBUpdate] : fixing " + collection("datasets").count(q) + " datasets")
+        collection("datasets").find(q).foreach { x =>
+          x.getAsOrElse[MongoDBList]("tags", MongoDBList.empty).foreach { case tag:DBObject =>
+            if (tag.getAsOrElse[String]("name", "").length > maxTagLength) {
+              Logger.info(x.get("_id").toString + " : truncating " + tag.getAsOrElse[String]("name", ""))
+              tag.put("name", tag.getAsOrElse[String]("name", "").substring(0, maxTagLength))
+            }
+          }
+          try {
+            collection("datasets").save(x)
+          } catch {
+            case e: BSONException => {
+              Logger.error(x.get("_id").toString + " : bad string\n" + x.toString, e)
+            }
+          }
+        }
+        Logger.info("[MongoDBUpdate] : fixing " + collection("uploads.files").count(q) + " files")
+        collection("uploads.files").find(q).foreach { x =>
+          x.getAsOrElse[MongoDBList]("tags", MongoDBList.empty).foreach { case tag:DBObject =>
+            if (tag.getAsOrElse[String]("name", "").length > maxTagLength) {
+              Logger.info(x.get("_id").toString + " : truncating " + tag.getAsOrElse[String]("name", ""))
+              tag.put("name", tag.getAsOrElse[String]("name", "").substring(0, maxTagLength))
+            }
+          }
+          try {
+            collection("uploads.files").save(x)
+          } catch {
+            case e: BSONException => {
+              Logger.error(x.get("_id").toString + " : bad string\n" + x.toString, e)
+            }
+          }
+        }
+        Logger.info("[MongoDBUpdate] : fixing " + collection("sections").count(q) + " files")
+        collection("sections").find(q).foreach { x =>
+          x.getAsOrElse[MongoDBList]("tags", MongoDBList.empty).foreach { case tag:DBObject =>
+            if (tag.getAsOrElse[String]("name", "").length > maxTagLength) {
+              Logger.info(x.get("_id").toString + " : truncating " + tag.getAsOrElse[String]("name", ""))
+              tag.put("name", tag.getAsOrElse[String]("name", "").substring(0, maxTagLength))
+            }
+          }
+          try {
+            collection("sections").save(x)
+          } catch {
+            case e: BSONException => {
+              Logger.error(x.get("_id").toString + " : bad string\n" + x.toString, e)
+            }
+          }
+        }
+        appConfig.addPropertyValue("mongodb.updates", "fixing-taglength")
+      } else {
+        Logger.warn("[MongoDBUpdate] : Missing fix taglength for tags.")
       }
     }
   }

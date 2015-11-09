@@ -7,9 +7,9 @@
         collectionsOutside: List[models.Collection],
         collectionsInside: List[models.Collection],
         rdfExported: Boolean,
-        relatedSensors: List[(String,String)],
         datasetSpaces: Option[List[ProjectSpace]],
-        otherSpaces: List[ProjectSpace])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+        otherSpaces: List[ProjectSpace],
+        relatedSensors: List[(String,String,String)])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -155,7 +155,7 @@
                 @datasets.userLink(dataset)
             }
             @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {
-                @sensors.relatedSensors(relatedSensors, dataset.id.stringify)
+                @sensors.relatedSensors(relatedSensors, "Dataset", dataset.id.stringify)
             }
 		</div>
 	</div>

@@ -364,7 +364,7 @@
 						  			 		}
 						  			 	}
 						  			 </td>
-						  			 <td class="galleriaFindSimilar"><a href="@routes.Search.searchMultimediaIndex(s.id)">Similar</a></td>
+						  			 <td class="galleriaFindSimilar"><a href="@routes.Search.callSearchMultimediaIndexView(s.id)">Similar</a></td>
 					  			 </tr>
 					  		}
 					  		</tbody>
@@ -384,31 +384,29 @@
 				  	</div>
 			  	</div>
 				
-				@if(!navOnSectionClick){
-					<script>
-					    document.addEventListener("DOMContentLoaded", function () {
-							if ($("#ourvideo").length>0) {
-						        var pop = Popcorn("#ourvideo");
-	
-								@sections.map { s =>
-						  			@if(s.startTime.isDefined) {
-								   		pop.code({
-									        start: @s.startTime,
-									        onStart: function() {
-									          var frame = @s.order - 1;
-									          console.log("Jumping to " + frame + " " + @s.startTime);
-									          $('#galleria').data('galleria').show(frame);
-									        },
-									        onEnd: function() {
-									          //console.log("end");
-									       }
-									    });
-									}
-							    }
-							}
-					    });
-			         </script>
-		         }
+				<script>
+				    document.addEventListener("DOMContentLoaded", function () {
+						if ($("#ourvideo").length>0) {
+					        var pop = Popcorn("#ourvideo");
+
+							@sections.map { s =>
+					  			@if(s.startTime.isDefined) {
+							   		pop.code({
+								        start: @s.startTime,
+								        onStart: function() {
+								          var frame = @s.order - 1;
+								          console.log("Jumping to " + frame + " " + @s.startTime);
+								          $('#galleria').data('galleria').show(frame);
+								        },
+								        onEnd: function() {
+								          //console.log("end");
+								       }
+								    });
+								}
+						    }
+						}
+				    });
+		        </script>
 			    
 			    <script>
 			    	$(function() {
@@ -743,7 +741,7 @@
               </ul>
               <form class="form-inline requiresLogin requiresLoginCommunity">
                 <div class="input-group input-group-sm col-md-8">
-                  <input type="text" id="tagField" class="form-control">
+                  <input type="text" maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" id="tagField" class="form-control">
                   <span class="input-group-btn">
                         <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
                             <span class="glyphicon glyphicon-tag"></span>
@@ -872,11 +870,6 @@
         <div class="row ds-section-sm border-top">
             <h4>Datasets containing the file</h4>
             @datasetsContainingFile(file, fileDataset, datasetsOutside)
-        </div>
-
-        <div class="row ds-section-sm border-top">
-            <h4>Sensors Associated with this file</h4>
-
         </div>
 
     </div> @* End of small right hand side column *@

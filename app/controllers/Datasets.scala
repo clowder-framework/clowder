@@ -292,13 +292,21 @@ class Datasets @Inject()(
           }
 
           // associated sensors
-          val sensors: List[(String, String)]= current.plugin[PostgresPlugin] match {
+          val sensors: List[(String, String, String)]= current.plugin[PostgresPlugin] match {
             case Some(db) => {
-              val base = play.api.Play.configuration.getString("geostream.dashboard.url").getOrElse("http://localhost:9000")
-              val ids = relations.findTargets(id.stringify, ResourceType.dataset, ResourceType.sensor)
-              db.getDashboardSensorURLs(ids)
+              // findRelationships will return a "Relation" model with all information about the relationship
+              val relationships = relations.findRelationships(id.stringify, ResourceType.dataset, ResourceType.sensor)
+
+              // we want to get the name of the sensor and its location on Geodashboard
+              // the "target.id" in a relationship is the Sensor's ID from the geostreaming API (like 117)
+              // we will lookup the name and url using the sensor ID, then return each sensor in a list of tuples:
+              // [(relationship_ID, sensor_name, geodashboard_url), ...]
+              relationships.map { r =>
+                val nameToURLTuple = db.getDashboardSensorURLs(List(r.target.id)).head
+                (r.id.stringify, nameToURLTuple._1, nameToURLTuple._2)
+              }
             }
-            case None => List.empty[(String, String)]
+            case None => List.empty[(String, String, String)]
           }
 
           var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
@@ -474,7 +482,10 @@ class Datasets @Inject()(
                   val dsId = dataset.id
                   val dsName = dataset.name
 
-                  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dsId, flags))}
+                  // Adding filename to the extractor message. Needed by PyClowder.
+                  val extra = Map("filename" -> f.filename)
+
+                  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, dsId, flags))}
 
                   val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
 
