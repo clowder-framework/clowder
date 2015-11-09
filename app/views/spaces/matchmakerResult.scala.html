@@ -64,7 +64,7 @@
    <div class="row bottom-padding">
         <div class="col-md-12">
             <a class="btn btn-default" href ="@routes.CurationObjects.getCurationObject(curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Edit Metadata</a>
-            <button  class="btn btn-primary pull-right selectRepository">Submit to Repository <span class="glyphicon glyphicon-chevron-right"></span></button>
+            <button class="btn btn-primary pull-right selectRepository">Submit to Repository <span class="glyphicon glyphicon-chevron-right"></span></button>
         </div>
     </div>
     <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
@@ -80,7 +80,7 @@
                 return options.fn(this);
             }
         });
-        var repositoryTemplate = Handlebars.getTemplate('/assets/templates/spaces/mmrepository');
+        var  repositoryTemplate = Handlebars.getTemplate('/assets/templates/spaces/mmrepository');
         @for(curRepository <- mmResponse) {
             var rules = [];
             @for(rule <- curRepository.per_rule_score) {
@@ -152,22 +152,11 @@
                  break;
                 }
             }
+
             if(repository == ""){
-            $('#selecterror').show();
-            }
-            else{
-            var request = jsRoutes.controllers.CurationObjects.compareToRepository('@curationObject.id', repository).ajax({
-                type: 'GET'
-            });
-
-            request.done(function(response, textStatus, jqXHR) {
-                console.log("Updated Data in Preferences");
-                document.write(response);
-            });
-            request.fail(function( jqXHR, textStatus, errorThrown) {
-                console.error("error occurred");
-
-            });
+                $('#selecterror').show();
+            } else{
+                window.location.href = jsRoutes.controllers.CurationObjects.compareToRepository('@curationObject.id', repository).url;
             }
         });
 

@@ -263,10 +263,14 @@ class CurationObjects @Inject()(
     val metadataJson = metadata.map {
       item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
     }
-    val creator = Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile.map(prof => prof.orcidID match {
-      case Some(oid)=> Json.toJson(oid);
-      case None => Json.toJson(hostIp + "/api/users/" + usr.id )
-    })))
+    val creator = Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile match {
+      case Some(prof) => prof.orcidID match {
+        case Some(oid) => oid
+        case None => hostIp + "/api/users/" + usr.id
+      }
+        case None =>hostIp + "/api/users/" + usr.id
+
+    }))
     val aggregation = metadataJson.toMap ++ Map(
       "Identifier" -> Json.toJson(hostIp +"/spaces/curations/" + c.id),
       "@id" -> Json.toJson(hostUrl),
@@ -351,11 +355,9 @@ class CurationObjects @Inject()(
            curations.updateRepository(c.id, repository)
            //TODO: Make some call to C3-PR?
            //  Ok(views.html.spaces.matchmakerReport())
-           val propertiesMap: Map[String, List[String]] = Map("Content Types" -> List("Images", "Video"),
-             "Dissemination Control" -> List("Restricted Use", "Ability to Embargo"),"License" -> List("Creative Commons", "GPL") ,
-             "Organizational Affiliation" -> List("UMich", "IU", "UIUC"))
+           val mmResp = callMatchmaker(c, Utils.baseUrl(request)).filter(_.orgidentifier == repository)
 
-           Ok(views.html.spaces.curationDetailReport( c, propertiesMap, repository))
+           Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository))
         }
         case None => InternalServerError("Space not found")
       }

@@ -1,4 +1,4 @@
-@(curationObject: models.CurationObject, properties: Map[String, List[String]], repository: String)(implicit user: Option[models.User] )
+@(curationObject: models.CurationObject, mmResponse: models.MatchMakerResponse, repository: String)(implicit user: Option[models.User] )
 @main("Submit to Repository") {
     <div class="row">
         <div class="col-md-12">
@@ -28,16 +28,20 @@
             @spaces.curation_summary(curationObject, "Submit to Repository", false)
         </div>
         <div class="col-md-9">
-            <h3>@repository</h3>
+            <h3>@mmResponse.repositoryName</h3>
             <h4>Matchmaker Summary</h4>
-            <ul class="list-unstyled">
-                <li><h5>Dataset Properties</h5><li/>
-                <li><span class="green">All requirements are satisfied</span></li>
-                <li><h5>Preferences</h5></li>
-                <li><span class="green">All requirements are satisfied</span></li>
-                <li><h5>Metadata</h5></li>
-                <li><span class="green">All requirements are satisfied</span></li>
-            </ul>
+            <div id="mmresults">
+                <ul class="indent_20 list-unstyled">
+                    @for(rule <- mmResponse.per_rule_score) {
+                        <li>@rule.rule_name </li>
+                        @if(rule.Score == 0) {
+                            <li><span class="red">@rule.Message</span> <a href="@routes.CurationObjects.getCurationObject(curationObject.id)"> Edit Metadata</a> <br/> </li>
+                        } else {
+                            <li><span class="green">All Requirements are satisfied.</span></li>
+                        }
+                    }
+                </ul>
+            </div>
             <h4>Acknowledgments</h4>
             <ul class="list-unstyled">
                 <li><h5>Confidentiality</h5><li/>
@@ -45,7 +49,7 @@
             <li><h5>Copyrighted material</h5><li/>
                 <li><input type="checkbox" checked id="copyright_agreement"> Dataset contains copyrighted material</li>
             <li><h5>Depositor Agreement</h5><li/>
-                <li><input type="checkbox" checked id="depositor_agreement"> I agree to IDEALS deposit agreement</li>
+                <li><input type="checkbox" checked id="depositor_agreement"> I agree to @mmResponse.repositoryName deposit agreement</li>
             </ul>
         </div>
     </div>
@@ -55,4 +59,6 @@
             <a class = "btn btn-default btn-primary pull-right" href ="@routes.CurationObjects.sendToRepository(curationObject.id)"> Submit <span class="glyphicon glyphicon-chevron-right"></span></a>
         </div>
     </div>
+
+
 }
