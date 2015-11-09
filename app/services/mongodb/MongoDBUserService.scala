@@ -42,8 +42,7 @@ import javax.inject.Inject
 class MongoDBUserService @Inject() (
   files: FileService,
   datasets: DatasetService,
-  collections: CollectionService,
-  spaces: SpaceService) extends services.UserService {
+  collections: CollectionService) extends services.UserService {
   // ----------------------------------------------------------------------
   // Code to implement the common CRUD services
   // ----------------------------------------------------------------------
@@ -415,7 +414,8 @@ class MongoDBUserService @Inject() (
   }
 }
 
-class MongoDBSecureSocialUserService(application: Application) extends UserServicePlugin(application) {
+class MongoDBSecureSocialUserService(application: Application,
+                                     spaces: SpaceService) extends UserServicePlugin(application) {
   override def find(id: IdentityId): Option[Identity] = {
     UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> id.userId, "identityId.providerId" -> id.providerId))
   }
