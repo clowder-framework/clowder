@@ -208,7 +208,6 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
-        spaces.cleanUpInvitationToSpace()
         val creator = users.findById(s.creator)
         var creatorActual: User = null
         val usersInSpace = spaces.getUsersInSpace(id)
