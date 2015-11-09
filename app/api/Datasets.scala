@@ -2,6 +2,7 @@ package api
 
 import java.io._
 import java.util.Date
+import api.Permission.Permission
 import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
 import java.util.zip._
 import javax.inject.{Inject, Singleton}
@@ -9,7 +10,7 @@ import javax.inject.{Inject, Singleton}
 import com.wordnik.swagger.annotations.{Api, ApiOperation}
 import controllers.{Previewers, Utils}
 import jsonutils.JsonUtil
-import models._
+import models.{File, _}
 import org.json.JSONObject
 import play.api.Logger
 import play.api.Play.{configuration, current}
@@ -498,7 +499,7 @@ class Datasets @Inject()(
       }
   }
 
-  def jsonFile(file: File): JsValue = {
+  def jsonFile(file: models.File): JsValue = {
     toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType,
                "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
   }
@@ -1529,7 +1530,7 @@ class Datasets @Inject()(
   def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION)
       (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
     implicit val pec = ec.prepare()
-    val inputFiles = dataset.files
+    val inputFiles = dataset.files.flatMap(f=>files.get(f))
     // which file we are currently processing
     var count = 0
     val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
@@ -1585,7 +1586,7 @@ class Datasets @Inject()(
    * @param zip zip output stream. One stream per dataset.
    * @return input stream for input file
    */
-  private def addFileToZip(file: File, zip: ZipOutputStream): Option[InputStream] = {
+  private def addFileToZip(file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     files.getBytes(file.id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
         zip.putNextEntry(new ZipEntry(file.id + "/" + filename))

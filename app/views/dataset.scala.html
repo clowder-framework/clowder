@@ -6,7 +6,7 @@
         usrmd: scala.collection.mutable.Map[String,Any],
         collectionsInside: List[models.Collection],
         rdfExported: Boolean,
-        relatedSensors: List[(String,String)],
+        relatedSensors: List[(String,String,String)],
         datasetSpaces: Option[List[ProjectSpace]],
         fileList: List[File])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 

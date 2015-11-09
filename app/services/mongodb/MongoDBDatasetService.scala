@@ -6,6 +6,7 @@ import java.util.{ArrayList, Date}
 import javax.inject.{Inject, Singleton}
 
 import Transformation.LidoToCidocConvertion
+import util.{Parsers, Formatters}
 import api.Permission
 import api.Permission.Permission
 import com.mongodb.casbah.Imports._
@@ -16,13 +17,15 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import jsonutils.JsonUtil
 import models.{File, _}
 import org.apache.commons.io.FileUtils
-import org.json.JSONObject
 import org.bson.types.ObjectId
+import org.json.JSONObject
 import play.api.Logger
 import play.api.Play._
+import play.api.libs.json.Json._
+import play.api.libs.json.JsValue
 import services._
 import services.mongodb.MongoContext.context
-import util.{Formatters, Parsers}
+
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
