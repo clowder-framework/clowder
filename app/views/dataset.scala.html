@@ -6,13 +6,12 @@
   collectionsOutside: List[models.Collection],
   collectionsInside: List[models.Collection],
   rdfExported: Boolean,
+  relatedSensors: List[(String,String,String)],
   datasetSpaces: Option[List[ProjectSpace]],
-  filesTags: Set[String],
+  fileList: List[File],
   otherSpaces: List[ProjectSpace],
-  currentSpace: Option[String],
-  toPublish :Boolean,
-  curationObjects: List[models.CurationObject], 
-  relatedSensors: List[(String,String)])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  toPublish: Boolean,
+  curationObjects: List[models.CurationObject])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -87,49 +86,58 @@
                     }
 
                 </div>
+                <div class="col-md-6">
+                    <ul class="list-unstyled">
+                        <li>Created by <a href= "@routes.Profile.viewProfile(dataset.author.email)"> @dataset.author.fullName </a></li>
+                        <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <ul class="list-unstyled">
+                        <li class="inline"><span id="licensetextdata">blank</span> <span id="rightsholderdata">blank</span></li>
+                        @datasets.editLicense(dataset)
+                    </ul>
+                </div>
+                <div class="col-md-12 box-white-space" id="aboutdesc">
+                    <p id ="ds_description" class="inline">@Html(dataset.description)</p>
+                    @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        <a id="edit-description" href="javascript:updateDescription()">
+                            <span class="edit-tab glyphicon glyphicon-edit" aria-hidden="true"></span>
+                        </a>
+                    }
             </div>
 
+                <div class="col-md-12 box-white-space">
+                    <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                    @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        <a href="@(routes.Datasets.addToDataset(dataset.id))"
+                        class="btn btn-default btn-sm" id="fileUploadBtn" title="Add File to Dataset" role="button">
+                            <span class="glyphicon glyphicon-export"></span> Add Files
+                        </a>
+                    }
+                    @if(dataset.files.length > 0 && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        <a id='download-dataset-url' href="#"
+                        onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id').url, '_blank');"
+                        class="btn btn-default btn-sm requiresLogin" title="Download All Files as Zip" role="button">
+                            <span class="glyphicon glyphicon-download-alt"></span>
+                            Download All Files
+                        </a>
+                    }
+                    @datasets.deleteButton(dataset)
+                    @datasets.follow(dataset)
+                </div>
+            </div>
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
                 <ul class="nav nav-tabs">
-                    <li role="presentation" class="active"><a href="#tab-home" role="tab" data-toggle="tab">Home</a></li>
-                    <li role="presentation"><a href="#tab-files" role="tab" data-toggle="tab">Files (@dataset.files.size)</a></li>
+                    <li role="presentation" class="active"><a href="#tab-files" role="tab" data-toggle="tab">Files (@dataset.files.size)</a></li>
                     <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata (@(usrmd.size + md.size))</a></li>
+                    <li role="presentation"><a href="#tab-visua" role="tab" data-toggle="tab">Visualizations</a></li>
                     <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
                     <li role="presentation"><a href="#tab-notes" role="tab" data-toggle="tab">Notes</a></li>
                 </ul>
                 <div class="tab-content">
-                    <div role="tabpanel" class="tab-pane fade in active" id="tab-home">
-                        @datasets.home(dataset, datasetSpaces, previews, otherSpaces, currentSpace, toPublish)
-                    </div>
-                  <div role="tabpanel" class="tab-pane" id="tab-files">
-                      <div id="add-file-btn">
-
-                      </div>
-                      @if(user.isDefined) {
-                          <div id="file-pane-buttons">
-                              <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                              @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                                  <a href="@(routes.Datasets.addToDataset(dataset.id, dataset.name, dataset.description))"
-                                  class="btn btn-primary btn-sm" id="fileUploadBtn" title="Add File to Dataset" role="button">
-                                      <span class="glyphicon glyphicon-export"></span> Add File
-                                  </a>
-                              } else {
-                                  <a href="@(routes.Datasets.addToDataset(dataset.id, dataset.name, dataset.description))"
-                                  class="btn btn-primary btn-sm disabled" id="fileUploadBtn" title="Add File to Dataset" role="button">
-                                      <span class="glyphicon glyphicon-export"></span> Add File
-                                  </a>
-                              }
-                              @if(dataset.files.length > 0) {
-                                  <a id='download-dataset-url' href="#"
-                                  onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id').url, '_blank');"
-                                  class="btn btn-default btn-sm requiresLogin" title="Download All Files as Zip" role="button">
-                                      <span class="glyphicon glyphicon-download-alt"></span>
-                                      Download All Files
-                                  </a>
-                              }
-                          </div>
-                      }
-                      @files.grid(dataset.files, dataset.id)
+                  <div role="tabpanel" class="tab-pane  fade in active" id="tab-files">
+                      @files.grid(fileList, dataset.id)
                   </div>
                   <div role="tabpanel" class="tab-pane fade" id="tab-comments">
                       <!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->
@@ -142,28 +150,34 @@
                   <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
                     @metadata(dataset, md, usrmd, dataset.datasetXmlMetadata, rdfExported, None)
                   </div>
+                    <div role="tabpanel" class="tab-pane fade" id="tab-visua">
+                    @datasets.previews(dataset, previewers)
+                    </div>
                   <!-- If the user can create a note on this dataset, display this tab. Otherwise, remove it. Is there a better way to do this? -->
                   @if(Permission.checkPermission(Permission.CreateNote, ResourceRef(ResourceRef.dataset, dataset.id))) {
                       <div role="tabpanel" class="tab-pane fade" id="tab-notes">
                       @notesform(dataset.id.toString, api.routes.Datasets.setNotesHTML(dataset.id).toString, dataset.notesHTML.getOrElse(""))
                       </div>
                   }
-                </div>
+
+            </div>
 			</div>
 		</div>
 
 		<!-- right column -->
 		<div class="col-md-4 col-left-border">
-            @datasets.tags(dataset, filesTags)
-            @datasets.collections(dataset, collectionsInside, collectionsOutside)
+            @spaces.spaceAllocation(dataset.id, ResourceRef.dataset, datasetSpaces.getOrElse(List.empty))
             @if(user.isDefined) {
+                <br/>
                 @datasets.userLink(dataset)
             }
+            @datasets.collections(dataset, collectionsInside)
+            @datasets.tags(dataset, fileList, filesTags)
             @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
                 @datasets.listCurationObjects(curationObjects)
             }
             @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {
-                @sensors.relatedSensors(relatedSensors, dataset.id.stringify)
+                @sensors.relatedSensors(relatedSensors, "Dataset", dataset.id.stringify)
             }
 		</div>
 	</div>
@@ -234,6 +248,46 @@
 		});
 
         }
+
+
+         function updateDescription() {
+		var cur_description = $('#ds_description').text().trim();
+		$('<div class="edit_desc"> </div>').insertAfter($('#ds_description'));
+		$('.edit_desc').append('<textarea id = "desc_input" class="form-control"/>');
+		$('.edit_desc').append('<br/>');
+		$('.edit_desc').append('<button id = "update_desc" class= "btn btn-sm btn-primary" onclick = "saveDescription()"> Save </button>')
+		$('#desc_input').val(cur_description);
+		$('#ds_description').text("");
+		$('#edit-description').css("display", "none");
+	}
+
+	function saveDescription() {
+		var description = $('#desc_input').val();
+		var encDescription = htmlEncode(description);
+		jsonData = JSON.stringify({"description": description});
+
+		var request = jsRoutes.api.Datasets.updateDescription("@dataset.id").ajax({
+			data: jsonData,
+			type: 'PUT',
+			contentType: "application/json"
+		});
+
+		request.done(function(response, textStatus,jqXHR) {
+			$('#ds_description').text(encDescription);
+			$('.edit_desc').remove();
+			$('#edit-description').css("display", "inline");
+			$('#ds_description').css("display", "inline");
+
+		});
+
+		request.fail(function(jqXHR, textStatus, errorThrown) {
+			console.error("The following error occurred: " + textStatus, errorThrown);
+			var errMsg = " You must be logged in to update the information about a collection.";
+			if(!checkErrorAndRedirect(jqXHR, errMsg)) {
+				notify("The collection information was not updated due to: " + errorThrown, "error");
+			}
+		});
+	}
     </script>
 }
 

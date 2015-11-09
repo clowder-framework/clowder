@@ -215,7 +215,7 @@ class Extractions @Inject()(
               } //end of file match
             } catch {
               case e: Exception =>
-                println(e.printStackTrace())
+                Logger.error("File not attached", e)
                 BadRequest(toJson("File not attached"))
             } finally {
               if (source != null)

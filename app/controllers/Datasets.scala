@@ -11,6 +11,7 @@ import java.util.Date
 import javax.inject.Inject
 
 import api.Permission
+import api.Permission.Permission
 import fileutils.FilesUtils
 import models._
 import play.api.Logger
@@ -71,9 +72,17 @@ class Datasets @Inject()(
   }
 
 
-  def addToDataset(id: UUID, name: String, desc: String) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def addToDataset(id: UUID) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       implicit val user = request.user
-      Ok(views.html.addToExistingDataset(id, name, desc)).flashing("error" -> "Cannot add to the dataset")
+     datasets.get(id) match {
+       case Some(dataset) => {
+         Ok(views.html.addToExistingDataset(id, dataset.name, dataset.description)).flashing("error" -> "Cannot add to the dataset")
+       }
+       case None => {
+         InternalServerError(s"Dataset $id not found")
+       }
+     }
+
   }
 
   /**
@@ -104,9 +113,9 @@ class Datasets @Inject()(
           }
           case None => {
             if (date != "") {
-              datasets.listAccess(date, nextPage, limit, request.user, request.superAdmin)
+              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
             } else {
-              datasets.listAccess(limit, request.user, request.superAdmin)
+              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
             }
 
           }
@@ -122,7 +131,7 @@ class Datasets @Inject()(
         case None => {
           space match {
             case Some(s) => datasets.listSpace(first, nextPage = false, 1, s)
-            case None => datasets.listAccess(first, nextPage = false, 1, request.user, request.superAdmin)
+            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
           }
         }
       }
@@ -143,7 +152,7 @@ class Datasets @Inject()(
         case None => {
           space match {
             case Some(s) => datasets.listSpace(last, nextPage=true, 1, s)
-            case None => datasets.listAccess(last, nextPage=true, 1, request.user, request.superAdmin)
+            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
           }
         }
       }
@@ -159,8 +168,8 @@ class Datasets @Inject()(
     val commentMap = datasetList.map { dataset =>
       var allComments = comments.findCommentsByDatasetId(dataset.id)
       dataset.files.map { file =>
-        allComments ++= comments.findCommentsByFileId(file.id)
-        sections.findByFileId(file.id).map { section =>
+        allComments ++= comments.findCommentsByFileId(file)
+        sections.findByFileId(file).map { section =>
           allComments ++= comments.findCommentsBySectionId(section.id)
         }
       }
@@ -233,9 +242,12 @@ class Datasets @Inject()(
         case Some(dataset) => {
 
           // get files info sorted by date
-          val filesInDataset = dataset.files.map(f => files.get(f.id).get).sortBy(_.uploadDate)
+          val filesInDataset = dataset.files.map(f => files.get(f) match {
+            case Some(file) => file
+            case None => Logger.debug(s"Unable to find file $f")
+          }).asInstanceOf[List[File]].sortBy(_.uploadDate)
 
-          var datasetWithFiles = dataset.copy(files = filesInDataset)
+          var datasetWithFiles = dataset.copy(files = filesInDataset.map(_.id))
           datasetWithFiles = Utils.decodeDatasetElements(datasetWithFiles)
 
           val filteredPreviewers = Previewers.findDatasetPreviewers
@@ -248,16 +260,10 @@ class Datasets @Inject()(
           val userMetadata = datasets.getUserMetadata(id)
           Logger.debug("User metadata: " + userMetadata.toString)
 
-          val collectionsOutside = collections.listOutsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
           val collectionsInside = collections.listInsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
-          var decodedCollectionsOutside = new ListBuffer[models.Collection]()
           var decodedCollectionsInside = new ListBuffer[models.Collection]()
           var filesTags = TreeSet.empty[String]
 
-          for (aCollection <- collectionsOutside) {
-              val dCollection = Utils.decodeCollectionElements(aCollection)
-              decodedCollectionsOutside += dCollection
-          }
           for (aCollection <- collectionsInside) {
               val dCollection = Utils.decodeCollectionElements(aCollection)
               decodedCollectionsInside += dCollection
@@ -293,13 +299,21 @@ class Datasets @Inject()(
           }
 
           // associated sensors
-          val sensors: List[(String, String)]= current.plugin[PostgresPlugin] match {
+          val sensors: List[(String, String, String)]= current.plugin[PostgresPlugin] match {
             case Some(db) => {
-              val base = play.api.Play.configuration.getString("geostream.dashboard.url").getOrElse("http://localhost:9000")
-              val ids = relations.findTargets(id.stringify, ResourceType.dataset, ResourceType.sensor)
-              db.getDashboardSensorURLs(ids)
+              // findRelationships will return a "Relation" model with all information about the relationship
+              val relationships = relations.findRelationships(id.stringify, ResourceType.dataset, ResourceType.sensor)
+
+              // we want to get the name of the sensor and its location on Geodashboard
+              // the "target.id" in a relationship is the Sensor's ID from the geostreaming API (like 117)
+              // we will lookup the name and url using the sensor ID, then return each sensor in a list of tuples:
+              // [(relationship_ID, sensor_name, geodashboard_url), ...]
+              relationships.map { r =>
+                val nameToURLTuple = db.getDashboardSensorURLs(List(r.target.id)).head
+                (r.id.stringify, nameToURLTuple._1, nameToURLTuple._2)
+              }
             }
-            case None => List.empty[(String, String)]
+            case None => List.empty[(String, String, String)]
           }
 
           var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
@@ -312,11 +326,11 @@ class Datasets @Inject()(
                   }
           }
 
-          val otherSpaces: List[ProjectSpace] = user match {
-            case Some(usr) => usr.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!datasetSpaces.map(_.id).contains(aSpace.id)) aSpace else None).filter(_ != None).asInstanceOf[List[ProjectSpace]]
-            case None => List.empty
-          }
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
+          val fileList: List[File] = dataset.files.map(fileId => files.get(fileId) match {
+            case Some(file) => file
+            case None => Logger.debug(s"Unable to find file $fileId")
+          }).asInstanceOf[List[File]]
 
           //dataset is in at least one space with editstagingarea permission, or if the user is the owner of dataset.
           val stagingarea = datasetSpaces filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id)))
@@ -325,8 +339,9 @@ class Datasets @Inject()(
           val curObjectsPublished: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(_.status == 'Published)
           val curObjectsPermission: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(curation => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id)))
           val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
+
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
-            decodedCollectionsOutside.toList, decodedCollectionsInside.toList, isRDFExportEnabled, Some(decodedSpaces), filesTags, otherSpaces, currentSpace, toPublish, curPubObjects, sensors))
+            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), fileList, toPublish, curPubObjects))
         }
         case None => {
           Logger.error("Error getting dataset" + id)
@@ -426,7 +441,7 @@ class Datasets @Inject()(
                 }
               }
 
-              Logger.debug("Datset submit, new file - uploading file " + nameOfFile)
+              Logger.debug("Dataset submit, new file - uploading file " + nameOfFile)
 
               // store file
               Logger.info("Adding file" + identity)
@@ -481,7 +496,10 @@ class Datasets @Inject()(
                   val dsId = dataset.id
                   val dsName = dataset.name
 
-                  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dsId, flags))}
+                  // Adding filename to the extractor message. Needed by PyClowder.
+                  val extra = Map("filename" -> f.filename)
+
+                  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, dsId, flags))}
 
                   val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
 

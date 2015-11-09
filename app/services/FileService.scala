@@ -130,7 +130,7 @@ trait FileService {
 
   def addUserMetadata(id: UUID, json: String)
 
-  def addXMLMetadata(id: UUID, json: String)
+  def addXMLMetadata(id: UUID, json: String)  
 
   def findByTag(tag: String): List[File]
 
