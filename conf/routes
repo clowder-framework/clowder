@@ -13,6 +13,7 @@ GET            /*path/                                                          
 # HOME PAGE
 # ----------------------------------------------------------------------
 GET            /                                                                        @controllers.Application.index
+GET            /about                                                                   @controllers.Application.about
 
 # ----------------------------------------------------------------------
 # Map static resources from the /public folder to the /assets URL path
