@@ -208,6 +208,7 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
+        spaces.cleanUpInvitationToSpace()
         val creator = users.findById(s.creator)
         var creatorActual: User = null
         val usersInSpace = spaces.getUsersInSpace(id)
@@ -296,7 +297,7 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
                       val TokenDuration = Play.current.configuration.getInt(TokenDurationKey).getOrElse(DefaultDuration)
                       val token = new Token(uuid.stringify, email, DateTime.now(), DateTime.now().plusMinutes(TokenDuration), true)
                       securesocial.core.UserService.save(token)
-                      val invite = SpaceInvite(uuid, uuid.toString(), email, s.id, role.id.stringify)
+                      val invite = SpaceInvite(uuid, uuid.toString(), email, s.id, role.id.stringify, DateTime.now(), DateTime.now().plusMinutes(TokenDuration))
                       if(play.api.Play.current.configuration.getBoolean("registerThroughAdmins").get)
                       {
                         val theHtml = views.html.inviteEmailThroughAdmin(uuid.stringify, email, s.name, user.get.getMiniUser.fullName, formData.message)

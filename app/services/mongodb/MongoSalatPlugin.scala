@@ -7,7 +7,7 @@ import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import models._
 import org.bson.BSONException
-import play.api.{ Plugin, Logger, Application }
+import play.api.{Play, Plugin, Logger, Application}
 import play.api.Play.current
 import com.mongodb.casbah.MongoURI
 import com.mongodb.casbah.MongoConnection
@@ -16,6 +16,7 @@ import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.gridfs.GridFS
 import org.bson.types.ObjectId
 import services.{DI, AppConfigurationService}
+import org.joda.time.DateTime
 
 /**
  * Mongo Salat service.
@@ -158,6 +159,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //Change Files in datasets from List[File] to List[UUID]
     updateReplaceFilesInDataset
+
+    // Adds creation date and expiration date to Space Invites assumes they were just created.
+    updateSpaceInvites
   }
 
   private def updateMongoChangeUserType {
@@ -275,7 +279,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   }
 
   /**
-   * Replaces the files in the datasets from acopy of the files tojust the file UUID's.
+   * Replaces the files in the datasets from a copy of the files to just the file UUID's.
    */
   private def updateReplaceFilesInDataset{
     val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
@@ -299,4 +303,34 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       Logger.warn("[MongoDBUpdate : Missing fix to replace the files in the dataset with UUIDs")
     }
   }
+
+  /**
+   * Adds a creation and expiration date to old invites. Considering them as just created when the update script is run.
+   */
+  private def updateSpaceInvites{
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", "update-space-invites")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        collection("spaces.invites").foreach { invite =>
+
+          val TokenDurationKey = securesocial.controllers.Registration.TokenDurationKey
+          val DefaultDuration = securesocial.controllers.Registration.DefaultDuration
+          val TokenDuration = Play.current.configuration.getInt(TokenDurationKey).getOrElse(DefaultDuration)
+          invite.put("creationTime", DateTime.now.toDate)
+          invite.put("expirationTime",  DateTime.now.plusMinutes(TokenDuration).toDate)
+          try {
+            collection("spaces.invites").save(invite, WriteConcern.Safe)
+          }
+          catch {
+            case e: BSONException => Logger.error("Unable to update invite:" + invite.getAsOrElse[ObjectId]("_id", new ObjectId()).toString() )
+          }
+        }
+      }
+      appConfig.addPropertyValue("mongodb.updates", "update-space-invites")
+    } else {
+      Logger.warn("[MongoDBUpdate : Missing fix to add creation and expiration time to invites")
+    }
+  }
+
 }

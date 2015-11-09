@@ -470,6 +470,10 @@ class MongoDBSpaceService @Inject() (
     SpaceInviteDAO.insert(invite)
   }
 
+  def cleanUpInvitationToSpace(): Unit = {
+    SpaceInviteDAO.remove("expirationTime" $lt new Date)
+  }
+
   def removeInvitationFromSpace(inviteId: UUID, spaceId: UUID) {
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
       $pull("invitations" -> MongoDBObject( "_id" -> new ObjectId(inviteId.stringify))), false, false, WriteConcern.Safe)
