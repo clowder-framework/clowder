@@ -120,6 +120,7 @@
                 <ul class="nav nav-tabs">
                     <li role="presentation" class="active"><a href="#tab-files" role="tab" data-toggle="tab">Files (@dataset.files.size)</a></li>
                     <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata (@(usrmd.size + md.size))</a></li>
+                    <li role="presentation"><a href="#tab-visua" role="tab" data-toggle="tab">Visualizations</a></li>
                     <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
                     <li role="presentation"><a href="#tab-notes" role="tab" data-toggle="tab">Notes</a></li>
                 </ul>
@@ -152,6 +153,9 @@
                   <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
                     @metadata(dataset, md, usrmd, dataset.datasetXmlMetadata, rdfExported)
                   </div>
+                    <div role="tabpanel" class="tab-pane fade" id="tab-visua">
+                    @datasets.previews(dataset, previewers)
+                    </div>
                   <!-- If the user can create a note on this dataset, display this tab. Otherwise, remove it. Is there a better way to do this? -->
                   @if(Permission.checkPermission(Permission.CreateNote, ResourceRef(ResourceRef.dataset, dataset.id))) {
                       <div role="tabpanel" class="tab-pane fade" id="tab-notes">
