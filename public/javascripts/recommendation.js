@@ -71,7 +71,7 @@ var followHandler = function (jsRoutes, id, name, type, followCallback, unfollow
         var request = ajaxObj.follow(id, name).ajax({ type: 'POST' });
         request.done(function (data) {
             $followButton.text("Unfollow");
-            $followButton.removeClass('btn-success');
+            $followButton.removeClass('btn-default');
             $followButton.addClass('btn-danger');
             if (followCallback !== undefined) {
                 followCallback(data);
@@ -86,7 +86,7 @@ var followHandler = function (jsRoutes, id, name, type, followCallback, unfollow
         request.done(function (data) {
             $followButton.text("Follow");
             $followButton.removeClass('btn-danger');
-            $followButton.addClass('btn-success');
+            $followButton.addClass('btn-default');
             if (unfollowCallback !== undefined) {
                 unfollowCallback();
             }

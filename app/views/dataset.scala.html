@@ -109,7 +109,21 @@
                 </div>
 
                 <div class="col-md-12 box-white-space">
-
+                    <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                    @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        <a href="@(routes.Datasets.addToDataset(dataset.id))"
+                        class="btn btn-default btn-sm" id="fileUploadBtn" title="Add File to Dataset" role="button">
+                            <span class="glyphicon glyphicon-export"></span> Add Files
+                        </a>
+                    }
+                    @if(dataset.files.length > 0 && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        <a id='download-dataset-url' href="#"
+                        onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id').url, '_blank');"
+                        class="btn btn-default btn-sm requiresLogin" title="Download All Files as Zip" role="button">
+                            <span class="glyphicon glyphicon-download-alt"></span>
+                            Download All Files
+                        </a>
+                    }
                     @datasets.deleteButton(dataset)
                     @datasets.follow(dataset)
                 </div>
@@ -126,28 +140,6 @@
                 </ul>
                 <div class="tab-content">
                   <div role="tabpanel" class="tab-pane  fade in active" id="tab-files">
-                      <div id="add-file-btn">
-                      <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                      @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                          <a href="@(routes.Datasets.addToDataset(dataset.id))"
-                          class="btn btn-primary btn-sm" id="fileUploadBtn" title="Add File to Dataset" role="button">
-                              <span class="glyphicon glyphicon-export"></span> Add File
-                          </a>
-                      } else {
-                          <a href="@(routes.Datasets.addToDataset(dataset.id))"
-                          class="btn btn-primary btn-sm disabled" id="fileUploadBtn" title="Add File to Dataset" role="button">
-                              <span class="glyphicon glyphicon-export"></span> Add File
-                          </a>
-                      }
-                      </div>
-                      @if(dataset.files.length > 0 && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                          <a id='download-dataset-url' href="#"
-                          onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id').url, '_blank');"
-                          class="btn btn-default btn-sm requiresLogin" title="Download All Files as Zip" role="button">
-                              <span class="glyphicon glyphicon-download-alt"></span>
-                              Download All Files
-                          </a>
-                      }
                       @files.grid(fileList, dataset.id)
                   </div>
                   <div role="tabpanel" class="tab-pane fade" id="tab-comments">
