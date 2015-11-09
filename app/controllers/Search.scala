@@ -158,7 +158,7 @@ class Search @Inject() (
   /**
    * Search MultimediaFeatures.
    */
-  def searchMultimediaIndex(section_id: UUID) = PermissionAction(Permission.Search) { implicit request =>
+  def callSearchMultimediaIndexView(section_id: UUID) = PermissionAction(Permission.ViewDataset) { implicit request =>
     Logger.debug("Searching multimedia index " + section_id.stringify)
     // TODO handle multiple previews found
     val preview = previews.findBySectionId(section_id)(0)

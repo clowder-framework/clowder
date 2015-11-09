@@ -326,7 +326,7 @@ class Datasets @Inject()(
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filesTags, filteredPreviewers.toList, metadata, userMetadata,
-            decodedCollectionsOutside.toList, decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), otherSpaces))
+            decodedCollectionsOutside.toList, decodedCollectionsInside.toList, isRDFExportEnabled, Some(decodedSpaces), otherSpaces, sensors))
 
         }
         case None => {

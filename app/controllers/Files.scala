@@ -1187,8 +1187,8 @@ def uploadExtract() =
   /**
    * File by section.
    */
-  def fileBySection(section_id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowFile)) {
-    request =>
+  def fileBySection(section_id: UUID) = PermissionAction(Permission.ViewFile) {
+    implicit request =>
       sections.get(section_id) match {
         case Some(section) => {
           files.get(section.file_id) match {
