@@ -19,6 +19,7 @@ import play.api.libs.json.Json.toJson
 import services.{CollectionService, DatasetService, _}
 import views.html.defaultpages.badRequest
 
+import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 import services._
 import org.apache.commons.lang.StringEscapeUtils
@@ -222,7 +223,14 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           Logger.debug("Saving collection " + collection.name)
           collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, datasetCount = 0, created = collection.created, author = collection.author, spaces = collection.spaces))
-
+          collection.spaces.map{
+            sp => spaceService.get(sp) match {
+              case Some(s) => {
+                spaces.addCollection(collection.id, s.id)
+              }
+              case None => Logger.error(s"space with id $sp on collection $collection.id doesn't exist.")
+            }
+          }
           //index collection
             val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
             current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
