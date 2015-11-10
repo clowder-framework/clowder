@@ -2,7 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
-import api.{WithPermission, Permission}
+import api.{Permission, WithPermission}
 import models.{ResourceRef, UUID}
 import services._
 
@@ -47,5 +47,10 @@ class Metadata @Inject() (
       }
       case None => NotFound
     }
+  }
+
+  def search() = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) {implicit request =>
+    implicit val user = request.user
+    Ok(views.html.metadatald.search())
   }
 }

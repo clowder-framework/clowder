@@ -116,6 +116,7 @@ GET            /collections/:collection_id/previews                             
 # ----------------------------------------------------------------------
 # JSON-LD Metadata
 # ----------------------------------------------------------------------
+GET            /metadata/search                                                         @controllers.Metadata.search()
 GET            /metadata/:id                                                            @controllers.Metadata.view(id: UUID)
 GET            /files/:file_id/metadata                                                 @controllers.Metadata.file(file_id: UUID)
 GET            /datasets/:dataset_id/metadata                                           @controllers.Metadata.dataset(dataset_id: UUID)
@@ -260,6 +261,7 @@ GET            /api/files/:id/metadata.jsonld                                   
 POST           /api/metadata.jsonld                                                     @api.Metadata.addUserMetadata()
 #GET            /api/metadata.jsonld                                                     @api.Metadata.getUserMetadata()
 
+GET            /api/metadata/search                                                     @api.Metadata.searchByKeyValue(mdkey: Option[String], mdvalue: Option[String], count: Int ?= 10)
 POST           /api/metadata/search                                                     @api.Metadata.search()
 
 GET            /api/metadata/definitions                                                @api.Metadata.getDefinitions()

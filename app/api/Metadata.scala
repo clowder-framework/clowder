@@ -4,16 +4,13 @@ import java.net.URL
 import java.util.Date
 import javax.inject.{Inject, Singleton}
 
-import jsonutils.JsonUtil
-import models.{UserAgent, UUID, ResourceRef}
+import models.{ResourceRef, UUID, UserAgent, _}
 import play.api.Logger
-import play.api.libs.json._
 import play.api.libs.json.Json._
-import models._
+import play.api.libs.json._
 import play.api.libs.ws.WS
 import play.api.mvc.Action
-import services.{UserService, ContextLDService, MetadataService}
-import play.api.Play.configuration
+import services._
 
 import scala.concurrent.Future
 
@@ -21,23 +18,44 @@ import scala.concurrent.Future
  * Manipulate generic metadata.
  */
 @Singleton
-class Metadata @Inject()(metadataService: MetadataService, contextService: ContextLDService, userService: UserService) extends ApiController {
+class Metadata @Inject()(
+  metadataService: MetadataService,
+  contextService: ContextLDService,
+  userService: UserService,
+  datasets: DatasetService,
+  files: FileService) extends ApiController {
   
   def search() = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { request =>
     Logger.debug("Searching metadata")
     val results = metadataService.search(request.body)
     Ok(toJson(results))
   }
-  
-  def getDefinitions() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.AddMetadata)) {
-    implicit request =>
-      request.user match {
-        case Some(user) => {
-          val vocabularies = metadataService.getDefinitions()
-          Ok(toJson(vocabularies))
+
+  def searchByKeyValue(key: Option[String], value: Option[String], count: Int = 0) =
+    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.SearchDatasets)) {
+      implicit request =>
+        val response = for {
+          k <- key
+          v <- value
+        } yield {
+          val results = metadataService.search(k, v, count)
+          val datasetsResults = results.flatMap { d =>
+            if (d.resourceType == ResourceRef.dataset) datasets.get(d.id) else None
+          }
+          val filesResults = results.flatMap { f =>
+            if (f.resourceType == ResourceRef.file) files.get(f.id) else None
+          }
+          import Dataset.DatasetWrites
+          import File.FileWrites
+          Ok(JsObject(Seq("datasets" -> toJson(datasetsResults), "files" -> toJson(filesResults))))
         }
-        case None => BadRequest(toJson("Invalid user"))
-      }
+        response getOrElse BadRequest(toJson("You must specify key and value"))
+  }
+
+  def getDefinitions() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.SearchDatasets)) {
+    implicit request =>
+      val vocabularies = metadataService.getDefinitions()
+      Ok(toJson(vocabularies))
   }
 
   def getDefinition(id: UUID) = Action.async { implicit request =>

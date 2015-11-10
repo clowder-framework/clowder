@@ -40,4 +40,7 @@ trait MetadataService {
 
   /** Search for resources matching a particular query **/
   def search(query: JsValue): List[ResourceRef]
+
+  /** Search for resources by key value pairs in the content of the metadata document **/
+  def search(key: String, value: String, count: Int): List[ResourceRef]
 }

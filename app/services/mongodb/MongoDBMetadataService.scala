@@ -7,7 +7,7 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import com.mongodb.casbah.Imports._
-import play.api.libs.json.{Json, JsValue}
+import play.api.libs.json.{JsObject, JsString, Json, JsValue}
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
@@ -102,15 +102,34 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
       }
     }
   }
-  
-  /** update Metadata 
-   *  TODO
-   *  */  
+
+  /**
+    * Update metadata
+    * TODO: implement
+    * @param metadataId
+    * @param json
+    */
   def updateMetadata(metadataId: UUID, json: JsValue) = {}
 
+  /**
+    * Search by metadata. Uses mongodb query structure.
+    * @param query
+    * @return
+    */
   def search(query: JsValue): List[ResourceRef] = {
     val doc = JSON.parse(Json.stringify(query)).asInstanceOf[DBObject]
     val resources: List[ResourceRef] = MetadataDAO.find(doc).map(_.attachedTo).toList
+    resources
+  }
+
+  def search(key: String, value: String, count: Int): List[ResourceRef] = {
+    val field = "content." + key.trim
+    val trimOr = value.trim().replaceAll(" ", "|")
+    // for some reason "/"+value+"/i" doesn't work because it gets translate to
+    // { "content.Abstract" : { "$regex" : "/test/i"}}
+    val regexp = (s"""(?i)$trimOr""").r
+    val doc = MongoDBObject(field -> regexp)
+    val resources: List[ResourceRef] = MetadataDAO.find(doc).limit(count).map(_.attachedTo).toList
     resources
   }
 

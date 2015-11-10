@@ -2,6 +2,7 @@ package models
 
 import java.util.Date
 import api.{WithPermission, Permission}
+import play.api.libs.json.{Json, JsObject, Writes}
 import securesocial.core.Identity
 import api.WithPermission
 
@@ -39,3 +40,13 @@ case class Versus(
   fileId: UUID,
   descriptors: Map[String,Any]= Map.empty
 )
+
+object File {
+  implicit object FileWrites extends Writes[File] {
+    def writes(file: File): JsObject = {
+      Json.obj(
+        "id" -> file.id,
+        "name" -> file.filename)
+    }
+  }
+}
