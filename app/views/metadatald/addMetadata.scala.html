@@ -142,7 +142,7 @@
     }
 
     // get metadata definitions
-    var request = jsRoutes.api.Metadata.getVocabularies().ajax({
+    var request = jsRoutes.api.Metadata.getDefinitions().ajax({
         type: 'GET',
         contentType: "application/json"
     });
@@ -240,7 +240,7 @@
                     var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
 
                     // make call to external service
-                    var request = jsRoutes.api.Metadata.getVocabulary(field[0].id).ajax({
+                    var request = jsRoutes.api.Metadata.getDefinition(field[0].id).ajax({
                         type: 'GET',
                         contentType: "application/json"
                     });
