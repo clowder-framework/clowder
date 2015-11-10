@@ -1,7 +1,7 @@
 @(dataset: models.Dataset,
         comments: List[Comment],
         previewers: List[Previewer],
-        md: Map[String,Any], usrmd: scala.collection.mutable.Map[String,Any],
+        m: List[models.Metadata],
         collectionsOutside: List[models.Collection],
         collectionsInside: List[models.Collection],
         filesOutside: List[models.File],
@@ -14,55 +14,6 @@
 @import com.mongodb.casbah.Imports.DBObject
 @import play.api.Play.current
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
-
-	@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {		
-		@for((key,value) <- metadata) {
-			<li><b>@(key):</b>
-			@if(value.isInstanceOf[String]) {
-				@if(value.asInstanceOf[String].startsWith("http://") || value.asInstanceOf[String].startsWith("https://")) {
-					<a href="@value">@value</a>
-				} else {
-					@value
-				}
-			} else {
-				@if(value.isInstanceOf[java.lang.Integer]) {
-					@value.toString
-			    } else {
-			    	@if(value.isInstanceOf[com.mongodb.BasicDBList]) {
-			    		@value.toString.replace("[","").replace("]","")
-			    	} else {
-			    		<ul>
-			    		@printLevel(value.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
-			    		</ul>
-			    	}
-			    }
-			}</li>
-		}
-	}
-	
-	@printLevelUserMetadata(metadata: scala.collection.mutable.Map[String,Any]) = {
-		<ul class="usr_md_">
-		@for((key,value) <- metadata) {
-			@if(value.isInstanceOf[com.mongodb.BasicDBList]){
-				@for(listValue <- value.asInstanceOf[com.mongodb.BasicDBList]) {
-						<li class="usr_md_"><b class="usr_md_">@(key):</b>
-						@if(listValue.isInstanceOf[String]) {			
-							<span class="usr_md_">@listValue</span><button class="usr_md_" type="button">Modify</button><button class="usr_md_" >Delete</button>
-						} else {
-								<button class="usr_md_" type="button">Add property</button><button class="usr_md_" type="button">Delete</button>@printLevelUserMetadata(listValue.asInstanceOf[DBObject].toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]])
-						}</li>
-				}
-			}else{
-				<li class="usr_md_"><b class="usr_md_">@(key):</b>
-				@if(value.isInstanceOf[String]) {			
-					<span class="usr_md_">@value</span><button class="usr_md_" type="button">Modify</button><button class="usr_md_" >Delete</button>
-				} else {
-						<button class="usr_md_" type="button">Add property</button><button class="usr_md_" type="button">Delete</button>@printLevelUserMetadata(value.asInstanceOf[DBObject].toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]])
-				}</li>
-			}	
-		}
-		</ul>
-	}
 
 @main("Dataset") {
 	<div class="row">
@@ -79,7 +30,7 @@
                 <ul class="nav nav-tabs">
                     <li role="presentation" class="active"><a href="#tab-home" role="tab" data-toggle="tab">Home</a></li>
                     <li role="presentation"><a href="#tab-files" role="tab" data-toggle="tab">Files (@dataset.files.size)</a></li>
-                    <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata (@(usrmd.size + md.size))</a></li>
+                    <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata (@m.size)</a></li>
                     <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
                     <li role="presentation"><a href="#tab-notes" role="tab" data-toggle="tab">Notes</a></li>
                 </ul>
@@ -107,7 +58,28 @@
                       </div>
                   </div>
                   <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
-                    @metadata(dataset, md, usrmd, dataset.datasetXmlMetadata, rdfExported)
+
+                      <div class="row">
+                          <div class="col-md-10">
+                          </div>
+                          <div class="col-md-2">
+                              <a href="@api.routes.Datasets.getMetadataJsonLD(dataset.id)" class="pull-right" title="JSON-LD">
+                                  <img src="@routes.Assets.at("images/json-ld.png")"/>
+                              </a>
+                          </div>
+                      </div>
+                      <div class="row">
+                          <div class="col-md-12">
+                            @metadatald.addMetadata("dataset", dataset.id.toString)
+                          </div>
+                      </div>
+                      <div class="row">
+                          <div class="col-md-12">
+                          @metadatald.view(m)
+                          </div>
+                      </div>
+
+
                   </div>
                   <div role="tabpanel" class="tab-pane fade" id="tab-notes">
                     @notesform(dataset.id.toString, api.routes.Datasets.setNotesHTML(dataset.id).toString, dataset.notesHTML.getOrElse(""))

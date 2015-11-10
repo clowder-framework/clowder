@@ -40,7 +40,8 @@ class Datasets @Inject()(
   sparql: RdfSPARQLService,
   users: UserService,
   previewService: PreviewService,
-  spaces: SpaceService) extends SecuredController {
+  spaces: SpaceService,
+  metadata: MetadataService) extends SecuredController {
 
 
   object ActivityFound extends Exception {}
@@ -275,46 +276,40 @@ class Datasets @Inject()(
 //              previewer
 //            }
 
-          val filteredPreviewers = Previewers.findDatasetPreviewers;
+        val filteredPreviewers = Previewers.findDatasetPreviewers;
 
-          val metadata = datasets.getMetadata(id)
-          Logger.debug("Metadata: " + metadata)
-          for (md <- metadata) {
-            Logger.debug(md.toString)
-          }
-          val userMetadata = datasets.getUserMetadata(id)
-          Logger.debug("User metadata: " + userMetadata.toString)
+        val m = metadata.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
 
-	          val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
-	          val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
-	          val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
-            val decodedCollectionsOutside = ListBuffer.empty[models.Collection]
-            val decodedCollectionsInside = ListBuffer.empty[models.Collection]
+        val collectionsOutside = collections.listOutsideDataset(id).sortBy(_.name)
+        val collectionsInside = collections.listInsideDataset(id).sortBy(_.name)
+        val filesOutside = files.listOutsideDataset(id).sortBy(_.filename)
+        val decodedCollectionsOutside = ListBuffer.empty[models.Collection]
+        val decodedCollectionsInside = ListBuffer.empty[models.Collection]
 
-            for (aCollection <- collectionsOutside) {
-              val dCollection = Utils.decodeCollectionElements(aCollection)
-              decodedCollectionsOutside += dCollection
+        for (aCollection <- collectionsOutside) {
+          val dCollection = Utils.decodeCollectionElements(aCollection)
+          decodedCollectionsOutside += dCollection
+        }
+        for (aCollection <- collectionsInside) {
+          val dCollection = Utils.decodeCollectionElements(aCollection)
+          decodedCollectionsInside += dCollection
+        }
+
+        var commentsByDataset = comments.findCommentsByDatasetId(id)
+        filesInDataset.map {
+          file =>
+            commentsByDataset ++= comments.findCommentsByFileId(file.id)
+            sections.findByFileId(UUID(file.id.toString)).map { section =>
+              commentsByDataset ++= comments.findCommentsBySectionId(section.id)
             }
-            for (aCollection <- collectionsInside) {
-              val dCollection = Utils.decodeCollectionElements(aCollection)
-              decodedCollectionsInside += dCollection
-            }
-
-          var commentsByDataset = comments.findCommentsByDatasetId(id)
-	          filesInDataset.map {
-	            file =>
-	              commentsByDataset ++= comments.findCommentsByFileId(file.id)
-	              sections.findByFileId(UUID(file.id.toString)).map { section =>
-	                commentsByDataset ++= comments.findCommentsBySectionId(section.id)
-	              }
-	          }
-	          commentsByDataset = commentsByDataset.sortBy(_.posted)
+        }
+        commentsByDataset = commentsByDataset.sortBy(_.posted)
         
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
         val space = dataset.space.flatMap(spaces.get(_))
 
-        Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
+        Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
           collectionsOutside, collectionsInside, filesOutside, isRDFExportEnabled, space))
       }
       case None => {
