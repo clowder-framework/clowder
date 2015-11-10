@@ -63,17 +63,17 @@
 							<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 							@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
 									<button id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')"
-											style="margin-right:15px;" class="btn btn-primary btn-xs" title="Delete Collection but not Enclosed Datasets">
+											style="margin-right:15px;" class="btn btn-danger btn-sm" title="Delete Collection but not Enclosed Datasets">
 									<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							} else {
 									<button disabled id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')"
-											style="margin-right:15px;" class="btn btn-primary btn-xs" title="Delete Collection but not Enclosed Datasets">
+											style="margin-right:15px;" class="btn btn-danger btn-sm" title="Delete Collection but not Enclosed Datasets">
 									<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							}
 							@if(user.isDefined) {
 								@if(!collection.followers.contains(user.get.id)) {
 									<button id="followButton"
-									class="btn btn-success followButton btn-xs"
+									class="btn btn-default followButton btn-sm"
 									objectId="@collection.id"
 									objectName="@collection.name"
 									objectType="collection">
@@ -81,7 +81,7 @@
 									</button>
 								} else {
 									<button id="followButton"
-									class="btn btn-danger followButton btn-xs"
+									class="btn btn-default followButton btn-sm"
 									objectId="@collection.id"
 									objectName="@collection.name"
 									objectType="collection">
