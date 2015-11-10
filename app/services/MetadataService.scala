@@ -1,7 +1,7 @@
 package services
 
 import play.api.libs.json.JsValue
-import models.{MDVocabularyDefinition, ResourceRef, UUID, Metadata}
+import models.{MetadataDefinition, ResourceRef, UUID, Metadata}
 
 /**
  * MetadataService for add and query metadata
@@ -30,13 +30,13 @@ trait MetadataService {
   def updateMetadata(metadataId: UUID, json: JsValue)
 
   /** Vocabulary definitions for user fields **/
-  def getVocabularies(spaceId: Option[UUID] = None): List[MDVocabularyDefinition]
+  def getDefinitions(spaceId: Option[UUID] = None): List[MetadataDefinition]
 
   /** Get vocabulary based on uri **/
-  def getVocabulary(id: UUID): Option[MDVocabularyDefinition]
+  def getDefinition(id: UUID): Option[MetadataDefinition]
 
   /** Add vocabulary definitions **/
-  def addVocabularyDefinition(definition: MDVocabularyDefinition)
+  def addDefinition(definition: MetadataDefinition)
 
   /** Search for resources matching a particular query **/
   def search(query: JsValue): List[ResourceRef]

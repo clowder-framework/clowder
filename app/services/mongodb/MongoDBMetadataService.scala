@@ -76,27 +76,27 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
   }
 
   /** Vocabulary definitions for user fields **/
-  def getVocabularies(spaceId: Option[UUID] = None): List[MDVocabularyDefinition] = {
-    MDVocabularyDefinitionDAO.findAll().toList
+  def getDefinitions(spaceId: Option[UUID] = None): List[MetadataDefinition] = {
+    MetadataDefinitionDAO.findAll().toList
   }
 
-  def getVocabulary(id: UUID): Option[MDVocabularyDefinition] = {
-    MDVocabularyDefinitionDAO.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)))
+  def getDefinition(id: UUID): Option[MetadataDefinition] = {
+    MetadataDefinitionDAO.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)))
   }
 
   /** Add vocabulary definitions **/
-  def addVocabularyDefinition(definition: MDVocabularyDefinition): Unit = {
+  def addDefinition(definition: MetadataDefinition): Unit = {
     val uri = (definition.json \ "uri").as[String]
-    MDVocabularyDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri)) match {
+    MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri)) match {
       case Some(md) => {
         Logger.debug("Updating existing vocabulary definition: " + definition)
         // make sure to use the same id as the old value
-        val writeResult = MDVocabularyDefinitionDAO.update(MongoDBObject("json.uri" -> uri), definition.copy(id=md.id),
+        val writeResult = MetadataDefinitionDAO.update(MongoDBObject("json.uri" -> uri), definition.copy(id=md.id),
           false, false, WriteConcern.Normal)
       }
       case None => {
         Logger.debug("Adding new vocabulary definition " + definition)
-        MDVocabularyDefinitionDAO.save(definition)
+        MetadataDefinitionDAO.save(definition)
       }
     }
   }
@@ -140,9 +140,9 @@ object MetadataDAO extends ModelCompanion[Metadata, ObjectId] {
   }
 }
 
-object MDVocabularyDefinitionDAO extends ModelCompanion[MDVocabularyDefinition, ObjectId] {
+object MetadataDefinitionDAO extends ModelCompanion[MetadataDefinition, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin")
-    case Some(x) => new SalatDAO[MDVocabularyDefinition, ObjectId](collection = x.collection("metadata.definitions")) {}
+    case Some(x) => new SalatDAO[MetadataDefinition, ObjectId](collection = x.collection("metadata.definitions")) {}
   }
 }

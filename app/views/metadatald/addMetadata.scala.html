@@ -22,6 +22,67 @@
 <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
+<style>
+  .ui-autocomplete-category {
+    font-weight: bold;
+    padding: .2em .4em;
+    margin: .8em 0 .2em;
+    line-height: 1.5;
+  }
+</style>
+
+<script>
+    // Assumption: the input list contains: <cat_short_name>;<cat_display_name> or <cat_short_name>:<var_name>, where <cat_display_name> contains no ":", and <var_name> contains no ";".
+    $.widget( "custom.catcomplete", $.ui.autocomplete, {
+        _create: function() {
+            this._super();
+            this.widget().menu( "option", "items", "> :not(.ui-autocomplete-category)" );
+        },
+        _renderMenu: function( ul, items ) {
+            var that = this;
+            var currentCategory = "";
+            var category = "";
+            var dispCatMap = new Map();
+            $.each( items, function( index, item ) {
+                //console.log("in renderMenu: item: ", item);
+                var label = item.label;
+                var char_index = label.indexOf(";");
+                if (char_index > -1) {
+                    var shortName = label.slice(0, char_index);
+                    var displName = label.slice(char_index + 1);
+                    console.log("Setting category name '" + shortName + "' to '" + displName + "'");
+                    dispCatMap.set(shortName, displName);
+                }
+            });
+            $.each( items, function( index, item ) {
+                var li;
+                // Each item from an original array of strings was converted to an object { label: "val1", value: "val1" }.
+                //console.log("item: ", item);
+                var label = item.label;
+                var char_index = label.indexOf(":");
+                if (char_index > -1) {
+                    category = label.slice(0, char_index);
+                    item.label = label.slice(char_index + 1);
+                }
+                if ( category != currentCategory ) {
+                    console.log("category changed from " + currentCategory + " to: " + category);
+                    var displayed_cat_name = category;
+                    if (dispCatMap.has(category)) {
+                        displayed_cat_name = dispCatMap.get(category);
+                    }
+                    ul.append( "<li class='ui-autocomplete-category'>" + displayed_cat_name + "</li>" );
+                    currentCategory = category;
+                }
+                // Used to be: Display only the items containing ":".
+                // Don't display the items containing ";".
+                if (label.indexOf(";") <= 0) {
+                    li = that._renderItemData( ul, item );
+                }
+            });
+        }
+    });
+</script>
+
 <script language="javascript">
     // submit metadata value to server
     function submit(event){
@@ -30,20 +91,29 @@
         var field_id = $("#field-value").data("id");
         var field_type = $("#add-metadata-select option:selected").data("type");
         var field_value = "";
-        if (field_type == "string") {
+        var field_types_with_simple_values = {"string": 1, "listjquery": 1, "listgeocode": 1};
+        if (field_type in field_types_with_simple_values) {
             field_value = $("#field-value").val();
         } else if (field_type == "list") {
             field_value = $("#field-value option:selected").val();
-        } else if (field_type == "listjquery") {
-            field_value = $("#field-value").val();
         }  else {
             console.log("Wrong field type: " + field_type);
         }
+        // console.log("field type: " + field_type + ", field_value: " + field_value);
         if (field_value != "") {
             var context = {};
             context[field_label] = field_id;
             var content = {};
-            content[field_label] = field_value;
+            if (field_type != "listgeocode") {
+                content[field_label] = field_value;
+            } else {
+                // geocode example: "Champaign, IL, USA: 40.12, -88.24"
+                var parts = field_value.split(":");
+                content["Location Name"] = parts[0].trim();
+                var lat_lng = parts[1].trim().split(",");
+                content["Latitude"] = lat_lng[0].trim();
+                content["Longitude"] = lat_lng[1].trim();
+            }
             var body = {
                     "@@context": context,
                     "@(resType)_id": "@id",
@@ -101,45 +171,70 @@
                 var field_label = $(this).text();
                 var field_id = $(this).val();
                 var field_type = $(this).data("type");
-                if (field_type == "string") {
-                    var modalTemplate = Handlebars.getTemplate('/assets/templates/metadata/add_metadata');
-                    var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type});
-                    $('#selected_field').html(html);
-                    // register submit listener
-                    $("#add-metadata-button").click(submit);
-                } else if (field_type == "listjquery") {
-                    var modalTemplate = Handlebars.getTemplate('/assets/templates/metadata/add_metadata_listjquery');
-                    var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type});
-                    $('#selected_field').html(html);
+                // Create the template and HTML content.
+                var template_map =
+                    {"string": "add_metadata_string",
+                     "list": "add_metadata_list",
+                     "listjquery": "add_metadata_listjquery",
+                     "listgeocode": "add_metadata_string"
+                    };
+                var modalTemplate = Handlebars.getTemplate('/assets/templates/metadata/' + template_map[field_type]);
+                var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type});
+                $('#selected_field').html(html);
+                //console.log("field_type: ", field_type, ", modalTemplate: ", template_map[field_type], ", html: ", html);
+                // register submit listener
+                $("#add-metadata-button").click(submit);
 
+                if (field_type == "listjquery") {
+                    // Find the field with the specific uri.
+                    var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
+                    $("#field-value").catcomplete({
+                        minLength: 3,
+                        source: function( request, response ) {
+
+                            var useSyn = $("#useSynonyms").prop("checked");
+                            // Sets a variable query parameter in $.ajax.data below.
+                            var query_data = { useSynonyms: useSyn };
+                            var query_param = field[0].json.query_parameter;
+                            query_data[query_param] = request.term;
+                            $.ajax({
+                                url: field[0].json.definitions_url,
+                                dataType: "jsonp",
+                                //data: { term: request.term, useSynonyms: useSyn },
+                                data: query_data,
+                                success: function( data ) {
+                                    // The vars list is in data.vars_data, and the categories in data.cat_data. Assuming that "listjquery" will use a URL that returns filtered data, we don't filter again. Returns cat_data with the vars listif present, otherwise returns the original data.
+                                    if ('cat_data' in data) {
+                                        var res = data.cat_data.concat(data.vars_data);
+                                        response(res);
+                                    } else {
+                                        response(data);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                } else if (field_type == "listgeocode") {
                     // Find the field with the specific uri.
                     var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
                     $("#field-value").autocomplete({
                         minLength: 3,
                         source: function( request, response ) {
+                            // Sets a variable query parameter in $.ajax.data below.
+                            var query_data = { };
+                            var query_param = field[0].json.query_parameter;
+                            query_data[query_param] = request.term;
                             $.ajax({
                                 url: field[0].json.definitions_url,
                                 dataType: "jsonp",
-                                data: { term: request.term },
+                                data: query_data,
                                 success: function( data ) {
-                                    var searchspace = data;
-                                    // Split by space.
-                                    var searchwords = request.term.split(" ");
-
-                                    $.each(searchwords, function() {
-                                        searchspace = $.ui.autocomplete.filter(searchspace, this);
-                                    });
-
-                                    // Limit the results returned in case searchspace is large.
-                                    var mySlice = searchspace.slice(0, 20);
-                                    response(mySlice);
+                                    // Assuming that the remote service returns filtered data, no need to filter again.
+                                    response(data);
                                 }
                             });
                         }
                     });
-
-                    // register submit listener
-                    $("#add-metadata-button").click(submit);
                 } else if (field_type == "list") {
                     // find field with the specific uri
                     var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
@@ -152,7 +247,7 @@
 
                     request.done(function (response, textStatus, jqXHR) {
                         var vocabulary = JSON.parse(response);
-                        var modalTemplate = Handlebars.getTemplate('/assets/templates/metadata/add_metadata_list');
+                        // modalTemplate was assigned above using the map.
                         var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type,
                             'options': vocabulary});
                         $('#selected_field').html(html);
