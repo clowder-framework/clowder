@@ -29,21 +29,21 @@ class Metadata @Inject()(metadataService: MetadataService, contextService: Conte
     Ok(toJson(results))
   }
   
-  def getVocabularies() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.AddMetadata)) {
+  def getDefinitions() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.AddMetadata)) {
     implicit request =>
       request.user match {
         case Some(user) => {
-          val vocabularies = metadataService.getVocabularies()
+          val vocabularies = metadataService.getDefinitions()
           Ok(toJson(vocabularies))
         }
         case None => BadRequest(toJson("Invalid user"))
       }
   }
 
-  def getVocabulary(id: UUID) = Action.async { implicit request =>
+  def getDefinition(id: UUID) = Action.async { implicit request =>
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
     val foo = for {
-      md <- metadataService.getVocabulary(id)
+      md <- metadataService.getDefinition(id)
       url <- (md.json \ "definitions_url").asOpt[String]
     } yield {
       WS.url(url).get().map(response => Ok(response.body.trim))
@@ -51,6 +51,25 @@ class Metadata @Inject()(metadataService: MetadataService, contextService: Conte
     foo.getOrElse {
       Future(InternalServerError)
     }
+  }
+
+  def addDefinition() = SecuredAction(authorization = WithPermission(Permission.AddMetadata)) {
+    implicit request =>
+      request.user match {
+        case Some(user) => {
+          val body = request.body
+
+          if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
+            val definition = MetadataDefinition(json = body)
+            metadataService.addDefinition(definition)
+            Ok(JsObject(Seq("status" -> JsString("ok"))))
+          } else {
+            BadRequest(toJson("Invalid resource type"))
+          }
+
+        }
+        case None => BadRequest(toJson("Invalid user"))
+      }
   }
 
   def addUserMetadata() = SecuredAction(authorization = WithPermission(Permission.AddMetadata)) {

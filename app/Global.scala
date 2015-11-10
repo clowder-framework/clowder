@@ -31,7 +31,7 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
     AppConfiguration.setDefaultAdmins()
 
     // set default metadata definitions
-    MDVocabularyDefinition.registerDefaultVacabularyDefinitions()
+    MetadataDefinition.registerDefaultDefinitions()
 
     extractorTimer = Akka.system().scheduler.schedule(0 minutes, 5 minutes) {
       ExtractionInfoSetUp.updateExtractorsInfo()

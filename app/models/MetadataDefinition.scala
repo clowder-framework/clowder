@@ -10,19 +10,19 @@ import services.{MetadataService, DI, UserService}
  * Definition of metadata fields to present to the user a list of options.
  * This can be defined local within the local instance or retrieved from a remote server.
  */
-case class MDVocabularyDefinition(
+case class MetadataDefinition(
   id: UUID = UUID.generate(),
 //  remoteURL: Option[URL] = None,
   spaceId: Option[UUID] = None,
   json: JsValue
 )
 
-object MDVocabularyDefinition {
+object MetadataDefinition {
 
-  implicit val repositoryFormat = Json.format[MDVocabularyDefinition]
+  implicit val repositoryFormat = Json.format[MetadataDefinition]
 
   /** Register default definitions that every instance should have **/
-  def registerDefaultVacabularyDefinitions(): Unit = {
+  def registerDefaultDefinitions(): Unit = {
     // add default definition
     Logger.debug("Adding core metadata vocabulary definitions to database")
     val metadataService: MetadataService = DI.injector.getInstance(classOf[MetadataService])
@@ -62,6 +62,6 @@ object MDVocabularyDefinition {
           "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/geocode",
           "query_parameter": "loc"}""")
     )
-    default.map(d => metadataService.addVocabularyDefinition(MDVocabularyDefinition(json = d)))
+    default.map(d => metadataService.addDefinition(MetadataDefinition(json = d)))
   }
 }

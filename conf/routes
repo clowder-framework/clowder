@@ -213,6 +213,7 @@ GET            /admin/measures                                                  
 GET            /admin/indexers                                                          @controllers.Admin.getIndexers
 GET            /admin/indexes                                                           @controllers.Admin.getIndexes
 GET            /admin/sections                                                          @controllers.Admin.getSections
+GET            /admin/metadata/definitions                                              @controllers.Admin.getMetadataDefinitions
 GET            /admin/addAdmin                                                          @controllers.Admin.newAdmin
 GET            /admin/listAdmins                                                        @controllers.Admin.listAdmins
 POST           /admin/submitNew                                                         @controllers.Admin.submitNew
@@ -261,8 +262,9 @@ POST           /api/metadata.jsonld                                             
 
 POST           /api/metadata/search                                                     @api.Metadata.search()
 
-GET            /api/metadata/vocabularies                                               @api.Metadata.getVocabularies()
-GET            /api/metadata/vocabularies/:id                                           @api.Metadata.getVocabulary(id: UUID)
+GET            /api/metadata/definitions                                                @api.Metadata.getDefinitions()
+GET            /api/metadata/definitions/:id                                            @api.Metadata.getDefinition(id: UUID)
+POST           /api/metadata/definitions                                                @api.Metadata.addDefinition
 
 
 
