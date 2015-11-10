@@ -95,7 +95,7 @@
                     <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
                       <div>This area will show all datasets you've created.</div>
 
-                         <div> <a class="btn btn-sm" href="@routes.Datasets.newDataset(None)" title="Create a new dataset">Create Dataset</a></div>
+                         <div> <a href="@routes.Datasets.newDataset(None)" title="Create a new dataset">Create Dataset</a></div>
                     </div>
                 }
             </div>
@@ -118,7 +118,7 @@
                         </div>
                         <div class="panel-body">
                             @if(!collection.thumbnail_id.isEmpty){
-                                <a> href="@(routes.Collections.collection(collection.id))">
+                                <a href="@(routes.Collections.collection(collection.id))">
                                     <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)">
                                 </a>
                             }
@@ -150,7 +150,7 @@
                     <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
                         <div>This area will show all collections you've created</div>
 
-                        <div> <a class="btn btn-sm" href="@routes.Collections.newCollection(None)" title="Create a new collection">Create Collection</a></div>
+                        <div> <a href="@routes.Collections.newCollection(None)" title="Create a new collection">Create Collection</a></div>
                     </div>
                 }
             </div>
@@ -208,7 +208,7 @@
                     <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
                         <div>This area will show all spaces you've created. </div>
 
-                        <div> <a class="btn btn-sm" href="@routes.Spaces.newSpace()" title="Create a new space">Create Space</a></div>
+                        <div> <a href="@routes.Spaces.newSpace()" title="Create a new space">Create Space</a></div>
                     </div>
                 }
             </div>

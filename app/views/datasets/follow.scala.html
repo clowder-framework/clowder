@@ -3,7 +3,7 @@
 @if(user.isDefined) {
     @if(!dataset.followers.contains(user.get.id)) {
         <button id="followButton"
-                class="btn btn-sm btn-default followButton"
+                class="btn btn-sm btn-default followButton btn-margin-bottom"
                 objectId="@dataset.id"
                 objectName="@dataset.name"
                 objectType="dataset">
@@ -11,7 +11,7 @@
         </button>
     } else {
         <button id="followButton"
-                class="btn btn-sm btn-danger followButton"
+                class="btn btn-sm btn-danger followButton btn-margin-bottom"
                 objectId="@dataset.id"
                 objectName="@dataset.name"
                 objectType="dataset">

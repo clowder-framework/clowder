@@ -461,7 +461,11 @@ textarea, input[type='text'], input[type='password']{
 }
 
 .btn-margins {
-  margin: 20px 0px;
+     margin: 20px 0px;
+ }
+
+.btn-margin-bottom {
+    margin-bottom: 20px !important;
 }
 
 .col-section {
