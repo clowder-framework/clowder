@@ -266,13 +266,35 @@ class Files @Inject()(
         val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
         files.get(id) match {
           case Some(x) => {
-            files.addMetadata(id, request.body)
-            index(id)
+            val json = request.body
+            //parse request for agent/creator info
+            //creator can be UserAgent or ExtractorAgent
+            val creator = ExtractorAgent(id = UUID.generate(),
+              extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/deprecatedapi")))
+
+            // check if the context is a URL to external endpoint
+            val contextURL: Option[URL] = None
+
+            // check if context is a JSON-LD document
+            val contextID: Option[UUID] = None
+
+            // when the new metadata is added
+            val createdAt = new Date()
+
+            //parse the rest of the request to create a new models.Metadata object
+            val attachedTo = ResourceRef(ResourceRef.file, id)
+            val version = None
+            val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+              json, version)
+
+            //add metadata to mongo
+            metadataService.addMetadata(metadata)
+
+            files.index(id)
+            Ok(toJson(Map("status" -> "success")))
           }
           case None => Logger.error(s"Error getting file $id"); NotFound
         }
-
-        Logger.debug(s"Updating previews.files $id with $doc")
         Ok(toJson("success"))
     }
   
@@ -1721,7 +1743,10 @@ class Files @Inject()(
       request =>
         files.get(id) match {
           case Some(file) => {
-            Ok(files.getTechnicalMetadataJSON(id))
+            val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+              .filter(_.creator.typeOfAgent == "extractor")
+              .map(JSONLD.jsonMetadataWithContext(_) \ "content")
+            Ok(toJson(listOfMetadata))
           }
           case None => {
             Logger.error("Error finding file" + id);
