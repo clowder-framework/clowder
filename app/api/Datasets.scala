@@ -1298,7 +1298,7 @@ class Datasets @Inject()(
       datasets.get(id) match {
         case Some(dataset) => {
           val datasetWithFiles = dataset.copy(files = dataset.files)
-          val datasetFiles = datasetWithFiles.files.map {f => files.get(f).foreach(file => file)}.asInstanceOf[List[File]]
+          val datasetFiles: List[File] = datasetWithFiles.files.flatMap(f => files.get(f))
           val previewers = Previewers.findPreviewers
           //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
           val previewslist = for (f <- datasetFiles; if (f.showPreviews.equals("DatasetLevel"))) yield {
