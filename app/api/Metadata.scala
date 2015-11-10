@@ -4,16 +4,13 @@ import java.net.URL
 import java.util.Date
 import javax.inject.{Inject, Singleton}
 
-import jsonutils.JsonUtil
-import models.{UserAgent, UUID, ResourceRef}
+import models.{ResourceRef, UUID, UserAgent, _}
 import play.api.Logger
-import play.api.libs.json._
 import play.api.libs.json.Json._
-import models._
+import play.api.libs.json._
 import play.api.libs.ws.WS
 import play.api.mvc.Action
 import services._
-import play.api.Play.configuration
 
 import scala.concurrent.Future
 
@@ -35,7 +32,7 @@ class Metadata @Inject()(
   }
 
   def searchByKeyValue(key: Option[String], value: Option[String], count: Int = 0) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Public)) {
+    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.SearchDatasets)) {
       implicit request =>
         val response = for {
           k <- key
