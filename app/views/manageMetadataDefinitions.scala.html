@@ -7,12 +7,23 @@
             $("#type").change(function() {
                 var definitions = $("#definitions_url");
                 var validateButton = $("#validateButton");
+                var queryParameter = $("#query_parameter");
+                var queryParameterValue = $("#query_parameter_value");
                 if ($(this).val() == "string") {
                     definitions.attr("disabled", true);
                     validateButton.attr("disabled", true);
+                    queryParameter.attr("disabled", true);
+                    queryParameterValue.attr("disabled", true);
+                } else if ($(this).val() == "list") {
+                    definitions.removeAttr("disabled");
+                    validateButton.removeAttr("disabled");
+                    queryParameter.attr("disabled", true);
+                    queryParameterValue.attr("disabled", true);
                 } else {
                     definitions.removeAttr("disabled");
                     validateButton.removeAttr("disabled");
+                    queryParameter.removeAttr("disabled");
+                    queryParameterValue.removeAttr("disabled");
                 }
             });
             $(function () {
@@ -23,7 +34,24 @@
 
             $("#validateButton").click(function(e){
                 e.preventDefault();
+                // get the value of this metadata definition url from the form
                 var definitionsValue = $("#definitions_url").val();
+                // get a reference to the form boxes for a query param and value in case this is a query-able list
+                var queryParam = $("#query_parameter");
+                var queryParamValue = $("#query_parameter_value");
+                // set a variable where we will store the query parameter key and value if it is filled out
+                var queryString;
+                // if this is a query-able list, we will enable the user to add a query parameter that will be registered with the definition
+                // we will also allow them to submit a sample value for the query parameter so they can test that the url works
+                if (!queryParam.attr("disabled") && queryParam.val() && queryParamValue.val()) {
+                    var paramString = {};
+                    paramString[queryParam.val()] = queryParamValue.val();
+                    queryString = $.param(paramString);
+                }
+                if (queryString) {
+                    definitionsValue = definitionsValue + "?" + queryString;
+                }
+                console.log(definitionsValue);
                 if (definitionsValue) {
                     var request = $.ajax({
                         url: definitionsValue,
@@ -38,13 +66,20 @@
                     });
 
                     request.done(function(data, textStatus) {
+                        // TODO: validation of the results would require either knowing which element
+                        // to look for in the response, or requiring all API's to use a standard response structure.
+                        // For now, if we got a successful response from the GET request, we'll proceed
+                        var linkText;
                         if (data && data.length) {
-                            $("#validationResults").html(
-                                '<div class="alert alert-success fade in">' +
-                                '<a href="#" class="close" data-dismiss="alert">&times;</a>' +
-                                '<strong>Success!</strong> Data was found at the URL: (<a href=' +
-                                definitionsValue + ' target="_blank">' + data.length + ' items</a>)</div>');
+                            linkText = data.length + " items";
+                        } else {
+                            linkText = "View";
                         }
+                        $("#validationResults").html(
+                            '<div class="alert alert-success fade in">' +
+                            '<a href="#" class="close" data-dismiss="alert">&times;</a>' +
+                            '<strong>Success!</strong> Data was found at the URL: (<a href=' +
+                            definitionsValue + ' target="_blank">' + linkText + '</a>)</div>');
                     });
                 }
             });
@@ -58,6 +93,7 @@
                         data[$(element).attr('id')] = value;
                     }
                 });
+                if (data['query_parameter_value']) delete data['query_parameter_value'];
                 if (data.type == "list" || data.type == "listjquery") {
                     if (!data.definitions_url) {
                         $("#validationResults").html(
@@ -90,8 +126,9 @@
                 <tr>
                     <th>Label <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Label" data-content="A label or name that users will see when selecting this as a type of metadata."><span class="glyphicon glyphicon-info-sign"></span></a></th>
                     <th>URI <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="URI" data-content="A unique URI where this metadata is defined. This is not queried or used to populate metadata values, only for reference."><span class="glyphicon glyphicon-info-sign"></span></a></th>
-                    <th>Type <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Metadata Type" data-content="A string is free-form, plain-text field. A list should also include Definitions URL that contains the available metadata options that a user can select from. A Query-able List is just like a list, except that you can pass an argument to the URL to filter values."><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                    <th>Type <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Metadata Type" data-html=true data-content="Currently supported types:<br /><ul><li>String: this is free-form, plain-text field.</li><li>List: an array or list of metadata options that can be retrieved from a URL. The list type requires you to define a Definitions URL that will return the available metadata options in JSON format.</li><li>Query-able List: similar to list, except that you can also pass a query parameter to filter the list at the Definitions URL.</li><li>Location: also a queryable list, but it expects the response to contain a latitude and longitude.</li></ul>"><span class="glyphicon glyphicon-info-sign"></span></a></th>
                     <th>Definitions URL <a tabindex="0" role="button" data-toggle="popover" title="Metadata Definitions URL" data-content="This URL should return a list of values that the user can select from as possible options for this metadata definition." aria-hidden="true" ><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                    <th>Query Parameter <a tabindex="0" role="button" data-toggle="popover" title="Query Parameter" data-content="Some list types support filtering the data by use of a query parameter. Example: example.com?searchterm=value" aria-hidden="true" ><span class="glyphicon glyphicon-info-sign"></span></a></th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -105,10 +142,18 @@
                             @((m.json \ "uri").asOpt[String].getOrElse(""))
                         </td>
                         <td>
-                            @((m.json \ "type").asOpt[String].getOrElse(""))
+                            @((m.json \ "type").asOpt[String].getOrElse("")) match {
+                                case "string" => {String}
+                                case "list" => {List}
+                                case "listjquery" => {Query-able List}
+                                case "listgeocode" => {Location}
+                            }
                         </td>
                         <td>
                             @((m.json \ "definitions_url").asOpt[String].getOrElse(""))
+                        </td>
+                        <td>
+                            @((m.json \ "query_parameter").asOpt[String].getOrElse(""))
                         </td>
                         <td><a href="#addDefinition" onclick="editDefinition('@(m.id)', '@(m.json)', this);">Edit</a></td>
                     </tr>
@@ -152,6 +197,7 @@
                                     <option value="string">String</option>
                                     <option value="list">List</option>
                                     <option value="listjquery">Query-able List</option>
+                                    <option value="listgeocode">Location</option>
                                 </select>
                             </div>
                         </div>
@@ -162,6 +208,15 @@
                             </div>
                             <div class="col-sm-2">
                                 <button class="btn btn-info" id="validateButton" disabled>Validate URL</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="query_parameter" class="col-sm-2">Query Parameter</label>
+                            <div class="col-sm-5">
+                                <input type="text" class="form-control" id="query_parameter" placeholder="term" disabled />
+                            </div>
+                            <div class="col-sm-5">
+                                <input type="text" class="form-control" id="query_parameter_value" placeholder="value" disabled />
                             </div>
                         </div>
                         <div class="form-group">
