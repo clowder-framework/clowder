@@ -93,16 +93,13 @@ class CurationObjects @Inject()(
 
               //copy file list from FileDAO.
               var newFiles: List[File]= List.empty
-              for ( file <- dataset.files) {
-                files.get(file.id) match{
+              for ( fileId <- dataset.files) {
+                files.get(fileId) match {
                   case Some(f) => {
                     newFiles =  f :: newFiles
                   }
                 }
               }
-              //this line can actually be removed since we are not using dataset.files to get file's info.
-              //Just to keep consistency
-              var newDataset = dataset.copy(files = newFiles)
 
               //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
               val newCuration = CurationObject(
@@ -113,7 +110,7 @@ class CurationObjects @Inject()(
                 submittedDate = None,
                 publishedDate= None,
                 space = spaceId,
-                datasets = List(newDataset),
+                datasets = List(dataset),
                 files = newFiles,
                 repository = None,
                 status = "In Curation"
@@ -186,7 +183,7 @@ class CurationObjects @Inject()(
 
 
   def getFiles(curation: CurationObject, dataset: Dataset): List[File] ={
-    curation.files filter (f => (dataset.files map (_.id)) contains  (f.id))
+    curation.files filter (f => dataset.files.contains (f.id))
   }
 
   def addFileUserMetadata(curationId:UUID, fileId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId)))  (parse.json) { implicit request =>

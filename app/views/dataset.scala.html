@@ -1,17 +1,17 @@
 @(dataset: models.Dataset,
   comments: List[Comment],
-  previews : List[Previewer],
+  previewers : List[Previewer],
   md: Map[String,Any],
   usrmd: scala.collection.mutable.Map[String,Any],
-  collectionsOutside: List[models.Collection],
   collectionsInside: List[models.Collection],
   rdfExported: Boolean,
   relatedSensors: List[(String,String,String)],
   datasetSpaces: Option[List[ProjectSpace]],
   fileList: List[File],
-  otherSpaces: List[ProjectSpace],
+  filesTags: scala.collection.immutable.TreeSet[String],
   toPublish: Boolean,
-  curationObjects: List[models.CurationObject])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  curationObjects: List[models.CurationObject],
+  currentSpace: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -125,6 +125,15 @@
                     }
                     @datasets.deleteButton(dataset)
                     @datasets.follow(dataset)
+                    @if(toPublish && currentSpace.isDefined) {
+                        <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-default btn-sm">
+                            Publish
+                        </a>
+                    } else {
+                        <button class="btn btn-default btn-xs" disabled>
+                            Publish
+                        </button>
+                    }
                 </div>
             </div>
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->

@@ -120,8 +120,8 @@
         <br/>
         <h4>Dataset <a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h4>
         Note: The links in this page redirect to the live objects.<br/>
-        <b>Size</b>: @{curationObject.datasets(0).files.map(_.length).sum /1024} MB <br/>
-        <b>File Formats</b>: @curationObject.datasets(0).files.map(_.contentType).toSet.mkString(", ") <br/>
+        <b>Size</b>: @{curationObject.files.map(_.length).sum /1024} MB <br/>
+        <b>File Formats</b>: @curationObject.files.map(_.contentType).toSet.mkString(", ") <br/>
         <b>Creator</b>: @curationObject.datasets(0).author.fullName <br/>
 
 

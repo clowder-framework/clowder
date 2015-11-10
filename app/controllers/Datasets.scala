@@ -234,7 +234,7 @@ class Datasets @Inject()(
   /**
    * Dataset.
    */
-  def dataset(id: UUID, currentSpace:Option[String]) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def dataset(id: UUID, currentSpace: Option[String]) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
 
       implicit val user = request.user
       Previewers.findPreviewers.foreach(p => Logger.debug("Previewer found " + p.id))
@@ -341,7 +341,7 @@ class Datasets @Inject()(
           val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
-            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), fileList, toPublish, curPubObjects))
+            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), fileList, filesTags, toPublish, curPubObjects, currentSpace))
         }
         case None => {
           Logger.error("Error getting dataset" + id)
