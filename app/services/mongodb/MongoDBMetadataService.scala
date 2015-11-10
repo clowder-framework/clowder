@@ -42,14 +42,16 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
 
   /** Get Metadata based on Id of an element (section/file/dataset/collection) */
   def getMetadataByAttachTo(resourceRef: ResourceRef): List[Metadata] = {
+    val order = MongoDBObject("createdAt"-> -1)
     MetadataDAO.find(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
-      "attachedTo._id" -> new ObjectId(resourceRef.id.stringify))).toList
+      "attachedTo._id" -> new ObjectId(resourceRef.id.stringify))).sort(order).toList
   }
 
   /** Get metadata based on type i.e. user generated metadata or technical metadata  */
   def getMetadataByCreator(resourceRef: ResourceRef, typeofAgent: String): List[Metadata] = {
+    val order = MongoDBObject("createdAt"-> -1)
     val metadata = MetadataDAO.find(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
-      "attachedTo._id" -> new ObjectId(resourceRef.id.stringify)))
+      "attachedTo._id" -> new ObjectId(resourceRef.id.stringify))).sort(order)
 
     for (md <- metadata.toList; if (md.creator.typeOfAgent == typeofAgent)) yield md
   }
