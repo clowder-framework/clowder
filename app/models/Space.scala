@@ -25,7 +25,7 @@ case class ProjectSpace (
   collectionCount: Integer,
   datasetCount: Integer,
   userCount: Integer,
-  metadata: List[Metadata], 
+  metadata: List[Metadata],
   resourceTimeToLive: Long = SpaceConfig.getTimeToLive(),
   isTimeToLiveEnabled: Boolean = SpaceConfig.getIsTimeToLiveEnabled(),
   followers: List[UUID] = List.empty,
@@ -51,7 +51,7 @@ case class SpaceInvite(
     email: String,
     space: UUID,
     role: String)
-   
+
 // New way to manage metadata. Will eventually be merged with space metadata.
 case class SpaceMetadata (
   created: Date,
@@ -60,6 +60,8 @@ case class SpaceMetadata (
   previousVersion: Option[UUID]
 )
 
+case class Role()
+
 // Attempt at a generic provenance object. **Not ready**
 case class ProvObj (
   typeofIf: String,
@@ -67,10 +69,6 @@ case class ProvObj (
   archived: Date,
   obj: JsObject)
 
-// Generic Agent
-trait Agent {
-  val id: UUID
-}
 
 // User through the GUI
 case class UserAgent(id: UUID, userId: Option[URL]) extends Agent

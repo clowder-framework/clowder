@@ -92,13 +92,19 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
     collection("previews.files").ensureIndex(MongoDBObject("section_id" -> -1))
     collection("previews.files").ensureIndex(MongoDBObject("file_id" -> -1))
-    
+
     collection("textures.files").ensureIndex(MongoDBObject("file_id" -> 1))
     collection("tiles.files").ensureIndex(MongoDBObject("preview_id" -> 1, "filename" -> 1,"level" -> 1))
     
     collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
     collection("sections").ensureIndex(MongoDBObject("file_id" -> -1))
     collection("sections").ensureIndex(MongoDBObject("tags.name" -> 1))
+
+    collection("metadata").ensureIndex(MongoDBObject("createdAt" -> -1))
+    collection("metadata").ensureIndex(MongoDBObject("creator" -> 1))
+    collection("metadata").ensureIndex(MongoDBObject("attachTo" -> 1))
+
+    collection("contextld").ensureIndex(MongoDBObject("contextName" -> 1))
 
     collection("dtsrequests").ensureIndex(MongoDBObject("startTime" -> -1, "endTime" -> -1))
     collection("dtsrequests").ensureIndex(MongoDBObject("file_id" -> -1))
@@ -153,6 +159,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("uploads.files").drop()
     collection("uploadquery.files").drop()
     collection("versus.descriptors").drop()
+    collection("metadata").drop()
+    collection("contexld").drop()
     collection("spaces.projects").drop()
     collection("spaces.users").drop()
     Logger.debug("**DANGER** Data deleted **DANGER**")

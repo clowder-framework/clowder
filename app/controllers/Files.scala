@@ -44,7 +44,9 @@ class Files @Inject() (
   sparql: RdfSPARQLService,
   users: UserService,
   events: EventService,
-  thumbnails: ThumbnailService) extends SecuredController {
+  thumbnails: ThumbnailService,
+  metadata: MetadataService,
+  contextLDService: ContextLDService) extends SecuredController {
 
   /**
    * Upload form.
@@ -94,8 +96,7 @@ class Files @Inject() (
           }
         }
         Logger.debug("Previewers available: " + previewsWithPreviewer)
-       
-        
+
         // add sections to file
         val sectionsByFile = sections.findByFileId(file.id)
         Logger.debug("Sections: " + sectionsByFile)
@@ -107,12 +108,17 @@ class Files @Inject() (
         		s.copy(preview = None)
         }
 
+        // metadata
+        val mds = metadata.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file.id))
+        // TODO use to provide contextual definitions directly in the GUI
+        val contexts = (for (md <- mds;
+                             cId <- md.contextId;
+                             c <- contextLDService.getContextById(cId))
+          yield cId -> c).toMap
+
         // Check if file is currently being processed by extractor(s)
         val extractorsActive = extractions.findIfBeingProcessed(file.id)
-        
-        val userMetadata = files.getUserMetadata(file.id)
-        Logger.debug("User metadata: " + userMetadata.toString)
-        
+
         var commentsByFile = comments.findCommentsByFileId(id)
         sectionsByFile.map { section =>
           commentsByFile ++= comments.findCommentsBySectionId(section.id)
@@ -125,7 +131,7 @@ class Files @Inject() (
           val dComment = Utils.decodeCommentElements(aComment)
           decodedCommentsByFile += dComment
         }
-        
+
         //Decode the datasets so that their free text will display correctly in the view
         val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
         val decodedDatasetsContaining = ListBuffer.empty[models.Dataset]
@@ -134,7 +140,7 @@ class Files @Inject() (
         	val dDataset = Utils.decodeDatasetElements(aDataset)
         	decodedDatasetsContaining += dDataset
         }
-        
+
           val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
           val extractionsByFile = extractions.findByFileId(id)
@@ -156,14 +162,14 @@ class Files @Inject() (
               plugin.getOutputFormats(contentTypeEnding).map(outputFormats =>
                 Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                   extractorsActive, decodedDatasetsContaining.toList,
-                  userMetadata, isRDFExportEnabled, extractionsByFile, outputFormats)))
+                  mds, isRDFExportEnabled, extractionsByFile, outputFormats)))
             }
             case None =>
               Logger.debug("Polyglot plugin not found")
               //passing None as the last parameter (list of output formats)
               Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                 extractorsActive, decodedDatasetsContaining.toList,
-                userMetadata, isRDFExportEnabled, extractionsByFile, None)))
+                mds, isRDFExportEnabled, extractionsByFile, None)))
           }              
       }
           

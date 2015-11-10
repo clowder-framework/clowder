@@ -69,11 +69,12 @@
                             <li><a href="@routes.Tags.tagListOrdered">Tags (Ordered)</a></li>
                             <li><a href="@routes.Tags.tagListWeighted">Tags (Weighted)</a></li>
                             <li><a href="@routes.Tags.tagCloud">Tag Cloud</a></li>
-                            <li role="separator" class="divider"></li>
-                            <li><a href="@routes.Files.metadataSearch">Search files by user metadata</a></li>
-                            <li><a href="@routes.Files.generalMetadataSearch">Search files by system metadata</a></li>
-                            <li><a href="@routes.Datasets.metadataSearch">Search datasets by user metadata</a></li>
-                            <li><a href="@routes.Datasets.generalMetadataSearch">Search datasets by system metadata</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">Metadata<b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="@routes.Metadata.search">Search</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -116,6 +117,7 @@
                                         <li><a href="@routes.Extractors.listAllExtractions">Extractions</a></li>
                                         <li><a href="@routes.Admin.adminIndex">Indexes</a></li>
                                         <li><a href="@routes.Admin.viewDumpers">Dumps</a></li>
+                                        <li><a href="@routes.Admin.getMetadataDefinitions">Metadata Definitions</a></li>
                                     </ul>
                                 </li>
                             }

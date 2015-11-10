@@ -12,13 +12,14 @@ GET            /*path/                                                          
 # ----------------------------------------------------------------------
 # HOME PAGE
 # ----------------------------------------------------------------------
+
 GET            /                                                                        @controllers.Application.index
 GET            /about                                                                   @controllers.Application.about
 
 # ----------------------------------------------------------------------
 # Map static resources from the /public folder to the /assets URL path
 # ----------------------------------------------------------------------
-#GET           /documentation/api/*testFile                                             controllers.Assets.at(path="/public/docs/api", testFile)
+GET            /contexts/metadata.jsonld                                                controllers.Assets.at(path="/public", file="/jsonld/contexts/metadata.jsonld")
 GET            /assets/img/glyphicons-halflings-white.png                               controllers.Assets.at(path="/public", file="/images/glyphicons-halflings-white.png")
 GET            /assets/img/glyphicons-halflings.png                                     controllers.Assets.at(path="/public", file="/images/glyphicons-halflings.png")
 GET            /assets/*file                                                            controllers.Assets.at(path="/public", file)
@@ -138,8 +139,24 @@ GET            /geostreams/sensors/new                                          
 GET            /geostreams/sensors/:id                                                  controllers.Geostreams.edit(id)
 
 # ----------------------------------------------------------------------
-# TAGS
+# JSON-LD Metadata
 # ----------------------------------------------------------------------
+GET            /metadata/search                                                         @controllers.Metadata.search()
+GET            /metadata/:id                                                            @controllers.Metadata.view(id: UUID)
+GET            /files/:file_id/metadata                                                 @controllers.Metadata.file(file_id: UUID)
+GET            /datasets/:dataset_id/metadata                                           @controllers.Metadata.dataset(dataset_id: UUID)
+
+# ----------------------------------------------------------------------
+# Spaces
+# ----------------------------------------------------------------------
+GET            /spaces                                                                  @controllers.Spaces.list(order: Option[String] ?= None, direction: String ?= "asc", start: Option[String] ?= None, limit: Int ?= 12, filter: Option[String] ?= None, mode: String ?= "tile")
+GET            /spaces/new                                                              @controllers.Spaces.newSpace
+GET            /spaces/:id                                                              @controllers.Spaces.getSpace(id: UUID)
+GET            /spaces/:id/updateSpace                                                  @controllers.Spaces.updateSpace(id:UUID)
+POST           /spaces/submit                                                           @controllers.Spaces.submit
+
+# Tags
+
 GET            /tags/search                                                             @controllers.Tags.search(tag, start: String ?= "", size: Integer ?= 12, mode: String ?= "")
 GET            /tags/list/ordered                                                       @controllers.Tags.tagListOrdered
 GET            /tags/list/weighted                                                      @controllers.Tags.tagListWeighted
@@ -216,6 +233,7 @@ GET            /admin/measures                                                  
 GET            /admin/indexers                                                          @controllers.Admin.getIndexers
 GET            /admin/indexes                                                           @controllers.Admin.getIndexes
 GET            /admin/sections                                                          @controllers.Admin.getSections
+GET            /admin/metadata/definitions                                              @controllers.Admin.getMetadataDefinitions
 GET            /admin/addAdmin                                                          @controllers.Admin.newAdmin
 GET            /admin/listAdmins                                                        @controllers.Admin.listAdmins
 POST           /admin/submitNew                                                         @controllers.Admin.submitNew
@@ -247,6 +265,32 @@ GET            /api-docs.json/:path                                             
 # ----------------------------------------------------------------------
 # RESTful API
 # ----------------------------------------------------------------------
+
+#----------------------------------------------------------------------
+# JSON-LD METADATA
+#----------------------------------------------------------------------
+POST           /api/contexts                                                            @api.ContextLD.addContext()
+GET            /api/contexts/:id                                                        @api.ContextLD.getContextById(id: UUID)
+GET            /api/contexts/:name/context.json                                         @api.ContextLD.getContextByName(name: String)
+DELETE         /api/contexts/:id                                                        @api.ContextLD.removeById(id: UUID)
+
+POST           /api/datasets/:id/metadata.jsonld                                        @api.Datasets.addMetadataJsonLD(id: UUID)
+GET            /api/datasets/:id/metadata.jsonld                                        @api.Datasets.getMetadataJsonLD(id: UUID)
+POST           /api/files/:id/metadata.jsonld                                           @api.Files.addMetadataJsonLD(id: UUID)
+GET            /api/files/:id/metadata.jsonld                                           @api.Files.getMetadataJsonLD(id: UUID)
+
+POST           /api/metadata.jsonld                                                     @api.Metadata.addUserMetadata()
+#GET            /api/metadata.jsonld                                                     @api.Metadata.getUserMetadata()
+
+GET            /api/metadata/search                                                     @api.Metadata.searchByKeyValue(mdkey: Option[String], mdvalue: Option[String], count: Int ?= 10)
+POST           /api/metadata/search                                                     @api.Metadata.search()
+
+GET            /api/metadata/definitions                                                @api.Metadata.getDefinitions()
+GET            /api/metadata/definitions/:id                                            @api.Metadata.getDefinition(id: UUID)
+POST           /api/metadata/definitions                                                @api.Metadata.addDefinition
+
+
+
 # ----------------------------------------------------------------------
 # FILES ENDPOINT
 # ----------------------------------------------------------------------
@@ -334,6 +378,13 @@ POST           /api/dumpFilesMd                                                 
 POST           /api/dumpDatasetsMd                                                      @api.Datasets.dumpDatasetsMetadata
 POST           /api/dumpDatasetGroupings                                                @api.Datasets.dumpDatasetGroupings
 
+#----------------------------------------------------------------------
+# 3D FILES
+#----------------------------------------------------------------------
+#GET		/api/files/:three_d_file_id/:filename			    @api.Files.getGeometry(three_d_file_id: UUID, filename)
+GET            /api/files/:three_d_file_id/:filename                                    @api.Files.getTexture(three_d_file_id: UUID, filename)
+
+
 # ----------------------------------------------------------------------
 # SPACES ENDPOINT
 # ----------------------------------------------------------------------
@@ -351,6 +402,11 @@ POST           /api/spaces/:spaceId/addDatasetToSpace/:datasetId                
 POST           /api/spaces/:spaceId/addCollectionToSpace/:collectionId                  @api.Spaces.addCollectionToSpace(spaceId: UUID, collectionId: UUID)
 POST           /api/spaces/:id/follow                                                   @api.Spaces.follow(id: UUID, name: String)
 POST           /api/spaces/:id/unfollow                                                 @api.Spaces.unfollow(id: UUID, name: String)
+
+POST           /api/spaces/:id/addCollection                                            @api.Spaces.addCollection(id: UUID)
+
+POST           /api/remove-admin                                                        api.Admin.removeAdmin
+POST           /api/changeAppearance                                                    api.Admin.submitAppearance
 
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT

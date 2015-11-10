@@ -20,7 +20,7 @@ import scala.concurrent.Future
  * Administration pages.
  */
 @Singleton
-class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: UserService) extends SecuredController {
+class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: UserService, metadataService: MetadataService) extends SecuredController {
 
   def main = ServerAdminAction { implicit request =>
     val theme = AppConfiguration.getTheme
@@ -352,6 +352,20 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     }
   }
 
+  def getMetadataDefinitions() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(x) => {
+        if (x.email.nonEmpty && AppConfiguration.checkAdmin(x.email.get)) {
+          val metadata = metadataService.getDefinitions()
+          Ok(views.html.manageMetadataDefinitions(metadata.toList))
+        } else {
+          Unauthorized("Not authorized")
+        }
+      }
+    }
+  }
+
   val roleForm = Form(
     mapping(
     "id" -> optional(Utils.CustomMappings.uuidType),
@@ -370,7 +384,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
       }
     }
   }
-  
+
   def viewDumpers() = ServerAdminAction { implicit request =>
   	implicit val user = request.user
 	Ok(views.html.viewDumpers())

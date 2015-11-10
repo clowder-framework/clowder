@@ -1,0 +1,129 @@
+@(metadata: List[models.Metadata])
+    @import play.api.libs.json.JsString
+    @import play.api.libs.json.JsObject
+    @import play.api.libs.json.JsValue
+    @import play.api.libs.json.JsArray
+
+    @dateFormatter(date: java.util.Date) = @{
+        val formatter = new java.text.SimpleDateFormat("MMM d, yyyy")
+        formatter.format(date)
+    }
+
+    @printContent(content: JsValue) = {
+        @content match {
+            case o: JsObject => {
+                <ul>
+                    @for((key, value) <- o.fields) {
+                        @value match {
+                            case o: JsObject => {
+                                <li class="md-block">
+                                    <a class="collapse-icon">
+                                        <span class="glyphicon glyphicon-minus"></span>
+                                    </a>
+                                    <strong>@key:</strong> @printContent(value)
+                                </li>
+                            }
+                            case o: JsArray => {
+                                <li class="md-block">
+                                    <a class="collapse-icon">
+                                        <span class="glyphicon glyphicon-minus"></span>
+                                    </a>
+                                    <strong>@key:</strong> @printContent(value)
+                                </li>
+                            }
+                            case _ => {<li class="md-block"><strong>@key:</strong> @printContent(value)</li>}
+                        }
+
+                    }
+                </ul>
+            }
+            case a: JsArray => {
+                <ul>
+                @for((value, i) <- a.value.zipWithIndex) {
+                    <li class="md-block">@printContent(value)</li>
+                }
+                </ul>
+            }
+            case s: JsString => {
+                @if(s.value.startsWith("http")) {
+                    <a href="@s.value">@s.value</a>
+                } else {
+                    @s.value
+                }
+            }
+            case _ => {@content}
+        }
+    }
+
+    @printHeader(agent: Agent, date: java.util.Date, contextId: Option[UUID]) = {
+        @agent match {
+            case a: ExtractorAgent => {
+                Extracted by <a href="@a.extractorId.get">
+                    @agent.asInstanceOf[ExtractorAgent].extractorId.get
+                </a> on @dateFormatter(date)
+                @if(contextId.isDefined) {
+                    <a href="@api.routes.ContextLD.getContextById(contextId.get)" class="pull-right">context</a>
+                }
+            }
+            case a: UserAgent => {
+                Added by <a href="@routes.Profile.viewProfileUUID(a.user.id)">@a.user.fullName</a>
+                on @dateFormatter(date)
+                @if(contextId.isDefined) {
+                    <a href="@api.routes.ContextLD.getContextById(contextId.get)" class="pull-right">context</a>
+                }
+            }
+            case _ => {
+                Extracted by unknown agent on @dateFormatter(date)
+            }
+        }
+    }
+
+    @if(metadata.size == 0) {
+        <h4>No metadata available for this resource</h4>
+    }
+    @for((m, i) <- metadata.zipWithIndex) {
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="heading_@i">
+                <a data-toggle="collapse" href="#collapse_@i" class="collapse-icon">
+                    <span class="panel-icon glyphicon glyphicon-minus"></span>
+                </a>
+                <span>
+                    @printHeader(m.creator, m.createdAt, m.contextId)
+                </span>
+            </div>
+            <div id="collapse_@i" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading_@i">
+                <div class="panel-body">
+                    <div class="tree">
+                        @printContent(m.content)
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <script>
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+
+            $('.collapse')
+                .on('shown.bs.collapse', function(){
+                    $(this).parent().find(".panel-icon").removeClass("glyphicon-plus").addClass("glyphicon-minus");
+                })
+                .on('hidden.bs.collapse', function(){
+                    $(this).parent().find(".panel-icon").removeClass("glyphicon-minus").addClass("glyphicon-plus");
+                });
+
+            $('.tree li').on('click', function (e) {
+                console.log("clicked");
+                var children = $(this).find('> ul > li');
+                if (children.is(":visible")) {
+                    children.hide('fast');
+                    $(this).find(".glyphicon-minus").removeClass("glyphicon-minus").addClass("glyphicon-plus");
+                } else {
+                    children.show('fast');
+                    $(this).find(".glyphicon-plus").removeClass("glyphicon-plus").addClass("glyphicon-minus");
+                }
+                e.stopPropagation();
+            });
+        })
+    </script>

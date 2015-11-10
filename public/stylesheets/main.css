@@ -474,10 +474,17 @@ textarea, input[type='text'], input[type='password']{
 
 .paddingTop7 {
     padding-top: 7px;
+
+.space-head {
+    border-bottom: 1px solid #E1E1E8;
 }
 
 .error {
     color: red;
+}
+
+.space-col-left {
+    border-right: 1px solid #E1E1E8;
 }
 
 .tag {
@@ -719,6 +726,21 @@ table#sensorsListTable > thead > tr > th.headerSortDown {
     border-radius: .25em;
 }
 
+.md-block {
+    padding: 5px 0px;
+    margin: 0px;
+}
+
+.collapse-icon:link, .collapse-icon:visited, .collapse-icon:hover, .collapse-icon:active  {
+    text-decoration:none;
+    cursor: pointer; cursor: hand;
+}
+
+.tree li {
+    list-style-type: none;
+}
+
+
 .space-pills a {
     color: white;
 }
@@ -864,4 +886,7 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 
 #user-space-role .table {
     margin-bottom: 0px;
+}
+.form-md {
+    padding: 10px 0px;
 }

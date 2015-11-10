@@ -32,28 +32,28 @@ object Utils {
       }
     }
   }
-  
+
   /**
    * Utility method to modify the elements in a space that are encoded when submitted and stored. These elements
    * are decoded when a view requests the objects, so that they can be human readable.
-   * 
+   *
    * Currently, the following space elements are encoded:
    * name
    * description
-   *  
+   *
    */
   def decodeDatasetElements(dataset: Dataset) : Dataset = {
     val updatedName = updateEncodedTextNewlines(dataset.name)
     val updatedDesc = updateEncodedTextNewlines(dataset.description)
     dataset.copy(name = updatedName, description = updatedDesc)
   }
-  
+
   def decodeSpaceElements(space: ProjectSpace): ProjectSpace = {
     val decodedName = StringEscapeUtils.unescapeHtml(space.name)
     val decodedDesc = StringEscapeUtils.unescapeHtml(space.description)
     space.copy(name = decodedName, description = decodedDesc)
   }
-  
+
   /**
    * Default formatter for the `String` type.
    */
@@ -61,7 +61,7 @@ object Utils {
     def bind(key: String, data: Map[String, String]) = data.get(key).toRight(Seq(FormError(key, "error.required", Nil)))
     def unbind(key: String, value: String) = Map(key -> value)
   }
-  
+
   /**
    * Exact copy of private function in play.api.data.format.Formats
    */
@@ -90,7 +90,22 @@ object Utils {
     }
     def uuidType: Mapping[UUID] = Forms.of[UUID]
   }
-  
+
+  /**
+   * Utility method to modify the elements in a dataset that are encoded when submitted and stored. These elements
+   * are decoded when a view requests the objects, so that they can be human readable.
+   *
+   * Currently, the following dataset elements are encoded:
+   * name
+   * description
+   *
+   */
+  def decodeDatasetElements(dataset: Dataset) : Dataset = {
+      val updatedName = updateEncodedTextNewlines(dataset.name)
+      val updatedDesc = updateEncodedTextNewlines(dataset.description)
+      dataset.copy(name = updatedName, description = updatedDesc)
+  }
+
   /**
    * Utility method to modify the elements in a collection that are encoded when submitted and stored. These elements
    * are decoded when a view requests the objects, so that they can be human readable.

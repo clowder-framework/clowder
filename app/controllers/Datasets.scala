@@ -40,7 +40,8 @@ class Datasets @Inject()(
   previewService: PreviewService,
   spaceService: SpaceService,
   curationService: CurationService,
-  relations: RelationService) extends SecuredController {
+  relations: RelationService,
+  metadata: MetadataService) extends SecuredController {
 
   object ActivityFound extends Exception {}
 
@@ -252,13 +253,7 @@ class Datasets @Inject()(
 
           val filteredPreviewers = Previewers.findDatasetPreviewers
 
-          val metadata = datasets.getMetadata(id)
-          Logger.debug("Metadata: " + metadata)
-          for (md <- metadata) {
-              Logger.debug(md.toString)
-          }
-          val userMetadata = datasets.getUserMetadata(id)
-          Logger.debug("User metadata: " + userMetadata.toString)
+          val m = metadata.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
 
           val collectionsInside = collections.listInsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
           var decodedCollectionsInside = new ListBuffer[models.Collection]()
@@ -340,7 +335,7 @@ class Datasets @Inject()(
           val curObjectsPermission: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(curation => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id)))
           val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
 
-          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, metadata, userMetadata,
+          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m, userMetadata,
             decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), fileList, filesTags, toPublish, curPubObjects, currentSpace))
         }
         case None => {

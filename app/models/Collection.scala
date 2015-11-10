@@ -15,7 +15,8 @@ case class Collection(
   previews: List[Preview] = List.empty,
   spaces: List[UUID] = List.empty,
   lastModifiedDate: Date = new Date(),
-  followers: List[UUID] = List.empty)
+  followers: List[UUID] = List.empty,
+  jsonldMetadata : List[Metadata]= List.empty)
 
 object Collection {
   implicit val collectionWrites = new Writes[Collection] {

@@ -1,8 +1,10 @@
 package api
 
 import java.io._
+import java.net.URL
 import java.util.Date
 import api.Permission.Permission
+import java.text.SimpleDateFormat
 import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
 import java.util.zip._
 import javax.inject.{Inject, Singleton}
@@ -40,6 +42,8 @@ class Datasets @Inject()(
   comments: CommentService,
   previews: PreviewService,
   extractions: ExtractionService,
+  metadataService: MetadataService,
+  contextService: ContextLDService,
   rdfsparql: RdfSPARQLService,
   events: EventService,
   spaces: SpaceService,
@@ -133,7 +137,7 @@ class Datasets @Inject()(
                               _.index("data", "dataset", UUID(id), List(("name", d.name), ("description", d.description)))
                             }
                           }
-                          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request),"Dataset","added",id, name)}                  
+                          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request),"Dataset","added",id, name)}
                           Ok(toJson(Map("id" -> id)))
                         }
                         case None => Ok(toJson(Map("status" -> "error")))
@@ -152,14 +156,14 @@ class Datasets @Inject()(
    * added as part of dataset creation.
    * 
    * A JSON document is the payload for this endpoint. Required elements are name, description, and space. Optional element is
-   * existingfiles, which will be a comma separated String of existing file IDs to be added to the new dataset. 
+   * existingfiles, which will be a comma separated String of existing file IDs to be added to the new dataset.
    */
   @ApiOperation(value = "Create new dataset with no file",
       notes = "New dataset requiring zero files based on values of fields in attached JSON. Returns dataset id as JSON object. Requires name, description, and space. Optional list of existing file ids to add.",
       responseClass = "None", httpMethod = "POST")
   def createEmptyDataset() = PermissionAction(Permission.CreateDataset)(parse.json) { implicit request =>
     (request.body \ "name").asOpt[String].map { name =>
-      (request.body \ "description").asOpt[String].map { description =>   
+      (request.body \ "description").asOpt[String].map { description =>
           (request.body \ "space").asOpt[List[String]].map { space =>
               var spaceList: List[UUID] = List.empty;
               space.map {
@@ -178,7 +182,7 @@ class Datasets @Inject()(
                   //In this case, the dataset has been created and inserted. Now notify the space service and check
                   //for the presence of existing files.
                   Logger.debug("About to call addDataset on spaces service")
-                  //Below call is not what is needed? That already does what we are doing in the Dataset constructor... 
+                  //Below call is not what is needed? That already does what we are doing in the Dataset constructor...
                   //Items from space model still missing. New API will be needed to update it most likely.
 
                   space.map {
@@ -210,7 +214,7 @@ class Datasets @Inject()(
                   }.getOrElse(Ok(toJson(Map("id" -> id))))
                 }
                 case None => Ok(toJson(Map("status" -> "error")))
-              }            
+              }
           }.getOrElse(BadRequest(toJson("Missing parameter [space]")))
       }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
@@ -434,19 +438,121 @@ class Datasets @Inject()(
   @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
   def addMetadata(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
       Logger.debug(s"Adding metadata to dataset $id")
-      datasets.addMetadata(id, Json.stringify(request.body))
-      datasets.index(id)
-      Ok(toJson(Map("status" -> "success")))
+      //datasets.addMetadata(id, Json.stringify(request.body))
+
+      datasets.get(id) match {
+        case Some(x) => {
+          val json = request.body
+          //parse request for agent/creator info
+          //creator can be UserAgent or ExtractorAgent
+          val creator = ExtractorAgent(id = UUID.generate(),
+            extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/deprecatedapi")))
+
+          // check if the context is a URL to external endpoint
+          val contextURL: Option[URL] = None
+
+          // check if context is a JSON-LD document
+          val contextID: Option[UUID] = None
+
+          // when the new metadata is added
+          val createdAt = new Date()
+
+          //parse the rest of the request to create a new models.Metadata object
+          val attachedTo = ResourceRef(ResourceRef.dataset, id)
+          val version = None
+          val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+            json, version)
+
+          //add metadata to mongo
+          metadataService.addMetadata(metadata)
+
+          datasets.index(id)
+          Ok(toJson(Map("status" -> "success")))
+        }
+        case None => Logger.error(s"Error getting dataset $id"); NotFound
+      }
+  }
+
+   /**
+   * Add metadata in JSON-LD format.
+   */
+  @ApiOperation(value = "Add JSON-LD metadata to the database.",
+      notes = "Metadata in attached JSON-LD object will be added to metadata Mongo db collection.",
+      responseClass = "None", httpMethod = "POST")
+  def addMetadataJsonLD(id: UUID) =
+    SecuredAction(authorization = WithPermission(Permission.AddMetadata), resourceId = Some(id)) {
+      request =>
+        datasets.get(id) match {
+          case Some(x) => {
+            val json = request.body
+            //parse request for agent/creator info
+            //creator can be UserAgent or ExtractorAgent
+            var creator: models.Agent = null
+            json.validate[Agent] match {
+              case s: JsSuccess[Agent] => {
+                creator = s.get
+
+                // check if the context is a URL to external endpoint
+                val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
+
+                // check if context is a JSON-LD document
+                val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
+                  .map(contextService.addContext(new JsString("context name"), _))
+
+                // when the new metadata is added
+                val createdAt = new Date()
+
+                //parse the rest of the request to create a new models.Metadata object
+                val attachedTo = ResourceRef(ResourceRef.dataset, id)
+                val content = (json \ "content")
+                val version = None
+                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+                  content, version)
+
+                //add metadata to mongo
+                metadataService.addMetadata(metadata)
+                datasets.index(id)
+                Ok(toJson("Metadata successfully added to db"))
+
+              }
+              case e: JsError => {
+                Logger.error("Error getting creator");
+                BadRequest(toJson(s"Creator data is missing or incorrect."))
+              }
+            }
+
+          }
+          case None => Logger.error(s"Error getting dataset $id"); NotFound
+        }
+    }
+
+ @ApiOperation(value = "Retrieve metadata as JSON-LD",
+      notes = "Get metadata of the file object as JSON-LD.",
+      responseClass = "None", httpMethod = "GET")
+  def getMetadataJsonLD(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
+    implicit request =>
+      datasets.get(id) match {
+        case Some(dataset) => {
+          //get metadata and also fetch context information
+          val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
+            .map(JSONLD.jsonMetadataWithContext(_))
+          Ok(toJson(listOfMetadata))
+        }
+        case None => {
+          Logger.error("Error getting dataset  " + id);
+          InternalServerError
+        }
+      }
   }
 
   @ApiOperation(value = "Add user-generated metadata to dataset",
       notes = "",
       responseClass = "None", httpMethod = "POST")
   def addUserMetadata(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
-    implicit val user = request.user  
+    implicit val user = request.user
     Logger.debug(s"Adding user metadata to dataset $id")
       datasets.addUserMetadata(id, Json.stringify(request.body))
-    
+
     datasets.get(id) match {
       case Some(dataset) => {
         events.addObjectEvent(user, id, dataset.name, "addMetadata_dataset")
@@ -460,8 +566,7 @@ class Datasets @Inject()(
     }
     Ok(toJson(Map("status" -> "success")))
   }
-  
-  
+
   def datasetFilesGetIdByDatasetAndFilename(datasetId: UUID, filename: String): Option[String] = {
     datasets.get(datasetId) match {
       case Some(dataset) => {
@@ -526,7 +631,7 @@ class Datasets @Inject()(
       notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pairs for name and description.",
       responseClass = "None", httpMethod = "POST")
   def updateInformation(id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
-    implicit val user = request.user  
+    implicit val user = request.user
     if (UUID.isValid(id.stringify)) {          
 
           //Set up the vars we are looking for
@@ -1363,7 +1468,12 @@ class Datasets @Inject()(
       responseClass = "None", httpMethod = "GET")
   def getTechnicalMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       datasets.get(id) match {
-        case Some(dataset) => Ok(datasets.getTechnicalMetadataJSON(id))
+        case Some(dataset) => {
+          val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
+            .filter(_.creator.typeOfAgent == "extractor")
+            .map(JSONLD.jsonMetadataWithContext(_) \ "content")
+          Ok(toJson(listOfMetadata))
+        }
         case None => Logger.error("Error finding dataset" + id); InternalServerError
       }
   }
@@ -1412,9 +1522,9 @@ class Datasets @Inject()(
 	    }
     }
   }
-  
+
   def dumpDatasetGroupings = ServerAdminAction { request =>
-  
+
 	  val unsuccessfulDumps = datasets.dumpAllDatasetGroupings
 	  if(unsuccessfulDumps.size == 0)
 	    Ok("Dumping of dataset file groupings was successful for all datasets.")
@@ -1424,12 +1534,12 @@ class Datasets @Inject()(
 	      unsuccessfulMessage = unsuccessfulMessage + badDataset + ", "
 	    }
 	    unsuccessfulMessage = unsuccessfulMessage.substring(0, unsuccessfulMessage.length()-2) + "."
-	    Ok(unsuccessfulMessage)  
-	  }      
+	    Ok(unsuccessfulMessage)
+	  }
 	}
 
   def dumpDatasetsMetadata = ServerAdminAction { request =>
-  
+
 	  val unsuccessfulDumps = datasets.dumpAllDatasetMetadata
 	  if(unsuccessfulDumps.size == 0)
 	    Ok("Dumping of datasets metadata was successful for all datasets.")
@@ -1439,8 +1549,8 @@ class Datasets @Inject()(
 	      unsuccessfulMessage = unsuccessfulMessage + badDataset + ", "
 	    }
 	    unsuccessfulMessage = unsuccessfulMessage.substring(0, unsuccessfulMessage.length()-2) + "."
-	    Ok(unsuccessfulMessage)  
-	  }      
+	    Ok(unsuccessfulMessage)
+	  }
 	}
 
   @ApiOperation(value = "Follow dataset.",

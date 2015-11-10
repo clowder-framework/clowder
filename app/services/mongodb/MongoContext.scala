@@ -1,7 +1,6 @@
 package services.mongodb
 
 import java.net.URL
-import java.net.URI
 
 import com.mongodb.casbah.commons.conversions.MongoConversionHelper
 import com.novus.salat.transformers.CustomTransformer
@@ -10,12 +9,12 @@ import play.api.{Logger, Play}
 import play.api.Play.current
 import models.UUIDTransformer
 import org.bson.{BSON, Transformer}
+import com.mongodb.util.JSON
+import com.mongodb.DBObject
+
 
 /**
  * MongoDB context configuration.
- *
- * @author Luigi Marini
- *
  */
 object MongoContext {
 
@@ -30,7 +29,10 @@ object MongoContext {
       registerCustomTransformer(JodaDateTimeTransformer)
       registerGlobalKeyOverride(remapThis = "id", toThisInstead = "_id")
       registerClassLoader(Play.classloader)
-    }
+      registerCustomTransformer(JsValueTransformer)
+      registerCustomTransformer(SymbolTransformer)
+      SymbolSerializer.register()
+  }
 
   /**
    * Casbah URL serializer.
@@ -83,11 +85,13 @@ object MongoContext {
 
   object RegisterURLDeserializer extends URLDeserializer {
     Logger.trace("Registering URL deserializer")
+
     def apply() = super.register()
   }
 
   object RegisterURLSerializer extends URLSerializer {
     Logger.trace("Registering URL serializer")
+
     def apply() = super.register()
   }
 
@@ -185,6 +189,21 @@ object MongoContext {
     }
   }
 
+
+  /**
+   * JsValue-DBObject Transformer
+   */
+  object JsValueTransformer extends CustomTransformer[play.api.libs.json.JsValue, DBObject] {
+    def deserialize(value: DBObject) = {
+      play.api.libs.json.Json.parse(com.mongodb.util.JSON.serialize(value))
+    }
+
+    def serialize(value: play.api.libs.json.JsValue) = {
+      val doc: DBObject = com.mongodb.util.JSON.parse(value.toString).asInstanceOf[DBObject]
+      doc
+    }
+  }
+
   // joda.time to Date and vice versa
   object JodaDateTimeTransformer extends CustomTransformer[org.joda.time.DateTime, java.util.Date] {
     def deserialize(date: java.util.Date) = {
@@ -195,6 +214,42 @@ object MongoContext {
       date.toDate
     }
   }
+
+  /**
+   * Salat Symbol transformers
+   */
+  object SymbolTransformer extends CustomTransformer[Symbol, String] {
+    def deserialize(s: String) = {
+      Logger.trace("Deserializing String to Symbol :" + s)
+      Symbol(s)
+    }
+
+    def serialize(symbol: Symbol) = {
+      Logger.trace("Serializing Symbol to String :" + symbol)
+      symbol.name
+    }
+  }
+
+  /**
+   * Casbah Symbol deserializer
+   */
+  object SymbolSerializer extends MongoConversionHelper {
+    private val transformer = new Transformer {
+      log.debug("Encoding a Scala Symbol.")
+
+      def transform(o: AnyRef): AnyRef = o match {
+        case s: Symbol => s.name
+        case _ => o
+      }
+    }
+
+    override def register() {
+      log.debug("Setting up SymbolSerializer")
+      BSON.addEncodingHook(classOf[_root_.scala.Symbol], transformer)
+      super.register()
+    }
+  }
+
 }
 
 

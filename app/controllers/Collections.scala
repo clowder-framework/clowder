@@ -24,7 +24,7 @@ import services._
 import org.apache.commons.lang.StringEscapeUtils
 
 @Singleton
-class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService, 
+class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService,
                             spaceService: SpaceService, users: UserService, events: EventService) extends SecuredController {
 
   def newCollection(space: Option[String]) = PermissionAction(Permission.CreateCollection) { implicit request =>
@@ -53,17 +53,17 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * Utility method to modify the elements in a collection that are encoded when submitted and stored. These elements
    * are decoded when a view requests the objects, so that they can be human readable.
-   * 
+   *
    * Currently, the following collection elements are encoded:
-   * 
+   *
    * name
    * description
-   *  
+   *
    */
-  def decodeCollectionElements(collection: Collection) : Collection = {      
-      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name), 
+  def decodeCollectionElements(collection: Collection) : Collection = {
+      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name),
               							  description = StringEscapeUtils.unescapeHtml(collection.description))
-              							  
+
       decodedCollection
   }
 
