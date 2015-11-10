@@ -1,7 +1,7 @@
 package api
 
 import java.io.{BufferedWriter, FileInputStream, FileWriter}
-import java.net.URLEncoder
+import java.net.{URL, URLEncoder}
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.Inject
@@ -269,73 +269,71 @@ class Files @Inject()(
       notes = "Metadata in attached JSON-LD object will be added to metadata Mongo db collection.",
       responseClass = "None", httpMethod = "POST")
   def addMetadataJsonLD(id: UUID) =
-    SecuredAction(authorization = WithPermission(Permission.AddMetadata), resourceId = Some(id)) {
-        request =>
-        files.get(id) match {
-          case Some(x) => {
-            val json = request.body
-            //parse request for agent/creator info
-            //creator can be UserAgent or ExtractorAgent
-            var creator: models.Agent = null
-            json.validate[Agent] match {
-              case s: JsSuccess[Agent] => {
-                creator = s.get
-                //if creator is found, continue processing
-                val context: JsValue = (json \ "@context")
+    PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
+      files.get(id) match {
+        case Some(x) => {
+          val json = request.body
+          //parse request for agent/creator info
+          //creator can be UserAgent or ExtractorAgent
+          var creator: models.Agent = null
+          json.validate[Agent] match {
+            case s: JsSuccess[Agent] => {
+              creator = s.get
+              //if creator is found, continue processing
+              val context: JsValue = (json \ "@context")
 
-                // check if the context is a URL to external endpoint
-                val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
+              // check if the context is a URL to external endpoint
+              val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
 
-                // check if context is a JSON-LD document
-                val contextID: Option[UUID] =
-                  if (context.isInstanceOf[JsObject]) {
-                    context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
-                  } else if (context.isInstanceOf[JsArray]) {
-                    context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
-                  } else None
+              // check if context is a JSON-LD document
+              val contextID: Option[UUID] =
+                if (context.isInstanceOf[JsObject]) {
+                  context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
+                } else if (context.isInstanceOf[JsArray]) {
+                  context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
+                } else None
 
-                // when the new metadata is added
-                val createdAt = new Date()
+              // when the new metadata is added
+              val createdAt = new Date()
 
-                //parse the rest of the request to create a new models.Metadata object
-                val attachedTo = ResourceRef(ResourceRef.file, id)
-                val content = (json \ "content")
-                val version = None
-                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                  content, version)
+              //parse the rest of the request to create a new models.Metadata object
+              val attachedTo = ResourceRef(ResourceRef.file, id)
+              val content = (json \ "content")
+              val version = None
+              val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+                content, version)
 
-                //add metadata to mongo
-                metadataService.addMetadata(metadata)
-                files.index(id)
-                Ok(toJson("Metadata successfully added to db"))
-              }
-              case e: JsError => {
-                Logger.error("Error getting creator")
-                BadRequest(toJson(s"Creator data is missing or incorrect."))
-              }
+              //add metadata to mongo
+              metadataService.addMetadata(metadata)
+              files.index(id)
+              Ok(toJson("Metadata successfully added to db"))
+            }
+            case e: JsError => {
+              Logger.error("Error getting creator")
+              BadRequest(toJson(s"Creator data is missing or incorrect."))
             }
           }
-          case None => Logger.error(s"Error getting file $id"); NotFound
         }
+        case None => Logger.error(s"Error getting file $id"); NotFound
+      }
     }
 
- @ApiOperation(value = "Retrieve metadata as JSON-LD",
+  @ApiOperation(value = "Retrieve metadata as JSON-LD",
       notes = "Get metadata of the file object as JSON-LD.",
       responseClass = "None", httpMethod = "GET")
-  def getMetadataJsonLD(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
-    implicit request =>
-      files.get(id) match {
-        case Some(file) => {
-          //get metadata and also fetch context information
-          val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
-            .map(JSONLD.jsonMetadataWithContext(_))
-          Ok(toJson(listOfMetadata))
-        }
-        case None => {
-          Logger.error("Error getting file  " + id);
-          InternalServerError
-        }
+  def getMetadataJsonLD(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+    files.get(id) match {
+      case Some(file) => {
+        //get metadata and also fetch context information
+        val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+          .map(JSONLD.jsonMetadataWithContext(_))
+        Ok(toJson(listOfMetadata))
       }
+      case None => {
+        Logger.error("Error getting file  " + id);
+        InternalServerError
+      }
+    }
   }
 
   /**
@@ -1709,6 +1707,28 @@ class Files @Inject()(
       }
     }
 
+  /**
+    * Update technical metadata of a file.
+    */
+  @ApiOperation(value = "Update technical metadata of a file generated by a specific extractor",
+    notes = "Metadata in attached JSON object will describe the file's described resource, not the file object itself. The method will search the entire techincal metadata array for the metadata generated by a specific extractor (using extractor_id provided as an argument) and if a match is found, it will update the corresponding metadata element.",
+    responseClass = "None", httpMethod = "POST")
+  def updateMetadata(id: UUID, extractor_id: String = "") =
+    PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
+      Logger.debug(s"Updating metadata of file $id")
+      val doc = com.mongodb.util.JSON.parse(Json.stringify(request.body)).asInstanceOf[DBObject]
+      files.get(id) match {
+        case Some(x) => {
+          files.updateMetadata(id, request.body, extractor_id)
+          files.index(id)
+        }
+        case None => Logger.error(s"Error getting file $id"); NotFound
+      }
+
+      Logger.debug(s"Updated metadata of file $id")
+      Ok(toJson("success"))
+    }
+
     @ApiOperation(value = "Get technical metadata of the resource described by the file",
           notes = "",
           responseClass = "None", httpMethod = "GET")
@@ -1726,6 +1746,7 @@ class Files @Inject()(
           }
         }
     }
+
      @ApiOperation(value = "Get Versus metadata of the resource described by the file",
           notes = "",
           responseClass = "None", httpMethod = "GET")

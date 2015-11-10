@@ -92,21 +92,6 @@ object Utils {
   }
 
   /**
-   * Utility method to modify the elements in a dataset that are encoded when submitted and stored. These elements
-   * are decoded when a view requests the objects, so that they can be human readable.
-   *
-   * Currently, the following dataset elements are encoded:
-   * name
-   * description
-   *
-   */
-  def decodeDatasetElements(dataset: Dataset) : Dataset = {
-      val updatedName = updateEncodedTextNewlines(dataset.name)
-      val updatedDesc = updateEncodedTextNewlines(dataset.description)
-      dataset.copy(name = updatedName, description = updatedDesc)
-  }
-
-  /**
    * Utility method to modify the elements in a collection that are encoded when submitted and stored. These elements
    * are decoded when a view requests the objects, so that they can be human readable.
    * 

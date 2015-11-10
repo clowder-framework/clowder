@@ -11,7 +11,7 @@ import play.api.data.{Form, Forms}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
-import services.{AppConfiguration, SectionIndexInfoService, UserService, VersusPlugin}
+import services._
 
 import scala.collection.immutable._
 import scala.concurrent.Future
@@ -334,11 +334,10 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     Ok(views.html.listAdmins(admins))
   }
 
-  def getPermissionsMap() : scala.collection.immutable.Map[String, Boolean] = {
+  def getPermissionsMap(): scala.collection.immutable.Map[String, Boolean] = {
     var permissionMap = SortedMap.empty[String, Boolean]
     Permission.values.map {
       permission => permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})", "$1 $2") -> false)
-
     }
     return permissionMap;
   }
@@ -352,7 +351,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     }
   }
 
-  def getMetadataDefinitions() = SecuredAction(authorization=WithPermission(Permission.UserAdmin)) { implicit request =>
+  def getMetadataDefinitions() = ServerAdminAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(x) => {

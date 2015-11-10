@@ -18,11 +18,11 @@ import play.api.Logger
 import play.api.Play.{configuration, current}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
-import play.api.libs.json.{JsError, JsResult, JsString, JsSuccess, JsValue, Json}
+import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.mvc.AnyContent
 import services._
-import util.License
+import _root_.util.{JSONLD, License}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -480,8 +480,7 @@ class Datasets @Inject()(
       notes = "Metadata in attached JSON-LD object will be added to metadata Mongo db collection.",
       responseClass = "None", httpMethod = "POST")
   def addMetadataJsonLD(id: UUID) =
-    SecuredAction(authorization = WithPermission(Permission.AddMetadata), resourceId = Some(id)) {
-      request =>
+     PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
         datasets.get(id) match {
           case Some(x) => {
             val json = request.body
@@ -529,20 +528,19 @@ class Datasets @Inject()(
  @ApiOperation(value = "Retrieve metadata as JSON-LD",
       notes = "Get metadata of the file object as JSON-LD.",
       responseClass = "None", httpMethod = "GET")
-  def getMetadataJsonLD(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFilesMetadata)) {
-    implicit request =>
-      datasets.get(id) match {
-        case Some(dataset) => {
-          //get metadata and also fetch context information
-          val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
-            .map(JSONLD.jsonMetadataWithContext(_))
-          Ok(toJson(listOfMetadata))
-        }
-        case None => {
-          Logger.error("Error getting dataset  " + id);
-          InternalServerError
-        }
+  def getMetadataJsonLD(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    datasets.get(id) match {
+      case Some(dataset) => {
+        //get metadata and also fetch context information
+        val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
+          .map(JSONLD.jsonMetadataWithContext(_))
+        Ok(toJson(listOfMetadata))
       }
+      case None => {
+        Logger.error("Error getting dataset  " + id);
+        InternalServerError
+      }
+    }
   }
 
   @ApiOperation(value = "Add user-generated metadata to dataset",

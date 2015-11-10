@@ -25,14 +25,13 @@ class Metadata @Inject()(
   datasets: DatasetService,
   files: FileService) extends ApiController {
   
-  def search() = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { request =>
+  def search() = PermissionAction(Permission.ViewDataset)(parse.json) { implicit request =>
     Logger.debug("Searching metadata")
     val results = metadataService.search(request.body)
     Ok(toJson(results))
   }
 
-  def searchByKeyValue(key: Option[String], value: Option[String], count: Int = 0) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.SearchDatasets)) {
+  def searchByKeyValue(key: Option[String], value: Option[String], count: Int = 0) = PermissionAction(Permission.ViewDataset) {
       implicit request =>
         val response = for {
           k <- key
@@ -45,14 +44,14 @@ class Metadata @Inject()(
           val filesResults = results.flatMap { f =>
             if (f.resourceType == ResourceRef.file) files.get(f.id) else None
           }
-          import Dataset.DatasetWrites
+          import Dataset.datasetWrites
           import File.FileWrites
           Ok(JsObject(Seq("datasets" -> toJson(datasetsResults), "files" -> toJson(filesResults))))
         }
         response getOrElse BadRequest(toJson("You must specify key and value"))
   }
 
-  def getDefinitions() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.SearchDatasets)) {
+  def getDefinitions() = PermissionAction(Permission.ViewDataset) {
     implicit request =>
       val vocabularies = metadataService.getDefinitions()
       Ok(toJson(vocabularies))
@@ -71,7 +70,7 @@ class Metadata @Inject()(
     }
   }
 
-  def addDefinition() = SecuredAction(authorization = WithPermission(Permission.AddMetadata)) {
+  def addDefinition() = PermissionAction(Permission.AddMetadata)(parse.json) {
     implicit request =>
       request.user match {
         case Some(user) => {
@@ -90,7 +89,7 @@ class Metadata @Inject()(
       }
   }
 
-  def addUserMetadata() = SecuredAction(authorization = WithPermission(Permission.AddMetadata)) {
+  def addUserMetadata() = PermissionAction(Permission.AddMetadata)(parse.json) {
     implicit request =>
       request.user match {
         case Some(user) => {

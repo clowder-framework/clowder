@@ -2,7 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
-import api.{Permission, WithPermission}
+import api.Permission
 import models.{ResourceRef, UUID}
 import services._
 
@@ -14,14 +14,14 @@ class Metadata @Inject() (
   datasets: DatasetService,
   metadata: MetadataService, contextLDService: ContextLDService) extends SecuredController {
 
-  def view(id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowFilesMetadata)) { implicit request =>
+  def view(id: UUID) = PermissionAction(Permission.ViewMetadata) { implicit request =>
     metadata.getMetadataById(id) match {
       case Some(m) => Ok(views.html.metadatald.view(List(m)))
       case None => NotFound
     }
   }
 
-  def file(file_id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowFilesMetadata)) { implicit request =>
+  def file(file_id: UUID) = PermissionAction(Permission.ViewMetadata) { implicit request =>
     implicit val user = request.user
     files.get(file_id) match {
       case Some(file) => {
@@ -38,7 +38,7 @@ class Metadata @Inject() (
     }
   }
 
-  def dataset(dataset_id: UUID) = SecuredAction(authorization = WithPermission(Permission.ShowFilesMetadata)) { implicit request =>
+  def dataset(dataset_id: UUID) = PermissionAction(Permission.ViewMetadata) { implicit request =>
     implicit val user = request.user
     datasets.get(dataset_id) match {
       case Some(dataset) => {
@@ -49,7 +49,7 @@ class Metadata @Inject() (
     }
   }
 
-  def search() = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) {implicit request =>
+  def search() = PermissionAction(Permission.ViewDataset) { implicit request =>
     implicit val user = request.user
     Ok(views.html.metadatald.search())
   }

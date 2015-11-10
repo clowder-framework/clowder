@@ -1,6 +1,6 @@
 package services.mongodb
 
-import java.net.URL
+import java.net.{URI, URL}
 
 import com.mongodb.casbah.commons.conversions.MongoConversionHelper
 import com.novus.salat.transformers.CustomTransformer

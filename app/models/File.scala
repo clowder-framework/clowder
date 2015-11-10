@@ -2,10 +2,8 @@ package models
 
 import java.util.Date
 
-import api.{WithPermission, Permission}
-import play.api.libs.json.{Json, JsObject, Writes}
+import play.api.libs.json.{JsObject, Json, Writes}
 import securesocial.core.Identity
-import api.WithPermission
 
 
 /**

@@ -146,17 +146,7 @@ GET            /metadata/:id                                                    
 GET            /files/:file_id/metadata                                                 @controllers.Metadata.file(file_id: UUID)
 GET            /datasets/:dataset_id/metadata                                           @controllers.Metadata.dataset(dataset_id: UUID)
 
-# ----------------------------------------------------------------------
-# Spaces
-# ----------------------------------------------------------------------
-GET            /spaces                                                                  @controllers.Spaces.list(order: Option[String] ?= None, direction: String ?= "asc", start: Option[String] ?= None, limit: Int ?= 12, filter: Option[String] ?= None, mode: String ?= "tile")
-GET            /spaces/new                                                              @controllers.Spaces.newSpace
-GET            /spaces/:id                                                              @controllers.Spaces.getSpace(id: UUID)
-GET            /spaces/:id/updateSpace                                                  @controllers.Spaces.updateSpace(id:UUID)
-POST           /spaces/submit                                                           @controllers.Spaces.submit
-
 # Tags
-
 GET            /tags/search                                                             @controllers.Tags.search(tag, start: String ?= "", size: Integer ?= 12, mode: String ?= "")
 GET            /tags/list/ordered                                                       @controllers.Tags.tagListOrdered
 GET            /tags/list/weighted                                                      @controllers.Tags.tagListWeighted
@@ -402,8 +392,6 @@ POST           /api/spaces/:spaceId/addDatasetToSpace/:datasetId                
 POST           /api/spaces/:spaceId/addCollectionToSpace/:collectionId                  @api.Spaces.addCollectionToSpace(spaceId: UUID, collectionId: UUID)
 POST           /api/spaces/:id/follow                                                   @api.Spaces.follow(id: UUID, name: String)
 POST           /api/spaces/:id/unfollow                                                 @api.Spaces.unfollow(id: UUID, name: String)
-
-POST           /api/spaces/:id/addCollection                                            @api.Spaces.addCollection(id: UUID)
 
 POST           /api/remove-admin                                                        api.Admin.removeAdmin
 POST           /api/changeAppearance                                                    api.Admin.submitAppearance

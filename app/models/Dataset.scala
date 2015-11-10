@@ -28,7 +28,7 @@ case class Dataset(
   @deprecated("use Metadata","since the use of jsonld") userMetadataWasModified: Option[Boolean] = None,
   licenseData: LicenseData = new LicenseData(),
   notesHTML: Option[String] = None,
-  space: Option[UUID] = None,
+  spaces: List[UUID] = List.empty,
   lastModifiedDate: Date = new Date(),
   followers: List[UUID] = List.empty)
 
