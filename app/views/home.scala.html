@@ -95,7 +95,7 @@
                     <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
                       <div>This area will show all datasets you've created.</div>
 
-                         <div> <a href="@routes.Datasets.newDataset(None)" title="Create a new dataset">Create Dataset</a></div>
+                         <div> <a class="btn-link" href="@routes.Datasets.newDataset(None)" title="Create a new dataset">Create Dataset</a></div>
                     </div>
                 }
             </div>
@@ -150,7 +150,7 @@
                     <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
                         <div>This area will show all collections you've created</div>
 
-                        <div> <a href="@routes.Collections.newCollection(None)" title="Create a new collection">Create Collection</a></div>
+                        <div> <a class="btn-link" href="@routes.Collections.newCollection(None)" title="Create a new collection">Create Collection</a></div>
                     </div>
                 }
             </div>
@@ -208,7 +208,7 @@
                     <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
                         <div>This area will show all spaces you've created. </div>
 
-                        <div> <a href="@routes.Spaces.newSpace()" title="Create a new space">Create Space</a></div>
+                        <div> <a class="btn-link" href="@routes.Spaces.newSpace()" title="Create a new space">Create Space</a></div>
                     </div>
                 }
             </div>
@@ -233,7 +233,7 @@
                 }
                 @if(followers.size < 1) {
                     <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                        This area will show users that follow you. Ask other users to follow you <a href="@routes.Profile.viewProfileUUID(profile.id)">here</a>
+                        This area will show users that follow you. Ask other users to follow you <a class="btn-link" href="@routes.Profile.viewProfileUUID(profile.id)">here</a>
                     </div>
                 }
 
