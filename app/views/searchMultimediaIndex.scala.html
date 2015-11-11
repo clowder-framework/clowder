@@ -31,7 +31,7 @@
 $(document).ready(function() {		
 
 	// Send AJAX request to get similar sections
-	var objSearch = jsRoutes.api.Search.searchMultimediaIndex('@section_id')
+	var objSearch = jsRoutes.api.Search.searchMultimediaIndexNew('@section_id')
 	var request = $.ajax({
 		url: objSearch.url,
 	  	type: 'GET',
