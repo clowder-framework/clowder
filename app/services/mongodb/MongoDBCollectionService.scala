@@ -407,7 +407,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       case Some(collection) => {
         datasets.get(datasetId) match {
           case Some(dataset) => {
-            if(dataset.collections.contains(collection.id.stringify)){
+            if(dataset.collections.contains(collection.id)){
               // remove dataset from collection
               Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $inc("datasetCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
               //remove collection from dataset

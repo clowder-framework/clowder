@@ -11,7 +11,7 @@ import play.api.data.{Form, Forms}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
-import services.{AppConfiguration, SectionIndexInfoService, UserService, VersusPlugin}
+import services._
 
 import scala.collection.immutable._
 import scala.concurrent.Future
@@ -20,7 +20,7 @@ import scala.concurrent.Future
  * Administration pages.
  */
 @Singleton
-class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: UserService) extends SecuredController {
+class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: UserService, metadataService: MetadataService) extends SecuredController {
 
   def main = ServerAdminAction { implicit request =>
     val theme = AppConfiguration.getTheme
@@ -334,11 +334,10 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     Ok(views.html.listAdmins(admins))
   }
 
-  def getPermissionsMap() : scala.collection.immutable.Map[String, Boolean] = {
+  def getPermissionsMap(): scala.collection.immutable.Map[String, Boolean] = {
     var permissionMap = SortedMap.empty[String, Boolean]
     Permission.values.map {
       permission => permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})", "$1 $2") -> false)
-
     }
     return permissionMap;
   }
@@ -348,6 +347,20 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     user match {
       case Some(x) => {
         Ok(views.html.roles.listRoles(userService.listRoles().sortWith(_.name.toLowerCase < _.name.toLowerCase)))
+      }
+    }
+  }
+
+  def getMetadataDefinitions() = ServerAdminAction { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(x) => {
+        if (x.email.nonEmpty && AppConfiguration.checkAdmin(x.email.get)) {
+          val metadata = metadataService.getDefinitions()
+          Ok(views.html.manageMetadataDefinitions(metadata.toList))
+        } else {
+          Unauthorized("Not authorized")
+        }
       }
     }
   }
@@ -370,7 +383,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
       }
     }
   }
-  
+
   def viewDumpers() = ServerAdminAction { implicit request =>
   	implicit val user = request.user
 	Ok(views.html.viewDumpers())

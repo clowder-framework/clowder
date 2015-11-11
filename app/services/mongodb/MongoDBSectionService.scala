@@ -28,10 +28,17 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
     val section = SectionDAO.findOneById(new ObjectId(id.stringify)).get
     val existingTags = section.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     val createdDate = new Date
+    val maxTagLength = play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)
     tags.foreach(tag => {
+      val shortTag = if (tag.length > maxTagLength) {
+        Logger.error("Tag is truncated to " + maxTagLength + " chars : " + tag)
+        tag.substring(0, maxTagLength)
+      } else {
+        tag
+      }
       // Only add tags with new values.
-      if (!existingTags.contains(tag)) {
-        val tagObj = models.Tag(name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
+      if (!existingTags.contains(shortTag)) {
+        val tagObj = models.Tag(name = shortTag, userId = userIdStr, extractor_id = eid, created = createdDate)
         SectionDAO.dao.collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })
@@ -90,6 +97,15 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
 
   def setDescription(id: UUID, descr: String) {
 	    SectionDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("description" -> Some(descr)), false, false, WriteConcern.Safe)
+  }
+
+  /**
+   * Return a list of tags and counts found in sections
+   */
+  def getTags(): Map[String, Long] = {
+    val x = SectionDAO.dao.collection.aggregate(MongoDBObject("$unwind" -> "$tags"),
+      MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
+    x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
   }
 
   /**

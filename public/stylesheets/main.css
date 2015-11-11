@@ -194,9 +194,9 @@ code {
   padding:10px;
 }
 
-.usr_md_search_list {
-	list-style-type:none;
-}
+/*.usr_md_search_list {*/
+	/*list-style-type:none;*/
+/*}*/
 
 .usr_md_search_list_not {
 	margin-left:58px;
@@ -461,7 +461,11 @@ textarea, input[type='text'], input[type='password']{
 }
 
 .btn-margins {
-  margin: 20px 0px;
+     margin: 20px 0px;
+ }
+
+.btn-margin-bottom {
+    margin-bottom: 20px !important;
 }
 
 .col-section {
@@ -481,7 +485,16 @@ span.error{
 }
 
 .error p{
+.space-head {
+    border-bottom: 1px solid #E1E1E8;
+}
+
+.error {
     color: red;
+}
+
+.space-col-left {
+    border-right: 1px solid #E1E1E8;
 }
 
 .tag {
@@ -564,7 +577,7 @@ table#sensorsListTable > thead > tr > th.headerSortDown {
     padding: 30px 0px 0px 0px;
 }
 
-#add-file-btn {
+#file-pane-buttons {
     margin-top: 10px;
     margin-left: 20px;
 }
@@ -822,4 +835,53 @@ table#nested-space-role-pairs>tbody>tr>td {
 
 table.borderless tbody tr td, table.borderless tbody tr th {
     border: none;
+}
+
+.margin-top-h{
+    margin-top: 30px;
+}
+.center-glyphicon{
+    display:block;
+    text-align: center;
+}
+
+.center-margin {
+    text-align: center;
+    margin: 0.5em;
+}
+/*.black-border {*/
+    /*border: 2px solid black;*/
+    /*display:block;*/
+    /*padding:10px;*/
+/*}*/
+
+.green{
+    color: green;
+}
+
+.red {
+    color: red;
+}
+
+.indent_20{
+    margin-left: 20px;
+}
+
+.submitted {
+    background-color: #dff0d8 !important;
+}
+
+.in-curation {
+    background-color: #fcf8e3 !important;
+}
+
+.publish {
+    background-color: #dcdcdc !important;
+}
+
+#user-space-role .table {
+    margin-bottom: 0px;
+}
+.form-md {
+    padding: 10px 0px;
 }

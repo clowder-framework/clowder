@@ -15,7 +15,11 @@
         <div id="spacesList" class="col-md-12">
         @resourceSpaces.map { s =>
             <div id="col_@s.id" class="row bottom-padding">
-                <div class="col-md-2"></div>
+                <div class="col-md-2">
+                    @if(s.logoURL.isDefined) {
+                        <img src="@s.logoURL.get" width="100%">
+                    }
+                </div>
                 <div class="col-md-10">
                     <div>
                         <a href="@routes.Spaces.getSpace(s.id)" id='@s.id' class ="space">@Html(s.name)</a>
@@ -29,7 +33,7 @@
                             }
 
                             @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
-                                | <a href="#" class="btn btn-link btn-xs" onclick="removeDatasetFromSpace( '@(s.id)', '@(s.name)', '@resourceId', event)" title="Remove from space">
+                                | <a href="#" class="btn btn-link btn-xs" onclick="removeDatasetFromSpace( '@(s.id)', '@resourceId', event)" title="Remove from space">
                                 Remove</a>
                             } else {
                                     <a href="#" class="btn btn-link btn-xs disabled" title="Remove dataset from space">
@@ -43,7 +47,7 @@
                                 @s.collectionCount collections
                             }
                             @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
-                                | <a href="#" class="btn btn-link btn-xs" onclick="removeCollectionFromSpace('@(s.id)', '@(s.name)', '@resourceId', event)" title="Remove from space">
+                                | <a href="#" class="btn btn-link btn-xs" onclick="removeCollectionFromSpace('@(s.id)', '@resourceId', event)" title="Remove from space">
                                     Remove</a>
                             } else {
                                 <a href="#" class="btn btn-link btn-xs disabled" title="Remove collection from space">

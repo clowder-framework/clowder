@@ -1,18 +1,24 @@
 package api
 
-import services.{RdfSPARQLService, DatasetService, FileService, CollectionService, ElasticsearchPlugin}
+import services.{RdfSPARQLService, DatasetService, FileService, CollectionService, PreviewService, MultimediaQueryService, ElasticsearchPlugin}
 import play.Logger
 import scala.collection.mutable.ListBuffer
 import scala.collection.JavaConversions.mapAsScalaMap
+import edu.illinois.ncsa.isda.lsva.ImageMeasures
+import edu.illinois.ncsa.isda.lsva.ImageDescriptors.FeatureType
+import scala.collection.mutable.{ HashMap, ListBuffer }
+import util.DistancePriorityQueue
+import util.SearchResult
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 import javax.inject.{Inject, Singleton}
 import play.api.Play.current
 import play.api.Play.configuration
 import models.UUID
+import com.wordnik.swagger.annotations.{ApiOperation, Api}
 
 @Singleton
-class Search @Inject() (files: FileService, datasets: DatasetService, collections: CollectionService, sparql: RdfSPARQLService)  extends ApiController {
+class Search @Inject() (files: FileService, datasets: DatasetService, collections: CollectionService, previews: PreviewService, queries: MultimediaQueryService, sparql: RdfSPARQLService)  extends ApiController {
   /**
    * Search results.
    */
@@ -116,5 +122,74 @@ class Search @Inject() (files: FileService, datasets: DatasetService, collection
           InternalServerError("Error searching RDF store. RDF SPARQL store not used.")
         }
       }
+  }
+
+  /**
+   * Search MultimediaFeatures.
+   */
+   @ApiOperation(value = "Search multimedia index for similar sections",
+       notes = "",
+       responseClass = "None", httpMethod = "GET")
+  def searchMultimediaIndex(section_id: UUID) = PermissionAction(Permission.ViewDataset) {
+    implicit request =>
+    Logger.debug("Searching multimedia index " + section_id.stringify)
+    // TODO handle multiple previews found
+    val preview = previews.findBySectionId(section_id)(0)
+    queries.findFeatureBySection(section_id) match {
+      case Some(feature) => {
+        // setup priority queues
+        val queues = new HashMap[String, DistancePriorityQueue]
+        val representations = feature.features.map { f =>
+          queues(f.representation) = new DistancePriorityQueue(20)
+        }
+        // push into priority queues
+        feature.features.map { f =>
+          Logger.debug("Computing " + f.representation)
+          val cursor = queries.listAll()
+          while (cursor.hasNext) {
+            val mf = cursor.next          
+            Logger.debug("Found multimedia features " + mf.id + " for section " + section_id)
+            mf.features.find(_.representation == f.representation) match {
+              case Some(fd) => {
+                val distance = ImageMeasures.getDistance(FeatureType.valueOf(fd.representation), f.descriptor.toArray, fd.descriptor.toArray)
+                if (!distance.isNaN()) {
+                  Logger.trace(f.representation + "/" + fd.representation + " Distance between " + feature.section_id + " and " + mf.id + " is " + distance)
+                  queues.get(f.representation).map { q =>
+                    val popped = q.insertWithOverflow(SearchResult(mf.section_id.get.toString, distance, None))
+                    if (popped != null) Logger.trace("Popped distance off the queue " + popped)
+                  }
+                } else {
+                  Logger.debug("Distance NaN " + f.descriptor + " and " + fd.descriptor + " is " + distance)
+                }
+              }
+              case None =>
+                Logger.error("Matching descriptor not found")
+            }
+          }
+        }
+
+        val items = new HashMap[String, ListBuffer[SearchResult]]
+        queues map {
+          case (key, queue) =>
+            val list = new ListBuffer[SearchResult]
+            while (queue.size > 0) {
+              val element = queue.pop()
+              val previewsBySection = previews.findBySectionId(UUID(element.section_id))
+              if (previewsBySection.size == 1) {
+                Logger.trace("Appended search result " + key + " " + element.section_id + " " + element.distance + " " + previewsBySection(0).id.toString)
+                list.prepend(SearchResult(element.section_id, element.distance, Some(previewsBySection(0).id.toString)))
+              } else {
+                Logger.error("Found more/less than one preview " + preview)
+              }
+            }
+            items += key -> list
+        }
+
+        val jsonResults = toJson(items.toMap)
+        Ok(jsonResults)
+                
+      }
+      case None => InternalServerError("feature not found")
+    }
   }
 }

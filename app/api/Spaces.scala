@@ -80,20 +80,20 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     notes = "Retrieves information about spaces",
     responseClass = "None", httpMethod = "GET")
   def list(title: Option[String], date: Option[String], limit: Int) = UserAction { implicit request =>
-    Ok(toJson(lisSpaces(title, date, limit, Set[Permission](Permission.ViewSpace), request.user, request.superAdmin).map(spaceToJson)))
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.ViewSpace), request.user, request.superAdmin).map(spaceToJson)))
   }
 
   @ApiOperation(value = "List spaces the user can add to",
     notes = "Retrieves a list of spaces that the user has permission to add to",
     responseClass = "None", httpMethod = "GET")
   def listCanEdit(title: Option[String], date: Option[String], limit: Int) = UserAction { implicit request =>
-    Ok(toJson(lisSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), request.user, request.superAdmin).map(spaceToJson)))
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), request.user, request.superAdmin).map(spaceToJson)))
   }
 
   /**
    * Returns list of collections based on parameters and permissions.
    */
-  private def lisSpaces(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[ProjectSpace] = {
+  private def listSpaces(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[ProjectSpace] = {
     (title, date) match {
       case (Some(t), Some(d)) => {
         spaces.listAccess(d, true, limit, t, permission, user, superAdmin)

@@ -33,4 +33,5 @@ object ResourceRef {
   val user = 'user
   val comment = 'comment
   val section = 'section
+  val curationObject = 'curationObject
 }

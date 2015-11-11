@@ -26,4 +26,6 @@ Following is a list of contributors in alphabetical order:
 - Will Hennessy
 - Winston Jansz
 - Xiaocheng Yuan
+- Yan Zhao
 - Yibo Guo
+

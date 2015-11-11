@@ -1,4 +1,4 @@
-@(tagMap: Map[Char, Map[String, Integer]])(implicit user: Option[models.User])
+@(tagMap: Map[Char, Map[String, Long]])(implicit user: Option[models.User])
 
 @main("Tag list") {
     @if(tagMap.isEmpty) {

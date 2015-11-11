@@ -31,12 +31,12 @@
                         @if(collection.datasetCount != 1) {
                             @collection.datasetCount datasets
                         }
-                        <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
-                        @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                           | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection( '@(collection.id)', '@(collection.name)', '@dataset.id', event)" title="Remove from collection">
+                        <!-- If the user can edit the collection, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
+                        @if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
+                           | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection( '@(collection.id)', '@dataset.id', event)" title="Remove from collection">
                                 Remove</a>
                         } else {
-                            <a href="#" class="btn btn-link btn-xs disabled" onclick="removeCollection('@(collection.id)', '@(collection.name)', '@dataset.id', event)" title="Remove from collection">
+                            <a href="#" class="btn btn-link btn-xs disabled" onclick="return false;" title="Remove from collection">
                             Remove</a>
                         }
                     </div>

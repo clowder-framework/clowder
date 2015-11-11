@@ -6,8 +6,8 @@ resource_type_enum = {
 
 
 function addCollectionToSpace(id) {
-
     var selectedId = $("#spaceAddSelect").val();
+    if (!selectedId) return false;
     var selectedName = $("#spaceAddSelect option:selected").text();
     selectedName = selectedName.replace(/\n/g, "<br>");
 
@@ -16,12 +16,19 @@ function addCollectionToSpace(id) {
     });
 
     request.done(function (response, textStatus, jqXHR) {
-        var o =$.parseJSON(jqXHR.responseText);
-        $("#spacesList").append('<div id="col_'+selectedId+'" class="row bottom-padding">' +
+        var o = $.parseJSON(jqXHR.responseText);
+        var txt = '<div id="col_'+selectedId+'" class="row bottom-padding">' +
             '<div class="col-md-2"></div>' +
-            '<div class="col-md-10"><div><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+' class ="space">'+selectedName+'</a></div><div>' +
-            o.collectionInSpace+' collection(s) | <a href="#" class="btn btn-link btn-xs" onclick="removeCollectionFromSpace(\''+selectedId+'\',\''+selectedName+'\', \''+id+'\', event)" title="Remove from space">' +
-            ' Remove</a></div></div></div>');
+            '<div class="col-md-10"><div><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+' class ="space">'+selectedName+'</a></div>' +
+            '<div>';
+        if (o.collectionInSpace == 1) {
+            txt = txt + o.collectionInSpace +' collection';
+        } else {
+            txt = txt + o.collectionInSpace +' collections';
+        }
+        txt = txt + ' | <a href="#" class="btn btn-link btn-xs" onclick="removeCollectionFromSpace(\''+selectedId+'\', \''+id+'\', event)" title="Remove from space">' +
+            'Remove</a></div></div></div>';
+        $("#spacesList").append(txt);
         $("#spaceAddSelect").select2("val", "");
     });
 
@@ -37,7 +44,7 @@ function addCollectionToSpace(id) {
 }
 
 
-function removeCollectionFromSpace(spaceId, spaceName, id, event){
+function removeCollectionFromSpace(spaceId, id, event){
 
     var request = jsRoutes.api.Spaces.removeCollection(spaceId, id).ajax({
         type: 'POST'
@@ -59,8 +66,8 @@ function removeCollectionFromSpace(spaceId, spaceName, id, event){
 
 
 function addDatasetToSpace(id) {
-
     var selectedId = $("#spaceAddSelect").val();
+    if (!selectedId) return false;
     var selectedName = $("#spaceAddSelect option:selected").text();
     selectedName = selectedName.replace(/\n/g, "<br>");
 
@@ -70,11 +77,18 @@ function addDatasetToSpace(id) {
 
     request.done(function (response, textStatus, jqXHR) {
         var o =$.parseJSON(jqXHR.responseText);
-        $("#spacesList").append('<div id="col_'+selectedId+'" class="row bottom-padding">' +
+        var txt = '<div id="col_'+selectedId+'" class="row bottom-padding">' +
             '<div class="col-md-2"></div>' +
-            '<div class="col-md-10"><div><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+' class ="space">'+selectedName+'</a></div><div>' +
-            o.datasetsInSpace+' dataset(s) | <a href="#" class="btn btn-link btn-xs" onclick="removeDatasetFromSpace(\''+selectedId+'\',\''+selectedName+'\', \''+id+'\', event)" title="Remove from space">' +
-            ' Remove</a></div></div></div>');
+            '<div class="col-md-10"><div><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+' class ="space">'+selectedName+'</a></div>' +
+            '<div>';
+        if (o.datasetsInSpace == 1) {
+            txt = txt + o.datasetsInSpace +' dataset';
+        } else {
+            txt = txt + o.datasetsInSpace +' datasets';
+        }
+        txt = txt + ' | <a href="#" class="btn btn-link btn-xs" onclick="removeDatasetFromSpace(\''+selectedId+'\', \''+id+'\', event)" title="Remove from space">' +
+            'Remove</a></div></div></div>';
+        $("#spacesList").append(txt);
         $("#spaceAddSelect").select2("val", "");
     });
 
@@ -90,7 +104,7 @@ function addDatasetToSpace(id) {
 }
 
 
-function removeDatasetFromSpace(spaceId, spaceName, id, event){
+function removeDatasetFromSpace(spaceId, id, event){
 
     var request = jsRoutes.api.Spaces.removeDataset(spaceId, id).ajax({
         type: 'POST'
@@ -156,9 +170,7 @@ function updateUsersInSpace(spaceId) {
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to update the users contained within a space.";
-        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            console.error("Unhandled error.");
-        }
+
     });
 
     return false;
@@ -177,9 +189,6 @@ function acceptSpaceRequest(id, user){
     request.fail(function(jqXHR, textStatus, errorThrown) {
         console.error("The following error occured: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to accept request.";
-        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("Error accepting request from "+ user);
-        }
     });
     return false;
 }
@@ -196,9 +205,6 @@ function rejectSpaceRequest(id, user){
     request.fail(function(jqXHR, textStatus, errorThrown) {
         console.error("The following error occured: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to reject request.";
-        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("Error rejecting request from "+user);
-        }
     });
     return false;
 }
