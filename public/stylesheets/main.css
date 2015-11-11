@@ -485,12 +485,10 @@ span.error{
 }
 
 .error p{
+    color: red;
+}
 .space-head {
     border-bottom: 1px solid #E1E1E8;
-}
-
-.error {
-    color: red;
 }
 
 .space-col-left {
