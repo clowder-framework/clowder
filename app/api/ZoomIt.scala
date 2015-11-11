@@ -19,8 +19,12 @@ class ZoomIt @Inject()(tiles: TileService) extends Controller with ApiController
         f =>
           Logger.info("Uploading pyramid tile " + f.filename.substring(0, f.filename.lastIndexOf("_")) + f.filename.substring(f.filename.lastIndexOf(".")))
           // store file
-          val id = tiles.save(new FileInputStream(f.ref.file), f.filename.substring(0, f.filename.lastIndexOf("_")) + f.filename.substring(f.filename.lastIndexOf(".")), f.contentType)
-          Ok(toJson(Map("id" -> id)))
+          try {
+            val id = tiles.save(new FileInputStream(f.ref.file), f.filename.substring(0, f.filename.lastIndexOf("_")) + f.filename.substring(f.filename.lastIndexOf(".")), f.contentType)
+            Ok(toJson(Map("id" -> id)))
+          } finally {
+            f.ref.clean()
+          }
       }.getOrElse {
         BadRequest(toJson("File not attached."))
       }

@@ -1,5 +1,6 @@
 package services
 
+import api.Permission.Permission
 import models._
 import models.Collection
 import models.Dataset
@@ -31,17 +32,27 @@ trait SpaceService {
   /**
    * Return a count of spaces the user has access to.
    */
-  def countAccess(user: Option[User], showAll: Boolean): Long
+  def countAccess(permisions: Set[Permission], user: Option[User], showAll: Boolean): Long
 
   /**
    * Return a list of spaces the user has access to.
    */
-  def listAccess(limit: Integer, user: Option[User], showAll: Boolean): List[ProjectSpace]
+  def listAccess(limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace]
+
+  /**
+   * Return a list of spaces the user has access to matching title.
+   */
+  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace]
 
   /**
    * Return a list of spaces the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean): List[ProjectSpace]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace]
+
+  /**
+   * Return a list of spaces the user has access to starting at a specific date and  matching title.
+   */
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace]
 
   /**
    * Return a count of spaces the user has created.
@@ -229,6 +240,10 @@ trait SpaceService {
    * Remove authorization request.
    */
   def removeRequest(id: UUID, userId: UUID)
+
+  def addCurationObject(spaceId: UUID, curationObjectId: UUID)
+
+  def removeCurationObject(spaceId: UUID, curationObjectId: UUID)
 
   /**
 	 * If entry for spaceId already exists, will update list of extractors.

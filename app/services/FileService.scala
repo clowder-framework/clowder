@@ -88,6 +88,11 @@ trait FileService {
   def index(id: UUID)
 
   /**
+   * Return a list of tags and counts found in sections
+   */
+  def getTags(): Map[String, Long]
+
+  /**
    * Update thumbnail used to represent this dataset.
    */
   def updateThumbnail(fileId: UUID, thumbnailId: UUID)
@@ -125,7 +130,7 @@ trait FileService {
 
   def addUserMetadata(id: UUID, json: String)
 
-  def addXMLMetadata(id: UUID, json: String)
+  def addXMLMetadata(id: UUID, json: String)  
 
   def findByTag(tag: String): List[File]
 

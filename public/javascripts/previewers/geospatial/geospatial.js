@@ -3,8 +3,7 @@
 
 	var defaultOpacity = 0.8;
 	// retrieve the metadata
-	var metadataApiUrl = "/api/files/" + Configuration.fileid
-			+ "/technicalmetadatajson";
+	var metadataApiUrl = jsRoutes.api.Files.getTechnicalMetadataJSON(Configuration.fileid).url;
 	var request = $.ajax({
 		type : "GET",
 		url : metadataApiUrl,

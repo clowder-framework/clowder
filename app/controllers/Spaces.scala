@@ -5,6 +5,7 @@ import java.util.Date
 import javax.inject.Inject
 
 import api.Permission
+import api.Permission._
 import models._
 import play.api.data.validation._
 import play.api.{Play, Logger}
@@ -41,7 +42,7 @@ case class spaceInviteData(
   role: String,
   message: Option[String])
 
-class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users: UserService, events: EventService) extends SecuredController {
+class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventService, curationService: CurationService, extractors: ExtractorService) extends SecuredController {
 
   /**
    * New/Edit project space form bindings.
@@ -400,7 +401,6 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
     }
   }
 
-
   def rejectRequest( id:UUID, requestuser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
@@ -427,7 +427,7 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
   /**
    * Submit action for new or edit space
    */
-  // TODO this should check to see if user has editpsace for specific space
+  // TODO this should check to see if user has editspace for specific space
   def submit() = AuthenticatedAction { implicit request =>
       implicit val user = request.user
       user match {
@@ -515,9 +515,9 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
        }
        case None => {
          if (date != "") {
-           spaces.listAccess(date, nextPage, limit, request.user, showAll)
+           spaces.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewSpace), request.user, showAll)
          } else {
-           spaces.listAccess(limit, request.user, showAll)
+           spaces.listAccess(limit, Set[Permission](Permission.ViewSpace), request.user, showAll)
          }
        }
      }
@@ -527,7 +527,7 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
        val first = Formatters.iso8601(spaceList.head.created)
        val space = person match {
          case Some(p) => spaces.listUser(first, nextPage=false, 1, request.user, showAll, p)
-         case None => spaces.listAccess(first, nextPage = false, 1, request.user, showAll)
+         case None => spaces.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewSpace), request.user, showAll)
        }
        if (space.nonEmpty && space.head.id != spaceList.head.id) {
          first
@@ -543,7 +543,7 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
        val last = Formatters.iso8601(spaceList.last.created)
        val ds = person match {
          case Some(p) => spaces.listUser(last, nextPage=true, 1, request.user, showAll, p)
-         case None => spaces.listAccess(last, nextPage=true, 1, request.user, showAll)
+         case None => spaces.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewSpace), request.user, showAll)
        }
        if (ds.nonEmpty && ds.head.id != spaceList.last.id) {
          last
@@ -568,7 +568,22 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
          Some(mode)
        }
 
-     val deletePermission = Permission.checkPermission(user, Permission.DeleteDataset)
+     val deletePermission = Permission.checkPermission(user, Permission.DeleteSpace)
      Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, deletePermission, prev, next))
    }
+
+
+  def stagingArea(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, id))) {
+    implicit request =>
+      implicit val user  = request.user
+      spaces.get(id) match {
+        case Some(s) => {
+          val curationDatasets: List[CurationObject] = s.curationObjects.map{curObject => curationService.get(curObject)}.flatten
+          Ok(views.html.spaces.stagingarea(s, curationDatasets ))
+        }
+        case None => InternalServerError("Space Not found")
+      }
+  }
+
+
 }

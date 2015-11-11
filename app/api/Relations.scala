@@ -39,7 +39,7 @@ class Relations @Inject()(relations: RelationService) extends ApiController {
       var res = relations.add(Relation(source = Node(sourceId, sourceType), target = Node(targetId, targetType)))
 
       res match {
-        case Some(id) => Ok(Json.obj("status" ->"OK", "message" -> ("Relation '" + id + "' saved.") ))
+        case Some(id) => Ok(Json.obj("status" ->"OK", "message" -> ("Relation '" + id + "' saved."), "id" -> id ))
         case None => Ok(Json.obj("status" ->"OK", "message" -> ("Relation already exists") ))
       }
   }

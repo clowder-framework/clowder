@@ -1,5 +1,6 @@
 package controllers
 
+import api.Permission._
 import models._
 import play.api.data.Form
 import play.api.data.Forms._
@@ -18,12 +19,13 @@ import play.api.libs.json.Json.toJson
 import services.{CollectionService, DatasetService, _}
 import views.html.defaultpages.badRequest
 
+import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 import services._
 import org.apache.commons.lang.StringEscapeUtils
 
 @Singleton
-class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService, 
+class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService,
                             spaceService: SpaceService, users: UserService, events: EventService) extends SecuredController {
 
   def newCollection(space: Option[String]) = PermissionAction(Permission.CreateCollection) { implicit request =>
@@ -52,17 +54,17 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * Utility method to modify the elements in a collection that are encoded when submitted and stored. These elements
    * are decoded when a view requests the objects, so that they can be human readable.
-   * 
+   *
    * Currently, the following collection elements are encoded:
-   * 
+   *
    * name
    * description
-   *  
+   *
    */
-  def decodeCollectionElements(collection: Collection) : Collection = {      
-      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name), 
+  def decodeCollectionElements(collection: Collection) : Collection = {
+      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name),
               							  description = StringEscapeUtils.unescapeHtml(collection.description))
-              							  
+
       decodedCollection
   }
 
@@ -94,9 +96,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           }
           case None => {
             if (date != "") {
-              collections.listAccess(date, nextPage, limit, request.user, request.superAdmin)
+              collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
             } else {
-              collections.listAccess(limit, request.user, request.superAdmin)
+              collections.listAccess(limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
             }
 
           }
@@ -112,7 +114,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         case None => {
           space match {
             case Some(s) => collections.listSpace(first, nextPage = false, 1, s)
-            case None => collections.listAccess(first, nextPage = false, 1, request.user, request.superAdmin)
+            case None => collections.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
           }
         }
       }
@@ -133,7 +135,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         case None => {
           space match {
             case Some(s) => collections.listSpace(last, nextPage = true, 1, s)
-            case None => collections.listAccess(last, nextPage = true, 1, request.user, request.superAdmin)
+            case None => collections.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
           }
         }
       }
@@ -147,13 +149,14 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     }
 
 
-    var collectionsWithThumbnails = List.empty[models.Collection]
-    for (collection <- collectionList) {
-      val collectionThumbnail = collection.datasets.find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
-      val collectionWithThumbnail = collection.copy(thumbnail_id = collectionThumbnail)
-      collectionsWithThumbnails = collectionWithThumbnail +: collectionsWithThumbnails
+    val collectionsWithThumbnails = collectionList.map {c =>
+      if (c.thumbnail_id.isDefined) {
+        c
+      } else {
+        val collectionThumbnail = datasets.listCollection(c.id.stringify).find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
+        c.copy(thumbnail_id = collectionThumbnail)
+      }
     }
-    collectionsWithThumbnails = collectionsWithThumbnails.reverse
 
     //Modifications to decode HTML entities that were stored in an encoded fashion as part
     //of the collection's names or descriptions
@@ -210,17 +213,24 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           var collection : Collection = null
           if (colSpace(0) == "default") {
-              collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null)
+              collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity)
           }
           else {
             val stringSpaces = colSpace(0).split(",").toList
             val colSpaces: List[UUID] = stringSpaces.map(aSpace => if(aSpace != "") UUID(aSpace) else None).filter(_ != None).asInstanceOf[List[UUID]]
-            collection = Collection(name = colName(0), description = colDesc(0), created = new Date, author = null, spaces = colSpaces)
+            collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, spaces = colSpaces)
           }
 
           Logger.debug("Saving collection " + collection.name)
-          collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, created = collection.created, author = Some(identity), spaces = collection.spaces))
-
+          collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, datasetCount = 0, created = collection.created, author = collection.author, spaces = collection.spaces))
+          collection.spaces.map{
+            sp => spaceService.get(sp) match {
+              case Some(s) => {
+                spaces.addCollection(collection.id, s.id)
+              }
+              case None => Logger.error(s"space with id $sp on collection $collection.id doesn't exist.")
+            }
+          }
           //index collection
             val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
             current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
@@ -268,7 +278,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
 
           //Decode the datasets so that their free text will display correctly in the view
-          val datasetsInside = datasets.listInsideCollection(id)
+          val datasetsInside = datasets.listCollection(id.stringify)
           val decodedDatasetsInside = ListBuffer.empty[models.Dataset]
           for (aDataset <- datasetsInside) {
             val dDataset = Utils.decodeDatasetElements(aDataset)
@@ -285,14 +295,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             }
           }
 
-          val otherSpaces: List[ProjectSpace] = user match {
-            case Some(usr) => usr.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_)).map(aSpace => if(!collectionSpaces.map(_.id).contains(aSpace.id)) aSpace else None).filter(_ != None).asInstanceOf[List[ProjectSpace]]
-            case None => List.empty
-          }
-
           val decodedSpaces: List[ProjectSpace] = collectionSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
-          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, Some(decodedSpaces), otherSpaces))
+          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, Some(decodedSpaces)))
 
         }
         case None => {
@@ -346,7 +351,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         for(k <- userListSpaceRoleTupleMap.keys) userListSpaceRoleTupleMap += ( k -> userListSpaceRoleTupleMap(k).distinct.sortBy(_._1.toLowerCase) )
 
         if(userList.nonEmpty) {
-          val currUserIsAuthor = user.get.identityId.userId.equals(collection.author.get.identityId.userId)
+          val currUserIsAuthor = user.get.identityId.userId.equals(collection.author.identityId.userId)
           Ok(views.html.collections.users(collection, userListSpaceRoleTupleMap, currUserIsAuthor, userList))
         }
         else Redirect(routes.Collections.collection(id)).flashing("error" -> s"Error: No users found for collection $id.")

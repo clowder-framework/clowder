@@ -2,6 +2,7 @@ package models
 
 import java.util.Date
 
+import play.api.libs.json.{JsObject, Json, Writes}
 import securesocial.core.Identity
 
 
@@ -23,12 +24,13 @@ case class File(
   sections: List[Section] = List.empty,
   previews: List[Preview] = List.empty,
   tags: List[Tag] = List.empty,
-  metadata: List[Map[String, Any]] = List.empty,
   thumbnail_id: Option[String] = None,
-  isIntermediate: Option[Boolean] = None,
-  userMetadata: Map[String, Any] = Map.empty,
-  xmlMetadata: Map[String, Any] = Map.empty,
-  userMetadataWasModified: Option[Boolean] = None,
+  jsonldMetadata : List[Metadata] = List.empty,
+  @deprecated("use Metadata","since the use of jsonld") metadata: List[Map[String, Any]] = List.empty,
+  @deprecated("will not be used in the future","since the use of jsonld") isIntermediate: Option[Boolean] = None,
+  @deprecated("use Metadata","since the use of jsonld") userMetadata: Map[String, Any] = Map.empty,
+  @deprecated("use Metadata","since the use of jsonld") xmlMetadata: Map[String, Any] = Map.empty,
+  @deprecated("use Metadata","since the use of jsonld") userMetadataWasModified: Option[Boolean] = None,
   licenseData: LicenseData = new LicenseData(),
   notesHTML: Option[String] = None,
   followers: List[UUID] = List.empty )
@@ -37,3 +39,13 @@ case class Versus(
   fileId: UUID,
   descriptors: Map[String,Any]= Map.empty
 )
+
+object File {
+  implicit object FileWrites extends Writes[File] {
+    def writes(file: File): JsObject = {
+      Json.obj(
+        "id" -> file.id,
+        "name" -> file.filename)
+    }
+  }
+}

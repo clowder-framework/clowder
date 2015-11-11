@@ -113,7 +113,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
       contentType(result) mustEqual Some("application/json")
       contentAsString(result) must include ("description")
       contentAsString(result) must include ("id")
-      contentAsString(result) must include ("datasetname")
+      contentAsString(result) must include ("name")
       contentAsString(result) must include ("created")
       contentAsString(result) must include ("authorId")
       contentAsString(result) must include ("thumbnail")
@@ -466,7 +466,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
       info("Status_Get="+status(result_get))
       status(result_get) mustEqual OK
       info("contentType_Get="+contentType(result_get))
-      contentType(result_get) mustEqual Some("text/plain")
+      contentType(result_get) mustEqual Some("application/json")
       val json: JsValue = Json.parse(contentAsString(result_get))
       val readableString: String = Json.prettyPrint(json)
       info("Pretty JSON format")

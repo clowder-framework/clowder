@@ -3,9 +3,11 @@ package services.mongodb
 import java.net.URL
 import java.util.Date
 
+import com.mongodb.CommandFailureException
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import models._
+import org.bson.BSONException
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
 import com.mongodb.casbah.MongoURI
@@ -13,6 +15,7 @@ import com.mongodb.casbah.MongoConnection
 import com.mongodb.casbah.MongoDB
 import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.gridfs.GridFS
+import org.bson.types.ObjectId
 import services.{DI, AppConfigurationService}
 
 /**
@@ -43,6 +46,20 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     // update database if needed
     updateDatabase()
 
+    // drop old indices
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("datasets").dropIndex("tags.name_text")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("tags.name_text")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("tags_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("sections").dropIndex("tags.name_text")
+    }
+
     // create indices.
     Logger.debug("Ensuring indices exist")
     collection("spaces.projects").ensureIndex(MongoDBObject("created" -> -1))
@@ -58,25 +75,37 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
     collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("files._id" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("tags.name" -> 1))
+
     collection("datasets").ensureIndex(MongoDBObject("spaces" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("public" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("name" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("author.identityId.userId" -> 1, "author.identityId.providerId" -> 1))
 
     collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
-    collection("uploads.files").ensureIndex(MongoDBObject("tags" -> 1))
+    collection("uploads.files").ensureIndex(MongoDBObject("author.email" -> 1))
+    collection("uploads.files").ensureIndex(MongoDBObject("tags.name" -> 1))
+
     collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
     
     collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
     collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
     collection("previews.files").ensureIndex(MongoDBObject("section_id" -> -1))
     collection("previews.files").ensureIndex(MongoDBObject("file_id" -> -1))
-    
+
     collection("textures.files").ensureIndex(MongoDBObject("file_id" -> 1))
     collection("tiles.files").ensureIndex(MongoDBObject("preview_id" -> 1, "filename" -> 1,"level" -> 1))
     
     collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
     collection("sections").ensureIndex(MongoDBObject("file_id" -> -1))
-    
+    collection("sections").ensureIndex(MongoDBObject("tags.name" -> 1))
+
+    collection("metadata").ensureIndex(MongoDBObject("createdAt" -> -1))
+    collection("metadata").ensureIndex(MongoDBObject("creator" -> 1))
+    collection("metadata").ensureIndex(MongoDBObject("attachTo" -> 1))
+
+    collection("contextld").ensureIndex(MongoDBObject("contextName" -> 1))
+
     collection("dtsrequests").ensureIndex(MongoDBObject("startTime" -> -1, "endTime" -> -1))
     collection("dtsrequests").ensureIndex(MongoDBObject("file_id" -> -1))
     collection("versus.descriptors").ensureIndex(MongoDBObject("fileId" -> 1))
@@ -130,6 +159,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("uploads.files").drop()
     collection("uploadquery.files").drop()
     collection("versus.descriptors").drop()
+    collection("metadata").drop()
+    collection("contexld").drop()
     collection("spaces.projects").drop()
     collection("spaces.users").drop()
     Logger.debug("**DANGER** Data deleted **DANGER**")
@@ -142,6 +173,24 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
     // migrate users to new model
+    updateMongoChangeUserType
+
+    // add a space if none exists
+    updateMongoAddFirstSpace
+
+    // remove datasets from collection
+    updateMongoRemoveDatasetCollection
+
+    // replace collection id strings with UUID in datasets
+    updateMongoCollectionsInDatasetStringToUUID
+
+    //Change Files in datasets from List[File] to List[UUID]
+    updateReplaceFilesInDataset
+  }
+
+  private def updateMongoChangeUserType {
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
     if (!appConfig.hasPropertyValue("mongodb.updates", "fixing-typehint-users")) {
       if (System.getProperty("MONGOUPDATE") != null) {
         Logger.info("[MongoDBUpdate] : Fixing _typeHint for users.")
@@ -153,8 +202,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         Logger.warn("[MongoDBUpdate] : Missing fix _typeHint for users.")
       }
     }
+  }
 
-    // add a space if none exists
+  private def updateMongoAddFirstSpace {
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
     if (!appConfig.hasPropertyValue("mongodb.updates", "convert-to-spaces")) {
       if (System.getProperty("MONGOUPDATE") != null) {
         val spaces = ProjectSpaceDAO.count(new MongoDBObject())
@@ -201,6 +253,144 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       } else {
         Logger.warn("[MongoDBUpdate] : Missing fix to convert to spaces.")
       }
+    }
+
+    updateTagLength()
+  }
+
+  def updateTagLength() {
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    // migrate users to new model
+    if (!appConfig.hasPropertyValue("mongodb.updates", "fixing-taglength")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        Logger.info("[MongoDBUpdate] : Fixing taglength.")
+        val q = MongoDBObject("tags" -> MongoDBObject("$exists" -> true, "$not" -> MongoDBObject("$size" -> 0)))
+        val maxTagLength = play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)
+        Logger.info("[MongoDBUpdate] : fixing " + collection("datasets").count(q) + " datasets")
+        collection("datasets").find(q).foreach { x =>
+          x.getAsOrElse[MongoDBList]("tags", MongoDBList.empty).foreach { case tag:DBObject =>
+            if (tag.getAsOrElse[String]("name", "").length > maxTagLength) {
+              Logger.info(x.get("_id").toString + " : truncating " + tag.getAsOrElse[String]("name", ""))
+              tag.put("name", tag.getAsOrElse[String]("name", "").substring(0, maxTagLength))
+            }
+          }
+          try {
+            collection("datasets").save(x)
+          } catch {
+            case e: BSONException => {
+              Logger.error(x.get("_id").toString + " : bad string\n" + x.toString, e)
+            }
+          }
+        }
+        Logger.info("[MongoDBUpdate] : fixing " + collection("uploads.files").count(q) + " files")
+        collection("uploads.files").find(q).foreach { x =>
+          x.getAsOrElse[MongoDBList]("tags", MongoDBList.empty).foreach { case tag:DBObject =>
+            if (tag.getAsOrElse[String]("name", "").length > maxTagLength) {
+              Logger.info(x.get("_id").toString + " : truncating " + tag.getAsOrElse[String]("name", ""))
+              tag.put("name", tag.getAsOrElse[String]("name", "").substring(0, maxTagLength))
+            }
+          }
+          try {
+            collection("uploads.files").save(x)
+          } catch {
+            case e: BSONException => {
+              Logger.error(x.get("_id").toString + " : bad string\n" + x.toString, e)
+            }
+          }
+        }
+        Logger.info("[MongoDBUpdate] : fixing " + collection("sections").count(q) + " files")
+        collection("sections").find(q).foreach { x =>
+          x.getAsOrElse[MongoDBList]("tags", MongoDBList.empty).foreach { case tag:DBObject =>
+            if (tag.getAsOrElse[String]("name", "").length > maxTagLength) {
+              Logger.info(x.get("_id").toString + " : truncating " + tag.getAsOrElse[String]("name", ""))
+              tag.put("name", tag.getAsOrElse[String]("name", "").substring(0, maxTagLength))
+            }
+          }
+          try {
+            collection("sections").save(x)
+          } catch {
+            case e: BSONException => {
+              Logger.error(x.get("_id").toString + " : bad string\n" + x.toString, e)
+            }
+          }
+        }
+        appConfig.addPropertyValue("mongodb.updates", "fixing-taglength")
+      } else {
+        Logger.warn("[MongoDBUpdate] : Missing fix taglength for tags.")
+      }
+    }
+  }
+
+  private def updateMongoRemoveDatasetCollection {
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", "removed-datasets-collection")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        collection("collections").foreach {c =>
+          val datasets = c.getAsOrElse[MongoDBList]("datasets", MongoDBList.empty)
+          c.removeField("datasets")
+          c.put("datasetCount", datasets.length)
+          collection("collections").save(c, WriteConcern.Safe)
+
+          datasets.foreach {d =>
+            if (c._id.isDefined) {
+              collection("datasets").update(MongoDBObject("_id" -> d.asInstanceOf[DBObject].get("_id")), $addToSet("collections" -> c._id.get.toString))
+            }
+          }
+        }
+        appConfig.addPropertyValue("mongodb.updates", "removed-datasets-collection")
+      } else {
+        Logger.warn("[MongoDBUpdate] : Missing fix to remove datasets from collection.")
+      }
+    }
+  }
+
+  private def updateMongoCollectionsInDatasetStringToUUID {
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", "replace-dataset-collections-string-uuid")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        collection("datasets").foreach { ds =>
+          val collection_string = ds.getAsOrElse[MongoDBList]("collections", MongoDBList.empty)
+          val collection_uuids = collection_string.map(col => new ObjectId(col.toString)).toList
+          ds.put("collections", collection_uuids)
+          try {
+            collection("datasets").save(ds, WriteConcern.Safe)
+          } catch {
+            case e: BSONException => Logger.error("Failed to refactor collections (String -> UUID) in  dataset with id" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString())
+          }
+        }
+        appConfig.addPropertyValue("mongodb.updates", "replace-dataset-collections-string-uuid")
+      } else {
+        Logger.warn("[MongoDBUpdate : Missing fix to replace the collections in the dataset with UUIDs")
+      }
+    }
+  }
+
+  /**
+   * Replaces the files in the datasets from acopy of the files tojust the file UUID's.
+   */
+  private def updateReplaceFilesInDataset{
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", "replace-dataset-files-with-id")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        collection("datasets").foreach { ds =>
+          val files = ds.getAsOrElse[MongoDBList]("files", MongoDBList.empty)
+          val fileIds = files.map(file => new ObjectId(file.asInstanceOf[BasicDBObject].get("_id").toString)).toList
+          ds.put("files", fileIds)
+          try {
+            collection("datasets").save(ds, WriteConcern.Safe)
+          }
+          catch {
+            case e: BSONException => Logger.error("Unable to update files in dataset:" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString() )
+          }
+        }
+      }
+      appConfig.addPropertyValue("mongodb.updates", "replace-dataset-files-with-id")
+    } else {
+      Logger.warn("[MongoDBUpdate : Missing fix to replace the files in the dataset with UUIDs")
     }
   }
 }

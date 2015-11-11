@@ -87,6 +87,10 @@ trait UserService  {
   def updateUserField(email: String, field: String, fieldText: Any)
 
   /**
+   * Updates the user repository preferences.
+   */
+  def updateRepositoryPreferences(id: UUID, preferences: Map[String, String])
+  /**
    * Adds a dataset view
    * TODO: use UUID instead of email
    */

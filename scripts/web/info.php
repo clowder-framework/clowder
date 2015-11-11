@@ -10,7 +10,7 @@ if(isset($_REQUEST['headings'])) $headings = $_REQUEST["headings"];
 
 try {
 	$m = new MongoClient();
-	$db = $m->test;
+	$db = $m->clowder;
 
 	//Servers
 	if($servers) {
