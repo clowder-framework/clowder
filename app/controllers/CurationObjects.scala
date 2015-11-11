@@ -253,6 +253,7 @@ class CurationObjects @Inject()(
           }
   }
 
+  //TODO: Use routes instead of hostIp. It is currently giving no http header defined when trying to use them.
   def callMatchmaker(c: CurationObject, hostIp: String ): List[MatchMakerResponse] = {
     val hostUrl = hostIp + "/api/curations/" + c.id + "/ore#aggregation"
     val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => pref._1-> Json.toJson(pref._2.toString().split(",").toList))).getOrElse(Map.empty)
@@ -385,6 +386,14 @@ class CurationObjects @Inject()(
           var metadataJson = metadata.map {
             item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
           }
+          val creator = Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile match {
+            case Some(prof) => prof.orcidID match {
+              case Some(oid) => oid
+              case None => controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(Utils.protocol(request) == "https")
+            }
+            case None => controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(Utils.protocol(request) == "https")
+
+          }))
           var metadataToAdd = metadataJson.toMap
           if(metadataJson.toMap.get("Abstract") == None) {
             metadataToAdd = metadataJson.toMap.+("Abstract" -> Json.toJson(c.description))
@@ -427,7 +436,7 @@ class CurationObjects @Inject()(
                     "@id" -> Json.toJson(hostUrl),
                     "@type" -> Json.toJson("Aggregation"),
                     "Title" -> Json.toJson(c.name),
-                    "Creator" -> Json.toJson(userService.findByIdentity(c.author).map(usr => JsArray(Seq(Json.toJson(usr.fullName + ": " + controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(Utils.protocol(request) == "https")), Json.toJson(usr.profile.map(prof => prof.orcidID.map(oid=> oid)))))))
+                    "Creator" -> creator
                   )
                 ),
                 "Aggregation Statistics" -> Json.toJson(
