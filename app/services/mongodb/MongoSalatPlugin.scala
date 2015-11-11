@@ -8,6 +8,7 @@ import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import models._
 import org.bson.BSONException
+import play.api.libs.json._
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
 import com.mongodb.casbah.MongoURI
@@ -16,7 +17,7 @@ import com.mongodb.casbah.MongoDB
 import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.gridfs.GridFS
 import org.bson.types.ObjectId
-import services.{DI, AppConfigurationService}
+import services.{MetadataService, DI, AppConfigurationService}
 
 /**
  * Mongo Salat service.
@@ -391,6 +392,41 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       appConfig.addPropertyValue("mongodb.updates", "replace-dataset-files-with-id")
     } else {
       Logger.warn("[MongoDBUpdate : Missing fix to replace the files in the dataset with UUIDs")
+    }
+  }
+
+
+  private def migrateMetadataRepresentationtoJSONLD {
+    val updateId = "migrate-metadata-jsonld"
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+    val metadataService: MetadataService = DI.injector.getInstance(classOf[MetadataService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", updateId)) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        collection("datasets").foreach { ds =>
+          val dsId = ds.getAs[ObjectId]("_id")
+          val createdAt = new Date()
+          val attachedTo = Some(ResourceRef(ResourceRef.dataset, UUID(dsId.toString)))
+          val contextURL: Option[URL] = None
+          val contextID: Option[UUID] = None
+          val version = None
+          // user metadata
+          val userMD = Json.parse(com.mongodb.util.JSON.serialize(ds.getAsOrElse[DBObject]("userMetadata", DBObject.empty)))
+          val user = User.anonymous
+          val userURI = "https://clowder.ncsa.illinois.edu/clowder/api/users/" + user.id
+          val creatorUser = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
+          val metadataUser = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorUser, userMD, version)
+          metadataService.addMetadata(metadataUser)
+          // system metadata
+          val techMD = Json.parse(com.mongodb.util.JSON.serialize(ds.getAsOrElse[DBObject]("metadata", DBObject.empty)))
+          val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
+          val metadataTech = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
+          metadataService.addMetadata(metadataTech)
+        }
+        appConfig.addPropertyValue("mongodb.updates", updateId)
+      } else {
+        Logger.warn("[MongoDBUpdate : Missing fix to update metadata to JSONLD representation")
+      }
     }
   }
 }
