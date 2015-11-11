@@ -79,7 +79,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
 
   /** Vocabulary definitions for user fields **/
   def getDefinitions(spaceId: Option[UUID] = None): List[MetadataDefinition] = {
-    MetadataDefinitionDAO.findAll().toList
+    MetadataDefinitionDAO.findAll().toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )
   }
 
   def getDefinition(id: UUID): Option[MetadataDefinition] = {

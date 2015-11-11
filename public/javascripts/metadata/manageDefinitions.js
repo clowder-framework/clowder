@@ -37,6 +37,9 @@ function editDefinition(id, json, element) {
   if (json.definitions_url) {
     $("#definitions_url").val(json.definitions_url);
   }
+  if (json.query_parameter) {
+    $("#query_parameter").val(json.query_parameter);
+  }
 
   $("#cancelButton").show();
 }
