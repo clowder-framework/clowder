@@ -1786,7 +1786,7 @@ class Files @Inject()(
           }
           Logger.debug("Deleting file: " + file.filename)
           files.removeFile(id)
-          
+
           current.plugin[ElasticsearchPlugin].foreach {
             _.delete("data", "file", id.stringify)
           }
@@ -1800,7 +1800,6 @@ class Files @Inject()(
             }
             case _ => {}
           }
-          Ok(toJson(Map("status"->"success")))
           current.plugin[AdminsNotifierPlugin].foreach{
             _.sendAdminsNotification(Utils.baseUrl(request), "File","removed",id.stringify, file.filename)}
           Ok(toJson(Map("status"->"success")))
