@@ -240,7 +240,11 @@ class CurationObjects @Inject()(
               val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
                 "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
                 "Affiliation" -> List("UMich", "IU", "UIUC"))
-              val mmResp = callMatchmaker(c, Utils.baseUrl(request))
+              val urlMap = scala.collection.immutable.Map( "hostUrl" -> api.routes.CurationObjects.getCurationObjectOre(curationId).absoluteURL(Utils.protocol(request) == "https"),
+               "curationUrl" -> controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(Utils.protocol(request) == "https"),
+               "datasetUrl"  -> controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(Utils.protocol(request) == "https"))
+
+              val mmResp = callMatchmaker(c, urlMap, Utils.baseUrl(request))
               user match {
                 case Some(usr) => {
                   val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
@@ -253,9 +257,8 @@ class CurationObjects @Inject()(
           }
   }
 
-  //TODO: Use routes instead of hostIp. It is currently giving no http header defined when trying to use them.
-  def callMatchmaker(c: CurationObject, hostIp: String ): List[MatchMakerResponse] = {
-    val hostUrl = hostIp + "/api/curations/" + c.id + "/ore#aggregation"
+  def callMatchmaker(c: CurationObject, urlMap: scala.collection.immutable.Map[String, String], hostIp: String): List[MatchMakerResponse] = {
+    val hostUrl = urlMap.get("hostUrl")
     val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => pref._1-> Json.toJson(pref._2.toString().split(",").toList))).getOrElse(Map.empty)
     val userPreferences = userPrefMap + ("Repository" -> Json.toJson(c.repository))
     val maxDataset = if (!c.files.isEmpty)  c.files.map(_.length).max else 0
@@ -264,20 +267,21 @@ class CurationObjects @Inject()(
     val metadataJson = metadata.map {
       item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
     }
-    val creator = Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile match {
+
+    val creator = userService.findByIdentity(c.author).map ( usr => usr.profile match {
       case Some(prof) => prof.orcidID match {
         case Some(oid) => oid
         case None => hostIp + "/api/users/" + usr.id
       }
-        case None =>hostIp + "/api/users/" + usr.id
+        case None => hostIp + "/api/users/" + usr.id
 
-    }))
+    })
     val aggregation = metadataJson.toMap ++ Map(
-      "Identifier" -> Json.toJson(hostIp +"/spaces/curations/" + c.id),
+      "Identifier" -> Json.toJson(urlMap.get("curationUrl")),
       "@id" -> Json.toJson(hostUrl),
       "Title" -> Json.toJson(c.name),
-      "Creator" -> creator,
-      "similarTo" -> Json.toJson(hostIp + "/datasets/" + c.datasets(0).id)
+      "Creator" -> Json.toJson(creator),
+      "similarTo" -> Json.toJson(urlMap.get("datasetUrl"))
       )
     val valuetoSend = Json.obj(
       "@context" -> Json.toJson(Seq(
@@ -356,7 +360,10 @@ class CurationObjects @Inject()(
            curations.updateRepository(c.id, repository)
            //TODO: Make some call to C3-PR?
            //  Ok(views.html.spaces.matchmakerReport())
-           val mmResp = callMatchmaker(c, Utils.baseUrl(request)).filter(_.orgidentifier == repository)
+           val urlMap = scala.collection.immutable.Map( "hostUrl" -> api.routes.CurationObjects.getCurationObjectOre(curationId).absoluteURL(Utils.protocol(request) == "https"),
+             "curationUrl" -> controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(Utils.protocol(request) == "https"),
+             "datasetUrl"  -> controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(Utils.protocol(request) == "https"))
+           val mmResp = callMatchmaker(c, urlMap, Utils.baseUrl(request)).filter(_.orgidentifier == repository)
 
            Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository))
         }

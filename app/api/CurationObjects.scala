@@ -209,8 +209,11 @@ class CurationObjects @Inject()(datasets: DatasetService,
           case aMap: JsSuccess[Map[String, String]] => {
             val userPreferences: Map[String, String] = aMap.get
             userService.updateRepositoryPreferences(user.get.id, userPreferences)
-
-            val mmResp = curationObjectController.callMatchmaker(c, Utils.baseUrl(request))
+            val hostUrl = api.routes.CurationObjects.getCurationObjectOre(curationId).absoluteURL(Utils.protocol(request) == "https")
+            val urlMap = scala.collection.immutable.Map( "hostUrl" -> api.routes.CurationObjects.getCurationObjectOre(curationId).absoluteURL(Utils.protocol(request) == "https"),
+              "curationUrl" -> controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(Utils.protocol(request) == "https"),
+              "datasetUrl"  -> controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(Utils.protocol(request) == "https"))
+            val mmResp = curationObjectController.callMatchmaker(c, urlMap, Utils.baseUrl(request))
             if ( mmResp.size > 0) {
               Ok(toJson(mmResp))
             } else {
