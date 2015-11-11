@@ -114,11 +114,6 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     Ok(views.html.searchByTag(tag, nextItems.slice(0, size).toList, prev, next, size, viewMode))
   }
 
-  def tagCloud() = PrivateServerAction { implicit request =>
-    implicit val user = request.user
-    Ok(views.html.tagCloud(computeTagWeights()))
-  }
-
   def tagListWeighted() = PrivateServerAction { implicit request =>
     implicit val user = request.user
     val tags = computeTagWeights()
