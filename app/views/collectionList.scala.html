@@ -1,4 +1,4 @@
-@(collections: List[models.Collection], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String])(implicit user: Option[models.User])
+@(collections: List[models.Collection], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String], title: Option[String])(implicit user: Option[models.User])
 
 @import _root_.util.Formatters.ellipsize
 
@@ -11,11 +11,7 @@
 
     <div class="row">
         <div class="col-md-12">
-            @if(user.isDefined) {
-                <h1>@{user.get.firstName}'s Collections</h1>
-            } else {
-                <h1>Collections</h1>
-            }
+            <h1>@title</h1>
         </div>
     </div>
 

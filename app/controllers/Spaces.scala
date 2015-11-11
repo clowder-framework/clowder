@@ -504,9 +504,11 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
      val nextPage = (when == "a")
      val person = owner.flatMap(o => users.get(UUID(o)))
+     var title: Option[String] = Some("Spaces")
 
      val spaceList = person match {
        case Some(p) => {
+         title = Some(person.get.fullName + "'s Space")
          if (date != "") {
            spaces.listUser(date, nextPage, limit, request.user, showAll, p)
          } else {
@@ -569,7 +571,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
        }
 
      val deletePermission = Permission.checkPermission(user, Permission.DeleteSpace)
-     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, deletePermission, prev, next))
+     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, deletePermission, prev, next, title))
    }
 
 
