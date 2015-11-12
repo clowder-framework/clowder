@@ -503,7 +503,6 @@ DELETE         /api/sections/:id/tags                                           
 # SEARCH ENDPOINT
 # ----------------------------------------------------------------------
 GET           /api/search/multimediasearch                                              @api.Search.searchMultimediaIndex(section_id: UUID)
-GET           /api/search/multimediasearch                                              @api.Search.searchMultimediaIndexNew(section_id: UUID)
 
 # ----------------------------------------------------------------------
 # GEOSTREAMS ENDPOINT
