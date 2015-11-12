@@ -126,12 +126,12 @@ class Datasets @Inject()(
       user match {
         case Some(identity) => {
           (request.body \ "space").asOpt[String] match {
+            case None | Some("default") => d = Dataset(name=name,description=description, created=new Date(), author=identity, licenseData = License.fromAppConfig())
             case Some(spaceId) =>
               spaces.get(UUID(spaceId)) match {
                 case Some(s) => d = Dataset(name=name,description=description, created=new Date(), author=identity, licenseData = License.fromAppConfig(), spaces = List(UUID(spaceId)))
                 case None => BadRequest(toJson("Bad space = " + spaceId))
               }
-            case None => d = Dataset(name=name,description=description, created=new Date(), author=identity, licenseData = License.fromAppConfig())
           }
         }
         case None => InternalServerError("User Not found")
@@ -196,6 +196,8 @@ class Datasets @Inject()(
       user match {
         case Some(identity) => {
           (request.body \ "space").asOpt[List[String]] match {
+            case None | Some(List("default"))=>
+              d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig())
             case Some(space) =>
               var spaceList: List[UUID] = List.empty;
               space.map {
@@ -206,9 +208,7 @@ class Datasets @Inject()(
                 }
               }
               d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig(), spaces = spaceList)
-            case None =>
-              d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig())
-          }
+           }
         }
         case None => InternalServerError("User Not found")
       }
