@@ -202,7 +202,7 @@ class Search @Inject() (files: FileService, datasets: DatasetService, collection
    @ApiOperation(value = "Search multimedia index for similar sections",
        notes = "",
        responseClass = "None", httpMethod = "GET")
-  def searchMultimediaIndexNew(section_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.SearchDatasets)) { 
+  def searchMultimediaIndexNew(section_id: UUID) = PermissionAction(Permission.ViewDataset) {
     implicit request =>
     
     Logger.debug("Searching multimedia index " + section_id.stringify)
