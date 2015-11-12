@@ -2,6 +2,7 @@ package api
 
 import java.util.Date
 import javax.inject.Inject
+import api.Permission.Permission
 import com.wordnik.swagger.annotations.{ApiOperation, Api}
 import models._
 import play.api.Logger
@@ -9,11 +10,12 @@ import controllers.Utils
 import play.api.Play._
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
+import play.api.libs.json.Json.toJson
 import services.{EventService, AdminsNotifierPlugin, SpaceService, UserService, DatasetService, CollectionService}
+import scala.collection.mutable.ListBuffer
 import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError
-import scala.collection.mutable.ListBuffer
 
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
@@ -74,43 +76,38 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     }
   }
 
-  @ApiOperation(value = "List spaces",
+  @ApiOperation(value = "List spaces the user can view",
     notes = "Retrieves information about spaces",
     responseClass = "None", httpMethod = "GET")
-  def list() = UserAction { implicit request =>
-    var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
-
-    val userSpaces = request.user match {
-      case Some(user) => user.spaceandrole.map(_.spaceId).flatMap(spaces.get(_))
-      case None => spaces.list()
-    }
-
-    for (aSpace <- userSpaces) {
-      decodedSpaceList += Utils.decodeSpaceElements(aSpace)
-    }
-    Ok(toJson(decodedSpaceList.toList.map(spaceToJson)))
+  def list(title: Option[String], date: Option[String], limit: Int) = UserAction { implicit request =>
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.ViewSpace), request.user, request.superAdmin).map(spaceToJson)))
   }
 
-  @ApiOperation(value = "List spaces a user can add to",
+  @ApiOperation(value = "List spaces the user can add to",
     notes = "Retrieves a list of spaces that the user has permission to add to",
     responseClass = "None", httpMethod = "GET")
-  def listSpacesCanAdd() = UserAction { implicit request =>
-    var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
+  def listCanEdit(title: Option[String], date: Option[String], limit: Int) = UserAction { implicit request =>
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), request.user, request.superAdmin).map(spaceToJson)))
+  }
 
-    val userSpaces = request.user match {
-      case Some(user) => user.spaceandrole.map(_.spaceId).flatMap(spaces.get(_))
-      case None => spaces.list()
-    }
-
-    implicit val user = request.user
-    for (aSpace <- userSpaces) {
-      //For each space in the list, check if the user has permission to add something to it, if so
-      //decode it and add it to the list to pass back to the view.
-      if (Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, aSpace.id))) {
-        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
+  /**
+   * Returns list of collections based on parameters and permissions.
+   */
+  private def listSpaces(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[ProjectSpace] = {
+    (title, date) match {
+      case (Some(t), Some(d)) => {
+        spaces.listAccess(d, true, limit, t, permission, user, superAdmin)
+      }
+      case (Some(t), None) => {
+        spaces.listAccess(limit, t, permission, user, superAdmin)
+      }
+      case (None, Some(d)) => {
+        spaces.listAccess(d, true, limit, permission, user, superAdmin)
+      }
+      case (None, None) => {
+        spaces.listAccess(limit, permission, user, superAdmin)
       }
     }
-    Ok(toJson(decodedSpaceList.toList.map(spaceToJson)))
   }
 
   def spaceToJson(space: ProjectSpace) = {
@@ -120,73 +117,60 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       "created" -> space.created.toString))
   }
 
-  @ApiOperation(value = "Associate a collection with a space",
-    notes = "",
-    responseClass = "None", httpMethod = "POST")
-  def addCollection(space: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, space)))(parse.json) { implicit request =>
-    val collectionId = (request.body \ "collection_id").as[String]
-    spaces.addCollection(UUID(collectionId), space)
-    Ok(toJson("success"))
-  }
-
-  @ApiOperation(value = " Associate a collection to multiple spaces",
+  @ApiOperation(value = " Associate a collection to a space",
   notes = "",
   responseClass = "None", httpMethod="POST"
   )
-  def addCollectionToSpaces(space_list: List[String], collection_id: UUID) = PermissionAction(Permission.EditCollection)(parse.json) {
+  def addCollectionToSpace(spaceId: UUID, collectionId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) {
     implicit request =>
-      val current_spaces = collectionService.get(collection_id).map(_.spaces).get
-      var new_spaces: List[UUID] = List.empty
-      current_spaces.map{
-        aSpace =>
-          if(!space_list.contains(aSpace.toString)) {
-            spaces.removeCollection(collection_id, aSpace)
-          }
-          else {
-            new_spaces = aSpace :: new_spaces
-          }
-      }
-      space_list.map {
-        aSpace => if(!new_spaces.contains(aSpace) && !current_spaces.contains(UUID(aSpace))) {
-          new_spaces = UUID(aSpace) :: new_spaces
+      (spaces.get(spaceId), collectionService.get(collectionId)) match {
+        case (Some(s), Some(c)) => {
+          spaces.addCollection(collectionId, spaceId)
+          Ok(Json.obj("collectionInSpace" -> (s.collectionCount +1).toString))
         }
+        case (_, _) => NotFound
       }
-      new_spaces.map(space_id => spaces.addCollection(collection_id, space_id))
-      Ok(toJson("success"))
   }
 
-  @ApiOperation(value = "Associate a dataset with a space",
+  @ApiOperation(value = " Associate a collection to a space",
+    notes = "",
+    responseClass = "None", httpMethod="POST"
+  )
+  def addDatasetToSpace(spaceId: UUID, datasetId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) {
+    implicit request =>
+      (spaces.get(spaceId), datasetService.get(datasetId)) match {
+        case (Some(s), Some(d)) => {
+          spaces.addDataset(datasetId, spaceId)
+          Ok(Json.obj("datasetsInSpace" -> (s.datasetCount+1).toString))
+        }
+        case (_, _) => NotFound
+      }
+  }
+
+  @ApiOperation(value = "Remove a collection from a space",
     notes = "",
     responseClass = "None", httpMethod = "POST")
-  def addDataset(space: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, space)))(parse.json) { implicit request =>
-    val datasetId = (request.body \ "dataset_id").as[String]
-    spaces.addDataset(UUID(datasetId), space)
-    Ok(toJson("success"))
+  def removeCollection(spaceId: UUID, collectionId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+    (spaces.get(spaceId), collectionService.get(collectionId)) match {
+      case (Some(s), Some(c)) => {
+        spaces.removeCollection(collectionId, spaceId)
+        Ok(toJson("success"))
+      }
+      case (_, _) => NotFound
+    }
   }
 
-  @ApiOperation(value = "Associate a dataset to multiple spaces",
-  notes= "",
-  responseClass="None", httpMethod ="POST")
-  def addDatasetToSpaces(space_list: List[String], dataset_id: UUID) = PermissionAction(Permission.EditCollection)(parse.json) {
-    implicit request =>
-      val current_spaces = datasetService.get(dataset_id).map(_.spaces).get
-      var new_spaces: List[UUID] = List.empty
-      current_spaces.map{
-        aSpace =>
-          if(!space_list.contains(aSpace.toString)) {
-            spaces.removeDataset(dataset_id, aSpace)
-          }
-          else {
-            new_spaces = aSpace :: new_spaces
-          }
+  @ApiOperation(value = "Remove a dataset from a space",
+  notes = "",
+  responseClass = "None", httpMethod = "POST")
+  def removeDataset(spaceId: UUID, datasetId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+    (spaces.get(spaceId), datasetService.get(datasetId)) match {
+      case (Some(s), Some(d)) => {
+        spaces.removeDataset(datasetId, spaceId)
+        Ok(toJson("success"))
       }
-      space_list.map {
-        aSpace => if(!new_spaces.contains(aSpace) && !current_spaces.contains(UUID(aSpace))) {
-          new_spaces = UUID(aSpace) :: new_spaces
-        }
-      }
-      new_spaces.map(space_id => spaces.addDataset(dataset_id, space_id))
-      Ok(toJson("success"))
+      case (_, _) => NotFound
+    }
   }
 
   /**

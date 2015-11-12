@@ -22,21 +22,21 @@ object Permission extends Enumeration {
     EditSpace,
     AddResourceToSpace,
     EditStagingArea,
-    
+
     // datasets
     ViewDataset,
     CreateDataset,
     DeleteDataset,
     EditDataset,
     AddResourceToDataset,
-    
+
     // collections
     ViewCollection,
     CreateCollection,
     DeleteCollection,
     EditCollection,
     AddResourceToCollection,
-    
+
     // files
     AddFile,
     DeleteFile,
@@ -52,13 +52,13 @@ object Permission extends Enumeration {
     ViewSection,
     DeleteSection,   // FIXME: Unused right now
     EditSection,     // FIXME: Unused right now
-    
+
     // metadata
     AddMetadata,
     ViewMetadata,
     DeleteMetadata, // FIXME: Unused right now
     EditMetadata,   // FIXME: Unused right now
-    
+
     // social annotation
     AddTag,
     DeleteTag,
@@ -67,7 +67,7 @@ object Permission extends Enumeration {
     ViewComments,   // FIXME: Unused right now
     DeleteComment,
     EditComment,
-    
+
     // geostreaming api
     CreateSensor,
     ViewSensor,
@@ -225,16 +225,11 @@ object Permission extends Enumeration {
               }
             }
             hasPermission getOrElse {
-              collection.author match {
-                case Some(realAuthor) => {
                   val r = for {
-                    e1 <- realAuthor.email
+                    e1 <- collection.author.email
                     e2 <- user.email}
                     yield e1 == e2
                   return r getOrElse false
-                }
-                case None => false
-              }
             }
           }
         }

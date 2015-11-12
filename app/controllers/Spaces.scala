@@ -5,6 +5,7 @@ import java.util.Date
 import javax.inject.Inject
 
 import api.Permission
+import api.Permission._
 import models._
 import play.api.data.validation._
 import play.api.{Play, Logger}
@@ -503,9 +504,11 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
      val nextPage = (when == "a")
      val person = owner.flatMap(o => users.get(UUID(o)))
+     var title: Option[String] = Some("Spaces")
 
      val spaceList = person match {
        case Some(p) => {
+         title = Some(person.get.fullName + "'s Space")
          if (date != "") {
            spaces.listUser(date, nextPage, limit, request.user, showAll, p)
          } else {
@@ -514,9 +517,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
        }
        case None => {
          if (date != "") {
-           spaces.listAccess(date, nextPage, limit, request.user, showAll)
+           spaces.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewSpace), request.user, showAll)
          } else {
-           spaces.listAccess(limit, request.user, showAll)
+           spaces.listAccess(limit, Set[Permission](Permission.ViewSpace), request.user, showAll)
          }
        }
      }
@@ -526,7 +529,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
        val first = Formatters.iso8601(spaceList.head.created)
        val space = person match {
          case Some(p) => spaces.listUser(first, nextPage=false, 1, request.user, showAll, p)
-         case None => spaces.listAccess(first, nextPage = false, 1, request.user, showAll)
+         case None => spaces.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewSpace), request.user, showAll)
        }
        if (space.nonEmpty && space.head.id != spaceList.head.id) {
          first
@@ -542,7 +545,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
        val last = Formatters.iso8601(spaceList.last.created)
        val ds = person match {
          case Some(p) => spaces.listUser(last, nextPage=true, 1, request.user, showAll, p)
-         case None => spaces.listAccess(last, nextPage=true, 1, request.user, showAll)
+         case None => spaces.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewSpace), request.user, showAll)
        }
        if (ds.nonEmpty && ds.head.id != spaceList.last.id) {
          last
@@ -567,8 +570,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
          Some(mode)
        }
 
-     val deletePermission = Permission.checkPermission(user, Permission.DeleteDataset)
-     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, deletePermission, prev, next))
+     val deletePermission = Permission.checkPermission(user, Permission.DeleteSpace)
+     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, deletePermission, prev, next, title))
    }
 
 

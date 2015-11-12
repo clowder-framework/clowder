@@ -1,9 +1,4 @@
 (function ($, Configuration) {
-
-	var hostAddress = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')
-	var fileUrl = hostAddress + Configuration.url;
-	var pathJs = hostAddress + Configuration.jsPath + "/";
-  
   var width = 750;
   var height = 550;
     
@@ -13,7 +8,7 @@
   $(document).ready(function() {
     $.ajax({
         type: "GET",
-        url: fileUrl,
+        url: Configuration.url,
         dataType: "text",
         success: function(data) {processData(data);}
      });

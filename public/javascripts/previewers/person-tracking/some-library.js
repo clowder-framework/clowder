@@ -1,8 +1,6 @@
 (function($, Configuration) {
 	console.log("Person tracking previewer for " + Configuration.id);    
-	
-    var pathJs = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + Configuration.jsPath + "/";
-	
+
 	// Retrieve the metadata
     var jsRoutesObject = jsRoutes.api.Files.getTechnicalMetadataJSON(Configuration.id);
     var metadataApiUrl = jsRoutesObject.url;
@@ -41,11 +39,11 @@
             return;
         }
 
-        var pathFlotJS = pathJs + "jquery.flot.js";
-        var pathNavigateJS = pathJs + "jquery.flot.navigate.js";
-        var pathCrosshairJS = pathJs + "jquery.flot.crosshair.js";
-        var pathPopcornJS = pathJs + "popcorn-complete.min.js";
-        var pathAxisLabelsJS = pathJs + "jquery.flot.axislabels.js";
+        var pathFlotJS = Configuration.previewer + "/jquery.flot.js";
+        var pathNavigateJS = Configuration.previewer + "/jquery.flot.navigate.js";
+        var pathCrosshairJS = Configuration.previewer + "/jquery.flot.crosshair.js";
+        var pathPopcornJS = Configuration.previewer + "/../../popcorn-complete.min.js";
+        var pathAxisLabelsJS = Configuration.previewer + "/jquery.flot.axislabels.js";
         var sortedFrameDataArray = new Array();
         var sortedFrameDataArrayCopy = new Array();
         var frameDataArray = new Array(); // To store array of frames obtained from the JSON response

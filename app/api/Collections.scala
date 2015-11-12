@@ -1,5 +1,6 @@
 package api
 
+import api.Permission.Permission
 import play.api.Logger
 import play.api.Play.current
 import models._
@@ -8,6 +9,7 @@ import play.api.libs.json._
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
 import javax.inject.{ Singleton, Inject }
+import scala.collection.immutable.HashSet
 import scala.util.{Try, Success, Failure}
 import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
@@ -34,18 +36,24 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           (request.body \ "description").asOpt[String].map { description =>
               (request.body \ "space").asOpt[String].map { space => 
 	              var c : Collection = null
-	              if (space == "default") {
-	                   c = Collection(name = name, description = description, created = new Date(), author=request.user)
-	              }
-	              else {
-	                   c = Collection(name = name, description = description, created = new Date(), author=request.user, spaces = List(UUID(space)))
-	              }
-	              collections.insert(c) match {
-	                case Some(id) => {
-	                 Ok(toJson(Map("id" -> id)))
-	                }
-	                case None => Ok(toJson(Map("status" -> "error")))
-	              }
+                implicit val user = request.user
+                user match {
+                  case Some(identity) => {
+                    if (space == "default") {
+                      c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity)
+                    }
+                    else {
+                      c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)))
+                    }
+                    collections.insert(c) match {
+                      case Some(id) => {
+                        Ok(toJson(Map("id" -> id)))
+                      }
+                      case None => Ok(toJson(Map("status" -> "error")))
+                    }
+                  }
+                  case None => InternalServerError("User Not found")
+                }
               }.getOrElse(BadRequest(toJson("Missing parameter [space]")))
           }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
       }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
@@ -57,7 +65,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   def attachDataset(collectionId: UUID, datasetId: UUID) = PermissionAction(Permission.AddResourceToCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     collections.addDataset(collectionId, datasetId) match {
       case Success(_) => {
-
+        var datasetsInCollection = 0
         collections.get(collectionId) match {
         case Some(collection) => {
           datasets.get(datasetId) match {
@@ -65,10 +73,11 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
               events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "attach_dataset_collection") 
             }
           }
-
+          datasetsInCollection = collection.datasetCount
         }
       }
-      Ok(toJson(Map("status" -> "success")))
+      //datasetsInCollection is the number of datasets in this collection
+      Ok(Json.obj("datasetsInCollection" -> Json.toJson(datasetsInCollection) ))
     }
       case Failure(t) => InternalServerError
     }
@@ -99,7 +108,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Remove dataset from collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: String) = PermissionAction(Permission.CreateCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
+  def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: String) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     collections.removeDataset(collectionId, datasetId, Try(ignoreNotFound.toBoolean).getOrElse(true)) match {
       case Success(_) => {
 
@@ -107,14 +116,17 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         case Some(collection) => {
           datasets.get(datasetId) match {
             case Some(dataset) => {
-              events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "remove_dataset_collection") 
+              events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "remove_dataset_collection")
             }
           }
         }
       }
       Ok(toJson(Map("status" -> "success")))
     }
-    case Failure(t) => InternalServerError
+    case Failure(t) => {
+      Logger.error("Error: " + t)
+      InternalServerError
+    }
     }
   }
   
@@ -135,12 +147,38 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     Ok(toJson(Map("status" -> "success")))
   }
 
-  @ApiOperation(value = "List all collections",
-      notes = "",
-      responseClass = "None", httpMethod = "GET")
-  def listCollections() = PrivateServerAction { implicit request =>
-    val list = collections.listAccess(0, request.user, request.superAdmin).map(jsonCollection(_))
-    Ok(toJson(list))
+  @ApiOperation(value = "List all collections the user can view",
+    notes = "This will check for Permission.ViewCollection",
+    responseClass = "None", multiValueResponse=true, httpMethod = "GET")
+  def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+    Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)))
+  }
+
+  @ApiOperation(value = "List all collections the user can edit",
+    notes = "This will check for Permission.AddResourceToCollection and Permission.EditCollection",
+    responseClass = "None", httpMethod = "GET")
+  def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+    Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), request.user, request.superAdmin)))
+  }
+
+  /**
+   * Returns list of collections based on parameters and permissions.
+   */
+  private def lisCollections(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Collection] = {
+    (title, date) match {
+      case (Some(t), Some(d)) => {
+        collections.listAccess(d, true, limit, t, permission, user, superAdmin)
+      }
+      case (Some(t), None) => {
+        collections.listAccess(limit, t, permission, user, superAdmin)
+      }
+      case (None, Some(d)) => {
+        collections.listAccess(d, true, limit, permission, user, superAdmin)
+      }
+      case (None, None) => {
+        collections.listAccess(limit, permission, user, superAdmin)
+      }
+    }
   }
 
   @ApiOperation(value = "Get a specific collection",

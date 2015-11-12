@@ -23,7 +23,7 @@ import play.api.Play._
 import org.apache.http.client.methods.HttpPost
 import scala.concurrent.Future
 import scala.concurrent.Await
-import play.api.mvc.{Action, AnyContent, Results}
+import play.api.mvc.{Request, Action, AnyContent, Results}
 import play.api.libs.ws._
 import play.api.libs.ws.WS._
 import play.api.libs.functional.syntax._
@@ -93,16 +93,13 @@ class CurationObjects @Inject()(
 
               //copy file list from FileDAO.
               var newFiles: List[File]= List.empty
-              for ( file <- dataset.files) {
-                files.get(file.id) match{
+              for ( fileId <- dataset.files) {
+                files.get(fileId) match {
                   case Some(f) => {
                     newFiles =  f :: newFiles
                   }
                 }
               }
-              //this line can actually be removed since we are not using dataset.files to get file's info.
-              //Just to keep consistency
-              var newDataset = dataset.copy(files = newFiles)
 
               //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
               val newCuration = CurationObject(
@@ -113,7 +110,7 @@ class CurationObjects @Inject()(
                 submittedDate = None,
                 publishedDate= None,
                 space = spaceId,
-                datasets = List(newDataset),
+                datasets = List(dataset),
                 files = newFiles,
                 repository = None,
                 status = "In Curation"
@@ -186,7 +183,7 @@ class CurationObjects @Inject()(
 
 
   def getFiles(curation: CurationObject, dataset: Dataset): List[File] ={
-    curation.files filter (f => (dataset.files map (_.id)) contains  (f.id))
+    curation.files filter (f => dataset.files.contains (f.id))
   }
 
   def addFileUserMetadata(curationId:UUID, fileId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId)))  (parse.json) { implicit request =>
@@ -240,11 +237,7 @@ class CurationObjects @Inject()(
               val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
                 "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
                 "Affiliation" -> List("UMich", "IU", "UIUC"))
-              val urlMap = scala.collection.immutable.Map( "hostUrl" -> api.routes.CurationObjects.getCurationObjectOre(curationId).absoluteURL(Utils.protocol(request) == "https"),
-               "curationUrl" -> controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(Utils.protocol(request) == "https"),
-               "datasetUrl"  -> controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(Utils.protocol(request) == "https"))
-
-              val mmResp = callMatchmaker(c, urlMap, Utils.baseUrl(request))
+              val mmResp = callMatchmaker(c)(request)
               user match {
                 case Some(usr) => {
                   val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
@@ -257,8 +250,9 @@ class CurationObjects @Inject()(
           }
   }
 
-  def callMatchmaker(c: CurationObject, urlMap: scala.collection.immutable.Map[String, String], hostIp: String): List[MatchMakerResponse] = {
-    val hostUrl = urlMap.get("hostUrl")
+  def callMatchmaker(c: CurationObject)(implicit request: Request[Any]): List[MatchMakerResponse] = {
+    val https = controllers.Utils.https(request)
+    val hostUrl = api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "#aggregation"
     val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => pref._1-> Json.toJson(pref._2.toString().split(",").toList))).getOrElse(Map.empty)
     val userPreferences = userPrefMap + ("Repository" -> Json.toJson(c.repository))
     val maxDataset = if (!c.files.isEmpty)  c.files.map(_.length).max else 0
@@ -271,17 +265,17 @@ class CurationObjects @Inject()(
     val creator = userService.findByIdentity(c.author).map ( usr => usr.profile match {
       case Some(prof) => prof.orcidID match {
         case Some(oid) => oid
-        case None => hostIp + "/api/users/" + usr.id
+        case None => api.routes.Users.findById(usr.id).absoluteURL(https)
       }
-        case None => hostIp + "/api/users/" + usr.id
+        case None => api.routes.Users.findById(usr.id).absoluteURL(https)
 
     })
     val aggregation = metadataJson.toMap ++ Map(
-      "Identifier" -> Json.toJson(urlMap.get("curationUrl")),
+      "Identifier" -> Json.toJson(controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(https)),
       "@id" -> Json.toJson(hostUrl),
       "Title" -> Json.toJson(c.name),
-      "Creator" -> Json.toJson(creator),
-      "similarTo" -> Json.toJson(urlMap.get("datasetUrl"))
+      "Creator" -> creator,
+      "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https))
       )
     val valuetoSend = Json.obj(
       "@context" -> Json.toJson(Seq(
@@ -363,7 +357,7 @@ class CurationObjects @Inject()(
            val urlMap = scala.collection.immutable.Map( "hostUrl" -> api.routes.CurationObjects.getCurationObjectOre(curationId).absoluteURL(Utils.protocol(request) == "https"),
              "curationUrl" -> controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(Utils.protocol(request) == "https"),
              "datasetUrl"  -> controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(Utils.protocol(request) == "https"))
-           val mmResp = callMatchmaker(c, urlMap, Utils.baseUrl(request)).filter(_.orgidentifier == repository)
+           val mmResp = callMatchmaker(c).filter(_.orgidentifier == repository)
 
            Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository))
         }
@@ -383,8 +377,8 @@ class CurationObjects @Inject()(
             case Some (s) => repository = s
             case None => Ok(views.html.spaces.curationSubmitted( c, "No Repository Provided", success))
           }
-          val key = play.api.Play.configuration.getString("commKey").getOrElse("")
-          val hostUrl = api.routes.CurationObjects.getCurationObjectOre(curationId).absoluteURL(Utils.protocol(request) == "https") + "?key=" + key
+          val https = controllers.Utils.https(request)
+          val hostUrl = api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "#aggregation"
           val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => pref._1-> Json.toJson(pref._2.toString().split(",").toList))).getOrElse(Map.empty)
           val userPreferences = userPrefMap + ("Repository" -> Json.toJson(repository))
           val maxDataset = if (!c.files.isEmpty)  c.files.map(_.length).max else 0
@@ -443,7 +437,7 @@ class CurationObjects @Inject()(
                     "@id" -> Json.toJson(hostUrl),
                     "@type" -> Json.toJson("Aggregation"),
                     "Title" -> Json.toJson(c.name),
-                    "Creator" -> creator
+                    "Creator" -> Json.toJson(userService.findByIdentity(c.author).map(usr => JsArray(Seq(Json.toJson(usr.fullName + ": " + controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)), Json.toJson(usr.profile.map(prof => prof.orcidID.map(oid=> oid)))))))
                   )
                 ),
                 "Aggregation Statistics" -> Json.toJson(
@@ -455,7 +449,7 @@ class CurationObjects @Inject()(
                     "Number of Datasets" -> Json.toJson(c.files.length),
                     "Number of Collections" -> Json.toJson(c.datasets.length)
                   )),
-                "Publication Callback" -> Json.toJson(controllers.routes.CurationObjects.savePublishedObject(c.id).absoluteURL(Utils.protocol(request) == "https") +"?key=" + key ),
+                "Publication Callback" -> Json.toJson(controllers.routes.CurationObjects.savePublishedObject(c.id).absoluteURL(https) +"?key=" + key),
                 "Environment Key" -> Json.toJson(play.api.Play.configuration.getString("commKey").getOrElse(""))
               )
             )
@@ -567,7 +561,7 @@ class CurationObjects @Inject()(
 
       case Some(c) => {
 
-        val endpoint = play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$", "") + "/" +id.toString()
+        val endpoint = play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$", "") + "/urn:uuid:" +id.toString()
         Logger.debug(endpoint)
         val futureResponse = WS.url(endpoint).get()
 

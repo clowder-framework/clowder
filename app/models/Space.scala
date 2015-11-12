@@ -25,7 +25,7 @@ case class ProjectSpace (
   collectionCount: Integer,
   datasetCount: Integer,
   userCount: Integer,
-  metadata: List[Metadata], 
+  metadata: List[Metadata],
   resourceTimeToLive: Long = SpaceConfig.getTimeToLive(),
   isTimeToLiveEnabled: Boolean = SpaceConfig.getIsTimeToLiveEnabled(),
   followers: List[UUID] = List.empty,
@@ -51,7 +51,7 @@ case class SpaceInvite(
     email: String,
     space: UUID,
     role: String)
-   
+
 // New way to manage metadata. Will eventually be merged with space metadata.
 case class SpaceMetadata (
   created: Date,
@@ -66,17 +66,3 @@ case class ProvObj (
   id: UUID, // id of original object
   archived: Date,
   obj: JsObject)
-
-// Generic Agent
-trait Agent {
-  val id: UUID
-}
-
-// User through the GUI
-case class UserAgent(id: UUID, userId: Option[URL]) extends Agent
-
-// Automatic extraction
-case class ExtractorAgent(id: UUID, extractorId: Option[URL]) extends Agent
-
-// User submitting tool
-case class ToolAgent(id: UUID, toolId: Option[URL]) extends Agent

@@ -15,6 +15,7 @@ case class Section(
   area: Option[Rectangle] = None,
   preview: Option[Preview] = None,
   description: Option[String] = None,
+  jsonldMetadata : List[Metadata]= List.empty,
   thumbnail_id: Option[String] = None,
   tags: List[Tag] = List.empty)
 

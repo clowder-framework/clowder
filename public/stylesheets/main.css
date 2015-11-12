@@ -41,10 +41,10 @@ span.align-right {
     float:right;
 }
 
-.error { 
-	color: red;
-	padding-left: 10px;
-	text-align:left;
+.error span{
+    color: red;
+    padding-left: 10px;
+    text-align:left;
 }
 
 .success {
@@ -461,7 +461,11 @@ textarea, input[type='text'], input[type='password']{
 }
 
 .btn-margins {
-  margin: 20px 0px;
+     margin: 20px 0px;
+ }
+
+.btn-margin-bottom {
+    margin-bottom: 20px !important;
 }
 
 .col-section {
@@ -476,8 +480,19 @@ textarea, input[type='text'], input[type='password']{
     padding-top: 7px;
 }
 
-.error {
+span.error{
     color: red;
+}
+
+.error p{
+    color: red;
+}
+.space-head {
+    border-bottom: 1px solid #E1E1E8;
+}
+
+.space-col-left {
+    border-right: 1px solid #E1E1E8;
 }
 
 .tag {
@@ -560,7 +575,7 @@ table#sensorsListTable > thead > tr > th.headerSortDown {
     padding: 30px 0px 0px 0px;
 }
 
-#add-file-btn {
+#file-pane-buttons {
     margin-top: 10px;
     margin-left: 20px;
 }
@@ -710,6 +725,21 @@ table#sensorsListTable > thead > tr > th.headerSortDown {
     color: #fff;
 }
 
+.md-block {
+    padding: 5px 0px;
+    margin: 0px;
+}
+
+.collapse-icon:link, .collapse-icon:visited, .collapse-icon:hover, .collapse-icon:active  {
+    text-decoration:none;
+    cursor: pointer; cursor: hand;
+}
+
+.tree li {
+    list-style-type: none;
+}
+
+
 .space-pills {
     display: inline-block;
     border: none;
@@ -820,6 +850,9 @@ table.borderless tbody tr td, table.borderless tbody tr th {
     border: none;
 }
 
+.margin-top-h{
+    margin-top: 30px;
+}
 .center-glyphicon{
     display:block;
     text-align: center;
@@ -861,4 +894,7 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 
 #user-space-role .table {
     margin-bottom: 0px;
+}
+.form-md {
+    padding: 10px 0px;
 }

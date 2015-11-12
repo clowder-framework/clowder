@@ -2,6 +2,7 @@ package services
 
 
 import java.io.InputStream
+import com.novus.salat.dao.SalatMongoCursor
 import models.{UUID, MultimediaFeatures, TempFile}
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.DBObject
@@ -54,5 +55,5 @@ abstract class MultimediaQueryService {
 
   def insert(multimediaFeature: MultimediaFeatures)
 
-  def listAll(): List[MultimediaFeatures]
+  def listAll(): SalatMongoCursor[MultimediaFeatures]
 }
