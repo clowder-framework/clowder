@@ -70,6 +70,18 @@ class Metadata @Inject()(
     }
   }
 
+  def getUrl(inUrl: String) = Action.async { implicit request =>
+    import java.net.URLDecoder
+    Logger.debug("Metadata getUrl: inUrl = '" + inUrl + "'.")
+    // Replace " " with "+", otherwise Ws.url(url) breaks.
+    val url = URLDecoder.decode(inUrl).replaceAll(" ", "+")
+    Logger.debug("Metadata getUrl decoded: url = '" + url + "'.")
+    implicit val context = scala.concurrent.ExecutionContext.Implicits.global
+    WS.url(url).get().map {
+      response => Ok(response.body.trim)
+    }
+  }
+
   def addDefinition() = PermissionAction(Permission.AddMetadata)(parse.json) {
     implicit request =>
       request.user match {

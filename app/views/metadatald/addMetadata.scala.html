@@ -200,15 +200,18 @@
                         source: function( request, response ) {
 
                             var useSyn = $("#useSynonyms").prop("checked");
-                            // Sets a variable query parameter in $.ajax.data below.
-                            var query_data = { useSynonyms: useSyn };
                             var query_param = field[0].json.query_parameter;
-                            query_data[query_param] = request.term;
+                            var url = encodeURIComponent(field[0].json.definitions_url + "?" + query_param + "=" + request.term + "&useSynonyms=" + useSyn);
+                            console.log("listjquery, url: '" + url + "'.");
+                            console.log("1. ajax url: '", jsRoutes.api.Metadata.getUrl(url));
+                            console.log("2. ajax getUrl(url).url: '", jsRoutes.api.Metadata.getUrl(url).url);
                             $.ajax({
-                                url: field[0].json.definitions_url,
-                                dataType: "jsonp",
+                                //url: field[0].json.definitions_url,
+                                url: jsRoutes.api.Metadata.getUrl(url).url,
+                                //dataType: "jsonp",
+                                dataType: "json",
                                 //data: { term: request.term, useSynonyms: useSyn },
-                                data: query_data,
+                                //data: query_data,
                                 success: function( data ) {
                                     // The vars list is in data.vars_data, and the categories in data.cat_data. Assuming that "listjquery" will use a URL that returns filtered data, we don't filter again. Returns cat_data with the vars listif present, otherwise returns the original data.
                                     if ('cat_data' in data) {
@@ -228,13 +231,13 @@
                         minLength: 3,
                         source: function( request, response ) {
                             // Sets a variable query parameter in $.ajax.data below.
-                            var query_data = { };
                             var query_param = field[0].json.query_parameter;
-                            query_data[query_param] = request.term;
+                            var url = encodeURIComponent(field[0].json.definitions_url + "?" + query_param + "=" + request.term);
                             $.ajax({
-                                url: field[0].json.definitions_url,
-                                dataType: "jsonp",
-                                data: query_data,
+                                url: jsRoutes.api.Metadata.getUrl(url).url,
+                                //dataType: "jsonp",
+                                dataType: "json",
+                                //data: query_data,
                                 success: function( data ) {
                                     // Assuming that the remote service returns filtered data, no need to filter again.
                                     response(data);
