@@ -209,7 +209,7 @@ class Datasets @Inject()(
       }
 
     //Pass the viewMode into the view
-    Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title))
+    Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title, owner))
   }
 
   def addViewer(id: UUID, user: Option[securesocial.core.Identity]) = {

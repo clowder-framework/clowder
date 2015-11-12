@@ -77,13 +77,13 @@ object Utils {
   object CustomMappings {
     implicit def urlFormat: Formatter[URL] = new Formatter[URL] {
       override val format = Some(("format.url", Nil))
-      def bind(key: String, data: Map[String, String]) = parsing(v => new URL(v), "error.url", Nil)(key, data)
+      def bind(key: String, data: Map[String, String]) = parsing(v => new URL(v), "Illegal Address", Nil)(key, data)
       def unbind(key: String, value: URL) = Map(key -> value.toString)
     }
     def urlType: Mapping[URL] = Forms.of[URL]
     implicit def uuidFormat: Formatter[UUID] = new Formatter[UUID] {
       override val format = Some(("format.uuid", Nil))
-      def bind(key: String, data: Map[String, String]) = parsing(v => UUID(v), "error.url", Nil)(key, data)
+      def bind(key: String, data: Map[String, String]) = parsing(v => UUID(v), "error.uuid", Nil)(key, data)
       def unbind(key: String, value: UUID) = Map(key -> value.toString)
     }
     def uuidType: Mapping[UUID] = Forms.of[UUID]
