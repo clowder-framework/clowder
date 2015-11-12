@@ -202,16 +202,12 @@
                             var useSyn = $("#useSynonyms").prop("checked");
                             var query_param = field[0].json.query_parameter;
                             var url = encodeURIComponent(field[0].json.definitions_url + "?" + query_param + "=" + request.term + "&useSynonyms=" + useSyn);
-                            console.log("listjquery, url: '" + url + "'.");
-                            console.log("1. ajax url: '", jsRoutes.api.Metadata.getUrl(url));
-                            console.log("2. ajax getUrl(url).url: '", jsRoutes.api.Metadata.getUrl(url).url);
                             $.ajax({
                                 //url: field[0].json.definitions_url,
                                 url: jsRoutes.api.Metadata.getUrl(url).url,
                                 //dataType: "jsonp",
                                 dataType: "json",
                                 //data: { term: request.term, useSynonyms: useSyn },
-                                //data: query_data,
                                 success: function( data ) {
                                     // The vars list is in data.vars_data, and the categories in data.cat_data. Assuming that "listjquery" will use a URL that returns filtered data, we don't filter again. Returns cat_data with the vars listif present, otherwise returns the original data.
                                     if ('cat_data' in data) {
