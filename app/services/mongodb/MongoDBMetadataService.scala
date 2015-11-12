@@ -24,7 +24,6 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
    * Add metadata to the metadata collection and attach to a section /file/dataset/collection
    */
   def addMetadata(metadata: Metadata): UUID = {
-    Logger.debug("Inside addMetadata")
     // TODO: Update context
     val mid = MetadataDAO.insert(metadata, WriteConcern.Safe)
     UUID(mid.get.toString())

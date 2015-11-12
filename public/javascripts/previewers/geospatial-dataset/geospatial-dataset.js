@@ -253,8 +253,9 @@
 			// fix for MMDB-1617
 			// force to redraw the map
 			// TODO the dom selector needs to select the current selector instead of this selection
-			$('a[href$="#tab-home"]').on('shown.bs.tab', function (e) {
+			$('a[href$="#tab-visua"]').on('shown.bs.tab', function (e) {
 				map.updateSize();
+				view.fitExtent(current_coord, map.getSize());
 			});
 		}
 	}

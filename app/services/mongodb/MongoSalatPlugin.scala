@@ -473,10 +473,20 @@ class MongoSalatPlugin(app: Application) extends Plugin {
               // system metadata
               if(ds.containsField("metadata")) {
                 val tmd = ds.get("metadata")
-                val techMD = Json.parse(com.mongodb.util.JSON.serialize(tmd))
-                val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
-                val metadataTech = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
-                metadataService.addMetadata(metadataTech)
+                if (tmd.isInstanceOf[BasicDBList]) {
+                  val tmdlist = tmd.asInstanceOf[BasicDBList]
+                  tmdlist.foreach { x =>
+                    val techMD = Json.parse(com.mongodb.util.JSON.serialize(x))
+                    val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
+                    val metadataTech = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
+                    metadataService.addMetadata(metadataTech)
+                  }
+                } else {
+                  val techMD = Json.parse(com.mongodb.util.JSON.serialize(tmd))
+                  val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
+                  val metadataTech = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
+                  metadataService.addMetadata(metadataTech)
+                }
               }
             }
             case None => Logger.error(s"[MongoDBUpdate : Missing dataset id")
