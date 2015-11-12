@@ -13,7 +13,7 @@
 	// setting up ajax call to get metadata from the file
 	var req = $.ajax({
 		type: "GET",
-		url: "/api/datasets/"+dataset_id+"/technicalmetadatajson",
+		url: jsRoutes.api.Datasets.getTechnicalMetadataJSON(dataset_id).url,
 		dataType: "json"
 	});
 
