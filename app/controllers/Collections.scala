@@ -76,9 +76,19 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
+    val datasetSpace = space.flatMap(o => spaceService.get(UUID(o)))
+    var title: Option[String] = Some("Collections")
 
     val collectionList = person match {
       case Some(p) => {
+        space match {
+          case Some(s) => {
+            title = Some(person.get.fullName + "'s Collections in Space " + datasetSpace.get.name)
+          }
+          case None => {
+            title = Some(person.get.fullName + "'s Collections")
+          }
+        }
         if (date != "") {
           collections.listUser(date, nextPage, limit, request.user, request.superAdmin, p)
         } else {
@@ -88,6 +98,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       case None => {
         space match {
           case Some(s) => {
+            title = Some("Collections in Space " + datasetSpace.get.name)
             if (date != "") {
               collections.listSpace(date, nextPage, limit, s)
             } else {
@@ -179,7 +190,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       }
 
     //Pass the viewMode into the view
-    Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space))
+    Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title))
   }
 
   def jsonCollection(collection: Collection): JsValue = {
