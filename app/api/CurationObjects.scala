@@ -44,7 +44,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
       val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
       curations.get(curationId) match {
         case Some(c) => {
-          val hostUrl = api.routes.CurationObjects.getCurationObjectOre(curationId).absoluteURL(Utils.protocol(request) == "https")
+
           val https = controllers.Utils.https(request)
           val filesJson = c.files.map { file =>
             // TODO: Add file.metadata to ORE Map when we change to JSON-LD
@@ -209,12 +209,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
         values match {
           case aMap: JsSuccess[Map[String, String]] => {
             val userPreferences: Map[String, String] = aMap.get
-            userService.updateRepositoryPreferences(user.get.id, userPreferences)
-            val hostUrl = api.routes.CurationObjects.getCurationObjectOre(curationId).absoluteURL(Utils.protocol(request) == "https")
-            val urlMap = scala.collection.immutable.Map( "hostUrl" -> api.routes.CurationObjects.getCurationObjectOre(curationId).absoluteURL(Utils.protocol(request) == "https"),
-              "curationUrl" -> controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(Utils.protocol(request) == "https"),
-              "datasetUrl"  -> controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(Utils.protocol(request) == "https"))
-            val mmResp = curationObjectController.callMatchmaker(c, urlMap, Utils.baseUrl(request))
+            val mmResp = curationObjectController.callMatchmaker(c)
             if ( mmResp.size > 0) {
               Ok(toJson(mmResp))
             } else {

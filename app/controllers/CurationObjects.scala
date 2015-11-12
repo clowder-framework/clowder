@@ -271,11 +271,11 @@ class CurationObjects @Inject()(
 
     })
     val aggregation = metadataJson.toMap ++ Map(
-      "Identifier" -> Json.toJson(controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(https)),
+      "Identifier" -> Json.toJson(controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(https).toString()),
       "@id" -> Json.toJson(hostUrl),
       "Title" -> Json.toJson(c.name),
-      "Creator" -> creator,
-      "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https))
+      "Creator" -> Json.toJson(creator),
+      "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https).toString())
       )
     val valuetoSend = Json.obj(
       "@context" -> Json.toJson(Seq(
@@ -354,9 +354,7 @@ class CurationObjects @Inject()(
            curations.updateRepository(c.id, repository)
            //TODO: Make some call to C3-PR?
            //  Ok(views.html.spaces.matchmakerReport())
-           val urlMap = scala.collection.immutable.Map( "hostUrl" -> api.routes.CurationObjects.getCurationObjectOre(curationId).absoluteURL(Utils.protocol(request) == "https"),
-             "curationUrl" -> controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(Utils.protocol(request) == "https"),
-             "datasetUrl"  -> controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(Utils.protocol(request) == "https"))
+
            val mmResp = callMatchmaker(c).filter(_.orgidentifier == repository)
 
            Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository))
@@ -377,8 +375,9 @@ class CurationObjects @Inject()(
             case Some (s) => repository = s
             case None => Ok(views.html.spaces.curationSubmitted( c, "No Repository Provided", success))
           }
+          val key = play.api.Play.configuration.getString("commKey").getOrElse("")
           val https = controllers.Utils.https(request)
-          val hostUrl = api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "#aggregation"
+          val hostUrl = api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "?key=" + key
           val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => pref._1-> Json.toJson(pref._2.toString().split(",").toList))).getOrElse(Map.empty)
           val userPreferences = userPrefMap + ("Repository" -> Json.toJson(repository))
           val maxDataset = if (!c.files.isEmpty)  c.files.map(_.length).max else 0
@@ -390,9 +389,9 @@ class CurationObjects @Inject()(
           val creator = Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile match {
             case Some(prof) => prof.orcidID match {
               case Some(oid) => oid
-              case None => controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(Utils.protocol(request) == "https")
+              case None => controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)
             }
-            case None => controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(Utils.protocol(request) == "https")
+            case None => controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)
 
           }))
           var metadataToAdd = metadataJson.toMap
@@ -437,7 +436,7 @@ class CurationObjects @Inject()(
                     "@id" -> Json.toJson(hostUrl),
                     "@type" -> Json.toJson("Aggregation"),
                     "Title" -> Json.toJson(c.name),
-                    "Creator" -> Json.toJson(userService.findByIdentity(c.author).map(usr => JsArray(Seq(Json.toJson(usr.fullName + ": " + controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)), Json.toJson(usr.profile.map(prof => prof.orcidID.map(oid=> oid)))))))
+                    "Creator" -> Json.toJson(creator)
                   )
                 ),
                 "Aggregation Statistics" -> Json.toJson(
