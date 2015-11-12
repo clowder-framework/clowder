@@ -436,7 +436,7 @@ class Files @Inject()(
 
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
 
-                  val host = Utils.baseUrl(request) + request.path.replaceAll("api/files$", "").replaceAll("/api/files/withFlags/.*$", "")
+                  val host = Utils.baseUrl(request)
 
                   /*---- Insert DTS Request to database---*/
 
@@ -562,7 +562,7 @@ class Files @Inject()(
 
           val key = "unknown." + "file." + fileType.replace("__", ".")
 
-          val host = Utils.baseUrl(request) + request.path.replaceAll("api/files/sendJob/[A-Za-z0-9_]*/.*$", "")
+          val host = Utils.baseUrl(request)
           val extra = Map("filename" -> theFile.filename)
 
           // TODO replace null with None
@@ -663,7 +663,7 @@ class Files @Inject()(
                 // TODO RK need to replace unknown with the server name
                 val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
 
-                val host = Utils.baseUrl(request) + request.path.replaceAll("api/uploadToDataset/[A-Za-z0-9_]*$", "").replaceAll("api/uploadToDataset/withFlags/[A-Za-z0-9_]*/.*$", "")
+                val host = Utils.baseUrl(request)
 
                 // Insert DTS Requests
                 val clientIP = request.remoteAddress
@@ -791,7 +791,7 @@ class Files @Inject()(
                   val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
                   val extra = Map("filename" -> f.filename)
 
-                  val host = Utils.baseUrl(request) + request.path.replaceAll("api/files/uploadIntermediate/[A-Za-z0-9_+]*$", "")
+                  val host = Utils.baseUrl(request)
                   val id = f.id
                   // index the file using Versus
                   current.plugin[VersusPlugin].foreach {

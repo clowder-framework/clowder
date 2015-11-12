@@ -494,7 +494,7 @@ class Datasets @Inject()(
                   // TODO RK need to replace unknown with the server name
                   val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
 
-                  val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
+                  val host = Utils.baseUrl(request)
 
                   //directly add the file to the dataset via the service
                   datasets.addFile(dataset.id, f)

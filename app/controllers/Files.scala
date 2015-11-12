@@ -452,7 +452,7 @@ def uploadExtract() =
 	            // TODO RK need to replace unknown with the server name
 	            val key = "unknown." + "file."+ fileType.replace(".","_").replace("/", ".")
 
-	            val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
+	            val host = Utils.baseUrl(request)
 	            val id = f.id
 	            
 	            /***** Inserting DTS Requests   **/  
@@ -966,7 +966,7 @@ def uploadExtract() =
             // TODO RK need to replace unknown with the server name
             val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
 
-            val host = Utils.baseUrl(request) + request.path.replaceAll("upload$", "")
+            val host = Utils.baseUrl(request)
             val id = f.id
             val extra = Map("filename" -> f.filename)
 
@@ -1078,7 +1078,7 @@ def uploadExtract() =
                     // TODO RK need to replace unknown with the server name
                     val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
 
-                    val host = Utils.baseUrl(request) + request.path.replaceAll("uploaddnd/[A-Za-z0-9_]*$", "")
+                    val host = Utils.baseUrl(request)
                     val id = f.id
 
                     /** *** Inserting DTS Requests   **/

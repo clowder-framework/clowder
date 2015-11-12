@@ -26,7 +26,7 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
       	      case Some(p) =>
 	      	    // TODO RK need to replace unknown with the server name
 	            val key = "unknown." + "index."+ p.contentType.replace(".", "_").replace("/", ".")
-	            val host = Utils.baseUrl(request) + request.path.replaceAll("api/indexes$", "")
+	            val host = Utils.baseUrl(request)
 	            val id = p.id
 	            current.plugin[RabbitmqPlugin].foreach{
                 // TODO replace null with None
