@@ -50,7 +50,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   val spaceForm = Form(
     mapping(
       "name" -> nonEmptyText,
-      "description" -> nonEmptyText,
+      "description" -> text,
       "logoUrl" -> optional(Utils.CustomMappings.urlType),
       "bannerUrl" -> optional(Utils.CustomMappings.urlType),
       "homePages" -> Forms.list(Utils.CustomMappings.urlType),

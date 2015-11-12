@@ -190,7 +190,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       }
 
     //Pass the viewMode into the view
-    Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title))
+    Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title, owner))
   }
 
   def jsonCollection(collection: Collection): JsValue = {
