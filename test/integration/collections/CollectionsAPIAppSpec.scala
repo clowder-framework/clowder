@@ -186,7 +186,7 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
       //val file_id = ""
 
       val req2 = FakeRequest(POST, "/api/datasets?key=" + secretKey).
-          withJsonBody(Json.toJson(Map("name" -> name, "description" -> description, "file_id" -> zipFile2Id, "space" -> "default")))
+          withJsonBody(Json.toJson(Map("name" -> name, "description" -> description, "file_id" -> zipFile2Id])))
       val result2 = route(req2).get
 
       info("Status=" + status(result2))
