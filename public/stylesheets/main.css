@@ -41,10 +41,10 @@ span.align-right {
     float:right;
 }
 
-.error { 
-	color: red;
-	padding-left: 10px;
-	text-align:left;
+.error span{
+    color: red;
+    padding-left: 10px;
+    text-align:left;
 }
 
 .success {
@@ -480,12 +480,15 @@ textarea, input[type='text'], input[type='password']{
     padding-top: 7px;
 }
 
-.space-head {
-    border-bottom: 1px solid #E1E1E8;
+span.error{
+    color: red;
 }
 
-.error {
+.error p{
     color: red;
+}
+.space-head {
+    border-bottom: 1px solid #E1E1E8;
 }
 
 .space-col-left {
@@ -722,15 +725,6 @@ table#sensorsListTable > thead > tr > th.headerSortDown {
     color: #fff;
 }
 
-.space-pills {
-    display: inline-block;
-    border: none;
-    padding: 1px 10px 1px 10px;
-    margin: 5px;
-    background: #eeeeee;
-    border-radius: .25em;
-}
-
 .md-block {
     padding: 5px 0px;
     margin: 0px;
@@ -745,6 +739,15 @@ table#sensorsListTable > thead > tr > th.headerSortDown {
     list-style-type: none;
 }
 
+
+.space-pills {
+    display: inline-block;
+    border: none;
+    padding: 1px 10px 1px 10px;
+    margin: 5px;
+    background: #eeeeee;
+    border-radius: .25em;
+}
 
 .space-pills a {
     color: white;

@@ -94,9 +94,19 @@ class Datasets @Inject()(
 
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
+    val datasetSpace = space.flatMap(o => spaceService.get(UUID(o)))
+    var title: Option[String] = Some("Datasets")
 
     val datasetList = person match {
       case Some(p) => {
+        space match {
+          case Some(s) => {
+            title = Some(person.get.fullName + "'s Datasets in Space " + datasetSpace.get.name)
+          }
+          case None => {
+            title = Some(person.get.fullName + "'s Datasets")
+          }
+        }
         if (date != "") {
           datasets.listUser(date, nextPage, limit, request.user, request.superAdmin, p)
         } else {
@@ -106,6 +116,7 @@ class Datasets @Inject()(
       case None => {
         space match {
           case Some(s) => {
+            title = Some("Datasets in Space " + datasetSpace.get.name)
             if (date != "") {
               datasets.listSpace(date, nextPage, limit, s)
             } else {
@@ -198,7 +209,7 @@ class Datasets @Inject()(
       }
 
     //Pass the viewMode into the view
-    Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space))
+    Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title))
   }
 
   def addViewer(id: UUID, user: Option[securesocial.core.Identity]) = {

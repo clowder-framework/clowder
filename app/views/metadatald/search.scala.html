@@ -73,13 +73,13 @@
                     var files = response.files;
                     if (datasets.length == 0) $('#datasets-results').append("No datasets found");
                     for (var i=0; i<datasets.length; i++) {
-                        var modalTemplate = Handlebars.getTemplate('/assets/templates/metadata/search_dataset_result');
+                        var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_dataset_result")");
                         var html = modalTemplate({'url': jsRoutes.controllers.Datasets.dataset(datasets[i].id).url, 'name': datasets[i].name});
                         $('#datasets-results').append(html);
                     }
                     if (files.length == 0) $('#files-results').append("No files found");
                     for (var i=0; i<files.length; i++) {
-                        var modalTemplate = Handlebars.getTemplate('/assets/templates/metadata/search_file_result');
+                        var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_file_result")");
                         var html = modalTemplate({'url': jsRoutes.controllers.Files.file(files[i].id).url, 'name': files[i].name});
                         $('#files-results').append(html);
                     }

@@ -65,11 +65,7 @@ function fetchFrame(index,prNum){
 
   console.log("ONI previewer for " + Configuration.id);
   
-  var hostAddress = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')
-  
-  var fileUrl = hostAddress + Configuration.url;
-  var pathJs = hostAddress + Configuration.jsPath + "/";
-  previewUrl = hostAddress + Configuration.appContext + "/api/previews/";
+  previewUrl = "/" + Configuration.appContext + "/api/previews/";
   var width = 750;
   var height = 550;
   var cacheLength = 5;  
@@ -85,7 +81,7 @@ function fetchFrame(index,prNum){
 
    var s = document.createElement("script");
   s.type = "text/javascript";
-  s.src = pathJs + "x3dom.js";
+  s.src = Configuration.previewer + "/../../x3dom.js";
   //s.src = "http://www.x3dom.org/release/x3dom.js";
   console.log("Updating tab " + Configuration.tab);
   $(Configuration.tab).append(s);  
@@ -98,7 +94,7 @@ function fetchFrame(index,prNum){
   //fetching the list of preview files
 
   $.ajax({
-	    url: fileUrl,
+	    url: Configuration.url,
 	    async:false,
 	    success: function (data) {
 	    	window["previewFileIds" + prNum] = data.split(",");

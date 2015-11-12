@@ -10,7 +10,7 @@
     // setting up ajax call to get list of datasets from the collections
 	var request = $.ajax({
 		type: "GET",
-		url: "/api/collections/"+col_id+"/getDatasets",
+		url: jsRoutes.api.Datasets.listInCollection(col_id).url,
 		dataType: "json"
 	});
 	
@@ -18,7 +18,7 @@
 		console.log(data.length+" datasets");
 		if(data.length > 0) {
 			// adding css for ol3
-			var cssLink = $("<link rel='stylesheet' type='text/css' href='http://openlayers.org/en/v3.0.0/css/ol.css'>");
+			var cssLink = $("<link rel='stylesheet' type='text/css' href='" + Configuration.previewer + "/../../openlayers/ol.css'>");
 			$(Configuration.tab).append(cssLink);
 			
 			// adding map div for rendering the map
@@ -37,7 +37,7 @@
 	        });
 			
 			// loading the ol3 script
-			$.getScript("http://openlayers.org/en/v3.0.0/build/ol.js", function() {
+			$.getScript(Configuration.previewer + "/../../openlayers/ol.js", function() {
 				// initiating map 
 				var map = new ol.Map({
 					target: 'map'
@@ -89,7 +89,7 @@
 					var file_req = $.ajax({
 						datasetTitle: dataset_title,
 						type: "GET",
-						url: "/api/datasets/"+dataset_id+"/listFiles",
+						url: jsRoutes.api.Datasets.files(dataset_id).url,
 						dataType: "json"
 					});
 					
@@ -111,7 +111,7 @@
                             var meta_req = $.ajax({
                                 fileTitle: file_title,
                                 type: "GET",
-                                url: "/api/files/" + file_id + "/technicalmetadatajson",
+                                url: jsRoutes.api.Files.getTechnicalMetadataJSON(file_id).url,
                                 dataType: "json"
                             });
                             meta_req.done(function (data) {

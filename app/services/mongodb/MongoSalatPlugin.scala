@@ -8,6 +8,7 @@ import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import models._
 import org.bson.BSONException
+import play.api.libs.json._
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
 import com.mongodb.casbah.MongoURI
@@ -16,7 +17,7 @@ import com.mongodb.casbah.MongoDB
 import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.gridfs.GridFS
 import org.bson.types.ObjectId
-import services.{DI, AppConfigurationService}
+import services.{MetadataService, DI, AppConfigurationService}
 
 /**
  * Mongo Salat service.
@@ -184,8 +185,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     // replace collection id strings with UUID in datasets
     updateMongoCollectionsInDatasetStringToUUID
 
-    //Change Files in datasets from List[File] to List[UUID]
+    // change Files in datasets from List[File] to List[UUID]
     updateReplaceFilesInDataset
+
+    // migrate metadata to jsonld
+    migrateMetadataRepresentationtoJSONLD
   }
 
   private def updateMongoChangeUserType {
@@ -391,6 +395,95 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       appConfig.addPropertyValue("mongodb.updates", "replace-dataset-files-with-id")
     } else {
       Logger.warn("[MongoDBUpdate : Missing fix to replace the files in the dataset with UUIDs")
+    }
+  }
+
+
+  private def migrateMetadataRepresentationtoJSONLD {
+    val updateId = "migrate-metadata-jsonld"
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+    val metadataService: MetadataService = DI.injector.getInstance(classOf[MetadataService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", updateId)) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        // update metadata on datasets
+        collection("datasets").foreach { ds =>
+          ds.getAs[ObjectId]("_id") match {
+            case Some(dsId) => {
+              val createdAt = new Date()
+              val attachedTo = Some(ResourceRef(ResourceRef.dataset, UUID(dsId.toString)))
+              val contextURL: Option[URL] = None
+              val contextID: Option[UUID] = None
+              val version = None
+              // user metadata
+              ds.getAs[DBObject]("userMetadata") match {
+                case Some(umd) => {
+                  if (umd.keySet().size() > 0) {
+                    val userMD = Json.parse(com.mongodb.util.JSON.serialize(umd))
+                    val user = User.anonymous
+                    val userURI = "https://clowder.ncsa.illinois.edu/clowder/api/users/" + user.id
+                    val creatorUser = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
+                    val metadataUser = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorUser, userMD, version)
+                    metadataService.addMetadata(metadataUser)
+                  }
+                }
+                case None => {}
+              }
+              // system metadata
+              ds.getAs[DBObject]("metadata") match {
+                case Some(tmd) => {
+                  if (tmd.keySet().size() > 0) {
+                    val techMD = Json.parse(com.mongodb.util.JSON.serialize(tmd))
+                    val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
+                    val metadataTech = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
+                    metadataService.addMetadata(metadataTech)
+                  }
+                }
+                case None => {}
+              }
+            }
+            case None => Logger.error(s"[MongoDBUpdate : Missing dataset id")
+          }
+        }
+        // update metadata on files
+        collection("uploads.files").foreach { ds =>
+          ds.getAs[ObjectId]("_id") match {
+            case Some(fileId) => {
+              val createdAt = new Date()
+              val attachedTo = Some(ResourceRef(ResourceRef.file, UUID(fileId.toString)))
+              val contextURL: Option[URL] = None
+              val contextID: Option[UUID] = None
+              val version = None
+              // user metadata
+              ds.getAs[DBObject]("userMetadata") match {
+                case Some(umd) => {
+                  if (umd.keySet().size() > 0) {
+                    val userMD = Json.parse(com.mongodb.util.JSON.serialize(umd))
+                    val user = User.anonymous
+                    val userURI = "https://clowder.ncsa.illinois.edu/clowder/api/users/" + user.id
+                    val creatorUser = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
+                    val metadataUser = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorUser, userMD, version)
+                    metadataService.addMetadata(metadataUser)
+                  }
+                }
+                case None => {}
+              }
+              // system metadata
+              if(ds.containsField("metadata")) {
+                val tmd = ds.get("metadata")
+                val techMD = Json.parse(com.mongodb.util.JSON.serialize(tmd))
+                val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
+                val metadataTech = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
+                metadataService.addMetadata(metadataTech)
+              }
+            }
+            case None => Logger.error(s"[MongoDBUpdate : Missing dataset id")
+          }
+        }
+        appConfig.addPropertyValue("mongodb.updates", updateId)
+      } else {
+        Logger.warn("[MongoDBUpdate] : Missing fix to update metadata to JSONLD representation")
+      }
     }
   }
 }
