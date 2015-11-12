@@ -15,20 +15,18 @@ object Utils {
    * https://localhost:9443 will be returned if it is using https.
    */
   def baseUrl(request: Request[Any]) = {
-    protocol(request) + "://" + request.host
+    routes.Files.list().absoluteURL(https(request))(request).replace("/files", "")
   }
 
   /**
-   * Returns protocol in request stripping it of the : trailing character.
-   * @param request
-   * @return
-   */
-  def protocol(request: Request[Any]): String = {
+    * Returns true if protocol is https
+    */
+  def https(request: Request[Any]): Boolean = {
     request.headers.get("x-forwarded-proto") match {
-      case Some(p) => p
+      case Some(p) => (p == "https")
       case None => {
         val httpsPort = System.getProperties().getProperty("https.port", "")
-        if (httpsPort == request.host.split(':').last)  "https" else "http"
+        httpsPort == request.host.split(':').last
       }
     }
   }

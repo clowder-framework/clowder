@@ -80,7 +80,7 @@
                 return options.fn(this);
             }
         });
-        var repositoryTemplate = Handlebars.getTemplate('/assets/templates/spaces/mmrepository');
+        var repositoryTemplate = Handlebars.getTemplate('@routes.Assets.at("templates/spaces/mmrepository")');
         @for(curRepository <- mmResponse) {
             var rules = [];
             @for(rule <- curRepository.per_rule_score) {

@@ -49,6 +49,16 @@ class Datasets @Inject()(
   spaces: SpaceService,
   userService: UserService) extends ApiController {
 
+  @ApiOperation(value = "Get a specific dataset",
+    notes = "This will return a sepcific dataset requested",
+    responseClass = "None", multiValueResponse=true, httpMethod = "GET")
+  def get(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    datasets.get(id) match {
+      case Some(d) => Ok(toJson(d))
+      case None => BadRequest(toJson(s"Could not find dataset with id [${id.stringify}]"))
+    }
+  }
+
   @ApiOperation(value = "List all datasets the user can view",
     notes = "This will check for Permission.ViewDataset",
     responseClass = "None", multiValueResponse=true, httpMethod = "GET")

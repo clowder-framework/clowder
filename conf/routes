@@ -462,7 +462,7 @@ POST           /api/datasets/:id/license                                        
 GET            /api/datasets/:id/isBeingProcessed                                       @api.Datasets.isBeingProcessed(id: UUID)
 GET            /api/datasets/:id/getPreviews                                            @api.Datasets.getPreviews(id: UUID)
 POST           /api/datasets/:ds_id/files/:file_id                                      @api.Datasets.attachExistingFile(ds_id: UUID,file_id: UUID)
-GET            /api/datasets/:id                                                        @api.Datasets.datasetFilesList(id: UUID)
+GET            /api/datasets/:id                                                        @api.Datasets.get(id: UUID)
 DELETE         /api/datasets/:id                                                        @api.Datasets.deleteDataset(id: UUID)
 POST           /api/datasets/:id/detachdelete                                           @api.Datasets.detachAndDeleteDataset(id: UUID)
 

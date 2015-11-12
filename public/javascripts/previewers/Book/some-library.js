@@ -51,14 +51,14 @@
 	
 	seadragonjs = document.createElement('script');
 	seadragonjs.type = 'text/javascript';
-	seadragonjs.src = pathJs + 'seadragon-min.js';
+	seadragonjs.src = Configuration.previewer + 'seadragon-min.js';
 	$('head')[0].appendChild(seadragonjs);
 	
 	bookjs = document.createElement('script');
 	bookjs.type = 'text/javascript';
-	bookjs.src = pathJs + 'book.js';
+	bookjs.src = Configuration.previewer + '/book.js';
 	bookjs.onload = function() {
-		turnjs_onload(totalpage, pathJs);
+		turnjs_onload(totalpage, Configuration.previewer);
 	}
 	$('head')[0].appendChild(bookjs);
 	
