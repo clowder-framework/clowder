@@ -425,9 +425,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                     val creatorUser = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
                     val metadataUser = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorUser, userMD, version)
                     metadataService.addMetadata(metadataUser)
-                  } else Logger.debug("User metadata is empty")
+                  }
                 }
-                case None => Logger.debug("[MongoDBUpdate] : Empty user metadata document")
+                case None => {}
               }
               // system metadata
               ds.getAs[DBObject]("metadata") match {
@@ -437,9 +437,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                     val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
                     val metadataTech = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
                     metadataService.addMetadata(metadataTech)
-                  } else Logger.debug("[MongoDBUpdate] : Technical metadata is empty")
+                  }
                 }
-                case None => Logger.trace("[MongoDBUpdate] : Empty technical metadata document")
+                case None => {}
               }
             }
             case None => Logger.error(s"[MongoDBUpdate : Missing dataset id")
@@ -464,21 +464,17 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                     val creatorUser = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
                     val metadataUser = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorUser, userMD, version)
                     metadataService.addMetadata(metadataUser)
-                  } else Logger.debug("User metadata is empty")
+                  }
                 }
-                case None => Logger.debug("[MongoDBUpdate] : Empty user metadata document")
+                case None => {}
               }
               // system metadata
-              ds.getAs[DBObject]("metadata") match {
-                case Some(tmd) => {
-                  if (tmd.keySet().size() > 0) {
-                    val techMD = Json.parse(com.mongodb.util.JSON.serialize(tmd))
-                    val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
-                    val metadataTech = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
-                    metadataService.addMetadata(metadataTech)
-                  } else Logger.debug("[MongoDBUpdate] : Technical metadata is empty")
-                }
-                case None => Logger.trace("[MongoDBUpdate] : Empty technical metadata document")
+              if(ds.containsField("metadata")) {
+                val tmd = ds.get("metadata")
+                val techMD = Json.parse(com.mongodb.util.JSON.serialize(tmd))
+                val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
+                val metadataTech = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
+                metadataService.addMetadata(metadataTech)
               }
             }
             case None => Logger.error(s"[MongoDBUpdate : Missing dataset id")
