@@ -191,6 +191,8 @@ def getFile(id: UUID): Option[TempFile] = {
                 } else {
                   addMultimediaDistance(
                     MultimediaDistance(source.section_id.get, target.section_id.get, fs.representation, distance))
+                  addMultimediaDistance(
+                    MultimediaDistance(target.section_id.get, source.section_id.get, fs.representation, distance)) // Adding reverse distance to complete the matrix
                   Logger.trace(s"Distance ${source.section_id.get} -> ${target.section_id.get} = $distance")
                 }
               } else {
