@@ -146,7 +146,7 @@ def getFile(id: UUID): Option[TempFile] = {
   }
 
   def searchMultimediaDistances(querySectionId: String, representation: String, limit: Int): List[MultimediaDistance] = {
-    MultimediaDistanceDAO.find(MongoDBObject("representation"->representation))
+    MultimediaDistanceDAO.find(MongoDBObject("source_section"->new ObjectId(querySectionId),"representation"->representation))
       .sort(MongoDBObject("distance" -> 1)).limit(limit).toList
   }
 

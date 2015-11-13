@@ -156,7 +156,7 @@ class Search @Inject() (files: FileService, datasets: DatasetService, collection
               val previewsBySection = previews.findBySectionId(element.target_section)
               if (previewsBySection.size == 1) {
                 Logger.trace("Appended search result " + key + " " + element.target_section + " " + element.distance + " " + previewsBySection(0).id.toString)
-                list.prepend(SearchResult(element.target_section.toString, element.distance, Some(previewsBySection(0).id.toString)))
+                list.append(SearchResult(element.target_section.toString, element.distance, Some(previewsBySection(0).id.toString)))
               } else {
                 Logger.error("Found more/less than one preview " + preview)
               }
