@@ -98,6 +98,7 @@ object Permission extends Enumeration {
   lazy val users: services.UserService = DI.injector.getInstance(classOf[services.UserService])
   lazy val comments: services.CommentService = DI.injector.getInstance(classOf[services.CommentService])
   lazy val curations: services.CurationService = DI.injector.getInstance(classOf[services.CurationService])
+  lazy val sections: SectionService = DI.injector.getInstance(classOf[SectionService])
 
 	def checkServerAdmin(user: Option[Identity]): Boolean = {
 		user.exists(u => u.email.nonEmpty && AppConfiguration.checkAdmin(u.email.get))
@@ -150,6 +151,8 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.collection, id) => false
       case ResourceRef(ResourceRef.space, id) => false
       case ResourceRef(ResourceRef.comment, id) => false
+      case ResourceRef(ResourceRef.section, id) => false
+      case ResourceRef(ResourceRef.preview, id) => false
       case ResourceRef(resType, id) => {
         Logger.error("Unrecognized resource type " + resType)
         false
@@ -162,10 +165,27 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.preview, id) => {
         previews.get(id) match {
           case Some(p) => {
-            p.file_id.exists(id => checkPermission(user, permission, ResourceRef(ResourceRef.file, id))) ||
-              p.section_id.exists(id => checkPermission(user, permission, ResourceRef(ResourceRef.file, id))) ||
-              p.dataset_id.exists(id => checkPermission(user, permission, ResourceRef(ResourceRef.file, id))) ||
-              p.collection_id.exists(id => checkPermission(user, permission, ResourceRef(ResourceRef.file, id)))
+            if (p.file_id.isDefined) {
+              checkPermission(user, permission, ResourceRef(ResourceRef.file, p.file_id.get))
+            } else if (p.section_id.isDefined) {
+              checkPermission(user, permission, ResourceRef(ResourceRef.section, p.section_id.get))
+            } else if (p.dataset_id.isDefined) {
+              checkPermission(user, permission, ResourceRef(ResourceRef.dataset, p.dataset_id.get))
+            } else if (p.collection_id.isDefined) {
+              checkPermission(user, permission, ResourceRef(ResourceRef.collection, p.collection_id.get))
+            } else {
+              true
+            }
+          }
+          case None => false
+        }
+      }
+      case ResourceRef(ResourceRef.section, id) => {
+        sections.get(id) match {
+          case Some(s) => {
+            // TODO fix permissions, need to add author to section
+            true
+            //getUserByIdentity(user).fold(checkPermission(user, permission, ResourceRef(ResourceRef.file, s.file_id)))(_.id == s.author)
           }
           case None => false
         }
