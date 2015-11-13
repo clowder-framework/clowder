@@ -57,7 +57,7 @@ class Metadata @Inject()(
       Ok(toJson(vocabularies))
   }
 
-  def getDefinition(id: UUID) = Action.async { implicit request =>
+  def getDefinition(id: UUID) = PermissionAction(Permission.AddMetadata).async { implicit request =>
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
     val foo = for {
       md <- metadataService.getDefinition(id)
@@ -70,11 +70,12 @@ class Metadata @Inject()(
     }
   }
 
-  def getUrl(inUrl: String) = Action.async { implicit request =>
-    import java.net.URLDecoder
+  def getUrl(inUrl: String) = PermissionAction(Permission.AddMetadata).async { implicit request =>
+    // Use java.net.URI instead of URLDecoder.decode to decode the path.
+    import java.net.URI
     Logger.debug("Metadata getUrl: inUrl = '" + inUrl + "'.")
-    // Replace " " with "+", otherwise Ws.url(url) breaks.
-    val url = URLDecoder.decode(inUrl).replaceAll(" ", "+")
+    // Replace " " with "+", otherwise the decoded URL might contain spaces and break Ws.url(url).
+    val url = new URI(inUrl).getPath().replaceAll(" ", "+")
     Logger.debug("Metadata getUrl decoded: url = '" + url + "'.")
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
     WS.url(url).get().map {
