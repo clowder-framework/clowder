@@ -55,7 +55,6 @@
                         </a>
                     }
             </div>
-
                 <div class="col-md-12 box-white-space">
                     <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
@@ -79,9 +78,15 @@
                             Publish
                         </a>
                     } else {
-                        <button class="btn btn-default btn-sm btn-margin-bottom" disabled>
-                            Publish
-                        </button>
+                        @if(dataset.spaces.size > 0) {
+                            <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-default btn-sm btn-margin-bottom">
+                                Publish
+                            </a>
+                        } else {
+                            <button class="btn btn-default btn-sm btn-margin-bottom" disabled>
+                                Publish
+                            </button>
+                        }
                     }
                 </div>
             </div>
