@@ -17,6 +17,7 @@ import com.mongodb.casbah.MongoDB
 import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.gridfs.GridFS
 import org.bson.types.ObjectId
+import securesocial.core.Identity
 import services.{MetadataService, DI, AppConfigurationService}
 
 /**
@@ -215,6 +216,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // migrate metadata to jsonld
     migrateMetadataRepresentationtoJSONLD
+
+    // collection now requires author
+    collectionRequiresAuthor
   }
 
   private def updateMongoChangeUserType {
@@ -520,5 +524,19 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         Logger.warn("[MongoDBUpdate] : Missing fix to update metadata to JSONLD representation")
       }
     }
+  }
+
+  private def collectionRequiresAuthor(): Unit = {
+    val updateId = "collection-author"
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", updateId)) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        val q = "author" $exists false
+        val o = MongoDBObject("$set" -> MongoDBObject("author" -> SocialUserDAO.dao.toDBObject(User.anonymous)))
+        collection("collections").update(q ,o)
+      }
+    }
+    Logger.warn("[MongoDBUpdate] : Adding anonymous author to collection when not set")
   }
 }
