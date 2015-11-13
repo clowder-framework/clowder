@@ -73,19 +73,21 @@
                     }
                     @datasets.deleteButton(dataset)
                     @datasets.follow(dataset)
-                    @if(toPublish && currentSpace.isDefined) {
-                        <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-default btn-sm btn-margin-bottom">
-                            Publish
-                        </a>
-                    } else {
-                        @if(dataset.spaces.size > 0) {
-                            <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-default btn-sm btn-margin-bottom">
+                    @if(user.isDefined && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+                        @if(toPublish && currentSpace.isDefined ) {
+                            <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-default btn-sm btn-margin-bottom">
                                 Publish
                             </a>
                         } else {
-                            <button class="btn btn-default btn-sm btn-margin-bottom" disabled>
-                                Publish
-                            </button>
+                            @if(dataset.spaces.size > 0) {
+                                <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-default btn-sm btn-margin-bottom">
+                                    Publish
+                                </a>
+                            } else {
+                                <button class="btn btn-default btn-sm btn-margin-bottom" disabled>
+                                    Publish
+                                </button>
+                            }
                         }
                     }
                 </div>
