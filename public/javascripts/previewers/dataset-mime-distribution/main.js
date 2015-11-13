@@ -41,8 +41,8 @@
 			array.push({occurences: counts[x], mime: x});
 		}
 
-		$.getScript("http://d3js.org/d3.v3.min.js", function() {
-			$.getScript(Configuration.path + "d3.legend.js", function() {
+		$.getScript(Configuration.path + "/../../../d3js/d3.v3.min.js", function() {
+			$.getScript(Configuration.path + "/../../../d3js/d3.legend.js", function() {
 
 				$(Configuration.div).append('<h4>File Types</h4>');
 
