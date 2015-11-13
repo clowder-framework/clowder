@@ -16,7 +16,8 @@ case class Collection(
   spaces: List[UUID] = List.empty,
   lastModifiedDate: Date = new Date(),
   followers: List[UUID] = List.empty,
-  jsonldMetadata : List[Metadata]= List.empty)
+  metadataCount: Long = 0,
+  @deprecated("use Metadata","since the use of jsonld") jsonldMetadata : List[Metadata]= List.empty)
 
 object Collection {
   implicit val collectionWrites = new Writes[Collection] {

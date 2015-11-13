@@ -26,6 +26,17 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
   def addMetadata(metadata: Metadata): UUID = {
     // TODO: Update context
     val mid = MetadataDAO.insert(metadata, WriteConcern.Safe)
+    current.plugin[MongoSalatPlugin] match {
+      case None => throw new RuntimeException("No MongoSalatPlugin")
+      case Some(x) => x.collection(metadata.attachedTo) match {
+        case Some(c) => {
+          c.update(MongoDBObject("_id" -> new ObjectId(metadata.attachedTo.id.stringify)), $inc("metadataCount" -> +1))
+        }
+        case None => {
+          Logger.error(s"Could not increase counter for ${metadata.attachedTo}")
+        }
+      }
+    }
     UUID(mid.get.toString())
   }
 
@@ -59,6 +70,17 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
   def removeMetadata(id: UUID) = {
     val md = getMetadataById(id).getOrElse(null)
     MetadataDAO.remove(md, WriteConcern.Safe)
+    current.plugin[MongoSalatPlugin] match {
+      case None => throw new RuntimeException("No MongoSalatPlugin")
+      case Some(x) => x.collection(md.attachedTo) match {
+        case Some(c) => {
+          c.update(MongoDBObject("_id" -> new ObjectId(md.attachedTo.id.stringify)), $inc("metadataCount" -> -1))
+        }
+        case None => {
+          Logger.error(s"Could not increase counter for ${md.attachedTo}")
+        }
+      }
+    }
   }
   
   /** Get metadata context if available  **/

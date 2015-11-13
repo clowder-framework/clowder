@@ -130,6 +130,29 @@ class MongoSalatPlugin(app: Application) extends Plugin {
    * Returns a collection in the database
    */
   def collection(collection: String): MongoCollection = getDB(collection)
+
+  /**
+    * Based on the resourceRef return the mongo collection.
+    */
+  def collection(resourceRef: ResourceRef): Option[MongoCollection] = {
+    resourceRef.resourceType match {
+      case ResourceRef.space => Some(collection("spaces.projects"))
+      case ResourceRef.dataset => Some(collection("datasets"))
+      case ResourceRef.file => Some(collection("uploads.files"))
+      //case ResourceRef.relation => Some(collection("hello"))
+      case ResourceRef.preview => Some(collection("previews.files"))
+      case ResourceRef.thumbnail => Some(collection("thumbnails.files"))
+      case ResourceRef.collection => Some(collection("collections"))
+      case ResourceRef.user => Some(collection("social.users"))
+      case ResourceRef.comment => Some(collection("comments"))
+      case ResourceRef.section => Some(collection("sections"))
+      case ResourceRef.curationObject => Some(collection("curationObjects"))
+      case _ => {
+        Logger.error(s"Can not map resource ${resourceRef.resourceType} to collection.")
+        None
+      }
+    }
+  }
   
   /**
    * Returns a GridFS for writing files, the files will be placed in
