@@ -532,8 +532,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     if (!appConfig.hasPropertyValue("mongodb.updates", updateId)) {
       if (System.getProperty("MONGOUPDATE") != null) {
-        val q = "author" $exists true
-        val o = MongoDBObject("$set" -> MongoDBObject("author" -> User.anonymous.asInstanceOf[ClowderUser]))
+        val q = "author" $exists false
+        val o = MongoDBObject("$set" -> MongoDBObject("author" -> SocialUserDAO.dao.toDBObject(User.anonymous)))
         collection("collections").update(q ,o)
       }
     }
