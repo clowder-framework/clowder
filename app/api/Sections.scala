@@ -54,7 +54,7 @@ class Sections @Inject()(
 
   @ApiOperation(value = "Delete section",
     notes = "Remove section file from system).",
-    responseClass = "None", httpMethod = "POST")
+    responseClass = "None", httpMethod = "DELETE")
   def delete(id: UUID) = PermissionAction(Permission.DeleteSection, Some(ResourceRef(ResourceRef.section, id))) {
     request =>
       sections.get(id) match {
