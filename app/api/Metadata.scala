@@ -46,7 +46,8 @@ class Metadata @Inject()(
           }
           import Dataset.datasetWrites
           import File.FileWrites
-          Ok(JsObject(Seq("datasets" -> toJson(datasetsResults), "files" -> toJson(filesResults))))
+          // Use "distinct" to remove duplicate results.
+          Ok(JsObject(Seq("datasets" -> toJson(datasetsResults.distinct), "files" -> toJson(filesResults.distinct))))
         }
         response getOrElse BadRequest(toJson("You must specify key and value"))
   }
