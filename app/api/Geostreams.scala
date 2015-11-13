@@ -271,6 +271,17 @@ object Geostreams extends ApiController {
       case None => pluginNotEnabled
     }
   }
+  
+  def deleteDatapoint(id: String) = PermissionAction(Permission.DeleteGeoStream) { implicit request =>
+    Logger.debug("Delete datapoint " + id)
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        if (plugin.deleteDatapoint(id.toInt)) jsonp("""{"status":"ok"}""", request)
+        else jsonp("""{"status":"error"}""", request)
+      }
+      case None => pluginNotEnabled
+    }
+  }
 
   def deleteAll() = PermissionAction(Permission.DeleteGeoStream) { implicit request =>
     Logger.debug("Drop all")
