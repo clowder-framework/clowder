@@ -534,7 +534,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       if (System.getProperty("MONGOUPDATE") != null) {
         val q = "author" $exists false
         val o = MongoDBObject("$set" -> MongoDBObject("author" -> SocialUserDAO.dao.toDBObject(User.anonymous)))
-        collection("collections").update(q, o)
+        collection("collections").update(q, o, multi=true)
         appConfig.addPropertyValue("mongodb.updates", updateId)
       } else {
         Logger.warn("[MongoDBUpdate] : Missing fix to set anonymous author to collection when not set")
