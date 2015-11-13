@@ -71,11 +71,10 @@
                     });
                     $('#myspace').click(function(){
                         var path;
-
                         if(window.location.search == ""){
-                            path = '/spaces?showAll=false'
+                            path = location.pathname+'?showAll=false'
                         } else {
-                            path = (location.pathname+location.search)+';showAll=false'
+                            path = location.pathname+location.search+'&showAll=false'
                         }
                         window.location.assign( path);
                     });
