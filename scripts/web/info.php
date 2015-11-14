@@ -97,7 +97,7 @@ try {
 			echo "<tr>";
 			echo "<td>" . (isset($document["clientIP"]) ? $document["clientIP"] : "") . "</td>";
 			echo "<td>" . (isset($document["filename"]) ? $document["filename"] : "") . "</td>";
-			echo "<td>" . (isset($document["filesize"]) ? $document["filesize"] : "") . "</td>";
+			echo "<td>" . (isset($document["fileSize"]) ? $document["fileSize"] : "") . "</td>";
 			echo "<td>" . (isset($document["input"]) ? $document["input"] : "") . "</td>";
 			echo "<td>" . (isset($document["extractors"]) ? $document["extractors"] : "") . "</td>";
 			echo "<td>" . (isset($document["startTime"]) ? $document["startTime"] : "") . "</td>";
@@ -121,8 +121,8 @@ try {
 		}
 
 		foreach($cursor as $document) {
-			if(isset($document["filesize"])) {
-				$sum += $document["filesize"];
+			if(isset($document["fileSize"])) {
+				$sum += $document["fileSize"];
 			}
 		}
 
