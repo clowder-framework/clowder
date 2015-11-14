@@ -7,6 +7,7 @@ if(isset($_REQUEST['count'])) $count = $_REQUEST["count"];
 if(isset($_REQUEST['inputs'])) $inputs = $_REQUEST["inputs"];
 if(isset($_REQUEST['requests'])) $requests = $_REQUEST["requests"];
 if(isset($_REQUEST['bytes'])) $bytes = $_REQUEST["bytes"];
+if(isset($_REQUEST['files'])) $files = $_REQUEST["files"];
 if(isset($_REQUEST['headings'])) $headings = $_REQUEST["headings"];
 
 try {
@@ -127,6 +128,24 @@ try {
 		}
 
 		echo $sum;
+	}
+	
+	//Files
+	if($files){
+		$collection = $db->dtsrequests;
+		$cursor = $collection->find();
+		$count = 0;
+
+		if($headings) {
+			echo "<br>\n";
+			echo "<h2>Files</h2>\n";
+		}
+
+		foreach($cursor as $document) {
+			$count++;
+		}
+
+		echo $count;
 	}
 } catch (Exception $e) {
     echo 'Caught exception: ',  $e->getMessage(), "\n";
