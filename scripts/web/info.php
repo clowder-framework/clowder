@@ -6,6 +6,7 @@ if(isset($_REQUEST['extractors'])) $extractors = $_REQUEST["extractors"];
 if(isset($_REQUEST['count'])) $count = $_REQUEST["count"];
 if(isset($_REQUEST['inputs'])) $inputs = $_REQUEST["inputs"];
 if(isset($_REQUEST['requests'])) $requests = $_REQUEST["requests"];
+if(isset($_REQUEST['bytes'])) $bytes = $_REQUEST["bytes"];
 if(isset($_REQUEST['headings'])) $headings = $_REQUEST["headings"];
 
 try {
@@ -107,8 +108,27 @@ try {
 
 		echo "</table>\n";
 	}
+	
+	//Bytes
+	if($bytes){
+		$collection = $db->dtsrequests;
+		$cursor = $collection->find();
+		$sum = 0;
+
+		if($headings) {
+			echo "<br>\n";
+			echo "<h2>Bytes</h2>\n";
+		}
+
+		foreach($cursor as $document) {
+			if(isset($document["filesize"])) {
+				$sum += $document["filesize"];
+			}
+		}
+
+		echo $sum;
+	}
 } catch (Exception $e) {
     echo 'Caught exception: ',  $e->getMessage(), "\n";
 }
-
 ?>
