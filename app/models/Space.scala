@@ -6,10 +6,8 @@ import play.api.libs.json.JsObject
 import util.SpaceConfig
 
 /**
- * A space definines a partition of the data so that authorization can be enforced on it.
+ * A space defines a partition of the data so that authorization can be enforced on it.
  * It is also a way for users to create collaboration spaces with other users.
- *
- * @author Luigi Marini
  *
  */
 
@@ -25,10 +23,11 @@ case class ProjectSpace (
   collectionCount: Integer,
   datasetCount: Integer,
   userCount: Integer,
-  metadata: List[Metadata], 
+  metadata: List[Metadata],
   resourceTimeToLive: Long = SpaceConfig.getTimeToLive(),
   isTimeToLiveEnabled: Boolean = SpaceConfig.getIsTimeToLiveEnabled(),
   followers: List[UUID] = List.empty,
+  curationObjects: List[UUID] = List.empty,
   invitations: List[(UUID, String)] = List.empty,
   requests: List[RequestResource] = List.empty)
 
@@ -67,17 +66,3 @@ case class ProvObj (
   id: UUID, // id of original object
   archived: Date,
   obj: JsObject)
-
-// Generic Agent
-trait Agent {
-  val id: UUID
-}
-
-// User through the GUI
-case class UserAgent(id: UUID, userId: Option[URL]) extends Agent
-
-// Automatic extraction
-case class ExtractorAgent(id: UUID, extractorId: Option[URL]) extends Agent
-
-// User submitting tool
-case class ToolAgent(id: UUID, toolId: Option[URL]) extends Agent

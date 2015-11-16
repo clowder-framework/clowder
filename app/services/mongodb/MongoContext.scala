@@ -1,6 +1,6 @@
 package services.mongodb
 
-import java.net.URL
+import java.net.{URI, URL}
 
 import com.mongodb.casbah.commons.conversions.MongoConversionHelper
 import com.novus.salat.transformers.CustomTransformer
@@ -9,12 +9,12 @@ import play.api.{Logger, Play}
 import play.api.Play.current
 import models.UUIDTransformer
 import org.bson.{BSON, Transformer}
+import com.mongodb.util.JSON
+import com.mongodb.DBObject
+
 
 /**
  * MongoDB context configuration.
- *
- * @author Luigi Marini
- *
  */
 object MongoContext {
 
@@ -25,10 +25,14 @@ object MongoContext {
         typeHint = "_typeHint")
       registerCustomTransformer(UUIDTransformer)
       registerCustomTransformer(URLTransformer)
+      registerCustomTransformer(URITransformer)
       registerCustomTransformer(JodaDateTimeTransformer)
       registerGlobalKeyOverride(remapThis = "id", toThisInstead = "_id")
       registerClassLoader(Play.classloader)
-    }
+      registerCustomTransformer(JsValueTransformer)
+      registerCustomTransformer(SymbolTransformer)
+      SymbolSerializer.register()
+  }
 
   /**
    * Casbah URL serializer.
@@ -81,11 +85,13 @@ object MongoContext {
 
   object RegisterURLDeserializer extends URLDeserializer {
     Logger.trace("Registering URL deserializer")
+
     def apply() = super.register()
   }
 
   object RegisterURLSerializer extends URLSerializer {
     Logger.trace("Registering URL serializer")
+
     def apply() = super.register()
   }
 
@@ -108,6 +114,96 @@ object MongoContext {
     }
   }
 
+
+  /**
+   * Casbah URI serializer.
+   */
+  trait URISerializer extends MongoConversionHelper {
+    private val transformer = new Transformer {
+      Logger.trace("Encoding a URI.")
+
+      def transform(o: AnyRef): AnyRef = o match {
+        case uri: URI => uri.toString
+        case _ => o
+      }
+    }
+
+    override def register() {
+      Logger.debug("Setting up URI Serializer")
+
+      BSON.addEncodingHook(classOf[URI], transformer)
+
+      super.register()
+    }
+  }
+
+  /**
+   * Casbah URI deserializer.
+   */
+  trait URIDeserializer extends MongoConversionHelper {
+
+    private val transformer = new Transformer {
+      Logger.trace("Decoding URI.")
+
+      def transform(o: AnyRef): AnyRef = o match {
+        case uri: String => {
+          new URI(uri)
+        }
+        case _ => {
+          o
+        }
+      }
+    }
+
+    override def register() {
+      Logger.trace("Hooking up URI deserializer")
+
+      BSON.addDecodingHook(classOf[URI], transformer)
+
+      super.register()
+    }
+  }
+
+  object RegisterURIDeserializer extends URIDeserializer {
+    Logger.trace("Registering URI deserializer")
+    def apply() = super.register()
+  }
+
+  object RegisterURISerializer extends URISerializer {
+    Logger.trace("Registering URI serializer")
+    def apply() = super.register()
+  }
+
+  RegisterURIDeserializer()
+  RegisterURISerializer()
+
+  object URITransformer extends CustomTransformer[URI, String] {
+    def deserialize(uri: String) = {
+      Logger.trace("Deserializing String to URI :" + uri)
+      new URI(uri)
+    }
+
+    def serialize(uri: URI) = {
+      Logger.trace("Serializing URI to String :" + uri)
+      uri.toString
+    }
+  }
+
+
+  /**
+   * JsValue-DBObject Transformer
+   */
+  object JsValueTransformer extends CustomTransformer[play.api.libs.json.JsValue, DBObject] {
+    def deserialize(value: DBObject) = {
+      play.api.libs.json.Json.parse(com.mongodb.util.JSON.serialize(value))
+    }
+
+    def serialize(value: play.api.libs.json.JsValue) = {
+      val doc: DBObject = com.mongodb.util.JSON.parse(value.toString).asInstanceOf[DBObject]
+      doc
+    }
+  }
+
   // joda.time to Date and vice versa
   object JodaDateTimeTransformer extends CustomTransformer[org.joda.time.DateTime, java.util.Date] {
     def deserialize(date: java.util.Date) = {
@@ -118,6 +214,42 @@ object MongoContext {
       date.toDate
     }
   }
+
+  /**
+   * Salat Symbol transformers
+   */
+  object SymbolTransformer extends CustomTransformer[Symbol, String] {
+    def deserialize(s: String) = {
+      Logger.trace("Deserializing String to Symbol :" + s)
+      Symbol(s)
+    }
+
+    def serialize(symbol: Symbol) = {
+      Logger.trace("Serializing Symbol to String :" + symbol)
+      symbol.name
+    }
+  }
+
+  /**
+   * Casbah Symbol deserializer
+   */
+  object SymbolSerializer extends MongoConversionHelper {
+    private val transformer = new Transformer {
+      log.debug("Encoding a Scala Symbol.")
+
+      def transform(o: AnyRef): AnyRef = o match {
+        case s: Symbol => s.name
+        case _ => o
+      }
+    }
+
+    override def register() {
+      log.debug("Setting up SymbolSerializer")
+      BSON.addEncodingHook(classOf[_root_.scala.Symbol], transformer)
+      super.register()
+    }
+  }
+
 }
 
 

@@ -1,41 +1,30 @@
-/**
- *
- */
 package api
 
+import java.io._
+import java.net.URL
 import java.util.Date
 import api.Permission.Permission
+import java.text.SimpleDateFormat
 import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
-import models._
+import java.util.zip._
+import javax.inject.{Inject, Singleton}
+
+import com.wordnik.swagger.annotations.{Api, ApiOperation}
+import controllers.{Previewers, Utils}
+import jsonutils.JsonUtil
+import models.{File, _}
+import org.json.JSONObject
 import play.api.Logger
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
+import play.api.Play.{configuration, current}
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.iteratee.Enumerator
+import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.mvc.AnyContent
-import jsonutils.JsonUtil
-import controllers.Previewers
-import org.bson.types.ObjectId
-import play.api.Play.current
-import javax.inject.{Singleton, Inject}
-import com.mongodb.casbah.Imports._
-import org.json.JSONObject
-import Transformation.LidoToCidocConvertion
-import java.io.BufferedWriter
-import java.io.FileWriter
-import play.api.libs.iteratee.Enumerator
-import java.io.FileInputStream
-import play.api.libs.concurrent.Execution.Implicits._
 import services._
-import play.api.libs.json.JsString
-import play.api.libs.json.JsResult
-import play.api.libs.json.JsSuccess
-import play.api.libs.json.JsError
-import util.License
-import scala.Some
-import models.File
-import play.api.Play.configuration
-import controllers.Utils
-import services._
+import _root_.util.{JSONLD, License}
+
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Dataset API.
@@ -53,10 +42,22 @@ class Datasets @Inject()(
   comments: CommentService,
   previews: PreviewService,
   extractions: ExtractionService,
+  metadataService: MetadataService,
+  contextService: ContextLDService,
   rdfsparql: RdfSPARQLService,
   events: EventService,
   spaces: SpaceService,
   userService: UserService) extends ApiController {
+
+  @ApiOperation(value = "Get a specific dataset",
+    notes = "This will return a sepcific dataset requested",
+    responseClass = "None", multiValueResponse=true, httpMethod = "GET")
+  def get(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    datasets.get(id) match {
+      case Some(d) => Ok(toJson(d))
+      case None => BadRequest(toJson(s"Could not find dataset with id [${id.stringify}]"))
+    }
+  }
 
   @ApiOperation(value = "List all datasets the user can view",
     notes = "This will check for Permission.ViewDataset",
@@ -110,122 +111,145 @@ class Datasets @Inject()(
   }
 
   /**
-   * Create new dataset
+   * Create new dataset. name, file_id are required, description and space,  are optional. If the space & file_id is wrong, refuse the request
    */
   @ApiOperation(value = "Create new dataset",
-      notes = "New dataset containing one existing file, based on values of fields in attached JSON. Returns dataset id as JSON object.",
-      responseClass = "None", httpMethod = "POST")
+    notes = "New dataset containing one existing file, based on values of fields in attached JSON. Returns dataset id as JSON object.",
+    responseClass = "None", httpMethod = "POST")
   def createDataset() = PermissionAction(Permission.CreateDataset)(parse.json) { implicit request =>
     Logger.debug("--- API Creating new dataset ----")
     (request.body \ "name").asOpt[String].map { name =>
-      (request.body \ "description").asOpt[String].map { description =>
-        (request.body \ "file_id").asOpt[String].map { file_id =>
-            (request.body \ "space").asOpt[String].map { space =>
-                  files.get(UUID(file_id)) match {
-                    case Some(file) =>
-                      var d : Dataset = null
-                      if (space == "default") {
-                          d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig())
-                      }
-                      else {
-                          d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig(), spaces = List(UUID(space)))
-                      }
-                      events.addObjectEvent(request.user, d.id, d.name, "create_dataset")
-                      datasets.insert(d) match {
-                        case Some(id) => {
-                          files.index(UUID(file_id))
-                          if(!file.xmlMetadata.isEmpty) {
-                            val xmlToJSON = files.getXMLMetadataJSON(UUID(file_id))
-                            datasets.addXMLMetadata(UUID(id), UUID(file_id), xmlToJSON)
-                            current.plugin[ElasticsearchPlugin].foreach {
-                             _.index("data", "dataset", UUID(id),
-                               List(("name", d.name), ("description", d.description), ("xmlmetadata", xmlToJSON)))
-                            }
-                          } else {
-                            current.plugin[ElasticsearchPlugin].foreach {
-                              _.index("data", "dataset", UUID(id), List(("name", d.name), ("description", d.description)))
-                            }
-                          }
-                          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request),"Dataset","added",id, name)}                  
-                          Ok(toJson(Map("id" -> id)))
-                        }
-                        case None => Ok(toJson(Map("status" -> "error")))
-                      }
-                    case None => BadRequest(toJson("Bad file_id = " + file_id))
+      val description = (request.body \ "description").asOpt[String].getOrElse("")
+
+      var d : Dataset = null
+      implicit val user = request.user
+      user match {
+        case Some(identity) => {
+          (request.body \ "space").asOpt[String] match {
+            case None | Some("default") => d = Dataset(name=name,description=description, created=new Date(), author=identity, licenseData = License.fromAppConfig())
+            case Some(spaceId) =>
+              spaces.get(UUID(spaceId)) match {
+                case Some(s) => d = Dataset(name=name,description=description, created=new Date(), author=identity, licenseData = License.fromAppConfig(), spaces = List(UUID(spaceId)))
+                case None => BadRequest(toJson("Bad space = " + spaceId))
+              }
+          }
+        }
+        case None => InternalServerError("User Not found")
+      }
+      //event will be added whether creation is success.
+      events.addObjectEvent(request.user, d.id, d.name, "create_dataset")
+
+      (request.body \ "file_id").asOpt[String] match {
+        case Some(file_id) => {
+          files.get(UUID(file_id)) match {
+            case Some(file) =>
+              datasets.insert(d) match {
+                case Some(id) => {
+                  d.spaces.map{ s => spaces.addDataset(d.id, s)}
+                  attachExistingFileHelper(UUID(id), file.id, d, file, request.user)
+                  files.index(UUID(file_id))
+                  if (!file.xmlMetadata.isEmpty) {
+                    val xmlToJSON = files.getXMLMetadataJSON(UUID(file_id))
+                    datasets.addXMLMetadata(UUID(id), UUID(file_id), xmlToJSON)
+                    current.plugin[ElasticsearchPlugin].foreach {
+                      _.index("data", "dataset", UUID(id),
+                        List(("name", d.name), ("description", d.description), ("xmlmetadata", xmlToJSON)))
+                    }
+                  } else {
+                    current.plugin[ElasticsearchPlugin].foreach {
+                      _.index("data", "dataset", UUID(id), List(("name", d.name), ("description", d.description)))
+                    }
+                  }
+
+                  current.plugin[AdminsNotifierPlugin].foreach {
+                    _.sendAdminsNotification(Utils.baseUrl(request), "Dataset", "added", id, name)
+                  }
+                  Ok(toJson(Map("id" -> id)))
                 }
-          }.getOrElse(BadRequest(toJson("Missing parameter [space]")))
-        }.getOrElse(BadRequest(toJson("Missing parameter [file_id]")))
-      }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
+                case None => Ok(toJson(Map("status" -> "error")))
+              }
+            case None => BadRequest(toJson("Bad file_id = " + file_id))
+
+          }
+        }
+        case None => BadRequest(toJson("Missing parameter [file_id]"))
+      }
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
-  
+
   /**
    * Create new dataset with no file required. However if there are comma separated file IDs passed in, add all of those as existing
    * files. This is to facilitate multi-file-uploader usage for new files, as well as to allow multiple existing files to be
    * added as part of dataset creation.
-   * 
+   *
    * A JSON document is the payload for this endpoint. Required elements are name, description, and space. Optional element is
-   * existingfiles, which will be a comma separated String of existing file IDs to be added to the new dataset. 
+   * existingfiles, which will be a comma separated String of existing file IDs to be added to the new dataset.
    */
   @ApiOperation(value = "Create new dataset with no file",
-      notes = "New dataset requiring zero files based on values of fields in attached JSON. Returns dataset id as JSON object. Requires name, description, and space. Optional list of existing file ids to add.",
-      responseClass = "None", httpMethod = "POST")
+    notes = "New dataset requiring zero files based on values of fields in attached JSON. Returns dataset id as JSON object. Requires name, description, and space. Optional list of existing file ids to add.",
+    responseClass = "None", httpMethod = "POST")
   def createEmptyDataset() = PermissionAction(Permission.CreateDataset)(parse.json) { implicit request =>
     (request.body \ "name").asOpt[String].map { name =>
-      (request.body \ "description").asOpt[String].map { description =>   
-          (request.body \ "space").asOpt[List[String]].map { space =>
+      val description = (request.body \ "description").asOpt[String].getOrElse("")
+      var d : Dataset = null
+      implicit val user = request.user
+      user match {
+        case Some(identity) => {
+          (request.body \ "space").asOpt[List[String]] match {
+            case None | Some(List("default"))=>
+              d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig())
+            case Some(space) =>
               var spaceList: List[UUID] = List.empty;
               space.map {
-                aSpace => spaceList = UUID(aSpace) :: spaceList
-              }
-              var d : Dataset = null
-              if (space == "default") {
-                  d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig())
-              }
-              else {
-              	  d = Dataset(name=name,description=description, created=new Date(), author=request.user.get, licenseData = License.fromAppConfig(), spaces = spaceList)
-              }
-            events.addObjectEvent(request.user, d.id, d.name, "create_dataset")
-            datasets.insert(d) match {
-                case Some(id) => {
-                  //In this case, the dataset has been created and inserted. Now notify the space service and check
-                  //for the presence of existing files.
-                  Logger.debug("About to call addDataset on spaces service")
-                  //Below call is not what is needed? That already does what we are doing in the Dataset constructor... 
-                  //Items from space model still missing. New API will be needed to update it most likely.
-
-                  space.map {
-                    aSpace => if(aSpace != "default") spaces.addDataset(UUID(id), UUID(aSpace))
-                  }
-                  (request.body \ "existingfiles").asOpt[String].map { fileString =>
-                    var idArray = fileString.split(",").map(_.trim())
-                    for (anId <- idArray) {
-                      datasets.get(UUID(id)) match {
-                        case Some(dataset) => {
-                          files.get(UUID(anId)) match {
-                            case Some(file) => {
-                              attachExistingFileHelper(UUID(id), UUID(anId), dataset, file, request.user)
-                              Ok(toJson(Map("status" -> "success")))
-                            }
-                            case None => {
-                              Logger.error("Error getting file" + anId)
-                              BadRequest(toJson(s"The given file id $anId is not a valid ObjectId."))
-                            }
-                          }
-                        }
-                        case None => {
-                          Logger.error("Error getting dataset" + id)
-                          BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
-                        }
-                      }
-                    }
-                    Ok(toJson(Map("id" -> id)))
-                  }.getOrElse(Ok(toJson(Map("id" -> id))))
+                aSpace => if (spaces.get(UUID(aSpace)).isDefined) {
+                  spaceList = UUID(aSpace) :: spaceList
+                } else {
+                  BadRequest(toJson("Bad space = " + aSpace))
                 }
-                case None => Ok(toJson(Map("status" -> "error")))
-              }            
-          }.getOrElse(BadRequest(toJson("Missing parameter [space]")))
-      }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
+              }
+              d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig(), spaces = spaceList)
+           }
+        }
+        case None => InternalServerError("User Not found")
+      }
+      events.addObjectEvent(request.user, d.id, d.name, "create_dataset")
+      datasets.insert(d) match {
+        case Some(id) => {
+          //In this case, the dataset has been created and inserted. Now notify the space service and check
+          //for the presence of existing files.
+          Logger.debug("About to call addDataset on spaces service")
+          d.spaces.map{ s => spaces.addDataset(d.id, s)}
+          //Below call is not what is needed? That already does what we are doing in the Dataset constructor...
+          //Items from space model still missing. New API will be needed to update it most likely.
+
+          (request.body \ "existingfiles").asOpt[String].map { fileString =>
+            var idArray = fileString.split(",").map(_.trim())
+            for (anId <- idArray) {
+              datasets.get(UUID(id)) match {
+                case Some(dataset) => {
+                  files.get(UUID(anId)) match {
+                    case Some(file) => {
+                      attachExistingFileHelper(UUID(id), UUID(anId), dataset, file, request.user)
+                      Ok(toJson(Map("status" -> "success")))
+                    }
+                    case None => {
+                      Logger.error("Error getting file" + anId)
+                      BadRequest(toJson(s"The given file id $anId is not a valid ObjectId."))
+                    }
+                  }
+                }
+                case None => {
+                  Logger.error("Error getting dataset" + id)
+                  BadRequest(toJson(s"The given dataset id $id is not a valid ObjectId."))
+                }
+              }
+            }
+            Ok(toJson(Map("id" -> id)))
+          }.getOrElse(Ok(toJson(Map("id" -> id))))
+        }
+        case None => Ok(toJson(Map("status" -> "error")))
+      }
+
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
   
@@ -447,19 +471,119 @@ class Datasets @Inject()(
   @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
   def addMetadata(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
       Logger.debug(s"Adding metadata to dataset $id")
-      datasets.addMetadata(id, Json.stringify(request.body))
-      datasets.index(id)
-      Ok(toJson(Map("status" -> "success")))
+      //datasets.addMetadata(id, Json.stringify(request.body))
+
+      datasets.get(id) match {
+        case Some(x) => {
+          val json = request.body
+          //parse request for agent/creator info
+          //creator can be UserAgent or ExtractorAgent
+          val creator = ExtractorAgent(id = UUID.generate(),
+            extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/deprecatedapi")))
+
+          // check if the context is a URL to external endpoint
+          val contextURL: Option[URL] = None
+
+          // check if context is a JSON-LD document
+          val contextID: Option[UUID] = None
+
+          // when the new metadata is added
+          val createdAt = new Date()
+
+          //parse the rest of the request to create a new models.Metadata object
+          val attachedTo = ResourceRef(ResourceRef.dataset, id)
+          val version = None
+          val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+            json, version)
+
+          //add metadata to mongo
+          metadataService.addMetadata(metadata)
+
+          datasets.index(id)
+          Ok(toJson(Map("status" -> "success")))
+        }
+        case None => Logger.error(s"Error getting dataset $id"); NotFound
+      }
+  }
+
+   /**
+   * Add metadata in JSON-LD format.
+   */
+  @ApiOperation(value = "Add JSON-LD metadata to the database.",
+      notes = "Metadata in attached JSON-LD object will be added to metadata Mongo db collection.",
+      responseClass = "None", httpMethod = "POST")
+  def addMetadataJsonLD(id: UUID) =
+     PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
+        datasets.get(id) match {
+          case Some(x) => {
+            val json = request.body
+            //parse request for agent/creator info
+            //creator can be UserAgent or ExtractorAgent
+            var creator: models.Agent = null
+            json.validate[Agent] match {
+              case s: JsSuccess[Agent] => {
+                creator = s.get
+
+                // check if the context is a URL to external endpoint
+                val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
+
+                // check if context is a JSON-LD document
+                val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
+                  .map(contextService.addContext(new JsString("context name"), _))
+
+                // when the new metadata is added
+                val createdAt = new Date()
+
+                //parse the rest of the request to create a new models.Metadata object
+                val attachedTo = ResourceRef(ResourceRef.dataset, id)
+                val content = (json \ "content")
+                val version = None
+                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+                  content, version)
+
+                //add metadata to mongo
+                metadataService.addMetadata(metadata)
+                datasets.index(id)
+                Ok(toJson("Metadata successfully added to db"))
+
+              }
+              case e: JsError => {
+                Logger.error("Error getting creator");
+                BadRequest(toJson(s"Creator data is missing or incorrect."))
+              }
+            }
+
+          }
+          case None => Logger.error(s"Error getting dataset $id"); NotFound
+        }
+    }
+
+ @ApiOperation(value = "Retrieve metadata as JSON-LD",
+      notes = "Get metadata of the file object as JSON-LD.",
+      responseClass = "None", httpMethod = "GET")
+  def getMetadataJsonLD(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    datasets.get(id) match {
+      case Some(dataset) => {
+        //get metadata and also fetch context information
+        val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
+          .map(JSONLD.jsonMetadataWithContext(_))
+        Ok(toJson(listOfMetadata))
+      }
+      case None => {
+        Logger.error("Error getting dataset  " + id);
+        InternalServerError
+      }
+    }
   }
 
   @ApiOperation(value = "Add user-generated metadata to dataset",
       notes = "",
       responseClass = "None", httpMethod = "POST")
   def addUserMetadata(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
-    implicit val user = request.user  
+    implicit val user = request.user
     Logger.debug(s"Adding user metadata to dataset $id")
       datasets.addUserMetadata(id, Json.stringify(request.body))
-    
+
     datasets.get(id) match {
       case Some(dataset) => {
         events.addObjectEvent(user, id, dataset.name, "addMetadata_dataset")
@@ -473,8 +597,7 @@ class Datasets @Inject()(
     }
     Ok(toJson(Map("status" -> "success")))
   }
-  
-  
+
   def datasetFilesGetIdByDatasetAndFilename(datasetId: UUID, filename: String): Option[String] = {
     datasets.get(datasetId) match {
       case Some(dataset) => {
@@ -512,7 +635,7 @@ class Datasets @Inject()(
       }
   }
 
-  def jsonFile(file: File): JsValue = {
+  def jsonFile(file: models.File): JsValue = {
     toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType,
                "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
   }
@@ -539,7 +662,7 @@ class Datasets @Inject()(
       notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pairs for name and description.",
       responseClass = "None", httpMethod = "POST")
   def updateInformation(id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
-    implicit val user = request.user  
+    implicit val user = request.user
     if (UUID.isValid(id.stringify)) {          
 
           //Set up the vars we are looking for
@@ -1208,7 +1331,7 @@ class Datasets @Inject()(
       datasets.get(id) match {
         case Some(dataset) => {
           val datasetWithFiles = dataset.copy(files = dataset.files)
-          val datasetFiles = datasetWithFiles.files.map {f => files.get(f).foreach(file => file)}.asInstanceOf[List[File]]
+          val datasetFiles: List[File] = datasetWithFiles.files.flatMap(f => files.get(f))
           val previewers = Previewers.findPreviewers
           //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
           val previewslist = for (f <- datasetFiles; if (f.showPreviews.equals("DatasetLevel"))) yield {
@@ -1376,7 +1499,12 @@ class Datasets @Inject()(
       responseClass = "None", httpMethod = "GET")
   def getTechnicalMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
       datasets.get(id) match {
-        case Some(dataset) => Ok(datasets.getTechnicalMetadataJSON(id))
+        case Some(dataset) => {
+          val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
+            .filter(_.creator.typeOfAgent == "extractor")
+            .map(JSONLD.jsonMetadataWithContext(_) \ "content")
+          Ok(toJson(listOfMetadata))
+        }
         case None => Logger.error("Error finding dataset" + id); InternalServerError
       }
   }
@@ -1425,9 +1553,9 @@ class Datasets @Inject()(
 	    }
     }
   }
-  
+
   def dumpDatasetGroupings = ServerAdminAction { request =>
-  
+
 	  val unsuccessfulDumps = datasets.dumpAllDatasetGroupings
 	  if(unsuccessfulDumps.size == 0)
 	    Ok("Dumping of dataset file groupings was successful for all datasets.")
@@ -1437,12 +1565,12 @@ class Datasets @Inject()(
 	      unsuccessfulMessage = unsuccessfulMessage + badDataset + ", "
 	    }
 	    unsuccessfulMessage = unsuccessfulMessage.substring(0, unsuccessfulMessage.length()-2) + "."
-	    Ok(unsuccessfulMessage)  
-	  }      
+	    Ok(unsuccessfulMessage)
+	  }
 	}
 
   def dumpDatasetsMetadata = ServerAdminAction { request =>
-  
+
 	  val unsuccessfulDumps = datasets.dumpAllDatasetMetadata
 	  if(unsuccessfulDumps.size == 0)
 	    Ok("Dumping of datasets metadata was successful for all datasets.")
@@ -1452,8 +1580,8 @@ class Datasets @Inject()(
 	      unsuccessfulMessage = unsuccessfulMessage + badDataset + ", "
 	    }
 	    unsuccessfulMessage = unsuccessfulMessage.substring(0, unsuccessfulMessage.length()-2) + "."
-	    Ok(unsuccessfulMessage)  
-	  }      
+	    Ok(unsuccessfulMessage)
+	  }
 	}
 
   @ApiOperation(value = "Follow dataset.",
@@ -1525,6 +1653,115 @@ class Datasets @Inject()(
       }
       case None => {
         List.empty
+      }
+    }
+  }
+
+
+  /**
+   * Enumerator to loop over all files in a dataset and return chunks for the result zip file that will be
+   * streamed to the client. The zip files are streamed and not stored on disk.
+   *
+   * @param dataset dataset from which to get teh files
+   * @param chunkSize chunk size in memory in which to buffer the stream
+   * @param compression java built in compression value. Use 0 for no compression.
+   * @return Enumerator to produce array of bytes from a zipped stream containing the bytes of each file
+   *         in the dataset
+   */
+  def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION)
+      (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
+    implicit val pec = ec.prepare()
+    val inputFiles = dataset.files.flatMap(f=>files.get(f))
+    // which file we are currently processing
+    var count = 0
+    val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
+    val zip = new ZipOutputStream((byteArrayOutputStream))
+    // zip compression level
+    zip.setLevel(compression)
+    var is: Option[InputStream] = addFileToZip(inputFiles(count), zip)
+
+    Enumerator.generateM({
+      is match {
+        case Some(inputStream) => {
+          val buffer = new Array[Byte](chunkSize)
+          val bytesRead = scala.concurrent.blocking {
+            inputStream.read(buffer)
+          }
+          val chunk = bytesRead match {
+            case -1 => {
+              // finished individual file
+              zip.closeEntry()
+              inputStream.close()
+              count = count + 1
+              // more files available
+              if (count < inputFiles.size) {
+                is = addFileToZip(inputFiles(count), zip)
+              } else {
+                // close the zip file and exit
+                zip.close()
+                is = None
+              }
+              Some(byteArrayOutputStream.toByteArray)
+            }
+            case read => {
+              zip.write(buffer, 0, read)
+              Some(byteArrayOutputStream.toByteArray)
+            }
+          }
+          // reset temporary byte array
+          byteArrayOutputStream.reset()
+          Future.successful(chunk)
+        }
+        case None => {
+          Future.successful(None)
+        }
+      }
+    })(pec)
+  }
+
+  /**
+   * Used by enumeratorFromDataset to add an entry to the zip file.
+   * Individual files are added to directories with id of file as the name to resolve naming conflicts.
+   *
+   * @param file file to be added to teh zip file
+   * @param zip zip output stream. One stream per dataset.
+   * @return input stream for input file
+   */
+  private def addFileToZip(file: models.File, zip: ZipOutputStream): Option[InputStream] = {
+    files.getBytes(file.id) match {
+      case Some((inputStream, filename, contentType, contentLength)) => {
+        zip.putNextEntry(new ZipEntry(file.id + "/" + filename))
+        Some(inputStream)
+      }
+      case None => None
+    }
+  }
+
+  @ApiOperation(value = "Download dataset",
+    notes = "Downloads all files contained in a dataset.",
+    responseClass = "None", httpMethod = "GET")
+  def download(id: UUID, compression: Int) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(loggedInUser) => {
+        datasets.get(id) match {
+          case Some(dataset) => {
+            // Use custom enumerator to create the zip file on the fly
+            // Use a 1MB in memory byte array
+            Ok.chunked(enumeratorFromDataset(dataset, 1024*1024, compression)).withHeaders(
+              "Content-Type" -> "application/zip",
+              "Content-Disposition" -> ("attachment; filename=" + dataset.name + ".zip")
+            )
+          }
+          // If the dataset wasn't found by ID
+          case None => {
+            NotFound
+          }
+        }
+      }
+      // If the user doesn't have access to download these files
+      case None => {
+        Unauthorized
       }
     }
   }

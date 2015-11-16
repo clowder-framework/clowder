@@ -1,5 +1,10 @@
 package controllers
 
+import play.api.Logger
+import play.api.data.Form
+import play.api.data.Forms._
+import play.api.libs.json.Json
+import play.api.mvc.Cookie
 import java.io.FileInputStream
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -33,8 +38,10 @@ class Datasets @Inject()(
   sparql: RdfSPARQLService,
   users: UserService,
   previewService: PreviewService,
+  spaceService: SpaceService,
+  curationService: CurationService,
   relations: RelationService,
-  spaceService: SpaceService) extends SecuredController {
+  metadata: MetadataService) extends SecuredController {
 
   object ActivityFound extends Exception {}
 
@@ -87,9 +94,19 @@ class Datasets @Inject()(
 
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
+    val datasetSpace = space.flatMap(o => spaceService.get(UUID(o)))
+    var title: Option[String] = Some("Datasets")
 
     val datasetList = person match {
       case Some(p) => {
+        space match {
+          case Some(s) => {
+            title = Some(person.get.fullName + "'s Datasets in Space " + datasetSpace.get.name)
+          }
+          case None => {
+            title = Some(person.get.fullName + "'s Datasets")
+          }
+        }
         if (date != "") {
           datasets.listUser(date, nextPage, limit, request.user, request.superAdmin, p)
         } else {
@@ -99,6 +116,7 @@ class Datasets @Inject()(
       case None => {
         space match {
           case Some(s) => {
+            title = Some("Datasets in Space " + datasetSpace.get.name)
             if (date != "") {
               datasets.listSpace(date, nextPage, limit, s)
             } else {
@@ -191,7 +209,7 @@ class Datasets @Inject()(
       }
 
     //Pass the viewMode into the view
-    Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space))
+    Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title, owner))
   }
 
   def addViewer(id: UUID, user: Option[securesocial.core.Identity]) = {
@@ -228,7 +246,7 @@ class Datasets @Inject()(
   /**
    * Dataset.
    */
-  def dataset(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def dataset(id: UUID, currentSpace: Option[String]) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
 
       implicit val user = request.user
       Previewers.findPreviewers.foreach(p => Logger.debug("Previewer found " + p.id))
@@ -246,13 +264,7 @@ class Datasets @Inject()(
 
           val filteredPreviewers = Previewers.findDatasetPreviewers
 
-          val metadata = datasets.getMetadata(id)
-          Logger.debug("Metadata: " + metadata)
-          for (md <- metadata) {
-              Logger.debug(md.toString)
-          }
-          val userMetadata = datasets.getUserMetadata(id)
-          Logger.debug("User metadata: " + userMetadata.toString)
+          val m = metadata.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
 
           val collectionsInside = collections.listInsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
           var decodedCollectionsInside = new ListBuffer[models.Collection]()
@@ -293,13 +305,21 @@ class Datasets @Inject()(
           }
 
           // associated sensors
-          val sensors: List[(String, String)]= current.plugin[PostgresPlugin] match {
+          val sensors: List[(String, String, String)]= current.plugin[PostgresPlugin] match {
             case Some(db) => {
-              val base = play.api.Play.configuration.getString("geostream.dashboard.url").getOrElse("http://localhost:9000")
-              val ids = relations.findTargets(id.stringify, ResourceType.dataset, ResourceType.sensor)
-              db.getDashboardSensorURLs(ids)
+              // findRelationships will return a "Relation" model with all information about the relationship
+              val relationships = relations.findRelationships(id.stringify, ResourceType.dataset, ResourceType.sensor)
+
+              // we want to get the name of the sensor and its location on Geodashboard
+              // the "target.id" in a relationship is the Sensor's ID from the geostreaming API (like 117)
+              // we will lookup the name and url using the sensor ID, then return each sensor in a list of tuples:
+              // [(relationship_ID, sensor_name, geodashboard_url), ...]
+              relationships.map { r =>
+                val nameToURLTuple = db.getDashboardSensorURLs(List(r.target.id)).head
+                (r.id.stringify, nameToURLTuple._1, nameToURLTuple._2)
+              }
             }
-            case None => List.empty[(String, String)]
+            case None => List.empty[(String, String, String)]
           }
 
           var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
@@ -318,9 +338,16 @@ class Datasets @Inject()(
             case None => Logger.debug(s"Unable to find file $fileId")
           }).asInstanceOf[List[File]]
 
-          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filesTags, filteredPreviewers.toList, metadata, userMetadata,
-            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), fileList))
+          //dataset is in at least one space with editstagingarea permission, or if the user is the owner of dataset.
+          val stagingarea = datasetSpaces filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id)))
+          val toPublish = ! stagingarea.isEmpty
 
+          val curObjectsPublished: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(_.status == 'Published)
+          val curObjectsPermission: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(curation => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id)))
+          val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
+
+          Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
+            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), fileList, filesTags, toPublish, curPubObjects, currentSpace))
         }
         case None => {
           Logger.error("Error getting dataset" + id)
@@ -467,7 +494,7 @@ class Datasets @Inject()(
                   // TODO RK need to replace unknown with the server name
                   val key = "unknown." + "file."+ fileType.replace(".", "_").replace("/", ".")
 
-                  val host = Utils.baseUrl(request) + request.path.replaceAll("dataset/submit$", "")
+                  val host = Utils.baseUrl(request)
 
                   //directly add the file to the dataset via the service
                   datasets.addFile(dataset.id, f)
@@ -475,7 +502,10 @@ class Datasets @Inject()(
                   val dsId = dataset.id
                   val dsName = dataset.name
 
-                  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, dsId, flags))}
+                  // Adding filename to the extractor message. Needed by PyClowder.
+                  val extra = Map("filename" -> f.filename)
+
+                  current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, dsId, flags))}
 
                   val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
 
@@ -663,4 +693,3 @@ class Datasets @Inject()(
       Ok(views.html.generalMetadataSearch())
   }
 }
-

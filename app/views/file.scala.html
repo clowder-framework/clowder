@@ -1,7 +1,7 @@
 @(file: models.File, id: String, comments: List[Comment],
   previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]],
   sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset],
-  usrmd: scala.collection.mutable.Map[String,Any],
+  mds: List[models.Metadata],
   rdfExported: Boolean,
   extractionsStatus: List[Extraction], outputFormats: Option[List[String]])(implicit user: Option[models.User])
 
@@ -72,6 +72,7 @@
 		}
 	}
 
+@* (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length) *@
 @showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long), filename: String, contentType: String) = {
 	<script>
 		Configuration.tab = "#previewer_@id";
@@ -125,7 +126,7 @@
     <script src="@routes.Assets.at("javascripts/galleria-1.2.9.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/sectionsListProcess.js")" type="text/javascript"></script>
-    
+
 	<script>
 		tinymce.init({selector:'.notesArea',
 	    	theme: "modern",
@@ -225,12 +226,12 @@
                 <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->                
                     @if(user.get.identityId.userId.equals(file.author.identityId.userId)){                    
                         <span class="align-right">
-				            <button id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Files.list(""))')" class="btn btn-primary" title="Delete">
+				            <button id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-primary" title="Delete">
 						    <span class="glyphicon glyphicon-trash"></span> Delete</button>
 					    </span>
 					} else {
 					    <span class="align-right">
-                            <button disabled id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Files.list(""))')" class="btn btn-primary" title="Delete">
+                            <button disabled id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-primary" title="Delete">
                             <span class="glyphicon glyphicon-trash"></span> Delete</button>
                         </span>
 					}
@@ -281,7 +282,7 @@
 			  	  <div class="col-md-12">
                     <h4>Sections</h4>
 				  	<div class="galleriaHelp">Click on icon at bottom-right of gallery to toggle sections gallery fullscreen view</div>
-				  	<div id="galleria" style="float:left;clear:none;width:100%;height:400px;">					  	
+				  	<div id="galleria" style="float:left;clear:none;width:100%;height:400px;">
 				  	</div>
 				  	<script type="text/javascript">
 				  		$(document).ready(function() {
@@ -306,7 +307,7 @@
 									<th class="galleriaTheThumbnail">Thumbnail</th>
 									<th class="galleriaPosition">Position</th>
 									<th class="galleriaDescr">Description</th>
-									<th class="galleriaFindSimilar">Find</th>									
+									<th class="galleriaFindSimilar">Find</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -357,14 +358,14 @@
 									                <span class="glyphicon glyphicon-ok"></span> Submit</button>
 												<button class="btn btn-default" onclick="return cancelEditSectionDescr('@s.id');" style="display:none; margin-top:5px;" id="sectiondescrCancel_@(s.id)" title="Cancel">
 									                <span class="glyphicon glyphicon-remove"></span> Cancel</button>
-									            
-									            <script>    
+
+									            <script>
 									            	window["previousSectiondescr_@(s.id)"] = '@s.description.getOrElse("")';
 									            </script>
 						  			 		}
 						  			 	}
 						  			 </td>
-						  			 <td class="galleriaFindSimilar"><a href="@routes.Search.searchMultimediaIndex(s.id)">Similar</a></td>
+						  			 <td class="galleriaFindSimilar"><a href="@routes.Search.callSearchMultimediaIndexView(s.id)">Similar</a></td>
 					  			 </tr>
 					  		}
 					  		</tbody>
@@ -384,31 +385,29 @@
 				  	</div>
 			  	</div>
 				
-				@if(!navOnSectionClick){
-					<script>
-					    document.addEventListener("DOMContentLoaded", function () {
-							if ($("#ourvideo").length>0) {
-						        var pop = Popcorn("#ourvideo");
-	
-								@sections.map { s =>
-						  			@if(s.startTime.isDefined) {
-								   		pop.code({
-									        start: @s.startTime,
-									        onStart: function() {
-									          var frame = @s.order - 1;
-									          console.log("Jumping to " + frame + " " + @s.startTime);
-									          $('#galleria').data('galleria').show(frame);
-									        },
-									        onEnd: function() {
-									          //console.log("end");
-									       }
-									    });
-									}
-							    }
-							}
-					    });
-			         </script>
-		         }
+				<script>
+				    document.addEventListener("DOMContentLoaded", function () {
+						if ($("#ourvideo").length>0) {
+					        var pop = Popcorn("#ourvideo");
+
+							@sections.map { s =>
+					  			@if(s.startTime.isDefined) {
+							   		pop.code({
+								        start: @s.startTime,
+								        onStart: function() {
+								          var frame = @s.order - 1;
+								          console.log("Jumping to " + frame + " " + @s.startTime);
+								          $('#galleria').data('galleria').show(frame);
+								        },
+								        onEnd: function() {
+								          //console.log("end");
+								       }
+								    });
+								}
+						    }
+						}
+				    });
+		        </script>
 			    
 			    <script>
 			    	$(function() {
@@ -419,12 +418,12 @@
 					    @sections.map { s =>
 							@if(s.preview.isDefined) {
 								galleriaItem = {};
-								galleriaItem["image"] = "@api.routes.Previews.download(s.preview.get.id)"; 					  			
+								galleriaItem["image"] = "@api.routes.Previews.download(s.preview.get.id)";
 								@if(s.startTime.isDefined) {
 									galleriaItem["title"] = "Shot";
 									galleriaItem["description"] = "Starts at @s.startTime seconds.";
 							 	} else {
-							 		if (s.area.isDefined) {
+							 		@if(s.area.isDefined) {
 							 			galleriaItem["title"] = "Area";
 							 			galleriaItem["description"] = "@s.area.toString";
 							 		} else {
@@ -433,7 +432,7 @@
 							 		}
 							 	}
 								galleriaData.push(galleriaItem);
-							}							
+							}
 						}
 
 					    @if(navOnSectionClick){
@@ -497,64 +496,28 @@
                 </div>
             </div>
 
-            <div class="row border-top">
-                <div class="col-md-12">
-                    <h4>Community generated metadata</h4>
-                    @fileusermetadata(file, usrmd, rdfExported)
-                </div>
-            </div>
-
-            <div class="row border-top">
-                <div class="col-md-12">
-                    <h4>System generated metadata</h4>
-                    <div id='technicalMetadata_@(file.id)'>
-                        <button class="tech_md_ btn btn-link btn-sm" type="button">Show file technical metadata</button>
-                        <div style="display:none;">
-                        <ul>
-                            @for(i <- 0 until file.metadata.length){
-                                @printLevel(file.metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
-                            }
-                        </ul>
-                        </div>
-                    </div>
-                    <script>
-                        $("#technicalMetadata_@(file.id.toString) > button").on('click',function(){
-                            if($("#technicalMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
-                                $("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
-                                $("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file technical metadata";
-                            }
-                            else{
-                                $("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
-                                $("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file technical metadata";
-                            }
-                        });
-                    </script>
-                </div>
-            </div>
-
-			@if(!file.xmlMetadata.isEmpty) {
-                <div id='xmlMetadata_@(file.id.toString)'>
-                    <button class="tech_md_" type="button">Show XML-uploaded metadata</button>
-                    <div style="display:none;">
-                    <ul>
-                            @printLevel(file.xmlMetadata)
-                    </ul>
-                    </div>
-                </div>
-                <script>
-                    $("#xmlMetadata_@(file.id.toString) > button").on('click',function(){
-                        if($("#xmlMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
-                            $("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
-                            $("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file XML-uploaded metadata";
-                        }
-                        else{
-                            $("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
-                            $("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file XML-uploaded metadata";
-                        }
-                    });
-                </script>
-            }
-
+			<div class="border-top">
+				<div class="row">
+					<div class="col-md-10">
+						<h4>Metadata</h4>
+					</div>
+					<div class="col-md-2">
+						<a href="@api.routes.Files.getMetadataJsonLD(file.id)" class="pull-right" title="JSON-LD">
+							<img src="@routes.Assets.at("images/json-ld.png")"/>
+						</a>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-md-12">
+						@metadatald.addMetadata("file", file.id.toString)
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-md-12">
+						@metadatald.view(mds)
+					</div>
+				</div>
+			</div>
 
 			<div class="row border-top">
 				<div class="col-md-12">
@@ -743,7 +706,7 @@
               </ul>
               <form class="form-inline requiresLogin requiresLoginCommunity">
                 <div class="input-group input-group-sm col-md-8">
-                  <input type="text" id="tagField" class="form-control">
+                  <input type="text" maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" id="tagField" class="form-control">
                   <span class="input-group-btn">
                         <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
                             <span class="glyphicon glyphicon-tag"></span>
@@ -771,7 +734,7 @@
 				  //so the ID could be returned there and added into the elements as needed.
                   var tagDataId = $(this).attr("data-id");
         		  console.log("data-id to remove is " + tagDataId);
-                  
+
                   var request = jsRoutes.api.Files.removeTags('@file.id').ajax({
                     data: JSON.stringify({"tags":[tagId]}),
                     type: 'POST',
@@ -780,7 +743,7 @@
 
                   request.done(function (response, textStatus, jqXHR) {
                     console.log("Response " + textStatus);
-                    $("[data-id=" + tagDataId + "].tag").parents("li").remove();
+                    $("[data-id=" + tagDataId + "]").parents("li").remove();
                   });
 
                   request.fail(function (jqXHR, textStatus, errorThrown){
@@ -815,7 +778,7 @@
                   $('#tagB').click(function() {
                     var tag = $('#tagField').val();
                     tag = htmlEncode(tag);
-                     
+
                     var isTagPresent = false;
                     $("#tagList").children("li").each(function (index, tagLi) {
                       if($(tagLi).attr("name")===tag) {
@@ -838,6 +801,7 @@
                         $newTag.hover(removeIconMouseIn,removeIconMouseOut);
                         $newTag.find(".glyphicon-remove").click(removeTag);
                         $('#tagField').val("");
+                        tmpId = tmpId+1;
                        });
                   
                       request.fail(function (jqXHR, textStatus, errorThrown){
@@ -872,11 +836,6 @@
         <div class="row ds-section-sm border-top">
             <h4>Datasets containing the file</h4>
             @datasetsContainingFile(file, datasets)
-        </div>
-
-        <div class="row ds-section-sm border-top">
-            <h4>Sensors Associated with this file</h4>
-
         </div>
 
     </div> @* End of small right hand side column *@

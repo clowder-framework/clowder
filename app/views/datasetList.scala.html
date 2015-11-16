@@ -1,4 +1,4 @@
-@(datasets: List[models.Dataset], comments: Map[UUID, Int], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String])(implicit user: Option[models.User])
+@(datasets: List[models.Dataset], comments: Map[UUID, Int], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String], title: Option[String], owner:Option[String])(implicit user: Option[models.User])
 
 @import _root_.util.Formatters.ellipsize
 
@@ -11,7 +11,7 @@
 
     <div class="row">
         <div class="col-md-12">
-            <h1>Datasets</h1>
+            <h1>@title</h1>
         </div>
     </div>
 
@@ -19,7 +19,11 @@
     <div class="col-md-10">
     </div>
     <div class="col-md-1">
-        <a id="create-dataset" class="btn btn-primary btn-sm pull-right" href="@routes.Datasets.newDataset(space)" title="Create a new dataset">Create</a>
+        @if(user.isDefined) {
+            <a id="create-dataset" class="btn btn-primary btn-sm pull-right" href="@routes.Datasets.newDataset(space)" title="Create a new dataset">Create</a>
+        }
+
+
     </div>
     <div class="col-md-1">
         <div class="btn-group btn-group-sm pull-right">            
@@ -78,8 +82,8 @@
             //Function to unify the changing of the href for the next/previous links. Called on button activation for
             //viewMode style, as well as on initial load of page.
 	        function updatePage() {
-	            $('#nextlink').attr('href', "@(routes.Datasets.list("a", next, limit, space))");
-	            $('#prevlink').attr('href', "@(routes.Datasets.list("b", prev, limit, space))");
+	            $('#nextlink').attr('href', "@(routes.Datasets.list("a", next, limit, space, "", owner))");
+	            $('#prevlink').attr('href', "@(routes.Datasets.list("b", prev, limit, space, "", owner))");
 	        }
         </script>
     </div>
@@ -96,12 +100,12 @@
                   </div>
                   <div class="panel-body">
                         @if(!dataset.thumbnail_id.isEmpty){
-                            <a href="@(routes.Datasets.dataset(dataset.id))">
+                            <a href="@(routes.Datasets.dataset(dataset.id,space))">
                                 <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)">
                             </a>
                         }
                         <div class="caption break-word">
-                            <h4><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></h4>
+                            <h4><a href="@(routes.Datasets.dataset(dataset.id, space))">@Html(dataset.name)</a></h4>
                             <p>@Html(ellipsize(dataset.description, 200))</p>
                         </div>
                   </div>
@@ -109,9 +113,9 @@
                   <ul class="list-group">
                     <li class="list-group-item">
                       <span class="glyphicon glyphicon glyphicon-file" title="@dataset.files.size files"></span> @dataset.files.size
-                      <span class="glyphicon glyphicon glyphicon-tags" title="@dataset.tags.size tags"></span>  @dataset.tags.size
-                      <span class="glyphicon glyphicon glyphicon-list" title="@(dataset.metadata.keys.size + dataset.userMetadata.keys.size) metadata fields"></span>  @(dataset.metadata.keys.size + dataset.userMetadata.keys.size)
-                      <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(dataset.id)) comments"></span>  @(comments.get(dataset.id))
+                      <span class="glyphicon glyphicon glyphicon-tags" title="@dataset.tags.size tags"></span> @dataset.tags.size
+                      <span class="glyphicon glyphicon glyphicon-list" title="@(dataset.metadataCount) metadata fields"></span> @(dataset.metadataCount)
+                      <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(dataset.id)) comments"></span> @(comments.get(dataset.id))
 					  @if(user.isDefined) {
 					        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->   
 							@if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
@@ -197,10 +201,5 @@
     </div>
 </div>
 
-    @if(!user.isDefined) {
-        <script type="text/javascript">
-        $('#create-dataset').addClass('disabled');
-        </script>
-    }
 
 }

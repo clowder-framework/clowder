@@ -8,7 +8,7 @@
 	// setting up ajax call to get metadata from the file
 	var req = $.ajax({
 		type: "GET",
-		url: "/api/datasets/"+dataset_id+"/technicalmetadatajson",
+		url: jsRoutes.api.Datasets.getTechnicalMetadataJSON(dataset_id).url,
 		dataType: "json"
 	});
 
@@ -20,7 +20,7 @@
 	// setting up ajax call to get file from the dataset
 	var file_req = $.ajax({
 		type: "GET",
-		url: "/api/datasets/"+dataset_id+"/listFiles",
+		url: jsRoutes.api.Datasets.datasetFilesList(dataset_id).url,
 		dataType: "json"
 	});
 
@@ -41,8 +41,8 @@
 			array.push({occurences: counts[x], mime: x});
 		}
 
-		$.getScript("http://d3js.org/d3.v3.min.js", function() {
-			$.getScript(Configuration.path + "d3.legend.js", function() {
+		$.getScript(Configuration.path + "/../../../d3js/d3.v3.min.js", function() {
+			$.getScript(Configuration.path + "/../../../d3js/d3.legend.js", function() {
 
 				$(Configuration.div).append('<h4>File Types</h4>');
 

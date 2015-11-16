@@ -118,6 +118,10 @@ trait DatasetService {
    */
   def isInCollection(datasetId: UUID, collectionId: UUID): Boolean
 
+  /**
+   * Return a list of tags and counts found in sections
+   */
+  def getTags(): Map[String, Long]
 
   def modifyRDFOfMetadataChangedDatasets()
 
@@ -265,5 +269,6 @@ trait DatasetService {
    * Remove follower from a dataset.
    */
   def removeFollower(id: UUID, userId: UUID)
+
 }
 

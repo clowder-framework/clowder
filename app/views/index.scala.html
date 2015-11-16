@@ -1,6 +1,6 @@
 @(files: List[models.File], datasetsCount: Long, datasetsCountAccess: Long, filesCount: Long,
         collectionsCount: Long, collectionsCountAccess: Long, spacesCount: Long, spacesCountAccess: Long, usersCount: Long,
-        displayedName: String, welcomeMessage: String, newsfeed: List[models.Event])(implicit user: Option[models.User])
+        displayedName: String, welcomeMessage: String)(implicit user: Option[models.User])
 
 @import _root_.util.Formatters
 
@@ -9,28 +9,6 @@
         <div class="col-md-7">
             <h2 class="featurette-heading">Welcome to @displayedName</h2>
             <p class="lead">@welcomeMessage</p>
-            @for(event <- newsfeed) {
-                <div class="panel panel-default">
-                    <div class="panel-body">
-                        <div class="media">
-                            <div class="media-left">
-                                <a href="@routes.Profile.viewProfileUUID(event.user.id)">
-                                    <img class="media-object" src="@event.user.avatarURL">
-                                </a>
-                            </div>
-                            <div class="media-body">
-                                <a href="@routes.Profile.viewProfileUUID(event.user.id)">
-                                    <h4 class="media-heading">@event.user.fullName</h4>
-                                </a>
-                                @newsfeedCard(event)
-                            </div>
-                            <div class="media-right">
-                                @Formatters.humanReadableTimeSince(event.created)
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
         </div>
         <div class="col-md-5" id="resources-panel-container">
             <div class="panel panel-default" id="resources-panel" data-clampedwidth=".col-md-5">

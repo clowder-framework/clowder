@@ -3,13 +3,7 @@
 	console.log("Iframe previewer for " + Configuration.id);
 	
 	console.log("Updating tab " + Configuration.tab);
-	
-	var width = 750;
-	
-	var prNum = Configuration.tab.replace("#previewer","");
-	
-	var hostAddress = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
-		
+
 	  $.ajax({
 		    url: Configuration.url,
 		    async:false,

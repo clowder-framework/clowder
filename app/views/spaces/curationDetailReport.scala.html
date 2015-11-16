@@ -1,0 +1,64 @@
+@(curationObject: models.CurationObject, mmResponse: models.MatchMakerResponse, repository: String)(implicit user: Option[models.User] )
+@main("Submit to Repository") {
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a> >
+                    <a  href ="@routes.CurationObjects.getCurationObject(curationObject.id)"> Edit Metadata</a> >
+                    <a  href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)">Select Repository</a> >
+                    <u><strong>Submit to Repository</strong></u>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-2">
+            <a class="btn btn-default" href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Select Repository</a>
+        </div>
+        <div class="col-md-8 text-center">
+            <h1>Submit to Repository</h1>
+        </div>
+        <div class="col-md-2">
+            <a class="btn btn-default btn-primary pull-right" href="@routes.CurationObjects.sendToRepository(curationObject.id)"> Submit <span class="glyphicon glyphicon-chevron-right"></span></a>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-3">
+            @spaces.curation_summary(curationObject, "Submit to Repository", false)
+        </div>
+        <div class="col-md-9">
+            <h3>@mmResponse.repositoryName</h3>
+            <h4>Matchmaker Summary</h4>
+            <div id="mmresults">
+                <ul class="indent_20 list-unstyled">
+                    @for(rule <- mmResponse.per_rule_score) {
+                        <li>@rule.rule_name </li>
+                        @if(rule.Score == 0) {
+                            <li><span class="red">@rule.Message</span> <a href="@routes.CurationObjects.getCurationObject(curationObject.id)"> Edit Metadata</a> <br/> </li>
+                        } else {
+                            <li><span class="green">All Requirements are satisfied.</span></li>
+                        }
+                    }
+                </ul>
+            </div>
+            <h4>Acknowledgments</h4>
+            <ul class="list-unstyled">
+                <li><h5>Confidentiality</h5><li/>
+                <li><input type="checkbox" id="confidential_agreement"> Dataset contains confidential info</li>
+            <li><h5>Copyrighted material</h5><li/>
+                <li><input type="checkbox" checked id="copyright_agreement"> Dataset contains copyrighted material</li>
+            <li><h5>Depositor Agreement</h5><li/>
+                <li><input type="checkbox" checked id="depositor_agreement"> I agree to @mmResponse.repositoryName deposit agreement</li>
+            </ul>
+        </div>
+    </div>
+    <div class="row bottom-padding">
+        <div class="col-md-12">
+            <a class="btn btn-default" href="@routes.CurationObjects.findMatchingRepositories( curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span>Select Repository</a>
+            <a class = "btn btn-default btn-primary pull-right" href ="@routes.CurationObjects.sendToRepository(curationObject.id)"> Submit <span class="glyphicon glyphicon-chevron-right"></span></a>
+        </div>
+    </div>
+
+
+}

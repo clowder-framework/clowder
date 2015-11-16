@@ -56,7 +56,7 @@ trait SecuredController extends Controller {
     }
   }
 
-  /** call code iff user is a server admin */
+  /** call code if user is a server admin */
   def ServerAdminAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
@@ -66,10 +66,11 @@ trait SecuredController extends Controller {
         Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
           .flashing("error" -> "You must be logged in as an administrator to access this page."))
       }
+
     }
   }
 
-  /** call code iff user has right permission for resource */
+  /** call code if user has right permission for resource */
   def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None) = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
@@ -107,6 +108,14 @@ trait SecuredController extends Controller {
                   ("space \"" + space.name + "\"", id.toString, "space")
                 }
               }
+            }
+          }
+
+          case Some(ResourceRef(ResourceRef.curationObject, id)) =>{
+            val curations: CurationService = DI.injector.getInstance(classOf[CurationService])
+            curations.get(id) match {
+              case None => ("curation \"" + id.toString() + "\" does not exist", "", "curation")
+              case Some(curation) => ("curation object \"" + curation.name + "\"", id.toString() ," curation")
             }
           }
 

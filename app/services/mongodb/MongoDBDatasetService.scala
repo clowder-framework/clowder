@@ -6,6 +6,7 @@ import java.util.{ArrayList, Date}
 import javax.inject.{Inject, Singleton}
 
 import Transformation.LidoToCidocConvertion
+import util.{Parsers, Formatters}
 import api.Permission
 import api.Permission.Permission
 import com.mongodb.casbah.Imports._
@@ -16,13 +17,15 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import jsonutils.JsonUtil
 import models.{File, _}
 import org.apache.commons.io.FileUtils
-import org.json.JSONObject
 import org.bson.types.ObjectId
+import org.json.JSONObject
 import play.api.Logger
 import play.api.Play._
+import play.api.libs.json.Json._
+import play.api.libs.json.JsValue
 import services._
 import services.mongodb.MongoContext.context
-import util.{Formatters, Parsers}
+
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
@@ -423,6 +426,24 @@ class MongoDBDatasetService @Inject() (
     return xmlFile
   }
 
+  def toJSON(dataset: Dataset): JsValue = {
+    var datasetThumbnail = "None"
+    if(!dataset.thumbnail_id.isEmpty)
+      datasetThumbnail = dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)
+
+    toJson(Map("id" -> dataset.id.toString, "datasetname" -> dataset.name, "description" -> dataset.description,
+      "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail, "authorId" -> dataset.author.identityId.userId))
+  }
+
+  /**
+   * Return a list of tags and counts found in sections
+   */
+  def getTags(): Map[String, Long] = {
+    val x = Dataset.dao.collection.aggregate(MongoDBObject("$unwind" -> "$tags"),
+      MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
+    x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+  }
+
   def isInCollection(datasetId: UUID, collectionId: UUID): Boolean = {
     get(datasetId).exists(_.collections.contains(collectionId.stringify))
   }
@@ -650,10 +671,17 @@ class MongoDBDatasetService @Inject() (
     val dataset = get(id).get
     val existingTags = dataset.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     val createdDate = new Date
+    val maxTagLength = play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)
     tags.foreach(tag => {
+      val shortTag = if (tag.length > maxTagLength) {
+        Logger.error("Tag is truncated to " + maxTagLength + " chars : " + tag)
+        tag.substring(0, maxTagLength)
+      } else {
+        tag
+      }
       // Only add tags with new values.
-      if (!existingTags.contains(tag)) {
-        val tagObj = models.Tag(name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
+      if (!existingTags.contains(shortTag)) {
+        val tagObj = models.Tag(name = shortTag, userId = userIdStr, extractor_id = eid, created = createdDate)
         Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })

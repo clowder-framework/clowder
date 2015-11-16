@@ -42,7 +42,7 @@ case class spaceInviteData(
   role: String,
   message: Option[String])
 
-class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users: UserService, events: EventService) extends SecuredController {
+class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventService, curationService: CurationService, extractors: ExtractorService) extends SecuredController {
 
   /**
    * New/Edit project space form bindings.
@@ -50,7 +50,7 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
   val spaceForm = Form(
     mapping(
       "name" -> nonEmptyText,
-      "description" -> nonEmptyText,
+      "description" -> text,
       "logoUrl" -> optional(Utils.CustomMappings.urlType),
       "bannerUrl" -> optional(Utils.CustomMappings.urlType),
       "homePages" -> Forms.list(Utils.CustomMappings.urlType),
@@ -401,7 +401,6 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
     }
   }
 
-
   def rejectRequest( id:UUID, requestuser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
@@ -428,7 +427,7 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
   /**
    * Submit action for new or edit space
    */
-  // TODO this should check to see if user has editpsace for specific space
+  // TODO this should check to see if user has editspace for specific space
   def submit() = AuthenticatedAction { implicit request =>
       implicit val user = request.user
       user match {
@@ -505,9 +504,11 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
 
      val nextPage = (when == "a")
      val person = owner.flatMap(o => users.get(UUID(o)))
+     var title: Option[String] = Some("Spaces")
 
      val spaceList = person match {
        case Some(p) => {
+         title = Some(person.get.fullName + "'s Space")
          if (date != "") {
            spaces.listUser(date, nextPage, limit, request.user, showAll, p)
          } else {
@@ -569,7 +570,22 @@ class Spaces @Inject()(extractors: ExtractorService, spaces: SpaceService, users
          Some(mode)
        }
 
-     val deletePermission = Permission.checkPermission(user, Permission.DeleteDataset)
-     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, deletePermission, prev, next))
+     val deletePermission = Permission.checkPermission(user, Permission.DeleteSpace)
+     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, deletePermission, prev, next, title))
    }
+
+
+  def stagingArea(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, id))) {
+    implicit request =>
+      implicit val user  = request.user
+      spaces.get(id) match {
+        case Some(s) => {
+          val curationDatasets: List[CurationObject] = s.curationObjects.map{curObject => curationService.get(curObject)}.flatten
+          Ok(views.html.spaces.stagingarea(s, curationDatasets ))
+        }
+        case None => InternalServerError("Space Not found")
+      }
+  }
+
+
 }

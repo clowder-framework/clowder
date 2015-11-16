@@ -1,15 +1,20 @@
 @(datasets: List[models.Dataset], space: String)(implicit user: Option[models.User])
 
+@import api.Permission
 <h3>Datasets</h3>
 @if(datasets.size == 0) {
-    <a id="create-dataset" href="@routes.Datasets.newDataset(Some(space))" class="btn btn-primary btn-xs">
-        Create Dataset
-    </a>
+    @if(user.isDefined &&  Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
+        <a id="create-dataset" href="@routes.Datasets.newDataset(Some(space))" class="btn btn-primary btn-xs">
+            Create Dataset
+        </a>
+    } else {
+        @if(user.isDefined) {
+            <p> Please request access to add datasets to this space</p>
+        } else {
+            <p> There are no datasets associated with this space. </p>
+        }
+    }
+
 } else {
     @spaces.datasetsGrid(datasets, space)
-}
-@if(!user.isDefined) {
-    <script type="text/javascript">
-        $('#create-dataset').addClass('disabled');
-    </script>
 }

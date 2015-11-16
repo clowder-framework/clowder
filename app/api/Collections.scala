@@ -24,40 +24,43 @@ import controllers.Utils
  */
 @Api(value = "/collections", listingPath = "/api-docs.json/collections", description = "Collections are groupings of datasets")
 @Singleton
-class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previews: PreviewService, userService: UserService, events: EventService) extends ApiController {
+class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previews: PreviewService, userService: UserService, events: EventService, spaces:SpaceService) extends ApiController {
 
     
   @ApiOperation(value = "Create a collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def createCollection() = PermissionAction(Permission.CreateCollection)(parse.json) { implicit request =>
-      Logger.debug("Creating new collection")
-      (request.body \ "name").asOpt[String].map { name =>
-          (request.body \ "description").asOpt[String].map { description =>
-              (request.body \ "space").asOpt[String].map { space => 
-	              var c : Collection = null
-                implicit val user = request.user
-                user match {
-                  case Some(identity) => {
-                    if (space == "default") {
-                      c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity)
-                    }
-                    else {
-                      c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)))
-                    }
-                    collections.insert(c) match {
-                      case Some(id) => {
-                        Ok(toJson(Map("id" -> id)))
-                      }
-                      case None => Ok(toJson(Map("status" -> "error")))
-                    }
-                  }
-                  case None => InternalServerError("User Not found")
-                }
-              }.getOrElse(BadRequest(toJson("Missing parameter [space]")))
-          }.getOrElse(BadRequest(toJson("Missing parameter [description]")))
-      }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
+  def createCollection() = PermissionAction(Permission.CreateCollection) (parse.json) { implicit request =>
+    Logger.debug("Creating new collection")
+    (request.body \ "name").asOpt[String].map { name =>
+
+      var c : Collection = null
+      implicit val user = request.user
+      user match {
+        case Some(identity) => {
+          val description = (request.body \ "description").asOpt[String].getOrElse("")
+          (request.body \ "space").asOpt[String] match {
+            case None | Some("default") => c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity)
+            case Some(space) =>  if (spaces.get(UUID(space)).isDefined) {
+              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)))
+            } else {
+              BadRequest(toJson("Bad space = " + space))
+            }
+          }
+
+          collections.insert(c) match {
+            case Some(id) => {
+              c.spaces.map{ s => spaces.addCollection(c.id, s)}
+              Ok(toJson(Map("id" -> id)))
+            }
+            case None => Ok(toJson(Map("status" -> "error")))
+          }
+        }
+        case None => InternalServerError("User Not found")
+      }
+    }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
+
 
   @ApiOperation(value = "Add dataset to collection",
       notes = "",
@@ -108,7 +111,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Remove dataset from collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: String) = PermissionAction(Permission.CreateCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
+  def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: String) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     collections.removeDataset(collectionId, datasetId, Try(ignoreNotFound.toBoolean).getOrElse(true)) match {
       case Success(_) => {
 

@@ -86,7 +86,8 @@ class Status @Inject()(spaces: SpaceService,
     result.put("geostream", current.plugin[PostgresPlugin] match {
       case Some(p) => {
         if (Permission.checkServerAdmin(user)) {
-          Json.obj("database" -> p.conn.getSchema)
+          Json.obj("catalog" -> p.conn.getCatalog,
+            "schema" -> p.conn.getSchema)
         } else {
           jsontrue
         }

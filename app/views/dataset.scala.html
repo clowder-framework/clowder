@@ -1,14 +1,16 @@
 @(dataset: models.Dataset,
-        comments: List[Comment],
-        filesTags: Set[String],
-        previewers : List[Previewer],
-        md: Map[String,Any],
-        usrmd: scala.collection.mutable.Map[String,Any],
-        collectionsInside: List[models.Collection],
-        rdfExported: Boolean,
-        relatedSensors: List[(String,String)],
-        datasetSpaces: Option[List[ProjectSpace]],
-        fileList: List[File])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  comments: List[Comment],
+  previewers : List[Previewer],
+  m: List[models.Metadata],
+  collectionsInside: List[models.Collection],
+  rdfExported: Boolean,
+  relatedSensors: List[(String,String,String)],
+  datasetSpaces: Option[List[ProjectSpace]],
+  fileList: List[File],
+  filesTags: scala.collection.immutable.TreeSet[String],
+  toPublish: Boolean,
+  curationObjects: List[models.CurationObject],
+  currentSpace: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -17,87 +19,34 @@
 
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
-	@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {		
-		@for((key,value) <- metadata) {
-			<li><b>@(key):</b>
-			@if(value.isInstanceOf[String]) {
-				@if(value.asInstanceOf[String].startsWith("http://") || value.asInstanceOf[String].startsWith("https://")) {
-					<a href="@value">@value</a>
-				} else {
-					@value
-				}
-			} else {
-				@if(value.isInstanceOf[java.lang.Integer]) {
-					@value.toString
-			    } else {
-			    	@if(value.isInstanceOf[com.mongodb.BasicDBList]) {
-			    		@value.toString.replace("[","").replace("]","")
-			    	} else {
-			    		<ul>
-			    		@printLevel(value.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
-			    		</ul>
-			    	}
-			    }
-			}</li>
-		}
-	}
-	
-	@printLevelUserMetadata(metadata: scala.collection.mutable.Map[String,Any]) = {
-		<ul class="usr_md_">
-		@for((key,value) <- metadata) {
-			@if(value.isInstanceOf[com.mongodb.BasicDBList]){
-				@for(listValue <- value.asInstanceOf[com.mongodb.BasicDBList]) {
-						<li class="usr_md_"><b class="usr_md_">@(key):</b>
-						@if(listValue.isInstanceOf[String]) {			
-							<span class="usr_md_">@listValue</span><button class="usr_md_" type="button">Modify</button><button class="usr_md_" >Delete</button>
-						} else {
-								<button class="usr_md_" type="button">Add property</button><button class="usr_md_" type="button">Delete</button>@printLevelUserMetadata(listValue.asInstanceOf[DBObject].toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]])
-						}</li>
-				}
-			}else{
-				<li class="usr_md_"><b class="usr_md_">@(key):</b>
-				@if(value.isInstanceOf[String]) {			
-					<span class="usr_md_">@value</span><button class="usr_md_" type="button">Modify</button><button class="usr_md_" >Delete</button>
-				} else {
-						<button class="usr_md_" type="button">Add property</button><button class="usr_md_" type="button">Delete</button>@printLevelUserMetadata(value.asInstanceOf[DBObject].toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]])
-				}</li>
-			}	
-		}
-		</ul>
-	}
-
 @main("Dataset") {
 	<div class="row">
 		<!-- left column -->
 		<div class="col-md-8 col-right-border">
-
             <div class="row">
                 <div class="col-md-12" id="ds-title">
                     <h1 id="datasettitle" class="inline">@Html(dataset.name)</h1>
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                        <h3 class="inline align-right"><a id ="edit-title" href = "javascript:updateTitle()">
+                        <h3 class="inline align-right">
+                            <a id ="edit-title" href = "javascript:updateTitle()">
                             <span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
-                        </a></h3>
+                            </a>
+                        </h3>
                     }
 
                 </div>
-
-
-
-                        <div class="col-md-6">
-                            <ul class="list-unstyled">
-                                <li>Created by <a href= "@routes.Profile.viewProfile(dataset.author.email)"> @dataset.author.fullName </a></li>
-                                <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <ul class="list-unstyled">
-                                <li class="inline"><span id="licensetextdata">blank</span> <span id="rightsholderdata">blank</span></li>
-                                @datasets.editLicense(dataset)
-                            </ul>
-                        </div>
-
-
+                <div class="col-md-6">
+                    <ul class="list-unstyled">
+                        <li>Created by <a href= "@routes.Profile.viewProfile(dataset.author.email)"> @dataset.author.fullName </a></li>
+                        <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <ul class="list-unstyled">
+                        <li class="inline"><span id="licensetextdata">blank</span> <span id="rightsholderdata">blank</span></li>
+                        @datasets.editLicense(dataset)
+                    </ul>
+                </div>
                 <div class="col-md-12 box-white-space" id="aboutdesc">
                     <p id ="ds_description" class="inline">@Html(dataset.description)</p>
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
@@ -105,40 +54,54 @@
                             <span class="edit-tab glyphicon glyphicon-edit" aria-hidden="true"></span>
                         </a>
                     }
-
-                </div>
-
+            </div>
                 <div class="col-md-12 box-white-space">
-
+                    <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                    @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        <a href="@(routes.Datasets.addToDataset(dataset.id))"
+                        class="btn btn-default btn-sm btn-margin-bottom" id="fileUploadBtn" title="Add File to Dataset" role="button">
+                            <span class="glyphicon glyphicon-export"></span> Add Files
+                        </a>
+                    }
+                    @if(dataset.files.length > 0 && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        <a id='download-dataset-url' href="#"
+                        onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id').url, '_blank');"
+                        class="btn btn-default btn-sm requiresLogin btn-margin-bottom" title="Download All Files as Zip" role="button">
+                            <span class="glyphicon glyphicon-download-alt"></span>
+                            Download All Files
+                        </a>
+                    }
                     @datasets.deleteButton(dataset)
                     @datasets.follow(dataset)
+                    @if(user.isDefined && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+                        @if(toPublish && currentSpace.isDefined ) {
+                            <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-default btn-sm btn-margin-bottom">
+                                Publish
+                            </a>
+                        } else {
+                            @if(dataset.spaces.size > 0) {
+                                <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-default btn-sm btn-margin-bottom">
+                                    Publish
+                                </a>
+                            } else {
+                                <button class="btn btn-default btn-sm btn-margin-bottom" disabled>
+                                    Publish
+                                </button>
+                            }
+                        }
+                    }
                 </div>
             </div>
-
-            <br/>
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
                 <ul class="nav nav-tabs">
                     <li role="presentation" class="active"><a href="#tab-files" role="tab" data-toggle="tab">Files (@dataset.files.size)</a></li>
-                    <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata (@(usrmd.size + md.size))</a></li>
+                    <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata (@dataset.metadataCount)</a></li>
+                    <li role="presentation"><a href="#tab-visua" role="tab" data-toggle="tab">Visualizations</a></li>
                     <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
                     <li role="presentation"><a href="#tab-notes" role="tab" data-toggle="tab">Notes</a></li>
                 </ul>
                 <div class="tab-content">
                   <div role="tabpanel" class="tab-pane  fade in active" id="tab-files">
-                      <div id="add-file-btn">
-                      <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                      @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                          <a href="@(routes.Datasets.addToDataset(dataset.id))"
-                          class="btn btn-primary btn-sm" id="fileUploadBtn" title="Add File to Dataset" role="button">
-                              <span class="glyphicon glyphicon-export"></span> Add File
-                          </a>
-                      } else {
-                          <a href="@(routes.Datasets.addToDataset(dataset.id))"
-                          class="btn btn-primary btn-sm disabled" id="fileUploadBtn" title="Add File to Dataset" role="button">
-                              <span class="glyphicon glyphicon-export"></span> Add File
-                          </a>
-                      }
-                      </div>
                       @files.grid(fileList, dataset.id)
                   </div>
                   <div role="tabpanel" class="tab-pane fade" id="tab-comments">
@@ -150,18 +113,41 @@
                          @comment(comments)</div>
                   </div>
                   <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
-                    @metadata(dataset, md, usrmd, dataset.datasetXmlMetadata, rdfExported)
+
+                      <div class="row">
+                          <div class="col-md-10">
+                          </div>
+                          <div class="col-md-2">
+                              <a href="@api.routes.Datasets.getMetadataJsonLD(dataset.id)" class="pull-right" title="JSON-LD">
+                                  <img src="@routes.Assets.at("images/json-ld.png")"/>
+                              </a>
+                          </div>
+                      </div>
+                      <div class="row">
+                          <div class="col-md-12">
+                            @metadatald.addMetadata("dataset", dataset.id.toString)
+                          </div>
+                      </div>
+                      <div class="row">
+                          <div class="col-md-12">
+                          @metadatald.view(m)
+                          </div>
+                      </div>
+
+
                   </div>
+                    <div role="tabpanel" class="tab-pane fade" id="tab-visua">
+                    @datasets.previews(dataset, previewers)
+                    </div>
                   <!-- If the user can create a note on this dataset, display this tab. Otherwise, remove it. Is there a better way to do this? -->
                   @if(Permission.checkPermission(Permission.CreateNote, ResourceRef(ResourceRef.dataset, dataset.id))) {
                       <div role="tabpanel" class="tab-pane fade" id="tab-notes">
                       @notesform(dataset.id.toString, api.routes.Datasets.setNotesHTML(dataset.id).toString, dataset.notesHTML.getOrElse(""))
                       </div>
                   }
-
             </div>
-			</div>
-		</div>
+        </div>
+    </div>
 
 		<!-- right column -->
 		<div class="col-md-4 col-left-border">
@@ -172,9 +158,11 @@
             }
             @datasets.collections(dataset, collectionsInside)
             @datasets.tags(dataset, fileList, filesTags)
-
+            @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+                @datasets.listCurationObjects(curationObjects)
+            }
             @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {
-                @sensors.relatedSensors(relatedSensors, dataset.id.stringify)
+                @sensors.relatedSensors(relatedSensors, "Dataset", dataset.id.stringify)
             }
 		</div>
 	</div>

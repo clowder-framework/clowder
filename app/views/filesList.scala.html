@@ -116,16 +116,16 @@
                     </div>
                     <ul class="list-group">
                         <li class="list-group-item">
-                            <span class="glyphicon glyphicon glyphicon-tags" title="@file.tags.size tags"></span>  @file.tags.size
-                            <span class="glyphicon glyphicon glyphicon-list" title="@(file.userMetadata.keys.size + file.metadata.size) metadata fields"></span>  @(file.userMetadata.keys.size + file.metadata.size)
-                            <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(file.id)) comments"></span>  @(comments.get(file.id))
+                            <span class="glyphicon glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
+                            <span class="glyphicon glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
+                            <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(file.id)) comments"></span> @(comments.get(file.id))
 							@if(user.isDefined) {
 							    <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 							    @if(user.get.identityId.userId.equals(file.author.identityId.userId)){
-								    <button onclick="removeFileAndRedirect('@(file.id)','@(routes.Files.list(""))')" class="btn btn-link" style="text-align:right" title="Delete">
+								    <button onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Delete">
 							        <span class="glyphicon glyphicon-trash"></span></button>
 							    } else {
-							        <button disabled onclick="removeFileAndRedirect('@(file.id)','@(routes.Files.list(""))')" class="btn btn-link" style="text-align:right" title="Delete">
+							        <button disabled onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Delete">
                                     <span class="glyphicon glyphicon-trash"></span></button>
                                 }							    
 							}
@@ -167,10 +167,10 @@
 							@if(user.isDefined) {
 							        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 									@if(user.get.identityId.userId.equals(file.author.identityId.userId)){
-										<button onclick="removeFileAndRedirect('@(file.id)','@(routes.Files.list(mode="list"))')" class="btn btn-link" style="text-align:right" title="Delete">
+										<button onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Delete">
                                         <span class="glyphicon glyphicon-trash"></span></button>
 									} else {
-									    <button disabled onclick="removeFileAndRedirect('@(file.id)','@(routes.Files.list(mode="list"))')" class="btn btn-link" style="text-align:right" title="Delete">
+									    <button disabled onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Delete">
                                         <span class="glyphicon glyphicon-trash"></span></button>
 									}													
 							}

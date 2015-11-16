@@ -12,12 +12,14 @@ GET            /*path/                                                          
 # ----------------------------------------------------------------------
 # HOME PAGE
 # ----------------------------------------------------------------------
+
 GET            /                                                                        @controllers.Application.index
+GET            /about                                                                   @controllers.Application.about
 
 # ----------------------------------------------------------------------
 # Map static resources from the /public folder to the /assets URL path
 # ----------------------------------------------------------------------
-#GET           /documentation/api/*testFile                                             controllers.Assets.at(path="/public/docs/api", testFile)
+GET            /contexts/metadata.jsonld                                                controllers.Assets.at(path="/public", file="/jsonld/contexts/metadata.jsonld")
 GET            /assets/img/glyphicons-halflings-white.png                               controllers.Assets.at(path="/public", file="/images/glyphicons-halflings-white.png")
 GET            /assets/img/glyphicons-halflings.png                                     controllers.Assets.at(path="/public", file="/images/glyphicons-halflings.png")
 GET            /assets/*file                                                            controllers.Assets.at(path="/public", file)
@@ -87,6 +89,7 @@ POST           /uploaddnd/:id                                                   
 #POST  	       /reactiveUpload					                                        @controllers.Files.reactiveUpload
 POST           /uploadDragDrop                                                          @controllers.Files.uploadDragDrop
 GET            /fileThumbnail/:id/blob                                                  @controllers.Files.thumbnail(id: UUID)
+GET            /file_by_section/:id                                                 	@controllers.Files.fileBySection(id: UUID)
 
 # ----------------------------------------------------------------------
 # DATASETS
@@ -96,7 +99,7 @@ GET            /datasets/new                                                    
 GET            /datasets/addToDataset/:id                                               @controllers.Datasets.addToDataset(id: UUID)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
-GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID)
+GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
 POST           /dataset/submit                                                          @controllers.Datasets.submit
@@ -136,12 +139,17 @@ GET            /geostreams/sensors/new                                          
 GET            /geostreams/sensors/:id                                                  controllers.Geostreams.edit(id)
 
 # ----------------------------------------------------------------------
-# TAGS
+# JSON-LD Metadata
 # ----------------------------------------------------------------------
+GET            /metadata/search                                                         @controllers.Metadata.search()
+GET            /metadata/:id                                                            @controllers.Metadata.view(id: UUID)
+GET            /files/:file_id/metadata                                                 @controllers.Metadata.file(file_id: UUID)
+GET            /datasets/:dataset_id/metadata                                           @controllers.Metadata.dataset(dataset_id: UUID)
+
+# Tags
 GET            /tags/search                                                             @controllers.Tags.search(tag, start: String ?= "", size: Integer ?= 12, mode: String ?= "")
 GET            /tags/list/ordered                                                       @controllers.Tags.tagListOrdered
 GET            /tags/list/weighted                                                      @controllers.Tags.tagListWeighted
-GET            /tags/cloud                                                              @controllers.Tags.tagCloud
 
 # ----------------------------------------------------------------------
 # AUTHENTICATION
@@ -151,7 +159,7 @@ POST           /loginTest                                                       
 GET            /notAuthorized                                                           controllers.Authentication.notAuthorized(msg:String,  id:String, resourceType:String )
 
 # ----------------------------------------------------------------------
-# SEARCH
+#
 # ----------------------------------------------------------------------
 GET            /search                                                                  @controllers.Search.search(query: String ?= "")
 GET            /multimediasearch                                                        @controllers.Search.multimediasearch
@@ -160,7 +168,7 @@ GET            /advanced                                                        
 GET            /SearchByText                                                            @controllers.Search.SearchByText(query: String ?= "")
 POST           /uploadquery                                                             @controllers.Search.uploadquery
 GET            /searchbyURL                                                             @controllers.Search.searchbyURL(query:String?="")
-GET            /searchbyfeature/:section_id                                             @controllers.Search.searchMultimediaIndex(section_id: UUID)
+GET            /searchbyfeature/:section_id                                             @controllers.Search.callSearchMultimediaIndexView(section_id: UUID)
 GET            /files/:id/similar                                                       @controllers.Search.findSimilarToExistingFile(id: UUID)
 GET            /queries/:id/similar                                                     @controllers.Search.findSimilarToQueryFile(id: UUID, typeToSearch:String, sectionsSelected:List[String] ?= List.empty )
 POST           /queries/similarWeightedIndexes                                          @controllers.Search.findSimilarWeightedIndexes()
@@ -214,6 +222,7 @@ GET            /admin/measures                                                  
 GET            /admin/indexers                                                          @controllers.Admin.getIndexers
 GET            /admin/indexes                                                           @controllers.Admin.getIndexes
 GET            /admin/sections                                                          @controllers.Admin.getSections
+GET            /admin/metadata/definitions                                              @controllers.Admin.getMetadataDefinitions
 GET            /admin/addAdmin                                                          @controllers.Admin.newAdmin
 GET            /admin/listAdmins                                                        @controllers.Admin.listAdmins
 POST           /admin/submitNew                                                         @controllers.Admin.submitNew
@@ -240,14 +249,38 @@ GET            /javascriptRoutes                                                
 # API DOCUMENTATION USING SWAGGER
 # ----------------------------------------------------------------------
 GET            /api-docs.json                                                           controllers.ApiHelpController.getResources
-GET            /api-docs.json/datasets                                                  controllers.ApiHelpController.getResource(path = "/api-docs.json/datasets")
-GET            /api-docs.json/files                                                     controllers.ApiHelpController.getResource(path = "/api-docs.json/files")
-GET            /api-docs.json/collections                                               controllers.ApiHelpController.getResource(path = "/api-docs.json/collections")
-GET            /api-docs.json/extractions                                               controllers.ApiHelpController.getResource(path = "/api-docs.json/extractions")
+GET            /api-docs.json/:path                                                     @controllers.Application.apidoc(path: String)
 
 # ----------------------------------------------------------------------
 # RESTful API
 # ----------------------------------------------------------------------
+
+#----------------------------------------------------------------------
+# JSON-LD METADATA
+#----------------------------------------------------------------------
+POST           /api/contexts                                                            @api.ContextLD.addContext()
+GET            /api/contexts/:id                                                        @api.ContextLD.getContextById(id: UUID)
+GET            /api/contexts/:name/context.json                                         @api.ContextLD.getContextByName(name: String)
+DELETE         /api/contexts/:id                                                        @api.ContextLD.removeById(id: UUID)
+
+POST           /api/datasets/:id/metadata.jsonld                                        @api.Datasets.addMetadataJsonLD(id: UUID)
+GET            /api/datasets/:id/metadata.jsonld                                        @api.Datasets.getMetadataJsonLD(id: UUID)
+POST           /api/files/:id/metadata.jsonld                                           @api.Files.addMetadataJsonLD(id: UUID)
+GET            /api/files/:id/metadata.jsonld                                           @api.Files.getMetadataJsonLD(id: UUID)
+
+POST           /api/metadata.jsonld                                                     @api.Metadata.addUserMetadata()
+#GET            /api/metadata.jsonld                                                     @api.Metadata.getUserMetadata()
+
+GET            /api/metadata/search                                                     @api.Metadata.searchByKeyValue(mdkey: Option[String], mdvalue: Option[String], count: Int ?= 10)
+POST           /api/metadata/search                                                     @api.Metadata.search()
+
+GET            /api/metadata/definitions                                                @api.Metadata.getDefinitions()
+GET            /api/metadata/definitions/:id                                            @api.Metadata.getDefinition(id: UUID)
+GET            /api/metadata/url/*in_url                                                @api.Metadata.getUrl(in_url: String)
+POST           /api/metadata/definitions                                                @api.Metadata.addDefinition
+
+
+
 # ----------------------------------------------------------------------
 # FILES ENDPOINT
 # ----------------------------------------------------------------------
@@ -335,6 +368,13 @@ POST           /api/dumpFilesMd                                                 
 POST           /api/dumpDatasetsMd                                                      @api.Datasets.dumpDatasetsMetadata
 POST           /api/dumpDatasetGroupings                                                @api.Datasets.dumpDatasetGroupings
 
+#----------------------------------------------------------------------
+# 3D FILES
+#----------------------------------------------------------------------
+#GET		/api/files/:three_d_file_id/:filename			    @api.Files.getGeometry(three_d_file_id: UUID, filename)
+GET            /api/files/:three_d_file_id/:filename                                    @api.Files.getTexture(three_d_file_id: UUID, filename)
+
+
 # ----------------------------------------------------------------------
 # SPACES ENDPOINT
 # ----------------------------------------------------------------------
@@ -352,6 +392,9 @@ POST           /api/spaces/:spaceId/addDatasetToSpace/:datasetId                
 POST           /api/spaces/:spaceId/addCollectionToSpace/:collectionId                  @api.Spaces.addCollectionToSpace(spaceId: UUID, collectionId: UUID)
 POST           /api/spaces/:id/follow                                                   @api.Spaces.follow(id: UUID, name: String)
 POST           /api/spaces/:id/unfollow                                                 @api.Spaces.unfollow(id: UUID, name: String)
+
+POST           /api/remove-admin                                                        api.Admin.removeAdmin
+POST           /api/changeAppearance                                                    api.Admin.submitAppearance
 
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT
@@ -401,6 +444,7 @@ GET            /api/datasets/:id/technicalmetadatajson                          
 GET            /api/datasets/:id/xmlmetadatajson                                        @api.Datasets.getXMLMetadataJSON(id: UUID)
 GET            /api/datasets/:id/usermetadatajson                                       @api.Datasets.getUserMetadataJSON(id: UUID)
 GET            /api/datasets/:id/listFiles                                              @api.Datasets.datasetFilesList(id: UUID)
+GET            /api/datasets/:id/download                                               @api.Datasets.download(id: UUID, compression: Int ?= -1)
 POST           /api/datasets/:id/comment                                                @api.Datasets.comment(id: UUID)
 POST           /api/datasets/:id/setNotesHTML                                           @api.Datasets.setNotesHTML(id: UUID)
 POST           /api/datasets/:id/reindex                                                @api.Datasets.reindex(id:UUID, recursive: Boolean ?= true)
@@ -419,7 +463,7 @@ POST           /api/datasets/:id/license                                        
 GET            /api/datasets/:id/isBeingProcessed                                       @api.Datasets.isBeingProcessed(id: UUID)
 GET            /api/datasets/:id/getPreviews                                            @api.Datasets.getPreviews(id: UUID)
 POST           /api/datasets/:ds_id/files/:file_id                                      @api.Datasets.attachExistingFile(ds_id: UUID,file_id: UUID)
-GET            /api/datasets/:id                                                        @api.Datasets.datasetFilesList(id: UUID)
+GET            /api/datasets/:id                                                        @api.Datasets.get(id: UUID)
 DELETE         /api/datasets/:id                                                        @api.Datasets.deleteDataset(id: UUID)
 POST           /api/datasets/:id/detachdelete                                           @api.Datasets.detachAndDeleteDataset(id: UUID)
 
@@ -446,15 +490,21 @@ POST           /api/indexes/features                                            
 # SECTIONS ENDPOINT
 # ----------------------------------------------------------------------
 POST           /api/sections                                                            @api.Sections.add
-GET            /api/sections/:id                                                        @api.Sections.get(id: UUID)
 POST           /api/sections/:id/comments                                               @api.Sections.comment(id: UUID)
 POST           /api/sections/:id/description                                            @api.Sections.description(id: UUID)
-POST           /api/sections/:section_id/thumbnails/:thumbnail_id                       @api.Sections.attachThumbnail(section_id: UUID,thumbnail_id: UUID)
+POST           /api/sections/:id/thumbnails/:thumbnail_id                               @api.Sections.attachThumbnail(id: UUID,thumbnail_id: UUID)
 GET            /api/sections/:id/tags                                                   @api.Sections.getTags(id: UUID)
 POST           /api/sections/:id/tags                                                   @api.Sections.addTags(id: UUID)
 POST           /api/sections/:id/tags/remove                                            @api.Sections.removeTags(id: UUID)
 POST           /api/sections/:id/tags/remove_all                                        @api.Sections.removeAllTags(id: UUID)
 DELETE         /api/sections/:id/tags                                                   @api.Sections.removeTags(id: UUID)
+GET            /api/sections/:id                                                        @api.Sections.get(id: UUID)
+DELETE         /api/sections/:id                                                        @api.Sections.delete(id: UUID)
+
+# ----------------------------------------------------------------------
+# SEARCH ENDPOINT
+# ----------------------------------------------------------------------
+GET           /api/search/multimediasearch                                              @api.Search.searchMultimediaIndex(section_id: UUID)
 
 # ----------------------------------------------------------------------
 # GEOSTREAMS ENDPOINT
@@ -466,7 +516,7 @@ GET            /api/geostreams/datapoints/trends                                
 GET            /api/geostreams/datapoints/bin/:time/:depth                              api.Geostreams.binDatapoints(time, depth: Double, raw: Boolean ?= false, since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty)
 GET            /api/geostreams/datapoints/:id                                           api.Geostreams.getDatapoint(id: String)
 GET            /api/geostreams/cache                                                    api.Geostreams.cacheListAction
-GET            /api/geostreams/cache/invalidate                                         api.Geostreams.cacheInvalidateAction
+GET            /api/geostreams/cache/invalidate                                         api.Geostreams.cacheInvalidateAction(sensor_id: Option[String] ?= None, stream_id: Option[String] ?= None)
 GET            /api/geostreams/cache/:id                                                api.Geostreams.cacheFetchAction(id)
 POST           /api/geostreams/sensors                                                  api.Geostreams.createSensor
 GET            /api/geostreams/sensors/update                                           api.Geostreams.updateStatisticsStreamSensor()
@@ -543,6 +593,7 @@ POST           /api/users/createNewListInUser                                   
 POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
 POST           /api/users/follow                                                        @api.Users.follow(followeeUUID: UUID, name: String)
 POST           /api/users/unfollow                                                      @api.Users.unfollow(followeeUUID: UUID, name: String)
+GET            /api/curations/:curationId/ore                                           @api.CurationObjects.getCurationObjectOre(curationId: UUID)
 
 # ----------------------------------------------------------------------
 # MEDICI STATUS API
@@ -555,3 +606,23 @@ GET            /api/status                                                      
 # ----------------------------------------------------------------------
 GET            /rss                                                                     @controllers.RSS.siteRSS(limit: Option[Int])
 GET            /rss/:etype                                                              @controllers.RSS.siteRSSOfType(limit: Option[Int], etype: String)
+
+# ----------------------------------------------------------------------
+# CURATIONS ENDPOINT
+# ----------------------------------------------------------------------
+
+GET            /dataset/:id/curations/new                                               @controllers.CurationObjects.newCO(id:UUID, space:String ?= "")
+POST           /dataset/:datasetId/curations/spaces/:spaceId/submit                     @controllers.CurationObjects.submit(datasetId:UUID, spaceId:UUID)
+GET            /spaces/:id/stagingArea                                                  @controllers.Spaces.stagingArea(id: UUID)
+GET            /spaces/curations/:id                                                    @controllers.CurationObjects.getCurationObject(id: UUID)
+DELETE         /spaces/curations/retract/:id                                            @api.CurationObjects.retractCurationObject(id: UUID)
+DELETE         /spaces/curations/:id                                                    @controllers.CurationObjects.deleteCuration(id: UUID)
+GET            /spaces/curations/:id/compareToRepository                                @controllers.CurationObjects.compareToRepository(id: UUID, repository:String)
+GET            /spaces/curations/:id/sendToRepository                                   @controllers.CurationObjects.sendToRepository(id: UUID)
+GET            /spaces/curations/:id/matchmaker                                         @controllers.CurationObjects.findMatchingRepositories(id: UUID)
+POST           /spaces/curations/:id/matchmaker                                         @api.CurationObjects.findMatchmakingRepositories(id: UUID)
+POST           /spaces/curations/:id/datasetUsermetadata                                @controllers.CurationObjects.addDatasetUserMetadata(id: UUID)
+POST           /spaces/curations/:curationId/files/:fileId/fileUsermetadata             @controllers.CurationObjects.addFileUserMetadata(curationId:UUID, fileId: UUID)
+POST           /spaces/curations/:id/status                                             @controllers.CurationObjects.savePublishedObject(id: UUID)
+GET            /spaces/curations/:id/getStatusFromRepository                            @controllers.CurationObjects.getStatusFromRepository(id: UUID)
+

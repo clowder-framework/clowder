@@ -170,9 +170,7 @@ function updateUsersInSpace(spaceId) {
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to update the users contained within a space.";
-        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            console.error("Unhandled error.");
-        }
+
     });
 
     return false;
@@ -191,9 +189,6 @@ function acceptSpaceRequest(id, user){
     request.fail(function(jqXHR, textStatus, errorThrown) {
         console.error("The following error occured: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to accept request.";
-        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("Error accepting request from "+ user);
-        }
     });
     return false;
 }
@@ -210,9 +205,6 @@ function rejectSpaceRequest(id, user){
     request.fail(function(jqXHR, textStatus, errorThrown) {
         console.error("The following error occured: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to reject request.";
-        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("Error rejecting request from "+user);
-        }
     });
     return false;
 }

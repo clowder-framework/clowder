@@ -48,8 +48,8 @@ class Extractions @Inject()(
 
       request.user match {
         case Some(user) => {
-          request.body.file("File").map {
-            f =>
+          request.body.file("File").map { f =>
+            try {
               var nameOfFile = f.filename
               var flags = ""
               if (nameOfFile.toLowerCase().endsWith(".ptm")) {
@@ -138,6 +138,9 @@ class Extractions @Inject()(
                   InternalServerError("Error uploading file")
                 }
               }
+            } finally {
+              f.ref.clean()
+            }
           }.getOrElse {
             BadRequest(toJson("File not attached."))
           }

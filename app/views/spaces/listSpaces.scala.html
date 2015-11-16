@@ -1,4 +1,4 @@
-@(spaces: List[models.ProjectSpace], when: String, date: String, limit: Int, owner: Option[String], showAll: Boolean, mode: Option[String], deletePermission: Boolean, prev: String, next: String)(implicit user: Option[models.User])
+@(spaces: List[models.ProjectSpace], when: String, date: String, limit: Int, owner: Option[String], showAll: Boolean, mode: Option[String], deletePermission: Boolean, prev: String, next: String, title: Option[String])(implicit user: Option[models.User])
 
 @import _root_.util.Formatters.ellipsize
 @import api.Permission
@@ -12,7 +12,7 @@
 
         <div class="row">
             <div class="col-md-12">
-                <h1>Spaces</h1>
+                <h1>@title</h1>
             </div>
         </div>
 
@@ -71,11 +71,10 @@
                     });
                     $('#myspace').click(function(){
                         var path;
-
                         if(window.location.search == ""){
-                            path = '/spaces?showAll=false'
+                            path = location.pathname+'?showAll=false'
                         } else {
-                            path = (location.pathname+location.search)+';showAll=false'
+                            path = location.pathname+location.search+'&showAll=false'
                         }
                         window.location.assign( path);
                     });
