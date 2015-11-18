@@ -156,8 +156,6 @@ class CurationObjects @Inject()(
       }
   }
 
-  // This function is actually "updateDatasetUserMetadata", it can rewrite the metadata in curation.dataset and add/ modify/ delte
-  // is all done in this function. We use addDatasetUserMetadata to keep consistency with live objects
   def addMetadata(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) (parse.json) { implicit request =>
     request.user match {
       case Some(user) => {
@@ -288,7 +286,7 @@ class CurationObjects @Inject()(
       case Some(c) => {
         val ds: Dataset = c.datasets(0)
         //dsmetadata is immutable but dsUsrMetadata is mutable TODO:change dsmetadata
-        val m = curations.getMeatadateByCuration(curationId).map( _.metadata)
+        val m = curations.getMetadateByCuration(curationId).map( _.metadata)
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
         val fileByDataset = getFiles(c, ds)
         if (c.status != "In Curation") {

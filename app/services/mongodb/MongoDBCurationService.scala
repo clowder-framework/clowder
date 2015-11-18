@@ -68,7 +68,7 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
   }
 
 
-  def getMeatadateByCuration(id:UUID): List[CurationObjectMetadata] = {
+  def getMetadateByCuration(id:UUID): List[CurationObjectMetadata] = {
     // in this method, we don't check curationservice.get(id).isDefine, and we don't recommand to do so, since the
     // curation object may already delete but the metadata is still in DB.
     CurationMetadataDAO.find(MongoDBObject("curationObject" ->new ObjectId(id.stringify))).toList

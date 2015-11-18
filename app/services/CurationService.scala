@@ -49,7 +49,7 @@ trait CurationService {
   /**
    * Get metadata attached to curation object
    */
-  def getMeatadateByCuration(id:UUID): List[CurationObjectMetadata]
+  def getMetadateByCuration(id:UUID): List[CurationObjectMetadata]
 
   /**
    * Update the repository selected
