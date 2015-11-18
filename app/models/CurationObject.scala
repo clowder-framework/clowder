@@ -1,6 +1,6 @@
 package models
 
-import java.net.URI
+import java.net.{URL, URI}
 import java.util.Date
 import play.api.libs.json.Json._
 import play.api.libs.json._
@@ -118,3 +118,8 @@ object MatchMakerResponse{
     ))
   }
 }
+
+
+case class CurationObjectMetadata (
+  curationObject: UUID,
+  metadata: Metadata)

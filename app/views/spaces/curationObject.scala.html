@@ -1,5 +1,4 @@
-@(curationObject: models.CurationObject, dsMetadata: Map[String,Any],
-dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, files :List[File] )(implicit user: Option[models.User])
+@(curationObject: models.CurationObject, m: List[models.Metadata], rdfExported: Boolean, files :List[File] )(implicit user: Option[models.User])
 
 @import helper._
 @import collection.JavaConverters._
@@ -98,8 +97,20 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
         <div class="col-md-9">
         <div>
             <div>Note: The links in this page redirect to the live objects.</div>
-            @metadata(curationObject.datasets(0), dsMetadata, dsUserMetadata, curationObject.datasets(0).datasetXmlMetadata, rdfExported, Some(curationObject.id))
+            <div class="row">
+                <div class="col-md-12">
+                @metadatald.addMetadata("curation.dataset", curationObject.datasets(0).id.toString, Some(curationObject.id.toString))
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                @metadatald.view(m.filter(_.attachedTo.resourceType == ResourceRef.dataset))
+                </div>
+            </div>
         </div>
+
+
+
         @if(curationObject.datasets(0).files.size > 0 ){
             <h2> Files</h2>
         }
@@ -115,7 +126,16 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
                 <div class="row border-top">
                     <div class="col-md-12">
                         <h4>Community generated metadata</h4>
-                        @fileusermetadata(file, collection.mutable.Map(file.userMetadata.toSeq: _*) , rdfExported, Some(curationObject.id))
+                        <div class="row">
+                            <div class="col-md-12">
+                            @metadatald.addMetadata("curation.file", file.id.toString, Some(curationObject.id.toString))
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                            @metadatald.view(m.filter(_.attachedTo.id == file.id))
+                            </div>
+                        </div>
                     </div>
                 </div>
 

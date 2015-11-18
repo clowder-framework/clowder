@@ -32,7 +32,7 @@ import play.api.libs.functional.syntax._
 import scala.concurrent.duration._
 import play.api.libs.json.Reads._
 import play.api.libs.json.JsPath.readNullable
-import java.net.URI
+import java.net.{URL, URI}
 
 /**
  * Methods for interacting with the curation objects in the staging area.
@@ -46,8 +46,9 @@ class CurationObjects @Inject()(
   comments: CommentService,
   sections: SectionService,
   events: EventService,
-  userService: UserService
-  ) extends SecuredController {
+  userService: UserService,
+  metadata: MetadataService,
+  contextService: ContextLDService) extends SecuredController {
 
   def newCO(datasetId:UUID, spaceId: String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
@@ -119,6 +120,8 @@ class CurationObjects @Inject()(
               // insert curation
               Logger.debug("create curation object: " + newCuration.id)
               curations.insert(newCuration)
+              metadata.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id)).map(m => curations.addMetaData(newCuration.id, m))
+              newFiles.map( f=> metadata.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map(m => curations.addMetaData(newCuration.id, m)))
 
               Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
             }
@@ -145,6 +148,7 @@ class CurationObjects @Inject()(
           Logger.debug("delete Curation object: " + c.id)
           val spaceId = c.space
           curations.remove(id)
+          curations.removeMetadataByCuration(id)
           //spaces.get(spaceId) is checked in Space.stagingArea
           Redirect(routes.Spaces.stagingArea(spaceId))
         }
@@ -154,17 +158,87 @@ class CurationObjects @Inject()(
 
   // This function is actually "updateDatasetUserMetadata", it can rewrite the metadata in curation.dataset and add/ modify/ delte
   // is all done in this function. We use addDatasetUserMetadata to keep consistency with live objects
+  def addMetadata(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) (parse.json) { implicit request =>
+    request.user match {
+      case Some(user) => {
+        Logger.debug(s"Adding user metadata to curation $id")
+
+        curations.get(id) match {
+          case Some(c) => {
+            if (c.status == "In Curation") {
+              // write metadata to the collection "curationObjects"
+              val json = request.body
+              // when the new metadata is added
+              val createdAt = new Date()
+
+              // build creator uri
+              // TODO switch to internal id and then build url when returning?
+              val userURI = controllers.routes.Application.index().absoluteURL() + "api/users/" + user.id
+              val creator = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
+
+              val context: JsValue = (json \ "@context")
+
+              // figure out what resource this is attached to
+              val attachedTo =
+                if ((json \ "file_id").asOpt[String].isDefined)
+                  Some(ResourceRef(ResourceRef.file, UUID((json \ "file_id").as[String])))
+                else if ((json \ "dataset_id").asOpt[String].isDefined)
+                  Some(ResourceRef(ResourceRef.dataset, UUID((json \ "dataset_id").as[String])))
+                else None
+
+              // check if the context is a URL to external endpoint
+              val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
+
+              // check if context is a JSON-LD document
+              val contextID: Option[UUID] =
+                if (context.isInstanceOf[JsObject]) {
+                  context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
+                } else if (context.isInstanceOf[JsArray]) {
+                  context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
+                } else None
+
+              //parse the rest of the request to create a new models.Metadata object
+              val content = (json \ "content")
+              val version = None
+
+              if (attachedTo.isDefined) {
+                val metadata = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creator,
+                  content, version)
+
+                //add metadata to mongo
+                curations.addMetaData(id, metadata)
+                //add event
+                events.addObjectEvent(Some(user), id, c.name, "addMetadata_curation")
+
+                Ok(toJson(Map("status" -> "success")))
+              } else {
+                BadRequest(toJson("Invalid resource type"))
+              }
+              //curations.addDatasetUserMetaData(id, Json.stringify(request.body))
+
+            } else {
+              InternalServerError("Curation Object already submitted")
+            }
+          }
+          case None  => NotFound
+        }
+      }
+      case None => BadRequest(toJson("Invalid user"))
+    }
+  }
+
+
+  // This function is actually "updateDatasetUserMetadata", it can rewrite the metadata in curation.dataset and add/ modify/ delte
+  // is all done in this function. We use addDatasetUserMetadata to keep consistency with live objects
   def addDatasetUserMetadata(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) (parse.json) { implicit request =>
     implicit val user = request.user
     Logger.debug(s"Adding user metadata to curation's dataset $id")
-
-
 
     curations.get(id) match {
       case Some(c) => {
         if (c.status == "In Curation") {
           // write metadata to the collection "curationObjects"
-          curations.addDatasetUserMetaData(id, Json.stringify(request.body))
+          //curations.addDatasetUserMetaData(id, Json.stringify(request.body))
           //add event
           events.addObjectEvent(user, id, c.name, "addMetadata_curation")
         } else {
@@ -181,7 +255,6 @@ class CurationObjects @Inject()(
     Ok(toJson(Map("status" -> "success")))
   }
 
-
   def getFiles(curation: CurationObject, dataset: Dataset): List[File] ={
     curation.files filter (f => dataset.files.contains (f.id))
   }
@@ -196,7 +269,7 @@ class CurationObjects @Inject()(
           val index = newFiles.indexWhere(_.id.equals(fileId))
           Logger.debug(s"Adding user metadata to curation's file No." + index )
           // write metadata to curationObjects
-          curations.addFileUserMetaData(curationId, index, Json.stringify(request.body))
+          //curations.addFileUserMetaData(curationId, index, Json.stringify(request.body))
           //add event
           events.addObjectEvent(user, curationId, c.name, "addMetadata_curation")
         } else {
@@ -214,15 +287,14 @@ class CurationObjects @Inject()(
     curations.get(curationId) match {
       case Some(c) => {
         val ds: Dataset = c.datasets(0)
-        //dsmetadata is immutable but dsUsrMetadata is mutable
-        val dsmetadata = ds.metadata
-        val dsUsrMetadata = collection.mutable.Map(ds.userMetadata.toSeq: _*)
+        //dsmetadata is immutable but dsUsrMetadata is mutable TODO:change dsmetadata
+        val m = curations.getMeatadateByCuration(curationId).map( _.metadata)
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
         val fileByDataset = getFiles(c, ds)
         if (c.status != "In Curation") {
-          Ok(views.html.spaces.submittedCurationObject(c, ds, fileByDataset))
+          Ok(views.html.spaces.submittedCurationObject(c, ds, fileByDataset, m))
         } else {
-          Ok(views.html.spaces.curationObject(c, dsmetadata, dsUsrMetadata, isRDFExportEnabled, fileByDataset))
+          Ok(views.html.spaces.curationObject(c, m, isRDFExportEnabled, fileByDataset))
         }
       }
       case None => InternalServerError("Curation Object Not found")

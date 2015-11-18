@@ -18,7 +18,7 @@ import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.gridfs.GridFS
 import org.bson.types.ObjectId
 import securesocial.core.Identity
-import services.{MetadataService, DI, AppConfigurationService}
+import services.{CurationService, MetadataService, DI, AppConfigurationService}
 
 /**
  * Mongo Salat service.
@@ -215,6 +215,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // migrate metadata to jsonld
     migrateMetadataRepresentationtoJSONLD
+
+    migrateMetadataInCurationRepresentationtoJSONLD
 
     // collection now requires author
     collectionRequiresAuthor
@@ -515,7 +517,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                 }
               }
             }
-            case None => Logger.error(s"[MongoDBUpdate : Missing dataset id")
+            case None => Logger.error(s"[MongoDBUpdate : Missing file id")
           }
         }
         appConfig.addPropertyValue("mongodb.updates", updateId)
@@ -524,6 +526,118 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       }
     }
   }
+
+
+  private def migrateMetadataInCurationRepresentationtoJSONLD {
+    val updateId = "migrate-metadata-curation-jsonld"
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+    val curations: CurationService = DI.injector.getInstance(classOf[CurationService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", updateId)) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        collection("curationObjects").foreach {curation =>
+          curation.getAs[ObjectId]("_id") match {
+            case Some(c) => {
+              // update metadata on datasets
+
+              val d = curation.getAs[ObjectId]("datasets.0._id").getOrElse("")
+              // user metadata
+              curation.getAs[DBObject]("datasets.0.userMetadata") match {
+                case Some(umd) => {
+                  if (umd.keySet().size() > 0) {
+                    val createdAt = new Date()
+                    val attachedTo = Some(ResourceRef(ResourceRef.dataset, UUID(d.toString)))
+                    val contextURL: Option[URL] = None
+                    val contextID: Option[UUID] = None
+                    val version = None
+                    val userMD = Json.parse(com.mongodb.util.JSON.serialize(umd))
+                    val user = User.anonymous
+                    val userURI = "https://clowder.ncsa.illinois.edu/clowder/api/users/" + user.id
+                    val creatorUser = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
+                    val metadataUser = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorUser, userMD, version)
+                    curations.addMetaData(UUID(c.toString), metadataUser)
+                  }
+                }
+                case None => {}
+              }
+
+              // system metadata
+              curation.getAs[DBObject]("datasets.0.metadata") match {
+                case Some(tmd) => {
+                  if (tmd.keySet().size() > 0) {
+                    val createdAt = new Date()
+                    val attachedTo = Some(ResourceRef(ResourceRef.dataset, UUID(d.toString)))
+                    val contextURL: Option[URL] = None
+                    val contextID: Option[UUID] = None
+                    val version = None
+                    val techMD = Json.parse(com.mongodb.util.JSON.serialize(tmd))
+                    val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
+                    val metadataTech = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
+                    curations.addMetaData(UUID(c.toString), metadataTech)
+                  }
+                }
+                case None => {}
+              }
+              // update metadata on files
+              curation.getAsOrElse[MongoDBList]("files", MongoDBList.empty).foreach {
+                case file: DBObject =>
+                  val fileId = file.getAs[ObjectId]("_id").getOrElse("")
+                  val umd = file.getAs[DBObject]("userMetadata") match {
+                    case Some(umd) => {
+                      if (umd.keySet().size() > 0) {
+                        val createdAt = new Date()
+                        val attachedTo = Some(ResourceRef(ResourceRef.file, UUID(fileId.toString)))
+                        val contextURL: Option[URL] = None
+                        val contextID: Option[UUID] = None
+                        val version = None
+                        val userMD = Json.parse(com.mongodb.util.JSON.serialize(umd))
+                        val user = User.anonymous
+                        val userURI = "https://clowder.ncsa.illinois.edu/clowder/api/users/" + user.id
+                        val creatorUser = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
+                        val metadataUser = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorUser, userMD, version)
+                        curations.addMetaData(UUID(c.toString), metadataUser)
+                      }
+                    }
+                    case None => {}
+                  }
+                  if(file.containsField("metadata")) {
+                    val createdAt = new Date()
+                    val attachedTo = Some(ResourceRef(ResourceRef.file, UUID(fileId.toString)))
+                    val contextURL: Option[URL] = None
+                    val contextID: Option[UUID] = None
+                    val version = None
+                    val tmd = file.get("metadata")
+                    if (tmd.isInstanceOf[BasicDBList]) {
+                      val tmdlist = tmd.asInstanceOf[BasicDBList]
+                      tmdlist.foreach { x =>
+                        val techMD = Json.parse(com.mongodb.util.JSON.serialize(x))
+                        val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
+                        val metadataTech = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
+                        curations.addMetaData(UUID(c.toString), metadataTech)
+                      }
+                    } else {
+                      val techMD = Json.parse(com.mongodb.util.JSON.serialize(tmd))
+                      val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
+                      val metadataTech = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
+                      curations.addMetaData(UUID(c.toString), metadataTech)
+                    }
+                  }
+                case e: BSONException => {
+                  Logger.error(e.toString)
+                }
+              }
+            }
+            case None => Logger.error(s"[MongoDBUpdate : Missing curation id")
+          }
+        }
+
+        }
+        appConfig.addPropertyValue("mongodb.updates", updateId)
+      } else {
+        Logger.warn("[MongoDBUpdate] : Missing fix to update metadata to JSONLD representation")
+      }
+  }
+
 
   private def collectionRequiresAuthor(): Unit = {
     val updateId = "collection-author"

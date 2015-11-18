@@ -95,7 +95,7 @@
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
                 <ul class="nav nav-tabs">
                     <li role="presentation" class="active"><a href="#tab-files" role="tab" data-toggle="tab">Files (@dataset.files.size)</a></li>
-                    <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata (@dataset.metadataCount)</a></li>
+                    <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata (@m.length)</a></li>
                     <li role="presentation"><a href="#tab-visua" role="tab" data-toggle="tab">Visualizations</a></li>
                     <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
                     <li role="presentation"><a href="#tab-notes" role="tab" data-toggle="tab">Notes</a></li>
@@ -125,7 +125,7 @@
                       </div>
                       <div class="row">
                           <div class="col-md-12">
-                            @metadatald.addMetadata("dataset", dataset.id.toString)
+                            @metadatald.addMetadata("dataset", dataset.id.toString, None)
                           </div>
                       </div>
                       <div class="row">

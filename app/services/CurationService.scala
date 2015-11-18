@@ -39,12 +39,17 @@ trait CurationService {
   /**
    * Add metadata to curation object, no influence to live object
    */
-  def addDatasetUserMetaData(id: UUID, json: String)
+  def addMetaData(id: UUID, metadata: Metadata)
 
   /**
-   * Add metadata to curation object, no influence to live object
+   * Remove metadata attached to curation object, no influence to live object
    */
-  def addFileUserMetaData(curationId: UUID, file: Int, json: String)
+  def removeMetadataByCuration(id:UUID)
+
+  /**
+   * Get metadata attached to curation object
+   */
+  def getMeatadateByCuration(id:UUID): List[CurationObjectMetadata]
 
   /**
    * Update the repository selected

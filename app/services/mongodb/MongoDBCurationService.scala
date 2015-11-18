@@ -4,11 +4,10 @@ import java.net.URI
 import javax.inject.{Inject, Singleton}
 
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
-import models.{CurationObject, ProjectSpace, SpaceInvite}
+import models._
 import org.bson.types.ObjectId
 import play.api.Play._
 import MongoContext.context
-import models.{User, UUID, Collection, Dataset}
 import services.{CurationService, SpaceService}
 import util.Direction._
 import java.util.Date
@@ -56,19 +55,23 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
     }
   }
 
-  def addDatasetUserMetaData(id: UUID, json: String) {
-    Logger.debug("Adding/modifying user metadata to curation " + id + " : " + json)
-    val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
-    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("datasets.0.userMetadata" -> md),
-      false, false, WriteConcern.Safe)
+  def addMetaData(id: UUID, metadata: Metadata) {
+    Logger.debug("Adding/modifying user metadata to curation " + id + " : " + metadata.content)
+    val m = CurationObjectMetadata(id, metadata)
+    CurationMetadataDAO.insert(m)
+  }
+
+  def removeMetadataByCuration(id:UUID): Unit = {
+    // in this method, we don't check curationservice.get(id).isDefine, and we don't recommand to do so, since the
+    // curation object may already delete but the metadata is still in DB.
+    CurationMetadataDAO.remove(MongoDBObject("curationObject" ->new ObjectId(id.stringify)))
   }
 
 
-  def addFileUserMetaData(curationId: UUID, file: Int, json: String) {
-    val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
-    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(curationId.stringify)), $set("files."+file+".userMetadata" -> md),
-      false, false, WriteConcern.Safe)
-
+  def getMeatadateByCuration(id:UUID): List[CurationObjectMetadata] = {
+    // in this method, we don't check curationservice.get(id).isDefine, and we don't recommand to do so, since the
+    // curation object may already delete but the metadata is still in DB.
+    CurationMetadataDAO.find(MongoDBObject("curationObject" ->new ObjectId(id.stringify))).toList
   }
 
   def updateRepository(curationId: UUID, repository: String): Unit = {
@@ -94,5 +97,16 @@ object CurationDAO extends ModelCompanion[CurationObject, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[CurationObject, ObjectId](collection = x.collection("curationObjects")) {}
+  }
+}
+
+
+/**
+ * Salat CurationObjectMetadata model companion.
+ */
+object CurationMetadataDAO extends ModelCompanion[CurationObjectMetadata, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[CurationObjectMetadata, ObjectId](collection = x.collection("curationObjects.metadata")) {}
   }
 }
