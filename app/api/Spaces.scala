@@ -21,7 +21,7 @@ import play.api.libs.json.JsError
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
  */
 @Api(value = "/spaces", listingPath = "/api-docs.json/spaces", description = "Spaces are groupings of collections and datasets.")
-class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetService: DatasetService, collectionService: CollectionService, events: EventService) extends ApiController {
+class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetService: DatasetService, collectionService: CollectionService, events: EventService, userController: controllers.Users) extends ApiController {
 
   @ApiOperation(value = "Create a space",
     notes = "",
@@ -352,7 +352,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
                           spaces.addUser(UUID(aUserId), aRole, spaceId)
                           val newmember = userService.get(UUID(aUserId))
                           val theHtml = views.html.spaces.inviteNotificationEmail(spaceId.stringify, space.name, user.get.getMiniUser, newmember.get.getMiniUser.fullName, aRole.name)
-                          controllers.Users.sendEmail("Added to Space", newmember.get.getMiniUser.email.get ,theHtml)
+                          userController.sendEmail("Added to Space", newmember.get.getMiniUser.email.get ,theHtml)
                         }
                       }
                       else {

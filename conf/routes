@@ -27,7 +27,7 @@ GET            /assets/*file                                                    
 # ----------------------------------------------------------------------
 # USERS
 # ----------------------------------------------------------------------
-POST           /users/registerThroughAdmins                                             controllers.Users.handleStartSignUp
+POST           /users/registerThroughAdmins                                             @controllers.Users.handleStartSignUp
 
 # ----------------------------------------------------------------------
 # PROFILE
@@ -594,6 +594,11 @@ POST           /api/users/createNewListInUser                                   
 POST           /api/users/follow                                                        @api.Users.follow(followeeUUID: UUID, name: String)
 POST           /api/users/unfollow                                                      @api.Users.unfollow(followeeUUID: UUID, name: String)
 GET            /api/curations/:curationId/ore                                           @api.CurationObjects.getCurationObjectOre(curationId: UUID)
+
+# ----------------------------------------------------------------------
+# USERS Controller
+# ----------------------------------------------------------------------
+GET            /controllers/users/followers                                             @controllers.Users.getFollowers()
 
 # ----------------------------------------------------------------------
 # MEDICI STATUS API

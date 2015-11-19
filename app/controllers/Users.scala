@@ -1,6 +1,7 @@
 package controllers
 
 import _root_.java.util.UUID
+import java.util.UUID
 
 import com.typesafe.plugin._
 import org.joda.time.DateTime
@@ -14,15 +15,16 @@ import play.api.mvc._
 import play.api.templates.Html
 import play.api.{Logger, Play}
 import securesocial.controllers.TemplatesPlugin
-import securesocial.core.UserService
 import securesocial.core.providers.utils.Mailer
 import securesocial.core.providers.{Token, UsernamePasswordProvider}
 import services.AppConfiguration
-
+import javax.inject.Inject
+import services.UserService
+import play.api.mvc.Action
 /**
  * Manage users.
  */
-object Users extends Controller {
+class Users @Inject() (users: UserService) extends SecuredController {
   //Custom signup initiation code, to be used if config is set to send signup link emails to admins to forward to users
   
   val TokenDurationKey = securesocial.controllers.Registration.TokenDurationKey
@@ -59,7 +61,7 @@ object Users extends Controller {
         },
         email => {
           // check if there is already an account for this email address
-          UserService.findByEmailAndProvider(email, UsernamePasswordProvider.UsernamePassword) match {
+          securesocial.core.UserService.findByEmailAndProvider(email, UsernamePasswordProvider.UsernamePassword) match {
             case Some(user) => {
               // user signed up already, send an email offering to login/recover password
               Mailer.sendAlreadyRegisteredEmail(user)
@@ -90,7 +92,7 @@ object Users extends Controller {
       now.plusMinutes(TokenDuration),
       isSignUp = isSignUp
     )
-    UserService.save(token)
+    securesocial.core.UserService.save(token)
     (uuid, token)
   }
   
@@ -115,5 +117,27 @@ object Users extends Controller {
       mail.send("", body.body)
     }
   }
-  
+
+  def getFollowers() = AuthenticatedAction { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(clowderUser) => {
+        var followers: List[(models.UUID, String, String, String)] = List.empty
+        for (followerID <- clowderUser.followers) {
+          var userFollower = users.findById(followerID)
+          userFollower match {
+            case Some(uFollower) => {
+              var ufEmail = uFollower.email.getOrElse("")
+              followers = followers.++(List((uFollower.id, ufEmail, uFollower.getAvatarUrl(), uFollower.fullName)))
+            }
+          }
+        }
+
+        Ok(views.html.users.folowers(followers, clowderUser.fullName, clowderUser.id))
+
+      }
+      case None => InternalServerError("User not defined")
+    }
+
+  }
 }
