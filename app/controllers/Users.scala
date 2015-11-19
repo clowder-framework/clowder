@@ -118,6 +118,31 @@ class Users @Inject() (users: UserService) extends SecuredController {
     }
   }
 
+  def getFollowing() = AuthenticatedAction { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(clowderUser) => {
+        var followedUsers: List[(models.UUID, String, String, String)] = List.empty
+        for (tidObject <- clowderUser.followedEntities) {
+          if (tidObject.objectType == "user") {
+            var followedUser = users.get(tidObject.id)
+            followedUser match {
+              case Some(fuser) => {
+                followedUsers = followedUsers.++(List((fuser.id, fuser.fullName, fuser.email.get, fuser.getAvatarUrl())))
+              }
+            }
+          }
+        }
+
+        Ok(views.html.users.followingUsers(followedUsers, clowderUser.fullName, clowderUser.id))
+
+      }
+      case None => InternalServerError("User not defined")
+    }
+
+  }
+
+
   def getFollowers() = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {

@@ -1,0 +1,30 @@
+@(followedUsers: List[(UUID, String, String, String)], name: String, profileId: UUID)(implicit user: Option[models.User])
+
+@main("Followers") {
+    <div class="row">
+        <div class="col-md-12">
+            <h1>@name's Followers</h1>
+        </div>
+    </div>
+    <div class="row">
+
+        @for(row <- followedUsers) {
+            <div class="post-box col-lg-3 col-md-3 col-sm-3 col-xs-6">
+                <div class = "img_wrapper">
+                    <div class = "img_hover">
+                        <a href="@routes.Profile.viewProfileUUID(row._1)">
+                        @row._4
+                        </a>
+                    </div>
+                    <img src="@row._4" class="img_thumbnail">
+                </div>
+            </div>
+        }
+        @if(followedUsers.size < 1) {
+            <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                <h2>This area will show users that you follow.</h2>
+            </div>
+        }
+
+    </div>
+}

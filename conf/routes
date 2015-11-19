@@ -89,7 +89,7 @@ POST           /uploaddnd/:id                                                   
 #POST  	       /reactiveUpload					                                        @controllers.Files.reactiveUpload
 POST           /uploadDragDrop                                                          @controllers.Files.uploadDragDrop
 GET            /fileThumbnail/:id/blob                                                  @controllers.Files.thumbnail(id: UUID)
-GET            /file_by_section/:id                                                 	@controllers.Files.fileBySection(id: UUID)
+GET            /file_by_section/:id                                                     @controllers.Files.fileBySection(id: UUID)
 
 # ----------------------------------------------------------------------
 # DATASETS
@@ -99,6 +99,7 @@ GET            /datasets/new                                                    
 GET            /datasets/addToDataset/:id                                               @controllers.Datasets.addToDataset(id: UUID)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
+GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(when: String ?= "", size: Int ?= 12, mode: String ?= "")
 GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
@@ -504,7 +505,7 @@ DELETE         /api/sections/:id                                                
 # ----------------------------------------------------------------------
 # SEARCH ENDPOINT
 # ----------------------------------------------------------------------
-GET           /api/search/multimediasearch                                              @api.Search.searchMultimediaIndex(section_id: UUID)
+GET            /api/search/multimediasearch                                             @api.Search.searchMultimediaIndex(section_id: UUID)
 
 # ----------------------------------------------------------------------
 # GEOSTREAMS ENDPOINT
@@ -599,6 +600,7 @@ GET            /api/curations/:curationId/ore                                   
 # USERS Controller
 # ----------------------------------------------------------------------
 GET            /controllers/users/followers                                             @controllers.Users.getFollowers()
+GET            /controllers/users/following                                             @controllers.Users.getFollowing()
 
 # ----------------------------------------------------------------------
 # MEDICI STATUS API

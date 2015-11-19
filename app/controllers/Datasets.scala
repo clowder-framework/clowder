@@ -86,6 +86,63 @@ class Datasets @Inject()(
 
   }
 
+  def followingDatasets(when: String, limit: Int, mode: String) = PrivateServerAction {implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(clowderUser)  => {
+        val nextPage = (when == "a")
+        var title: Option[String] = Some("Datasets")
+
+        var datasetList = new ListBuffer[Dataset]()
+        for (tidObject <- clowderUser.followedEntities) {
+          if (tidObject.objectType == "dataset") {
+            var followedDataset = datasets.get(tidObject.id)
+            followedDataset match {
+              case Some(fdset) => {
+                datasetList += fdset
+              }
+            }
+          }
+        }
+
+        val commentMap = datasetList.map { dataset =>
+          var allComments = comments.findCommentsByDatasetId(dataset.id)
+          dataset.files.map { file =>
+            allComments ++= comments.findCommentsByFileId(file)
+            sections.findByFileId(file).map { section =>
+              allComments ++= comments.findCommentsBySectionId(section.id)
+            }
+          }
+          dataset.id -> allComments.size
+        }.toMap
+
+        //Modifications to decode HTML entities that were stored in an encoded fashion as part
+        //of the datasets names or descriptions
+        val decodedDatasetList = ListBuffer.empty[models.Dataset]
+        for (aDataset <- datasetList) {
+          decodedDatasetList += Utils.decodeDatasetElements(aDataset)
+        }
+
+        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+        //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+        //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+        val viewMode: Option[String] =
+          if (mode == null || mode == "") {
+            request.cookies.get("view-mode") match {
+              case Some(cookie) => Some(cookie.value)
+              case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+            }
+          } else {
+            Some(mode)
+          }
+
+        //Pass the viewMode into the view
+        Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, "", "", limit, viewMode, None, title, None))
+      }
+      case None => InternalServerError("No User found")
+    }
+  }
+
   /**
    * List datasets.
    */
