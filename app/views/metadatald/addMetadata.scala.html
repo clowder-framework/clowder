@@ -111,15 +111,18 @@
             var context = {};
             context[field_label] = field_id;
             var content = {};
-            if (field_type != "listgeocode") {
-                content[field_label] = field_value;
-            } else {
+            if (field_type == "listgeocode") {
                 // geocode example: "Champaign, IL, USA: 40.12, -88.24"
                 var parts = field_value.split(":");
                 content["Location Name"] = parts[0].trim();
                 var lat_lng = parts[1].trim().split(",");
                 content["Latitude"] = lat_lng[0].trim();
                 content["Longitude"] = lat_lng[1].trim();
+            } else if (field_type == "listjquery") {
+                content[field_label] = field_value;
+                content["Unit"] = $("#unit-value").val();
+            } else {
+                content[field_label] = field_value;
             }
             var body = {
                     "@@context": context,
@@ -157,14 +160,18 @@
     request.done(function (response, textStatus, jqXHR) {
         var fields = response;
         for (var i = 0; i < fields.length; i++) {
+            //console.log("Rui:, field[", i, "].json is: ", fields[i].json);
 
-           var elem = $("<option></option>");
+            var elem = $("<option></option>");
                 elem.attr("data-type", fields[i].json.type);
                 elem.attr("data-id", fields[i].id);
                 elem.attr("value", fields[i].json.uri);
                 elem.text(fields[i].json.label);
             $("#add-metadata-select").append(elem);
+            //console.log("Rui: fields[i].json.label == Unit is: ", (fields[i].json.label == "Unit"));
         }
+        var unit_uri = fields.filter(function(el) {return el.json.label == "Unit";})[0].json.uri;
+        console.log("Rui: unit_uri is:", unit_uri);
         // chosen pulldown configuration
         $("#add-metadata-select").chosen({
             no_results_text: "Not found. Press enter to add ",
@@ -216,6 +223,20 @@
                                     } else {
                                         response(data);
                                     }
+                                }
+                            });
+                        }
+                    });
+                    $("#unit-value").autocomplete({
+                        minLength: 1,
+                        source: function( request, response ) {
+                            console.log("Rui: in unit-value autocomplete, unit_uri is:", unit_uri);
+                            var url = encodeURIComponent(unit_uri);
+                            $.ajax({
+                                url: jsRoutes.api.Metadata.getUrl(url).url,
+                                dataType: "json",
+                                success: function( data ) {
+                                    response(data);
                                 }
                             });
                         }
