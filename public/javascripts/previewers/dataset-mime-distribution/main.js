@@ -5,18 +5,6 @@
     
     var dataset_id = Configuration.dataset_id;
 
-	// setting up ajax call to get metadata from the file
-	//var req = $.ajax({
-	//	type: "GET",
-	//	url: jsRoutes.api.Datasets.getTechnicalMetadataJSON(dataset_id).url,
-	//	dataType: "json"
-	//});
-
-	//req.done(function(data){
-	//	console.log("Metadata on dataset: ");
-	//	console.log(data);
-	//});
-
 	// setting up ajax call to get file from the dataset
 	var file_req = $.ajax({
 		type: "GET",
@@ -90,26 +78,6 @@
 						//.attr("style", "outline: thin solid lightGrey")
 						.style("font-size","12px")
 						.call(d3.legend);
-
-					// use if you want labels instead of legend
-					//g.append("text")
-					//	.attr("transform", function(d) {
-					//		var desired = 140;
-					//		var c = arc.centroid(d),
-					//			x = c[0],
-					//			y = c[1],
-					//			h = Math.sqrt(x*x + y*y); // hypotenuse
-					//		return "translate(" + (x/h * desired) +  ',' + (y/h * desired) +  ")";
-					//	})
-					//	.attr("dy", ".35em")
-					//		.attr("text-anchor", function(d) { // which side
-					//			return (d.endAngle + d.startAngle)/2 > Math.PI ?
-					//				"end" : "start";
-					//		})
-					//	.attr("display", function(d) {
-					//		return d.endAngle - d.startAngle > 0.01 ? "block" : "none";
-					//	})
-					//	.text(function(d) { return d.data.mime; });
 				});
 			});
 		}
