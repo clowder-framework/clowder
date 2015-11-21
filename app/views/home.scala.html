@@ -265,7 +265,7 @@
 
                             </h4>
                         </div>
-                        <div id="collapseOne" class="panel-collapse collapse in">
+                        <div id="collapseOne" class="panel-collapse collapse">
                             <div class="panel-body caption break-word">
                                 <div class="row" style="margin-top : 15px;">
                                 @for(userInfo <- followedUsers) {
@@ -321,7 +321,7 @@
                                         <a data-toggle="collapse" data-parent="#accordion" href="#collapseSpaces">Spaces</a>
                                     </div>
                                     <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                                        <span class="pull-right"> <a href="@routes.Datasets.followingDatasets("",12, "")">See More</a></span>
+                                        <span class="pull-right"> <a href="@routes.Spaces.followingSpaces("", 0, 12, "")">See More</a></span>
                                     </div>
                                 </div>
 
@@ -390,7 +390,15 @@
                     <div class="panel panel-default">
                         <div class="panel-heading">
                             <h4 class="panel-title">
-                                <a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">Files</a>
+                                <div class="row">
+                                    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                                        <a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">Files</a>
+                                    </div>
+                                    <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                                        <span class="pull-right"> <a href="@routes.Files.followingFiles("",0, 12, "")">See More</a></span>
+                                    </div>
+                                </div>
+
                             </h4>
                         </div>
                         <div id="collapseTwo" class="panel-collapse collapse">
@@ -460,7 +468,7 @@
                                         <a data-toggle="collapse" data-parent="#accordion" href="#collapseThree">Datasets</a>
                                     </div>
                                     <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                                        <span class="pull-right"> <a href="@routes.Datasets.followingDatasets("",12, "")">See More</a></span>
+                                        <span class="pull-right"> <a href="@routes.Datasets.followingDatasets("", 0, 12, "")">See More</a></span>
                                     </div>
                                 </div>
 
@@ -528,7 +536,15 @@
                     <div class="panel panel-default">
                         <div class="panel-heading">
                             <h4 class="panel-title">
-                                <a data-toggle="collapse" data-parent="#accordion" href="#collapseFour">Collections</a>
+                                <div class="row">
+                                    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                                        <a data-toggle="collapse" data-parent="#accordion" href="#collapseFour">Collections</a>
+                                    </div>
+                                    <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                                        <span class="pull-right"> <a href="@routes.Collections.followingCollections("",0, 12, "")">See More</a></span>
+                                    </div>
+                                </div>
+
                             </h4>
                         </div>
                         <div id="collapseFour" class="panel-collapse collapse">

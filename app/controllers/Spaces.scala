@@ -495,6 +495,52 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
         case None => Redirect(routes.Spaces.list()).flashing("error" -> "You are not authorized to create/edit spaces.")
       }
   }
+  def followingSpaces(when: String, index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(clowderUser) => {
+        val nextPage = (when == "a")
+        val title: Option[String] = Some("Following Spaces")
+
+        var spaceList = new ListBuffer[ProjectSpace]()
+        val spaceIds = clowderUser.followedEntities.filter(_.objectType == "'space")
+        val spaceIdsToUse = spaceIds.slice(index*limit, (index+1)*limit)
+        val prev=  index -1
+        val next = if(spaceIds.length > (index+1) * limit) {
+          index + 1
+        } else {
+          -1
+        }
+        for (tidObject <- spaceIdsToUse) {
+          val followedSpace = spaces.get(tidObject.id)
+          followedSpace match {
+            case Some(fspace) => {
+              spaceList += fspace
+            }
+          }
+        }
+
+        val decodedSpaceList = spaceList.map(Utils.decodeSpaceElements)
+        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+        //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+        //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+        val viewMode: Option[String] =
+          if (mode == null || mode == "") {
+            request.cookies.get("view-mode") match {
+              case Some(cookie) => Some(cookie.value)
+              case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+            }
+          } else {
+            Some(mode)
+          }
+
+        val deletePermission = Permission.checkPermission(user, Permission.DeleteSpace)
+        Ok(views.html.users.followingSpaces(decodedSpaceList.toList, when, "", limit, None, true, viewMode, deletePermission, prev, next, title))
+
+      }
+      case None => InternalServerError("User not found")
+    }
+      }
 
    /**
    * Show the list page

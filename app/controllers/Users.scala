@@ -118,23 +118,29 @@ class Users @Inject() (users: UserService) extends SecuredController {
     }
   }
 
-  def getFollowing() = AuthenticatedAction { implicit request =>
+  def getFollowing(index: Int, limit: Int) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(clowderUser) => {
         var followedUsers: List[(models.UUID, String, String, String)] = List.empty
-        for (tidObject <- clowderUser.followedEntities) {
-          if (tidObject.objectType == "user") {
-            var followedUser = users.get(tidObject.id)
+        val userIds = clowderUser.followedEntities.filter(_.objectType == "user")
+        val userIdsToUse = userIds.slice(index*limit, (index+1)*limit)
+        val prev = index -1
+        val next = if(userIds.length > (index+1) * limit) {
+          index + 1
+        } else {
+          -1
+        }
+        for (tidObject <-userIdsToUse) {
+            val followedUser = users.get(tidObject.id)
             followedUser match {
               case Some(fuser) => {
                 followedUsers = followedUsers.++(List((fuser.id, fuser.fullName, fuser.email.get, fuser.getAvatarUrl())))
               }
             }
-          }
         }
 
-        Ok(views.html.users.followingUsers(followedUsers, clowderUser.fullName, clowderUser.id))
+        Ok(views.html.users.followingUsers(followedUsers, clowderUser.fullName, clowderUser.id, prev, next, limit))
 
       }
       case None => InternalServerError("User not defined")
@@ -143,22 +149,29 @@ class Users @Inject() (users: UserService) extends SecuredController {
   }
 
 
-  def getFollowers() = AuthenticatedAction { implicit request =>
+  def getFollowers(index: Int, limit: Int) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(clowderUser) => {
         var followers: List[(models.UUID, String, String, String)] = List.empty
-        for (followerID <- clowderUser.followers) {
-          var userFollower = users.findById(followerID)
+        val followersToUse = clowderUser.followers.slice(index*limit, (index+1)*limit)
+        val prev = index-1
+        val next = if(clowderUser.followers.length > (index+1) * limit) {
+          index + 1
+        } else {
+          -1
+        }
+        for (followerID <- followersToUse) {
+          val userFollower = users.findById(followerID)
           userFollower match {
             case Some(uFollower) => {
-              var ufEmail = uFollower.email.getOrElse("")
+              val ufEmail = uFollower.email.getOrElse("")
               followers = followers.++(List((uFollower.id, ufEmail, uFollower.getAvatarUrl(), uFollower.fullName)))
             }
           }
         }
 
-        Ok(views.html.users.folowers(followers, clowderUser.fullName, clowderUser.id))
+        Ok(views.html.users.followers(followers, clowderUser.fullName, clowderUser.id, prev, next, limit))
 
       }
       case None => InternalServerError("User not defined")

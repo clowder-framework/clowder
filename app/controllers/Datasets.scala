@@ -86,23 +86,30 @@ class Datasets @Inject()(
 
   }
 
-  def followingDatasets(when: String, limit: Int, mode: String) = PrivateServerAction {implicit request =>
+  def followingDatasets(when: String, index: Int, limit: Int, mode: String) = PrivateServerAction {implicit request =>
     implicit val user = request.user
     user match {
       case Some(clowderUser)  => {
         val nextPage = (when == "a")
-        var title: Option[String] = Some("Datasets")
+        val title: Option[String] = Some("Following Datasets")
 
-        var datasetList = new ListBuffer[Dataset]()
-        for (tidObject <- clowderUser.followedEntities) {
-          if (tidObject.objectType == "dataset") {
-            var followedDataset = datasets.get(tidObject.id)
+        var datasetList =  new ListBuffer[Dataset]()
+        val datasetIds = clowderUser.followedEntities.filter(_.objectType == "dataset")
+        val datasetIdsToUse = datasetIds.slice(index*limit, (index+1)*limit)
+        val prev = index-1
+        val next = if(datasetIds.length > (index+1) * limit) {
+          index + 1
+        } else {
+          -1
+        }
+
+        for (tidObject <- datasetIdsToUse) {
+            val followedDataset = datasets.get(tidObject.id)
             followedDataset match {
               case Some(fdset) => {
                 datasetList += fdset
               }
             }
-          }
         }
 
         val commentMap = datasetList.map { dataset =>
@@ -137,7 +144,7 @@ class Datasets @Inject()(
           }
 
         //Pass the viewMode into the view
-        Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, "", "", limit, viewMode, None, title, None))
+        Ok(views.html.users.followingDatasets(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, None, title, None))
       }
       case None => InternalServerError("No User found")
     }

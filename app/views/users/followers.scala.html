@@ -1,4 +1,4 @@
-@(followedUsers: List[(UUID, String, String, String)], name: String, profileId: UUID, prev: Int, next: Int, limit: Int)(implicit user: Option[models.User])
+@(followers: List[(UUID, String, String, String)], name: String, profileId: UUID, prev: Int, next: Int, limit: Int)(implicit user: Option[models.User])
 
 @main("Followers") {
     <div class="row">
@@ -8,7 +8,7 @@
     </div>
     <div class="row">
 
-        @for(row <- followedUsers) {
+        @for(row <- followers) {
             <div class="post-box col-lg-3 col-md-3 col-sm-3 col-xs-6">
                 <div class = "img_wrapper">
                     <div class = "img_hover">
@@ -16,13 +16,13 @@
                         @row._4
                         </a>
                     </div>
-                    <img src="@row._4" class="img_thumbnail">
+                    <img src="@row._3" class="img_thumbnail">
                 </div>
             </div>
         }
-        @if(followedUsers.size < 1) {
+        @if(followers.size < 1) {
             <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                <h2>This area will show users that you follow.</h2>
+               <h2>This area will show users that follow you. Ask other users to follow you <a class="btn-link" href="@routes.Profile.viewProfileUUID(profileId)">here</a></h2>
             </div>
         }
 
@@ -42,8 +42,8 @@
     </div>
     <script type="text/javascript" language="javascript">
         $(document).ready(function() {
-                $('#nextlink').attr('href', "@(routes.Users.getFollowing( next, limit))");
-	            $('#prevlink').attr('href', "@(routes.Users.getFollowing(prev, limit))");
+                $('#nextlink').attr('href', "@(routes.Users.getFollowers( next, limit))");
+	            $('#prevlink').attr('href', "@(routes.Users.getFollowers(prev, limit))");
 
         });
     </script>
