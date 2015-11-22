@@ -8,7 +8,7 @@ import models._
 import org.bson.types.ObjectId
 import play.api.Play._
 import MongoContext.context
-import services.{CurationService, SpaceService}
+import services.{MetadataService, CurationService, SpaceService}
 import util.Direction._
 import java.util.Date
 import play.api.Logger
@@ -18,7 +18,7 @@ import com.mongodb.casbah.Imports._
 
 
 @Singleton
-class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends CurationService {
+class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: SpaceService)  extends CurationService {
 
   def insert(curation: CurationObject) = {
 
@@ -48,6 +48,8 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
     val curation = get(id)
     curation match {
       case Some(c) => {
+        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
+        c.files.map(f => metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f)))
         spaces.removeCurationObject(c.space, c.id)
         c.files.map(f => CurationFileDAO.remove(MongoDBObject("_id" ->new ObjectId(f.stringify))))
         CurationDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))

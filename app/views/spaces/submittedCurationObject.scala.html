@@ -56,7 +56,7 @@
           <div class="col-md-12 box-white-space">
             <h5>Metadata</h5>
             <div  class='usr_md_'>
-            @metadatald.view(m.filter(_.attachedTo.resourceType == ResourceRef.dataset))
+            @metadatald.view(m.filter(_.attachedTo.resourceType == ResourceRef.curationObject))
             </div>
           </div>
         </div>
@@ -72,7 +72,7 @@
       <ul>
       @for(file<- files) {
 
-        <li><h4><a href=@routes.Files.file(file.id)>@file.filename</a></h4>
+        <li><h4><a href=@routes.Files.file(file.fileId)>@file.filename</a></h4>
           <div id ='allMetadata_@(file.id)'>
             <button class="tech_md_" type="button">Show File metadata</button>
             <div style="display:none;">

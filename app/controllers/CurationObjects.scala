@@ -104,7 +104,7 @@ class CurationObjects @Inject()(
                     thumbnail_id = f.thumbnail_id, metadataCount = f.metadataCount, licenseData = f.licenseData, notesHTML = f.notesHTML)
                     curations.insertFile(cf)
                     newFiles = cf.id :: newFiles
-                    metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map(m => metadatas.addMetadata(m.copy(attachedTo = ResourceRef(ResourceRef.curationFile, cf.id))))
+                    metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id))))
                   }
                 }
               }
@@ -128,7 +128,7 @@ class CurationObjects @Inject()(
               curations.insert(newCuration)
 
               metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id)).map{m =>
-                val newm = m.copy(attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id))
+                val newm = m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id))
                 metadatas.addMetadata(newm)
               }
 
@@ -156,8 +156,7 @@ class CurationObjects @Inject()(
         case Some(c) => {
           Logger.debug("delete Curation object: " + c.id)
           val spaceId = c.space
-          metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
-          c.files.map(f => metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f)))
+
           curations.remove(id)
           //spaces.get(spaceId) is checked in Space.stagingArea
           Redirect(routes.Spaces.stagingArea(spaceId))

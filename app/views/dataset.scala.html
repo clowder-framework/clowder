@@ -74,7 +74,7 @@
                     @datasets.deleteButton(dataset)
                     @datasets.follow(dataset)
                     @if(user.isDefined && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
-                        @if(toPublish && currentSpace.isDefined ) {
+                        @if(toPublish && currentSpace.isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, UUID(currentSpace.getOrElse(""))))) {
                             <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-default btn-sm btn-margin-bottom">
                                 Publish
                             </a>

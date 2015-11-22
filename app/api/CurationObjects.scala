@@ -17,11 +17,6 @@ import play.api.libs.json.JsResult
 import play.api.libs.json.Json.toJson
 import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
 import play.api.Logger
-import controllers.CurationObjects
-
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import collection.JavaConverters._
 import play.api.Play.current
 
 /**
