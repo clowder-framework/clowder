@@ -49,29 +49,15 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
     curation match {
       case Some(c) => {
         spaces.removeCurationObject(c.space, c.id)
+        c.files.map(f => CurationFileDAO.remove(MongoDBObject("_id" ->new ObjectId(f.stringify))))
         CurationDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
       }
       case None =>
     }
   }
 
-  def addMetaData(id: UUID, metadata: Metadata) {
-    Logger.debug("Adding/modifying user metadata to curation " + id + " : " + metadata.content)
-    val m = CurationObjectMetadata(id, metadata)
-    CurationMetadataDAO.insert(m)
-  }
-
-  def removeMetadataByCuration(id:UUID): Unit = {
-    // in this method, we don't check curationservice.get(id).isDefine, and we don't recommand to do so, since the
-    // curation object may already delete but the metadata is still in DB.
-    CurationMetadataDAO.remove(MongoDBObject("curationObject" ->new ObjectId(id.stringify)))
-  }
-
-
-  def getMetadateByCuration(id:UUID): List[CurationObjectMetadata] = {
-    // in this method, we don't check curationservice.get(id).isDefine, and we don't recommand to do so, since the
-    // curation object may already delete but the metadata is still in DB.
-    CurationMetadataDAO.find(MongoDBObject("curationObject" ->new ObjectId(id.stringify))).toList
+  def insertFile(cf: CurationFile) ={
+    CurationFileDAO.insert(cf)
   }
 
   def updateRepository(curationId: UUID, repository: String): Unit = {
@@ -87,6 +73,10 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
 
   def getCurationObjectByDatasetId(datasetId: UUID): List[CurationObject] = {
     CurationDAO.find(MongoDBObject("datasets" -> MongoDBObject("$elemMatch" -> MongoDBObject("_id" -> new ObjectId(datasetId.stringify))))).toList
+  }
+
+  def getCurationFiles(cfs:List[UUID]): List[CurationFile] ={
+    (for (cf <- cfs) yield CurationFileDAO.findOneById(new ObjectId(cf.stringify))).flatten.toList
   }
 }
 
@@ -104,9 +94,9 @@ object CurationDAO extends ModelCompanion[CurationObject, ObjectId] {
 /**
  * Salat CurationObjectMetadata model companion.
  */
-object CurationMetadataDAO extends ModelCompanion[CurationObjectMetadata, ObjectId] {
+object CurationFileDAO extends ModelCompanion[CurationFile, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[CurationObjectMetadata, ObjectId](collection = x.collection("curationObjects.metadata")) {}
+    case Some(x) => new SalatDAO[CurationFile, ObjectId](collection = x.collection("curationFiles")) {}
   }
 }

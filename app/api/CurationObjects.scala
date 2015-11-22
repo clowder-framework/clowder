@@ -5,7 +5,7 @@ import javax.inject.{Inject, Singleton}
 
 import com.mongodb.BasicDBList
 import controllers.Utils
-import models.{MatchMakerResponse, mmRule, ResourceRef, UUID}
+import models._
 import play.api.libs.ws.WS
 import org.apache.http.client.methods.HttpDelete
 import org.apache.http.impl.client.DefaultHttpClient
@@ -14,6 +14,7 @@ import play.api.libs.json._
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import play.api.libs.json.JsResult
+import play.api.libs.json.Json.toJson
 import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
 import play.api.Logger
 import controllers.CurationObjects
@@ -46,7 +47,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
         case Some(c) => {
 
           val https = controllers.Utils.https(request)
-          val filesJson = c.files.map { file =>
+          val filesJson = curations.getCurationFiles(c.files).map { file =>
             // TODO: Add file.metadata to ORE Map when we change to JSON-LD
 //            var fl_md: Map[String, Any] = Map.empty[String,Any]
 //            for ( i <- 0 to file.metadata.length -1) {
@@ -58,10 +59,10 @@ class CurationObjects @Inject()(datasets: DatasetService,
 //              item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
 //              )))
             val key = play.api.Play.configuration.getString("commKey").getOrElse("")
-            val metadata = file.userMetadata ++ file.xmlMetadata
-            val fileMetadata = metadata.map {
-              item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
-            }
+//            val metadata = file.userMetadata ++ file.xmlMetadata
+//            val fileMetadata = metadata.map {
+//              item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
+//            }
             val tempMap =  Map(
               "Identifier" -> Json.toJson("urn:uuid:"+file.id),
               "@id" -> Json.toJson(controllers.routes.Files.file(file.id).absoluteURL(https)),
@@ -77,15 +78,15 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "Is Version Of" -> Json.toJson(controllers.routes.Files.file(file.id).absoluteURL(https) + "?key=" + key),
               "similarTo" -> Json.toJson(api.routes.Files.download(file.id).absoluteURL(https))
             )
-            fileMetadata.toMap ++ tempMap
+            //fileMetadata.toMap ++
+              tempMap
           }
-          val fileIds = c.files.map{file => file.id}
+          val fileIds = c.files
           var commentsByDataset = comments.findCommentsByDatasetId(c.datasets(0).id)
-          c.files.map {
+          curations.getCurationFiles(c.files).map {
             file =>
-
-              commentsByDataset ++= comments.findCommentsByFileId(file.id)
-              sections.findByFileId(UUID(file.id.toString)).map { section =>
+              commentsByDataset ++= comments.findCommentsByFileId(file.fileId)
+              sections.findByFileId(UUID(file.fileId.toString)).map { section =>
                 commentsByDataset ++= comments.findCommentsBySectionId(section.id)
               }
           }
@@ -256,4 +257,17 @@ class CurationObjects @Inject()(datasets: DatasetService,
 
   }
 
+
+  @ApiOperation(value = "Get files in curation", notes = "",
+    responseClass = "None", httpMethod = "GET")
+  def getCurationFiles(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
+    implicit request =>
+      implicit val user = request.user
+      curations.get(curationId) match {
+        case Some(c) => {
+          Ok(toJson(Map("cf" -> curations.getCurationFiles(c.files))))
+        }
+        case None => InternalServerError("Curation Object Not found")
+      }
+  }
 }

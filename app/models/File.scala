@@ -36,6 +36,25 @@ case class File(
   notesHTML: Option[String] = None,
   followers: List[UUID] = List.empty )
 
+case class CurationFile(
+  id: UUID = UUID.generate,
+  fileId: UUID,
+  path: Option[String] = None,
+  filename: String,
+  author: Identity,
+  uploadDate: Date,
+  contentType: String,
+  length: Long = 0,
+  showPreviews: String = "DatasetLevel",
+  sections: List[Section] = List.empty,
+  previews: List[Preview] = List.empty,
+  tags: List[Tag] = List.empty,
+  thumbnail_id: Option[String] = None,
+  metadataCount: Long = 0,
+  licenseData: LicenseData = new LicenseData(),
+  notesHTML: Option[String] = None)
+
+
 case class Versus(
   fileId: UUID,
   descriptors: Map[String,Any]= Map.empty
@@ -47,6 +66,20 @@ object File {
       Json.obj(
         "id" -> file.id,
         "name" -> file.filename)
+    }
+  }
+}
+
+
+object CurationFile {
+  implicit object CurationFileWrites extends Writes[CurationFile] {
+    def writes(cf: CurationFile): JsObject = {
+      Json.obj(
+        "id" -> cf.id.toString(),
+        "fileId" -> cf.fileId.toString(),
+        "name" -> cf.filename,
+        "length" -> cf.length,
+        "contentType" -> cf.contentType)
     }
   }
 }

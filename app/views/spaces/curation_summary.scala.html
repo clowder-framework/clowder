@@ -1,11 +1,11 @@
-@(curationObject: models.CurationObject, title: String, editCurationObject: Boolean)(implicit user: Option[models.User])
+@(curationObject: models.CurationObject, title:String,  editCurationObject: Boolean)(implicit user: Option[models.User])
 @import api.Permission
     <div class="panel panel-default">
         <div class="panel-body">
             <h5><a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h5>
             <ul class="list-unstyled">
-                <li>Size: @{curationObject.files.map(_.length).sum /1024} MB<li/>
-                <li>File Formats: @curationObject.files.map(_.contentType).toSet.mkString(", ")</li>
+                <li>Size: <div id="size"></div> MB<li/>
+                <li>File Formats: <div id="format"></div></li>
                 <li>Creator: @curationObject.datasets(0).author.fullName</li>
                 <li>Uploaded: @curationObject.created.format("MMM dd, yyyy")</li>
             </ul>
@@ -20,3 +20,28 @@
         </div>
     </div>
     <script src="@routes.Assets.at("javascripts/curationProcess.js")" type="text/javascript"></script>
+
+    <script>
+    $(document).ready(function() {
+        var request = jsRoutes.api.CurationObjects.getCurationFiles('@curationObject.id').ajax({
+            type: "GET",
+            contentType : "application/json"
+        }).done(function( response, textStatus, jqXHR ) {
+
+            var totalSize = 0;
+            $.each(response.cf, function (i, el) {
+                 totalSize += this.length;
+            });
+
+            var formatAll = response.cf.map(f => f.contentType.valueOf());
+            var formats = [];
+            $.each(formatAll, function(i, el){
+                 if($.inArray(el, formats) === -1) formats.push(el);
+            });
+
+            $( "#size" ).replaceWith( Math.round(totalSize /1024) );
+            $( "#format" ).replaceWith(formats.join(', ') );
+
+        });
+    });
+    </script>

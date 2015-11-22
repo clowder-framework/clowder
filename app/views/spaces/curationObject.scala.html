@@ -1,4 +1,4 @@
-@(curationObject: models.CurationObject, m: List[models.Metadata], rdfExported: Boolean, files :List[File] )(implicit user: Option[models.User])
+@(curationObject: models.CurationObject, m: List[models.Metadata], rdfExported: Boolean, files :List[CurationFile] )(implicit user: Option[models.User])
 
 @import helper._
 @import collection.JavaConverters._
@@ -104,7 +104,7 @@
             </div>
             <div class="row">
                 <div class="col-md-12">
-                @metadatald.view(m.filter(_.attachedTo.resourceType == ResourceRef.dataset))
+                @metadatald.view(m.filter(_.attachedTo.resourceType == ResourceRef.curationObject))
                 </div>
             </div>
         </div>
@@ -119,13 +119,13 @@
             <ul style = "list-style-type: none">
             @for(file<- files) {
 
-                <li><h3><a href=@routes.Files.file(file.id)>@file.filename</a></h3>
+                <li><h3><a href=@routes.Files.file(file.fileId)>@file.filename</a></h3>
                 <div id ='allMetadata_@(file.id)'>
                     <button class="tech_md_" type="button">Show File metadata</button>
                     <div style="display:none;">
                 <div class="row border-top">
                     <div class="col-md-12">
-                        <h4>Community generated metadata</h4>
+
                         <div class="row">
                             <div class="col-md-12">
                             @metadatald.addMetadata("curation.file", file.id.toString, Some(curationObject.id.toString))
@@ -136,59 +136,11 @@
                             @metadatald.view(m.filter(_.attachedTo.id == file.id))
                             </div>
                         </div>
+
+
                     </div>
                 </div>
 
-                <div class="row border-top">
-                    <div class="col-md-12">
-                        <h4>System generated metadata</h4>
-                        <div id='technicalMetadata_@(file.id)'>
-                            <button class="tech_md_ btn btn-link btn-sm" type="button">Show file technical metadata</button>
-                            <div style="display:none;">
-                                <ul>
-                                @for(i <- 0 until file.metadata.length){
-                                    @printLevel(file.metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
-                                }
-                                </ul>
-                            </div>
-                        </div>
-                        <script>
-                            $("#technicalMetadata_@(file.id.toString) > button").on('click',function(){
-                                if($("#technicalMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
-                                    $("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
-                                    $("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file technical metadata";
-                                }
-                                else{
-                                    $("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
-                                    $("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file technical metadata";
-                                }
-                            });
-                        </script>
-                    </div>
-                </div>
-
-                @if(!file.xmlMetadata.isEmpty) {
-                    <div id='xmlMetadata_@(file.id.toString)'>
-                        <button class="tech_md_" type="button">Show XML-uploaded metadata</button>
-                        <div style="display:none;">
-                            <ul>
-                            @printLevel(file.xmlMetadata)
-                            </ul>
-                        </div>
-                    </div>
-                    <script>
-                        $("#xmlMetadata_@(file.id.toString) > button").on('click',function(){
-                            if($("#xmlMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
-                                $("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
-                                $("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file XML-uploaded metadata";
-                            }
-                            else{
-                                $("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
-                                $("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file XML-uploaded metadata";
-                            }
-                        });
-                    </script>
-                }
                 </div>
                 </div>
                     </li>

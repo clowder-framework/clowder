@@ -139,7 +139,6 @@
 
    var topId = "generalUserMetadata_@(dataset.id.stringify)";
    @if(curationId.isDefined){
-  		window["uploadIp"+topId] = "@routes.CurationObjects.addDatasetUserMetadata(curationId.get)";
    } else {
 		window["uploadIp"+topId] = "@api.routes.Datasets.addUserMetadata(dataset.id)";
 		window["rdfIp"+topId] = "@api.routes.Datasets.getRDFUserMetadata(dataset.id)";
