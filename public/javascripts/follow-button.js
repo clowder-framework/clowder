@@ -28,8 +28,11 @@ $(document ).ready(function() {
     	      })
     	        .done(function(data) {
     	          followButton.text("Unfollow");
-    	          followButton.removeClass('btn-success');
-    	          followButton.addClass('btn-danger');
+				  if(!followButton.hasClass('btn-link'))
+				  {
+					  followButton.removeClass('btn-success');
+					  followButton.addClass('btn-danger');
+				  }
     	          followCallback();
     	        })
     	        .fail(function(data) {
@@ -42,8 +45,10 @@ $(document ).ready(function() {
     	      })
     	        .done(function(data) {
     	          followButton.text("Follow");
-    	          followButton.removeClass('btn-danger');
-    	          followButton.addClass('btn-success');
+				  if(!followButton.hasClass('btn-link')) {
+					  followButton.removeClass('btn-danger');
+					  followButton.addClass('btn-success');
+				  }
     	          unfollowCallback();
     	        })
     	        .fail(function(data) {
@@ -59,8 +64,10 @@ $(document ).ready(function() {
     	      })
     	        .done(function(data) {
     	          followButton.text("Unfollow");
-    	          followButton.removeClass('btn-success');
-    	          followButton.addClass('btn-danger');
+					if(!followButton.hasClass('btn-link')) {
+						followButton.removeClass('btn-success');
+						followButton.addClass('btn-danger');
+					}
     	          followCallback();
     	        })
     	        .fail(function(data) {
@@ -73,8 +80,10 @@ $(document ).ready(function() {
     	      })
     	        .done(function(data) {
     	          followButton.text("Follow");
-    	          followButton.removeClass('btn-danger');
-    	          followButton.addClass('btn-success');
+				  if(!followButton.hasClass('btn-link')) {
+					  followButton.removeClass('btn-danger');
+					  followButton.addClass('btn-success');
+				  }
     	          unfollowCallback();
     	        })
     	        .fail(function(data) {
@@ -89,8 +98,10 @@ $(document ).ready(function() {
     	      })
     	        .done(function(data) {
     	          followButton.text("Unfollow");
-    	          followButton.removeClass('btn-success');
-    	          followButton.addClass('btn-danger');
+					if(!followButton.hasClass('btn-link')) {
+						followButton.removeClass('btn-success');
+						followButton.addClass('btn-danger');
+					}
     	          followCallback();
     	        })
     	        .fail(function(data) {
@@ -103,8 +114,10 @@ $(document ).ready(function() {
     	      })
     	        .done(function(data) {
     	          followButton.text("Follow");
-    	          followButton.removeClass('btn-danger');
-    	          followButton.addClass('btn-success');
+				  if(!followButton.hasClass('btn-link')) {
+					  followButton.removeClass('btn-danger');
+					  followButton.addClass('btn-success');
+				  }
     	          unfollowCallback();
     	        })
     	        .fail(function(data) {
@@ -119,8 +132,10 @@ $(document ).ready(function() {
     	      })
     	        .done(function(data) {
     	          followButton.text("Unfollow");
-    	          followButton.removeClass('btn-success');
-    	          followButton.addClass('btn-danger');
+					if(!followButton.hasClass('btn-link')) {
+						followButton.removeClass('btn-success');
+						followButton.addClass('btn-danger');
+					}
     	          followCallback();
     	        })
     	        .fail(function(data) {
@@ -133,8 +148,10 @@ $(document ).ready(function() {
     	      })
     	        .done(function(data) {
     	          followButton.text("Follow");
-    	          followButton.removeClass('btn-danger');
-    	          followButton.addClass('btn-success');
+				  if(!followButton.hasClass('btn-link')) {
+					  followButton.removeClass('btn-danger');
+					  followButton.addClass('btn-success');
+				  }
     	          unfollowCallback();
     	        })
     	        .fail(function(data) {
@@ -149,8 +166,10 @@ $(document ).ready(function() {
 			})
 				.done(function(data) {
 					followButton.text("Unfollow");
-					followButton.removeClass('btn-success');
-					followButton.addClass('btn-danger');
+					if(!followButton.hasClass('btn-link')) {
+						followButton.removeClass('btn-success');
+						followButton.addClass('btn-danger');
+					}
 					followCallback();
 				})
 				.fail(function(data) {
@@ -163,8 +182,10 @@ $(document ).ready(function() {
 			})
 				.done(function(data) {
 					followButton.text("Follow");
-					followButton.removeClass('btn-danger');
-					followButton.addClass('btn-success');
+					if(!followButton.hasClass('btn-link')) {
+						followButton.removeClass('btn-danger');
+						followButton.addClass('btn-success');
+					}
 					unfollowCallback();
 				})
 				.fail(function(data) {
