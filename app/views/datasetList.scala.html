@@ -177,7 +177,7 @@
                               </div>
                               <div class="col-md-6 col-sm-6 col-lg-6">
                                   <ul class="list-unstyled">
-                                      @if(user.isDefined) {
+                                      @if(user.isDefined && !dataset.spaces.isEmpty) {
                                         <li>
                                             <div id='dataset-users' class="row">
                                                 <div class="col-md-12">
