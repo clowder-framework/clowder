@@ -73,19 +73,21 @@
                     }
                     @datasets.deleteButton(dataset)
                     @datasets.follow(dataset)
-                    @if(toPublish && currentSpace.isDefined) {
-                        <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-warning btn-sm btn-margin-bottom">
-                            <span class="glyphicon glyphicon-globe"></span> Publish
-                        </a>
-                    } else {
-                        @if(dataset.spaces.size > 0) {
-                            <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-warning btn-sm btn-margin-bottom">
+                    @if(user.isDefined && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+                        @if(toPublish && currentSpace.isDefined) {
+                            <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-warning btn-sm btn-margin-bottom">
                                 <span class="glyphicon glyphicon-globe"></span> Publish
                             </a>
                         } else {
-                            <button class="btn btn-warning btn-sm btn-margin-bottom" disabled>
-                                <span class="glyphicon glyphicon-globe"></span> Publish
-                            </button>
+                            @if(dataset.spaces.size > 0) {
+                                <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-warning btn-sm btn-margin-bottom">
+                                    <span class="glyphicon glyphicon-globe"></span> Publish
+                                </a>
+                            } else {
+                                <button class="btn btn-warning btn-sm btn-margin-bottom" disabled>
+                                    <span class="glyphicon glyphicon-globe"></span> Publish
+                                </button>
+                            }
                         }
                     }
                 </div>
