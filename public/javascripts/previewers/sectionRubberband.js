@@ -85,28 +85,7 @@ function rubberbandFormSubmit(prNum) {
         return false;
     }
 
-    // create section
-    var sectionid = "";
-    var request = window.jsRoutes.api.Sections.add().ajax({
-        type: "POST",
-        contentType: "application/json",
-        data: JSON.stringify({
-            file_id: Configuration["id"],
-            area: {
-                x: x,
-                y: y,
-                w: w,
-                h: h
-            }
-        })
-    });
-    request.done(function (response, textStatus, jqXHR) {
-        rubberbandCreateSection(tag, comment, response.id, x, y, w, h, prNum);
-    });
-    request.fail(function (jqXHR, textStatus, errorThrown) {
-        console.error("The following error occured: " + textStatus, errorThrown);
-    });
-
+    rubberbandCreateSection(tag, comment, x, y, w, h, prNum);
     rubberbandResetDiv(prNum);
     return false;
 }
@@ -205,8 +184,39 @@ function rubberbandResetDiv(prNum) {
     $("#rubberbandFormComment" + prNum).val("");
 }
 
-// associate preview with section
-function rubberbandCreateSection(tag, comment, sectionid, x, y, w, h, prNum) {
+// ----------------------------------------------------------------------
+// CODE TO CREATE TAG/COMMENT + PREVIEW
+// 1) create section
+// 2) add metadata to section
+// 3) add preview to section
+// 4) add tag/comment
+// if anything fails, cleanup
+// ----------------------------------------------------------------------
+
+function rubberbandCreateSection(tag, comment, x, y, w, h, prNum) {
+    // create section
+    var request = window.jsRoutes.api.Sections.add().ajax({
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+            file_id: Configuration["id"],
+            area: {
+                x: x,
+                y: y,
+                w: w,
+                h: h
+            }
+        })
+    });
+    request.done(function (response, textStatus, jqXHR) {
+        rubberbandAddPreview(tag, comment, response.id, x, y, w, h, prNum);
+    });
+    request.fail(function (jqXHR, textStatus, errorThrown) {
+        console.log("Could not add section: " + textStatus, errorThrown);
+    });
+}
+
+function rubberbandAddPreview(tag, comment, sectionid, x, y, w, h, prNum) {
     // clone canvas to have a subimage
     var canvas = $("#rubberbandCanvas" + prNum)[0];
     var subcanvas = document.createElement("canvas");
@@ -234,15 +244,18 @@ function rubberbandCreateSection(tag, comment, sectionid, x, y, w, h, prNum) {
         processData: false
     });
     request.done(function (response, textStatus, jqXHR) {
-        rubberbandPreviewSection(tag, comment, sectionid, response.id, w, h, prNum);
+        rubberbandAddMetadata(tag, comment, response.id, sectionid, w, h, prNum);
     });
     request.fail(function (jqXHR, textStatus, errorThrown) {
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.log("Could not add preview: " + textStatus, errorThrown);
+        window.jsRoutes.api.Sections.delete(sectionid).ajax({
+            type: "DELETE",
+            contentType: "application/json"
+        });
     });
 }
 
-// tag and comment on section
-function rubberbandPreviewSection(tag, comment, sectionid, previewid, w, h, prNum) {
+function rubberbandAddMetadata(tag, comment, previewid, sectionid, w, h, prNum) {
     var request = window.jsRoutes.api.Previews.uploadMetadata(previewid).ajax({
         type: "POST",
         contentType: "application/json",
@@ -253,11 +266,19 @@ function rubberbandPreviewSection(tag, comment, sectionid, previewid, w, h, prNu
         })
     });
     request.done(function (response, textStatus, jqXHR) {
+        rubberbandAddText(tag, comment, sectionid, prNum);
     });
     request.fail(function (jqXHR, textStatus, errorThrown) {
-        console.error("The following error occured: " + textStatus, errorThrown);
+        console.log("Could not add metadata: " + textStatus, errorThrown);
+        window.jsRoutes.api.Sections.delete(sectionid).ajax({
+            type: "DELETE",
+            contentType: "application/json"
+        });
     });
+}
 
+
+function rubberbandAddText(tag, comment, sectionid, prNum) {
     // add tag to section
     if (tag != "") {
         request = window.jsRoutes.api.Sections.addTags(sectionid).ajax({
@@ -273,7 +294,11 @@ function rubberbandPreviewSection(tag, comment, sectionid, previewid, w, h, prNu
             $('#tagField').val("");
         });
         request.fail(function (jqXHR, textStatus, errorThrown) {
-            console.error("The following error occured: " + textStatus, errorThrown);
+            console.log("Could not add tag/comment: " + textStatus, errorThrown);
+            window.jsRoutes.api.Sections.delete(sectionid).ajax({
+                type: "DELETE",
+                contentType: "application/json"
+            });
         });
     }
 
@@ -290,8 +315,11 @@ function rubberbandPreviewSection(tag, comment, sectionid, previewid, w, h, prNu
         });
         request.fail(function (jqXHR, textStatus, errorThrown) {
             console.error("The following error occured: " + textStatus, errorThrown);
+            window.jsRoutes.api.Sections.delete(sectionid).ajax({
+                type: "DELETE",
+                contentType: "application/json"
+            });
         });
         $("#rubberbandFormComment" + prNum).val("");
     }
 }
-

@@ -38,7 +38,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
     @ApiOperation(value = "Delete previews",
       notes = "Remove preview file from system).",
       responseClass = "None", httpMethod = "POST")
-    def removePreview(id: UUID) = PermissionAction(Permission.AddFile) {
+    def removePreview(id: UUID) = PermissionAction(Permission.DeleteFile, Some(ResourceRef(ResourceRef.preview, id))) {
       request =>
         previews.get(id) match {
           case Some(preview) => {
@@ -49,7 +49,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
         }
     }
 
-  def downloadPreview(id: UUID, datasetid: UUID) = PermissionAction(Permission.ViewFile) {request =>
+  def downloadPreview(id: UUID, datasetid: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.preview, id))) {request =>
     Redirect(routes.Previews.download(id))
   }
 

@@ -728,6 +728,10 @@ table#sensorsListTable > thead > tr > th.headerSortDown {
 .md-block {
     padding: 5px 0px;
     margin: 0px;
+    text-align: left;
+    white-space: -moz-pre-wrap;
+    white-space: -o-pre-wrap;
+    word-wrap: break-word;
 }
 
 .collapse-icon:link, .collapse-icon:visited, .collapse-icon:hover, .collapse-icon:active  {

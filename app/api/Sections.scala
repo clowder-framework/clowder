@@ -2,6 +2,7 @@ package api
 
 import javax.inject.{Inject, Singleton}
 
+import com.wordnik.swagger.annotations.ApiOperation
 import models.{Comment, UUID}
 import play.api.Logger
 import play.api.libs.json.Json
@@ -31,6 +32,7 @@ class Sections @Inject()(
    * A new ObjectId is created for this section.
    */
   def add() = PermissionAction(Permission.CreateSection)(parse.json) { implicit request =>
+    if (request.user.isEmpty) Unauthorized("Not authorized")
       request.body.\("file_id").asOpt[String] match {
         case Some(file_id) => {
             files.get(UUID(file_id.toString)) match {
@@ -47,6 +49,20 @@ class Sections @Inject()(
           Logger.error("No \"file_id\" specified, request body: " + request.body)
           BadRequest(toJson("No \"file_id\" specified."))
         }
+      }
+  }
+
+  @ApiOperation(value = "Delete section",
+    notes = "Remove section file from system).",
+    responseClass = "None", httpMethod = "DELETE")
+  def delete(id: UUID) = PermissionAction(Permission.DeleteSection, Some(ResourceRef(ResourceRef.section, id))) {
+    request =>
+      sections.get(id) match {
+        case Some(s) => {
+          sections.removeSection(s)
+          Ok(toJson(Map("status"->"success")))
+        }
+        case None => Ok(toJson(Map("status" -> "success")))
       }
   }
 

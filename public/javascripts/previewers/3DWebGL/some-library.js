@@ -31,7 +31,7 @@ function onDownloadResponse(resp){
 	else{		
 		// initialize WebGL application
 		LazyLoad.js(Configuration.previewer + "/webGL.js", function() {
-			init_webGL(resp, Configuration.previewer + "/../../../images");
+			init_webGL(resp, Configuration.previewer + "/../../../images/");
 		});		
 	}	
 }
