@@ -82,13 +82,13 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
     </div>
     <div class="row">
         <div class="col-md-2">
-            <a class="btn btn-default" href="@routes.Spaces.stagingArea(curationObject.space)"><span class="glyphicon glyphicon-chevron-left"></span>Staging Area</a>
+            <a class="btn btn-success" href="@routes.Spaces.stagingArea(curationObject.space)"><span class="glyphicon glyphicon-briefcase"></span> Staging Area</a>
         </div>
         <div class="col-md-8 text-center">
             <h1>Edit Metadata</h1>
         </div>
         <div class="col-md-2">
-            <a class="btn btn-primary pull-right" href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)"> Select Repository <span class="glyphicon glyphicon-chevron-right"></span></a>
+            <a class="btn btn-warning pull-right" href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)"><span class="glyphicon glyphicon-screenshot"></span> Select Repository</a>
         </div>
     </div>
     <div class="row">
@@ -192,8 +192,8 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
         </div>
     <div class="row bottom-padding">
         <div class="col-md-12">
-            <a class="btn btn-default" href="@routes.Spaces.stagingArea(curationObject.space)"><span class="glyphicon glyphicon-chevron-left"></span>Staging Area</a>
-            <a class="btn btn-primary pull-right" href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)">Select Repository <span class="glyphicon glyphicon-chevron-right"></span></a>
+            <a class="btn btn-success" href="@routes.Spaces.stagingArea(curationObject.space)"><span class="glyphicon glyphicon-briefcase"></span>Staging Area</a>
+            <a class="btn btn-warning pull-right" href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)"><span class="glyphicon glyphicon-screenshot"></span> Select Repository</a>
         </div>
     </div>
 

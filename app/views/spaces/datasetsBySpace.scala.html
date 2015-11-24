@@ -5,7 +5,7 @@
 @if(datasets.size == 0) {
     @if(user.isDefined &&  Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
         <a id="create-dataset" href="@routes.Datasets.newDataset(Some(space))" class="btn btn-primary btn-xs">
-            Create Dataset
+            <span class="glyphicon glyphicon-ok"></span> Create Dataset
         </a>
     } else {
         @if(user.isDefined) {

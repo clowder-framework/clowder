@@ -59,8 +59,8 @@
                     <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
                         <a href="@(routes.Datasets.addToDataset(dataset.id))"
-                        class="btn btn-default btn-sm btn-margin-bottom" id="fileUploadBtn" title="Add File to Dataset" role="button">
-                            <span class="glyphicon glyphicon-export"></span> Add Files
+                        class="btn btn-primary btn-sm btn-margin-bottom" id="fileUploadBtn" title="Add File to Dataset" role="button">
+                            <span class="glyphicon glyphicon-plus"></span> Add Files
                         </a>
                     }
                     @if(dataset.files.length > 0 && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
@@ -74,17 +74,17 @@
                     @datasets.deleteButton(dataset)
                     @datasets.follow(dataset)
                     @if(toPublish && currentSpace.isDefined) {
-                        <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-default btn-sm btn-margin-bottom">
-                            Publish
+                        <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-warning btn-sm btn-margin-bottom">
+                            <span class="glyphicon glyphicon-globe"></span> Publish
                         </a>
                     } else {
                         @if(dataset.spaces.size > 0) {
-                            <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-default btn-sm btn-margin-bottom">
-                                Publish
+                            <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-warning btn-sm btn-margin-bottom">
+                                <span class="glyphicon glyphicon-globe"></span> Publish
                             </a>
                         } else {
-                            <button class="btn btn-default btn-sm btn-margin-bottom" disabled>
-                                Publish
+                            <button class="btn btn-warning btn-sm btn-margin-bottom" disabled>
+                                <span class="glyphicon glyphicon-globe"></span> Publish
                             </button>
                         }
                     }
@@ -191,7 +191,7 @@
         function updateTitle() {
             var cur_title = $('#datasettitle').text();
             $('<input type="text" id = "title_input" class="form-control"/>').insertAfter($('#datasettitle'));
-            $('<button id="update_title" class= "btn btn-sm btn-primary" onclick="saveTitle()"> Save </button>').insertAfter($('#title_input'));
+            $('<button id="update_title" class= "btn btn-sm btn-default" onclick="saveTitle()"><span class="glyphicon glyphicon-save"></span> Save</button>').insertAfter($('#title_input'));
             $('#title_input').val(cur_title);
             $('#datasettitle').text("");
             $('#edit-title').css("display", "none");
@@ -238,7 +238,7 @@
 		$('<div class="edit_desc"> </div>').insertAfter($('#ds_description'));
 		$('.edit_desc').append('<textarea id = "desc_input" class="form-control"/>');
 		$('.edit_desc').append('<br/>');
-		$('.edit_desc').append('<button id = "update_desc" class= "btn btn-sm btn-primary" onclick = "saveDescription()"> Save </button>')
+		$('.edit_desc').append('<button id = "update_desc" class= "btn btn-sm btn-default" onclick = "saveDescription()"><span class="glyphicon glyphicon-save"></span> Save</button>')
 		$('#desc_input').val(cur_description);
 		$('#ds_description').text("");
 		$('#edit-description').css("display", "none");

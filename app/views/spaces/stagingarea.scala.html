@@ -45,7 +45,7 @@
                             </ul>
                             @if(curObject.status == "Submitted") {
                                 <ul id="ul_@curObject.id" class="list-group">
-                                <li class="list-group-item"><button class="btn btn-default btn-sm btn-danger text-center" onclick="retractCuration('@curObject.id')">Retract Submission</button></li>
+                                <li class="list-group-item"><button class="btn btn-info btn-sm btn-danger text-center" onclick="retractCuration('@curObject.id')"><span class="glyphicon glyphicon-fire"></span> Retract Submission</button></li>
                                 </ul>
                             }
                         </div>

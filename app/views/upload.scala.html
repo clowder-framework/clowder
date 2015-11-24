@@ -46,12 +46,12 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
                     <input type="file" name="files[]" multiple>
                     <input type="hidden" name="datasetLevel" value="DatasetLevel">
                 </span>
-                <button type="submit" class="btn btn-default start">
+                <button type="submit" class="btn btn-warning start">
                     <i class="glyphicon glyphicon-upload"></i>
                     <span>Start upload</span>
                 </button>
-                <button type="reset" class="btn btn-default cancel">
-                    <i class="glyphicon glyphicon-ban-circle"></i>
+                <button type="reset" class="btn btn-info cancel">
+                    <i class="glyphicon glyphicon-remove"></i>
                     <span>Cancel upload</span>
                 </button>
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -109,14 +109,14 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
         </td>
         <td>
             {% if (!i && !o.options.autoUpload) { %}
-                <button class="btn btn-primary start" disabled>
-                    <i class="glyphicon glyphicon-upload"></i>
+                <button class="btn btn-warning  start" disabled>
+                    <i class="glyphicon glyphicon-play"></i>
                     <span>Start</span>
                 </button>
             {% } %}
             {% if (!i) { %}
-                <button class="btn btn-default cancel">
-                    <i class="glyphicon glyphicon-ban-circle"></i>
+                <button class="btn btn-info  cancel">
+                    <i class="glyphicon glyphicon-remove"></i>
                     <span>Cancel</span>
                 </button>
             {% } %}
@@ -162,8 +162,8 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
                     <span>Delete</span>
                 </button>
             {% } else { %}
-                <button class="btn btn-default cancel">
-                    <i class="glyphicon glyphicon-ban-circle"></i>
+                <button class="btn btn-info cancel">
+                    <i class="glyphicon glyphicon-remove"></i>
                     <span>Cancel</span>
                 </button>
             {% } %}

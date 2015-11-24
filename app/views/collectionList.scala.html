@@ -20,12 +20,12 @@
     </div>
     <div class="col-md-1">
         @if(user.isDefined) {
-            <a id="create-collection" class="btn btn-primary btn-sm pull-right" href="@routes.Collections.newCollection(space)" title="Create a new collection">Create</a>
+            <a id="create-collection" class="btn btn-primary btn-sm pull-right" href="@routes.Collections.newCollection(space)" title="Create a new collection"><span class="glyphicon glyphicon-ok"></span> Create</a>
         }
 
     </div>
     <div class="col-md-1">
-        <div class="btn-group btn-group-sm pull-right">            
+        <div class="btn-group btn-group-sm pull-right">
             <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
             <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>            
         </div>

@@ -46,8 +46,8 @@ function rubberbandCreate(prNum, renderCanvas) {
         "<button id='rubberbandFormSubmit" + prNum + "' class=\"btn btn-primary\" title=\"Create Section\"  onClick=\"rubberbandFormSubmit('" + prNum + "')\">" +
         "<span class=\"glyphicon glyphicon-ok\"></span> Submit" +
         "</button>&nbsp;" +
-        "<button id='rubberbandFormCancel" + prNum + "'class=\"btn btn-default\" title=\"Close\" onClick=\"rubberbandFormCancel('" + prNum + "')\";>" +
-        "<span class=\"glyphicon glyphicon-remove\"></span> Close" +
+        "<button id='rubberbandFormCancel" + prNum + "'class=\"btn btn-danger\" title=\"Close\" onClick=\"rubberbandFormCancel('" + prNum + "')\";>" +
+        "<span class=\"glyphicon glyphicon-eject\"></span> Close" +
         "</button>" +
         "</form></div>";
 }

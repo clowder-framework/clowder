@@ -16,7 +16,7 @@
     </ul>
     @import play.api.Play.current
     @defining(play.api.Play.configuration.getString("geostream.dashboard.url").getOrElse("http://localhost:9000") + "#detail/location/") { base_url =>
-        <button class="btn btn-default btn-xs" onclick="javascript:associateWithSensor('@resource_type', '@item_id', '@base_url')">Add</button>
+        <button class="btn btn-primary btn-xs" onclick="javascript:associateWithSensor('@resource_type', '@item_id', '@base_url')"><span class="glyphicon glyphicon-plus"></span> Add</button>
     }
 </div>
 <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>

@@ -70,8 +70,8 @@ var followHandler = function (jsRoutes, id, name, type, followCallback, unfollow
     if (buttonText === 'Follow') {
         var request = ajaxObj.follow(id, name).ajax({ type: 'POST' });
         request.done(function (data) {
-            $followButton.text("Unfollow");
-            $followButton.removeClass('btn-default');
+            $followButton.html("<span class='glyphicon glyphicon-star-empty'></span> Unfollow");
+            $followButton.removeClass('btn-success');
             $followButton.addClass('btn-danger');
             if (followCallback !== undefined) {
                 followCallback(data);
@@ -84,9 +84,9 @@ var followHandler = function (jsRoutes, id, name, type, followCallback, unfollow
     } else if (buttonText === 'Unfollow') {
         var request = ajaxObj.unfollow(id, name).ajax({ type: 'POST' });
         request.done(function (data) {
-            $followButton.text("Follow");
+            $followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
             $followButton.removeClass('btn-danger');
-            $followButton.addClass('btn-default');
+            $followButton.addClass('btn-success');
             if (unfollowCallback !== undefined) {
                 unfollowCallback();
             }
@@ -125,7 +125,8 @@ var recommendationHandler = function(jsRoutes, $recPanel, $recDiv, recommendatio
                                             'objectId="' + id + '" ' +
                                             'objectName="' + name + '" ' +
                                             'objectType="' + objectType + '">' +
-                                        'Follow' +
+                                            '<span class="glyphicon glyphicon-star"></span> ' +
+                                    'Follow' +
                                     '</button>' +
                                 '</h4>' +
                             '</div>' +
