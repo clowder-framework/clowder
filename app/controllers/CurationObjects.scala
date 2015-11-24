@@ -92,8 +92,6 @@ class CurationObjects @Inject()(
             // val spaceId = UUID(COSpace(0))
             if (spaces.get(spaceId) != None) {
 
-
-
               //copy file list from FileDAO. and save curartion file matadate
               var newFiles: List[UUID]= List.empty
               for ( fileId <- dataset.files) {
@@ -312,10 +310,10 @@ class CurationObjects @Inject()(
     val files = curations.getCurationFiles(c.files)
     val maxDataset = if (!c.files.isEmpty)  files.map(_.length).max else 0
     val totalSize = if (!c.files.isEmpty) files.map(_.length).sum else 0
-    val metadata = c.datasets(0).metadata ++ c.datasets(0).datasetXmlMetadata.map(metadata => metadata.xmlMetadata) ++ c.datasets(0).userMetadata
 
-    val metadataJson = metadata.filter(item =>isInstanceOf[Tuple2[String, BasicDBList]]).map {
-      item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
+    var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
+    metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).map {
+      item => metadataJson = metadataJson ++ buildMetadataMap(item.content)
     }
 
     val creator = userService.findByIdentity(c.author).map ( usr => usr.profile match {
@@ -438,9 +436,9 @@ class CurationObjects @Inject()(
           val files = curations.getCurationFiles(c.files)
           val maxDataset = if (!c.files.isEmpty)  files.map(_.length).max else 0
           val totalSize = if (!c.files.isEmpty) files.map(_.length).sum else 0
-          val metadata = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
-          var metadataJson = metadata.map {
-            item => item.content.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
+          var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
+          metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).map {
+            item => metadataJson = metadataJson ++ buildMetadataMap(item.content)
           }
           val creator = Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile match {
             case Some(prof) => prof.orcidID match {
@@ -635,4 +633,41 @@ class CurationObjects @Inject()(
     }
   }
 
+
+  def buildMetadataMap(content: JsValue): Map[String, JsValue] = {
+    var out = scala.collection.mutable.Map.empty[String, JsValue]
+    content match {
+      case o: JsObject => {
+        for ((key, value) <- o.fields) {
+          value match {
+            case o: JsObject => value match {
+              case b: JsArray => out(key) = Json.toJson(buildMetadataMap(value))
+              case b: JsString => out(key) = Json.toJson(b.value)
+              case _ => out(key) = value
+            }
+            case o: JsArray => value match {
+              case b: JsArray => out(key) = Json.toJson(buildMetadataMap(value))
+              case b: JsString => out(key) = Json.toJson(b.value)
+              case _ => out(key) = value
+            }
+            case _ => value match {
+              case b: JsArray => out(key) = Json.toJson(buildMetadataMap(value))
+              case b: JsString => out(key) = Json.toJson(b.value)
+              case _ => out(key) = value
+            }
+          }
+        }
+      }
+      case a: JsArray => {
+        for((value, i) <- a.value.zipWithIndex){
+          out = out ++ buildMetadataMap(value)
+        }
+      }
+
+    }
+
+    out.toMap
+  }
+
 }
+
