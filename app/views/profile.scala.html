@@ -24,7 +24,7 @@
                     <button
                       id="userFollowButton"
                       type="button"
-                      class="followButton 
+                      class="followButton
                         @if(profile.followers.contains(viewer.id)) {
                           btn btn-danger
                         }else {
@@ -46,9 +46,9 @@
                     >
                       <!-- Is there a way to store a scala variable somewhere?... -->
                       @if(profile.followers.contains(viewer.id)) {
-                        Unfollow
-                      } else {
-                        Follow
+                           <span class="glyphicon glyphicon-star-empty"></span> Unfollow
+                       } else {
+                           <span class="glyphicon glyphicon-star"></span> Follow
                       }
                     </button>
                   </h4>
