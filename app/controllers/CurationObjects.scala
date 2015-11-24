@@ -438,9 +438,9 @@ class CurationObjects @Inject()(
           val files = curations.getCurationFiles(c.files)
           val maxDataset = if (!c.files.isEmpty)  files.map(_.length).max else 0
           val totalSize = if (!c.files.isEmpty) files.map(_.length).sum else 0
-          val metadata = c.datasets(0).metadata ++ c.datasets(0).datasetXmlMetadata.map(metadata => metadata.xmlMetadata) ++ c.datasets(0).userMetadata
+          val metadata = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
           var metadataJson = metadata.map {
-            item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
+            item => item.content.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
           }
           val creator = Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile match {
             case Some(prof) => prof.orcidID match {

@@ -31,7 +31,8 @@ class CurationObjects @Inject()(datasets: DatasetService,
       sections: SectionService,
       spaces: SpaceService,
       userService: UserService,
-      curationObjectController: controllers.CurationObjects
+      curationObjectController: controllers.CurationObjects,
+      metadatas: MetadataService
       ) extends ApiController {
   @ApiOperation(value = " Get Curation object ORE map",
     httpMethod = "GET")
@@ -54,10 +55,9 @@ class CurationObjects @Inject()(datasets: DatasetService,
 //              item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
 //              )))
             val key = play.api.Play.configuration.getString("commKey").getOrElse("")
-//            val metadata = file.userMetadata ++ file.xmlMetadata
-//            val fileMetadata = metadata.map {
-//              item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
-//            }
+            val fileMetadata = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, file.id)).map {
+              item => item.content.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
+            }
             val tempMap =  Map(
               "Identifier" -> Json.toJson("urn:uuid:"+file.id),
               "@id" -> Json.toJson(controllers.routes.Files.file(file.id).absoluteURL(https)),
@@ -73,8 +73,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "Is Version Of" -> Json.toJson(controllers.routes.Files.file(file.id).absoluteURL(https) + "?key=" + key),
               "similarTo" -> Json.toJson(api.routes.Files.download(file.id).absoluteURL(https))
             )
-            //fileMetadata.toMap ++
-              tempMap
+            fileMetadata.toMap ++ tempMap
           }
           val fileIds = c.files
           var commentsByDataset = comments.findCommentsByDatasetId(c.datasets(0).id)
