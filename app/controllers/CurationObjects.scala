@@ -92,9 +92,7 @@ class CurationObjects @Inject()(
             // val spaceId = UUID(COSpace(0))
             if (spaces.get(spaceId) != None) {
 
-
-
-              //copy file list from FileDAO. and save curartion file matadate
+              //copy file list from FileDAO. and save curartion file metadate
               var newFiles: List[UUID]= List.empty
               for ( fileId <- dataset.files) {
                 files.get(fileId) match {
@@ -165,116 +163,18 @@ class CurationObjects @Inject()(
       }
   }
 
-  def addMetadata(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) (parse.json) { implicit request =>
-    request.user match {
-      case Some(user) => {
-        Logger.debug(s"Adding user metadata to curation $id")
-
-        curations.get(id) match {
-          case Some(c) => {
-            if (c.status == "In Curation") {
-              // write metadata to the collection "curationObjects"
-              val json = request.body
-              // when the new metadata is added
-              val createdAt = new Date()
-
-              // build creator uri
-              // TODO switch to internal id and then build url when returning?
-              val userURI = controllers.routes.Application.index().absoluteURL() + "api/users/" + user.id
-              val creator = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
-
-              val context: JsValue = (json \ "@context")
-
-              // figure out what resource this is attached to
-              val attachedTo =
-                if ((json \ "file_id").asOpt[String].isDefined)
-                  Some(ResourceRef(ResourceRef.curationFile, UUID((json \ "file_id").as[String])))
-                else if ((json \ "dataset_id").asOpt[String].isDefined)
-                  Some(ResourceRef(ResourceRef.curationObject, id))
-                else None
-
-              // check if the context is a URL to external endpoint
-              val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
-
-              // check if context is a JSON-LD document
-              val contextID: Option[UUID] =
-                if (context.isInstanceOf[JsObject]) {
-                  context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
-                } else if (context.isInstanceOf[JsArray]) {
-                  context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
-                } else None
-
-              //parse the rest of the request to create a new models.Metadata object
-              val content = (json \ "content")
-              val version = None
-
-              if (attachedTo.isDefined) {
-                val metadata = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creator,
-                  content, version)
-
-                //add metadata to mongo
-                metadatas.addMetadata(metadata)
-                //add event
-                events.addObjectEvent(Some(user), id, c.name, "addMetadata_curation")
-
-                Ok(toJson(Map("status" -> "success")))
-              } else {
-                BadRequest(toJson("Invalid resource type"))
-              }
-              //curations.addDatasetUserMetaData(id, Json.stringify(request.body))
-
-            } else {
-              InternalServerError("Curation Object already submitted")
-            }
-          }
-          case None  => NotFound
-        }
-      }
-      case None => BadRequest(toJson("Invalid user"))
-    }
-  }
-
-
-  // This function is actually "updateDatasetUserMetadata", it can rewrite the metadata in curation.dataset and add/ modify/ delte
-  // is all done in this function. We use addDatasetUserMetadata to keep consistency with live objects
-  def addDatasetUserMetadata(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) (parse.json) { implicit request =>
-    implicit val user = request.user
-    Logger.debug(s"Adding user metadata to curation's dataset $id")
-
-    curations.get(id) match {
-      case Some(c) => {
-        if (c.status == "In Curation") {
-          // write metadata to the collection "curationObjects"
-          //curations.addDatasetUserMetaData(id, Json.stringify(request.body))
-          //add event
-          events.addObjectEvent(user, id, c.name, "addMetadata_curation")
-        } else {
-          InternalServerError("Curation Object already submitted")
-        }
-      }
-    }
-
-    //datasets.index(id)
-    //    configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-    //      case "yes" => datasets.setUserMetadataWasModified(id, true)
-    //      case _ => Logger.debug("userdfSPARQLStore not enabled")
-    //    }
-    Ok(toJson(Map("status" -> "success")))
-  }
 
 
   def getCurationObject(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {    implicit request =>
     implicit val user = request.user
     curations.get(curationId) match {
       case Some(c) => {
-        val ds: Dataset = c.datasets(0)
-        //dsmetadata is immutable but dsUsrMetadata is mutable TODO:change dsmetadata
         val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
         val mCurationFile = c.files.map(f => metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f))).flatten
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
         val fileByDataset = curations.getCurationFiles(c.files)
         if (c.status != "In Curation") {
-          Ok(views.html.spaces.submittedCurationObject(c, ds, fileByDataset, m))
+          Ok(views.html.spaces.submittedCurationObject(c, fileByDataset, m ++ mCurationFile))
         } else {
           Ok(views.html.spaces.curationObject(c, m ++ mCurationFile, isRDFExportEnabled, fileByDataset))
         }
@@ -312,8 +212,10 @@ class CurationObjects @Inject()(
     val files = curations.getCurationFiles(c.files)
     val maxDataset = if (!c.files.isEmpty)  files.map(_.length).max else 0
     val totalSize = if (!c.files.isEmpty) files.map(_.length).sum else 0
-    val metadata = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).map(_.content)
-    val metadataJson = metadata
+    var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
+    metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).map {
+      item => metadataJson = metadataJson ++ buildMetadataMap(item.content)
+    }
 
     val creator = userService.findByIdentity(c.author).map ( usr => usr.profile match {
       case Some(prof) => prof.orcidID match {
@@ -435,9 +337,9 @@ class CurationObjects @Inject()(
           val files = curations.getCurationFiles(c.files)
           val maxDataset = if (!c.files.isEmpty)  files.map(_.length).max else 0
           val totalSize = if (!c.files.isEmpty) files.map(_.length).sum else 0
-          val metadata = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
-          var metadataJson = metadata.map {
-            item => item.content.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
+          var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
+          metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).map {
+            item => metadataJson = metadataJson ++ buildMetadataMap(item.content)
           }
           val creator = Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile match {
             case Some(prof) => prof.orcidID match {
@@ -632,4 +534,41 @@ class CurationObjects @Inject()(
     }
   }
 
+
+  def buildMetadataMap(content: JsValue): Map[String, JsValue] = {
+    var out = scala.collection.mutable.Map.empty[String, JsValue]
+    content match {
+      case o: JsObject => {
+        for ((key, value) <- o.fields) {
+          value match {
+            case o: JsObject => value match {
+              case b: JsArray => out(key) = Json.toJson(buildMetadataMap(value))
+              case b: JsString => out(key) = Json.toJson(b.value)
+              case _ => out(key) = value
+            }
+            case o: JsArray => value match {
+              case b: JsArray => out(key) = Json.toJson(buildMetadataMap(value))
+              case b: JsString => out(key) = Json.toJson(b.value)
+              case _ => out(key) = value
+            }
+            case _ => value match {
+              case b: JsArray => out(key) = Json.toJson(buildMetadataMap(value))
+              case b: JsString => out(key) = Json.toJson(b.value)
+              case _ => out(key) = value
+            }
+          }
+        }
+      }
+      case a: JsArray => {
+        for((value, i) <- a.value.zipWithIndex){
+          out = out ++ buildMetadataMap(value)
+        }
+      }
+
+    }
+
+    out.toMap
+  }
+
 }
+

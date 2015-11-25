@@ -1,21 +1,15 @@
 package api
 
 import javax.inject.{Inject, Singleton}
-
-
-import com.mongodb.BasicDBList
-import controllers.Utils
 import models._
-import play.api.libs.ws.WS
 import org.apache.http.client.methods.HttpDelete
 import org.apache.http.impl.client.DefaultHttpClient
 import services._
 import play.api.libs.json._
 import play.api.libs.json.Json
-import play.api.libs.json.Json._
 import play.api.libs.json.JsResult
 import play.api.libs.json.Json.toJson
-import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
+import com.wordnik.swagger.annotations.{Api, ApiOperation}
 import play.api.Logger
 import play.api.Play.current
 
@@ -44,19 +38,11 @@ class CurationObjects @Inject()(datasets: DatasetService,
 
           val https = controllers.Utils.https(request)
           val filesJson = curations.getCurationFiles(c.files).map { file =>
-            // TODO: Add file.metadata to ORE Map when we change to JSON-LD
-//            var fl_md: Map[String, Any] = Map.empty[String,Any]
-//            for ( i <- 0 to file.metadata.length -1) {
-//              fl_md = fl_md ++ file.metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap
-//            }
-
-//            val file_md_parsed = fl_md.map(
-//              it => it._1 -> Json.toJson( it._2.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap.map(
-//              item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
-//              )))
             val key = play.api.Play.configuration.getString("commKey").getOrElse("")
-            val fileMetadata = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, file.id)).map {
-              item => item.content.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
+
+            var fileMetadata = scala.collection.mutable.Map.empty[String, JsValue]
+            metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, file.id)).map {
+              item => fileMetadata = fileMetadata ++ curationObjectController.buildMetadataMap(item.content)
             }
             val tempMap =  Map(
               "Identifier" -> Json.toJson("urn:uuid:"+file.id),
@@ -73,7 +59,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "Is Version Of" -> Json.toJson(controllers.routes.Files.file(file.id).absoluteURL(https) + "?key=" + key),
               "similarTo" -> Json.toJson(api.routes.Files.download(file.id).absoluteURL(https))
             )
-            fileMetadata.toMap ++ tempMap
+            tempMap ++ fileMetadata
           }
           val fileIds = c.files
           var commentsByDataset = comments.findCommentsByDatasetId(c.datasets(0).id)
@@ -93,10 +79,11 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "comment_author" -> Json.toJson(userService.findByIdentity(comm.author).map ( usr => Json.toJson(usr.fullName + ": " + controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https))))
             ))
           }
-          val metadata = c.datasets(0).metadata ++ c.datasets(0).datasetXmlMetadata.map(metadata => metadata.xmlMetadata) ++ c.datasets(0).userMetadata
-          val metadataJson = metadata.map {
-            item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
+          var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
+          metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).map {
+            item => metadataJson = metadataJson ++ curationObjectController.buildMetadataMap(item.content)
           }
+
           val parsedValue = Json.toJson(
             Map(
               "@context" -> Json.toJson(Seq(

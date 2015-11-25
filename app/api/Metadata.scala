@@ -124,7 +124,11 @@ class Metadata @Inject()(
               Some(ResourceRef(ResourceRef.file, UUID((json \ "file_id").as[String])))
             else if ((json \ "dataset_id").asOpt[String].isDefined)
               Some(ResourceRef(ResourceRef.dataset, UUID((json \ "dataset_id").as[String])))
-            else None
+            else if ((json \ "curationObject_id").asOpt[String].isDefined)
+              Some(ResourceRef(ResourceRef.curationObject, UUID((json \ "curationObject_id").as[String])))
+          else if ((json \ "curationFile_id").asOpt[String].isDefined)
+              Some(ResourceRef(ResourceRef.curationFile, UUID((json \ "curationFile_id").as[String])))
+          else None
 
           // check if the context is a URL to external endpoint
           val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))

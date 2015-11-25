@@ -1,4 +1,4 @@
-@(curationObject: models.CurationObject, dataset: models.Dataset, files :List[CurationFile], m: List[models.Metadata])(implicit user: Option[models.User])
+@(curationObject: models.CurationObject, files :List[CurationFile], m: List[models.Metadata])(implicit user: Option[models.User])
 
   @import helper._
   @import collection.JavaConverters._
@@ -85,8 +85,21 @@
             </div>
           </div>
         </li>
+        <script>
+                    $("#allMetadata_@(file.id.toString) > button").on('click', function(){
+                        if($("#allMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
+                            $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
+                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file metadata";
+                        }
+                        else{
+                            $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
+                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file metadata";
+                        }
+                        });
+                </script>
       }
       </ul>
+
 
     </div>
     <div class="col-md-6">

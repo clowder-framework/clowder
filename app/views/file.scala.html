@@ -10,67 +10,6 @@
 @import play.api.Play.current
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
-	@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
-		@for((key,value) <- metadata) {
-			<li><b>@(key):</b>
-			@if(value.isInstanceOf[String]) {
-				@if(value.asInstanceOf[String].startsWith("http://") || value.asInstanceOf[String].startsWith("https://")) {
-					<a href="@value">@value</a>
-				} else {
-					@value
-				}
-			} else {
-				@if(value.isInstanceOf[java.lang.Integer] || value.isInstanceOf[java.lang.Double] || value.isInstanceOf[java.lang.Float] ) {
-					@value.toString
-				} else {
-					@if(value.isInstanceOf[com.mongodb.BasicDBList]) {
-						<ul>
-							@printList(value.asInstanceOf[com.mongodb.BasicDBList].toList)
-						</ul>
-					} else {
-						@if(value.isInstanceOf[com.mongodb.BasicDBObject]) {
-							<ul>
-							  @printLevel(value.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
-							</ul>
-						} else {
-							@value.toString
-						}
-					}
-				}
-			}</li>
-		}
-	}
-
-	@printList(metadata: List[AnyRef])	= {
-		@metadata.indices.map { i =>
-			<li><b>@i:</b>
-				@if(metadata(i).isInstanceOf[String]) {
-					@if(metadata(i).asInstanceOf[String].startsWith("http://") || metadata(i).asInstanceOf[String].startsWith("https://")) {
-						<a href="@metadata(i)">@metadata(i)</a>
-					} else {
-						@metadata(i)
-					}
-				} else {
-					@if(metadata(i).isInstanceOf[java.lang.Integer] || metadata(i).isInstanceOf[java.lang.Double] || metadata(i).isInstanceOf[java.lang.Float] ) {
-						@metadata(i).toString
-					} else {
-						@if(metadata(i).isInstanceOf[com.mongodb.BasicDBList]) {
-							<ul>
-							@printList(metadata(i).asInstanceOf[com.mongodb.BasicDBList].toList)
-							</ul>
-						} else {
-							@if(metadata(i).isInstanceOf[com.mongodb.BasicDBObject]) {
-								<ul>
-								@printLevel(metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
-								</ul>
-							} else {
-								@metadata(i)
-							}
-						}
-					}
-				}</li>
-		}
-	}
 
 @* (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length) *@
 @showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long), filename: String, contentType: String) = {
@@ -509,7 +448,7 @@
 				</div>
 				<div class="row">
 					<div class="col-md-12">
-						@metadatald.addMetadata("file", file.id.toString, None)
+						@metadatald.addMetadata("file", file.id.toString)
 					</div>
 				</div>
 				<div class="row">

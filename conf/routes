@@ -622,7 +622,6 @@ GET            /spaces/curations/:id/sendToRepository                           
 GET            /spaces/curations/:id/matchmaker                                         @controllers.CurationObjects.findMatchingRepositories(id: UUID)
 POST           /spaces/curations/:id/matchmaker                                         @api.CurationObjects.findMatchmakingRepositories(id: UUID)
 GET            /spaces/curations/:id/curationFile                                       @api.CurationObjects.getCurationFiles(id: UUID)
-POST           /spaces/curations/:id/metadata                                           @controllers.CurationObjects.addMetadata(id: UUID)
 POST           /spaces/curations/:id/status                                             @controllers.CurationObjects.savePublishedObject(id: UUID)
 GET            /spaces/curations/:id/getStatusFromRepository                            @controllers.CurationObjects.getStatusFromRepository(id: UUID)
 

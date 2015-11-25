@@ -1,8 +1,9 @@
-@(resType: String, id: String, curationId:Option[String])(implicit user: Option[models.User])
+@(resType: String, id: String)(implicit user: Option[models.User])
 @import api.Permission
-@if(resType== "dataset" && Permission.checkPermission(Permission.AddMetadata, ResourceRef(ResourceRef.dataset, UUID(id)))
+@*The permission for curationObject and CurationFile is check outside this file*@
+@if(resType == "dataset" && Permission.checkPermission(Permission.AddMetadata, ResourceRef(ResourceRef.dataset, UUID(id)))
         || resType == "file" && Permission.checkPermission(Permission.AddMetadata, ResourceRef(ResourceRef.file, UUID(id)))
-        || resType.startsWith("curation") && Permission.checkPermission(Permission.AddMetadata, ResourceRef(ResourceRef.curationObject, UUID(curationId.getOrElse(""))))) {
+        || resType.startsWith("curation")) {
 
 
 
@@ -126,32 +127,7 @@ line-height: 1.5;
                 content["Latitude"] = lat_lng[0].trim();
                 content["Longitude"] = lat_lng[1].trim();
             }
-            if(@resType.startsWith("curation")){
-                 var body = {
-                    "@@context": context,
-                    "@(resType.replace("curation.", ""))_id": "@id",
-                    "content": content
-                };
 
-                 var request = jsRoutes.controllers.CurationObjects.addMetadata('@UUID(curationId.getOrElse(""))').ajax({
-                    data: JSON.stringify(body),
-                    type: 'POST',
-                    contentType: "application/json"
-                });
-
-                request.done(function (response, textStatus, jqXHR) {
-                    // TODO update gui without reloading page
-                    location.reload();
-                });
-
-                request.fail(function (jqXHR, textStatus, errorThrown){
-                    console.error("The following error occured: " + textStatus, errorThrown);
-                    var errMsg = "You must be logged in to add metadata";
-                    if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                      notify("Metadata was not added due to : " + errorThrown, "error");
-                    }
-                });
-            } else {
                 var body = {
                         "@@context": context,
                         "@(resType)_id": "@id",
@@ -176,7 +152,7 @@ line-height: 1.5;
                       notify("Metadata was not added due to : " + errorThrown, "error");
                     }
                 });
-            }
+
         }
     }
 

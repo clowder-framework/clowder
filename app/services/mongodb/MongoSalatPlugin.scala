@@ -211,7 +211,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongoCollectionsInDatasetStringToUUID
 
     // change Files in datasets from List[File] to List[UUID]
-    //updateReplaceFilesInDataset
+    updateReplaceFilesInDataset
 
     // migrate metadata to jsonld
     migrateMetadataRepresentationtoJSONLD
