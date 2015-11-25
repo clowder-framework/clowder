@@ -49,8 +49,8 @@ case class SpaceInvite(
     email: String,
     space: UUID,
     role: String,
-    creationTime: org.joda.time.DateTime,
-    expirationTime: org.joda.time.DateTime)
+    creationTime: java.util.Date,
+    expirationTime: java.util.Date)
    
 // New way to manage metadata. Will eventually be merged with space metadata.
 case class SpaceMetadata (

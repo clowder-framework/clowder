@@ -1,7 +1,7 @@
 package controllers
 
 import java.net.URL
-import java.util.Date
+import java.util.{Calendar, Date}
 import javax.inject.Inject
 
 import api.Permission
@@ -296,7 +296,11 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                       val TokenDuration = Play.current.configuration.getInt(TokenDurationKey).getOrElse(DefaultDuration)
                       val token = new Token(uuid.stringify, email, DateTime.now(), DateTime.now().plusMinutes(TokenDuration), true)
                       securesocial.core.UserService.save(token)
-                      val invite = SpaceInvite(uuid, uuid.toString(), email, s.id, role.id.stringify, DateTime.now(), DateTime.now().plusMinutes(TokenDuration))
+                      val ONE_MINUTE_IN_MILLIS=60000
+                      val date: Calendar = Calendar.getInstance()
+                      val t= date.getTimeInMillis()
+                      val afterAddingMins: Date=new Date(t + (TokenDuration * ONE_MINUTE_IN_MILLIS))
+                      val invite = SpaceInvite(uuid, uuid.toString(), email, s.id, role.id.stringify, new Date(), afterAddingMins)
                       if(play.api.Play.current.configuration.getBoolean("registerThroughAdmins").get)
                       {
                         val theHtml = views.html.inviteEmailThroughAdmin(uuid.stringify, email, s.name, user.get.getMiniUser.fullName, formData.message)

@@ -1,7 +1,7 @@
 package services.mongodb
 
 import java.net.URL
-import java.util.Date
+import java.util.{Calendar, Date}
 
 import com.mongodb.CommandFailureException
 import com.mongodb.casbah.Imports._
@@ -558,8 +558,12 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           val TokenDurationKey = securesocial.controllers.Registration.TokenDurationKey
           val DefaultDuration = securesocial.controllers.Registration.DefaultDuration
           val TokenDuration = Play.current.configuration.getInt(TokenDurationKey).getOrElse(DefaultDuration)
-          invite.put("creationTime", DateTime.now.toDate)
-          invite.put("expirationTime",  DateTime.now.plusMinutes(TokenDuration).toDate)
+          invite.put("creationTime", new Date())
+          val ONE_MINUTE_IN_MILLIS=60000
+          val date: Calendar = Calendar.getInstance()
+          val t= date.getTimeInMillis()
+          val afterAddingMins: Date=new Date(t + (TokenDuration * ONE_MINUTE_IN_MILLIS))
+          invite.put("expirationTime",  afterAddingMins)
           try {
             collection("spaces.invites").save(invite, WriteConcern.Safe)
           }
