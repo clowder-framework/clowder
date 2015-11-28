@@ -156,4 +156,17 @@ class Metadata @Inject()(
         case None => BadRequest(toJson("Invalid user"))
       }
   }
+
+  def removeMetadata(id:UUID) = PermissionAction(Permission.AddMetadata) { implicit request =>
+    metadataService.getMetadataById(id) match{
+      case Some(m) => {
+        metadataService.removeMetadata(id)
+        Ok(JsObject(Seq("status" -> JsString("ok"))))
+      }
+      case None => BadRequest(toJson("Invalid Metadata"))
+    }
+
+  }
+
+
 }

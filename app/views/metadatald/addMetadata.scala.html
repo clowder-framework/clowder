@@ -29,6 +29,7 @@
 <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
 <style>
   .ui-autocomplete-category {
     font-weight: bold;
@@ -135,7 +136,9 @@
 
             request.done(function (response, textStatus, jqXHR) {
                 // TODO update gui without reloading page
-                location.reload();
+
+                window.location.reload();
+
             });
 
             request.fail(function (jqXHR, textStatus, errorThrown){
