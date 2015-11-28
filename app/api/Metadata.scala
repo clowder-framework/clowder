@@ -165,8 +165,5 @@ class Metadata @Inject()(
       }
       case None => BadRequest(toJson("Invalid Metadata"))
     }
-
   }
-
-
 }

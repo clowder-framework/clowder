@@ -136,9 +136,7 @@
 
             request.done(function (response, textStatus, jqXHR) {
                 // TODO update gui without reloading page
-
-                window.location.reload();
-
+                location.reload();
             });
 
             request.fail(function (jqXHR, textStatus, errorThrown){
