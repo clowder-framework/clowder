@@ -92,10 +92,11 @@
             idEmailObj["@extUser.id"] = "@extUser.email";
         }
 
-    @for((k,v) <- userRoleMap) {
+        @for((k,v) <- userRoleMap) {
             idNameObj["@k.id"] = "@k.fullName";
             idEmailObj["@k.id"] = "@k.email";
         }
+        $(".chosen-choices").addClass("form-control");
     });
 
     //Handle the change events when a user is added or removed from the selection lists

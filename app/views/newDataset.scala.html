@@ -221,9 +221,10 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
 
 <script language = "javascript">
     $(".chosen-select").chosen({
-        width: "90%",
+        width: "100%",
         placeholder_text_multiple: "Select spaces for this dataset."
     })
+
 </script>
 
 <script language = "javascript">
@@ -241,6 +242,7 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
         @for(space <- spaces) {
             idNameObj["@space.name"] = "@space.id";
         }
+        $(".chosen-choices").addClass("form-control");
     });
 
     $(".chosen-select").chosen().change(function(event, params) {

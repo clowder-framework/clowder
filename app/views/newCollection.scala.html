@@ -83,9 +83,8 @@
   </div>
 <script language="javascript">
     $(".chosen-select").chosen({
-        width: "90%",
+        width: "100%",
         placeholder_text_multiple: "Select spaces for this collection.",
-        class: "chosen-container"
     });
 </script>
 <script language = "javascript">
@@ -104,6 +103,7 @@
             idNameObj["@space.name"] = "@space.id";
 
         }
+        $(".chosen-choices").addClass("form-control");
     });
 
     $(".chosen-select").chosen().change(function(event, params) {
