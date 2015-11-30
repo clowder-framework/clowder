@@ -27,7 +27,7 @@ $(document ).ready(function() {
     	        type: "POST"
     	      })
     	        .done(function(data) {
-    	          followButton.text("Unfollow");
+    	          followButton.html("<span class='glyphicon glyphicon-star-empty'></span> Unfollow");
     	          followButton.removeClass('btn-success');
     	          followButton.addClass('btn-danger');
     	          followCallback();
@@ -41,7 +41,7 @@ $(document ).ready(function() {
     	        type: "POST"
     	      })
     	        .done(function(data) {
-    	          followButton.text("Follow");
+    	          followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
     	          followButton.removeClass('btn-danger');
     	          followButton.addClass('btn-success');
     	          unfollowCallback();
@@ -58,7 +58,7 @@ $(document ).ready(function() {
     	        type: "POST"
     	      })
     	        .done(function(data) {
-    	          followButton.text("Unfollow");
+    	          followButton.html("<span class='glyphicon glyphicon-star-empty'></span> Unfollow");
     	          followButton.removeClass('btn-success');
     	          followButton.addClass('btn-danger');
     	          followCallback();
@@ -72,7 +72,7 @@ $(document ).ready(function() {
     	        type: "POST"
     	      })
     	        .done(function(data) {
-    	          followButton.text("Follow");
+    	          followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
     	          followButton.removeClass('btn-danger');
     	          followButton.addClass('btn-success');
     	          unfollowCallback();
@@ -88,7 +88,7 @@ $(document ).ready(function() {
     	        type: "POST"
     	      })
     	        .done(function(data) {
-    	          followButton.text("Unfollow");
+    	          followButton.html("<span class='glyphicon glyphicon-star-empty'></span> Unfollow");
     	          followButton.removeClass('btn-success');
     	          followButton.addClass('btn-danger');
     	          followCallback();
@@ -102,7 +102,7 @@ $(document ).ready(function() {
     	        type: "POST"
     	      })
     	        .done(function(data) {
-    	          followButton.text("Follow");
+    	          followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
     	          followButton.removeClass('btn-danger');
     	          followButton.addClass('btn-success');
     	          unfollowCallback();
@@ -118,7 +118,7 @@ $(document ).ready(function() {
     	        type: "POST"
     	      })
     	        .done(function(data) {
-    	          followButton.text("Unfollow");
+    	          followButton.html("<span class='glyphicon glyphicon-star-empty'></span> Unfollow");
     	          followButton.removeClass('btn-success');
     	          followButton.addClass('btn-danger');
     	          followCallback();
@@ -132,7 +132,7 @@ $(document ).ready(function() {
     	        type: "POST"
     	      })
     	        .done(function(data) {
-    	          followButton.text("Follow");
+    	          followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
     	          followButton.removeClass('btn-danger');
     	          followButton.addClass('btn-success');
     	          unfollowCallback();
@@ -148,7 +148,7 @@ $(document ).ready(function() {
 				type: "POST"
 			})
 				.done(function(data) {
-					followButton.text("Unfollow");
+					followButton.html("<span class='glyphicon glyphicon-star-empty'></span> Unfollow");
 					followButton.removeClass('btn-success');
 					followButton.addClass('btn-danger');
 					followCallback();
@@ -162,7 +162,7 @@ $(document ).ready(function() {
 				type: "POST"
 			})
 				.done(function(data) {
-					followButton.text("Follow");
+					followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
 					followButton.removeClass('btn-danger');
 					followButton.addClass('btn-success');
 					unfollowCallback();

@@ -83,7 +83,7 @@
 									class="btn btn-danger followButton btn-sm"
 									objectId="@collection.id"
 									objectName="@collection.name"
-									objectType="collection"><span class="glyphicon glyphicon-star-empty"> Unfollow
+									objectType="collection"><span class="glyphicon glyphicon-star-empty"></span> Unfollow
 									</button>
 								}
 							}
@@ -226,7 +226,7 @@
 	function updateTitle() {
 	 var cur_title = $('#collectiontitle').text();
 	 $('<input type = "text" id="title_input" class="form-control"/>').insertAfter($('#collectiontitle'));
-	 $('<button id="update_title" class="btn btn-sm btn-default" onclick="saveTitle()"><span class="glyphicon glyphicon-save"></span> Save</button>').insertAfter($('#title_input'));
+	 $('<button id="update_title" class="btn btn-sm btn-default" onclick="saveTitle()"><span class="glyphicon glyphicon-send"></span> Save</button>').insertAfter($('#title_input'));
 	 $('#title_input').val(cur_title);
 	 $('#collectiontitle').text("");
 	 $('#edit-title').css("display", "none");
@@ -265,7 +265,7 @@
 		$('<div class = "edit_desc"></div>').insertAfter($('#collection_desc'));
 		$(".edit_desc").append('<textarea type ="text" id = "desc_input" class="form-control"/>')
 		$(".edit_desc").append('<br/>');
-		$(".edit_desc").append('<button id = "update_desc" class = "btn btn-sm btn-default" onclick = "saveDescription()"><span class="glyphicon glyphicon-save"></span> Save</button>');
+		$(".edit_desc").append('<button id = "update_desc" class = "btn btn-sm btn-default" onclick = "saveDescription()"><span class="glyphicon glyphicon-send"></span> Save</button>');
 		$('#desc_input').val(cur_description);
 		$('#collection_desc').text("");
 		$('#edit-description').css("display", "none");
