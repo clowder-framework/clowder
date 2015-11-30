@@ -157,7 +157,7 @@ class Metadata @Inject()(
       }
   }
 
-  def removeMetadata(id:UUID) = PermissionAction(Permission.AddMetadata) { implicit request =>
+  def removeMetadata(id:UUID) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.metadata, id))) { implicit request =>
     metadataService.getMetadataById(id) match{
       case Some(m) => {
         metadataService.removeMetadata(id)

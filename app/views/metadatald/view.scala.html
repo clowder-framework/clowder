@@ -136,7 +136,7 @@
 
         $(function () {
             $('.delete-icon').on('click', function(){
-                var delete_icon = this;
+                var delete_icon = $(this);
                 var request = jsRoutes.api.Metadata.removeMetadata(this.id).ajax({
                     type: 'GET',
                     contentType: "application/json"
