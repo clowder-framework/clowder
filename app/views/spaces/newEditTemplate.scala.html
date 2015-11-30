@@ -22,12 +22,12 @@
 
       @form(action = routes.Spaces.submit, 'enctype -> "multipart/form-data", 'class -> "form-horizontal", 'id -> "spaceForm") {
         <fieldset  id="nameDescrFieldSet">
-          @inputText(myForm("name"), '_label -> "Name")
-          @textarea(myForm("description"), '_label -> "Description")
+          @inputText(myForm("name"), 'class -> "form-control", '_label -> "Name")
+          @textarea(myForm("description"), 'class -> "form-control", '_label -> "Description")
           <div class ="control-group"><label class="control-label" for="homePages">External Links</label></div>
           <div class = "homePages">
             @repeat(myForm("homePages"), min = 1) {externalLink =>
-              @inputText(externalLink, '_label -> "")
+              @inputText(externalLink, 'class -> "form-control", '_label -> "")
               @****** one too many delete buttons
               @if(myForm.hasErrors && myForm("homePages").indexes.length > 1) {
               <div class="home-page-delete"><a href="#">delete</a></div>
@@ -36,15 +36,15 @@
             }
             <div class="external-link-add"><a href="#">add</a></div>
           </div>
-          @inputText(myForm("logoUrl"), '_label-> "Logo URL")
-          @inputText(myForm("bannerUrl"), '_label-> "Banner URL")
+          @inputText(myForm("logoUrl"),'class -> "form-control", '_label-> "Logo URL")
+          @inputText(myForm("bannerUrl"),'class -> "form-control", '_label-> "Banner URL")
 
           @helper.inputRadioGroup(myForm("expiration"), options("expiretrue"->"On", "expirefalse"->"Off"), '_label -> "Expiration")
           @defining(myForm("isTimeToLiveEnabled")) { isTimeToLiveEnabled =>
             <input type="hidden" name="isTimeToLiveEnabled" id="isTimeToLiveEnabled", value = @isTimeToLiveEnabled.value>
           }
-          @helper.inputText(myForm("editTime"), '_label -> "Time to live (hours):")
-          @helper.input(myForm("space_id"), '_label ->"") {(id, name, value, args) =>
+          @helper.inputText(myForm("editTime"), 'class -> "form-control", '_label -> "Time to live (hours):")
+          @helper.input(myForm("space_id"), 'class -> "form-control", '_label ->"") {(id, name, value, args) =>
             <input type="hidden" name="@id" value="@value">
           }
         </fieldset>

@@ -20,8 +20,8 @@
 
             @form(action = routes.Admin.submitCreateRole(), 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
                 <fieldset id="nameDescrFieldSet">
-                    @inputText(newRoleForm("name"), '_label -> "Name")
-                    @textarea(newRoleForm("description"), '_label -> "Description")
+                    @inputText(newRoleForm("name"), 'class-> "form-control", '_label -> "Name")
+                    @textarea(newRoleForm("description"), 'class-> "form-control", '_label -> "Description")
                     @checkboxes(newRoleForm("permissions"), label = "Permissions", checkboxMap = permissionsMap, help ="Select the permissions you want to add to this role" )
                 </fieldset>
                 <div class="form-actions">

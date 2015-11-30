@@ -54,7 +54,7 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Name:</td>
             <td style="width: 35%; vertical-align:top;" class="input-table-cell">
                 <label id="namelabel" class="hiddencomplete">Nothing</label>
-                <textarea cols=40 rows=4 type="text" id="name"></textarea>                                            
+                <textarea class="form-control" cols=40 rows=4 type="text" id="name"></textarea>
             </td>
             <td style="vertical-align:top;" class="input-table-cell">
                 <span class="error hiddencomplete" id="nameerror"> The name is a required field</span><br>
@@ -64,7 +64,7 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Description:</td>
             <td style="width: 35%; vertical-align:top;" class="input-table-cell" id="desccell">
                 <label id="desclabel" class="hiddencomplete">Nothing</label>
-                <textarea cols=40 rows=4 type="text" id="description"></textarea>                                            
+                <textarea class="form-control" cols=40 rows=4 type="text" id="description"></textarea>
             </td>
             <td style="vertical-align:top;" class="input-table-cell">
                 <span class="error hiddencomplete" id="descerror"> This description is a required field</span><br>
@@ -73,7 +73,7 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
         <tr>
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Share with spaces (optional):</td>
             <td style="width: 35%; vertical-align:top;" class="input-table-cell" id="desccell">
-                <select name="space" id="spaceid" style="width: 415px;" class ="chosen-select" multiple>
+                <select name="space" id="spaceid" style="width: 415px;" class ="form-control chosen-select" multiple>
 
 			        @spaces.map { space =>  
 			            <option id="@(space.id)" value="@(space.id)">@(space.name)</option>
