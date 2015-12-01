@@ -60,7 +60,12 @@ object MetadataDefinition {
           "uri":"http://ecgs.ncsa.illinois.edu/gsis/sas/geocode",
           "type":"listgeocode",
           "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/geocode",
-          "query_parameter": "loc"}""")
+          "query_parameter": "loc"}"""),
+        Json.parse("""{
+          "label":"Unit",
+          "uri":"http://ecgs.ncsa.illinois.edu/gsis/sas/unit/udunits2",
+          "type":"list",
+          "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/unit/udunits2"}""")
     )
     default.map(d => metadataService.addDefinition(MetadataDefinition(json = d)))
   }

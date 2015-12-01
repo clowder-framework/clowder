@@ -57,7 +57,7 @@
                 if (char_index > -1) {
                     var shortName = label.slice(0, char_index);
                     var displName = label.slice(char_index + 1);
-                    console.log("Setting category name '" + shortName + "' to '" + displName + "'");
+                    //console.log("Setting category name '" + shortName + "' to '" + displName + "'");
                     dispCatMap.set(shortName, displName);
                 }
             });
@@ -72,7 +72,7 @@
                     item.label = label.slice(char_index + 1);
                 }
                 if ( category != currentCategory ) {
-                    console.log("category changed from " + currentCategory + " to: " + category);
+                    //console.log("category changed from " + currentCategory + " to: " + category);
                     var displayed_cat_name = category;
                     if (dispCatMap.has(category)) {
                         displayed_cat_name = dispCatMap.get(category);
@@ -170,8 +170,11 @@
             $("#add-metadata-select").append(elem);
             //console.log("Rui: fields[i].json.label == Unit is: ", (fields[i].json.label == "Unit"));
         }
-        var unit_uri = fields.filter(function(el) {return el.json.label == "Unit";})[0].json.uri;
-        console.log("Rui: unit_uri is:", unit_uri);
+        var unit_field = fields.filter(function(el) {return el.json.label == "Unit";})[0];
+        var unit_uri = undefined;
+        if (unit_field) {
+            unit_uri = unit_field.json.definitions_url;
+        }
         // chosen pulldown configuration
         $("#add-metadata-select").chosen({
             no_results_text: "Not found. Press enter to add ",
@@ -200,6 +203,9 @@
                 $("#add-metadata-button").click(submit);
 
                 if (field_type == "listjquery") {
+                    if (! unit_uri) {
+                        console.log("Error: a metadata definition item labelled \"Unit\" is required to add \"Unit\" metadata with a variable name.  Please add it in \"Metadata Definitions\".");
+                    }
                     // Find the field with the specific uri.
                     var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
                     $("#field-value").catcomplete({
@@ -230,13 +236,17 @@
                     $("#unit-value").autocomplete({
                         minLength: 1,
                         source: function( request, response ) {
-                            console.log("Rui: in unit-value autocomplete, unit_uri is:", unit_uri);
                             var url = encodeURIComponent(unit_uri);
                             $.ajax({
                                 url: jsRoutes.api.Metadata.getUrl(url).url,
                                 dataType: "json",
                                 success: function( data ) {
-                                    response(data);
+                                    var searchspace = data;
+                                    var searchwords = request.term.split(" ");
+                                    $.each(searchwords, function() {
+                                        searchspace = $.ui.autocomplete.filter(searchspace, this);
+                                    });
+                                    response(searchspace);
                                 }
                             });
                         }
