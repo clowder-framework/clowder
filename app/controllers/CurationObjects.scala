@@ -89,10 +89,9 @@ class CurationObjects @Inject()(
 
         datasets.get(datasetId) match {
           case Some(dataset) => {
-            // val spaceId = UUID(COSpace(0))
             if (spaces.get(spaceId) != None) {
 
-              //copy file list from FileDAO. and save curartion file metadate
+              //copy file list from FileDAO. and save curartion file metadata
               var newFiles: List[UUID]= List.empty
               for ( fileId <- dataset.files) {
                 files.get(fileId) match {
