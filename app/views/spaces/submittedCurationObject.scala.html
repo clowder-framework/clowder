@@ -54,7 +54,9 @@
         @*if(Permission.checkPermission(Permission.ViewMetadata, ResourceRef(ResourceRef.curationObject, curationObject.id))) {*@
         <div class="row">
           <div class="col-md-12 box-white-space">
-            <h5>Metadata</h5>
+            @if(m.filter(_.attachedTo.resourceType == ResourceRef.curationObject).size > 0) {
+           	  <h5>Metadata</h5>
+            }
             <div  class='usr_md_'>
             @metadatald.view(m.filter(_.attachedTo.resourceType == ResourceRef.curationObject))
             </div>
@@ -78,7 +80,9 @@
             <div style="display:none;">
               <div class="row border-top">
                 <div class="col-md-12">
-                  <h4>Metadata</h4>
+                  @if(m.filter(_.attachedTo.id == file.id).size > 0) {
+                 	 <h4>Metadata</h4>
+                  }
                   @metadatald.view(m.filter(_.attachedTo.id == file.id))
                 </div>
               </div>
