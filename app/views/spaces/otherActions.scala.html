@@ -7,7 +7,7 @@
                 <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
             </a></li>
         } else {
-            <li><a href="@routes.Spaces.manageUsers(space.id)" class="btn btn-success btn-xs disabled btn-margins">
+            <li><a href="@routes.Spaces.manageUsers(space.id)" class="btn btn-default btn-xs disabled btn-margins">
                 <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
             </a></li>
         }
@@ -29,7 +29,7 @@
             </a></li>
         }
         @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))) {
-            <li><a class = "btn btn-xs btn-success btn-margins" href="@routes.Spaces.stagingArea(space.id)" title="Staging Area"><span class="glyphicon glyphicon-briefcase"></span> Staging Area</a></li>
+            <li><a class = "btn btn-xs btn-default btn-margins" href="@routes.Spaces.stagingArea(space.id)" title="Staging Area"><span class="glyphicon glyphicon-briefcase"></span> Staging Area</a></li>
         }
         <li>@spaces.follow(space)</li>
         <li>@spaces.requestAuthorization(space, userRoleMap)</li>

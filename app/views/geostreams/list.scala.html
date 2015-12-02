@@ -33,9 +33,8 @@
                     <td>@((item \ "geometry" \ "coordinates")(1))</td>
                     <td>@((item \ "geometry" \ "coordinates")(0))</td>
                     <td>
-                        <a class="btn btn-default disabled edit-sensor" href="@(routes.Geostreams.edit(((item \ "id").toString())))">Edit</a>
-                        <input type="button" class="btn btn-danger delete-sensor" id="@((item \ "id").toString())" value="Delete" disabled></input>
-
+                        <a class="btn btn-link disabled edit-sensor" href="@(routes.Geostreams.edit(((item \ "id").toString())))"><span class="glyphicon glyphicon-edit"></span> Edit</a>
+                        <button type="button" class="btn btn-link delete-sensor" id="@((item \ "id").toString())" disabled><span class="glyphicon glyphicon-trash"></span> Delete</button>
                     </td>
                 </tr>
             }

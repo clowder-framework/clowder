@@ -75,16 +75,16 @@
                     @datasets.follow(dataset)
                     @if(user.isDefined && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
                         @if(toPublish && currentSpace.isDefined) {
-                            <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-default btn-sm btn-margin-bottom">
+                            <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-primary btn-sm btn-margin-bottom">
                                 <span class="glyphicon glyphicon-globe"></span> Publish
                             </a>
                         } else {
                             @if(dataset.spaces.size > 0) {
-                                <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-default btn-sm btn-margin-bottom">
+                                <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-primary btn-sm btn-margin-bottom">
                                     <span class="glyphicon glyphicon-globe"></span> Publish
                                 </a>
                             } else {
-                                <button class="btn btn-default btn-sm btn-margin-bottom" disabled>
+                                <button class="btn btn-primary btn-sm btn-margin-bottom" disabled>
                                     <span class="glyphicon glyphicon-globe"></span> Publish
                                 </button>
                             }
@@ -193,7 +193,7 @@
         function updateTitle() {
             var cur_title = $('#datasettitle').text();
             $('<input type="text" id = "title_input" class="form-control"/>').insertAfter($('#datasettitle'));
-            $('<button id="update_title" class= "btn btn-sm btn-default" onclick="saveTitle()"><span class="glyphicon glyphicon-send"></span> Save</button>').insertAfter($('#title_input'));
+            $('<button id="update_title" class= "btn btn-sm btn-primary" onclick="saveTitle()"><span class="glyphicon glyphicon-send"></span> Save</button>').insertAfter($('#title_input'));
             $('#title_input').val(cur_title);
             $('#datasettitle').text("");
             $('#edit-title').css("display", "none");
@@ -240,7 +240,7 @@
 		$('<div class="edit_desc"> </div>').insertAfter($('#ds_description'));
 		$('.edit_desc').append('<textarea id = "desc_input" class="form-control"/>');
 		$('.edit_desc').append('<br/>');
-		$('.edit_desc').append('<button id = "update_desc" class= "btn btn-sm btn-default" onclick = "saveDescription()"><span class="glyphicon glyphicon-send"></span> Save</button>')
+		$('.edit_desc').append('<button id = "update_desc" class= "btn btn-sm btn-primary" onclick = "saveDescription()"><span class="glyphicon glyphicon-send"></span> Save</button>')
 		$('#desc_input').val(cur_description);
 		$('#ds_description').text("");
 		$('#edit-description').css("display", "none");
