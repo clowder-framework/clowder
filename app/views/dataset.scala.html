@@ -238,7 +238,10 @@
                     $('#edit-description').addClass("hiddencomplete");
                  });
 
-                 $(document).on('mouseenter', '#edit-license', function() {
+
+            }
+            if(@Permission.checkPermission(Permission.EditLicense, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                $(document).on('mouseenter', '#edit-license', function() {
                     $('#editlicense').removeClass("hiddencomplete");
                     $('#editlicense').addClass("inline");
                  }).on('mouseleave', '#edit-license', function() {
@@ -247,6 +250,7 @@
                  });
 
             }
+
         });
 
         function cancelTitle() {

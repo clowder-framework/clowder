@@ -29,11 +29,11 @@
 			<!-- left column -->
 		<div class="col-md-8 col-right-border">
 
-			<div class="page-header">
+			<div id="coll-title" class="page-header">
 				<h1 id ="collectiontitle" class="inline">@Html(collection.name)</h1>
 				@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
-					<h3 class="inline align-right">
-						<a id="edit-title" href="javascript:updateTitle()">
+					<h3 id="h-edit-title" class="hiddencomplete">
+						<a id="edit-title" href="javascript:updateTitle()" edit="Click to edit title">
 							<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
 						</a>
 					</h3>
@@ -48,10 +48,10 @@
 										<a href= "@routes.Profile.viewProfile(collection.author.email)"> @collection.author.fullName </a>
 									</dd>
 								<dt>Description:</dt>
-								<dd ><p id="collection_desc"  class="inline">@Html(collection.description)</p>
+								<dd id="aboutdesc"><p id="collection_desc"  class="inline">@Html(collection.description)</p>
 									@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
-										<a id="edit-description" href="javascript:updateDescription()">
-											<span class="glyphicon glyphicon-edit edit-tab" aria-hidden="true"></span>
+										<a class="hiddencomplete" id="edit-description" href="javascript:updateDescription()" title ="Click to edit description">
+											<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
 										</a>
 									}
 								</dd>
@@ -224,15 +224,19 @@
 
 
 	var collectionId = "@collection.id.stringify";
-
+	var cur_title;
 	function updateTitle() {
-	 var cur_title = $('#collectiontitle').text();
+	 cur_title = $('#collectiontitle').text();
 	 $('<input type = "text" id="title_input" class="form-control"/>').insertAfter($('#collectiontitle'));
-	 $('<button id="update_title" class="btn btn-sm btn-primary" onclick="saveTitle()"> Save </button>').insertAfter($('#title_input'));
+	 $('<button id="update_title" class="btn btn-sm btn-primary btn-margins" onclick="saveTitle()"> Save </button>').insertAfter($('#title_input'));
+	 $('<a id="cancel_title" class="btn btn-link btn-margins" onclick="cancelTitle()"> Cancel </a>').insertAfter($('#update_title'));
 	 $('#title_input').val(cur_title);
 	 $('#collectiontitle').text("");
-	 $('#edit-title').css("display", "none");
+	 $('#h-edit-title').css("display", "none");
+	 $('#h-edit-title').addClass("hiddencomplete");
+
 	}
+
 	function saveTitle() {
 		var name = $('#title_input').val();
 		var encName = htmlEncode(name);
@@ -248,8 +252,11 @@
 			$('#collectiontitle').text(encName.replace(/\n/g, "<br>"));
 			$('#title_input').remove();
 			$('#update_title').remove();
-			$('#edit-title').css("display", "inline");
+			$('#cancel_title').remove();
 			$('#collectiontitle').css("display", "inline");
+			$('#h-edit-title').removeClass("inline");
+			$('#h-edit-title').css("display", "");
+
 		});
 
 		request.fail(function(jqXHR, textStatus, errorThrown) {
@@ -261,16 +268,29 @@
 		});
 
 	}
+	function cancelTitle() {
+		$('#collectiontitle').text(cur_title);
+		$('#title_input').remove();
+		$('#update_title').remove();
+		$('#cancel_title').remove();
+		$('#collectiontitle').css("display", "inline");
+		$('#h-edit-title').removeClass("inline");
+		$('#h-edit-title').css("display", "");
+	}
+
+	var cur_description;
 
 	function updateDescription() {
-		var cur_description = $('#collection_desc').text().trim();
+		cur_description = $('#collection_desc').text().trim();
 		$('<div class = "edit_desc"></div>').insertAfter($('#collection_desc'));
 		$(".edit_desc").append('<textarea type ="text" id = "desc_input" class="form-control"/>')
 		$(".edit_desc").append('<br/>');
 		$(".edit_desc").append('<button id = "update_desc" class = "btn btn-sm btn-primary" onclick = "saveDescription()"> Save </button>');
+		$(".edit_desc").append('<a id = "cancel_desc" class = "btn btn-link" onclick = "cancelDescription()"> Cancel </a>');
 		$('#desc_input').val(cur_description);
 		$('#collection_desc').text("");
 		$('#edit-description').css("display", "none");
+		$('#edit-description').addClass("hiddencomplete");
 	}
 
 	function saveDescription() {
@@ -287,7 +307,8 @@
 		request.done(function(response, textStatus,jqXHR) {
 			$('#collection_desc').text(encDescription.replace(/\n/g, "<br>"));
 			$('.edit_desc').remove();
-			$('#edit-description').css("display", "inline");
+			$('#edit-description').css("display", "");
+			$('#edit-description').removeClass("inline");
 			$('#collection_desc').css("display", "inline");
 
 		});
@@ -300,9 +321,35 @@
 			}
 		});
 	}
+
+	function cancelDescription() {
+		$('#collection_desc').text(cur_description);
+		$('.edit_desc').remove();
+		$('#edit-description').css("display", "");
+		$('#edit-description').removeClass("inline");
+		$('#collection_desc').css("display", "inline");
+	}
+
 	$(document).ready(function(){
 		if(@collection.spaces.size < 1 ) {
 			$('#collection-users').hide();
+		}
+		if(@Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
+			    $(document).on('mouseenter', '#coll-title', function() {
+                    $('#h-edit-title').removeClass("hiddencomplete");
+                    $('#h-edit-title').addClass("inline");
+                 }).on('mouseleave', '#coll-title', function() {
+                    $('#h-edit-title').removeClass("inline");
+                    $('#h-edit-title').addClass("hiddencomplete");
+                 });
+
+                 $(document).on('mouseenter', '#aboutdesc', function() {
+                    $('#edit-description').removeClass("hiddencomplete");
+                    $('#edit-description').addClass("inline");
+                 }).on('mouseleave', '#aboutdesc', function() {
+                    $('#edit-description').removeClass("inline");
+                    $('#edit-description').addClass("hiddencomplete");
+                 });
 		}
 
 	});
