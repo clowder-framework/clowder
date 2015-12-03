@@ -62,6 +62,6 @@ object MetadataDefinition {
           "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/geocode",
           "query_parameter": "loc"}""")
     )
-    default.map(d => metadataService.addDefinition(MetadataDefinition(json = d)))
+    default.map(d => metadataService.addDefinitionNoUpdate(MetadataDefinition(json = d)))
   }
 }

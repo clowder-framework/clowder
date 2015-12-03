@@ -112,6 +112,23 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
     val uri = (definition.json \ "uri").as[String]
     MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri)) match {
       case Some(md) => {
+        Logger.debug("Updating existing vocabulary definition: " + definition)
+        // make sure to use the same id as the old value
+        val writeResult = MetadataDefinitionDAO.update(MongoDBObject("json.uri" -> uri), definition.copy(id=md.id),
+          false, false, WriteConcern.Normal)
+      }
+      case None => {
+        Logger.debug("Adding new vocabulary definition " + definition)
+        MetadataDefinitionDAO.save(definition)
+      }
+    }
+  }
+
+  /** Add vocabulary definitions, leaving it unchanged if existing **/
+  def addDefinitionNoUpdate(definition: MetadataDefinition): Unit = {
+    val uri = (definition.json \ "uri").as[String]
+    MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri)) match {
+      case Some(md) => {
         Logger.debug("Leaving existing vocabulary definition unchanged: " + definition)
       }
       case None => {

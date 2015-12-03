@@ -38,6 +38,9 @@ trait MetadataService {
   /** Add vocabulary definitions **/
   def addDefinition(definition: MetadataDefinition)
 
+  /** Add vocabulary definitions, leaving it unchanged if existing **/
+  def addDefinitionNoUpdate(definition: MetadataDefinition)
+
   /** Search for resources matching a particular query **/
   def search(query: JsValue): List[ResourceRef]
 
