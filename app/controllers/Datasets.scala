@@ -333,13 +333,14 @@ class Datasets @Inject()(
           }
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
-          val limit: Int = 10;
+          val limit: Int = 10
           val fileList: List[File] = dataset.files.map(fileId => files.get(fileId) match {
             case Some(file) => file
             case None => Logger.debug(s"Unable to find file $fileId")
-          }).asInstanceOf[List[File]]
+          }).asInstanceOf[List[File]].reverse
           val next = fileList.length > limit * (filepage+1)
-          val limitFileList = fileList.slice(limit * filepage, limit * (filepage+1) )
+          val limitFileList = fileList.slice(limit * filepage, limit * (filepage+1))
+          val filepageUpdate = if (filepage <0) 0 else filepage
 
 
           //dataset is in at least one space with editstagingarea permission, or if the user is the owner of dataset.
@@ -351,7 +352,7 @@ class Datasets @Inject()(
           val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
-            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), limitFileList, filesTags, toPublish, curPubObjects, currentSpace, filepage, next))
+            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), limitFileList, filesTags, toPublish, curPubObjects, currentSpace, filepageUpdate, next))
         }
         case None => {
           Logger.error("Error getting dataset" + id)

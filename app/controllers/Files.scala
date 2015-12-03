@@ -250,6 +250,29 @@ class Files @Inject() (
     Ok(views.html.filesList(fileList, commentMap, prev, next, limit, viewMode))
   }
 
+  def listByDataset(datasetId: UUID, filepage: Int) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
+    implicit val user = request.user
+
+    datasets.get(datasetId) match {
+      case Some(d) => {
+        val limit: Int = 30
+        val fileList = d.files.map(f => files.get(f)).flatten
+        val next = if (fileList.length > limit * (filepage+1) ) "dataset-"+ datasetId.toString+ "-next" else "dataset-"+ datasetId.toString
+        val prev = if(filepage<0) "0" else filepage.toString
+        val limitFileList = fileList.slice(limit * filepage, limit * (filepage+1))
+        val commentMap = fileList.map{file =>
+          var allComments = comments.findCommentsByFileId(file.id)
+          sections.findByFileId(file.id).map { section =>
+            allComments ++= comments.findCommentsBySectionId(section.id)
+          }
+          file.id -> allComments.size
+        }.toMap
+        Ok(views.html.filesList(limitFileList, commentMap, prev, next, limit, None))
+      }
+      case None => BadRequest("Dataset not found")
+    }
+  }
+
   /**
    * Upload file page.
    */

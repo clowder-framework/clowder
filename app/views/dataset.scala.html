@@ -102,6 +102,9 @@
                 </ul>
                 <div class="tab-content">
                   <div role="tabpanel" class="tab-pane  fade in active" id="tab-files">
+                      @if(! (filepage == 0 && next == false) ) {
+                          <a id="allfiles" href="@(routes.Files.listByDataset(dataset.id))">All Files</a>
+                      }
                       @files.grid(fileList, dataset.id)
                       <div class="row">
                           <div class="col-md-12">
