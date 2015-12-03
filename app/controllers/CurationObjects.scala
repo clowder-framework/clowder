@@ -141,7 +141,6 @@ class CurationObjects @Inject()(
           val (name, desc, spaceByDataset, defaultspace) = (c.name, c.description, c.datasets.head.spaces.map(id => spaces.get(id)).flatten
             .filter(space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))), spaces.get(c.space))
 
-          //spaces.get(spaceId) is checked in Space.stagingArea
           Ok(views.html.curations.newCuration(id, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
             RequiredFieldsConfig.isDescriptionRequired, false))
 
