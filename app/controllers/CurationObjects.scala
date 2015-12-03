@@ -32,7 +32,7 @@ import play.api.libs.functional.syntax._
 import scala.concurrent.duration._
 import play.api.libs.json.Reads._
 import play.api.libs.json.JsPath.readNullable
-import java.net.{URL, URI}
+import java.net.URI
 
 /**
  * Methods for interacting with the curation objects in the staging area.

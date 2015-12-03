@@ -79,21 +79,21 @@
             <td>
             </td>
             <td>
-            @if(isNew) {
-                <button style="margin-top: 10px; margin-right: 10px;" class="btn btn-primary" title="Create the CO" onclick="return createCuration();">
-                    <span class="glyphicon glyphicon-upload"></span> Create
-                </button>
-                <button style="margin-top: 10px;" class="btn btn-default" title="Clear the input fields" onclick="return clearFields();">
-                    <span class="glyphicon glyphicon-refresh"></span> Reset
-                </button>
+                @if(isNew) {
+                    <button style="margin-top: 10px; margin-right: 10px;" class="btn btn-primary" title="Create the CO" onclick="return createCuration();">
+                        <span class="glyphicon glyphicon-upload"></span> Create
+                    </button>
+                    <button style="margin-top: 10px;" class="btn btn-default" title="Clear the input fields" onclick="return clearFields();">
+                        <span class="glyphicon glyphicon-refresh"></span> Reset
+                    </button>
                 } else {
-            <button style="margin-top : 10 px ; margin-right : 10 px ;" class="btn btn-primary" title="Edit Curation Object" onclick="return updateCuration('@id');">
-                <span class="glyphicon glyphicon-upload"></span> Update
-            </button>
-            <button style="margin-top: 10px;" class="btn btn-default" title="cancel edit" onclick="return cancelEdit('@id');">
-                <span class="glyphicon glyphicon-refresh"></span> Cancel
-            </button>
-        }
+                    <button style="margin-top : 10px ; margin-right : 10px ;" class="btn btn-default" title="Edit Curation Object" onclick="return updateCuration('@id');">
+                        <span class="glyphicon glyphicon-upload"></span> Update
+                    </button>
+                    <button style="margin-top: 10px;" class="btn btn-default" title="cancel edit" onclick="return cancelEdit('@id');">
+                        <span class="glyphicon glyphicon-remove-sign"></span> Cancel
+                    </button>
+                }
             </td>
         </tr>
 
@@ -107,14 +107,14 @@
                 </td>
                 <td>
                     @if(isNew) {
-                        <button style="margin-top : 10 px ; margin-right : 10 px ;" class="btn btn-primary disabled" title="Create the CO" onclick="return createCuration();">
+                        <button style="margin-top : 10px ; margin-right : 10px ;" class="btn btn-primary disabled" title="Create the CO" onclick="return createCuration();">
                             <span class="glyphicon glyphicon-upload"></span> Create
                         </button>
                         <button style="margin-top: 10px;" class="btn btn-default" title="Clear the input fields" onclick="return clearFields();">
                             <span class="glyphicon glyphicon-refresh"></span> Reset
                         </button>
                     } else {
-                        <button style="margin-top : 10 px ; margin-right : 10 px ;" class="btn btn-primary disabled" title="Edit Curation Object" onclick="return updateCuration('@id');">
+                        <button style="margin-top : 10px ; margin-right : 10px ;" class="btn btn-primary disabled" title="Edit Curation Object" onclick="return updateCuration('@id');">
                             <span class="glyphicon glyphicon-upload"></span> Update
                         </button>
                         <button style="margin-top: 10px;" class="btn btn-default" title="cancel edit" onclick="return cancelEdit('@id');">
