@@ -250,17 +250,16 @@ class Files @Inject() (
     Ok(views.html.filesList(fileList, commentMap, prev, next, limit, viewMode))
   }
 
-  def listByDataset(datasetId: UUID, filepage: Int) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
+  def listByDataset(datasetId: UUID, filepage: Int, limit: Int) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
 
     datasets.get(datasetId) match {
       case Some(d) => {
-        val limit: Int = 30
-        val fileList = d.files.map(f => files.get(f)).flatten
-        val next = if (fileList.length > limit * (filepage+1) ) "dataset-"+ datasetId.toString+ "-next" else "dataset-"+ datasetId.toString
+
+        val next = if (d.files.length > limit * (filepage+1) ) "dataset-"+ datasetId.toString+ "-next" else "dataset-"+ datasetId.toString
         val prev = if(filepage<0) "0" else filepage.toString
-        val limitFileList = fileList.slice(limit * filepage, limit * (filepage+1))
-        val commentMap = fileList.map{file =>
+        val limitFileList = d.files.slice(limit * filepage, limit * (filepage+1)).map(f => files.get(f)).flatten
+        val commentMap = limitFileList.map{file =>
           var allComments = comments.findCommentsByFileId(file.id)
           sections.findByFileId(file.id).map { section =>
             allComments ++= comments.findCommentsBySectionId(section.id)
