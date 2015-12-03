@@ -334,9 +334,10 @@ class Datasets @Inject()(
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
           val limit: Int = 9
-          val next = dataset.files.length > limit * (filepage+1)
-          val limitFileList : List[File]= dataset.files.reverse.slice(limit * filepage, limit * (filepage+1)).map(f => files.get(f)).flatten
+          //in case filepage is less than 0, we start from filepage=0
           val filepageUpdate = if (filepage <0) 0 else filepage
+          val next = dataset.files.length > limit * (filepageUpdate+1)
+          val limitFileList : List[File]= dataset.files.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => files.get(f)).flatten
 
           //dataset is in at least one space with editstagingarea permission, or if the user is the owner of dataset.
           val stagingarea = datasetSpaces filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id)))

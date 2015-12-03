@@ -257,8 +257,9 @@ class Files @Inject() (
       case Some(d) => {
 
         val next = if (d.files.length > limit * (filepage+1) ) "dataset-"+ datasetId.toString+ "-next" else "dataset-"+ datasetId.toString
-        val prev = if(filepage<0) "0" else filepage.toString
-        val limitFileList = d.files.slice(limit * filepage, limit * (filepage+1)).map(f => files.get(f)).flatten
+        //we reuse prev but it is actuall filepage
+        val prev = if(filepage<0) 0 else filepage
+        val limitFileList = d.files.slice(limit * prev, limit * (prev+1)).map(f => files.get(f)).flatten
         val commentMap = limitFileList.map{file =>
           var allComments = comments.findCommentsByFileId(file.id)
           sections.findByFileId(file.id).map { section =>
@@ -266,7 +267,7 @@ class Files @Inject() (
           }
           file.id -> allComments.size
         }.toMap
-        Ok(views.html.filesList(limitFileList, commentMap, prev, next, limit, None))
+        Ok(views.html.filesList(limitFileList, commentMap, prev.toString, next, limit, None))
       }
       case None => BadRequest("Dataset not found")
     }
