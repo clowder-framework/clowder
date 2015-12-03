@@ -199,7 +199,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       implicit val user = request.user
       spaces.get(id) match {
         case Some(s) => {
-          Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), s.resourceTimeToLive, s.isTimeToLiveEnabled, "Update"))))}
+          Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), s.resourceTimeToLive, s.isTimeToLiveEnabled, "Update")), Some(s.id)))}
         case None => InternalServerError("Space not found")
       }
   }
@@ -465,7 +465,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
               }
               case ("Update") => {
                 spaceForm.bindFromRequest.fold(
-                  errors => BadRequest(views.html.spaces.editSpace(errors)),
+                  errors => BadRequest(views.html.spaces.editSpace(errors, None)),
                   formData => {
                     Logger.debug("updating space " + formData.name)
                     spaces.get(formData.spaceId.get) match {
