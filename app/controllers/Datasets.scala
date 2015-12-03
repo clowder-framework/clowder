@@ -333,7 +333,7 @@ class Datasets @Inject()(
           }
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
-          val limit: Int =10;
+          val limit: Int =3;
           val fileList: List[File] = dataset.files.map(fileId => files.get(fileId) match {
             case Some(file) => file
             case None => Logger.debug(s"Unable to find file $fileId")
