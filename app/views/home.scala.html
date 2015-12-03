@@ -269,7 +269,7 @@
                                                 <h4>
                                                 @if(user.get.followedEntities.filter(x => (x.id == userInfo._1)).nonEmpty) {
                                                     <button id="followButton" type="button"
-                                                    class="btn btn-danger"
+                                                    class="btn btn-link"
                                                     data-toggle="button"
                                                     aria-pressed="true"
                                                     autocomplete="off"
@@ -279,7 +279,7 @@
                                                     </button>
                                                 } else {
                                                     <button id="followButton" type="button"
-                                                    class="btn btn-success"
+                                                    class="btn btn-link"
                                                     data-toggle="button"
                                                     aria-pressed="false"
                                                     autocomplete="off"
@@ -330,9 +330,9 @@
                                                             type="button"
                                                             class="
                                                                 @if(viewer.followedEntities.filter(x => (x.id == info._1)).nonEmpty) {
-                                                                    btn btn-danger
+                                                                    btn btn-link
                                                                 } else {
-                                                                    btn btn-success
+                                                                    btn btn-link
                                                                 }
                                                             "
                                                             data-toggle="button"
@@ -396,9 +396,9 @@
                                                             type="button"
                                                             class="
                                                                 @if(viewer.followedEntities.filter(x => (x.id == fileInfo._1)).nonEmpty) {
-                                                                    btn btn-danger
+                                                                    btn btn-link
                                                                 }else {
-                                                                    btn btn-success
+                                                                    btn btn-link
                                                                 }
                                                             "
                                                             data-toggle="button"
@@ -461,9 +461,9 @@
                                                             type="button"
                                                             class="
                                                                 @if(viewer.followedEntities.filter(x => (x.id == datasetInfo._1)).nonEmpty) {
-                                                                    btn btn-danger
+                                                                    btn btn-link
                                                                 }else {
-                                                                    btn btn-success
+                                                                    btn btn-link
                                                                 }
                                                             "
                                                             data-toggle="button"
@@ -526,9 +526,9 @@
                                                             type="button"
                                                             class="
                                                                 @if(viewer.followedEntities.filter(x => (x.id == collectionInfo._1)).nonEmpty) {
-                                                                    btn btn-danger
+                                                                    btn btn-link
                                                                 }else {
-                                                                    btn btn-success
+                                                                    btn btn-link
                                                                 }
                                                             "
                                                             data-toggle="button"

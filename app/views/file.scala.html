@@ -226,26 +226,26 @@
                 <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->                
                     @if(user.get.identityId.userId.equals(file.author.identityId.userId)){                    
                         <span class="align-right">
-				            <button id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-danger" title="Delete">
+				            <button id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" title="Delete">
 						    <span class="glyphicon glyphicon-trash"></span> Delete</button>
 					    </span>
 					} else {
 					    <span class="align-right">
-                            <button disabled id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-danger" title="Delete">
+                            <button disabled id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" title="Delete">
                             <span class="glyphicon glyphicon-trash"></span> Delete</button>
                         </span>
 					}
 
                     @if(!file.followers.contains(user.get.id)) {
                         <button id="followButton"
-                                class="btn btn-success followButton"
+                                class="btn btn-link followButton"
                                 objectId="@file.id"
                                 objectName="@file.filename"
                                 objectType="file"><span class="glyphicon glyphicon-star"></span> Follow
                         </button>
                     } else {
                         <button id="followButton"
-                                class="btn btn-danger followButton"
+                                class="btn btn-link followButton"
                                 objectId="@file.id"
                                 objectName="@file.filename"
                                 objectType="file"><span class="glyphicon glyphicon-star-empty"></span> Unfollow

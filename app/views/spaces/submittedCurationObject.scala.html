@@ -150,7 +150,7 @@
 
         <li><h4><a href=@routes.Files.file(file.id)>@file.filename</a></h4>
           <div id ='allMetadata_@(file.id)'>
-            <button class="tech_md_" type="button">Show File metadata</button>
+            <button class="btn btn-link tech_md_" type="button">Show File metadata</button>
             <div style="display:none;">
               <div class="row border-top">
                 <div class="col-md-12">
@@ -176,7 +176,7 @@
 
             @if(!file.xmlMetadata.isEmpty) {
               <div id='xmlMetadata_@(file.id.toString)'>
-                <button class="tech_md_" type="button">Show XML-uploaded metadata</button>
+                <button class="btn btn-link tech_md_" type="button">Show XML-uploaded metadata</button>
                 <div style="display:none;">
                   <ul>
                   @printLevel(file.xmlMetadata)
@@ -217,7 +217,7 @@
 
     </div>
     <div class="col-md-6">
-    <b>Submission Status in repository &nbsp</b><button id="status" class ="btn btn-primary btn-xs"><span class="glyphicon glyphicon-send"></span> Update</button>
+    <b>Submission Status in repository &nbsp</b><button id="status" class ="btn btn-default btn-xs"><span class="glyphicon glyphicon-send"></span> Update</button>
     <br/><br/>
     <div id="showStatus"></div>
       <script>

@@ -40,16 +40,17 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
         <div class="row fileupload-buttonbar">
             <div class="col-lg-7">
                 <!-- The fileinput-button span is used to style the file input field as button -->
-                <span class="btn btn-primary fileinput-button">
+                <span class="btn btn-link fileinput-button">
                     <i class="glyphicon glyphicon-plus"></i>
                     <span>Add files</span>
+                        <!-- The file input had "multiple" removed for the current dataset creation method. -->
                     <input type="file" name="files[]" multiple>
                     <input type="hidden" name="datasetLevel" value="DatasetLevel">
                 </span>
-                <button type="submit" class="btn btn-primary start">
+                <button type="submit" class="btn btn-link start" type="submit">
                     <span class="glyphicon glyphicon-upload"></span> Start upload
                 </button>
-                <button type="reset" class="btn btn-default cancel">
+                <button type="reset" class="btn btn-link cancel">
                     <span class="glyphicon glyphicon-remove"></span> Cancel upload
                 </button>
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -106,12 +107,12 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
         </td>
         <td>
             {% if (!i && !o.options.autoUpload) { %}
-                <button type="button" class="btn btn-primary start" disabled>
+                <button type="button" class="btn btn-link start" disabled>
                     <span class="glyphicon glyphicon-play"></span> Start
                 </button>
             {% } %}
             {% if (!i) { %}
-                <button type="button" class="btn btn-default cancel">
+                <button type="button" class="btn btn-link cancel">
                     <span class="glyphicon glyphicon-remove"></span> Cancel
                 </button>
             {% } %}
@@ -152,11 +153,11 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
         </td>
         <td>
             {% if (file.deleteUrl) { %}
-                <button type="button" class="btn btn-danger delete" data-type="{%=file.deleteType%}" data-url="{%=file.deleteUrl%}"{% if (file.deleteWithCredentials) { %} data-xhr-fields='{"withCredentials":true}'{% } %}>
+                <button type="button" class="btn btn-link delete" data-type="{%=file.deleteType%}" data-url="{%=file.deleteUrl%}"{% if (file.deleteWithCredentials) { %} data-xhr-fields='{"withCredentials":true}'{% } %}>
                     <span class="glyphicon glyphicon-trash"></span> Delete
                 </button>
             {% } else { %}
-                <button type="button" class="btn btn-default cancel">
+                <button type="button" class="btn btn-link cancel">
                     <span class="glyphicon glyphicon-remove"></span> Cancel
                 </button>
             {% } %}

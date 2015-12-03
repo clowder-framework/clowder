@@ -2,11 +2,11 @@
 @if(user.isDefined) {
     <!-- Fix for CATS-163 An exception is thrown if user is not defined -->
     @if(user.isEmpty || !space.followers.contains(user.get.id)) {
-        <button id="followButton" class="btn btn-success followButton btn-xs btn-margins" objectId="@space.id" objectName="@space.name" objectType="space">
+        <button id="followButton" class="btn btn-link followButton btn-xs btn-margins" objectId="@space.id" objectName="@space.name" objectType="space">
             <span class="glyphicon glyphicon-star"></span> Follow
         </button>
     } else {
-        <button id="followButton" class="btn btn-danger followButton btn-xs btn-margins" objectId="@space.id" objectName="@space.name" objectType="space">
+        <button id="followButton" class="btn btn-link followButton btn-xs btn-margins" objectId="@space.id" objectName="@space.name" objectType="space">
             <span class="glyphicon glyphicon-star-empty"></span> Unfollow
         </button>
     }

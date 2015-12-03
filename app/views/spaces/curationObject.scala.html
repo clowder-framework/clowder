@@ -82,13 +82,13 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
     </div>
     <div class="row">
         <div class="col-md-2">
-            <a class="btn btn-default" href="@routes.Spaces.stagingArea(curationObject.space)"><span class="glyphicon glyphicon-briefcase"></span> Staging Area</a>
+            <a class="btn btn-default" href="@routes.Spaces.stagingArea(curationObject.space)"><span class="glyphicon glyphicon-chevron-left"></span> Staging Area</a>
         </div>
         <div class="col-md-8 text-center">
             <h1>Edit Metadata</h1>
         </div>
         <div class="col-md-2">
-            <a class="btn btn-default pull-right" href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)"><span class="glyphicon glyphicon-screenshot"></span> Select Repository</a>
+            <a class="btn btn-primary pull-right" href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)">Select Repository <span class="glyphicon glyphicon-chevron-right"></span></a>
         </div>
     </div>
     <div class="row">
@@ -110,7 +110,7 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
 
                 <li><h3><a href=@routes.Files.file(file.id)>@file.filename</a></h3>
                 <div id ='allMetadata_@(file.id)'>
-                    <button class="tech_md_" type="button"><span class="glyphicon glyphicon-hand-down"></span> Show File metadata</button>
+                    <button class="btn btn-link tech_md_" type="button">Show File metadata</button>
                     <div style="display:none;">
                 <div class="row border-top">
                     <div class="col-md-12">
@@ -123,7 +123,7 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
                     <div class="col-md-12">
                         <h4>System generated metadata</h4>
                         <div id='technicalMetadata_@(file.id)'>
-                            <button class="tech_md_ btn btn-link btn-sm" type="button"><span class="glyphicon glyphicon-hand-down"></span> Show file technical metadata</button>
+                            <button class="tech_md_ btn btn-link btn-sm" type="button">Show file technical metadata</button>
                             <div style="display:none;">
                                 <ul>
                                 @for(i <- 0 until file.metadata.length){
@@ -136,11 +136,11 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
                             $("#technicalMetadata_@(file.id.toString) > button").on('click',function(){
                                 if($("#technicalMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
                                     $("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
-                                    $("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "<span class='glyphicon glyphicon-remove'></span> Hide file technical metadata";
+                                    $("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file technical metadata";
                                 }
                                 else{
                                     $("#technicalMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
-                                    $("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "<span class='glyphicon glyphicon-hand-down'></span> Show file technical metadata";
+                                    $("#technicalMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file technical metadata";
                                 }
                             });
                         </script>
@@ -149,7 +149,7 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
 
                 @if(!file.xmlMetadata.isEmpty) {
                     <div id='xmlMetadata_@(file.id.toString)'>
-                        <button class="tech_md_ btn btn-link" type="button"><span class="glyphicon glyphicon-hand-down"></span> Show XML-uploaded metadata</button>
+                        <button class="tech_md_ btn btn-link" type="button">Show XML-uploaded metadata</button>
                         <div style="display:none;">
                             <ul>
                             @printLevel(file.xmlMetadata)
@@ -160,11 +160,11 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
                         $("#xmlMetadata_@(file.id.toString) > button").on('click',function(){
                             if($("#xmlMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
                                 $("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
-                                $("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "<span class='glyphicon glyphicon-remove'></span> Hide file XML-uploaded metadata";
+                                $("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file XML-uploaded metadata";
                             }
                             else{
                                 $("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
-                                $("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "<span class='glyphicon glyphicon-hand-down'></span> Show file XML-uploaded metadata";
+                                $("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file XML-uploaded metadata";
                             }
                         });
                     </script>
@@ -177,11 +177,11 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
                     $("#allMetadata_@(file.id.toString) > button").on('click', function(){
                         if($("#allMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
                             $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
-                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "<span class='glyphicon glyphicon-remove'></span> Hide file metadata";
+                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file metadata";
                         }
                         else{
                             $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
-                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "<span class='glyphicon glyphicon-hand-down'></span> Show file metadata";
+                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file metadata";
                         }
                         });
                 </script>
@@ -192,8 +192,8 @@ dsUserMetadata: scala.collection.mutable.Map[String,Any], rdfExported: Boolean, 
         </div>
     <div class="row bottom-padding">
         <div class="col-md-12">
-            <a class="btn btn-default" href="@routes.Spaces.stagingArea(curationObject.space)"><span class="glyphicon glyphicon-briefcase"></span> Staging Area</a>
-            <a class="btn btn-default pull-right" href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)"><span class="glyphicon glyphicon-screenshot"></span> Select Repository</a>
+            <a class="btn btn-default" href="@routes.Spaces.stagingArea(curationObject.space)"><span class="glyphicon glyphicon-chevron-left"></span> Staging Area</a>
+            <a class="btn btn-primary pull-right" href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)">Select Repository <span class="glyphicon glyphicon-chevron-right"></span></a>
         </div>
     </div>
 

@@ -71,8 +71,8 @@ var followHandler = function (jsRoutes, id, name, type, followCallback, unfollow
         var request = ajaxObj.follow(id, name).ajax({ type: 'POST' });
         request.done(function (data) {
             $followButton.html("<span class='glyphicon glyphicon-star-empty'></span> Unfollow");
-            $followButton.removeClass('btn-success');
-            $followButton.addClass('btn-danger');
+            $followButton.removeClass('btn-link');
+            $followButton.addClass('btn-link');
             if (followCallback !== undefined) {
                 followCallback(data);
             }
@@ -85,8 +85,8 @@ var followHandler = function (jsRoutes, id, name, type, followCallback, unfollow
         var request = ajaxObj.unfollow(id, name).ajax({ type: 'POST' });
         request.done(function (data) {
             $followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
-            $followButton.removeClass('btn-danger');
-            $followButton.addClass('btn-success');
+            $followButton.removeClass('btn-link');
+            $followButton.addClass('btn-link');
             if (unfollowCallback !== undefined) {
                 unfollowCallback();
             }
@@ -118,7 +118,7 @@ var recommendationHandler = function(jsRoutes, $recPanel, $recDiv, recommendatio
                             '</div>' +
                             '<div class="panel-footer">' +
                                 '<h4>' +
-                                    '<button class="followButton btn-xs btn-success" ' +
+                                    '<button class="followButton btn-xs btn-link" ' +
                                             'data-toggle="button" ' +
                                             'aria-pressed="true" ' +
                                             'autocomplete="off" ' +
