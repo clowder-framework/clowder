@@ -14,6 +14,8 @@
                     <a class="btn btn-sm btn-link" href ="@routes.CurationObjects.getCurationObject(curationObject.id)">
                         <span class="glyphicon glyphicon-edit"></span> Edit Metadata</a>
                 }
+                <a class="btn btn-sm btn-link"  href ="@(routes.CurationObjects.editCuration(curationObject.id))"  >
+                    <span class="glyphicon glyphicon-edit"></span> Edit Curation Object</a>
                 <a class="btn btn-sm btn-link" onclick="removeCuration('@(curationObject.space)','@(curationObject.id)')"  >
                     <span class="glyphicon glyphicon-trash"></span> Delete Curation Object</a>
             }

@@ -85,6 +85,16 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
   def getCurationObjectByDatasetId(datasetId: UUID): List[CurationObject] = {
     CurationDAO.find(MongoDBObject("datasets" -> MongoDBObject("$elemMatch" -> MongoDBObject("_id" -> new ObjectId(datasetId.stringify))))).toList
   }
+
+  def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID) = {
+    val result = CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $set("description" -> description, "name" -> name, "space" -> new ObjectId(newSpace.stringify)),
+      false, false, WriteConcern.Safe)
+    if(oldSpace != newSpace) {
+      spaces.removeCurationObject(oldSpace, id)
+      spaces.addCurationObject(newSpace, id)
+    }
+  }
 }
 
 /**
