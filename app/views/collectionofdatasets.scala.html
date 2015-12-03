@@ -227,9 +227,12 @@
 	var cur_title;
 	function updateTitle() {
 	 cur_title = $('#collectiontitle').text();
-	 $('<input type = "text" id="title_input" class="form-control"/>').insertAfter($('#collectiontitle'));
-	 $('<button id="update_title" class="btn btn-sm btn-primary btn-margins" onclick="saveTitle()"> Save </button>').insertAfter($('#title_input'));
-	 $('<a id="cancel_title" class="btn btn-link btn-margins" onclick="cancelTitle()"> Cancel </a>').insertAfter($('#update_title'));
+	 $('<div class="inline edit_title_div"> </span>').insertAfter($('#collectiontitle'));
+	 $('.edit_title_div').append('<input type = "text" id="title_input" class="form-control"/>');
+	 $('.edit_title_div').append('<div class="hiddencomplete" id="title-error"> <span class="error"> Title is required </span> </div>');
+	 $('.edit_title_div').append('<button id="update_title" class="btn btn-sm btn-primary btn-margins" onclick="saveTitle()"> <span class="glyphicon glyphicon-send"></span> Save </button>');
+	 $('.edit_title_div').append('<button id="cancel_title" class="btn btn-sm btn-default btn-margins edit-tab" onclick="cancelTitle()"> <span class="glyphicon glyphicon-remove"></span> Cancel </button>');
+
 	 $('#title_input').val(cur_title);
 	 $('#collectiontitle').text("");
 	 $('#h-edit-title').css("display", "none");
@@ -238,6 +241,12 @@
 	}
 
 	function saveTitle() {
+		if($('#title_input').val().length < 1) {
+			$('#title-error').show();
+			return false;
+		} else {
+			$('#title-error').addClass('hiddencomplete');
+		}
 		var name = $('#title_input').val();
 		var encName = htmlEncode(name);
 		jsonData = JSON.stringify({"name": encName});
@@ -250,13 +259,11 @@
 
 		request.done(function(response, textStatus, jqXHR) {
 			$('#collectiontitle').text(encName.replace(/\n/g, "<br>"));
-			$('#title_input').remove();
-			$('#update_title').remove();
-			$('#cancel_title').remove();
+            $('.edit_title_div').remove();
 			$('#collectiontitle').css("display", "inline");
 			$('#h-edit-title').removeClass("inline");
 			$('#h-edit-title').css("display", "");
-
+			$('#coll-title').mouseleave();
 		});
 
 		request.fail(function(jqXHR, textStatus, errorThrown) {
@@ -270,12 +277,11 @@
 	}
 	function cancelTitle() {
 		$('#collectiontitle').text(cur_title);
-		$('#title_input').remove();
-		$('#update_title').remove();
-		$('#cancel_title').remove();
+        $('.edit_title_div').remove();
 		$('#collectiontitle').css("display", "inline");
 		$('#h-edit-title').removeClass("inline");
 		$('#h-edit-title').css("display", "");
+		$('#coll-title').mouseleave();
 	}
 
 	var cur_description;
@@ -283,10 +289,10 @@
 	function updateDescription() {
 		cur_description = $('#collection_desc').text().trim();
 		$('<div class = "edit_desc"></div>').insertAfter($('#collection_desc'));
-		$(".edit_desc").append('<textarea type ="text" id = "desc_input" class="form-control"/>')
+		$(".edit_desc").append('<textarea type ="text" id = "desc_input" class="form-control"/>');
 		$(".edit_desc").append('<br/>');
-		$(".edit_desc").append('<button id = "update_desc" class = "btn btn-sm btn-primary" onclick = "saveDescription()"> Save </button>');
-		$(".edit_desc").append('<a id = "cancel_desc" class = "btn btn-link" onclick = "cancelDescription()"> Cancel </a>');
+		$(".edit_desc").append('<button id = "update_desc" class = "btn btn-sm btn-primary" onclick = "saveDescription()"> <span class="glyphicon glyphicon-send"></span>  Save </button>');
+		$(".edit_desc").append('<button id = "cancel_desc" class = "btn btn-default btn-sm edit-tab" onclick = "cancelDescription()"> <span class="glyphicon glyphicon-remove"></span>  Cancel </button>');
 		$('#desc_input').val(cur_description);
 		$('#collection_desc').text("");
 		$('#edit-description').css("display", "none");
@@ -310,7 +316,6 @@
 			$('#edit-description').css("display", "");
 			$('#edit-description').removeClass("inline");
 			$('#collection_desc').css("display", "inline");
-
 		});
 
 		request.fail(function(jqXHR, textStatus, errorThrown) {
