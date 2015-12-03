@@ -10,12 +10,12 @@
   filesTags: scala.collection.immutable.TreeSet[String],
   toPublish: Boolean,
   curationObjects: List[models.CurationObject],
-  currentSpace: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  currentSpace: Option[String],
+  filepage: Int,
+  next: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
-@import collection.JavaConverters._
-@import com.mongodb.casbah.Imports.DBObject
 
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
@@ -103,6 +103,19 @@
                 <div class="tab-content">
                   <div role="tabpanel" class="tab-pane  fade in active" id="tab-files">
                       @files.grid(fileList, dataset.id)
+                      <div class="row">
+                          <div class="col-md-12">
+                              <ul class="pager">
+                                      <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
+                                  @if(filepage > 0) {
+                                      <li class="previous"><a id="prevlink" title="Page backwards" href="@(routes.Datasets.dataset(dataset.id, currentSpace, filepage-1))">Previous</a></li>
+                                  }
+                                  @if(next) {
+                                      <li class ="next"><a id="nextlink" title="Page forwards" href="@(routes.Datasets.dataset(dataset.id, currentSpace, filepage+1))">Next</a></li>
+                                  }
+                              </ul>
+                          </div>
+                      </div>
                   </div>
                   <div role="tabpanel" class="tab-pane fade" id="tab-comments">
                       <!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->

@@ -246,7 +246,7 @@ class Datasets @Inject()(
   /**
    * Dataset.
    */
-  def dataset(id: UUID, currentSpace: Option[String]) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def dataset(id: UUID, currentSpace: Option[String], filepage: Int) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
 
       implicit val user = request.user
       Previewers.findPreviewers.foreach(p => Logger.debug("Previewer found " + p.id))
@@ -331,12 +331,16 @@ class Datasets @Inject()(
                     case None => Logger.error(s"space with id $sp on dataset $id doesn't exist.")
                   }
           }
-
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
+
+          val limit: Int =10;
           val fileList: List[File] = dataset.files.map(fileId => files.get(fileId) match {
             case Some(file) => file
             case None => Logger.debug(s"Unable to find file $fileId")
           }).asInstanceOf[List[File]]
+          val next = fileList.length > limit * (filepage+1)
+          val limitFileList = fileList.slice(limit * filepage, limit * (filepage+1) )
+
 
           //dataset is in at least one space with editstagingarea permission, or if the user is the owner of dataset.
           val stagingarea = datasetSpaces filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id)))
@@ -347,7 +351,7 @@ class Datasets @Inject()(
           val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
-            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), fileList, filesTags, toPublish, curPubObjects, currentSpace))
+            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), limitFileList, filesTags, toPublish, curPubObjects, currentSpace, filepage, next))
         }
         case None => {
           Logger.error("Error getting dataset" + id)
