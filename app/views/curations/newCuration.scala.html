@@ -80,17 +80,17 @@
             </td>
             <td>
                 @if(isNew) {
-                    <button style="margin-top: 10px; margin-right: 10px;" class="btn btn-primary" title="Create the CO" onclick="return createCuration();">
+                    <button class="btn btn-primary btn-margins" title="Create the CO" onclick="return createCuration();">
                         <span class="glyphicon glyphicon-upload"></span> Create
                     </button>
-                    <button style="margin-top: 10px;" class="btn btn-default" title="Clear the input fields" onclick="return clearFields();">
+                    <button class="btn btn-default btn-margins" title="Clear the input fields" onclick="return clearFields();">
                         <span class="glyphicon glyphicon-refresh"></span> Reset
                     </button>
                 } else {
-                    <button style="margin-top : 10px ; margin-right : 10px ;" class="btn btn-default" title="Edit Curation Object" onclick="return updateCuration('@id');">
+                    <button class="btn btn-default btn-margins" title="Edit Curation Object" onclick="return updateCuration('@id');">
                         <span class="glyphicon glyphicon-upload"></span> Update
                     </button>
-                    <button style="margin-top: 10px;" class="btn btn-default" title="cancel edit" onclick="return cancelEdit('@id');">
+                    <button class="btn btn-default btn-margins" title="cancel edit" onclick="return cancelEdit('@id');">
                         <span class="glyphicon glyphicon-remove-sign"></span> Cancel
                     </button>
                 }
@@ -107,17 +107,17 @@
                 </td>
                 <td>
                     @if(isNew) {
-                        <button style="margin-top : 10px ; margin-right : 10px ;" class="btn btn-primary disabled" title="Create the CO" onclick="return createCuration();">
+                        <button class="btn btn-primary btn-margins disabled" title="Create the CO" onclick="return createCuration();">
                             <span class="glyphicon glyphicon-upload"></span> Create
                         </button>
-                        <button style="margin-top: 10px;" class="btn btn-default" title="Clear the input fields" onclick="return clearFields();">
+                        <button class="btn btn-default btn-margins" title="Clear the input fields" onclick="return clearFields();">
                             <span class="glyphicon glyphicon-refresh"></span> Reset
                         </button>
                     } else {
-                        <button style="margin-top : 10px ; margin-right : 10px ;" class="btn btn-primary disabled" title="Edit Curation Object" onclick="return updateCuration('@id');">
+                        <button class="btn btn-primary btn-margins disabled" title="Edit Curation Object" onclick="return updateCuration('@id');">
                             <span class="glyphicon glyphicon-upload"></span> Update
                         </button>
-                        <button style="margin-top: 10px;" class="btn btn-default" title="cancel edit" onclick="return cancelEdit('@id');">
+                        <button class="btn btn-default btn-margins" title="cancel edit" onclick="return cancelEdit('@id');">
                             <span class="glyphicon glyphicon-refresh"></span> Cancel
                         </button>
                     }
