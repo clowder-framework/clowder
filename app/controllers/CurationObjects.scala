@@ -212,7 +212,7 @@ class CurationObjects @Inject()(
     val maxDataset = if (!c.files.isEmpty)  files.map(_.length).max else 0
     val totalSize = if (!c.files.isEmpty) files.map(_.length).sum else 0
     var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
-    metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).map {
+    metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).filter(_.creator.typeOfAgent == "cat:user").map {
       item => metadataJson = metadataJson ++ buildMetadataMap(item.content)
     }
 
@@ -337,7 +337,7 @@ class CurationObjects @Inject()(
           val maxDataset = if (!c.files.isEmpty)  files.map(_.length).max else 0
           val totalSize = if (!c.files.isEmpty) files.map(_.length).sum else 0
           var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
-          metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).map {
+          metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).filter(_.creator.typeOfAgent == "cat:user").map {
             item => metadataJson = metadataJson ++ buildMetadataMap(item.content)
           }
           val creator = Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile match {

@@ -41,7 +41,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
             val key = play.api.Play.configuration.getString("commKey").getOrElse("")
 
             var fileMetadata = scala.collection.mutable.Map.empty[String, JsValue]
-            metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, file.id)).map {
+            metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, file.id)).filter(_.creator.typeOfAgent == "cat:user").map {
               item => fileMetadata = fileMetadata ++ curationObjectController.buildMetadataMap(item.content)
             }
             val tempMap =  Map(
@@ -80,7 +80,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
             ))
           }
           var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
-          metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).map {
+          metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).filter(_.creator.typeOfAgent == "cat:user").map {
             item => metadataJson = metadataJson ++ curationObjectController.buildMetadataMap(item.content)
           }
 
