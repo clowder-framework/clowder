@@ -98,7 +98,7 @@
         var field_id = $("#field-value").data("id");
         var field_type = $("#add-metadata-select option:selected").data("type");
         var field_value = "";
-        var field_types_with_simple_values = {"string": 1, "listjquery": 1, "listgeocode": 1};
+        var field_types_with_simple_values = {"string": 1, "listjquery": 1, "listgeocode": 1, "scientific_variable": 1};
         if (field_type in field_types_with_simple_values) {
             field_value = $("#field-value").val();
         } else if (field_type == "list") {
@@ -118,7 +118,7 @@
                 var lat_lng = parts[1].trim().split(",");
                 content["Latitude"] = lat_lng[0].trim();
                 content["Longitude"] = lat_lng[1].trim();
-            } else if (field_type == "listjquery") {
+            } else if (field_type == "scientific_variable") {
                 content[field_label] = field_value;
                 var unit_val = $("#unit-value").val();
                 if (unit_val) {
@@ -190,7 +190,8 @@
                     {"string": "add_metadata_string",
                      "list": "add_metadata_list",
                      "listjquery": "add_metadata_listjquery",
-                     "listgeocode": "add_metadata_string"
+                     "listgeocode": "add_metadata_string",
+                     "scientific_variable": "add_metadata_scientific_variable"
                     };
                 var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/")" + template_map[field_type]);
                 var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type});
@@ -199,7 +200,7 @@
                 // register submit listener
                 $("#add-metadata-button").click(submit);
 
-                if (field_type == "listjquery") {
+                if (field_type == "scientific_variable") {
                     // Find the field with the specific uri.
                     var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
                     $("#field-value").catcomplete({
@@ -244,6 +245,29 @@
                                         });
                                         response(searchspace);
                                     }
+                                }
+                            });
+                        }
+                    });
+                } else if (field_type == "listjquery") {
+                    // Find the field with the specific uri.
+                    var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
+                    $("#field-value").autocomplete({
+                        minLength: 3,
+                        source: function( request, response ) {
+                            // Get the query parameter from the saved json, not hardcoded.
+                            var query_param = field[0].json.query_parameter;
+                            var url = encodeURIComponent(field[0].json.definitions_url + "?" + query_param + "=" + request.term);
+                            $.ajax({
+                                url: jsRoutes.api.Metadata.getUrl(url).url,
+                                dataType: "json",
+                                success: function( data ) {
+                                    var searchspace = data;
+                                    var searchwords = request.term.split(" ");
+                                    $.each(searchwords, function() {
+                                        searchspace = $.ui.autocomplete.filter(searchspace, this);
+                                    });
+                                    response(searchspace);
                                 }
                             });
                         }
