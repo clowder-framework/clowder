@@ -819,3 +819,7 @@ table#nested-space-role-pairs>tbody>tr>td {
 table.borderless tbody tr td, table.borderless tbody tr th {
     border: none;
 }
+
+.upload-files-buttons {
+    padding-top: 20px;
+}
