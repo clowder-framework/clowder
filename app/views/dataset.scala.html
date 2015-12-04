@@ -24,7 +24,7 @@
 		<!-- left column -->
 		<div class="col-md-8 col-right-border">
             <div class="row">
-                <div class="col-md-12" id="ds-title">
+                <div class="col-md-12 caption break-word" id="ds-title">
                     <h1 id="datasettitle" class="inline">@Html(dataset.name)</h1>
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
                         <h3 class="inline align-right">

@@ -29,7 +29,7 @@
 			<!-- left column -->
 		<div class="col-md-8 col-right-border">
 
-			<div class="page-header">
+			<div class="page-header caption break-word">
 				<h1 id ="collectiontitle" class="inline">@Html(collection.name)</h1>
 				@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
 					<h3 class="inline align-right">
