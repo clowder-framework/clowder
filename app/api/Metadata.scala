@@ -158,15 +158,20 @@ class Metadata @Inject()(
       }
   }
 
-  @ApiOperation(value = "Delete context for the metadata represented in Json-ld format",
+  @ApiOperation(value = "Delete the metadata represented in Json-ld format",
     responseClass = "None", httpMethod = "DELETE")
   def removeMetadata(id:UUID) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.metadata, id))) { implicit request =>
-    metadataService.getMetadataById(id) match{
-      case Some(m) => {
-        metadataService.removeMetadata(id)
-        Ok(JsObject(Seq("status" -> JsString("ok"))))
+    request.user match {
+      case Some(user) => {
+        metadataService.getMetadataById(id) match {
+          case Some(m) => {
+            metadataService.removeMetadata(id)
+            Ok(JsObject(Seq("status" -> JsString("ok"))))
+          }
+          case None => BadRequest(toJson("Invalid Metadata"))
+        }
       }
-      case None => BadRequest(toJson("Invalid Metadata"))
+      case None => BadRequest("Not authorized.")
     }
   }
 }

@@ -269,7 +269,7 @@ POST           /api/files/:id/metadata.jsonld                                   
 GET            /api/files/:id/metadata.jsonld                                           @api.Files.getMetadataJsonLD(id: UUID)
 
 POST           /api/metadata.jsonld                                                     @api.Metadata.addUserMetadata()
-DELETE            /api/metadata.jsonld/:id                                                 @api.Metadata.removeMetadata(id:UUID)
+DELETE         /api/metadata.jsonld/:id                                                 @api.Metadata.removeMetadata(id:UUID)
 
 #GET            /api/metadata.jsonld                                                     @api.Metadata.getUserMetadata()
 
