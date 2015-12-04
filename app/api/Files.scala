@@ -362,8 +362,8 @@ class Files @Inject()(
   @ApiOperation(value = "max test api",
       notes = "Will accept multiple files - it'll look for metadata matching filename in body",
       responseClass = "None", httpMethod = "POST")
-  def uploadToDatasetMax(dataset_id: UUID) = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
-          // how to require AddFile for part, and AddMetadata for other part?
+  def uploadToDatasetMulti(dataset_id: UUID) = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
+          // ??? how to require AddFile for part, and AddMetadata for other part?
 
     //def upload(request: Request[Any], index: Boolean = True, key: String = "") = PermissionAction(Permission.AddFile) { implicit request =>
       // index - if ES plugin exists, should i submit to elasticsearch?
@@ -572,7 +572,7 @@ class Files @Inject()(
     }
 
     Logger.debug("MAX TEST DONE")
-     Ok(toJson(Map("status" -> "success")))
+    Ok(toJson(Map("status" -> "success")))
   }
   
   

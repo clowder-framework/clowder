@@ -295,7 +295,7 @@ POST           /api/files/searchusermetadata                                    
 POST           /api/files/searchmetadata                                                @api.Files.searchFilesGeneralMetadata
 POST           /api/uploadToDataset/withFlags/:id/:flags                                @api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String)
 POST           /api/uploadToDataset/:id                                                 @api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String ?= "")
-POST           /api/uploadToDatasetMax/:id                                              @api.Files.uploadToDatasetMax(id: UUID)
+POST           /api/uploadToDatasetMulti/:id                                            @api.Files.uploadToDatasetMulti(id: UUID)
 POST           /api/files/uploadIntermediate/:idAndFlags                                @api.Files.uploadIntermediate(idAndFlags)
 POST           /api/files/sendJob/:fileId/:fileType                                     @api.Files.sendJob(fileId: UUID,fileType)
 GET            /api/files/getRDFURLsForFile/:id                                         @api.Files.getRDFURLsForFile(id: UUID)
