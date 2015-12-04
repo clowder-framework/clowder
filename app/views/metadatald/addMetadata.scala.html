@@ -163,8 +163,6 @@
     request.done(function (response, textStatus, jqXHR) {
         var fields = response;
         for (var i = 0; i < fields.length; i++) {
-            //console.log("Rui:, field[", i, "].json is: ", fields[i].json);
-
             var elem = $("<option></option>");
                 elem.attr("data-type", fields[i].json.type);
                 elem.attr("data-id", fields[i].id);
