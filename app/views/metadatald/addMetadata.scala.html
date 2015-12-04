@@ -120,7 +120,10 @@
                 content["Longitude"] = lat_lng[1].trim();
             } else if (field_type == "listjquery") {
                 content[field_label] = field_value;
-                content["Unit"] = $("#unit-value").val();
+                var unit_val = $("#unit-value").val();
+                if (unit_val) {
+                    content["Unit"] = unit_val;
+                }
             } else {
                 content[field_label] = field_value;
             }
@@ -168,12 +171,6 @@
                 elem.attr("value", fields[i].json.uri);
                 elem.text(fields[i].json.label);
             $("#add-metadata-select").append(elem);
-            //console.log("Rui: fields[i].json.label == Unit is: ", (fields[i].json.label == "Unit"));
-        }
-        var unit_field = fields.filter(function(el) {return el.json.label == "Unit";})[0];
-        var unit_uri = undefined;
-        if (unit_field) {
-            unit_uri = unit_field.json.definitions_url;
         }
         // chosen pulldown configuration
         $("#add-metadata-select").chosen({
@@ -203,9 +200,6 @@
                 $("#add-metadata-button").click(submit);
 
                 if (field_type == "listjquery") {
-                    if (! unit_uri) {
-                        console.log("Error: a metadata definition item labelled \"Unit\" is required to add \"Unit\" metadata with a variable name.  Please add it in \"Metadata Definitions\".");
-                    }
                     // Find the field with the specific uri.
                     var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
                     $("#field-value").catcomplete({
