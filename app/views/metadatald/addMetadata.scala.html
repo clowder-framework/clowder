@@ -216,7 +216,6 @@
                             var query_param = field[0].json.query_parameter;
                             var url = encodeURIComponent(field[0].json.definitions_url + "?" + query_param + "=" + request.term + "&useSynonyms=" + useSyn);
                             $.ajax({
-                                //url: field[0].json.definitions_url,
                                 url: jsRoutes.api.Metadata.getUrl(url).url,
                                 //dataType: "jsonp",
                                 dataType: "json",
@@ -236,17 +235,21 @@
                     $("#unit-value").autocomplete({
                         minLength: 1,
                         source: function( request, response ) {
-                            var url = encodeURIComponent(unit_uri);
+                            var url = encodeURIComponent(field[0].json.definitions_url);
                             $.ajax({
                                 url: jsRoutes.api.Metadata.getUrl(url).url,
                                 dataType: "json",
                                 success: function( data ) {
-                                    var searchspace = data;
-                                    var searchwords = request.term.split(" ");
-                                    $.each(searchwords, function() {
-                                        searchspace = $.ui.autocomplete.filter(searchspace, this);
-                                    });
-                                    response(searchspace);
+                                    if (! ('unit_data' in data)) {
+                                        response(Array("Error: no unit_data field in the returned result."));
+                                    } else {
+                                        var searchspace = data.unit_data;
+                                        var searchwords = request.term.split(" ");
+                                        $.each(searchwords, function() {
+                                            searchspace = $.ui.autocomplete.filter(searchspace, this);
+                                        });
+                                        response(searchspace);
+                                    }
                                 }
                             });
                         }
