@@ -4,6 +4,7 @@ import java.net.URL
 import java.util.Date
 import javax.inject.{Inject, Singleton}
 
+import com.wordnik.swagger.annotations.ApiOperation
 import models.{ResourceRef, UUID, UserAgent, _}
 import play.api.Logger
 import play.api.libs.json.Json._
@@ -157,6 +158,8 @@ class Metadata @Inject()(
       }
   }
 
+  @ApiOperation(value = "Delete context for the metadata represented in Json-ld format",
+    responseClass = "None", httpMethod = "DELETE")
   def removeMetadata(id:UUID) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.metadata, id))) { implicit request =>
     metadataService.getMetadataById(id) match{
       case Some(m) => {
