@@ -155,10 +155,10 @@
 
             if(repository == ""){
                 $('#selecterror').show();
-                //document.getElementById("selecterror").focus();
+
                 $('html, body').animate({
-            scrollTop: $('#candidate').offset().top + 'px'
-        }, 'fast');
+                    scrollTop: $('#candidate').offset().top + 'px'
+                }, 'fast');
 
             } else{
                 window.location.href = jsRoutes.controllers.CurationObjects.compareToRepository('@curationObject.id', repository).url;
