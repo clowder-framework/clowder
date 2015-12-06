@@ -36,7 +36,7 @@
                                 | <a href="#" class="btn btn-link btn-xs" onclick="removeDatasetFromSpace( '@(s.id)', '@resourceId', event)" title="Remove from space">
                                 Remove</a>
                             } else {
-                                    <a href="#" class="btn btn-link btn-xs disabled" title="Remove dataset from space">
+                                 |  <a href="#" class="btn btn-link btn-xs disabled" title="Remove dataset from space">
                                     Remove</a>
                             }
                         }
@@ -50,7 +50,7 @@
                                 | <a href="#" class="btn btn-link btn-xs" onclick="removeCollectionFromSpace('@(s.id)', '@resourceId', event)" title="Remove from space">
                                     Remove</a>
                             } else {
-                                <a href="#" class="btn btn-link btn-xs disabled" title="Remove collection from space">
+                                | <a href="#" class="btn btn-link btn-xs disabled" title="Remove collection from space">
                                     Remove</a>
                             }
                         }
@@ -67,7 +67,7 @@
     @if(user.isDefined) {
         <div class="form-inline">
             <div class="input-group input-group-sm col-md-8">
-                <select id="spaceAddSelect" class="form-control" style="width: 100%">
+                <select id="spaceAddSelect" class="form-control add-resource">
                 </select>
                 @if(resourceType == ResourceRef.dataset) {
                     <span class="input-group-btn">
