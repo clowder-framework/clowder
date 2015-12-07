@@ -5,6 +5,7 @@ import play.api.Logger
 import play.filters.gzip.GzipFilter
 
 import play.libs.Akka
+import play.mvc.Result
 import services.{UserService, DI, AppConfiguration}
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -73,7 +74,17 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
   override def onError(request: RequestHeader, ex: Throwable) = {
     Future(InternalServerError(
-      views.html.errorPage(ex)
+      views.html.errorPage(ex.toString)
     ))
+  }
+
+  override def onHandlerNotFound(request: RequestHeader) = {
+    Future(NotFound(
+      views.html.errorPage(request.toString + " is not found")
+    ))
+  }
+
+  override def onBadRequest(request: RequestHeader, error: String) = {
+    Future(BadRequest(views.html.errorPage(request.toString + error)))
   }
 }
