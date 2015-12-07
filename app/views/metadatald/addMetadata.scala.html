@@ -114,7 +114,7 @@
             if (field_type == "listgeocode") {
                 // geocode example: "Champaign, IL, USA: 40.12, -88.24"
                 var parts = field_value.split(":");
-                content["Location Name"] = parts[0].trim();
+                content[field_label] = parts[0].trim();
                 var lat_lng = parts[1].trim().split(",");
                 content["Latitude"] = lat_lng[0].trim();
                 content["Longitude"] = lat_lng[1].trim();
