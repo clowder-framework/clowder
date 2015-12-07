@@ -6,11 +6,13 @@ import play.filters.gzip.GzipFilter
 
 import play.libs.Akka
 import services.{UserService, DI, AppConfiguration}
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
 import models._
 import java.util.Calendar
-import play.api.mvc.WithFilters
+import play.api.mvc.{RequestHeader, WithFilters}
+import play.api.mvc.Results._
 import akka.actor.Cancellable
 import julienrf.play.jsonp.Jsonp
 
@@ -67,5 +69,11 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
   /** Used for dynamic controller dispatcher **/
   override def getControllerInstance[A](clazz: Class[A]) = {
     injector.getInstance(clazz)
+  }
+
+  override def onError(request: RequestHeader, ex: Throwable) = {
+    Future(InternalServerError(
+      views.html.errorPage(ex)
+    ))
   }
 }
