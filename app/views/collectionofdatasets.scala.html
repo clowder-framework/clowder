@@ -63,29 +63,27 @@
 							<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 							@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
 									<button id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')"
-											style="margin-right:15px;" class="btn btn-danger btn-sm" title="Delete Collection but not Enclosed Datasets">
+											style="margin-right:15px;" class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
 									<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							} else {
 									<button disabled id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')"
-											style="margin-right:15px;" class="btn btn-danger btn-sm" title="Delete Collection but not Enclosed Datasets">
+											style="margin-right:15px;" class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
 									<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							}
 							@if(user.isDefined) {
 								@if(!collection.followers.contains(user.get.id)) {
 									<button id="followButton"
-									class="btn btn-default followButton btn-sm"
+									class="btn btn-link followButton btn-sm"
 									objectId="@collection.id"
 									objectName="@collection.name"
-									objectType="collection">
-										Follow
+									objectType="collection"><span class="glyphicon glyphicon-star"></span> Follow
 									</button>
 								} else {
 									<button id="followButton"
-									class="btn btn-default followButton btn-sm"
+									class="btn btn-link followButton btn-sm"
 									objectId="@collection.id"
 									objectName="@collection.name"
-									objectType="collection">
-										Unfollow
+									objectType="collection"><span class="glyphicon glyphicon-star-empty"></span> Unfollow
 									</button>
 								}
 							}
@@ -188,8 +186,8 @@
 					</tbody>
 				</table>
 				<ul class="pager" id="datasetsPager">
-					<li class="previous" id="datasetsPagerPrev" style="visibility:hidden;"><a href="#!">Previous</a></li>
-					<li class ="next" id="datasetsPagerNext" style="visibility:hidden;"><a href="#!">Next</a></li>
+					<li class="previous" id="datasetsPagerPrev" style="visibility:hidden;"><a class="btn btn-link" href="#!"><span class="glyphicon glyphicon-chevron-left"></span> Previous</a></li>
+					<li class ="next" id="datasetsPagerNext" style="visibility:hidden;"><a class="btn btn-link" href="#!">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
 				</ul>
 			</div>
 		</div>

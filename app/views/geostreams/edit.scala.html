@@ -350,7 +350,7 @@
 
                                                 <div class="col-md-12">
                                                     <div class="pull-right instrument-delete">
-                                                        <div class="btn btn-primary btn-sm removeInstrument" id="instrument-delete-@(stream \ "id")" data-id="@(stream \ "id")">Remove Instrument #@(stream \ "id")</div>
+                                                        <div class="btn btn-danger btn-sm removeInstrument" id="instrument-delete-@(stream \ "id")" data-id="@(stream \ "id")"><span class="glyphicon glyphicon-remove"></span> Remove Instrument #@(stream \ "id")</div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -373,10 +373,10 @@
 
         </div>
 
-        <div class="btn btn-default" id="addInstrument" style="display: none">Add Instrument</div>
+        <div class="btn btn-primary" id="addInstrument" style="..."><span class="glyphicon glyphicon-plus"></span> Add Instrument</div>
 
-        <button type="submit" class="btn btn-default submit" id="cancelSubmit">Cancel</button>
-        <button type="submit" class="btn btn-primary submit" id="formSubmit">Save</button>
+        <button type="submit" class="btn btn-default submit" id="cancelSubmit"><span class="glyphicon glyphicon-remove"></span> Cancel</button>
+        <button type="submit" class="btn btn-primary submit" id="formSubmit"><span class="glyphicon glyphicon-send"></span> Save</button>
 
 
 
@@ -650,7 +650,7 @@
 
                                     <div class="col-md-12">
                                         <div class="pull-right instrument-delete">
-                                            <div class="btn btn-primary btn-sm removeInstrument" id="instrument-delete-{{instrumentNumber}}" data-id="{{instrumentNumber}}">Remove Instrument #{{instrumentNumber}}</div>
+                                            <div class="btn btn-danger btn-sm removeInstrument" id="instrument-delete-{{instrumentNumber}}" data-id="{{instrumentNumber}}"><span class="glyphicon glyphicon-remove"></span> Remove Instrument #{{instrumentNumber}}</div>
                                         </div>
                                     </div>
                                 </div>

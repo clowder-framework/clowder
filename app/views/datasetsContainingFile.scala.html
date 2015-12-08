@@ -21,9 +21,9 @@
             <div>
             <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
                 @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                    <a href="#" class="btn btn-link btn-xs" onclick="removeFromDataset('@(dataset.id)','@(dataset.name)',event)" title="Remove from dataset">Remove</a>
+                    <a href="#" class="btn btn-link btn-xs" onclick="removeFromDataset('@(dataset.id)','@(dataset.name)',event)" title="Remove from dataset"><span class="glyphicon glyphicon-remove"></span> Remove</a>
                 } else {
-                    <a href="#" class="btn btn-link btn-xs disabled" onclick="return false;" title="Remove from dataset">Remove</a>
+                    <a href="#" class="btn btn-link btn-xs disabled" onclick="return false;" title="Remove from dataset"><span class="glyphicon glyphicon-remove"></span> Remove</a>
                 }
             </div>
         </div>

@@ -22,10 +22,10 @@
 
     <div class="row">
         <div class="col-md-12">
-            <a class="btn btn-primary" href="@routes.Spaces.getSpace(curationObject.space)"> Go Back to Space </a>
-            <a class="btn btn-primary" href="@routes.Spaces.stagingArea(curationObject.space)"> Go Back to Staging Area </a>
+            <a class="btn btn-default" href="@routes.Spaces.getSpace(curationObject.space)"><span class="glyphicon glyphicon-circle-arrow-left"></span> Go Back to Space </a>
+            <a class="btn btn-default" href="@routes.Spaces.stagingArea(curationObject.space)"><span class="glyphicon glyphicon-circle-arrow-left"></span> Go Back to Staging Area </a>
             @if(success) {
-                <a id="retract-curation" class="btn btn-danger" onclick="retractCuration('@curationObject.id')">Retract Submission</a>
+                <a id="retract-curation" class="btn btn-danger" onclick="retractCuration('@curationObject.id')"><span class="glyphicon glyphicon-fire"></span> Retract Submission</a>
             }
         </div>
     </div>

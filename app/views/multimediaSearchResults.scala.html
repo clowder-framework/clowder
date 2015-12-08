@@ -164,13 +164,13 @@
 			     	   @if(previewsAndFiles.size > 0){	
 			     		    <p>Please select weight for index @index.extractorID / @index.measureID  			
 			     		    <input type="text" name="Weight" id="@index.id">			
-						      <input	type="hidden" name="IndexID" value="@index.id">		
+						      <input type="hidden" name="IndexID" value="@index.id">
 						   }												
 					   }			     
 					   <div id="checkboxes" style="padding-left:15px">
 			    </fieldset>
 		      <div class="form-actions">
-		       		<input type="submit" class="btn btn-primary" value="Combine Results"/>
+				  <button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-filter"></span> Combine Results</button>
 		      </div>
 		}
 	}<!--end of if(resultsList.size >=2) -->
