@@ -97,7 +97,7 @@
             if(!isUndefined(params.selected)) {
                 var addedId = params.selected;
                 @for(space <- spaces) {
-                var currentId = "@space";
+                var currentId = "@space.id";
                 if(currentId != targetId) {
                     $('#@space.id option [value='+addedId+']').remove();
                     $('#@space.id').trigger("chosen:updated");
@@ -108,7 +108,7 @@
             } else if(!isUndefined(params.deselected)) {
                 var removedId = params.deselected;
                 @for(space <- spaces) {
-                    var currentId = "@space";
+                    var currentId = "@space.id";
                     if(currentId != targetId) {
                         $('#@space.id').prepend($("<option></option>").attr("value", removedId).text(getName(removedId)));
                         $('#@space.id').trigger("chosen:updated");

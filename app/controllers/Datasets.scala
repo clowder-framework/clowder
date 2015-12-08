@@ -62,12 +62,15 @@ class Datasets @Inject()(
     space match {
       case Some(s) => {
         spaceService.get(UUID(s)) match {
-          case Some(spaceId) => Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, Some(s))).flashing("error" -> "Please select ONE file (upload new or existing)")
-          case None => Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None)).flashing("error" -> "Please select ONE file (upload new or existing)")
+          case Some(space) => Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
+            RequiredFieldsConfig.isDescriptionRequired, Some(space.id.toString))).flashing("error" -> "Please select ONE file (upload new or existing)")
+          case None => Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
+            RequiredFieldsConfig.isDescriptionRequired, None)).flashing("error" -> "Please select ONE file (upload new or existing)")
         }
 
       }
-      case None => Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None)).flashing("error" -> "Please select ONE file (upload new or existing)")
+      case None => Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
+        RequiredFieldsConfig.isDescriptionRequired, None)).flashing("error" -> "Please select ONE file (upload new or existing)")
     }
   }
 
