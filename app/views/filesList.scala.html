@@ -190,10 +190,10 @@
         <ul class="pager">
             <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
             @if(next.startsWith("dataset") && prev.toInt >0 ||  !next.startsWith("dataset") && prev != "") {
-                <li class="previous"><a id="prevlink" title="Page backwards" href="#">Previous</a></li>
+                <li class="previous"><a class="btn btn-link" id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
             }
             @if(next.startsWith("dataset") && next.contains("next")  ||  !next.startsWith("dataset") && next != "") {
-                <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next</a></li>
+                <li class ="next"><a class="btn btn-link" id="nextlink" title="Page forwards" href="#">Next<span class="glyphicon glyphicon-chevron-right"></span></a></li>
             }
         </ul>
     </div>
