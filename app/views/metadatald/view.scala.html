@@ -57,25 +57,15 @@
     }
 
     @printHeader(agent: Agent, date: java.util.Date, contextId: Option[UUID]) = {
-        @agent match {
-            case a: ExtractorAgent => {
-                Extracted by <a href="@a.extractorId.get">
-                    @agent.asInstanceOf[ExtractorAgent].extractorId.get
-                </a> on @dateFormatter(date)
-                @if(contextId.isDefined) {
-                    <a href="@api.routes.ContextLD.getContextById(contextId.get)" class="pull-right">context</a>
-                }
-            }
-            case a: UserAgent => {
-                Added by <a href="@routes.Profile.viewProfileUUID(a.user.id)">@a.user.fullName</a>
-                on @dateFormatter(date)
-                @if(contextId.isDefined) {
-                    <a href="@api.routes.ContextLD.getContextById(contextId.get)" class="pull-right">context</a>
-                }
-            }
-            case _ => {
-                Extracted by unknown agent on @dateFormatter(date)
-            }
+        @agent.operation by
+        @if(agent.url.isDefined) {
+           <a href="@agent.url">@agent.displayName</a>
+        } else {
+            @agent.displayName
+        }
+        on @dateFormatter(date)
+        @if(contextId.isDefined) {
+            <a href="@api.routes.ContextLD.getContextById(contextId.get)" class="pull-right">context</a>
         }
     }
 
