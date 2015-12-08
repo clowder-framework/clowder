@@ -21,6 +21,8 @@ import services.AppConfiguration
 import javax.inject.Inject
 import services.UserService
 import play.api.mvc.Action
+import util.Mail
+
 /**
  * Manage users.
  */
@@ -71,7 +73,7 @@ class Users @Inject() (users: UserService) extends SecuredController {
               val theHTML = views.html.signUpEmailThroughAdmin(token._1, email)
               val admins = AppConfiguration.getAdmins
               for(admin <- admins) {
-            	  sendEmail(Messages(SignUpEmailSubject), admin, theHTML)
+            	  Mail.sendEmail(Messages(SignUpEmailSubject), admin, theHTML)
               }
             }
           }
@@ -96,27 +98,7 @@ class Users @Inject() (users: UserService) extends SecuredController {
     (uuid, token)
   }
   
-  def sendEmail(subject: String, recipient: String, body: Html) {
-    import com.typesafe.plugin._
-    import play.api.libs.concurrent.Execution.Implicits._
 
-    import scala.concurrent.duration._
-
-    if ( Logger.isDebugEnabled ) {
-      Logger.debug("Sending email to %s".format(recipient))
-      Logger.debug("Title = %s".format(subject))
-      Logger.debug("Mail = [%s]".format(body))
-    }
-
-    Akka.system.scheduler.scheduleOnce(1.seconds) {
-      val mail = use[MailerPlugin].email
-      mail.setSubject(subject)
-      mail.setRecipient(recipient)
-      mail.setFrom(Mailer.fromAddress)
-      // the mailer plugin handles null / empty string gracefully
-      mail.send("", body.body)
-    }
-  }
 
   def getFollowing(index: Int, limit: Int) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
