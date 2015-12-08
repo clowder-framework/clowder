@@ -207,6 +207,7 @@ class Files @Inject() (
             case Some(ffile) => {
               fileList += ffile
             }
+            case None =>
           }
         }
 
