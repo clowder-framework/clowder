@@ -38,8 +38,8 @@ trait MetadataService {
   /** Get vocabulary based on uri **/
   def getDefinition(id: UUID): Option[MetadataDefinition]
 
-  /** Add vocabulary definitions **/
-  def addDefinition(definition: MetadataDefinition)
+  /** Add vocabulary definitions, leaving it unchanged if the update argument is set to false, defaults to update **/
+  def addDefinition(definition: MetadataDefinition, update: Boolean = true)
 
   /** Search for resources matching a particular query **/
   def search(query: JsValue): List[ResourceRef]
