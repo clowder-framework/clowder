@@ -9,6 +9,9 @@ import models._
  * Service to manipulate curation objects.
  */
 trait CurationService {
+  /**
+   * insert a new curation object.
+   */
   def insert(curation: CurationObject)
 
   /**
@@ -37,14 +40,9 @@ trait CurationService {
   def remove(id: UUID): Unit
 
   /**
-   * Add metadata to curation object, no influence to live object
+   * insert a new curation object file.
    */
-  def addDatasetUserMetaData(id: UUID, json: String)
-
-  /**
-   * Add metadata to curation object, no influence to live object
-   */
-  def addFileUserMetaData(curationId: UUID, file: Int, json: String)
+  def insertFile(curationFile : CurationFile)
 
   /**
    * Update the repository selected
@@ -60,6 +58,12 @@ trait CurationService {
    * List curation and published objects a dataset is related to.
    */
   def getCurationObjectByDatasetId(datasetId: UUID): List[CurationObject]
+
+
+  /**
+   * List curation files of a curation obeject
+   */
+  def getCurationFiles(cfs:List[UUID]): List[CurationFile]
 
   /**
    * Update curation object's name, description, space.

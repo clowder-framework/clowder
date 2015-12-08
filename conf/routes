@@ -97,7 +97,7 @@ GET            /file_by_section/:id                                             
 # ----------------------------------------------------------------------
 GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
 GET            /datasets/new                                                            @controllers.Datasets.newDataset(space: Option[String])
-GET            /datasets/addToDataset/:id                                               @controllers.Datasets.addToDataset(id: UUID)
+GET            /datasets/createStep2                                                    @controllers.Datasets.createStep2(id: UUID)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
 GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(when: String ?= "", index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
@@ -105,6 +105,7 @@ GET            /datasets/:id                                                    
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
 POST           /dataset/submit                                                          @controllers.Datasets.submit
+GET            /datasets/:id/addFiles                                                   @controllers.Datasets.addFiles(id: UUID)
 
 # ----------------------------------------------------------------------
 # COLLECTIONS
@@ -636,8 +637,7 @@ GET            /spaces/curations/:id/compareToRepository                        
 GET            /spaces/curations/:id/sendToRepository                                   @controllers.CurationObjects.sendToRepository(id: UUID)
 GET            /spaces/curations/:id/matchmaker                                         @controllers.CurationObjects.findMatchingRepositories(id: UUID)
 POST           /spaces/curations/:id/matchmaker                                         @api.CurationObjects.findMatchmakingRepositories(id: UUID)
-POST           /spaces/curations/:id/datasetUsermetadata                                @controllers.CurationObjects.addDatasetUserMetadata(id: UUID)
-POST           /spaces/curations/:curationId/files/:fileId/fileUsermetadata             @controllers.CurationObjects.addFileUserMetadata(curationId:UUID, fileId: UUID)
+GET            /spaces/curations/:id/curationFile                                       @api.CurationObjects.getCurationFiles(id: UUID)
 POST           /spaces/curations/:id/status                                             @controllers.CurationObjects.savePublishedObject(id: UUID)
 GET            /spaces/curations/:id/getStatusFromRepository                            @controllers.CurationObjects.getStatusFromRepository(id: UUID)
 

@@ -29,7 +29,7 @@
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
                         <h3 id="h-edit-title" class="hiddencomplete">
                             <a id ="edit-title" href = "javascript:updateTitle()" title="Click to edit title">
-                                <span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
+                            <span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
                             </a>
                         </h3>
                     }
@@ -44,7 +44,7 @@
                 <div class="col-md-6">
                     <ul class="list-unstyled">
                         <div id="edit-license">
-                            <li class="inline"><span id="licensetextdata">blank</span> <span id="rightsholderdata">blank</span></li>
+                        <li class="inline"><span id="licensetextdata">blank</span> <span id="rightsholderdata">blank</span></li>
                             @if(Permission.checkPermission(Permission.EditLicense, ResourceRef(ResourceRef.dataset, dataset.id))) {
 
                                 <a class="edit-tab hiddencomplete" data-toggle="collapse"
@@ -66,11 +66,11 @@
                             <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
                         </a>
                     }
-                </div>
+            </div>
                 <div class="col-md-12 box-white-space">
                     <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                        <a href="@(routes.Datasets.addToDataset(dataset.id))"
+                        <a href="@(routes.Datasets.addFiles(dataset.id))"
                         class="btn btn-link btn-sm btn-margin-bottom" id="fileUploadBtn" title="Add File to Dataset" role="button">
                             <span class="glyphicon glyphicon-plus"></span> Add Files
                         </a>
@@ -86,7 +86,7 @@
                     @datasets.deleteButton(dataset)
                     @datasets.follow(dataset)
                     @if(user.isDefined && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
-                        @if(toPublish && currentSpace.isDefined) {
+                        @if(toPublish && currentSpace.isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, UUID(currentSpace.getOrElse(""))))) {
                             <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-link btn-sm btn-margin-bottom">
                                 <span class="glyphicon glyphicon-globe"></span> Publish
                             </a>
@@ -107,7 +107,7 @@
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
                 <ul class="nav nav-tabs">
                     <li role="presentation" class="active"><a href="#tab-files" role="tab" data-toggle="tab">Files (@dataset.files.size)</a></li>
-                    <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata (@dataset.metadataCount)</a></li>
+                    <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata (@m.length)</a></li>
                     <li role="presentation"><a href="#tab-visua" role="tab" data-toggle="tab">Visualizations</a></li>
                     <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
                     <li role="presentation"><a href="#tab-notes" role="tab" data-toggle="tab">Notes</a></li>
@@ -202,7 +202,7 @@
             templates :[ { title : 'Test template 1', content : 'Test 1' }, { title : 'Test template 2', content : 'Test 2' }
             ]
             } ) ;
-         var cur_title;
+        var cur_title;
         function updateTitle() {
             cur_title = $('#datasettitle').text();
             $('<span class="inline edit_title_div"> </span>').insertAfter($('#datasettitle'));
@@ -244,11 +244,10 @@
                 $(document).on('mouseenter', '#edit-license', function() {
                     $('#editlicense').removeClass("hiddencomplete");
                     $('#editlicense').addClass("inline");
-                 }).on('mouseleave', '#edit-license', function() {
+                }).on('mouseleave', '#edit-license', function() {
                     $('#editlicense').removeClass("inline");
                     $('#editlicense').addClass("hiddencomplete");
-                 });
-
+                });
             }
 
         });
@@ -295,10 +294,8 @@
 		    });
 
         }
-
     var cur_description;
     function updateDescription() {
-
 		cur_description = $('#ds_description').html().trim();
 		$('<div class="edit_desc"> </div>').insertAfter($('#ds_description'));
 		$('.edit_desc').append('<textarea id = "desc_input" class="form-control"/>');
@@ -320,6 +317,7 @@
         $('#edit-description').css("display", "");
 
     }
+
 	function saveDescription() {
 		var description = $('#desc_input').val();
 		var encDescription = htmlEncode(description);
@@ -348,8 +346,6 @@
 		});
 
 	 }
-
-
     </script>
 }
 

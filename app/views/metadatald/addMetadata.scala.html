@@ -1,42 +1,43 @@
 @(resType: String, id: String)(implicit user: Option[models.User])
 @import api.Permission
-    @if(resType== "dataset" && Permission.checkPermission(Permission.AddMetadata, ResourceRef(ResourceRef.dataset, UUID(id)))
-            || resType == "file" && Permission.checkPermission(Permission.AddMetadata, ResourceRef(ResourceRef.file, UUID(id)))) {
-
-
-        <div class="panel panel-default">
-            <div class="panel-body">
-                <div class="row">
-                    <div class="col-md-12">
-                        <h5>Add metadata</h5>
-                    </div>
+@*The permission for curationObject and CurationFile is check outside this file*@
+@if(resType == "dataset" && Permission.checkPermission(Permission.AddMetadata, ResourceRef(ResourceRef.dataset, UUID(id)))
+        || resType == "file" && Permission.checkPermission(Permission.AddMetadata, ResourceRef(ResourceRef.file, UUID(id)))
+        || resType.startsWith("curation")) {
+    <div id="@id" class="panel panel-default">
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-12">
+                    <h5>Add metadata</h5>
                 </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        <form class="form-horizontal form-md">
-                            <select id="add-metadata-select">
-                                <option value=""></option>
-                            </select>
-                        </form>
-                    </div>
-                </div>
-
-                <div id="selected_field" class="row"></div>
             </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <form class="form-horizontal form-md">
+                        <select id="add-metadata-select">
+                            <option value=""></option>
+                        </select>
+                    </form>
+                </div>
+            </div>
+
+            <div id="selected_field" class="row"></div>
         </div>
-    }
+    </div>
+}
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
 <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+
 <style>
-  .ui-autocomplete-category {
-    font-weight: bold;
-    padding: .2em .4em;
-    margin: .8em 0 .2em;
-    line-height: 1.5;
-  }
+.ui-autocomplete-category {
+font-weight: bold;
+padding: .2em .4em;
+margin: .8em 0 .2em;
+line-height: 1.5;
+}
 </style>
 
 <script>
@@ -93,17 +94,18 @@
 
 <script language="javascript">
     // submit metadata value to server
-    function submit(event){
+    function submit_@id
+    (event){
         event.preventDefault();
-        var field_label = $("#field-value").data("label");
-        var field_id = $("#field-value").data("id");
-        var field_type = $("#add-metadata-select option:selected").data("type");
+        var field_label = $("#@id  #field-value").data("label");
+        var field_id = $("#@id  #field-value").data("id");
+        var field_type = $("#@id  #add-metadata-select option:selected").data("type");
         var field_value = "";
         var field_types_with_simple_values = {"string": 1, "listjquery": 1, "listgeocode": 1};
         if (field_type in field_types_with_simple_values) {
-            field_value = $("#field-value").val();
+            field_value = $("#@id  #field-value").val();
         } else if (field_type == "list") {
-            field_value = $("#field-value option:selected").val();
+            field_value = $("#@id  #field-value option:selected").val();
         }  else {
             console.log("Wrong field type: " + field_type);
         }
@@ -122,30 +124,32 @@
                 content["Latitude"] = lat_lng[0].trim();
                 content["Longitude"] = lat_lng[1].trim();
             }
-            var body = {
-                    "@@context": context,
-                    "@(resType)_id": "@id",
-                    "content": content
-                };
 
-            var request = jsRoutes.api.Metadata.addUserMetadata().ajax({
-                data: JSON.stringify(body),
-                type: 'POST',
-                contentType: "application/json"
-            });
+                var body = {
+                        "@@context": context,
+                        "@(resType)_id": "@id",
+                        "content": content
+                    };
 
-            request.done(function (response, textStatus, jqXHR) {
-                // TODO update gui without reloading page
-                location.reload();
-            });
+                var request = jsRoutes.api.Metadata.addUserMetadata().ajax({
+                    data: JSON.stringify(body),
+                    type: 'POST',
+                    contentType: "application/json"
+                });
 
-            request.fail(function (jqXHR, textStatus, errorThrown){
-                console.error("The following error occured: " + textStatus, errorThrown);
-                var errMsg = "You must be logged in to add metadata";
-                if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                  notify("Metadata was not added due to : " + errorThrown, "error");
-                }
-            });
+                request.done(function (response, textStatus, jqXHR) {
+                    // TODO update gui without reloading page
+                    location.reload();
+                });
+
+                request.fail(function (jqXHR, textStatus, errorThrown){
+                    console.error("The following error occured: " + textStatus, errorThrown);
+                    var errMsg = "You must be logged in to add metadata";
+                    if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                      notify("Metadata was not added due to : " + errorThrown, "error");
+                    }
+                });
+
         }
     }
 
@@ -164,17 +168,17 @@
                 elem.attr("data-id", fields[i].id);
                 elem.attr("value", fields[i].json.uri);
                 elem.text(fields[i].json.label);
-            $("#add-metadata-select").append(elem);
+            $("#@id  #add-metadata-select").append(elem);
         }
         // chosen pulldown configuration
-        $("#add-metadata-select").chosen({
+        $("#@id  #add-metadata-select").chosen({
             no_results_text: "Not found. Press enter to add ",
             search_contains: true,
             width: "100%",
             placeholder_text_single: "Select field"});
         // register selection listener
-        $("#add-metadata-select").change(function () {
-            $("#add-metadata-select option:selected").each(function() {
+        $("#@id  #add-metadata-select").change(function () {
+            $("#@id  #add-metadata-select option:selected").each(function() {
                 // create html form
                 var field_label = $(this).text();
                 var field_id = $(this).val();
@@ -188,19 +192,19 @@
                     };
                 var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/")" + template_map[field_type]);
                 var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type});
-                $('#selected_field').html(html);
+                $('#@id  #selected_field').html(html);
                 //console.log("field_type: ", field_type, ", modalTemplate: ", template_map[field_type], ", html: ", html);
                 // register submit listener
-                $("#add-metadata-button").click(submit);
+                $("#@id  #add-metadata-button").click(submit_@id);
 
                 if (field_type == "listjquery") {
                     // Find the field with the specific uri.
                     var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
-                    $("#field-value").catcomplete({
+                    $("#@id  #field-value").catcomplete({
                         minLength: 3,
                         source: function( request, response ) {
 
-                            var useSyn = $("#useSynonyms").prop("checked");
+                            var useSyn = $("#@id  #useSynonyms").prop("checked");
                             var query_param = field[0].json.query_parameter;
                             var url = encodeURIComponent(field[0].json.definitions_url + "?" + query_param + "=" + request.term + "&useSynonyms=" + useSyn);
                             $.ajax({
@@ -224,7 +228,7 @@
                 } else if (field_type == "listgeocode") {
                     // Find the field with the specific uri.
                     var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
-                    $("#field-value").autocomplete({
+                    $("#@id  #field-value").autocomplete({
                         minLength: 3,
                         source: function( request, response ) {
                             // Sets a variable query parameter in $.ajax.data below.
@@ -257,15 +261,15 @@
                         // modalTemplate was assigned above using the map.
                         var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type,
                             'options': vocabulary});
-                        $('#selected_field').html(html);
+                        $('#@id  #selected_field').html(html);
                         // chosen pulldown configuration
-                        $("#field-value").chosen({
+                        $("#@id  #field-value").chosen({
                             no_results_text: "Not found. Press enter to add ",
                             search_contains: true,
                             width: "100%",
                             placeholder_text_single: "Select field"});
                         // register submit listener
-                        $("#add-metadata-button").click(submit);
+                        $("#@id  #add-metadata-button").click(submit_@id);
                       });
 
                     request.fail(function (jqXHR, textStatus, errorThrown){
