@@ -27,7 +27,7 @@
     
 	  @form(action = routes.Admin.submitNew, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {	 
 	    <fieldset  id="adminMailFieldSet">
-	      @inputText(myForm("email"), '_label -> "Email")
+	      @inputText(myForm("email"), 'class -> "form-control", '_label -> "Email")
 	    </fieldset>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary btn-margins"><span class="glyphicon glyphicon-saved"></span> Submit</button>

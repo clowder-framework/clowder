@@ -15,8 +15,8 @@
         }
         </div>
         <div class="col-md-10">
-            <div>
-                <a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id' class ="btn btn-link btn-xs">@Html(dataset.name)</a>
+            <div class="caption break-word">
+                <a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id'>@Html(dataset.name)</a>
             </div>
             <div>
             <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->

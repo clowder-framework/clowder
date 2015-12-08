@@ -79,7 +79,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
             }
             val spacesUser = spaces.listUser(4, Some(clowderUser),request.superAdmin, clowderUser)
             var followers: List[(UUID, String, String, String)] = List.empty
-            for (followerID <- clowderUser.followers) {
+            for (followerID <- clowderUser.followers.take(3)) {
               var userFollower = users.findById(followerID)
               userFollower match {
                 case Some(uFollower) => {
@@ -93,38 +93,38 @@ class Application @Inject() (files: FileService, collections: CollectionService,
             var followedDatasets: List[(UUID, String, String)] = List.empty
             var followedCollections: List[(UUID, String, String)] = List.empty
             var followedSpaces: List[(UUID, String, String)] = List.empty
-            var maxDescLength = 50
+            val maxDescLength = 50
             for (tidObject <- clowderUser.followedEntities) {
               if (tidObject.objectType == "user") {
-                var followedUser = users.get(tidObject.id)
+                val followedUser = users.get(tidObject.id)
                 followedUser match {
                   case Some(fuser) => {
                     followedUsers = followedUsers.++(List((fuser.id, fuser.fullName, fuser.email.get, fuser.getAvatarUrl())))
                   }
                 }
               } else if (tidObject.objectType == "file") {
-                var followedFile = files.get(tidObject.id)
+                val followedFile = files.get(tidObject.id)
                 followedFile match {
                   case Some(ffile) => {
                     followedFiles = followedFiles.++(List((ffile.id, ffile.filename, ffile.contentType)))
                   }
                 }
               } else if (tidObject.objectType == "dataset") {
-                var followedDataset = datasets.get(tidObject.id)
+                val followedDataset = datasets.get(tidObject.id)
                 followedDataset match {
                   case Some(fdset) => {
                     followedDatasets = followedDatasets.++(List((fdset.id, fdset.name, fdset.description.substring(0, Math.min(maxDescLength, fdset.description.length())))))
                   }
                 }
               } else if (tidObject.objectType == "collection") {
-                var followedCollection = collections.get(tidObject.id)
+                val followedCollection = collections.get(tidObject.id)
                 followedCollection match {
                   case Some(fcoll) => {
                     followedCollections = followedCollections.++(List((fcoll.id, fcoll.name, fcoll.description.substring(0, Math.min(maxDescLength, fcoll.description.length())))))
                   }
                 }
               } else if (tidObject.objectType == "'space") {
-                var followedSpace = spaces.get(tidObject.id)
+                val followedSpace = spaces.get(tidObject.id)
                 followedSpace match {
                   case Some(fspace) => {
                     followedSpaces = followedSpaces.++(List((fspace.id, fspace.name, fspace.description.substring(0, Math.min(maxDescLength, fspace.description.length())))))
@@ -132,8 +132,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
                 }
               }
             }
-            Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser, datasetcommentMap, decodedCollections.toList, spacesUser, true, followers, followedUsers,
-           followedFiles, followedDatasets, followedCollections,followedSpaces, Some(true)))
+            Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser, datasetcommentMap, decodedCollections.toList, spacesUser, true, followers, followedUsers.take(3),
+           followedFiles.take(3), followedDatasets.take(3), followedCollections.take(3),followedSpaces.take(3), Some(true)))
           }
           case None =>  Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess,
             spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
@@ -311,6 +311,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Metadata.getDefinition,
         api.routes.javascript.Metadata.getUrl,
         api.routes.javascript.Metadata.addDefinition,
+        api.routes.javascript.Metadata.removeMetadata,
         controllers.routes.javascript.Files.file,
         controllers.routes.javascript.Datasets.dataset,
         controllers.routes.javascript.Datasets.newDataset,

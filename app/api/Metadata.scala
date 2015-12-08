@@ -4,6 +4,7 @@ import java.net.URL
 import java.util.Date
 import javax.inject.{Inject, Singleton}
 
+import com.wordnik.swagger.annotations.ApiOperation
 import models.{ResourceRef, UUID, UserAgent, _}
 import play.api.Logger
 import play.api.libs.json.Json._
@@ -155,5 +156,22 @@ class Metadata @Inject()(
         }
         case None => BadRequest(toJson("Invalid user"))
       }
+  }
+
+  @ApiOperation(value = "Delete the metadata represented in Json-ld format",
+    responseClass = "None", httpMethod = "DELETE")
+  def removeMetadata(id:UUID) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.metadata, id))) { implicit request =>
+    request.user match {
+      case Some(user) => {
+        metadataService.getMetadataById(id) match {
+          case Some(m) => {
+            metadataService.removeMetadata(id)
+            Ok(JsObject(Seq("status" -> JsString("ok"))))
+          }
+          case None => BadRequest(toJson("Invalid Metadata"))
+        }
+      }
+      case None => BadRequest("Not authorized.")
+    }
   }
 }
