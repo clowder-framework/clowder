@@ -133,35 +133,37 @@
                                 }
                             </li>
                         </ul>
-                        <ul class="list-group center-margin">
-                        @user match {
-                            case Some(viewer) => {
+                        @if(dataset.isEmpty){
+                            <ul class="list-group center-margin">
+                            @user match {
+                                case Some(viewer) => {
 
-                                    <a
-                                    id="followButton"
-                                    type="button"
-                                    class="btn-link"
-                                    data-toggle="button"
-                                    aria-pressed="
+                                        <a
+                                        id="followButton"
+                                        type="button"
+                                        class="btn-link"
+                                        data-toggle="button"
+                                        aria-pressed="
+                                            @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
+                                                true
+                                            }else {
+                                                false
+                                            }
+                                        "
+                                        autocomplete="off"
+                                        objectType="file"
+                                        objectId="@file.id.stringify"
+                                        >
                                         @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
-                                            true
-                                        }else {
-                                            false
+                                            <span class='glyphicon glyphicon-star-empty'></span>Unfollow
+                                        } else {
+                                            <span class='glyphicon glyphicon-star'></span>Follow
                                         }
-                                    "
-                                    autocomplete="off"
-                                    objectType="file"
-                                    objectId="@file.id.stringify"
-                                    >
-                                    @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
-                                        <span class='glyphicon glyphicon-star-empty'></span>Unfollow
-                                    } else {
-                                        <span class='glyphicon glyphicon-star'></span>Follow
-                                    }
-                                    </a>
+                                        </a>
+                                }
                             }
+                            </ul>
                         }
-                        </ul>
                     </div>
                 </div>
             }
@@ -252,10 +254,10 @@
             <ul class="pager">
                     <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
                 @if(prev >= 0) {
-                    <li class="previous"><a id="prevlink" title="Page backwards" href="#">Previous</a></li>
+                    <li class="previous"><a id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
                 }
                 @if(next >=0) {
-                    <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next</a></li>
+                    <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next<span class="glyphicon glyphicon-chevron-right"></span></a></li>
                 }
             </ul>
         </div>
