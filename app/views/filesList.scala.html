@@ -17,10 +17,8 @@
     </div>
 
 <div class="row">
-    <div class="col-md-10">
-    </div>
-    <div class="col-md-1">
-        <a class="btn btn-primary btn-sm pull-right" href="@routes.Files.upload()" title="Upload a new file">Upload</a>
+
+    <div class="col-md-11">
     </div>
     <div class="col-md-1">
         <div class="btn-group btn-group-sm pull-right">                                        
@@ -83,8 +81,13 @@
             //Function to unify the changing of the href for the next/previous links. Called on button activation for
             //viewMode style, as well as on initial load of page.
 	        function updatePage() {
-	            $('#nextlink').attr('href', "@(routes.Files.list("a", next, limit))");
-	            $('#prevlink').attr('href', "@(routes.Files.list("b", prev, limit))");
+                if(@next.startsWith("dataset")){
+                    $('#nextlink').attr('href', "@(routes.Files.listByDataset(UUID(next.split("-")(1)), prev.toInt+1))");
+                    $('#prevlink').attr('href', "@(routes.Files.listByDataset(UUID(next.split("-")(1)), prev.toInt-1))");
+                } else {
+                    $('#nextlink').attr('href', "@(routes.Files.list("a", next, limit))");
+                    $('#prevlink').attr('href', "@(routes.Files.list("b", prev, limit))");
+                }
 	        }
         </script>
     </div>
@@ -186,11 +189,11 @@
     <div class="col-md-12">
         <ul class="pager">
             <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
-            @if(prev != "") {
-                <li class="previous"><a id="prevlink" title="Page backwards" href="#">Previous</a></li>
+            @if(next.startsWith("dataset") && prev.toInt >0 ||  !next.startsWith("dataset") && prev != "") {
+                <li class="previous"><a class="btn btn-link" id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
             }
-            @if(next != "") {
-                <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next</a></li>
+            @if(next.startsWith("dataset") && next.contains("next")  ||  !next.startsWith("dataset") && next != "") {
+                <li class ="next"><a class="btn btn-link" id="nextlink" title="Page forwards" href="#">Next<span class="glyphicon glyphicon-chevron-right"></span></a></li>
             }
         </ul>
     </div>

@@ -15,6 +15,7 @@ class Metadata @Inject() (
   metadata: MetadataService, contextLDService: ContextLDService) extends SecuredController {
 
   def view(id: UUID) = PermissionAction(Permission.ViewMetadata) { implicit request =>
+    implicit val user = request.user
     metadata.getMetadataById(id) match {
       case Some(m) => Ok(views.html.metadatald.view(List(m)))
       case None => NotFound

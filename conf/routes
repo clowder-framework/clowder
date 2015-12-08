@@ -27,7 +27,7 @@ GET            /assets/*file                                                    
 # ----------------------------------------------------------------------
 # USERS
 # ----------------------------------------------------------------------
-POST           /users/registerThroughAdmins                                             controllers.Users.handleStartSignUp
+POST           /users/registerThroughAdmins                                             @controllers.Users.handleStartSignUp
 
 # ----------------------------------------------------------------------
 # PROFILE
@@ -74,9 +74,11 @@ POST           /extraction/upload                                               
 # FILES
 # ----------------------------------------------------------------------
 GET            /files                                                                   @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "")
+GET            /files/:datasetId                                                        @controllers.Files.listByDataset(datasetId: UUID, filepage: Int ?= 0, limit: Int ?= 12)
 GET            /files/new                                                               @controllers.Files.uploadFile
 GET            /files/metadataSearch                                                    @controllers.Files.metadataSearch
 GET            /files/generalMetadataSearch                                             @controllers.Files.generalMetadataSearch
+GET            /files/following                                                         @controllers.Files.followingFiles(when: String ?= "", index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
 GET            /files/:id                                                               @controllers.Files.file(id: UUID)
 GET            /files/:id/blob                                                          @controllers.Files.download(id: UUID)
 GET            /files/:id/download/:format                                              @controllers.Files.downloadAsFormat(id: UUID, format: String)
@@ -89,26 +91,29 @@ POST           /uploaddnd/:id                                                   
 #POST  	       /reactiveUpload					                                        @controllers.Files.reactiveUpload
 POST           /uploadDragDrop                                                          @controllers.Files.uploadDragDrop
 GET            /fileThumbnail/:id/blob                                                  @controllers.Files.thumbnail(id: UUID)
-GET            /file_by_section/:id                                                 	@controllers.Files.fileBySection(id: UUID)
+GET            /file_by_section/:id                                                     @controllers.Files.fileBySection(id: UUID)
 
 # ----------------------------------------------------------------------
 # DATASETS
 # ----------------------------------------------------------------------
 GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
 GET            /datasets/new                                                            @controllers.Datasets.newDataset(space: Option[String])
-GET            /datasets/addToDataset/:id                                               @controllers.Datasets.addToDataset(id: UUID)
+GET            /datasets/createStep2                                                    @controllers.Datasets.createStep2(id: UUID)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
-GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None)
+GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(when: String ?= "", index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
+GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, filepage:Int ?= 0)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
 POST           /dataset/submit                                                          @controllers.Datasets.submit
+GET            /datasets/:id/addFiles                                                   @controllers.Datasets.addFiles(id: UUID)
 
 # ----------------------------------------------------------------------
 # COLLECTIONS
 # ----------------------------------------------------------------------
 GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
 GET            /collections/new                                                         @controllers.Collections.newCollection(space: Option[String])
+GET            /collections/following                                                   @controllers.Collections.followingCollections(when: String ?= "", index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
 POST           /collection/submit                                                       @controllers.Collections.submit
 GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)
 GET            /collection/:id/users                                                    @controllers.Collections.users(id: UUID)
@@ -119,6 +124,7 @@ GET            /collections/:collection_id/previews                             
 # ----------------------------------------------------------------------
 GET            /spaces                                                                  @controllers.Spaces.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "", owner: Option[String] ?= None, showAll: Boolean ?= true)
 GET            /spaces/new                                                              @controllers.Spaces.newSpace
+GET            /spaces/following                                                        @controllers.Spaces.followingSpaces(when: String ?= "", index: Int ?=0, size: Int ?= 12, mode: String ?= "")
 GET            /spaces/:id                                                              @controllers.Spaces.getSpace(id: UUID, size: Int ?= 9, direction: String ?= "desc")
 GET            /spaces/:id/updateSpace                                                  @controllers.Spaces.updateSpace(id:UUID)
 GET            /spaces/:id/addRequest                                                   @controllers.Spaces.addRequest(id:UUID)
@@ -269,6 +275,8 @@ POST           /api/files/:id/metadata.jsonld                                   
 GET            /api/files/:id/metadata.jsonld                                           @api.Files.getMetadataJsonLD(id: UUID)
 
 POST           /api/metadata.jsonld                                                     @api.Metadata.addUserMetadata()
+DELETE         /api/metadata.jsonld/:id                                                 @api.Metadata.removeMetadata(id:UUID)
+
 #GET            /api/metadata.jsonld                                                     @api.Metadata.getUserMetadata()
 
 GET            /api/metadata/search                                                     @api.Metadata.searchByKeyValue(mdkey: Option[String], mdvalue: Option[String], count: Int ?= 10)
@@ -504,7 +512,7 @@ DELETE         /api/sections/:id                                                
 # ----------------------------------------------------------------------
 # SEARCH ENDPOINT
 # ----------------------------------------------------------------------
-GET           /api/search/multimediasearch                                              @api.Search.searchMultimediaIndex(section_id: UUID)
+GET            /api/search/multimediasearch                                             @api.Search.searchMultimediaIndex(section_id: UUID)
 
 # ----------------------------------------------------------------------
 # GEOSTREAMS ENDPOINT
@@ -597,6 +605,12 @@ POST           /api/users/unfollow                                              
 GET            /api/curations/:curationId/ore                                           @api.CurationObjects.getCurationObjectOre(curationId: UUID)
 
 # ----------------------------------------------------------------------
+# USERS Controller
+# ----------------------------------------------------------------------
+GET            /controllers/users/followers                                             @controllers.Users.getFollowers(index: Int ?= 0, limit: Int ?=12)
+GET            /controllers/users/following                                             @controllers.Users.getFollowing(index: Int ?= 0, limit: Int ?=12)
+
+# ----------------------------------------------------------------------
 # MEDICI STATUS API
 # ----------------------------------------------------------------------
 GET            /api/version                                                             @api.Status.version
@@ -613,17 +627,18 @@ GET            /rss/:etype                                                      
 # ----------------------------------------------------------------------
 
 GET            /dataset/:id/curations/new                                               @controllers.CurationObjects.newCO(id:UUID, space:String ?= "")
-POST           /dataset/:datasetId/curations/spaces/:spaceId/submit                     @controllers.CurationObjects.submit(datasetId:UUID, spaceId:UUID)
+POST           /dataset/:id/curations/spaces/:spaceId/submit                            @controllers.CurationObjects.submit(id:UUID, spaceId:UUID)
 GET            /spaces/:id/stagingArea                                                  @controllers.Spaces.stagingArea(id: UUID)
 GET            /spaces/curations/:id                                                    @controllers.CurationObjects.getCurationObject(id: UUID)
 DELETE         /spaces/curations/retract/:id                                            @api.CurationObjects.retractCurationObject(id: UUID)
+GET            /spaces/curations/:id/edit                                               @controllers.CurationObjects.editCuration(id: UUID)
+POST           /spaces/curations/:id/spaces/:spaceId/update                             @controllers.CurationObjects.updateCuration(id: UUID, spaceId:UUID)
 DELETE         /spaces/curations/:id                                                    @controllers.CurationObjects.deleteCuration(id: UUID)
 GET            /spaces/curations/:id/compareToRepository                                @controllers.CurationObjects.compareToRepository(id: UUID, repository:String)
 GET            /spaces/curations/:id/sendToRepository                                   @controllers.CurationObjects.sendToRepository(id: UUID)
 GET            /spaces/curations/:id/matchmaker                                         @controllers.CurationObjects.findMatchingRepositories(id: UUID)
 POST           /spaces/curations/:id/matchmaker                                         @api.CurationObjects.findMatchmakingRepositories(id: UUID)
-POST           /spaces/curations/:id/datasetUsermetadata                                @controllers.CurationObjects.addDatasetUserMetadata(id: UUID)
-POST           /spaces/curations/:curationId/files/:fileId/fileUsermetadata             @controllers.CurationObjects.addFileUserMetadata(curationId:UUID, fileId: UUID)
+GET            /spaces/curations/:id/curationFile                                       @api.CurationObjects.getCurationFiles(id: UUID)
 POST           /spaces/curations/:id/status                                             @controllers.CurationObjects.savePublishedObject(id: UUID)
 GET            /spaces/curations/:id/getStatusFromRepository                            @controllers.CurationObjects.getStatusFromRepository(id: UUID)
 

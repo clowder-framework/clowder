@@ -6,8 +6,8 @@
     <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
     @if(Permission.checkPermission(Permission.DeleteDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
         <a id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
-            class="btn-margin-bottom btn btn-danger btn-sm" href="#"><span class="glyphicon glyphicon-trash"></span> Delete</a>
+            class="btn-margin-bottom btn btn-link btn-sm" href="#"><span class="glyphicon glyphicon-trash"></span> Delete</a>
     } else {
-        <a id="deleteButton" class="btn-margin-bottom btn btn-danger btn-sm disabled" href="#"><span class="glyphicon glyphicon-trash"></span> Delete</a>
+        <a id="deleteButton" class="btn-margin-bottom btn btn-link btn-sm disabled" href="#"><span class="glyphicon glyphicon-trash"></span> Delete</a>
     }
 }

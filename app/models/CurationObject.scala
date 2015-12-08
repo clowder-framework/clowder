@@ -1,6 +1,6 @@
 package models
 
-import java.net.URI
+import java.net.{URL, URI}
 import java.util.Date
 import play.api.libs.json.Json._
 import play.api.libs.json._
@@ -20,8 +20,7 @@ case class CurationObject (
   space: UUID,
   datasets: List[Dataset] =  List.empty,
   collections: List[Collection] = List.empty,
-  //here we don't use a map to know the file belongs to which dataset, we find the fileByDataset from dataset.files._.id
-  files: List[File] =  List.empty,
+  files: List[UUID] =  List.empty,  //id of curationFile, different from live object
   repository: Option[String],
   status: String,
   externalIdentifier: Option[URI] = None
@@ -116,5 +115,38 @@ object MatchMakerResponse{
       (json \ "Per Rule Scores").as[List[mmRule]],
       (json \ "Total Score").as[Int]
     ))
+  }
+}
+
+
+case class CurationFile(
+                         id: UUID = UUID.generate,
+                         fileId: UUID,
+                         path: Option[String] = None,
+                         filename: String,
+                         author: Identity,
+                         uploadDate: Date,
+                         contentType: String,
+                         length: Long = 0,
+                         showPreviews: String = "DatasetLevel",
+                         sections: List[Section] = List.empty,
+                         previews: List[Preview] = List.empty,
+                         tags: List[Tag] = List.empty,
+                         thumbnail_id: Option[String] = None,
+                         metadataCount: Long = 0,
+                         licenseData: LicenseData = new LicenseData(),
+                         notesHTML: Option[String] = None)
+
+
+object CurationFile {
+  implicit object CurationFileWrites extends Writes[CurationFile] {
+    def writes(cf: CurationFile): JsObject = {
+      Json.obj(
+        "id" -> cf.id.toString(),
+        "fileId" -> cf.fileId.toString(),
+        "name" -> cf.filename,
+        "length" -> cf.length,
+        "contentType" -> cf.contentType)
+    }
   }
 }

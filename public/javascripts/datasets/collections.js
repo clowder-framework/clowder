@@ -19,7 +19,7 @@ function addToCollection(datasetId) {
         '<div class="col-md-2"></div>' +
         '<div class="col-md-10"><div><a href="'+jsRoutes.controllers.Collections.collection(selectedId).url+'" id='+selectedId+' class ="collection">'+selectedName+'</a></div><div>' +
             o.datasetsInCollection+' dataset(s) | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection(\''+selectedId+'\', \''+datasetId+'\', event)" title="Remove from collection">' +
-        ' Remove</a></div></div></div>');
+        '<span class="glyphicon glyphicon-remove"></span> Remove</a></div></div></div>');
         $("#collectionAddSelect").select2("val", "");
     });
 

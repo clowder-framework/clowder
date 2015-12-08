@@ -1,4 +1,4 @@
-@(collections: List[models.Collection], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String], title: Option[String], owner:Option[String])(implicit user: Option[models.User])
+@(collections: List[models.Collection], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String], title: Option[String], owner:Option[String])(implicit flash: play.api.mvc.Flash,  user: Option[models.User])
 
 
 
@@ -8,7 +8,7 @@
     
 <script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
-
+    <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
     <div class="row">
         <div class="col-md-12">
             <h1>@title</h1>
@@ -20,12 +20,12 @@
     </div>
     <div class="col-md-1">
         @if(user.isDefined) {
-            <a id="create-collection" class="btn btn-primary btn-sm pull-right" href="@routes.Collections.newCollection(space)" title="Create a new collection">Create</a>
+            <a id="create-collection" class="btn btn-primary btn-sm pull-right" href="@routes.Collections.newCollection(space)" title="Create a new collection"><span class="glyphicon glyphicon-ok"></span> Create</a>
         }
 
     </div>
     <div class="col-md-1">
-        <div class="btn-group btn-group-sm pull-right">            
+        <div class="btn-group btn-group-sm pull-right">
             <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
             <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>            
         </div>
@@ -102,50 +102,80 @@
 
   <div class="row hidden" id="list-view">
 	<div class="col-md-12">
-		<table class="table table-bordered table-hover">
-			<thead>
-				<tr>
-					@if(user.isDefined) {
-						<th style="width: 25%">Name</th>
-						<th style="width: 15%">Created</th>
-						<th style="width: 40%">Description</th>
-						<th style="width: 15%">Preview</th>
-						<th style="width: 5%">Delete</th>
-					}
-					@if(!user.isDefined) {
-						<th style="width: 25%">Name</th>
-						<th style="width: 15%">Created</th>
-						<th style="width: 45%">Description</th>
-						<th style="width: 15%">Preview</th>
-					}
-				</tr>
-			</thead>
-			<tbody>
-				@collections.map { collection =>
-					<tr>
-						<td><a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a></td>
-						<td>@collection.created.format("MMM dd, yyyy")</td>
-						<td>@Html(collection.description)</td>
-						<td>
-							@if(!collection.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)" width="120">}
-							@if(collection.thumbnail_id.isEmpty){No thumbnail available}
-						</td>
-						<td class="requiresLogin">
-							@if(user.isDefined) {								
-								<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->   
-                                @if( user.get.identityId.userId.equals(collection.author.identityId.userId)){
-                                    <button onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
-                                    <span class="glyphicon glyphicon-trash"></span></button>
-                                } else {
-                                    <button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
-                                    <span class="glyphicon glyphicon-trash"></span></button>
-                                }																                                                            				
-							}
-						</td>
-					</tr>
-				}
-			</tbody>
-		</table>		
+
+        @collections.map { collection =>
+            <div class="panel panel-default">
+                <div class="panel-body">
+                  <div class="row">
+                      <div class="col-md-2 col-sm-2 col-lg-2">
+                      @if(!collection.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)" width="120">}
+                      </div>
+                      <div class="col-md-10 col-sm-10 col-lg-10">
+                          <h2><a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a></h2>
+                        <div class="row">
+                            <div class="col-md-6 col-lg-6 col-sm-6">
+                                <ul class="list-unstyled">
+                                    <li>@Html(collection.description)</li>
+                                    <li>@collection.created.format("MMM dd, yyyy")</li>
+                                    <li>
+                                        <span class="glyphicon glyphicon glyphicon-file" title="@collection.datasetCount datasets"></span> @collection.datasetCount
+                                        @if(user.isDefined) {
+                                                <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                                            @if( user.get.identityId.userId.equals(collection.author.identityId.userId)){
+                                                <button onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
+                                                    <span class="glyphicon glyphicon-trash"></span></button>
+                                            } else {
+                                                <button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
+                                                    <span class="glyphicon glyphicon-trash"></span></button>
+                                            }
+                                        }
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6 col-lg-6 col-sm-6">
+                                <ul class="list-unstyled">
+                                <li>@if(user.isDefined && !collection.spaces.isEmpty){
+                                    <div id="collection-users">
+                                        <a href="@routes.Collections.users(collection.id)" class="btn btn-link ">
+                                            <span class="glyphicon glyphicon-hand-right"></span> Users with access to the collection
+                                        </a>
+                                        <div class="alert-danger inner-item">
+                                        @flash.get("error")
+                                        </div>
+                                    </div>
+                                }</li>
+                                <li>
+                                @if(user.isDefined) {
+                                    @if(!collection.followers.contains(user.get.id)) {
+                                        <button id="followButton"
+                                        class="btn btn-link"
+                                        objectId="@collection.id"
+                                        objectName="@collection.name"
+                                        objectType="collection">
+                                            <span class='glyphicon glyphicon-star'></span>
+                                            Follow
+                                        </button>
+                                    } else {
+                                        <button id="followButton"
+                                        class="btn btn-link"
+                                        objectId="@collection.id"
+                                        objectName="@collection.name"
+                                        objectType="collection">
+                                            <span class='glyphicon glyphicon-star-empty'></span>
+                                            Unfollow
+                                        </button>
+                                    }
+                                }
+                                </li>
+                                </ul>
+                            </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+          </div>
+        }
+
 	</div>
 </div>
 
@@ -153,10 +183,10 @@
     <div class="col-md-12">
         <ul class="pager">
             @if(prev != "") {
-  				<li class="previous"><a id="prevlink" title="Page backwards" href="#">Previous</a></li>
+                <li class="previous"><a class="btn btn-link" id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span> Previous</a></li>
   			}
   			@if(next != "") {
-  				<li class ="next"><a id="nextlink" title="Page forwards" href="#">Next</a></li>
+                <li class ="next"><a class="btn btn-link" id="nextlink" title="Page forwards" href="#">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
   			}
         </ul>
     </div>

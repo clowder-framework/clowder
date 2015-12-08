@@ -10,12 +10,12 @@
   filesTags: scala.collection.immutable.TreeSet[String],
   toPublish: Boolean,
   curationObjects: List[models.CurationObject],
-  currentSpace: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  currentSpace: Option[String],
+  filepage: Int,
+  next: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
-@import collection.JavaConverters._
-@import com.mongodb.casbah.Imports.DBObject
 
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
@@ -24,11 +24,11 @@
 		<!-- left column -->
 		<div class="col-md-8 col-right-border">
             <div class="row">
-                <div class="col-md-12" id="ds-title">
+                <div class="col-md-12 caption break-word" id="ds-title">
                     <h1 id="datasettitle" class="inline">@Html(dataset.name)</h1>
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                        <h3 class="inline align-right">
-                            <a id ="edit-title" href = "javascript:updateTitle()">
+                        <h3 id="h-edit-title" class="hiddencomplete">
+                            <a id ="edit-title" href = "javascript:updateTitle()" title="Click to edit title">
                             <span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
                             </a>
                         </h3>
@@ -43,30 +43,42 @@
                 </div>
                 <div class="col-md-6">
                     <ul class="list-unstyled">
+                        <div id="edit-license">
                         <li class="inline"><span id="licensetextdata">blank</span> <span id="rightsholderdata">blank</span></li>
+                            @if(Permission.checkPermission(Permission.EditLicense, ResourceRef(ResourceRef.dataset, dataset.id))) {
+
+                                <a class="edit-tab hiddencomplete" data-toggle="collapse"
+                                data-parent="#accordion6" href="#collapseSix" id="editlicense"
+                                title=" Click to Edit License Information">
+                                    <span class="glyphicon glyphicon-edit"></span>
+                                </a>
+
+                            }
+                        </div>
+
                         @datasets.editLicense(dataset)
                     </ul>
                 </div>
                 <div class="col-md-12 box-white-space" id="aboutdesc">
-                    <p id ="ds_description" class="inline">@Html(dataset.description)</p>
+                    <p id ="ds_description" class="inline">@if(dataset.description.length > 0) { @Html(dataset.description) } else {Add a description}</p>
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                        <a id="edit-description" href="javascript:updateDescription()">
-                            <span class="edit-tab glyphicon glyphicon-edit" aria-hidden="true"></span>
+                        <a id="edit-description" class="hiddencomplete" href="javascript:updateDescription()" title="Click to edit description">
+                            <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
                         </a>
                     }
             </div>
                 <div class="col-md-12 box-white-space">
                     <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                        <a href="@(routes.Datasets.addToDataset(dataset.id))"
-                        class="btn btn-default btn-sm btn-margin-bottom" id="fileUploadBtn" title="Add File to Dataset" role="button">
-                            <span class="glyphicon glyphicon-export"></span> Add Files
+                        <a href="@(routes.Datasets.addFiles(dataset.id))"
+                        class="btn btn-link btn-sm btn-margin-bottom" id="fileUploadBtn" title="Add File to Dataset" role="button">
+                            <span class="glyphicon glyphicon-plus"></span> Add Files
                         </a>
                     }
                     @if(dataset.files.length > 0 && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
                         <a id='download-dataset-url' href="#"
                         onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id').url, '_blank');"
-                        class="btn btn-default btn-sm requiresLogin btn-margin-bottom" title="Download All Files as Zip" role="button">
+                        class="btn btn-link btn-sm requiresLogin btn-margin-bottom" title="Download All Files as Zip" role="button">
                             <span class="glyphicon glyphicon-download-alt"></span>
                             Download All Files
                         </a>
@@ -74,18 +86,18 @@
                     @datasets.deleteButton(dataset)
                     @datasets.follow(dataset)
                     @if(user.isDefined && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
-                        @if(toPublish && currentSpace.isDefined ) {
-                            <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-default btn-sm btn-margin-bottom">
-                                Publish
+                        @if(toPublish && currentSpace.isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, UUID(currentSpace.getOrElse(""))))) {
+                            <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-link btn-sm btn-margin-bottom">
+                                <span class="glyphicon glyphicon-globe"></span> Publish
                             </a>
                         } else {
                             @if(dataset.spaces.size > 0) {
-                                <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-default btn-sm btn-margin-bottom">
-                                    Publish
+                                <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-link btn-sm btn-margin-bottom">
+                                    <span class="glyphicon glyphicon-globe"></span> Publish
                                 </a>
                             } else {
-                                <button class="btn btn-default btn-sm btn-margin-bottom" disabled>
-                                    Publish
+                                <button class="btn btn-link btn-sm btn-margin-bottom" disabled>
+                                    <span class="glyphicon glyphicon-globe"></span> Publish
                                 </button>
                             }
                         }
@@ -95,14 +107,36 @@
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
                 <ul class="nav nav-tabs">
                     <li role="presentation" class="active"><a href="#tab-files" role="tab" data-toggle="tab">Files (@dataset.files.size)</a></li>
-                    <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata (@dataset.metadataCount)</a></li>
+                    <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata (@m.length)</a></li>
                     <li role="presentation"><a href="#tab-visua" role="tab" data-toggle="tab">Visualizations</a></li>
                     <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
                     <li role="presentation"><a href="#tab-notes" role="tab" data-toggle="tab">Notes</a></li>
                 </ul>
                 <div class="tab-content">
                   <div role="tabpanel" class="tab-pane  fade in active" id="tab-files">
+
+                      @if(! (filepage == 0 && !next) ) {
+                          <div class="row">
+                              <div class="col-md-12 box-white-space">
+                                  <a id="allfiles" class="btn btn-default btn-xs" href="@(routes.Files.listByDataset(dataset.id))">
+                                      <span class="glyphicon glyphicon-th"></span>  All Files</a>
+                              </div>
+                          </div>
+                      }
                       @files.grid(fileList, dataset.id)
+                      <div class="row">
+                          <div class="col-md-12">
+                              <ul class="pager">
+                                      <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
+                                  @if(filepage > 0) {
+                                      <li class="previous"><a id="prevlink" title="Page backwards" href="@(routes.Datasets.dataset(dataset.id, currentSpace, filepage-1))"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
+                                  }
+                                  @if(next) {
+                                      <li class ="next"><a id="nextlink" title="Page forwards" href="@(routes.Datasets.dataset(dataset.id, currentSpace, filepage+1))">Next<span class="glyphicon glyphicon-chevron-right"></span></a></li>
+                                  }
+                              </ul>
+                          </div>
+                      </div>
                   </div>
                   <div role="tabpanel" class="tab-pane fade" id="tab-comments">
                       <!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->
@@ -190,21 +224,70 @@
             templates :[ { title : 'Test template 1', content : 'Test 1' }, { title : 'Test template 2', content : 'Test 2' }
             ]
             } ) ;
+        var cur_title;
         function updateTitle() {
-            var cur_title = $('#datasettitle').text();
-            $('<input type="text" id = "title_input" class="form-control"/>').insertAfter($('#datasettitle'));
-            $('<button id="update_title" class= "btn btn-sm btn-primary" onclick="saveTitle()"> Save </button>').insertAfter($('#title_input'));
+            cur_title = $('#datasettitle').text();
+            $('<span class="inline edit_title_div"> </span>').insertAfter($('#datasettitle'));
+            $('.edit_title_div').append('<input type="text" id = "title_input" class="form-control" required/>');
+            $('.edit_title_div').append('<div class="hiddencomplete" aria-hidden="true" id="title-error"> <span class="error"> Title is required </span> </div>');
+            $('.edit_title_div').append('<button id="update_title" class= "btn btn-sm btn-primary btn-margins" onclick="saveTitle()"> <span class="glyphicon glyphicon-send"></span> Save </button>');
+            $('.edit_title_div').append('<button id="cancel_title" onclick="cancelTitle()" class="btn btn-sm edit-tab btn-default btn-margins"> <span class="glyphicon glyphicon-remove"></span>Cancel </button>');
             $('#title_input').val(cur_title);
             $('#datasettitle').text("");
-            $('#edit-title').css("display", "none");
+            $('#h-edit-title').addClass("hiddencomplete");
+            $('#h-edit-title').css("display", "none");
         }
 
         $(document).ready(function(){
             if(@dataset.spaces.size < 1 ) {
                 $('#dataset-users').hide();
             }
+
+            if(@Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                 $(document).on('mouseenter', '#ds-title', function() {
+                    $('#h-edit-title').removeClass("hiddencomplete");
+                    $('#h-edit-title').addClass("inline");
+                 }).on('mouseleave', '#ds-title', function() {
+                    $('#h-edit-title').removeClass("inline");
+                    $('#h-edit-title').addClass("hiddencomplete");
+                 });
+
+                 $(document).on('mouseenter', '#aboutdesc', function() {
+                    $('#edit-description').removeClass("hiddencomplete");
+                    $('#edit-description').addClass("inline");
+                 }).on('mouseleave', '#aboutdesc', function() {
+                    $('#edit-description').removeClass("inline");
+                    $('#edit-description').addClass("hiddencomplete");
+                 });
+
+
+            }
+            if(@Permission.checkPermission(Permission.EditLicense, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                $(document).on('mouseenter', '#edit-license', function() {
+                    $('#editlicense').removeClass("hiddencomplete");
+                    $('#editlicense').addClass("inline");
+                }).on('mouseleave', '#edit-license', function() {
+                    $('#editlicense').removeClass("inline");
+                    $('#editlicense').addClass("hiddencomplete");
+                });
+            }
+
         });
+
+        function cancelTitle() {
+              $('#datasettitle').text(cur_title);
+              $('.edit_title_div').remove();
+              $('#datasettitle').css("display", "inline");
+              $('#h-edit-title').removeClass("inline");
+              $('#h-edit-title').css("display", "");
+              $('#ds-title').mouseleave();
+        }
+
         function saveTitle() {
+            if($('#title_input').val().length < 1) {
+                $('#title-error').show();
+                return false;
+            }
             var name = $('#title_input').val();
             var encName = htmlEncode(name);
             jsonData = JSON.stringify({"name": encName});
@@ -217,11 +300,11 @@
 
             request.done(function(response, textStatus, jqXHR){
                 $('#datasettitle').text(encName.replace(/\n/g, "<br>"));
-                $('#title_input').remove();
-                $('#update_title').remove();
-                $('#edit-title').css("display", "inline");
+                $('.edit_title_div').remove();
                 $('#datasettitle').css("display", "inline");
-
+                $('#h-edit-title').removeClass("inline");
+                $('#h-edit-title').css("display", "");
+                $('#ds-title').mouseleave();
             });
 
             request.fail(function(jqXHR, textStatus, errorThrown) {
@@ -229,27 +312,38 @@
                 var errMsg = "Yoy must be logged in to update the information about a dataset.";
                 if(!checkErrorAndRedirect(jqXHR, errMsg)) {
                     notify("The dataset information was not updated due to: "+ errorThrown, "error");
-			};
-		});
+			    }
+		    });
 
         }
-
-
-         function updateDescription() {
-		var cur_description = $('#ds_description').text().trim();
+    var cur_description;
+    function updateDescription() {
+		cur_description = $('#ds_description').html().trim();
 		$('<div class="edit_desc"> </div>').insertAfter($('#ds_description'));
 		$('.edit_desc').append('<textarea id = "desc_input" class="form-control"/>');
-		$('.edit_desc').append('<br/>');
-		$('.edit_desc').append('<button id = "update_desc" class= "btn btn-sm btn-primary" onclick = "saveDescription()"> Save </button>')
-		$('#desc_input').val(cur_description);
+		$('.edit_desc').append('<button id = "update_desc" class= "btn btn-sm btn-primary btn-margins" onclick = "saveDescription()"> <span class="glyphicon glyphicon-send"> </span> Save </button>');
+		$('.edit_desc').append('<button id="cancel_desc" class="btn btn-sm edit-tab btn-default btn-margins" onclick="cancelDescription()"> <span class="glyphicon glyphicon-remove"></span> Cancel </button>');
+		if(cur_description.indexOf("Add a description") != 0) {
+		    $('#desc_input').val(cur_description.replace(new RegExp("<br>", "g"), "\n"));
+		}
 		$('#ds_description').text("");
 		$('#edit-description').css("display", "none");
+		$('#edit-description').addClass("hiddencomplete");
 	}
+
+    function cancelDescription() {
+        $('#ds_description').html(cur_description);
+        $('.edit_desc').remove();
+        $('#ds_description').css("display", "inline");
+        $('#edit-description').removeClass("inline");
+        $('#edit-description').css("display", "");
+
+    }
 
 	function saveDescription() {
 		var description = $('#desc_input').val();
 		var encDescription = htmlEncode(description);
-		jsonData = JSON.stringify({"description": description});
+		jsonData = JSON.stringify({"description": encDescription});
 
 		var request = jsRoutes.api.Datasets.updateDescription("@dataset.id").ajax({
 			data: jsonData,
@@ -258,11 +352,11 @@
 		});
 
 		request.done(function(response, textStatus,jqXHR) {
-			$('#ds_description').text(encDescription);
+			$('#ds_description').html(description.replace(/\n/g, "<br>"));
 			$('.edit_desc').remove();
-			$('#edit-description').css("display", "inline");
 			$('#ds_description').css("display", "inline");
-
+			$('#edit-description').removeClass("inline");
+            $('#edit-description').css("display", "");
 		});
 
 		request.fail(function(jqXHR, textStatus, errorThrown) {
@@ -272,7 +366,8 @@
 				notify("The collection information was not updated due to: " + errorThrown, "error");
 			}
 		});
-	}
+
+	 }
     </script>
 }
 

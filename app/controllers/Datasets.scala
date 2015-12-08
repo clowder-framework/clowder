@@ -46,8 +46,7 @@ class Datasets @Inject()(
   object ActivityFound extends Exception {}
 
   /**
-   * Display the page that allows users to create new datasets, either by uploading multiple new files,
-   * or by selecting multiple existing files.
+   * Display the page that allows users to create new datasets
    */
   def newDataset(space: Option[String]) = PermissionAction(Permission.CreateDataset) { implicit request =>
       implicit val user = request.user
@@ -63,27 +62,104 @@ class Datasets @Inject()(
     space match {
       case Some(s) => {
         spaceService.get(UUID(s)) match {
-          case Some(spaceId) => Ok(views.html.newDataset(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, Some(s))).flashing("error" -> "Please select ONE file (upload new or existing)")
-          case None => Ok(views.html.newDataset(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None)).flashing("error" -> "Please select ONE file (upload new or existing)")
+          case Some(space) => Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
+            RequiredFieldsConfig.isDescriptionRequired, Some(space.id.toString))).flashing("error" -> "Please select ONE file (upload new or existing)")
+          case None => Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
+            RequiredFieldsConfig.isDescriptionRequired, None)).flashing("error" -> "Please select ONE file (upload new or existing)")
         }
 
       }
-      case None => Ok(views.html.newDataset(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None)).flashing("error" -> "Please select ONE file (upload new or existing)")
+      case None => Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
+        RequiredFieldsConfig.isDescriptionRequired, None)).flashing("error" -> "Please select ONE file (upload new or existing)")
     }
   }
 
+  def createStep2(id: UUID) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    implicit val user = request.user
+    datasets.get(id) match {
+      case Some(dataset) => {
+        Ok(views.html.datasets.createStep2(dataset))
+      }
+      case None => {
+        InternalServerError(s"Dataset $id not found")
+      }
+    }
+  }
 
-  def addToDataset(id: UUID) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
-      implicit val user = request.user
-     datasets.get(id) match {
-       case Some(dataset) => {
-         Ok(views.html.addToExistingDataset(id, dataset.name, dataset.description)).flashing("error" -> "Cannot add to the dataset")
-       }
-       case None => {
-         InternalServerError(s"Dataset $id not found")
-       }
-     }
+  def addFiles(id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    implicit val user = request.user
+    datasets.get(id) match {
+      case Some(dataset) => {
+        Ok(views.html.datasets.addFiles(dataset))
+      }
+      case None => {
+        InternalServerError(s"Dataset $id not found")
+      }
+    }
+  }
 
+  def followingDatasets(when: String, index: Int, limit: Int, mode: String) = PrivateServerAction {implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(clowderUser)  => {
+        val nextPage = (when == "a")
+        val title: Option[String] = Some("Following Datasets")
+
+        var datasetList =  new ListBuffer[Dataset]()
+        val datasetIds = clowderUser.followedEntities.filter(_.objectType == "dataset")
+        val datasetIdsToUse = datasetIds.slice(index*limit, (index+1)*limit)
+        val prev = index-1
+        val next = if(datasetIds.length > (index+1) * limit) {
+          index + 1
+        } else {
+          -1
+        }
+
+        for (tidObject <- datasetIdsToUse) {
+            val followedDataset = datasets.get(tidObject.id)
+            followedDataset match {
+              case Some(fdset) => {
+                datasetList += fdset
+              }
+            }
+        }
+
+        val commentMap = datasetList.map { dataset =>
+          var allComments = comments.findCommentsByDatasetId(dataset.id)
+          dataset.files.map { file =>
+            allComments ++= comments.findCommentsByFileId(file)
+            sections.findByFileId(file).map { section =>
+              allComments ++= comments.findCommentsBySectionId(section.id)
+            }
+          }
+          dataset.id -> allComments.size
+        }.toMap
+
+        //Modifications to decode HTML entities that were stored in an encoded fashion as part
+        //of the datasets names or descriptions
+        val decodedDatasetList = ListBuffer.empty[models.Dataset]
+        for (aDataset <- datasetList) {
+          decodedDatasetList += Utils.decodeDatasetElements(aDataset)
+        }
+
+        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+        //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+        //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+        val viewMode: Option[String] =
+          if (mode == null || mode == "") {
+            request.cookies.get("view-mode") match {
+              case Some(cookie) => Some(cookie.value)
+              case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+            }
+          } else {
+            Some(mode)
+          }
+
+        //Pass the viewMode into the view
+        Ok(views.html.users.followingDatasets(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, None, title, None))
+      }
+      case None => InternalServerError("No User found")
+    }
   }
 
   /**
@@ -246,7 +322,7 @@ class Datasets @Inject()(
   /**
    * Dataset.
    */
-  def dataset(id: UUID, currentSpace: Option[String]) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def dataset(id: UUID, currentSpace: Option[String], filepage: Int) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
 
       implicit val user = request.user
       Previewers.findPreviewers.foreach(p => Logger.debug("Previewer found " + p.id))
@@ -331,12 +407,13 @@ class Datasets @Inject()(
                     case None => Logger.error(s"space with id $sp on dataset $id doesn't exist.")
                   }
           }
-
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
-          val fileList: List[File] = dataset.files.map(fileId => files.get(fileId) match {
-            case Some(file) => file
-            case None => Logger.debug(s"Unable to find file $fileId")
-          }).asInstanceOf[List[File]]
+
+          val limit: Int = 9
+          //in case filepage is less than 0, we start from filepage=0
+          val filepageUpdate = if (filepage <0) 0 else filepage
+          val next = dataset.files.length > limit * (filepageUpdate+1)
+          val limitFileList : List[File]= dataset.files.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => files.get(f)).flatten
 
           //dataset is in at least one space with editstagingarea permission, or if the user is the owner of dataset.
           val stagingarea = datasetSpaces filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id)))
@@ -347,7 +424,7 @@ class Datasets @Inject()(
           val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
-            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), fileList, filesTags, toPublish, curPubObjects, currentSpace))
+            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), limitFileList, filesTags, toPublish, curPubObjects, currentSpace, filepageUpdate, next))
         }
         case None => {
           Logger.error("Error getting dataset" + id)
@@ -372,14 +449,6 @@ class Datasets @Inject()(
   }
 
   /**
-   * TODO where is this used?
-  def upload = Action(parse.temporaryFile) { implicit request =>
-    request.body.moveTo(new File("/tmp/picture"))
-    Ok("File uploaded")
-  }
-   */
-
-  /**
    * Controller flow that handles the new multi file uploader workflow for creating a new dataset. Requires name, description, 
    * and id for the dataset. The interface should validate to ensure that these are present before reaching this point, but
    * the checks are made here as well. 
@@ -390,7 +459,7 @@ class Datasets @Inject()(
     Logger.debug("------- in Datasets.submit ---------")
     var dsName = request.body.asFormUrlEncoded.getOrElse("name", null)
     var dsDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
-    var dsLevel = request.body.asFormUrlEncoded.get("datasetLevel")
+    var dsLevel = request.body.asFormUrlEncoded.getOrElse("datasetLevel", null)
     var dsId = request.body.asFormUrlEncoded.getOrElse("datasetid", null)
 
     if (dsName == null || dsDesc == null) {
@@ -451,7 +520,7 @@ class Datasets @Inject()(
 
               // store file
               Logger.info("Adding file" + identity)
-              val showPreviews = request.body.asFormUrlEncoded.get("datasetLevel").get(0)
+              val showPreviews = "DatasetLevel"
               val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
               Logger.debug("Uploaded file id is " + file.get.id)
               Logger.debug("Uploaded file type is " + f.contentType)

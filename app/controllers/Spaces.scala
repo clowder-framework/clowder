@@ -1,7 +1,7 @@
 package controllers
 
 import java.net.URL
-import java.util.Date
+import java.util.{Calendar, Date}
 import javax.inject.Inject
 
 import api.Permission
@@ -20,7 +20,7 @@ import securesocial.core.providers.{Token, UsernamePasswordProvider}
 import org.joda.time.DateTime
 import play.api.i18n.Messages
 import services.AppConfiguration
-import util.Formatters
+import util.{Mail, Formatters}
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 /**
@@ -42,7 +42,8 @@ case class spaceInviteData(
   role: String,
   message: Option[String])
 
-class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventService, curationService: CurationService, extractors: ExtractorService) extends SecuredController {
+class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventService, curationService: CurationService,
+  extractors: ExtractorService) extends SecuredController {
 
   /**
    * New/Edit project space form bindings.
@@ -199,7 +200,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       implicit val user = request.user
       spaces.get(id) match {
         case Some(s) => {
-          Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), s.resourceTimeToLive, s.isTimeToLiveEnabled, "Update"))))}
+          Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), s.resourceTimeToLive, s.isTimeToLiveEnabled, "Update")), Some(s.id)))}
         case None => InternalServerError("Space not found")
       }
   }
@@ -287,7 +288,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                       val usr = users.findByEmail(email)
                       spaces.addUser(usr.get.id, role, id)
                       val theHtml = views.html.spaces.inviteNotificationEmail(id.stringify, s.name, user.get.getMiniUser, usr.get.fullName, role.name)
-                      Users.sendEmail("Added to space", email, theHtml)
+                      Mail.sendEmail("Added to space", email, theHtml)
                     }
                     case None => {
                       val uuid = UUID.generate()
@@ -296,20 +297,24 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                       val TokenDuration = Play.current.configuration.getInt(TokenDurationKey).getOrElse(DefaultDuration)
                       val token = new Token(uuid.stringify, email, DateTime.now(), DateTime.now().plusMinutes(TokenDuration), true)
                       securesocial.core.UserService.save(token)
-                      val invite = SpaceInvite(uuid, uuid.toString(), email, s.id, role.id.stringify)
+                      val ONE_MINUTE_IN_MILLIS=60000
+                      val date: Calendar = Calendar.getInstance()
+                      val t= date.getTimeInMillis()
+                      val afterAddingMins: Date=new Date(t + (TokenDuration * ONE_MINUTE_IN_MILLIS))
+                      val invite = SpaceInvite(uuid, uuid.toString(), email, s.id, role.id.stringify, new Date(), afterAddingMins)
                       if(play.api.Play.current.configuration.getBoolean("registerThroughAdmins").get)
                       {
                         val theHtml = views.html.inviteEmailThroughAdmin(uuid.stringify, email, s.name, user.get.getMiniUser.fullName, formData.message)
                         val admins = AppConfiguration.getAdmins
                         for(admin <- admins) {
-                          Users.sendEmail(Messages("mails.sendSignUpEmail.subject"), admin, theHtml)
+                          Mail.sendEmail(Messages("mails.sendSignUpEmail.subject"), admin, theHtml)
                         }
                         spaces.addInvitationToSpace(invite)
                       }
                       if(!play.api.Play.current.configuration.getBoolean("registerThroughAdmins").get)
                       {
                         val theHtml = views.html.inviteThroughEmail(uuid.stringify, s.name, user.get.getMiniUser.fullName, formData.message)
-                        Users.sendEmail(Messages("mails.sendSignUpEmail.subject"), email, theHtml)
+                        Mail.sendEmail(Messages("mails.sendSignUpEmail.subject"), email, theHtml)
                         spaces.addInvitationToSpace(invite)
                       }
                     }
@@ -354,7 +359,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
                     //sending emails to the space's Admin && Editor
                     val recipient: String = requestReceiver.email.get.toString
-                    Users.sendEmail(subject, recipient, body)
+                    Mail.sendEmail(subject, recipient, body)
                   }
                 }
               }
@@ -391,7 +396,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
             val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Accepted"
             val recipient: String = requestUser.email.get.toString
             val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "accepted your request and assigned you as " + role + " to")
-            Users.sendEmail(subject, recipient, body)
+            Mail.sendEmail(subject, recipient, body)
             Ok(Json.obj("status" -> "success"))
           }
           case None => InternalServerError("Request user not found")
@@ -413,7 +418,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
             val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Rejected"
             val recipient: String = requestUser.email.get.toString
             val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "rejected your request to")
-            Users.sendEmail(subject, recipient, body)
+            Mail.sendEmail(subject, recipient, body)
             Ok(Json.obj("status" -> "success"))
           }
           case None => InternalServerError("Request user not found")
@@ -465,7 +470,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
               }
               case ("Update") => {
                 spaceForm.bindFromRequest.fold(
-                  errors => BadRequest(views.html.spaces.editSpace(errors)),
+                  errors => BadRequest(views.html.spaces.editSpace(errors, None)),
                   formData => {
                     Logger.debug("updating space " + formData.name)
                     spaces.get(formData.spaceId.get) match {
@@ -495,6 +500,52 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
         case None => Redirect(routes.Spaces.list()).flashing("error" -> "You are not authorized to create/edit spaces.")
       }
   }
+  def followingSpaces(when: String, index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(clowderUser) => {
+        val nextPage = (when == "a")
+        val title: Option[String] = Some("Following Spaces")
+
+        var spaceList = new ListBuffer[ProjectSpace]()
+        val spaceIds = clowderUser.followedEntities.filter(_.objectType == "'space")
+        val spaceIdsToUse = spaceIds.slice(index*limit, (index+1)*limit)
+        val prev=  index -1
+        val next = if(spaceIds.length > (index+1) * limit) {
+          index + 1
+        } else {
+          -1
+        }
+        for (tidObject <- spaceIdsToUse) {
+          val followedSpace = spaces.get(tidObject.id)
+          followedSpace match {
+            case Some(fspace) => {
+              spaceList += fspace
+            }
+          }
+        }
+
+        val decodedSpaceList = spaceList.map(Utils.decodeSpaceElements)
+        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+        //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+        //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+        val viewMode: Option[String] =
+          if (mode == null || mode == "") {
+            request.cookies.get("view-mode") match {
+              case Some(cookie) => Some(cookie.value)
+              case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+            }
+          } else {
+            Some(mode)
+          }
+
+        val deletePermission = Permission.checkPermission(user, Permission.DeleteSpace)
+        Ok(views.html.users.followingSpaces(decodedSpaceList.toList, when, "", limit, None, true, viewMode, deletePermission, prev, next, title))
+
+      }
+      case None => InternalServerError("User not found")
+    }
+      }
 
    /**
    * Show the list page

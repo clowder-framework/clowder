@@ -180,8 +180,11 @@
                 }
             </div>
             <div class="row top-padding">
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
-                    <h2> Followers </h2>
+                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                    <h2> Followers</h2>
+                </div>
+                <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                    <span class=" margin-top-h pull-right"> <a href="@routes.Users.getFollowers()">See More</a></span>
                 </div>
             </div>
             <div class="row">
@@ -218,10 +221,18 @@
                     <div class="panel panel-default">
                         <div class="panel-heading">
                             <h4 class="panel-title">
-                                <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne">Users</a>
+                                <div class="row">
+                                    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                                        <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne">Users</a>
+                                    </div>
+                                    <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                                        <span class="pull-right"> <a href="@routes.Users.getFollowing()">See More</a></span>
+                                    </div>
+                                </div>
+
                             </h4>
                         </div>
-                        <div id="collapseOne" class="panel-collapse collapse in">
+                        <div id="collapseOne" class="panel-collapse collapse">
                             <div class="panel-body caption break-word">
                                 <div class="row" style="margin-top : 15px;">
                                 @for(userInfo <- followedUsers) {
@@ -236,23 +247,23 @@
                                                 <h4>
                                                 @if(user.get.followedEntities.filter(x => (x.id == userInfo._1)).nonEmpty) {
                                                     <button id="followButton" type="button"
-                                                    class="btn btn-danger"
+                                                    class="btn btn-link"
                                                     data-toggle="button"
                                                     aria-pressed="true"
                                                     autocomplete="off"
                                                     objectId = "@userInfo._1.stringify"
                                                     objectType = "user">
-                                                        Unfollow
+                                                        <span class="glyphicon glyphicon-star-empty"></span> Unfollow
                                                     </button>
                                                 } else {
                                                     <button id="followButton" type="button"
-                                                    class="btn btn-success"
+                                                    class="btn btn-link"
                                                     data-toggle="button"
                                                     aria-pressed="false"
                                                     autocomplete="off"
                                                     objectId = "@userInfo._1.stringify"
                                                     objectType = "user">
-                                                        Follow
+                                                        <span class="glyphicon glyphicon-star"></span> Follow
                                                     </button>
                                                 }
                                                 </h4>
@@ -272,7 +283,15 @@
                     <div class="panel panel-default">
                         <div class="panel-heading">
                             <h4 class="panel-title">
-                                <a data-toggle="collapse" data-parent="#accordion" href="#collapseSpaces">Spaces</a>
+                                <div class="row">
+                                    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                                        <a data-toggle="collapse" data-parent="#accordion" href="#collapseSpaces">Spaces</a>
+                                    </div>
+                                    <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                                        <span class="pull-right"> <a href="@routes.Spaces.followingSpaces("", 0, 12, "")">See More</a></span>
+                                    </div>
+                                </div>
+
                             </h4>
                         </div>
                         <div id="collapseSpaces" class="panel-collapse collapse">
@@ -297,9 +316,9 @@
                                                             type="button"
                                                             class="
                                                                 @if(viewer.followedEntities.filter(x => (x.id == info._1)).nonEmpty) {
-                                                                    btn btn-danger
+                                                                    btn btn-link
                                                                 } else {
-                                                                    btn btn-success
+                                                                    btn btn-link
                                                                 }
                                                             "
                                                             data-toggle="button"
@@ -315,9 +334,9 @@
                                                             objectId="@info._1.stringify"
                                                             >
                                                             @if(viewer.followedEntities.filter(x => (x.id == info._1)).nonEmpty) {
-                                                                Unfollow
+                                                                <span class="glyphicon glyphicon-star-empty"></span> Unfollow
                                                             } else {
-                                                                Follow
+                                                                <span class="glyphicon glyphicon-star"></span> Follow
                                                             }
                                                             </button>
                                                         </h4>
@@ -338,7 +357,15 @@
                     <div class="panel panel-default">
                         <div class="panel-heading">
                             <h4 class="panel-title">
-                                <a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">Files</a>
+                                <div class="row">
+                                    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                                        <a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">Files</a>
+                                    </div>
+                                    <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                                        <span class="pull-right"> <a href="@routes.Files.followingFiles("",0, 12, "")">See More</a></span>
+                                    </div>
+                                </div>
+
                             </h4>
                         </div>
                         <div id="collapseTwo" class="panel-collapse collapse">
@@ -363,9 +390,9 @@
                                                             type="button"
                                                             class="
                                                                 @if(viewer.followedEntities.filter(x => (x.id == fileInfo._1)).nonEmpty) {
-                                                                    btn btn-danger
+                                                                    btn btn-link
                                                                 }else {
-                                                                    btn btn-success
+                                                                    btn btn-link
                                                                 }
                                                             "
                                                             data-toggle="button"
@@ -381,9 +408,9 @@
                                                             objectType = "file"
                                                             >
                                                             @if(viewer.followedEntities.filter(x => (x.id == fileInfo._1)).nonEmpty) {
-                                                                Unfollow
+                                                                <span class="glyphicon glyphicon-star-empty"></span> Unfollow
                                                             } else {
-                                                                Follow
+                                                                <span class="glyphicon glyphicon-star"></span> Follow
                                                             }
                                                             </button>
                                                         </h4>
@@ -403,7 +430,15 @@
                     <div class="panel panel-default">
                         <div class="panel-heading">
                             <h4 class="panel-title">
-                                <a data-toggle="collapse" data-parent="#accordion" href="#collapseThree">Datasets</a>
+                                <div class="row">
+                                    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                                        <a data-toggle="collapse" data-parent="#accordion" href="#collapseThree">Datasets</a>
+                                    </div>
+                                    <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                                        <span class="pull-right"> <a href="@routes.Datasets.followingDatasets("", 0, 12, "")">See More</a></span>
+                                    </div>
+                                </div>
+
                             </h4>
                         </div>
                         <div id="collapseThree" class="panel-collapse collapse">
@@ -428,9 +463,9 @@
                                                             type="button"
                                                             class="
                                                                 @if(viewer.followedEntities.filter(x => (x.id == datasetInfo._1)).nonEmpty) {
-                                                                    btn btn-danger
+                                                                    btn btn-link
                                                                 }else {
-                                                                    btn btn-success
+                                                                    btn btn-link
                                                                 }
                                                             "
                                                             data-toggle="button"
@@ -446,9 +481,9 @@
                                                             objectId="@datasetInfo._1.stringify"
                                                             >
                                                             @if(viewer.followedEntities.filter(x => (x.id == datasetInfo._1)).nonEmpty) {
-                                                                Unfollow
+                                                                <span class="glyphicon glyphicon-star-empty"></span> Unfollow
                                                             } else {
-                                                                Follow
+                                                                <span class="glyphicon glyphicon-star"></span> Follow
                                                             }
                                                             </button>
                                                         </h4>
@@ -468,7 +503,15 @@
                     <div class="panel panel-default">
                         <div class="panel-heading">
                             <h4 class="panel-title">
-                                <a data-toggle="collapse" data-parent="#accordion" href="#collapseFour">Collections</a>
+                                <div class="row">
+                                    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                                        <a data-toggle="collapse" data-parent="#accordion" href="#collapseFour">Collections</a>
+                                    </div>
+                                    <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                                        <span class="pull-right"> <a href="@routes.Collections.followingCollections("",0, 12, "")">See More</a></span>
+                                    </div>
+                                </div>
+
                             </h4>
                         </div>
                         <div id="collapseFour" class="panel-collapse collapse">
@@ -493,9 +536,9 @@
                                                             type="button"
                                                             class="
                                                                 @if(viewer.followedEntities.filter(x => (x.id == collectionInfo._1)).nonEmpty) {
-                                                                    btn btn-danger
+                                                                    btn btn-link
                                                                 }else {
-                                                                    btn btn-success
+                                                                    btn btn-link
                                                                 }
                                                             "
                                                             data-toggle="button"
@@ -511,9 +554,9 @@
                                                             objectId="@collectionInfo._1.stringify"
                                                             >
                                                             @if(viewer.followedEntities.filter(x => (x.id == collectionInfo._1)).nonEmpty) {
-                                                                Unfollow
+                                                                <span class="glyphicon glyphicon-star-empty"></span> Unfollow
                                                             } else {
-                                                                Follow
+                                                                <span class="glyphicon glyphicon-star"></span> Follow
                                                             }
                                                             </button>
                                                         </h4>
