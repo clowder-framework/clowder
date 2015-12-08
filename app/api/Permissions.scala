@@ -313,6 +313,14 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.curationObject, id) => {
         curations.get(id) match {
           case Some(curation) => checkPermission(user, permission, ResourceRef(ResourceRef.space, curation.space))
+
+          case None => false
+        }
+      }
+
+      case ResourceRef(ResourceRef.curationFile, id) => {
+        curations.getCurationByCurationFile(id) match {
+          case Some(curation) => checkPermission(user, permission, ResourceRef(ResourceRef.space, curation.space))
           case None => false
         }
       }
