@@ -131,38 +131,21 @@
                         <ul class="list-group center-margin">
                         @user match {
                             case Some(viewer) => {
-                                <h4>
                                     <a
                                     id="followButton"
                                     type="button"
-                                    class="
-                                        @if(viewer.followedEntities.filter(x => (x.id == dataset.id)).nonEmpty) {
-                                            btn btn-danger
-                                        }else {
-                                            btn btn-success
-                                        }
-                                    "
+                                    class="btn-link "
                                     data-toggle="button"
-                                    aria-pressed="
-                                        @if(viewer.followedEntities.filter(x => (x.id == dataset.id)).nonEmpty) {
-                                            true
-                                        }else {
-                                            false
-                                        }
-                                    "
                                     autocomplete="off"
                                     objectType="dataset"
                                     objectId="@dataset.id.stringify"
                                     >
                                     @if(viewer.followedEntities.filter(x => (x.id == dataset.id)).nonEmpty) {
-                                        Unfollow
+                                        <span class='glyphicon glyphicon-star-empty'></span>  Unfollow
                                     } else {
-                                        Follow
+                                        <span class='glyphicon glyphicon-star'></span> Follow
                                     }
                                     </a>
-                                </h4>
-
-
                             }
                         }
                         </ul>
@@ -241,7 +224,7 @@
                                                 objectId="@dataset.id"
                                                 objectName="@dataset.name"
                                                 objectType="dataset">
-                                                    Follow
+                                                    <span class='glyphicon glyphicon-star'></span> Follow
                                                 </a>
                                             } else {
                                                 <a id="followButton"
@@ -249,7 +232,7 @@
                                                 objectId="@dataset.id"
                                                 objectName="@dataset.name"
                                                 objectType="dataset">
-                                                    Unfollow
+                                                    <span class='glyphicon glyphicon-star-empty'></span> Unfollow
                                                 </a>
                                             }
                                         }</li>

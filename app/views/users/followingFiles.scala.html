@@ -131,17 +131,11 @@
                         <ul class="list-group center-margin">
                         @user match {
                             case Some(viewer) => {
-                                <h4>
+
                                     <a
                                     id="followButton"
                                     type="button"
-                                    class="
-                                        @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
-                                            btn btn-danger
-                                        }else {
-                                            btn btn-success
-                                        }
-                                    "
+                                    class="btn-link"
                                     data-toggle="button"
                                     aria-pressed="
                                         @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
@@ -155,14 +149,11 @@
                                     objectId="@file.id.stringify"
                                     >
                                     @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
-                                        Unfollow
+                                        <span class='glyphicon glyphicon-star-empty'></span>Unfollow
                                     } else {
-                                        Follow
+                                        <span class='glyphicon glyphicon-star'></span>Follow
                                     }
                                     </a>
-                                </h4>
-
-
                             }
                         }
                         </ul>
@@ -232,9 +223,9 @@
                                                         objectId="@file.id.stringify"
                                                         >
                                                         @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
-                                                            Unfollow
+                                                            <span class='glyphicon glyphicon-star-empty'></span>Unfollow
                                                         } else {
-                                                            Follow
+                                                            <span class='glyphicon glyphicon-star'></span>Follow
                                                         }
                                                         </a>
                                                 }
