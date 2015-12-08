@@ -17,8 +17,7 @@ import models.UUID
 
 /**
  * SecureSocial implementation using MongoDB.
- * 
- * @author Luigi Marini
+ *
  */
 case class MongoToken(
   id: Object,

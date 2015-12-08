@@ -29,8 +29,6 @@ import util.Formatters
 /**
  * Store Spaces in MongoDB.
  *
- * @author Luigi Marini
- *
  */
 @Singleton
 class MongoDBSpaceService @Inject() (

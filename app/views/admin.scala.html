@@ -17,11 +17,11 @@
 			<form role="form-horizontal">
 			  <div class="form-group">
 			    <label for="displayNameField">Display name</label>
-			    <input id="displayNameField" name="displayNameField" type="text" value="@(displayName)"></input>
+			    <input class="form-control" id="displayNameField" name="displayNameField" type="text" value="@(displayName)"></input>
 			    <span id="displayNameField_error" style="display:none;">Must have a display name</span>
 			    <br /><br />
 			    <label for="welcomingField">Welcoming message</label>
-				<textarea name="welcomingField" id="welcomingField" style="width:300%;">@(welcomeMessage)</textarea>
+				<textarea class="form-control" name="welcomingField" id="welcomingField" style="width:300%;">@(welcomeMessage)</textarea>
 				<br /><br />
                 @play.api.Play.current.plugin[services.PostgresPlugin] match {
                     case Some(db) => {

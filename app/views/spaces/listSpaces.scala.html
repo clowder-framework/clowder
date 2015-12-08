@@ -1,4 +1,4 @@
-@(spaces: List[models.ProjectSpace], when: String, date: String, limit: Int, owner: Option[String], showAll: Boolean, mode: Option[String], deletePermission: Boolean, prev: String, next: String, title: Option[String])(implicit user: Option[models.User])
+@(spacesList: List[models.ProjectSpace], when: String, date: String, limit: Int, owner: Option[String], showAll: Boolean, mode: Option[String], deletePermission: Boolean, prev: String, next: String, title: Option[String])(implicit user: Option[models.User])
 
 @import _root_.util.Formatters.ellipsize
 @import api.Permission
@@ -9,7 +9,7 @@
 
         <script src="@routes.Assets.at("javascripts/spaceListProcess.js")" type="text/javascript"></script>
         <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
-
+        <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
         <div class="row">
             <div class="col-md-12">
                 <h1>@title</h1>
@@ -115,7 +115,7 @@
         <div class="row hidden" id="tile-view">
             <div class="col-md-12">
                 <div id="masonry">
-                    @spaces.map { space =>
+                    @spacesList.map { space =>
                         <div class="post-box col-lg-3 col-md-3 col-sm-3 col-xs-12">
                         <div class="panel panel-default">
                         <div class="pull-right">
@@ -160,55 +160,113 @@
             </div>
 
             <div class="row hidden" id="list-view">
-                <div class="col-md-12">
-                    <table class="table table-bordered table-hover">
-                        <thead>
-                            <tr>
-                                @if(user.isDefined) {
-                                    <th style="width : 15%">Logo</th>
-                                    <th style="width : 25%">Name</th>
-                                    <th style="width : 40%">Description</th>
-                                    <th style="width : 15%">Created</th>
-                                    <th style="width : 5%">Delete</th>
-                                }
-                                @if(!user.isDefined) {
-                                    <th style="width : 15%">Logo</th>
-                                    <th style="width : 25%">Name</th>
-                                    <th style="width : 45%">Description</th>
-                                    <th style="width : 15%">Created</th>
-                                }
-                            </tr>
-                        </thead>
-                        <tbody>
-                        @spaces.map { space =>
-                                <tr>
-                                <td>
-                                    @if(!space.logoURL.isEmpty) {
-                                        <img src="@(space.logoURL)" alt="Thumbnail of @(space.name)" width="120">
-                                    }
-                                    @if(space.logoURL.isEmpty) {No thumbnail available}
-                                </td>
-                                <td><a href="@routes.Spaces.getSpace(space.id)">@space.name</a></td>
-                                <td style="white-space : pre-line">@space.description</td>
-                                <td>@space.created.format("MMM dd, yyyy")</td>
-                                <td class="requiresLogin">
-                                @if(user.isDefined) {
-                                        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                                    @if(deletePermission || user.get.identityId.userId.equals(space.creator)){
-                                        <button onclick="removeSpaceAndRedirect('@(space.id)', '@(routes.Spaces.list())')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
-                                            <span class="glyphicon glyphicon-trash"></span>
-                                        </button>
-                                    } else {
-                                        <button disabled class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
-                                            <span class="glyphicon glyphicon-trash"></span>
-                                        </button>
-                                    }
-                                }
-                                </td>
-                            </tr>
-                        }
-                        </tbody>
-                    </table>
+                <div  class="col-md-12">
+
+                    @spacesList.map { space =>
+                        <div class="panel panel-default">
+                            <div class="panel-body">
+                                <div class = "row">
+                                    <div class="col-md-2 col-sm-2 col-lg-2">
+                                       @if(!space.logoURL.isEmpty) {
+                                           <img src="@(space.logoURL)" alt="Thumbnail of @(space.name)" width="120">
+                                       }
+                                    </div>
+                                    <div class="col-md-10 col-sm-10 col-lg-10">
+                                        <h2><a href="@routes.Spaces.getSpace(space.id)">@space.name</a></h2>
+                                        <div class= "row">
+                                            <div class="col-md-6 col-sm-6 col-lg-6">
+                                                <div>@space.description</div>
+                                                <div>@space.created.format("MMM dd, yyyy")</div>
+                                                <div>
+                                                    <span class="glyphicon glyphicon-file" title="@space.datasetCount datasets"></span> @space.datasetCount
+                                                    <span class="glyphicon glyphicon-th-large" title="@space.collectionCount collections"></span> @space.collectionCount
+                                                    <span class="glyphicon glyphicon-user" title="@space.userCount users"></span> @space.userCount
+                                                    @if(user.isDefined) {
+                                                            <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                                                        @if(deletePermission || user.get.identityId.userId.equals(space.creator)){
+                                                            <button onclick="removeSpaceAndRedirect ( '@(space.id) ',' @(routes.Spaces.list(when, date, limit, "", owner, showAll)) ')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
+                                                                <span class="glyphicon glyphicon-trash"></span>
+                                                            </button>
+                                                        } else {
+                                                            <button disabled class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
+                                                                <span class="glyphicon glyphicon-trash"></span>
+                                                            </button>
+                                                        }
+                                                    }
+                                            </div>
+                                            </div>
+                                            <div class="col-md-3 col-sm-6 col-lg-3">
+                                                <ul class="list-unstyled">
+                                                    <li><a href="@(routes.Collections.list("", "", 12, Some(space.id.stringify)))" class="btn btn-link">
+                                                        <span class="glyphicon glyphicon-hand-right"></span>
+                                                        Collections in Space
+                                                    </a></li>
+                                                    <li><a href="@(routes.Datasets.list("", "", 12, Some(space.id.stringify)))" class="btn btn-link">
+                                                        <span class="glyphicon glyphicon-hand-right"></span>
+                                                        Datasets in Space
+                                                    </a></li>
+                                                    <li>
+                                                    @if(user.isDefined) {
+                                                            <!-- Fix for CATS-163 An exception is thrown if user is not defined -->
+                                                        @if(user.isEmpty || !space.followers.contains(user.get.id)) {
+                                                            <button id="followButton" class="btn btn-link" objectId="@space.id" objectName="@space.name" objectType="space">
+                                                                <span class='glyphicon glyphicon-star'></span>
+                                                                Follow
+                                                            </button>
+                                                        } else {
+                                                            <button id="followButton" class="btn btn-link" objectId="@space.id" objectName="@space.name" objectType="space">
+                                                                <span class='glyphicon glyphicon-star-empty'></span>
+                                                                Unfollow
+                                                            </button>
+                                                        }
+
+                                                        <script src="@routes.Assets.at("javascripts/recommendation.js")" type="text/javascript"></script>
+                                                        <script type="text/javascript" language="javascript">
+                                                            $(document).ready(function() {
+                                                                $(document).on('click', '.followButton', function() {
+                                                                    var id = $(this).attr('objectId');
+                                                                    var name = $(this).attr('objectName');
+                                                                    var type = $(this).attr('objectType');
+                                                                    followHandler.call(this, jsRoutes, id, name, type, undefined, undefined);
+                                                                });
+                                                            });
+                                                        </script>
+                                                    }
+                                                    </li>
+                                                    </ul>
+                                                </div>
+                                            <div class="col-md-3 col-sm-6 col-lg-3">
+                                                <ul class="list-unstyled">
+                                                    @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
+                                                        <li><a href="@routes.Spaces.manageUsers(space.id)" class="btn btn-link">
+                                                            <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
+                                                        </a></li>
+                                                    }
+                                                    @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
+                                                        <li><a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-link">
+                                                            <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
+                                                        </a></li>
+                                                        <li><a href="@routes.Spaces.selectExtractors(space.id)" class="btn btn-link">
+                                                            <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Extractors
+                                                        </a></li>
+                                                    }
+                                                    @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))) {
+                                                        <li><a class = "btn btn-link" href="@routes.Spaces.stagingArea(space.id)" title="Staging Area">Staging Area</a></li>
+                                                    }
+                                                </ul>
+
+                                            </div>
+
+                                        </div>
+
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    }
+
                 </div>
             </div>
 

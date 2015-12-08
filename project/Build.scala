@@ -14,6 +14,7 @@ object ApplicationBuild extends Build {
 
   val appName = "clowder"
   val version = "0.9.2"
+  val jvm = "1.7"
 
   def appVersion: String = {
     if (gitBranchName == "master") {
@@ -139,6 +140,12 @@ object ApplicationBuild extends Build {
   )
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
+    scalacOptions ++= Seq(s"-target:jvm-$jvm", "-feature"),
+    javacOptions ++= Seq("-source", jvm, "-target", jvm),
+    initialize := {
+      val current  = sys.props("java.specification.version")
+      assert(current >= jvm, s"Unsupported JDK: java.specification.version $current != $jvm")
+    },
     offline := true,
     lessEntryPoints <<= baseDirectory(customLessEntryPoints),
     javaOptions in Test += "-Dconfig.file=" + Option(System.getProperty("config.file")).getOrElse("conf/application.conf"),

@@ -68,6 +68,69 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       decodedCollection
   }
 
+  def followingCollections(when: String, index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(clowderUser) => {
+        val nextPage = (when == "a")
+
+        val title: Option[String] = Some("Following Collections")
+
+        val collectionList = new ListBuffer[Collection]()
+        val collectionIds = clowderUser.followedEntities.filter(_.objectType == "collection")
+        val collectionIdsToUse = collectionIds.slice(index*limit, (index+1) *limit)
+        val prev = index-1
+        val next = if(collectionIds.length > (index+1) * limit) {
+          index + 1
+        } else {
+          -1
+        }
+        for (tidObject <- collectionIdsToUse) {
+          val followedCollection = collections.get(tidObject.id)
+          followedCollection match {
+            case Some(fcoll) => {
+              collectionList += fcoll
+            }
+          }
+        }
+
+        val collectionsWithThumbnails = collectionList.map {c =>
+          if (c.thumbnail_id.isDefined) {
+            c
+          } else {
+            val collectionThumbnail = datasets.listCollection(c.id.stringify).find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
+            c.copy(thumbnail_id = collectionThumbnail)
+          }
+        }
+
+        //Modifications to decode HTML entities that were stored in an encoded fashion as part
+        //of the collection's names or descriptions
+        val decodedCollections = ListBuffer.empty[models.Collection]
+        for (aCollection <- collectionsWithThumbnails) {
+          decodedCollections += Utils.decodeCollectionElements(aCollection)
+        }
+
+        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+        //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+        //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+        val viewMode: Option[String] =
+          if (mode == null || mode == "") {
+            request.cookies.get("view-mode") match {
+              case Some(cookie) => Some(cookie.value)
+              case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+            }
+          } else {
+            Some(mode)
+          }
+
+        //Pass the viewMode into the view
+        Ok(views.html.users.followingCollections(decodedCollections.toList, prev, next, limit, viewMode, None, title, None))
+      }
+      case None => InternalServerError("No user defined")
+    }
+
+  }
+
   /**
    * List collections.
    */

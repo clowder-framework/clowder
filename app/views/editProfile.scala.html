@@ -26,14 +26,14 @@
         <fieldset  class="editProfileInput">
           @select(myForm("institution"), options(allInstitutionOptions), '_label -> "Institution", 'class -> "chosen-select", 'placeholder -> "Select an institution...")
 
-          @inputText(myForm("position"), '_label -> "Position")
-          @inputText(myForm("avatarUrl"), '_label -> "Avatar URL")
-          @inputText(myForm("orcidID"), '_label -> "Orcid ID")
-          @textarea(myForm("biography"), '_label -> "Biography")
+          @inputText(myForm("position"), 'class -> "form-control", '_label -> "Position")
+          @inputText(myForm("avatarUrl"), 'class -> "form-control", '_label -> "Avatar URL")
+          @inputText(myForm("orcidID"), 'class -> "form-control", '_label -> "Orcid ID")
+          @textarea(myForm("biography"),'class -> "form-control",  '_label -> "Biography")
 
-          @select(myForm("currentprojects"), options(allProjectOptions), '_label -> "Current Projects", 'multiple -> "true", 'class -> "chosen-select", 'placeholder -> "Add your projects")
+          @select(myForm("currentprojects"), options(allProjectOptions), '_label -> "Current Projects", 'multiple -> "true", 'class -> "chosen-select form-control", 'placeholder -> "Add your projects")
 
-          @select(myForm("pastprojects"), options(allProjectOptions), '_label -> "Past Projects", 'multiple -> "true", 'class -> "chosen-select", 'placeholder -> "Add your projects")
+          @select(myForm("pastprojects"), options(allProjectOptions), '_label -> "Past Projects", 'multiple -> "true", 'class -> "chosen-select form-control", 'placeholder -> "Add your projects")
 
           @select(myForm("emailsettings"), options(emailtimes), '_label -> "Email Settings")
 
@@ -47,5 +47,8 @@
 <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
 <script language="javascript">
   $(".chosen-select").chosen({no_results_text: "Not found. Press enter to add", allow_single_deselect: true});
+  $(document).ready(function() {
+    $(".chosen-choices").addClass("form-control");
+   });
 </script>
 }
