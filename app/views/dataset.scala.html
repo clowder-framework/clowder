@@ -107,7 +107,7 @@
                           <div class="row">
                               <div class="col-md-12 box-white-space">
                                   <a id="allfiles" class="btn btn-default btn-xs" href="@(routes.Files.listByDataset(dataset.id))">
-                                      All Files</a>
+                                      <span class="glyphicon glyphicon-th"></span>  All Files</a>
                               </div>
                           </div>
                       }
@@ -117,10 +117,10 @@
                               <ul class="pager">
                                       <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
                                   @if(filepage > 0) {
-                                      <li class="previous"><a id="prevlink" title="Page backwards" href="@(routes.Datasets.dataset(dataset.id, currentSpace, filepage-1))">Previous</a></li>
+                                      <li class="previous"><a id="prevlink" title="Page backwards" href="@(routes.Datasets.dataset(dataset.id, currentSpace, filepage-1))"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
                                   }
                                   @if(next) {
-                                      <li class ="next"><a id="nextlink" title="Page forwards" href="@(routes.Datasets.dataset(dataset.id, currentSpace, filepage+1))">Next</a></li>
+                                      <li class ="next"><a id="nextlink" title="Page forwards" href="@(routes.Datasets.dataset(dataset.id, currentSpace, filepage+1))">Next<span class="glyphicon glyphicon-chevron-right"></span></a></li>
                                   }
                               </ul>
                           </div>
