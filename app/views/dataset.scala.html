@@ -27,8 +27,8 @@
                 <div class="col-md-12" id="ds-title">
                     <h1 id="datasettitle" class="inline">@Html(dataset.name)</h1>
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                        <h3 class="inline align-right">
-                            <a id ="edit-title" href = "javascript:updateTitle()">
+                        <h3 id="h-edit-title" class="hiddencomplete">
+                            <a id ="edit-title" href = "javascript:updateTitle()" title="Click to edit title">
                             <span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
                             </a>
                         </h3>
@@ -43,15 +43,27 @@
                 </div>
                 <div class="col-md-6">
                     <ul class="list-unstyled">
+                        <div id="edit-license">
                         <li class="inline"><span id="licensetextdata">blank</span> <span id="rightsholderdata">blank</span></li>
+                            @if(Permission.checkPermission(Permission.EditLicense, ResourceRef(ResourceRef.dataset, dataset.id))) {
+
+                                <a class="edit-tab hiddencomplete" data-toggle="collapse"
+                                data-parent="#accordion6" href="#collapseSix" id="editlicense"
+                                title=" Click to Edit License Information">
+                                    <span class="glyphicon glyphicon-edit"></span>
+                                </a>
+
+                            }
+                        </div>
+
                         @datasets.editLicense(dataset)
                     </ul>
                 </div>
                 <div class="col-md-12 box-white-space" id="aboutdesc">
-                    <p id ="ds_description" class="inline">@Html(dataset.description)</p>
+                    <p id ="ds_description" class="inline">@if(dataset.description.length > 0) { @Html(dataset.description) } else {Add a description}</p>
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                        <a id="edit-description" href="javascript:updateDescription()">
-                            <span class="edit-tab glyphicon glyphicon-edit" aria-hidden="true"></span>
+                        <a id="edit-description" class="hiddencomplete" href="javascript:updateDescription()" title="Click to edit description">
+                            <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
                         </a>
                     }
             </div>
