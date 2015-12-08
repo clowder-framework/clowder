@@ -1,83 +1,9 @@
-@(curationObject: models.CurationObject, dataset: models.Dataset, files :List[File] )(implicit user: Option[models.User])
+@(curationObject: models.CurationObject, files :List[CurationFile], m: List[models.Metadata])(implicit user: Option[models.User])
 
   @import helper._
   @import collection.JavaConverters._
   @import play.api.Play.current
   @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
-  @import api.Permission
-
-  @staticPrint(metadata: scala.collection.immutable.Map[String,Any], emptyMessage: String) = {
-  @if(metadata.isEmpty) {
-    <div>@emptyMessage</div>
-  } else {
-    @printLevel(metadata)
-  }
-  }
-
-
-  @printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
-  @for((key,value) <- metadata) {
-    <li><b>@(key):</b>
-      @if(value.isInstanceOf[String]) {
-        @if(value.asInstanceOf[String].startsWith("http://") || value.asInstanceOf[String].startsWith("https://")) {
-          <a href="@value">@value</a>
-        } else {
-          @value
-        }
-      } else {
-        @if(value.isInstanceOf[java.lang.Integer] || value.isInstanceOf[java.lang.Double] || value.isInstanceOf[java.lang.Float] ) {
-          @value.toString
-        } else {
-          @if(value.isInstanceOf[com.mongodb.BasicDBList]) {
-            <ul>
-            @printList(value.asInstanceOf[com.mongodb.BasicDBList].toList)
-            </ul>
-          } else {
-            @if(value.isInstanceOf[com.mongodb.BasicDBObject]) {
-              <ul>
-              @printLevel(value.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
-              </ul>
-            } else {
-              @value.toString
-            }
-          }
-        }
-      }</li>
-  }
-  }
-
-  @printList(metadata: List[AnyRef])	= {
-  @metadata.indices.map { i =>
-    <li><b>@i:</b>
-      @if(metadata(i).isInstanceOf[String]) {
-        @if(metadata(i).asInstanceOf[String].startsWith("http://") || metadata(i).asInstanceOf[String].startsWith("https://")) {
-          <a href="@metadata(i)">@metadata(i)</a>
-        } else {
-          @metadata(i)
-        }
-      } else {
-        @if(metadata(i).isInstanceOf[java.lang.Integer] || metadata(i).isInstanceOf[java.lang.Double] || metadata(i).isInstanceOf[java.lang.Float] ) {
-          @metadata(i).toString
-        } else {
-          @if(metadata(i).isInstanceOf[com.mongodb.BasicDBList]) {
-            <ul>
-            @printList(metadata(i).asInstanceOf[com.mongodb.BasicDBList].toList)
-            </ul>
-          } else {
-            @if(metadata(i).isInstanceOf[com.mongodb.BasicDBObject]) {
-              <ul>
-              @printLevel(metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
-              </ul>
-            } else {
-              @metadata(i)
-            }
-          }
-        }
-      }</li>
-  }
-  }
-
-
 
   @main(curationObject.name) {
     <div class = "row">
@@ -120,20 +46,20 @@
         <br/>
         <h4>Dataset <a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h4>
         Note: The links in this page redirect to the live objects.<br/>
-        <b>Size</b>: @{curationObject.files.map(_.length).sum /1024} MB <br/>
-        <b>File Formats</b>: @curationObject.files.map(_.contentType).toSet.mkString(", ") <br/>
+        <b>Size</b>: @{files.map(_.length).sum /1024} MB <br/>
+        <b>File Formats</b>: @files.map(_.contentType).toSet.mkString(", ") <br/>
         <b>Creator</b>: @curationObject.datasets(0).author.fullName <br/>
 
 
         @*if(Permission.checkPermission(Permission.ViewMetadata, ResourceRef(ResourceRef.curationObject, curationObject.id))) {*@
         <div class="row">
           <div class="col-md-12 box-white-space">
-            <h5>Community generated metadata</h5>
+            @if(m.filter(_.attachedTo.resourceType == ResourceRef.curationObject).size > 0) {
+           	  <h5>Metadata</h5>
+            }
             <div  class='usr_md_'>
-            @staticPrint(dataset.userMetadata, "No community generated metadata.")
+            @metadatald.view(m.filter(_.attachedTo.resourceType == ResourceRef.curationObject))
             </div>
-            <h5>System generated metadata</h5>
-            @staticPrint(dataset.metadata, "No system generated metadata.")
           </div>
         </div>
         @*}*@
@@ -148,72 +74,36 @@
       <ul>
       @for(file<- files) {
 
-        <li><h4><a href=@routes.Files.file(file.id)>@file.filename</a></h4>
+        <li><h4><a href=@routes.Files.file(file.fileId)>@file.filename</a></h4>
           <div id ='allMetadata_@(file.id)'>
             <button class="btn btn-link tech_md_" type="button">Show File metadata</button>
             <div style="display:none;">
               <div class="row border-top">
                 <div class="col-md-12">
-                  <h4>Community generated metadata</h4>
-                  <ul>
-
-                    @staticPrint(file.userMetadata, "No community generated metadata.")
-
-                  </ul>
-                  <h4>System generated metadata</h4>
-                  <ul>
-                  @if(file.metadata.length == 0){
-                    <div>No system generated metadata.</div>
-                  } else {
-                    @for(i <- 0 until file.metadata.length) {
-                      @printLevel(file.metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap)
-                    }
+                  @if(m.filter(_.attachedTo.id == file.id).size > 0) {
+                 	 <h4>Metadata</h4>
                   }
-                  </ul>
+                  @metadatald.view(m.filter(_.attachedTo.id == file.id))
                 </div>
               </div>
             </div>
-
-            @if(!file.xmlMetadata.isEmpty) {
-              <div id='xmlMetadata_@(file.id.toString)'>
-                <button class="btn btn-link tech_md_" type="button">Show XML-uploaded metadata</button>
-                <div style="display:none;">
-                  <ul>
-                  @printLevel(file.xmlMetadata)
-                  </ul>
-                </div>
-              </div>
-              <script>
-                    $("#xmlMetadata_@(file.id.toString) > button").on('click',function(){
-                        if($("#xmlMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
-                            $("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
-                            $("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file XML-uploaded metadata";
+          </div>
+        </li>
+        <script>
+                    $("#allMetadata_@(file.id.toString) > button").on('click', function(){
+                        if($("#allMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
+                            $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
+                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file metadata";
                         }
                         else{
-                            $("#xmlMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
-                            $("#xmlMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file XML-uploaded metadata";
+                            $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
+                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file metadata";
                         }
-                    });
+                        });
                 </script>
-            }
-          </div>
-
-        </li>
-
-        <script>
-                $("#allMetadata_@(file.id.toString) > button").on('click', function(){
-                    if($("#allMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
-                        $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
-                        $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file metadata";
-                    }
-                    else{
-                        $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
-                        $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file metadata";
-                    }
-                    });
-            </script>
       }
       </ul>
+
 
     </div>
     <div class="col-md-6">
