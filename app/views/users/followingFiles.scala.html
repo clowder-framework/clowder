@@ -1,4 +1,4 @@
-@(files: List[models.File], comments: Map[UUID, Int], prev: Int, next: Int, limit: Int, mode: Option[String])(implicit user: Option[models.User])
+@(files: List[models.File], comments: Map[UUID, Int], prev: Int, next: Int, limit: Int, mode: Option[String], dataset:Option[UUID])(implicit user: Option[models.User])
 
 @import api.Permission
 @import org.apache.commons.io._
@@ -80,8 +80,13 @@
             //Function to unify the changing of the href for the next/previous links. Called on button activation for
             //viewMode style, as well as on initial load of page.
 	        function updatePage() {
+	        if(@dataset.isDefined){
+	        	$('#nextlink').attr('href', "@(routes.Files.listByDataset(dataset.getOrElse(UUID()),"a", next, limit, ""))");
+	            $('#prevlink').attr('href', "@(routes.Files.listByDataset(dataset.getOrElse(UUID()),"b", prev, limit, ""))");
+	             } else {
 	            $('#nextlink').attr('href', "@(routes.Files.followingFiles("a", next, limit, ""))");
 	            $('#prevlink').attr('href', "@(routes.Files.followingFiles("b", prev, limit, ""))");
+	            }
 	        }
         </script>
         </div>
