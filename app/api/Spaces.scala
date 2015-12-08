@@ -56,6 +56,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     notes = "Does not delete the individual datasets and collections in the space.",
     responseClass = "None", httpMethod = "DELETE")
   def removeSpace(spaceId: UUID) = PermissionAction(Permission.DeleteSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+    Logger.debug(spaceId.toString())
     spaces.get(spaceId) match {
       case Some(space) => {
         spaces.delete(spaceId)
