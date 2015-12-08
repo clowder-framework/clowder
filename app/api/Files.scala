@@ -294,7 +294,7 @@ class Files @Inject()(
                 } else None
 
               // when the new metadata is added
-              val createdAt = new Date()
+              val createdAt = (json \ "created_at").asOpt[Date].getOrElse(new Date())
 
               //parse the rest of the request to create a new models.Metadata object
               val attachedTo = ResourceRef(ResourceRef.file, id)

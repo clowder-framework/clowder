@@ -20,7 +20,7 @@
         </div>
         <div class="col-md-1">
         @if(user.isDefined) {
-            <a id="create-collection" class="btn btn-primary btn-sm pull-right" href="@routes.Collections.newCollection(space)" title="Create a new collection">Create</a>
+            <a id="create-collection" class="btn btn-primary btn-sm pull-right" href="@routes.Collections.newCollection(space)" title="Create a new collection"> <span class="glyphicon glyphicon-ok"></span> Create</a>
         }
 
         </div>
@@ -128,37 +128,21 @@
                         <ul class="list-group center-margin">
                         @user match {
                             case Some(viewer) => {
-                                <h4>
                                     <a
                                     id="followButton"
                                     type="button"
-                                    class="
-                                        @if(viewer.followedEntities.filter(x => (x.id == collection.id)).nonEmpty) {
-                                            btn btn-danger
-                                        }else {
-                                            btn btn-success
-                                        }
-                                    "
+                                    class="btn-link"
                                     data-toggle="button"
-                                    aria-pressed="
-                                        @if(viewer.followedEntities.filter(x => (x.id == collection.id)).nonEmpty) {
-                                            true
-                                        }else {
-                                            false
-                                        }
-                                    "
                                     autocomplete="off"
                                     objectType="collection"
                                     objectId="@collection.id.stringify"
                                     >
                                     @if(viewer.followedEntities.filter(x => (x.id == collection.id)).nonEmpty) {
-                                        Unfollow
+                                        <span class='glyphicon glyphicon-star-empty'></span>Unfollow
                                     } else {
-                                        Follow
+                                        <span class='glyphicon glyphicon-star'></span> Follow
                                     }
                                     </a>
-                                </h4>
-
 
                             }
                         }
@@ -222,7 +206,7 @@
                                                 objectId="@collection.id"
                                                 objectName="@collection.name"
                                                 objectType="collection">
-                                                    Follow
+                                                    <span class='glyphicon glyphicon-star'></span> Follow
                                                 </button>
                                             } else {
                                                 <button id="followButton"
@@ -230,7 +214,7 @@
                                                 objectId="@collection.id"
                                                 objectName="@collection.name"
                                                 objectType="collection">
-                                                    Unfollow
+                                                    <span class='glyphicon glyphicon-star-empty'></span> Unfollow
                                                 </button>
                                             }
                                         }
