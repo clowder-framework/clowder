@@ -519,7 +519,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                 }
               }
             }
-            case None => Logger.error(s"[MongoDBUpdate : Missing dataset id")
+            case None => Logger.error(s"[MongoDBUpdate : Missing file id")
           }
         }
         appConfig.addPropertyValue("mongodb.updates", updateId)
