@@ -21,15 +21,31 @@ case class Metadata (
 
 trait Agent {
   val id: UUID
+  def operation: String
+  def displayName: String
+  def url: Option[URL]
   def typeOfAgent: String
   def typeOfAgent_= (s: String): Unit
 }
 
 // User through the GUI
-case class UserAgent(id: UUID, var typeOfAgent: String = "user", user: MiniUser, userId: Option[URL]) extends Agent
+case class UserAgent(id: UUID, var typeOfAgent: String = "user", user: MiniUser, userId: Option[URL]) extends Agent {
+  def operation: String = "Added"
+  def displayName: String = user.fullName
+  def url: Option[URL] = userId
+}
 
 // Automatic extraction
-case class ExtractorAgent(id: UUID, var typeOfAgent: String = "extractor" , extractorId: Option[URL]) extends Agent
+case class ExtractorAgent(id: UUID, var typeOfAgent: String = "extractor", name: Option[String] = None,  extractorId: Option[URL]) extends Agent {
+  def operation: String = "Extracted"
+  def displayName: String = {
+    name match {
+      case Some(s) => s
+      case None => extractorId.map(_.toString).getOrElse("unknown")
+    }
+  }
+  def url: Option[URL] = extractorId
+}
 
 object Agent {
 
@@ -44,19 +60,27 @@ object Agent {
       //parse json input for type of agent
       val typeOfAgent = (json \ "agent" \ "@type").as[String]
 
+      // parse label if given
+      val label = (json \ "agent" \ "name").asOpt[String]
+
       //if user_id is part of the request, then creator is a user
       val user_id = (json \ "agent" \ "user_id").asOpt[String]
       user_id map { uid =>
         val userId = Some(new URL(uid))
-        val user = userService.get(UUID(uid)).getOrElse(User.anonymous)
-        creator = Some(UserAgent(UUID.generate, typeOfAgent, MiniUser(user.id, user.fullName, user.avatarUrl.get, user.email), userId))
+        // /api/profile/{\s*}??
+        val profileid = UUID(uid.substring(uid.lastIndexOf('/') + 1))
+        val user = userService.get(profileid) match {
+          case Some(u) => MiniUser(u.id, u.fullName, u.avatarUrl.get, u.email)
+          case None => MiniUser(UUID("000000000000000000000000"), label.getOrElse("unknown"), "", None)
+        }
+        creator = Some(UserAgent(UUID.generate, typeOfAgent, user, userId))
       }
 
       //if extractor_id is part of the request, then creator is an extractor
       val extr_id = (json \ "agent" \ "extractor_id").asOpt[String]
       extr_id map { exid =>
         val extractorId =  Some(new URL(exid))
-        creator = Some(ExtractorAgent(UUID.generate, typeOfAgent, extractorId))
+        creator = Some(ExtractorAgent(UUID.generate, typeOfAgent, label, extractorId))
       }
 
       //if creator is still None - wrong user input
@@ -75,6 +99,7 @@ object Metadata {
       val extractor_id_string = extractor.extractorId.map(_.toString).getOrElse("")
       Json.obj(
         "@type" -> "cat:extractor",
+        "name" -> extractor.displayName,
         "extractor_id" -> extractor_id_string)
     }
   }
@@ -84,6 +109,7 @@ object Metadata {
       val user_id_string = user.userId.map(_.toString).getOrElse("")
       Json.obj(
         "@type" -> "cat:user",
+        "name" -> user.displayName,
         "user_id" -> user_id_string)
     }
   }
