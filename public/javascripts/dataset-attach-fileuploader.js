@@ -7,8 +7,8 @@
 $(document).ready(function() {
     clearErrors();
     hideStatus();
-    $('#existingcreate').html(" Attach Files");
-    $('#uploadcreate').html(" Attach Files");
+    $('#existingcreate').html("<span class='glyphicon glyphicon-plus'></span> Attach Files");
+    $('#uploadcreate').html("<span class='glyphicon glyphicon-plus'></span> Attach Files");
 });   
 
 //Remove the error messages that are provided to the user

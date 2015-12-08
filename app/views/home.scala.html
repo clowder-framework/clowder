@@ -269,23 +269,23 @@
                                                 <h4>
                                                 @if(user.get.followedEntities.filter(x => (x.id == userInfo._1)).nonEmpty) {
                                                     <button id="followButton" type="button"
-                                                    class="btn btn-danger"
+                                                    class="btn btn-link"
                                                     data-toggle="button"
                                                     aria-pressed="true"
                                                     autocomplete="off"
                                                     objectId = "@userInfo._1.stringify"
                                                     objectType = "user">
-                                                        Unfollow
+                                                        <span class="glyphicon glyphicon-star-empty"></span> Unfollow
                                                     </button>
                                                 } else {
                                                     <button id="followButton" type="button"
-                                                    class="btn btn-success"
+                                                    class="btn btn-link"
                                                     data-toggle="button"
                                                     aria-pressed="false"
                                                     autocomplete="off"
                                                     objectId = "@userInfo._1.stringify"
                                                     objectType = "user">
-                                                        Follow
+                                                        <span class="glyphicon glyphicon-star"></span> Follow
                                                     </button>
                                                 }
                                                 </h4>
@@ -330,9 +330,9 @@
                                                             type="button"
                                                             class="
                                                                 @if(viewer.followedEntities.filter(x => (x.id == info._1)).nonEmpty) {
-                                                                    btn btn-danger
+                                                                    btn btn-link
                                                                 } else {
-                                                                    btn btn-success
+                                                                    btn btn-link
                                                                 }
                                                             "
                                                             data-toggle="button"
@@ -348,9 +348,9 @@
                                                             objectId="@info._1.stringify"
                                                             >
                                                             @if(viewer.followedEntities.filter(x => (x.id == info._1)).nonEmpty) {
-                                                                Unfollow
+                                                                <span class="glyphicon glyphicon-star-empty"></span> Unfollow
                                                             } else {
-                                                                Follow
+                                                                <span class="glyphicon glyphicon-star"></span> Follow
                                                             }
                                                             </button>
                                                         </h4>
@@ -396,9 +396,9 @@
                                                             type="button"
                                                             class="
                                                                 @if(viewer.followedEntities.filter(x => (x.id == fileInfo._1)).nonEmpty) {
-                                                                    btn btn-danger
+                                                                    btn btn-link
                                                                 }else {
-                                                                    btn btn-success
+                                                                    btn btn-link
                                                                 }
                                                             "
                                                             data-toggle="button"
@@ -414,9 +414,9 @@
                                                             objectType = "file"
                                                             >
                                                             @if(viewer.followedEntities.filter(x => (x.id == fileInfo._1)).nonEmpty) {
-                                                                Unfollow
+                                                                <span class="glyphicon glyphicon-star-empty"></span> Unfollow
                                                             } else {
-                                                                Follow
+                                                                <span class="glyphicon glyphicon-star"></span> Follow
                                                             }
                                                             </button>
                                                         </h4>
@@ -461,9 +461,9 @@
                                                             type="button"
                                                             class="
                                                                 @if(viewer.followedEntities.filter(x => (x.id == datasetInfo._1)).nonEmpty) {
-                                                                    btn btn-danger
+                                                                    btn btn-link
                                                                 }else {
-                                                                    btn btn-success
+                                                                    btn btn-link
                                                                 }
                                                             "
                                                             data-toggle="button"
@@ -479,9 +479,9 @@
                                                             objectId="@datasetInfo._1.stringify"
                                                             >
                                                             @if(viewer.followedEntities.filter(x => (x.id == datasetInfo._1)).nonEmpty) {
-                                                                Unfollow
+                                                                <span class="glyphicon glyphicon-star-empty"></span> Unfollow
                                                             } else {
-                                                                Follow
+                                                                <span class="glyphicon glyphicon-star"></span> Follow
                                                             }
                                                             </button>
                                                         </h4>
@@ -526,9 +526,9 @@
                                                             type="button"
                                                             class="
                                                                 @if(viewer.followedEntities.filter(x => (x.id == collectionInfo._1)).nonEmpty) {
-                                                                    btn btn-danger
+                                                                    btn btn-link
                                                                 }else {
-                                                                    btn btn-success
+                                                                    btn btn-link
                                                                 }
                                                             "
                                                             data-toggle="button"
@@ -544,9 +544,9 @@
                                                             objectId="@collectionInfo._1.stringify"
                                                             >
                                                             @if(viewer.followedEntities.filter(x => (x.id == collectionInfo._1)).nonEmpty) {
-                                                                Unfollow
+                                                                <span class="glyphicon glyphicon-star-empty"></span> Unfollow
                                                             } else {
-                                                                Follow
+                                                                <span class="glyphicon glyphicon-star"></span> Follow
                                                             }
                                                             </button>
                                                         </h4>

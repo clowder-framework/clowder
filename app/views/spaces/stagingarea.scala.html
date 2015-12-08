@@ -37,15 +37,15 @@
                             </div>
                             <ul class="list-group">
                                 <li class="list-group-item">
-                                    <span class="glyphicon glyphicon glyphicon-file" title="@curObject.datasets.size datasets"></span> @curObject.datasets.size
-                                    <span class="glyphicon glyphicon glyphicon-th-large" title="@curObject.collections.size collections"></span> @curObject.collections.size
+                                    <span class="glyphicon glyphicon-file" title="@curObject.datasets.size datasets"></span> @curObject.datasets.size
+                                    <span class="glyphicon glyphicon-th-large" title="@curObject.collections.size collections"></span> @curObject.collections.size
                                     <button onclick="removeCuration('@(space.id)','@(curObject.id)')"  type="button" class="btn btn-link">
-                                        <span class="glyphicon glyphicon glyphicon-trash" title="@curObject.collections.size collections"></span></button>
+                                        <span class="glyphicon glyphicon-trash" title="@curObject.collections.size collections"></span></button>
                                 </li>
                             </ul>
                             @if(curObject.status == "Submitted") {
                                 <ul id="ul_@curObject.id" class="list-group">
-                                <li class="list-group-item"><button class="btn btn-default btn-sm btn-danger text-center" onclick="retractCuration('@curObject.id')">Retract Submission</button></li>
+                                <li class="list-group-item"><button class="btn btn-sm btn-default text-center" onclick="retractCuration('@curObject.id')"><span class="glyphicon glyphicon-fire"></span> Retract Submission</button></li>
                                 </ul>
                             }
                         </div>
