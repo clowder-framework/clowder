@@ -41,7 +41,7 @@ case class ExtractorAgent(id: UUID, var typeOfAgent: String = "extractor", name:
   def displayName: String = {
     name match {
       case Some(s) => s
-      case None => extractorId.map(_.toString).getOrElse("unknown")
+      case None => extractorId.map(_.toString).getOrElse("Unknown")
     }
   }
   def url: Option[URL] = extractorId
@@ -61,20 +61,25 @@ object Agent {
       val typeOfAgent = (json \ "agent" \ "@type").as[String]
 
       // parse label if given
-      val label = (json \ "agent" \ "name").asOpt[String]
+      val name = (json \ "agent" \ "name").asOpt[String]
 
       //if user_id is part of the request, then creator is a user
       val user_id = (json \ "agent" \ "user_id").asOpt[String]
       user_id map { uid =>
         val userId = Some(new URL(uid))
-        val profileid = UUID(uid.substring(uid.lastIndexOf('/') + 1))
-        val user = try {
-          userService.get(profileid) match {
-            case Some(u) => MiniUser(u.id, u.fullName, u.avatarUrl.get, u.email)
-            case None => MiniUser(UUID("000000000000000000000000"), label.getOrElse("unknown"), "", None)
+        val profile = """.*/api/users/([^\?]+).*""".r
+        val user = uid match {
+          case profile(id) => {
+            try {
+              userService.get(UUID(id)) match {
+                case Some(u) => MiniUser(u.id, u.fullName, u.avatarUrl.get, u.email)
+                case None => MiniUser(UUID("000000000000000000000000"), name.getOrElse("Unknown"), "", None)
+              }
+            } catch {
+              case e: Exception => MiniUser(UUID("000000000000000000000000"), name.getOrElse("Unknown"), "", None)
+            }
           }
-        } catch {
-          case e: Exception => MiniUser(UUID("000000000000000000000000"), label.getOrElse("unknown"), "", None)
+          case _ => MiniUser(UUID("000000000000000000000000"), name.getOrElse("Unknown"), "", None)
         }
         creator = Some(UserAgent(UUID.generate, typeOfAgent, user, userId))
       }
@@ -83,7 +88,7 @@ object Agent {
       val extr_id = (json \ "agent" \ "extractor_id").asOpt[String]
       extr_id map { exid =>
         val extractorId =  Some(new URL(exid))
-        creator = Some(ExtractorAgent(UUID.generate, typeOfAgent, label, extractorId))
+        creator = Some(ExtractorAgent(UUID.generate, typeOfAgent, name, extractorId))
       }
 
       //if creator is still None - wrong user input
