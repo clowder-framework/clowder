@@ -74,7 +74,7 @@ POST           /extraction/upload                                               
 # FILES
 # ----------------------------------------------------------------------
 GET            /files                                                                   @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "")
-GET            /files/:datasetId                                                        @controllers.Files.listByDataset(datasetId: UUID, filepage: Int ?= 0, limit: Int ?= 12)
+GET            /files_by_dataset/:datasetId                                                        @controllers.Files.listByDataset(datasetId: UUID, filepage: Int ?= 0, limit: Int ?= 12)
 GET            /files/new                                                               @controllers.Files.uploadFile
 GET            /files/metadataSearch                                                    @controllers.Files.metadataSearch
 GET            /files/generalMetadataSearch                                             @controllers.Files.generalMetadataSearch

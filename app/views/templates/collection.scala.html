@@ -1,4 +1,4 @@
-@(collection: models.Collection, classes: String)(implicit user: Option[models.User])
+@(collection: models.Collection, classes: String, showFollow: Boolean)(implicit user: Option[models.User])
 @import _root_.util.Formatters.ellipsize
 <div class="post-box @classes">
     <div class="panel panel-default">
@@ -32,5 +32,29 @@
                 }
             </li>
         </ul>
+        @if(showFollow) {
+            <ul class="list-group center-margin">
+            @user match {
+                case Some(viewer) => {
+                    <a
+                    id="followButton"
+                    type="button"
+                    class="btn-link"
+                    data-toggle="button"
+                    autocomplete="off"
+                    objectType="collection"
+                    objectId="@collection.id.stringify"
+                    >
+                    @if(viewer.followedEntities.filter(x => (x.id == collection.id)).nonEmpty) {
+                        <span class='glyphicon glyphicon-star-empty'></span>Unfollow
+                    } else {
+                        <span class='glyphicon glyphicon-star'></span> Follow
+                    }
+                    </a>
+
+                }
+            }
+            </ul>
+        }
     </div>
 </div>

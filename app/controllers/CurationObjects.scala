@@ -162,8 +162,8 @@ class CurationObjects @Inject()(
       implicit val user = request.user
       curations.get(id) match {
         case Some(c) => {
-          var COName = request.body.asFormUrlEncoded.getOrElse("name", null)
-          var CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
+          val COName = request.body.asFormUrlEncoded.getOrElse("name", null)
+          val CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
           Logger.debug(COName(0))
           curations.updateInformation(id, CODesc(0), COName(0), c.space, spaceId)
           events.addObjectEvent(user, id, COName(0), "update_dataset_information")
