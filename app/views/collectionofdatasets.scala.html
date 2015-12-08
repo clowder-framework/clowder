@@ -141,50 +141,32 @@
 			<div class="row">
 			<div class="col-md-12">
 				<h3>Datasets in the collection</h3>
-				<table id='collectionDatasetsTable' class="table table-bordered table-hover">
-					<thead>
-						<tr>
-							@if(user.isDefined) {
-								<th style="width: 27%">Name</th>
-								<th style="width: 17%">Created</th>
-								<th style="width: 36%">Description</th>
-								<th style="width: 10%"></th>
-								<th style="width: 10%"></th>
-							}
-							@if(!user.isDefined) {
-								<th style="width: 27%">Name</th>
-								<th style="width: 17%">Created</th>
-								<th style="width: 36%">Description</th>
-								<th style="width: 20%"></th>
-							}
-						</tr>
-					</thead>
-					<tbody>
-						@datasetsInCollection.map { dataset =>
-							<tr data-datasetId="@(dataset.id.toString)">
-								<td><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></td>
-								<td>@dataset.created.format("MMM dd, yyyy")</td>
-								<td>@Html(dataset.description)</td>
-								<td>
-									@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
-									@if(dataset.thumbnail_id.isEmpty){No thumbnail available}
-								</td>
-								@if(user.isDefined) {
-								<td><a href="#!" onclick="removeDataset('@(dataset.id.toString)',event)">Remove</a>
-									<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-									@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
-										<button onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Detach the Dataset">
-										<span class="glyphicon glyphicon-trash"></span></button>
-									} else {
-										<button disabled onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Detach the Dataset">
-										<span class="glyphicon glyphicon-trash"></span></button>
-									}
-								</td>
-								}
-							</tr>
-						}
-					</tbody>
-				</table>
+					@datasetsInCollection.map { dataset =>
+						<div class="panel panel-default" id="@dataset.id">
+							<div class="panel-body">
+								<div class="row">
+									<div class="col-md-2 col-sm-2 col-lg-2">
+										@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
+									</div>
+									<div class="col-md-10 col-sm-10 col-lg-10">
+										<div><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></div>
+										<div>@Html(dataset.description)</div>
+										<div>@dataset.created.format("MMM dd, yyyy")</div>
+										@if(user.isDefined) {
+											<div>
+												@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
+													<a onclick="removeDataset('@(dataset.id.toString)',event)" title="Detach the Dataset">
+														<span class="glyphicon glyphicon-trash"></span></a>
+												}
+											</div>
+										}
+									</div>
+								</div>
+							</div>
+						</div>
+
+					}
+
 				<ul class="pager" id="datasetsPager">
 					<li class="previous" id="datasetsPagerPrev" style="visibility:hidden;"><a class="btn btn-link" href="#!"><span class="glyphicon glyphicon-chevron-left"></span> Previous</a></li>
 					<li class ="next" id="datasetsPagerNext" style="visibility:hidden;"><a class="btn btn-link" href="#!">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
