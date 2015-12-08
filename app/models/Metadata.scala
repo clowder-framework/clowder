@@ -67,11 +67,14 @@ object Agent {
       val user_id = (json \ "agent" \ "user_id").asOpt[String]
       user_id map { uid =>
         val userId = Some(new URL(uid))
-        // /api/profile/{\s*}??
         val profileid = UUID(uid.substring(uid.lastIndexOf('/') + 1))
-        val user = userService.get(profileid) match {
-          case Some(u) => MiniUser(u.id, u.fullName, u.avatarUrl.get, u.email)
-          case None => MiniUser(UUID("000000000000000000000000"), label.getOrElse("unknown"), "", None)
+        val user = try {
+          userService.get(profileid) match {
+            case Some(u) => MiniUser(u.id, u.fullName, u.avatarUrl.get, u.email)
+            case None => MiniUser(UUID("000000000000000000000000"), label.getOrElse("unknown"), "", None)
+          }
+        } catch {
+          case e: Exception => MiniUser(UUID("000000000000000000000000"), label.getOrElse("unknown"), "", None)
         }
         creator = Some(UserAgent(UUID.generate, typeOfAgent, user, userId))
       }
