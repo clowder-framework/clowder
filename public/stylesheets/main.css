@@ -854,6 +854,10 @@ table.borderless tbody tr td, table.borderless tbody tr th {
     border: none;
 }
 
+.upload-files-buttons {
+    padding-top: 20px;
+}
+
 .margin-top-h{
     margin-top: 30px;
 }

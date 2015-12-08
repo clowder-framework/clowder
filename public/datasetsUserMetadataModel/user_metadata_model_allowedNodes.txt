@@ -1,13 +1,13 @@
-Abstract,String,http://purl.org/dc/terms/abstract
-Alternative title,String,http://purl.org/dc/terms/alternative
-Audience,String,http://purl.org/dc/terms/audience
-Bibliographic citation,String,http://purl.org/dc/terms/bibliographicCitation
-Contact,Node,http://dts.ncsa.illinois.edu/terms/contact
-Name,String,http://dts.ncsa.illinois.edu/terms/name
-Email,String,http://dts.ncsa.illinois.edu/terms/email
-Creator,String,http://purl.org/dc/elements/1.1/creator
-Description,String,http://purl.org/dc/elements/1.1/description
-Spatial Reference,Node,http://dts.ncsa.illinois.edu/terms/spatialReference
-Latitude,String,http://dts.ncsa.illinois.edu/terms/latitude
-Longitude,String,http://dts.ncsa.illinois.edu/terms/longitude
-Altitude,String,http://dts.ncsa.illinois.edu/terms/altitude
+Abstract,String
+Alternative title,String
+Audience,String
+Bibliographic citation,String
+Contact,Node
+Name,String
+Email,String
+Creator,String
+Description,String
+Spatial Reference,Node
+Latitude,String
+Longitude,String
+Altitude,String

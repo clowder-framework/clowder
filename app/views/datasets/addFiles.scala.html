@@ -1,0 +1,25 @@
+@(dataset: Dataset)(implicit user: Option[models.User])
+
+@main("Add Files to Dataset") {
+    <!-- Custom items for the create dataset workflow -->
+    <script src="@routes.Assets.at("javascripts/dataset-attach-fileuploader.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+
+    <div class="page-header">
+        <h1>
+            <a href="@routes.Datasets.dataset(dataset.id)" class="btn btn-link" title="Navigate back to dataset">
+                <span class="glyphicon glyphicon-chevron-left" style="font-size: 150%;"></span>
+            </a>
+            Add Files to Dataset</h1>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <ul class="list-unstyled">
+                <li>Dataset <a href="@routes.Datasets.dataset(dataset.id)">@dataset.name</a></li>
+                <li>Created by <a href= "@routes.Profile.viewProfile(dataset.author.email)"> @dataset.author.fullName </a></li>
+                <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
+            </ul>
+        </div>
+    </div>
+    @datasets.uploadFiles(dataset)
+}
