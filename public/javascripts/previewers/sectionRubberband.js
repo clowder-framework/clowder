@@ -47,7 +47,7 @@ function rubberbandCreate(prNum, renderCanvas) {
         "<span class=\"glyphicon glyphicon-ok\"></span> Submit" +
         "</button>&nbsp;" +
         "<button id='rubberbandFormCancel" + prNum + "'class=\"btn btn-default\" title=\"Close\" onClick=\"rubberbandFormCancel('" + prNum + "')\";>" +
-        "<span class=\"glyphicon glyphicon-remove\"></span> Close" +
+        "<span class=\"glyphicon glyphicon-eject\"></span> Close" +
         "</button>" +
         "</form></div>";
 }

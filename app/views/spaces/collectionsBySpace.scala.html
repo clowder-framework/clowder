@@ -4,8 +4,7 @@
 @if(collections.size == 0) {
     @if(user.isDefined &&  Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
         <a id="create-collection"href="@routes.Collections.newCollection(Some(space))" class="btn btn-primary btn-xs">
-
-            Create Collection
+            <span class="glyphicon glyphicon-ok"></span> Create Collection
         </a>
     } else {
         @if(user.isDefined) {

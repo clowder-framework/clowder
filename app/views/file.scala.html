@@ -208,12 +208,12 @@
         <div class="row">
         <div class="col-md-12 button-margins">
           <div class="btn-group" role="group" aria-label="...">                 
-            <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file"  disabled="disabled"> <span class="glyphicon glyphicon-save"></span> Download </button>
+            <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-default" title="You don't have permission to download this file"  disabled="disabled"> <span class="glyphicon glyphicon-download-alt"></span> Download</button>
             
             <!--  If outputFormats list is not empty, display downloadAs drop-down button with the list of available formats -->      
             @if(!outputFormats.isEmpty){  
               <div class="btn-group" role="group">         
-                <button id="downloadAsButton" type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> <span class="glyphicon glyphicon-save"></span> </button>
+                <button id="downloadAsButton" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> <span class="glyphicon glyphicon-download-alt"></span> </button>
                 <ul class="dropdown-menu" role="menu">
                   @outputFormats.get.map { outputFrmt =>
                     <li id="doc" onclick="return downloadFileAs('@routes.Files.downloadAsFormat(UUID(id), outputFrmt)'  );" > <a href="#">@outputFrmt</a> </li>          
@@ -226,31 +226,29 @@
                 <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->                
                     @if(user.get.identityId.userId.equals(file.author.identityId.userId)){                    
                         <span class="align-right">
-				            <button id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-primary" title="Delete">
+				            <button id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" title="Delete">
 						    <span class="glyphicon glyphicon-trash"></span> Delete</button>
 					    </span>
 					} else {
 					    <span class="align-right">
-                            <button disabled id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-primary" title="Delete">
+                            <button disabled id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" title="Delete">
                             <span class="glyphicon glyphicon-trash"></span> Delete</button>
                         </span>
 					}
 
                     @if(!file.followers.contains(user.get.id)) {
                         <button id="followButton"
-                                class="btn btn-success followButton"
+                                class="btn btn-link followButton"
                                 objectId="@file.id"
                                 objectName="@file.filename"
-                                objectType="file">
-                            Follow
+                                objectType="file"><span class="glyphicon glyphicon-star"></span> Follow
                         </button>
                     } else {
                         <button id="followButton"
-                                class="btn btn-danger followButton"
+                                class="btn btn-link followButton"
                                 objectId="@file.id"
                                 objectName="@file.filename"
-                                objectType="file">
-                            Unfollow
+                                objectType="file"><span class="glyphicon glyphicon-star-empty"></span> Unfollow
                         </button>
                     }
                 }
@@ -353,7 +351,7 @@
 													<textarea name="sectiondescrText" class="sectionTextBox" id="sectiondescrText_@(s.id)" style="width:100%; height:100px;">@s.description.getOrElse("")</textarea>
 												</div>
 												<button class="btn btn-default btn-xs btn-margins" onclick="return openForEditSectionDescr('@s.id');" style="display:inline;" id="sectiondescrEdit_@(s.id)" title="Edit Description">
-									                <span class="glyphicon glyphicon-chevron-down"></span> Edit</button>
+									                <span class="glyphicon glyphicon-edit"></span> Edit</button>
 												<button class="btn btn-primary" onclick="return postSectionDescr('@s.id', '@api.routes.Sections.description(s.id).toString');" style="display:none; margin-top:5px;" id="sectiondescrPost_@(s.id)" title="Submit">
 									                <span class="glyphicon glyphicon-ok"></span> Submit</button>
 												<button class="btn btn-default" onclick="return cancelEditSectionDescr('@s.id');" style="display:none; margin-top:5px;" id="sectiondescrCancel_@(s.id)" title="Cancel">
@@ -579,7 +577,7 @@
                                 <a class="btn btn-link btn-sm accordion-toggle collapsed" data-toggle="collapse"
                                    data-parent="#accordion6" href="#collapseSix" id="editlicense"
                                    title="Edit License Information">
-                                    <span class="glyphicon glyphicon-chevron-down"></span> Edit
+                                    <span class="glyphicon glyphicon-edit"></span> Edit
                                 </a>
                                 }
                         </div>

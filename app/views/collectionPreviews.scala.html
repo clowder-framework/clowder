@@ -21,7 +21,7 @@
     <ul>
     @for(p <- previewers; supported <- p.supportedPreviews) {
       <li>
-        <button type="button" class="btn btn-default btn-xs addPreviewer" data-id="@p.id" data-preview-type="@supported">
+        <button type="button" class="btn btn-primary btn-xs addPreviewer" data-id="@p.id" data-preview-type="@supported">
            <span class="glyphicon glyphicon-plus"></span> Add
         </button>
         <b>Supported Type:</b> @supported (<b>Previewer:</b> @p.id)
