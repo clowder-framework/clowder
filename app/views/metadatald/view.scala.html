@@ -92,8 +92,8 @@
                     @printHeader(m.creator, m.createdAt, m.contextId)
                 </span>
                 @if(Permission.checkPermission(Permission.DeleteMetadata, ResourceRef(ResourceRef.metadata, m.id))) {
-                        <a id="@m.id" class="delete-icon">
-                        <span class="panel-icon glyphicon glyphicon-trash"></span>
+                        <a id="@m.id" title="Delete metadata entry" class="btn btn-link delete-icon">
+                            <span class="panel-icon glyphicon glyphicon-trash"></span>
                         </a>
                 }
             </div>
