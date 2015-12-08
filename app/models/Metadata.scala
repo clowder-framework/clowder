@@ -48,7 +48,7 @@ object Agent {
       val user_id = (json \ "agent" \ "user_id").asOpt[String]
       user_id map { uid =>
         val userId = Some(new URL(uid))
-        val user = userService.get(UUID(uid)).get
+        val user = userService.get(UUID(uid)).getOrElse(User.anonymous)
         creator = Some(UserAgent(UUID.generate, typeOfAgent, MiniUser(user.id, user.fullName, user.avatarUrl.get, user.email), userId))
       }
 
