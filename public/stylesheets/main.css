@@ -766,7 +766,7 @@ table#sensorsListTable > thead > tr > th.headerSortDown {
 }
 
 .edit-tab {
-    padding-left: 2em;
+    margin-left: 5px;
 }
 
 .align-right {
@@ -854,6 +854,10 @@ table.borderless tbody tr td, table.borderless tbody tr th {
     border: none;
 }
 
+.upload-files-buttons {
+    padding-top: 20px;
+}
+
 .margin-top-h{
     margin-top: 30px;
 }
@@ -901,4 +905,8 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 }
 .form-md {
     padding: 10px 0px;
+}
+
+.add-resource {
+    width: 240px !important
 }

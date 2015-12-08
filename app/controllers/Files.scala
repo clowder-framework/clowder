@@ -183,7 +183,60 @@ class Files @Inject() (
         }
     }
   }
-  
+
+  def followingFiles(when: String, index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(clowderUser) => {
+        val nextPage = (when == "a")
+        val title: Option[String] = Some("Following Files")
+
+        var fileList = new ListBuffer[models.File]()
+        val fileIds = clowderUser.followedEntities.filter(_.objectType == "file")
+        val fileIdsToUse = fileIds.slice(index*limit, (index+1)*limit)
+        val prev= index -1
+        val next = if(fileIds.length > (index+1) * limit) {
+          index + 1
+        } else {
+          -1
+        }
+
+        for (tidObject <- fileIdsToUse) {
+          val followedFile = files.get(tidObject.id)
+          followedFile match {
+            case Some(ffile) => {
+              fileList += ffile
+            }
+          }
+        }
+
+        val commentMap = fileList.map{file =>
+          var allComments = comments.findCommentsByFileId(file.id)
+          sections.findByFileId(file.id).map { section =>
+            allComments ++= comments.findCommentsBySectionId(section.id)
+          }
+          file.id -> allComments.size
+        }.toMap
+
+        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+        //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+        //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+        val viewMode: Option[String] =
+          if (mode == null || mode == "") {
+            request.cookies.get("view-mode") match {
+              case Some(cookie) => Some(cookie.value)
+              case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+            }
+          } else {
+            Some(mode)
+          }
+
+        //Pass the viewMode into the view
+        Ok(views.html.users.followingFiles(fileList.toList, commentMap, prev, next, limit, viewMode))
+      }
+      case None => InternalServerError("User not found")
+    }
+  }
   /**
    * List a specific number of files before or after a certain date.
    */
@@ -248,6 +301,29 @@ class Files @Inject() (
       
     //Pass the viewMode into the view
     Ok(views.html.filesList(fileList, commentMap, prev, next, limit, viewMode))
+  }
+
+  def listByDataset(datasetId: UUID, filepage: Int, limit: Int) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
+    implicit val user = request.user
+
+    datasets.get(datasetId) match {
+      case Some(d) => {
+
+        val next = if (d.files.length > limit * (filepage+1) ) "dataset-"+ datasetId.toString+ "-next" else "dataset-"+ datasetId.toString
+        //we reuse prev but it is actuall filepage
+        val prev = if(filepage<0) 0 else filepage
+        val limitFileList = d.files.slice(limit * prev, limit * (prev+1)).map(f => files.get(f)).flatten
+        val commentMap = limitFileList.map{file =>
+          var allComments = comments.findCommentsByFileId(file.id)
+          sections.findByFileId(file.id).map { section =>
+            allComments ++= comments.findCommentsBySectionId(section.id)
+          }
+          file.id -> allComments.size
+        }.toMap
+        Ok(views.html.filesList(limitFileList, commentMap, prev.toString, next, limit, None))
+      }
+      case None => BadRequest("Dataset not found")
+    }
   }
 
   /**

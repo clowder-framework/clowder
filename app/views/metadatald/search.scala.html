@@ -15,7 +15,7 @@
                         <input type="text" class="form-control" id="v" placeholder="Type value here">
                     </div>
                     <div class="form-group col-lg-4 col-md-4">
-                        <button type="submit" class="btn btn-default">Search</button>
+                        <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-search"></span> Search</button>
                         <span id="mt-search-feedback"></span>
                     </div>
                 </form>
@@ -83,7 +83,7 @@
                         var html = modalTemplate({'url': jsRoutes.controllers.Files.file(files[i].id).url, 'name': files[i].name});
                         $('#files-results').append(html);
                     }
-                    $('#getmore').html('<a id="showmore" class="btn btn-default">Show more results</a>');
+                    $('#getmore').html('<a id="showmore" class="btn btn-link"><span class="glyphicon glyphicon-hand-down"></span> Show more results</a>');
                     $('#showmore').click( function() { search(key, value, count+10); } );
                 });
 

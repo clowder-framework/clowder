@@ -54,22 +54,7 @@
 		
 		request.done(function (response, textStatus, jqXHR){	        	       
 	      //Remove selected dataset from datasets in collection.
-	      var rowId = event.target.parentNode.parentNode.getAttribute('data-datasetid');	
-	      var inputDate = $("tr[data-datasetid='" + rowId + "'] td:nth-child(2)").text();
-	      var inputDescr = $("tr[data-datasetid='" + rowId + "'] td:nth-child(3)").html();
-	      var inputThumbnail = $("tr[data-datasetid='" + rowId + "'] td:nth-child(4)").html();
-	      $("#collectionDatasetsTable tbody tr[data-datasetid='" + rowId + "']").remove(); 
-	      
-	      //Add the data back to the uncontained datasets table
-	      var newDatasetHTML = "<tr data-datasetId='" + datasetId + "'><td><a href='#!' "
-	      + "onclick='addDataset(\"" + datasetId + "\",event)' "
-	      + ">"+ event.target.parentNode.parentNode.children[0].children[0].innerHTML + "</a></td>"
-	      + "<td>" + inputDate + "</td>"
-	      + "<td style='white-space:pre-line;'>" + inputDescr + "</td>"
-	      + "<td>" + inputThumbnail + "</td>"
-	      + "<td><a target='_blank' href='" + jsRoutes.controllers.Datasets.dataset(datasetId).url + "'>View</a></td></tr>";
-	      
-	      $('#addDatasetsTable tbody').append(newDatasetHTML);	      	      	      	          
+			$('#'+datasetId).remove();
 		});  	
 		
 		request.fail(function (jqXHR, textStatus, errorThrown){

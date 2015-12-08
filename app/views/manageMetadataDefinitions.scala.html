@@ -93,7 +93,7 @@
                     }
                 });
                 if (data['query_parameter_value']) delete data['query_parameter_value'];
-                if (data.type == "list" || data.type == "listjquery") {
+                if (data.type == "list" || data.type == "listjquery" || data.type == "scientific_variable") {
                     if (!data.definitions_url) {
                         $("#validationResults").html(
                             '<div class="alert alert-danger fade in">' +
@@ -145,6 +145,7 @@
                                 case "string" => {String}
                                 case "list" => {List}
                                 case "listjquery" => {Queryable List}
+                                case "scientific_variable" => {Scientific Variable}
                                 case "listgeocode" => {Location}
                             }
                         </td>
@@ -197,6 +198,7 @@
                                     <option value="list">List</option>
                                     <option value="listjquery">Queryable List</option>
                                     <option value="listgeocode">Location</option>
+                                    <option value="scientific_variable">Scientific Variable</option>
                                 </select>
                             </div>
                         </div>
@@ -206,7 +208,7 @@
                                 <input type="url" class="form-control" id="definitions_url" placeholder="http://" disabled />
                             </div>
                             <div class="col-sm-2">
-                                <button class="btn btn-info" id="validateButton" disabled>Validate URL</button>
+                                <button class="btn btn-default" id="validateButton" disabled><span class="glyphicon glyphicon-ok"></span> Validate URL</button>
                             </div>
                         </div>
                         <div class="form-group">
@@ -223,8 +225,8 @@
                             <div class="col-sm-8" id="validationResults"></div>
                         </div>
                         <hr/>
-                        <a href="#" class="btn btn-default pull-left" id="cancelButton" onclick="reset(this)" style="display:none;">Cancel</a>
-                        <button type="submit" class="btn btn-primary pull-right"><span class="definitionAction">Add</span></button>
+                        <a href="#" class="btn btn-default pull-left" id="cancelButton" onclick="reset(this)" style="display:none;"><span class="glyphicon glyphicon-remove"></span> Cancel</a>
+                        <button type="submit" class="btn btn-primary pull-right"><span class="definitionAction"><span class="glyphicon glyphicon-plus"></span> Add</span></button>
 
                     </form>
                 </div>

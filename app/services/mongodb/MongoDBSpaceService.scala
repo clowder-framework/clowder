@@ -29,15 +29,14 @@ import util.Formatters
 /**
  * Store Spaces in MongoDB.
  *
- * @author Luigi Marini
- *
  */
 @Singleton
 class MongoDBSpaceService @Inject() (
   collections: CollectionService,
   files: FileService,
   datasets: DatasetService,
-  users: UserService) extends SpaceService {
+  users: UserService,
+  curations: CurationService) extends SpaceService {
 
   def get(id: UUID): Option[ProjectSpace] = {
     ProjectSpaceDAO.findOneById(new ObjectId(id.stringify))
@@ -225,6 +224,11 @@ class MongoDBSpaceService @Inject() (
   }
 
   def delete(id: UUID): Unit = {
+    // only curation objects in this space are removed, since dataset & collection doesn't need to belong to a space.
+    get(id) match {
+      case Some(s) =>
+        s.curationObjects.map(c => curations.remove(c))
+    }
     ProjectSpaceDAO.removeById(new ObjectId(id.stringify))
   }
 

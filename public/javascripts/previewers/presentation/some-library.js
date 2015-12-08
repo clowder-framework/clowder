@@ -37,14 +37,14 @@
 	    	     "</video>"
 	    	  );
 	    	  $(useTab).append("<br/>");
-	    	  $(useTab).append("<a class='btn btn-default' href='" + jsRoutes.api.Previews.download(videosIds[0]).url + "'>Download merged high-quality video.</a>");
+	    	  $(useTab).append("<a class='btn btn-link' href='" + jsRoutes.api.Previews.download(videosIds[0]).url + "'><span class='glyphicon glyphicon-download-alt'></span> Download merged high-quality video.</a>");
 	    	 },
 	    	 error: function(jqXHR, textStatus, errorThrown) { 
 	    	        alert("Status: " + textStatus); alert("Error: " + errorThrown); 
 	    	    },
 	    dataType: 'text'
 	});
-  
+
 
 }(jQuery, Configuration));
 
