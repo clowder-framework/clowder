@@ -766,7 +766,7 @@ table#sensorsListTable > thead > tr > th.headerSortDown {
 }
 
 .edit-tab {
-    padding-left: 2em;
+    margin-left: 5px;
 }
 
 .align-right {
