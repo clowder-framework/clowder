@@ -21,7 +21,7 @@
         <tr>
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Name:</td>
             <td style="width: 35%; vertical-align:top;" class="input-table-cell">
-                <textarea cols=40 rows=4 type="text" id="name">@name</textarea>
+                <textarea class="form-control" cols=40 rows=4 type="text" id="name">@name</textarea>
             </td>
             <td style="vertical-align:top;" class="input-table-cell">
                 <span class="error hiddencomplete" id="nameerror"> The name is a required field</span><br>
@@ -30,7 +30,7 @@
         <tr>
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Description:</td>
             <td style="width: 35%; vertical-align:top;" class="input-table-cell" id="desccell">
-                <textarea cols=40 rows=4 type="text" id="description">@desc</textarea>
+                <textarea class="form-control" cols=40 rows=4 type="text" id="description">@desc</textarea>
             </td>
             <td style="vertical-align:top;" class="input-table-cell">
                 <span class="error hiddencomplete" id="descerror"> This description is a required field</span><br>
@@ -75,10 +75,10 @@
             </td>
             <td>
                 <button style="margin-top: 10px; margin-right: 10px;" class="btn btn-primary" title="Create the CO" onclick="return createCuration();">
-                    <span class="glyphicon glyphicon-upload"></span> Create
+                    <span class="glyphicon glyphicon-ok"></span> Create
                 </button>
                 <button style="margin-top: 10px;" class="btn btn-default" title="Clear the input fields" onclick="return clearFields();">
-                    <span class="glyphicon glyphicon-refresh"></span> Reset
+                    <span class="glyphicon glyphicon-unchecked"></span> Reset
                 </button>
             </td>
         </tr>
@@ -93,10 +93,10 @@
                 </td>
                 <td>
                     <button style="margin-top: 10px; margin-right: 10px;" class="btn btn-primary disabled" title="Create the CO" onclick="return createCuration();">
-                        <span class="glyphicon glyphicon-upload"></span> Create
+                        <span class="glyphicon glyphicon-ok"></span> Create
                     </button>
                     <button style="margin-top: 10px;" class="btn btn-default" title="Clear the input fields" onclick="return clearFields();">
-                        <span class="glyphicon glyphicon-refresh"></span> Reset
+                        <span class="glyphicon glyphicon-unchecked"></span> Reset
                     </button>
                 </td>
             </tr>

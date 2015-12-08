@@ -9,8 +9,6 @@ import util.SpaceConfig
  * A space defines a partition of the data so that authorization can be enforced on it.
  * It is also a way for users to create collaboration spaces with other users.
  *
- * @author Luigi Marini
- *
  */
 
 case class ProjectSpace (
@@ -50,8 +48,10 @@ case class SpaceInvite(
     invite_id: String,
     email: String,
     space: UUID,
-    role: String)
-
+    role: String,
+    creationTime: java.util.Date,
+    expirationTime: java.util.Date)
+   
 // New way to manage metadata. Will eventually be merged with space metadata.
 case class SpaceMetadata (
   created: Date,

@@ -56,7 +56,7 @@ object Permission extends Enumeration {
     // metadata
     AddMetadata,
     ViewMetadata,
-    DeleteMetadata, // FIXME: Unused right now
+    DeleteMetadata,
     EditMetadata,   // FIXME: Unused right now
 
     // social annotation
@@ -99,6 +99,7 @@ object Permission extends Enumeration {
   lazy val comments: services.CommentService = DI.injector.getInstance(classOf[services.CommentService])
   lazy val curations: services.CurationService = DI.injector.getInstance(classOf[services.CurationService])
   lazy val sections: SectionService = DI.injector.getInstance(classOf[SectionService])
+  lazy val metadatas: MetadataService = DI.injector.getInstance(classOf[MetadataService])
 
 	def checkServerAdmin(user: Option[Identity]): Boolean = {
 		user.exists(u => u.email.nonEmpty && AppConfiguration.checkAdmin(u.email.get))
@@ -312,6 +313,13 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.curationObject, id) => {
         curations.get(id) match {
           case Some(curation) => checkPermission(user, permission, ResourceRef(ResourceRef.space, curation.space))
+          case None => false
+        }
+      }
+      // for DeleteMetadata, the creator of this metadata or user with permission to delete this resource can delete metadata
+      case ResourceRef(ResourceRef.metadata, id) => {
+        metadatas.getMetadataById(id) match {
+          case Some(m) => m.creator.id.equals(user.identityId) || checkPermission(user, permission, m.attachedTo)
           case None => false
         }
       }

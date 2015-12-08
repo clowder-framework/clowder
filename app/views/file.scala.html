@@ -8,6 +8,7 @@
 @import helper._
 @import collection.JavaConverters._
 @import play.api.Play.current
+@import api.Permission
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
 	@printLevel(metadata: scala.collection.immutable.Map[String,Any]) = {
@@ -207,13 +208,18 @@
 
         <div class="row">
         <div class="col-md-12 button-margins">
-          <div class="btn-group" role="group" aria-label="...">                 
-            <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file"  disabled="disabled"> <span class="glyphicon glyphicon-save"></span> Download </button>
-            
+          <div class="btn-group" role="group" aria-label="...">
+		  @if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
+			  <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file"> <span class="glyphicon glyphicon-save"></span>
+				  Download </button>
+		  } else {
+			  <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file" disabled="disabled"> <span class="glyphicon glyphicon-save"></span>
+				  Download </button>
+		  }
             <!--  If outputFormats list is not empty, display downloadAs drop-down button with the list of available formats -->      
             @if(!outputFormats.isEmpty){  
               <div class="btn-group" role="group">         
-                <button id="downloadAsButton" type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> <span class="glyphicon glyphicon-save"></span> </button>
+                <button id="downloadAsButton" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> <span class="glyphicon glyphicon-download-alt"></span> </button>
                 <ul class="dropdown-menu" role="menu">
                   @outputFormats.get.map { outputFrmt =>
                     <li id="doc" onclick="return downloadFileAs('@routes.Files.downloadAsFormat(UUID(id), outputFrmt)'  );" > <a href="#">@outputFrmt</a> </li>          
@@ -226,31 +232,29 @@
                 <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->                
                     @if(user.get.identityId.userId.equals(file.author.identityId.userId)){                    
                         <span class="align-right">
-				            <button id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-primary" title="Delete">
+				            <button id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" title="Delete">
 						    <span class="glyphicon glyphicon-trash"></span> Delete</button>
 					    </span>
 					} else {
 					    <span class="align-right">
-                            <button disabled id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-primary" title="Delete">
+                            <button disabled id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" title="Delete">
                             <span class="glyphicon glyphicon-trash"></span> Delete</button>
                         </span>
 					}
 
                     @if(!file.followers.contains(user.get.id)) {
                         <button id="followButton"
-                                class="btn btn-success followButton"
+                                class="btn btn-link followButton"
                                 objectId="@file.id"
                                 objectName="@file.filename"
-                                objectType="file">
-                            Follow
+                                objectType="file"><span class="glyphicon glyphicon-star"></span> Follow
                         </button>
                     } else {
                         <button id="followButton"
-                                class="btn btn-danger followButton"
+                                class="btn btn-link followButton"
                                 objectId="@file.id"
                                 objectName="@file.filename"
-                                objectType="file">
-                            Unfollow
+                                objectType="file"><span class="glyphicon glyphicon-star-empty"></span> Unfollow
                         </button>
                     }
                 }
@@ -353,7 +357,7 @@
 													<textarea name="sectiondescrText" class="sectionTextBox" id="sectiondescrText_@(s.id)" style="width:100%; height:100px;">@s.description.getOrElse("")</textarea>
 												</div>
 												<button class="btn btn-default btn-xs btn-margins" onclick="return openForEditSectionDescr('@s.id');" style="display:inline;" id="sectiondescrEdit_@(s.id)" title="Edit Description">
-									                <span class="glyphicon glyphicon-chevron-down"></span> Edit</button>
+									                <span class="glyphicon glyphicon-edit"></span> Edit</button>
 												<button class="btn btn-primary" onclick="return postSectionDescr('@s.id', '@api.routes.Sections.description(s.id).toString');" style="display:none; margin-top:5px;" id="sectiondescrPost_@(s.id)" title="Submit">
 									                <span class="glyphicon glyphicon-ok"></span> Submit</button>
 												<button class="btn btn-default" onclick="return cancelEditSectionDescr('@s.id');" style="display:none; margin-top:5px;" id="sectiondescrCancel_@(s.id)" title="Cancel">
@@ -579,7 +583,7 @@
                                 <a class="btn btn-link btn-sm accordion-toggle collapsed" data-toggle="collapse"
                                    data-parent="#accordion6" href="#collapseSix" id="editlicense"
                                    title="Edit License Information">
-                                    <span class="glyphicon glyphicon-chevron-down"></span> Edit
+                                    <span class="glyphicon glyphicon-edit"></span> Edit
                                 </a>
                                 }
                         </div>
@@ -611,53 +615,6 @@
 
                     if (!@user.isDefined){
                         updateInterface(fileLicenseType, fileRightsHolder, fileLicenseText, fileLicenseUrl, fileAllowDownload, fileImageBase, fileAuthorName);
-                    }
-                    
-                    //Now, set the DownloadButton correctly (disabled or enabled as determined by the license)
-                    var owner = "@file.author.fullName";
-                    var userName = null;
-
-                    @user match {
-                        case None => {
-                           userName = "";
-                        }
-                        case Some(x) => {
-                           userName = "@user.getOrElse(null).fullName";
-                        }
-                    }
-                    
-                    //TODO:
-                    //Create new route and new API call to check license info that is being done below by javascript
-                    //Return true or false to allow or not allow the download. On good, proceed normally. On bad
-                    //display appropriate message as an alert. (the else block from below is good example)
-                    
-                    //The checkLicenseType and checkAllowDownload variables are globally defined, and referenced from
-                    //updateLicenseInfo.js.
-                    //
-                    //Check the license type, only type1 needs to have further checks, otherwise download should be allowed
-                    if (fileLicenseType != 'license1') {
-                        $("#downloadButton").removeAttr("disabled");
-                        $("#downloadButton").attr("title", "Download the file");
-                        //the same for downloadAs button
-                        $("#downloadAsButton").removeAttr("disabled");
-                        $("#downloadAsButton").attr("title", "Download as...");
-                    }
-                    //Check if the downloading of the file is allowed, however always allow the owner of the file to download it.
-                    else {
-                        if (fileAllowDownload == "true" || userName == owner) {
-                        	  $("#downloadButton").removeAttr("disabled");
-                            $("#downloadButton").attr("title", "Download the file");  
-                            //the same for downloadAs button
-                            $("#downloadAsButton").removeAttr("disabled");
-                            $("#downloadAsButton").attr("title", "Download as...");    
-                        }
-                        else {
-                        	  $("#downloadButton").attr("disabled", "disabled");
-                            $("#downloadButton").attr("title", "You don't have permission to download this file");
-                            //the same for downloadAs button                            
-                            $("#downloadAsButton").attr("disabled", "disabled");
-                            $("#downloadAsButton").attr("title", "You don't have permission to download this file");
-                        }
                     }
 
                     $(document).on('click', '.followButton', function() {

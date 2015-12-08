@@ -57,9 +57,9 @@ function resetDatasetItems() {
 	//Ensure both tabs are shown
 	$('#tab1anchor').show();
 	$('#tab2anchor').show();
-	hideStatus();	
-	$('#uploadcreate').html("Create Dataset");
-	$('#existingcreate').html("Create Dataset");
+	hideStatus();
+	$('#existingcreate').html("<span class='glyphicon glyphicon-ok'></span> Create Dataset");
+	$('#uploadcreate').html("<span class='glyphicon glyphicon-ok'></span> Create Dataset");
 }
 
 //Hide the status items
@@ -204,8 +204,8 @@ function createEmptyDataset(data) {
 	            origData.submit();
             }
                         
-            notify("Creation successful. Go to the <a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a>", "success", 5000);            
-            $('#uploadcreate').html(" Attach Files");
+            notify("Creation successful. Go to the <a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a>", "success", 5000);
+			$('#uploadcreate').html("<span class='glyphicon glyphicon-plus'></span> Attach Files");
         });
 
 
@@ -316,8 +316,8 @@ function attachFiles() {
 	    	//Successful creation and file attachment. Update the staus label accordingly.
 	        id = response["id"];
 	        console.log("Successful response from createEmptyDataset existing files. ID is " + id);
-	        notify("Creation successful. Go to the <a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a>", "success", 5000);	        
-	        $('#existingcreate').html(" Attach Files");
+	        notify("Creation successful. Go to the <a href='" + jsRoutes.controllers.Datasets.dataset(id).url + "'>Dataset</a>", "success", 5000);
+			$('#existingcreate').html("<span class='glyphicon glyphicon-plus'></span> Attach Files");
 	    });
 	
 	

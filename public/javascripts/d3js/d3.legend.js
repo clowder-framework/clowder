@@ -18,7 +18,7 @@
             svg.selectAll("[data-legend]").each(function() {
                 var self = d3.select(this)
                 items[self.attr("data-legend")] = {
-                    pos : self.attr("data-legend-pos") || this.getBBox().y,
+                    pos : self.attr("data-legend-pos") || 0,//this.getBBox().y,
                     color : self.attr("data-legend-color") != undefined ? self.attr("data-legend-color") : self.style("fill") != 'none' ? self.style("fill") : self.style("stroke")
                 }
             })
