@@ -140,7 +140,8 @@ object ApplicationBuild extends Build {
   )
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
-    scalacOptions += s"-target:jvm-$jvm",
+    scalacOptions ++= Seq(s"-target:jvm-$jvm", "-feature"),
+    javacOptions ++= Seq("-source", jvm, "-target", jvm),
     initialize := {
       val current  = sys.props("java.specification.version")
       assert(current >= jvm, s"Unsupported JDK: java.specification.version $current != $jvm")
