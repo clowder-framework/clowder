@@ -448,8 +448,17 @@ class PostgresPlugin(application: Application) extends Plugin {
     st.close()
     true
   }
-  
-  
+
+  def deleteDatapoint(gid: Integer): Boolean = {
+    val query = "DELETE FROM datapoints where gid = ?"
+    val st = conn.prepareStatement(query)
+    st.setInt(1,gid)
+    Logger.debug("Deleting datapoint statement: " + st)
+    st.execute()
+    st.close
+    true
+  }  
+ 
   def dropAll(): Boolean = {
     val deleteSensors = "DELETE from sensors"
     val st = conn.prepareStatement(deleteSensors)

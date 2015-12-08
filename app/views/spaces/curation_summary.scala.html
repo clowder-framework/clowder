@@ -12,7 +12,7 @@
             @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, curationObject.space))){
                 @if(!editCurationObject){
                     <a class="btn btn-sm btn-link" href ="@routes.CurationObjects.getCurationObject(curationObject.id)">
-                        <span class="glyphicon glyphicon-edit"></span> Edit Metadata</a>
+                        <span class="glyphicon glyphicon-chevron-left"></span> Go to Edit Metadata</a>
                 }
                 <a class="btn btn-sm btn-link" onclick="removeCuration('@(curationObject.space)','@(curationObject.id)')"  >
                     <span class="glyphicon glyphicon-trash"></span> Delete Curation Object</a>

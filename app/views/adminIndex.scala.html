@@ -10,7 +10,7 @@
 	 <div class="row">
     <div class="col-sm-4">
       <h5>Choose a Name for Index (optional)</h5>
-			<input type="text" id="nameTextArea" onchange="setNameForIndex()">		
+			<input class="form-control input-sm" type="text" id="nameTextArea" onchange="setNameForIndex()">
     </div>
     
     <div class="col-sm-4">
@@ -64,7 +64,7 @@
   <!--  Create button row -->  
   <div class="row">
     <div class="col-sm-4" >
-      <input id="create" type="submit" class="btn btn-default btn-sm btn-margins" value="Create" />
+        <button type="submit" id="create" class="btn btn-primary btn-sm btn-margins"><span class="glyphicon glyphicon-ok"></span> Create</button>
     </div>
   </div>
   
@@ -89,7 +89,7 @@
 				</select>
 				
 				<div style="text-align: left;">
-				  <input id="build" class="btn btn-default btn-sm btn-margins" type="submit" value="Build Index">
+                    <button type="submit" id="build" class="btn btn-default btn-sm btn-margins"><span class="glyphicon glyphicon-cog"></span> Build Index</button>
 				</div>
 				
 				<div id="buildmsg"style="text-align: left;">
@@ -107,8 +107,8 @@
  <div class="container-fluid"> 
   <div class="row">
     <div class="col-md-12">
-	    <div style="text-align: left;">			
-        <input id="list" type="submit" class="btn btn-default btn-sm btn-margins" value="List All Indexes" />
+	    <div style="text-align: left;">
+            <button type="submit" id="list" class="btn btn-default btn-sm btn-margins"><span class="glyphicon glyphicon-list-alt"></span> List Indexes</button>
       </div>
       <div id="listIndexesTable">
           <!-- Placeholder for table with info about indexes -->       
@@ -131,7 +131,7 @@
 			</select>
 
 			<div style="text-align: left;">
-				<input id="delete" class="btn btn-default btn-sm btn-margins" type="submit" value="Delete Index">
+                <button type="submit" id="delete" class="btn btn-danger btn-sm btn-margins"><span class="glyphicon glyphicon-trash"></span> Delete Index</button>
 			</div>
 			<br>
 			<div id="deletemsg" style="text-align: left;">
@@ -149,8 +149,8 @@
  <div class="container-fluid"> 
   <div class="row">
     <div class="col-md-12">
-	   <div style="text-align: left;">			
-        <input id="deleteAll" type="submit" class="btn btn-default btn-sm btn-danger" value="Delete All" />
+	   <div style="text-align: left;">
+           <button type="submit" id="deleteAll" class="btn btn-danger btn-sm btn-margins"><span class="glyphicon glyphicon-trash"></span> Delete All</button>
      </div>
     
      <div id="deleteallmsg" style="text-align: left;">

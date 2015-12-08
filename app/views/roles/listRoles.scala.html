@@ -21,7 +21,7 @@
             @if(roles.isEmpty) {
                 <div>No roles defined</div>
             }
-            <div><a href="@routes.Admin.createRole()" class="btn btn-default">Create new role</a></div>
+            <div><a href="@routes.Admin.createRole()" class="btn btn-primary"><span class="glyphicon glyphicon-ok"></span> Create New Role</a></div>
             @if(!roles.isEmpty) {
                 <table class="table">
                     <thead><tr><th>Name</th><th>Description</th><th>Permissions</th><th>Edit / Delete</th></tr></thead>

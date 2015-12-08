@@ -1,7 +1,7 @@
 package services.mongodb
 
 import java.net.URL
-import java.util.Date
+import java.util.{Calendar, Date}
 
 import com.mongodb.CommandFailureException
 import com.mongodb.casbah.Imports._
@@ -9,7 +9,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import models._
 import org.bson.BSONException
 import play.api.libs.json._
-import play.api.{ Plugin, Logger, Application }
+import play.api.{ Play, Plugin, Logger, Application }
 import play.api.Play.current
 import com.mongodb.casbah.MongoURI
 import com.mongodb.casbah.MongoConnection
@@ -18,7 +18,8 @@ import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.gridfs.GridFS
 import org.bson.types.ObjectId
 import securesocial.core.Identity
-import services.{CurationService, MetadataService, DI, AppConfigurationService}
+import services.{MetadataService, DI, AppConfigurationService}
+import org.joda.time.DateTime
 
 /**
  * Mongo Salat service.
@@ -218,6 +219,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // collection now requires author
     collectionRequiresAuthor
+
+    // Adds creation date and expiration date to Space Invites assumes they were just created.
+    updateSpaceInvites
   }
 
   private def updateMongoChangeUserType {
@@ -401,7 +405,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   }
 
   /**
-   * Replaces the files in the datasets from acopy of the files tojust the file UUID's.
+   * Replaces the files in the datasets from a copy of the files to just the file UUID's.
    */
   private def updateReplaceFilesInDataset{
     val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
@@ -515,7 +519,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                 }
               }
             }
-            case None => Logger.error(s"[MongoDBUpdate : Missing file id")
+            case None => Logger.error(s"[MongoDBUpdate : Missing dataset id")
           }
         }
         appConfig.addPropertyValue("mongodb.updates", updateId)
@@ -524,8 +528,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       }
     }
   }
-
-
 
   private def collectionRequiresAuthor(): Unit = {
     val updateId = "collection-author"
@@ -542,4 +544,38 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       }
     }
   }
+
+  /**
+   * Adds a creation and expiration date to old invites. Considering them as just created when the update script is run.
+   */
+  private def updateSpaceInvites{
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", "update-space-invites")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        collection("spaces.invites").foreach { invite =>
+
+          val TokenDurationKey = securesocial.controllers.Registration.TokenDurationKey
+          val DefaultDuration = securesocial.controllers.Registration.DefaultDuration
+          val TokenDuration = Play.current.configuration.getInt(TokenDurationKey).getOrElse(DefaultDuration)
+          invite.put("creationTime", new Date())
+          val ONE_MINUTE_IN_MILLIS=60000
+          val date: Calendar = Calendar.getInstance()
+          val t= date.getTimeInMillis()
+          val afterAddingMins: Date=new Date(t + (TokenDuration * ONE_MINUTE_IN_MILLIS))
+          invite.put("expirationTime",  afterAddingMins)
+          try {
+            collection("spaces.invites").save(invite, WriteConcern.Safe)
+          }
+          catch {
+            case e: BSONException => Logger.error("Unable to update invite:" + invite.getAsOrElse[ObjectId]("_id", new ObjectId()).toString() )
+          }
+        }
+      }
+      appConfig.addPropertyValue("mongodb.updates", "update-space-invites")
+    } else {
+      Logger.warn("[MongoDBUpdate : Missing fix to add creation and expiration time to invites")
+    }
+  }
+
 }

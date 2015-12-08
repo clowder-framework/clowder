@@ -111,9 +111,9 @@
             <div id='generalUserMetadata_@(dataset.id.stringify)' class='usr_md_'>
                 <button class="usr_md_ btn btn-link btn-sm" type="button">Add property</button>
                 @printLevelUserMetadata(userMetadata)
-                <button class="usr_md_submit btn btn-default btn-xs" type="button">Submit</button>
+                <button class="usr_md_submit btn btn-primary btn-xs" type="button"><span class="glyphicon glyphicon-saved"></span> Submit</button>
                 @if(rdfExported){
-                    <button class="usr_md_submit btn btn-primary rdfbtn" type="button">Get as RDF</button>
+                    <button class="usr_md_submit btn btn-default rdfbtn" type="button"><span class="glyphicon glyphicon-pencil"></span> Get as RDF</button>
                 }
             </div>
         </div>
