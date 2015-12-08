@@ -24,6 +24,7 @@ import play.api.libs.iteratee.{Enumeratee, Enumerator}
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
+import com.wordnik.swagger.annotations.ApiOperation
 
 /**
  * Geostreaming endpoints. A geostream is a time and geospatial referenced
@@ -195,7 +196,7 @@ object Geostreams extends ApiController {
               val data = Json.parse(d)
               Json.obj(
                 "range" -> Map[String, JsValue]("min_start_time" -> data \ "min_start_time",
-                                                "max_start_time" -> data \ "max_start_time"),
+                                                "max_end_time" -> data \ "max_end_time"),
                 "parameters" -> data \ "parameters"
               )
             }
@@ -271,6 +272,18 @@ object Geostreams extends ApiController {
       case None => pluginNotEnabled
     }
   }
+  
+  @ApiOperation(value = "Delete Geostream Datapoint", notes = "Delete datapoint from geostream database.", responseClass = "None", httpMethod = "DELETE")
+  def deleteDatapoint(id: String) = PermissionAction(Permission.DeleteGeoStream) { implicit request =>
+    Logger.debug("Delete datapoint " + id)
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        if (plugin.deleteDatapoint(id.toInt)) jsonp("""{"status":"ok"}""", request)
+        else jsonp("""{"status":"error"}""", request)
+      }
+      case None => pluginNotEnabled
+    }
+  }
 
   def deleteAll() = PermissionAction(Permission.DeleteGeoStream) { implicit request =>
     Logger.debug("Drop all")
@@ -310,7 +323,7 @@ object Geostreams extends ApiController {
             } else {
               plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), 0.0, streamId)
             }
-            cacheInvalidate
+            cacheInvalidate(None, None)
             jsonp(toJson("success"), request)
           }
           case None => pluginNotEnabled
@@ -1460,31 +1473,100 @@ object Geostreams extends ApiController {
   }
 
   /**
-   * Removes all files from the cache
+   * Removes all files from the cache,
+   * or the files associated with either sensor_id or stream_id as query parameters.
+   * Specifying sensor_id and stream_id will only remove caching where both are present
    */
-  def cacheInvalidate = {
+  def cacheInvalidate(sensor_id: Option[String] = None, stream_id: Option[String] = None) = {
     play.api.Play.configuration.getString("geostream.cache") match {
       case Some(x) => {
-        val files = new File(x).listFiles
-        for (f <- new File(x).listFiles) {
-          if (!f.delete) {
-            Logger.error("Could not delete cache file " + f.getAbsolutePath)
+        val existingFiles = new File(x).listFiles
+        val filesToRemove = collection.mutable.ListBuffer.empty[String]
+        val streams = new ListBuffer[String]()
+        val sensors = new ListBuffer[String]()
+        val errors = new ListBuffer[String]()
+
+        if (sensor_id.isDefined) {
+          sensors += sensor_id.get.toString
+          current.plugin[PostgresPlugin] match {
+            case Some(plugin) => {
+              plugin.getSensorStreams(sensor_id.get.toString) match {
+                case Some(d) => {
+                  val responseJson : JsValue = Json.parse(d)
+                  (responseJson \\ "stream_id").foreach(streams += _.toString)
+                }
+                case None => errors += "Sensor " + sensor_id.get.toString + " does not exist"
+              }
+            }
+            case None => pluginNotEnabled
           }
         }
-        files.map { s => s.getAbsolutePath}
+
+        if (stream_id.isDefined) {
+          streams += stream_id.get.toString
+          current.plugin[PostgresPlugin] match {
+            case Some(plugin) => {
+              plugin.getStream(stream_id.get.toString) match {
+                case Some(d) => {
+                  val responseJson : JsValue = Json.parse(d)
+                  (responseJson \\ "sensor_id").foreach(sensors += _.asInstanceOf[JsString].value.toString)
+                }
+                case None => errors += "Stream " + stream_id.get.toString + " does not exist"
+              }
+            }
+            case None => pluginNotEnabled
+          }
+        }
+
+        for (file <- existingFiles) {
+          val jsonFile = new File(file.getAbsolutePath + ".json")
+          if (jsonFile.exists()) {
+            val data = Json.parse(Source.fromFile(jsonFile).mkString)
+            (Parsers.parseString(data.\("sensor_id")), Parsers.parseString(data.\("stream_id"))) match {
+              case (sensor_value, stream_value) =>
+                if (sensor_id.isDefined && !stream_id.isDefined) {
+                  if (sensors.contains(sensor_value) || streams.contains(stream_value)) {
+                    filesToRemove += file.getAbsolutePath
+                    filesToRemove += jsonFile.getAbsolutePath
+                  }
+                }
+                if (!sensor_id.isDefined && stream_id.isDefined) {
+                  if (streams.contains(stream_value) || (sensors.contains(sensor_value) && stream_value.isEmpty)) {
+                    filesToRemove += file.getAbsolutePath
+                    filesToRemove += jsonFile.getAbsolutePath
+                  }
+                }
+              case _ => None
+            }
+          }
+        }
+
+        if (sensor_id.isEmpty && stream_id.isEmpty) {
+          for (f <- existingFiles) {
+            filesToRemove += f.getAbsolutePath
+          }
+        }
+        for (f <- filesToRemove) {
+          val file = new File(f)
+          if (!file.delete) {
+            errors += "Could not delete cache file: " + file.getAbsolutePath
+            Logger.error("Could not delete cache file " + file.getAbsolutePath)
+          }
+        }
+        (filesToRemove.toArray, errors.toArray)
       }
-      case None => Array.empty[String]
+      case None => (Array.empty[String], Array.empty[String])
     }
   }
 
   /**
    * Removes all files from the cache
    */
-  def cacheInvalidateAction() =  PermissionAction(Permission.DeleteGeoStream) { implicit request =>
+  def cacheInvalidateAction(sensor_id: Option[String] = None, stream_id: Option[String] = None) =  PermissionAction(Permission.DeleteGeoStream) { implicit request =>
     play.api.Play.configuration.getString("geostream.cache") match {
       case Some(x) => {
-        val files = cacheInvalidate
-        Ok(Json.obj("files" -> Json.toJson(files)))
+        val (files, errors) = cacheInvalidate(sensor_id, stream_id)
+        Ok(Json.obj("files" -> Json.toJson(files), "errors" -> Json.toJson(errors)))
       }
       case None => {
         NotFound("Cache is not enabled")

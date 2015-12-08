@@ -158,61 +158,11 @@ class Search @Inject() (
   /**
    * Search MultimediaFeatures.
    */
-  def searchMultimediaIndex(section_id: UUID) = PermissionAction(Permission.ViewDataset) { implicit request =>
+  def callSearchMultimediaIndexView(section_id: UUID) = PermissionAction(Permission.ViewDataset) { implicit request =>
     Logger.debug("Searching multimedia index " + section_id.stringify)
     // TODO handle multiple previews found
     val preview = previews.findBySectionId(section_id)(0)
-    queries.findFeatureBySection(section_id) match {
-      case Some(feature) => {
-        // setup priority queues
-        val queues = new HashMap[String, DistancePriorityQueue]
-        val representations = feature.features.map { f =>
-          queues(f.representation) = new DistancePriorityQueue(20)
-        }
-        // push into priority queues
-        feature.features.map { f =>
-          Logger.debug("Computing " + f.representation)
-          queries.listAll().map { mf =>
-            Logger.trace("Found multimedia features " + mf.id + " for section " + section_id)
-            mf.features.find(_.representation == f.representation) match {
-              case Some(fd) => {
-                val distance = ImageMeasures.getDistance(FeatureType.valueOf(fd.representation), f.descriptor.toArray, fd.descriptor.toArray)
-                if (!distance.isNaN()) {
-                  Logger.trace(f.representation + "/" + fd.representation + " Distance between " + feature.section_id + " and " + mf.id + " is " + distance)
-                  queues.get(f.representation).map { q =>
-                    val popped = q.insertWithOverflow(SearchResult(mf.section_id.get.toString, distance, None))
-                    if (popped != null) Logger.trace("Popped distance off the queue " + popped)
-                  }
-                } else {
-                  Logger.debug("Distance NaN " + f.descriptor + " and " + fd.descriptor + " is " + distance)
-                }
-              }
-              case None =>
-                Logger.error("Matching descriptor not found")
-            }
-          }
-        }
-
-        val items = new HashMap[String, ListBuffer[SearchResult]]
-        queues map {
-          case (key, queue) =>
-            val list = new ListBuffer[SearchResult]
-            while (queue.size > 0) {
-              val element = queue.pop()
-              val previewsBySection = previews.findBySectionId(UUID(element.section_id))
-              if (previewsBySection.size == 1) {
-                Logger.trace("Appended search result " + key + " " + element.section_id + " " + element.distance + " " + previewsBySection(0).id.toString)
-                list.prepend(SearchResult(element.section_id, element.distance, Some(previewsBySection(0).id.toString)))
-              } else {
-                Logger.error("Found more/less than one preview " + preview)
-              }
-            }
-            items += key -> list
-        }
-        Ok(views.html.searchMultimediaIndex(preview, items))
-      }
-      case None => InternalServerError("feature not found")
-    }
+    Ok(views.html.searchMultimediaIndex(section_id, preview))
   }
 
   def advanced() = PermissionAction(Permission.ViewDataset) { implicit request =>
@@ -259,7 +209,7 @@ class Search @Inject() (
         case None => {
           Future(Ok("No Versus Service"))
         }
-      } //match            
+      } //match
   }
 
   /**
@@ -311,7 +261,7 @@ class Search @Inject() (
           Logger.debug("File with id " + fileID + " not found")
           Future(Ok("File with id " + fileID + " not found"))
         }
-      } //end of queries.get(imageID) match 
+      } //end of queries.get(imageID) match
   }
 
   /**
@@ -358,7 +308,7 @@ class Search @Inject() (
           Logger.debug("Could not find similar for file id " + inputFileId)
           Future(Ok("Could not find similar for file id " + inputFileId))
         }
-      } //end of files.getBytes(inputFileId) match 
+      } //end of files.getBytes(inputFileId) match
   }
 
   /**

@@ -8,7 +8,7 @@ import play.api.Play.current
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json._
 import play.api.mvc.Controller
-import services._
+import services.{ExtractorMessage, _}
 
 /**
  * Index data.
@@ -26,7 +26,7 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
       	      case Some(p) =>
 	      	    // TODO RK need to replace unknown with the server name
 	            val key = "unknown." + "index."+ p.contentType.replace(".", "_").replace("/", ".")
-	            val host = Utils.baseUrl(request) + request.path.replaceAll("api/indexes$", "")
+	            val host = Utils.baseUrl(request)
 	            val id = p.id
 	            current.plugin[RabbitmqPlugin].foreach{
                 // TODO replace null with None
@@ -55,6 +55,7 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
           case Some(multimediaFeature) => {
             val features = (request.body \ "features").as[List[JsObject]]
             multimediaSearch.updateFeatures(multimediaFeature, sectionUUID, features)
+            // TODO add method to pre-compute with existing feature vectors
             Ok(toJson(Map("id"->multimediaFeature.id.toString)))
           }
           case None => {
@@ -64,6 +65,8 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
             }
             val doc = MultimediaFeatures(section_id = Some(sectionUUID), features = features)
             multimediaSearch.insert(doc)
+            // precompute distances
+            multimediaSearch.computeDistances(doc)
             Ok(toJson(Map("id"->doc.id.toString)))
           }
         }

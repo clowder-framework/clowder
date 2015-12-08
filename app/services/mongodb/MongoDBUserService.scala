@@ -22,6 +22,7 @@ import com.mongodb.casbah.Imports._
 import models.Role
 import models.UserSpaceAndRole
 import models.UserSpaceAndRole
+import services.mongodb.SpaceInviteDAO
 import scala.collection.mutable.ListBuffer
 import play.api.Logger
 import securesocial.core.providers.Token
@@ -160,7 +161,10 @@ class MongoDBUserService @Inject() (
   override def createNewListInUser(email: String, field: String, fieldList: List[Any]) {
     UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldList))
   }
-  
+
+  override def updateRepositoryPreferences(id: UUID, preferences: Map[String, String])  {
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("repositoryPreferences" -> preferences))
+  }
   /**
    * @see app.services.UserService
    * 
@@ -452,6 +456,12 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
 
   override def deleteExpiredTokens(): Unit = {
     TokenDAO.remove("expirationTime" $lt new Date)
+    val invites = SpaceInviteDAO.find("expirationTime" $lt new Date)
+    for(inv <- invites) {
+      ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(inv.space.stringify)),
+        $pull("invitations" -> MongoDBObject( "_id" -> new ObjectId(inv.id.stringify))), false, false, WriteConcern.Safe)
+    }
+    SpaceInviteDAO.remove("expirationTime" $lt new Date)
   }
 
   override def findToken(token: String): Option[Token] = {

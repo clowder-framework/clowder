@@ -19,12 +19,13 @@ import play.api.libs.json.Json.toJson
 import services.{CollectionService, DatasetService, _}
 import views.html.defaultpages.badRequest
 
+import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 import services._
 import org.apache.commons.lang.StringEscapeUtils
 
 @Singleton
-class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService, 
+class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService,
                             spaceService: SpaceService, users: UserService, events: EventService) extends SecuredController {
 
   def newCollection(space: Option[String]) = PermissionAction(Permission.CreateCollection) { implicit request =>
@@ -53,18 +54,81 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * Utility method to modify the elements in a collection that are encoded when submitted and stored. These elements
    * are decoded when a view requests the objects, so that they can be human readable.
-   * 
+   *
    * Currently, the following collection elements are encoded:
-   * 
+   *
    * name
    * description
-   *  
+   *
    */
-  def decodeCollectionElements(collection: Collection) : Collection = {      
-      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name), 
+  def decodeCollectionElements(collection: Collection) : Collection = {
+      val decodedCollection = collection.copy(name = StringEscapeUtils.unescapeHtml(collection.name),
               							  description = StringEscapeUtils.unescapeHtml(collection.description))
-              							  
+
       decodedCollection
+  }
+
+  def followingCollections(when: String, index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(clowderUser) => {
+        val nextPage = (when == "a")
+
+        val title: Option[String] = Some("Following Collections")
+
+        val collectionList = new ListBuffer[Collection]()
+        val collectionIds = clowderUser.followedEntities.filter(_.objectType == "collection")
+        val collectionIdsToUse = collectionIds.slice(index*limit, (index+1) *limit)
+        val prev = index-1
+        val next = if(collectionIds.length > (index+1) * limit) {
+          index + 1
+        } else {
+          -1
+        }
+        for (tidObject <- collectionIdsToUse) {
+          val followedCollection = collections.get(tidObject.id)
+          followedCollection match {
+            case Some(fcoll) => {
+              collectionList += fcoll
+            }
+          }
+        }
+
+        val collectionsWithThumbnails = collectionList.map {c =>
+          if (c.thumbnail_id.isDefined) {
+            c
+          } else {
+            val collectionThumbnail = datasets.listCollection(c.id.stringify).find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
+            c.copy(thumbnail_id = collectionThumbnail)
+          }
+        }
+
+        //Modifications to decode HTML entities that were stored in an encoded fashion as part
+        //of the collection's names or descriptions
+        val decodedCollections = ListBuffer.empty[models.Collection]
+        for (aCollection <- collectionsWithThumbnails) {
+          decodedCollections += Utils.decodeCollectionElements(aCollection)
+        }
+
+        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+        //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+        //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+        val viewMode: Option[String] =
+          if (mode == null || mode == "") {
+            request.cookies.get("view-mode") match {
+              case Some(cookie) => Some(cookie.value)
+              case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+            }
+          } else {
+            Some(mode)
+          }
+
+        //Pass the viewMode into the view
+        Ok(views.html.users.followingCollections(decodedCollections.toList, prev, next, limit, viewMode, None, title, None))
+      }
+      case None => InternalServerError("No user defined")
+    }
+
   }
 
   /**
@@ -75,9 +139,19 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
+    val datasetSpace = space.flatMap(o => spaceService.get(UUID(o)))
+    var title: Option[String] = Some("Collections")
 
     val collectionList = person match {
       case Some(p) => {
+        space match {
+          case Some(s) => {
+            title = Some(person.get.fullName + "'s Collections in Space " + datasetSpace.get.name)
+          }
+          case None => {
+            title = Some(person.get.fullName + "'s Collections")
+          }
+        }
         if (date != "") {
           collections.listUser(date, nextPage, limit, request.user, request.superAdmin, p)
         } else {
@@ -87,6 +161,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       case None => {
         space match {
           case Some(s) => {
+            title = Some("Collections in Space " + datasetSpace.get.name)
             if (date != "") {
               collections.listSpace(date, nextPage, limit, s)
             } else {
@@ -178,7 +253,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       }
 
     //Pass the viewMode into the view
-    Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space))
+    Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title, owner))
   }
 
   def jsonCollection(collection: Collection): JsValue = {
@@ -222,7 +297,14 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           Logger.debug("Saving collection " + collection.name)
           collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, datasetCount = 0, created = collection.created, author = collection.author, spaces = collection.spaces))
-
+          collection.spaces.map{
+            sp => spaceService.get(sp) match {
+              case Some(s) => {
+                spaces.addCollection(collection.id, s.id)
+              }
+              case None => Logger.error(s"space with id $sp on collection $collection.id doesn't exist.")
+            }
+          }
           //index collection
             val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
             current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,

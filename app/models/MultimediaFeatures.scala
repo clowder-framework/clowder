@@ -15,3 +15,9 @@ case class Feature(
   representation: String,
   descriptor: List[Double])
 
+case class MultimediaDistance(
+  source_section: UUID,
+  target_section: UUID,
+  representation: String,
+  distance: Double)
+

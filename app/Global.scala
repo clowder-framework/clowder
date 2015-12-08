@@ -8,7 +8,7 @@ import play.libs.Akka
 import services.{UserService, DI, AppConfiguration}
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
-import models.{Role, ServerStartTime, CORSFilter, ExtractionInfoSetUp, JobsScheduler}
+import models._
 import java.util.Calendar
 import play.api.mvc.WithFilters
 import akka.actor.Cancellable
@@ -40,6 +40,8 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
       users.updateRole(Role.Viewer)
     }
 
+    // set default metadata definitions
+    MetadataDefinition.registerDefaultDefinitions()
 
     extractorTimer = Akka.system().scheduler.schedule(0 minutes, 5 minutes) {
       ExtractionInfoSetUp.updateExtractorsInfo()

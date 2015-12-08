@@ -1,10 +1,36 @@
 @(space: ProjectSpace, userRoleMap: Map[User, String])(implicit user: Option[models.User])
-
+@import api.Permission
 <div class="row ds-section-sm">
-    <h3>Other Actions for Space</h3>
-    <br />
-
     <ul class="list-unstyled">
+        @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
+            <li><a href="@routes.Spaces.manageUsers(space.id)" class="btn btn-link btn-xs btn-margins">
+                <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
+            </a></li>
+        } else {
+            <li><a href="@routes.Spaces.manageUsers(space.id)" class="btn btn-link btn-xs disabled btn-margins">
+                <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
+            </a></li>
+        }
+
+        <!-- If the user can edit this space, the following are displayed; otherwise they are displayed and disabled, to provide a consistent UE. -->
+        @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
+            <li><a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-link btn-xs btn-margins">
+                <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
+            </a></li>
+            <li><a href="@routes.Spaces.selectExtractors(space.id)" class="btn btn-link btn-xs btn-margins">
+                <span class = "glyphicon glyphicon-fullscreen" aria-hidden="true"></span> Extractors
+            </a></li>
+        } else {
+            <li><a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-link btn-xs disabled btn-margins">
+                <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
+            </a></li>
+            <li><a href="@routes.Spaces.selectExtractors(space.id)" class="btn btn-link btn-xs disabled btn-margins">
+                <span class = "glyphicon glyphicon-fullscreen" aria-hidden="true"></span> Extractors
+            </a></li>
+        }
+        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))) {
+            <li><a class = "btn btn-xs btn-link btn-margins" href="@routes.Spaces.stagingArea(space.id)" title="Staging Area"><span class="glyphicon glyphicon-briefcase"></span> Staging Area</a></li>
+        }
         <li>@spaces.follow(space)</li>
         <li>@spaces.requestAuthorization(space, userRoleMap)</li>
     </ul>

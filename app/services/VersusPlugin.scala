@@ -1,6 +1,7 @@
 package services
 
 import models.{ SearchResultFile, SearchResultPreview, PreviewFilesSearchResult, UUID }
+import play.api.mvc.Request
 import play.api.{ Plugin, Logger, Application }
 import play.api.libs.json.{ Json, JsValue }
 import play.api.libs.ws.{ WS, Response }
@@ -33,10 +34,11 @@ class VersusPlugin(application: Application) extends Plugin {
   /*
  * This method sends the file's url to Versus for the extraction of descriptors from the file
  */
-  def extract(fileid: UUID): Future[Response] = {
+  def extract(fileid: UUID)(implicit request: Request[Any]): Future[Response] = {
     val configuration = play.api.Play.configuration
-    val client = configuration.getString("versus.client").getOrElse("")
-    val fileUrl = client + "/api/files/" + fileid + "/blob?key=" + configuration.getString("commKey").get
+    val key = "?key=" + configuration.getString("commKey").get
+    val https = controllers.Utils.https(request)
+    val fileUrl = api.routes.Files.download(fileid).absoluteURL(https) + key
     val host = configuration.getString("versus.host").getOrElse("")
 
     val extractUrl = host + "/extract"
@@ -313,13 +315,14 @@ class VersusPlugin(application: Application) extends Plugin {
    *  - could be preview of video file - first frame of each shot of a video, e.g. produced by 'cinemetrics' extractor
    *  - could be a preview of still image file - e.g. produced by 'face' or 'census' extractor
    */
-  def indexPreview(previewId: UUID, fileType: String) {
+  def indexPreview(previewId: UUID, fileType: String)(implicit request: Request[Any]) {
     //called from /app/api/Indexes.scala->index()  which is called from extractors,
     //(e.g. cinemetrics extractor ->uploadShot, or from face extractor, etc)        
     val configuration = play.api.Play.configuration
-    val client = configuration.getString("versus.client").getOrElse("")
+    val key = "?key=" + configuration.getString("commKey").get
+    val https = controllers.Utils.https(request)
+    val prevURL = api.routes.Previews.download(previewId).absoluteURL(https) + key
     val host = configuration.getString("versus.host").getOrElse("")
-    val prevURL = client + "/api/previews/" + previewId + "?key=" + configuration.getString("commKey").get
 
     //find out what extractor created this preview
     val extractorId = previews.getExtractorId(previewId)
@@ -341,14 +344,15 @@ class VersusPlugin(application: Application) extends Plugin {
    * Sends request to indexes that (1)contain whole files (as opposed to sections) and (2)of matching fileType
    *
    */
-  def indexFile(fileId: UUID, fileType: String) {
+  def indexFile(fileId: UUID, fileType: String)(implicit request: Request[Any]) {
     //called from /app/controllers/Files.scala->upload()
     val configuration = play.api.Play.configuration
-    val client = configuration.getString("versus.client").getOrElse("")
 
     //fileURL will be used by versus comparison resource to get file's bytes
     //need 'blob' in fileURL
-    val fileURL = client + "/api/files/" + fileId + "/blob?key=" + configuration.getString("commKey").get
+    val key = "?key=" + configuration.getString("commKey").get
+    val https = controllers.Utils.https(request)
+    val fileURL = api.routes.Files.download(fileId).absoluteURL(https) + key
     //indexes that have TYPE parameter contain sections, and indexes that don't have TYPE parameter contain whole files.
     //go through all indexes and find ones that DONT'T have the TYPE param and send file for indexing in these indexes.
     for (indexList <- getIndexesAsFutureList()) {
@@ -455,23 +459,20 @@ class VersusPlugin(application: Application) extends Plugin {
 
   def queryIndexForURL(fileURL: String, indexId: String): Future[List[PreviewFilesSearchResult]] = {
     Logger.trace("VersusPlugin - queryIndexForURL")
-    val configuration = play.api.Play.configuration
-    val client = configuration.getString("versus.client").getOrElse("")
-    val host = configuration.getString("versus.host").getOrElse("")
     queryIndex(fileURL, indexId)
   }
 
   /*
    * Searches for entries similar to the input file, which is already in the db.
    */
-  def queryIndexForExistingFile(inputFileId: UUID, indexId: String): Future[List[PreviewFilesSearchResult]] = {
+  def queryIndexForExistingFile(inputFileId: UUID, indexId: String)(implicit request: Request[Any]): Future[List[PreviewFilesSearchResult]] = {
     //called when multimedia search -> find similar is clicked    
     Logger.trace("VersusPlugin - queryIndexForExistingFile  - file id = " + inputFileId)
 
     val configuration = play.api.Play.configuration
-    val client = configuration.getString("versus.client").getOrElse("")
-    val host = configuration.getString("versus.host").getOrElse("")
-    val queryStr = client + "/api/files/" + inputFileId + "/blob?key=" + configuration.getString("commKey").get
+    val key = "?key=" + configuration.getString("commKey").get
+    val https = controllers.Utils.https(request)
+    val queryStr = api.routes.Files.download(inputFileId).absoluteURL(https) + key
 
     queryIndex(queryStr, indexId)
   }
@@ -479,11 +480,12 @@ class VersusPlugin(application: Application) extends Plugin {
   /*
    * Searches for entries similar to the new query file (NOT in the db, just uploaded by the user)
    */
-  def queryIndexForNewFile(newFileId: UUID, indexId: String): Future[List[PreviewFilesSearchResult]] = {
+  def queryIndexForNewFile(newFileId: UUID, indexId: String)(implicit request: Request[Any]): Future[List[PreviewFilesSearchResult]] = {
     Logger.trace("queryIndexForNewFile")
     val configuration = play.api.Play.configuration
-    val client = configuration.getString("versus.client").getOrElse("")
-    val queryStr = client + "/api/queries/" + newFileId + "?key=" + configuration.getString("commKey").get
+    val key = "?key=" + configuration.getString("commKey").get
+    val https = controllers.Utils.https(request)
+    val queryStr = api.routes.Files.downloadquery(newFileId).absoluteURL(https) + key
     queryIndex(queryStr, indexId)
   }
 
@@ -596,16 +598,17 @@ class VersusPlugin(application: Application) extends Plugin {
    * the results are reorganized as a hash map of (file url, proximity) touples.
    * Note: might be reorganized in the future to use queryIndex method
    */
-  def queryIndexSorted(inputFileId: String, indexId: String): Future[scala.collection.immutable.HashMap[String, Double]] = {
+  def queryIndexSorted(inputFileId: String, indexId: String)(implicit request: Request[Any]): Future[scala.collection.immutable.HashMap[String, Double]] = {
     Logger.trace("VersusPlugin.queryIndexSorted, indexId = " + indexId)
     val configuration = play.api.Play.configuration
     val host = configuration.getString("versus.host").getOrElse("")
-    val client = configuration.getString("versus.client").getOrElse("")
 
     //if searching for file already uploaded previously, use api/files
     // val queryStr = client + "/api/files/" + inputFileId + "/blob?key=" + configuration.getString("commKey").get
     //if searching for a new file, i.e.  uploaded just now, use api/queries
-    val queryStr = client + "/api/queries/" + inputFileId + "?key=" + configuration.getString("commKey").get
+    val key = "?key=" + configuration.getString("commKey").get
+    val https = controllers.Utils.https(request)
+    val queryStr = api.routes.Files.downloadquery(UUID(inputFileId)).absoluteURL(https) + key
     val responseFuture: Future[Response] = WS.url(host + "/indexes/" + indexId + "/query").post(Map("infile" -> Seq(queryStr)))
 
     //example: queryIndexUrl = http://localhost:8080/api/v1/indexes/a885bad2-f463-496f-a881-c01ebd4c31f1/query

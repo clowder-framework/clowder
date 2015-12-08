@@ -1,8 +1,10 @@
 package unit
 
 import java.util.Date
-import models.{Tag, UUID, File}
+import models.{Tag, UUID, File, Metadata, UserAgent}
 import securesocial.core.{AuthenticationMethod, IdentityId, SocialUser}
+import java.net.URL
+import play.api.libs.json.JsObject
 
 /**
  * Mixin of default data to use for testing.
@@ -17,8 +19,9 @@ trait TestData {
     email = Some("john@doe.com"),
     avatarUrl = None,
     authMethod = AuthenticationMethod.UserPassword)
-
+  
   var testFile = File(id = UUID.generate, filename = "foo.txt", author = testUser, uploadDate =  new Date, contentType = "text/plain")
 
   var testTag = Tag(UUID.generate, "foo", None, None, new Date)
-}
+    
+  }

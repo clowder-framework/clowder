@@ -5,22 +5,10 @@
     
     var dataset_id = Configuration.dataset_id;
 
-	// setting up ajax call to get metadata from the file
-	var req = $.ajax({
-		type: "GET",
-		url: "/api/datasets/"+dataset_id+"/technicalmetadatajson",
-		dataType: "json"
-	});
-
-	req.done(function(data){
-		console.log("Metadata on dataset: ");
-		console.log(data);
-	});
-
 	// setting up ajax call to get file from the dataset
 	var file_req = $.ajax({
 		type: "GET",
-		url: "/api/datasets/"+dataset_id+"/listFiles",
+		url: jsRoutes.api.Datasets.datasetFilesList(dataset_id).url,
 		dataType: "json"
 	});
 
@@ -41,76 +29,57 @@
 			array.push({occurences: counts[x], mime: x});
 		}
 
-		$.getScript("http://d3js.org/d3.v3.min.js", function() {
-			$.getScript(Configuration.path + "d3.legend.js", function() {
+		if (array.length > 0) {
+			// add css
+			$("<link/>", {
+				rel: "stylesheet",
+				type: "text/css",
+				href: Configuration.path + "main.css"
+			}).appendTo(Configuration.div);
 
-				$(Configuration.div).append('<h4>File Types</h4>');
+			$(Configuration.div).append('<h4>File Types</h4>');
 
-				// add css
-				$("<link/>", {
-					rel: "stylesheet",
-					type: "text/css",
-					href: Configuration.path + "main.css"
-				}).appendTo(Configuration.div);
+			$.getScript(Configuration.path + "/../../../d3js/d3.v3.min.js", function () {
+				$.getScript(Configuration.path + "/../../../d3js/d3.legend.js", function () {
+					var width = 500,
+						height = 250,
+						radius = Math.min(width, height) / 2;
 
-				var width = 300,
-					height = 250,
-					radius = Math.min(width, height) / 2;
+					var color = d3.scale.category20();
+					var arc = d3.svg.arc()
+						.outerRadius(radius - 50)
+						.innerRadius(radius - 80);
 
-				var color = d3.scale.category20()
-				//var color = d3.scale.ordinal()
-				//	.range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+					var pie = d3.layout.pie()
+						.sort(null)
+						.value(function (d) {
+							return d.occurences;
+						});
+					// container
+					var svg = d3.select(Configuration.div).append("svg")
+						.attr("width", width)
+						.attr("height", height)
+						.append("g")
+						.attr("transform", "translate(" + (width / 2 - 150) + "," + height / 2 + ")");
 
-				var arc = d3.svg.arc()
-					.outerRadius(radius - 50)
-					.innerRadius(radius - 80);
+					var g = svg.selectAll(".arc")
+						.data(pie(array))
+						.enter().append("g")
+						.attr("class", "arc");
 
-				var pie = d3.layout.pie()
-					.sort(null)
-					.value(function(d) { return d.occurences; });
+					g.append("path")
+						.attr("d", arc)
+						.attr("data-legend", function(d) { return d.data.mime; })
+						.style("fill", function(d) { return color(d.data.mime); });
 
-				var svg = d3.select(Configuration.div).append("svg")
-					.attr("width", width)
-					.attr("height", height)
-					.append("g")
-					.attr("transform", "translate(" + (width / 2 - 50)+ "," + height / 2 + ")");
-
-				var g = svg.selectAll(".arc")
-					.data(pie(array))
-					.enter().append("g")
-					.attr("class", "arc");
-
-				g.append("path")
-					.attr("d", arc)
-					.attr("data-legend", function(d){return d.data.mime})
-					.style("fill", function(d) { return color(d.data.mime); });
-
-				var legend = svg.append("g")
-					.attr("class", "legend")
-					.attr("transform", "translate("+ (radius - 35) +","+(-radius + 35)+")")
-					.style("font-size", "12px")
-					.call(d3.legend)
-
-				// use if you want labels instead of legend
-				//g.append("text")
-				//	.attr("transform", function(d) {
-				//		var desired = 140;
-				//		var c = arc.centroid(d),
-				//			x = c[0],
-				//			y = c[1],
-				//			h = Math.sqrt(x*x + y*y); // hypotenuse
-				//		return "translate(" + (x/h * desired) +  ',' + (y/h * desired) +  ")";
-				//	})
-				//	.attr("dy", ".35em")
-				//		.attr("text-anchor", function(d) { // which side
-				//			return (d.endAngle + d.startAngle)/2 > Math.PI ?
-				//				"end" : "start";
-				//		})
-				//	.attr("display", function(d) {
-				//		return d.endAngle - d.startAngle > 0.01 ? "block" : "none";
-				//	})
-				//	.text(function(d) { return d.data.mime; });
+					var legend = svg.append("g")
+						.attr("class", "legend")
+						.attr("transform", "translate("+ (radius - 25) +","+(-radius + 35)+")")
+						//.attr("style", "outline: thin solid lightGrey")
+						.style("font-size","12px")
+						.call(d3.legend);
+				});
 			});
-		});
+		}
 	});
 }(jQuery, Configuration));

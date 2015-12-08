@@ -8,8 +8,6 @@ import play.api.libs.concurrent.Execution.Implicits._
 /**
  * Dataset metadata automatic dump service.
  *
- * @author Constantinos Sophocleous
- *
  */
 class DatasetsMetadataAutodumpService (application: Application) extends Plugin {
 

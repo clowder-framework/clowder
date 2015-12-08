@@ -1,16 +1,19 @@
 @(collections: List[Collection], space: String)(implicit user: Option[models.User])
-
+@import api.Permission
 <h3>Collections</h3>
 @if(collections.size == 0) {
-    <a id="create-collection"href="@routes.Collections.newCollection(Some(space))" class="btn btn-primary btn-xs">
+    @if(user.isDefined &&  Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
+        <a id="create-collection"href="@routes.Collections.newCollection(Some(space))" class="btn btn-primary btn-xs">
+            <span class="glyphicon glyphicon-ok"></span> Create Collection
+        </a>
+    } else {
+        @if(user.isDefined) {
+            <p> Please request access to add collections to this space</p>
+        } else {
+            <p> There are no collections associated with this space. </p>
+        }
+    }
 
-        Create Collection
-    </a>
 } else {
     @spaces.collectionsGrid(collections, space)
-}
-@if(!user.isDefined) {
-    <script type="text/javascript">
-        $('#create-collection').addClass('disabled');
-    </script>
 }
