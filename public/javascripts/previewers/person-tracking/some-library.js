@@ -399,10 +399,10 @@
                     $(Configuration.tab).append("<div id='persontracking' style='width: 750px; height: 400px; float: left; margin-top: 10px;'></div>");
                     $("#persontracking").append("<div id='placeholder' style='width: 550px; height: 400px; margin-right: 10px; float: left;'></div>");
                     $("#persontracking").append("<div id='legend' style='width: 190px; max-height: 350px; overflow: auto; margin-top: 5px; float: left;'></div>");
-                    $("#persontracking").append("<span class=button-bar> <button id='btnSaveChanges' onClick='savePersonTrackingChanges(); return false;' class='usr_md_submit btn btn-default btn-xs' " + 
-                                                " style='margin-right: 10px; margin-top: 5px; float: left; display:none;'>Save</button>"+
+                    $("#persontracking").append("<span class=button-bar> <button id='btnSaveChanges' onClick='savePersonTrackingChanges(); return false;' class='usr_md_submit btn btn-primary btn-xs' " +
+                                                " style='margin-right: 10px; margin-top: 5px; float: left; display:none;'><span class='glyphicon glyphicon-send'></span> Save</button>"+
                                                 "<button id='btnCancelChanges' onClick='cancelPersonTrackingChanges(); return false;' class='usr_md_submit btn btn-default btn-xs' " + 
-                                                "style='margin-right: 10px; margin-top: 5px; float: left; display:none;'>Cancel</button></span>");
+                                                "style='margin-right: 10px; margin-top: 5px; float: left; display:none;'><span class='glyphicon glyphicon-remove'></span> Cancel</button></span>");
 
                     var canvas = $("#canvas");
                     var video = $("#video");

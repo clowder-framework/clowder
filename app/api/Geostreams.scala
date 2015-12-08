@@ -24,6 +24,7 @@ import play.api.libs.iteratee.{Enumeratee, Enumerator}
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
+import com.wordnik.swagger.annotations.ApiOperation
 
 /**
  * Geostreaming endpoints. A geostream is a time and geospatial referenced
@@ -266,6 +267,18 @@ object Geostreams extends ApiController {
     current.plugin[PostgresPlugin] match {
       case Some(plugin) => {
         if (plugin.deleteSensor(id.toInt)) jsonp("""{"status":"ok"}""", request)
+        else jsonp("""{"status":"error"}""", request)
+      }
+      case None => pluginNotEnabled
+    }
+  }
+  
+  @ApiOperation(value = "Delete Geostream Datapoint", notes = "Delete datapoint from geostream database.", responseClass = "None", httpMethod = "DELETE")
+  def deleteDatapoint(id: String) = PermissionAction(Permission.DeleteGeoStream) { implicit request =>
+    Logger.debug("Delete datapoint " + id)
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        if (plugin.deleteDatapoint(id.toInt)) jsonp("""{"status":"ok"}""", request)
         else jsonp("""{"status":"error"}""", request)
       }
       case None => pluginNotEnabled

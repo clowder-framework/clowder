@@ -25,19 +25,17 @@
                 @if(user.isDefined) {
                     @if(showAll == false) {
                         <div class="btn-group btn-group-sm pull-right">
-                            <a class="btn btn-default" id="allspace">All Spaces</a>
-                                <a class="btn btn-default active" id="myspace">
-                                    My Spaces</a>
+                            <a class="btn btn-default" id="allspace"><span class="glyphicon glyphicon-th"></span> All Spaces</a>
+                            <a class="btn btn-default active" id="myspace"><span class="glyphicon glyphicon-stop"></span> My Spaces</a>
                         </div>
                     } else {
                         <div class="btn-group btn-group-sm pull-right">
-                            <a class="btn btn-default active" id="allspace">All Spaces</a>
-                                <a class="btn btn-default" id="myspace">
-                                    My Spaces</a>
+                            <a class="btn btn-default active" id="allspace"><span class="glyphicon glyphicon-th"></span> All Spaces</a>
+                            <a class="btn btn-default" id="myspace"><span class="glyphicon glyphicon-stop"></span> My Spaces</a>
                         </div>
                     }
                 }
-                <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new space">Create</a>
+                <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new space"><span class="glyphicon glyphicon-ok"></span> Create</a>
             </div>
         </div>
                 <script>
@@ -218,10 +216,10 @@
                 <div class="col-md-12">
                     <ul class="pager">
                         @if(prev != "") {
-                            <li class="previous"><a id="prevlink" title="Page backwards" href="#">Previous</a></li>
+                            <li class="previous"><a class="btn btn-link" id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span> Previous</a></li>
                         }
                         @if(next != "") {
-                            <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next</a></li>
+                            <li class ="next"><a class="btn btn-link" id="nextlink" title="Page forwards" href="#">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
                         }
                     </ul>
                 </div>

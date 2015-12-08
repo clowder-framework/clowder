@@ -17,7 +17,7 @@
                var form="<form class=\"form-inline\">";               
                form += "<textarea id=\"editField_" + id + "\" class=\"comment-input-box\"></textarea>";
                form += "<br />";
-               form += "<button class=\"btn btn-primary btn-sm\" title=\"Submit Edit\" onclick=\"return updateComment('" + id + "');\" style=\"margin-right:5px;\"><span class=\"glyphicon glyphicon-ok\"></span> Submit</button>";
+               form += "<button class=\"btn btn-primary btn-sm\" title=\"Submit Edit\" onclick=\"return updateComment('" + id + "');\" style=\"margin-right:5px;\"><span class=\"glyphicon glyphicon-saved\"></span> Submit</button>";
                form += "<button class=\"btn btn-default btn-sm\" title=\"Cancel\" onclick=\"return cancelEditComment('" + id + "');\"><span class=\"glyphicon glyphicon-remove\"></span> Cancel</button>";
                form += "</form>";
                $("#comment-body_" + id).html("<div class=\"comment-edit\" id=\"edit-form_" + id + "\">" + form + "</div>");

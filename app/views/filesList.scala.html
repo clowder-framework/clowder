@@ -20,7 +20,7 @@
     <div class="col-md-10">
     </div>
     <div class="col-md-1">
-        <a class="btn btn-primary btn-sm pull-right" href="@routes.Files.upload()" title="Upload a new file">Upload</a>
+        <a class="btn btn-primary btn-sm pull-right" href="@routes.Files.upload()" title="Upload a new file"><span class="glyphicon glyphicon-upload"></span> Upload</a>
     </div>
     <div class="col-md-1">
         <div class="btn-group btn-group-sm pull-right">                                        
@@ -187,10 +187,10 @@
         <ul class="pager">
             <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
             @if(prev != "") {
-                <li class="previous"><a id="prevlink" title="Page backwards" href="#">Previous</a></li>
+                <li class="previous"><a class="btn btn-link" id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span> Previous</a></li>
             }
             @if(next != "") {
-                <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next</a></li>
+                <li class ="next"><a class="btn btn-link" id="nextlink" title="Page forwards" href="#">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
             }
         </ul>
     </div>
