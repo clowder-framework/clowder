@@ -20,12 +20,14 @@
         myForm("email"),
         '_label -> "Email Address",
         'placeholder -> "Email",
+        'class -> "form-control",
         '_error -> myForm.error("email")
       )
       @inputPassword(
         myForm("password"),
         '_label -> "Password",
         '_error -> myForm.error("password"),
+        'class -> "form-control",
         'placeholder -> "Password" 
       )
     </fieldset>

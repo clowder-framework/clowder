@@ -52,28 +52,24 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
     <table style="width: 100%; margin-bottom: 40px; margin-top: 40px;">
         <tr>
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Name:</td>
-            <td style="width: 35%; vertical-align:top;" class="input-table-cell">
+            <td style="width: 80%; vertical-align:top;" class="input-table-cell">
                 <label id="namelabel" class="hiddencomplete">Nothing</label>
-                <textarea cols=40 rows=4 type="text" id="name"></textarea>                                            
-            </td>
-            <td style="vertical-align:top;" class="input-table-cell">
+                <textarea class="form-control" cols=40 rows=4 type="text" id="name"></textarea>
                 <span class="error hiddencomplete" id="nameerror"> The name is a required field</span><br>
             </td>
         </tr>
         <tr>
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Description:</td>
-            <td style="width: 35%; vertical-align:top;" class="input-table-cell" id="desccell">
+            <td style="width: 85%; vertical-align:top;" class="input-table-cell" id="desccell">
                 <label id="desclabel" class="hiddencomplete">Nothing</label>
-                <textarea cols=40 rows=4 type="text" id="description"></textarea>                                            
-            </td>
-            <td style="vertical-align:top;" class="input-table-cell">
+                <textarea class="form-control" cols=40 rows=4 type="text" id="description"></textarea>
                 <span class="error hiddencomplete" id="descerror"> This description is a required field</span><br>
             </td>
         </tr>
         <tr>
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Share with spaces (optional):</td>
             <td style="width: 35%; vertical-align:top;" class="input-table-cell" id="desccell">
-                <select name="space" id="spaceid" style="width: 415px;" class ="chosen-select" multiple>
+                <select name="space" id="spaceid" style="width: 415px;" class ="form-control chosen-select" multiple>
 
 			        @spaces.map { space =>  
 			            <option id="@(space.id)" value="@(space.id)">@(space.name)</option>
@@ -217,9 +213,10 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
 
 <script language = "javascript">
     $(".chosen-select").chosen({
-        width: "90%",
+        width: "100%",
         placeholder_text_multiple: "Select spaces for this dataset."
     })
+
 </script>
 
 <script language = "javascript">
@@ -237,6 +234,7 @@ of the blueimp jQuery File Upload library. An open source project locatd here: h
         @for(space <- spaces) {
             idNameObj["@space.name"] = "@space.id";
         }
+        $(".chosen-choices").addClass("form-control");
     });
 
     $(".chosen-select").chosen().change(function(event, params) {
