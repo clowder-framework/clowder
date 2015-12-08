@@ -59,14 +59,14 @@
                     <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
                         <a href="@(routes.Datasets.addToDataset(dataset.id))"
-                        class="btn btn-default btn-sm btn-margin-bottom" id="fileUploadBtn" title="Add File to Dataset" role="button">
-                            <span class="glyphicon glyphicon-export"></span> Add Files
+                        class="btn btn-link btn-sm btn-margin-bottom" id="fileUploadBtn" title="Add File to Dataset" role="button">
+                            <span class="glyphicon glyphicon-plus"></span> Add Files
                         </a>
                     }
                     @if(dataset.files.length > 0 && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
                         <a id='download-dataset-url' href="#"
                         onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id').url, '_blank');"
-                        class="btn btn-default btn-sm requiresLogin btn-margin-bottom" title="Download All Files as Zip" role="button">
+                        class="btn btn-link btn-sm requiresLogin btn-margin-bottom" title="Download All Files as Zip" role="button">
                             <span class="glyphicon glyphicon-download-alt"></span>
                             Download All Files
                         </a>
@@ -75,16 +75,16 @@
                     @datasets.follow(dataset)
                     @if(user.isDefined && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
                         @if(toPublish && currentSpace.isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, UUID(currentSpace.getOrElse(""))))) {
-                            <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-default btn-sm btn-margin-bottom">
+                            <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-link btn-sm btn-margin-bottom">
                                 <span class="glyphicon glyphicon-globe"></span> Publish
                             </a>
                         } else {
                             @if(dataset.spaces.size > 0) {
-                                <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-default btn-sm btn-margin-bottom">
+                                <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-link btn-sm btn-margin-bottom">
                                     <span class="glyphicon glyphicon-globe"></span> Publish
                                 </a>
                             } else {
-                                <button class="btn btn-default btn-sm btn-margin-bottom" disabled>
+                                <button class="btn btn-link btn-sm btn-margin-bottom" disabled>
                                     <span class="glyphicon glyphicon-globe"></span> Publish
                                 </button>
                             }
@@ -193,7 +193,7 @@
         function updateTitle() {
             var cur_title = $('#datasettitle').text();
             $('<input type="text" id = "title_input" class="form-control"/>').insertAfter($('#datasettitle'));
-            $('<button id="update_title" class= "btn btn-sm btn-primary" onclick="saveTitle()"> Save </button>').insertAfter($('#title_input'));
+            $('<button id="update_title" class= "btn btn-sm btn-primary" onclick="saveTitle()"><span class="glyphicon glyphicon-send"></span> Save </button>').insertAfter($('#title_input'));
             $('#title_input').val(cur_title);
             $('#datasettitle').text("");
             $('#edit-title').css("display", "none");
@@ -240,7 +240,7 @@
 		$('<div class="edit_desc"> </div>').insertAfter($('#ds_description'));
 		$('.edit_desc').append('<textarea id = "desc_input" class="form-control"/>');
 		$('.edit_desc').append('<br/>');
-		$('.edit_desc').append('<button id = "update_desc" class= "btn btn-sm btn-primary" onclick = "saveDescription()"> Save </button>')
+		$('.edit_desc').append('<button id = "update_desc" class= "btn btn-sm btn-primary" onclick = "saveDescription()"><span class="glyphicon glyphicon-send"></span> Save </button>')
 		$('#desc_input').val(cur_description);
 		$('#ds_description').text("");
 		$('#edit-description').css("display", "none");
