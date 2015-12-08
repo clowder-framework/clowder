@@ -1,4 +1,4 @@
-@(myForm: Form[controllers.spaceFormData], title:String, submitButton: Html)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(myForm: Form[controllers.spaceFormData], title:String, submitButton: Html, spaceId: Option[UUID])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f)}
@@ -143,6 +143,15 @@
       }
 
     });
+  });
+
+  $('#cancel_space').click(function() {
+    if(!@spaceId.isEmpty) {
+       window.location.replace("@routes.Spaces.getSpace(spaceId.getOrElse(new UUID("")))");
+    } else {
+      window.location.replace("@routes.Spaces.list()");
+    }
+
   });
   </script>
 }

@@ -766,7 +766,7 @@ table#sensorsListTable > thead > tr > th.headerSortDown {
 }
 
 .edit-tab {
-    padding-left: 2em;
+    margin-left: 5px;
 }
 
 .align-right {
@@ -852,6 +852,10 @@ table#nested-space-role-pairs>tbody>tr>td {
 
 table.borderless tbody tr td, table.borderless tbody tr th {
     border: none;
+}
+
+.upload-files-buttons {
+    padding-top: 20px;
 }
 
 .margin-top-h{

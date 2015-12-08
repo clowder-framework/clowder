@@ -29,11 +29,11 @@
 			<!-- left column -->
 		<div class="col-md-8 col-right-border">
 
-			<div class="page-header">
+			<div id="coll-title" class="page-header">
 				<h1 id ="collectiontitle" class="inline">@Html(collection.name)</h1>
 				@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
-					<h3 class="inline align-right">
-						<a id="edit-title" href="javascript:updateTitle()">
+					<h3 id="h-edit-title" class="hiddencomplete">
+						<a id="edit-title" href="javascript:updateTitle()" edit="Click to edit title">
 							<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
 						</a>
 					</h3>
@@ -48,10 +48,10 @@
 										<a href= "@routes.Profile.viewProfile(collection.author.email)"> @collection.author.fullName </a>
 									</dd>
 								<dt>Description:</dt>
-								<dd ><p id="collection_desc"  class="inline">@Html(collection.description)</p>
+								<dd id="aboutdesc"><p id="collection_desc"  class="inline">@Html(collection.description)</p>
 									@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
-										<a id="edit-description" href="javascript:updateDescription()">
-											<span class="glyphicon glyphicon-edit edit-tab" aria-hidden="true"></span>
+										<a class="hiddencomplete" id="edit-description" href="javascript:updateDescription()" title ="Click to edit description">
+											<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
 										</a>
 									}
 								</dd>
@@ -141,50 +141,32 @@
 			<div class="row">
 			<div class="col-md-12">
 				<h3>Datasets in the collection</h3>
-				<table id='collectionDatasetsTable' class="table table-bordered table-hover">
-					<thead>
-						<tr>
-							@if(user.isDefined) {
-								<th style="width: 27%">Name</th>
-								<th style="width: 17%">Created</th>
-								<th style="width: 36%">Description</th>
-								<th style="width: 10%"></th>
-								<th style="width: 10%"></th>
-							}
-							@if(!user.isDefined) {
-								<th style="width: 27%">Name</th>
-								<th style="width: 17%">Created</th>
-								<th style="width: 36%">Description</th>
-								<th style="width: 20%"></th>
-							}
-						</tr>
-					</thead>
-					<tbody>
-						@datasetsInCollection.map { dataset =>
-							<tr data-datasetId="@(dataset.id.toString)">
-								<td><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></td>
-								<td>@dataset.created.format("MMM dd, yyyy")</td>
-								<td>@Html(dataset.description)</td>
-								<td>
-									@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
-									@if(dataset.thumbnail_id.isEmpty){No thumbnail available}
-								</td>
-								@if(user.isDefined) {
-								<td><a href="#!" onclick="removeDataset('@(dataset.id.toString)',event)">Remove</a>
-									<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-									@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
-										<button onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Detach the Dataset">
-										<span class="glyphicon glyphicon-trash"></span></button>
-									} else {
-										<button disabled onclick="removeDataset('@(dataset.id.toString)',event)" class="btn btn-link" style="text-align:right" title="Detach the Dataset">
-										<span class="glyphicon glyphicon-trash"></span></button>
-									}
-								</td>
-								}
-							</tr>
-						}
-					</tbody>
-				</table>
+					@datasetsInCollection.map { dataset =>
+						<div class="panel panel-default" id="@dataset.id">
+							<div class="panel-body">
+								<div class="row">
+									<div class="col-md-2 col-sm-2 col-lg-2">
+										@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
+									</div>
+									<div class="col-md-10 col-sm-10 col-lg-10">
+										<div><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></div>
+										<div>@Html(dataset.description)</div>
+										<div>@dataset.created.format("MMM dd, yyyy")</div>
+										@if(user.isDefined) {
+											<div>
+												@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
+													<a onclick="removeDataset('@(dataset.id.toString)',event)" title="Detach the Dataset">
+														<span class="glyphicon glyphicon-trash"></span></a>
+												}
+											</div>
+										}
+									</div>
+								</div>
+							</div>
+						</div>
+
+					}
+
 				<ul class="pager" id="datasetsPager">
 					<li class="previous" id="datasetsPagerPrev" style="visibility:hidden;"><a class="btn btn-link" href="#!"><span class="glyphicon glyphicon-chevron-left"></span> Previous</a></li>
 					<li class ="next" id="datasetsPagerNext" style="visibility:hidden;"><a class="btn btn-link" href="#!">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
@@ -222,16 +204,29 @@
 
 
 	var collectionId = "@collection.id.stringify";
-
+	var cur_title;
 	function updateTitle() {
-	 var cur_title = $('#collectiontitle').text();
-	 $('<input type = "text" id="title_input" class="form-control"/>').insertAfter($('#collectiontitle'));
-	 $('<button id="update_title" class="btn btn-sm btn-primary" onclick="saveTitle()"><span class="glyphicon glyphicon-send"></span> Save</button>').insertAfter($('#title_input'));
+	 cur_title = $('#collectiontitle').text();
+	 $('<div class="inline edit_title_div"> </span>').insertAfter($('#collectiontitle'));
+	 $('.edit_title_div').append('<input type = "text" id="title_input" class="form-control"/>');
+	 $('.edit_title_div').append('<div class="hiddencomplete" id="title-error"> <span class="error"> Title is required </span> </div>');
+	 $('.edit_title_div').append('<button id="update_title" class="btn btn-sm btn-primary btn-margins" onclick="saveTitle()"> <span class="glyphicon glyphicon-send"></span> Save </button>');
+	 $('.edit_title_div').append('<button id="cancel_title" class="btn btn-sm btn-default btn-margins edit-tab" onclick="cancelTitle()"> <span class="glyphicon glyphicon-remove"></span> Cancel </button>');
+
 	 $('#title_input').val(cur_title);
 	 $('#collectiontitle').text("");
-	 $('#edit-title').css("display", "none");
+	 $('#h-edit-title').css("display", "none");
+	 $('#h-edit-title').addClass("hiddencomplete");
+
 	}
+
 	function saveTitle() {
+		if($('#title_input').val().length < 1) {
+			$('#title-error').show();
+			return false;
+		} else {
+			$('#title-error').addClass('hiddencomplete');
+		}
 		var name = $('#title_input').val();
 		var encName = htmlEncode(name);
 		jsonData = JSON.stringify({"name": encName});
@@ -244,10 +239,11 @@
 
 		request.done(function(response, textStatus, jqXHR) {
 			$('#collectiontitle').text(encName.replace(/\n/g, "<br>"));
-			$('#title_input').remove();
-			$('#update_title').remove();
-			$('#edit-title').css("display", "inline");
+            $('.edit_title_div').remove();
 			$('#collectiontitle').css("display", "inline");
+			$('#h-edit-title').removeClass("inline");
+			$('#h-edit-title').css("display", "");
+			$('#coll-title').mouseleave();
 		});
 
 		request.fail(function(jqXHR, textStatus, errorThrown) {
@@ -259,16 +255,28 @@
 		});
 
 	}
+	function cancelTitle() {
+		$('#collectiontitle').text(cur_title);
+        $('.edit_title_div').remove();
+		$('#collectiontitle').css("display", "inline");
+		$('#h-edit-title').removeClass("inline");
+		$('#h-edit-title').css("display", "");
+		$('#coll-title').mouseleave();
+	}
+
+	var cur_description;
 
 	function updateDescription() {
-		var cur_description = $('#collection_desc').text().trim();
+		cur_description = $('#collection_desc').html().trim();
 		$('<div class = "edit_desc"></div>').insertAfter($('#collection_desc'));
-		$(".edit_desc").append('<textarea type ="text" id = "desc_input" class="form-control"/>')
+		$(".edit_desc").append('<textarea type ="text" id = "desc_input" class="form-control"/>');
 		$(".edit_desc").append('<br/>');
-		$(".edit_desc").append('<button id = "update_desc" class = "btn btn-sm btn-primary" onclick = "saveDescription()"><span class="glyphicon glyphicon-send"></span> Save</button>');
-		$('#desc_input').val(cur_description);
+		$(".edit_desc").append('<button id = "update_desc" class = "btn btn-sm btn-primary" onclick = "saveDescription()"> <span class="glyphicon glyphicon-send"></span>  Save </button>');
+		$(".edit_desc").append('<button id = "cancel_desc" class = "btn btn-default btn-sm edit-tab" onclick = "cancelDescription()"> <span class="glyphicon glyphicon-remove"></span>  Cancel </button>');
+		$('#desc_input').val(cur_description.replace(new RegExp("<br>", "g"), "\n"));
 		$('#collection_desc').text("");
 		$('#edit-description').css("display", "none");
+		$('#edit-description').addClass("hiddencomplete");
 	}
 
 	function saveDescription() {
@@ -283,11 +291,11 @@
 		});
 
 		request.done(function(response, textStatus,jqXHR) {
-			$('#collection_desc').text(encDescription.replace(/\n/g, "<br>"));
+			$('#collection_desc').html(encDescription.replace(/\n/g, "<br>"));
 			$('.edit_desc').remove();
-			$('#edit-description').css("display", "inline");
+			$('#edit-description').css("display", "");
+			$('#edit-description').removeClass("inline");
 			$('#collection_desc').css("display", "inline");
-
 		});
 
 		request.fail(function(jqXHR, textStatus, errorThrown) {
@@ -298,9 +306,35 @@
 			}
 		});
 	}
+
+	function cancelDescription() {
+		$('#collection_desc').html(cur_description);
+		$('.edit_desc').remove();
+		$('#edit-description').css("display", "");
+		$('#edit-description').removeClass("inline");
+		$('#collection_desc').css("display", "inline");
+	}
+
 	$(document).ready(function(){
 		if(@collection.spaces.size < 1 ) {
 			$('#collection-users').hide();
+		}
+		if(@Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
+			    $(document).on('mouseenter', '#coll-title', function() {
+                    $('#h-edit-title').removeClass("hiddencomplete");
+                    $('#h-edit-title').addClass("inline");
+                 }).on('mouseleave', '#coll-title', function() {
+                    $('#h-edit-title').removeClass("inline");
+                    $('#h-edit-title').addClass("hiddencomplete");
+                 });
+
+                 $(document).on('mouseenter', '#aboutdesc', function() {
+                    $('#edit-description').removeClass("hiddencomplete");
+                    $('#edit-description').addClass("inline");
+                 }).on('mouseleave', '#aboutdesc', function() {
+                    $('#edit-description').removeClass("inline");
+                    $('#edit-description').addClass("hiddencomplete");
+                 });
 		}
 
 	});
