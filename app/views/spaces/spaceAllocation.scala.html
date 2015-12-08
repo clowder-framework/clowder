@@ -34,10 +34,10 @@
 
                             @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
                                 | <a href="#" class="btn btn-link btn-xs" onclick="removeDatasetFromSpace( '@(s.id)', '@resourceId', event)" title="Remove from space">
-                                Remove</a>
+                                    <span class="glyphicon glyphicon-remove"></span>Remove</a>
                             } else {
                                  |  <a href="#" class="btn btn-link btn-xs disabled" title="Remove dataset from space">
-                                    Remove</a>
+                                    <span class="glyphicon glyphicon-remove"></span> Remove</a>
                             }
                         }
                         @if(resourceType == ResourceRef.collection) {
@@ -48,10 +48,10 @@
                             }
                             @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
                                 | <a href="#" class="btn btn-link btn-xs" onclick="removeCollectionFromSpace('@(s.id)', '@resourceId', event)" title="Remove from space">
-                                    Remove</a>
+                                    <span class="glyphicon glyphicon-remove"></span>  Remove</a>
                             } else {
                                 | <a href="#" class="btn btn-link btn-xs disabled" title="Remove collection from space">
-                                    Remove</a>
+                                    <span class="glyphicon glyphicon-remove"></span> Remove</a>
                             }
                         }
                     </div>
