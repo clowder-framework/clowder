@@ -599,9 +599,6 @@ class Files @Inject()(
   @ApiOperation(value = "Upload file(s) to a specific dataset",
     notes = "Uploads file(s), then links with the dataset. Returns file names & ids as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file to be added to the dataset.",
     responseClass = "None", httpMethod = "POST")
-  @ApiOperation(value = "max test api",
-      notes = "Will accept multiple files - it'll look for metadata matching filename in body",
-      responseClass = "None", httpMethod = "POST")
   def uploadToDatasetMulti(dataset_id: UUID) = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
      request.user match {
        case Some(user) => {
