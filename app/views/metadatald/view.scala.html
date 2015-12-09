@@ -135,7 +135,7 @@
 
 
         $(function () {
-            $('.delete-icon').on('click', function(){
+            $('.delete-icon').unbind().on('click', function(){
                 var delete_icon = $(this);
                 var request = jsRoutes.api.Metadata.removeMetadata(this.id).ajax({
                     type: 'DELETE'
@@ -150,7 +150,7 @@
                     console.error("The following error occured: " + textStatus, errorThrown);
                     var errMsg = "You must be logged in to add metadata";
                     if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                      notify("Metadata was not added due to : " + errorThrown, "error");
+                      notify("Metadata was not removed due to : " + errorThrown, "error");
                     }
                 });
             });

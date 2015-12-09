@@ -327,7 +327,7 @@ object Permission extends Enumeration {
       // for DeleteMetadata, the creator of this metadata or user with permission to delete this resource can delete metadata
       case ResourceRef(ResourceRef.metadata, id) => {
         metadatas.getMetadataById(id) match {
-          case Some(m) => m.creator.id.equals(user.identityId) || checkPermission(user, permission, m.attachedTo)
+          case Some(m) => getUserByIdentity(user).getOrElse(User.anonymous).id.equals(m.creator.id) || checkPermission(user, permission, m.attachedTo)
           case None => false
         }
       }
