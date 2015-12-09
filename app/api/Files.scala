@@ -376,8 +376,7 @@ class Files @Inject()(
    */
   def uploadUtil(request: Request[MultipartFormData[Files.TemporaryFile]], user: User, dataset_id: UUID, key: String = "",
                  index: Boolean = true, showPreviews: String = "DatasetLevel", originalZipFile: String = "",
-                 flagsFromPrevious: String = "") : List[File] =
-  {
+                 flagsFromPrevious: String = "") : List[File] = {
     datasets.get(dataset_id) match {
       // dataset_id is a valid Dataset
       case Some(dataset) => {
@@ -482,7 +481,9 @@ class Files @Inject()(
                     current.plugin[ElasticsearchPlugin].foreach {
                       _.index("data", "file", new UUID(id), List(("filename", f.filename), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("datasetId", dataset.id.toString), ("datasetName", dataset.name), ("xmlmetadata", xmlToJSON)))
                     }
-                  } else {
+                  }
+                } else {
+                  if (index.equals(true)) {
                     current.plugin[ElasticsearchPlugin].foreach {
                       _.index("data", "file", new UUID(id), List(("filename", f.filename), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("datasetId", dataset.id.toString), ("datasetName", dataset.name)))
                     }
@@ -592,21 +593,29 @@ class Files @Inject()(
     return List.empty[File]
   }
 
-
-	 // take any request, return list of files uploaded
+  /**
+   * Upload multiple files to a specific dataset
+   */
+  @ApiOperation(value = "Upload file(s) to a specific dataset",
+    notes = "Uploads file(s), then links with the dataset. Returns file names & ids as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file to be added to the dataset.",
+    responseClass = "None", httpMethod = "POST")
   @ApiOperation(value = "max test api",
       notes = "Will accept multiple files - it'll look for metadata matching filename in body",
       responseClass = "None", httpMethod = "POST")
   def uploadToDatasetMulti(dataset_id: UUID) = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
      request.user match {
-       case Some(user) => uploadUtil(request, user, dataset_id)
+       case Some(user) => {
+         val uploaded_files = uploadUtil(request, user, dataset_id)
+         var uploaded_ids = new mutable.ArrayBuffer[String](uploaded_files.length)
+         uploaded_files.map { file =>
+            uploaded_ids.append(file.id.toString)
+         }
+         Ok(toJson(Map("ids" -> uploaded_files.toList)))
+       }
        case None => BadRequest(toJson("Not authorized."))
      }
-
-     Ok(toJson(Map("status" -> "success")))
   }
-  
-  
+
   /**
    * Upload file using multipart form enconding.
    */
@@ -823,7 +832,6 @@ class Files @Inject()(
         }
       }
   }
-
 
   /**
    * Upload a file to a specific dataset
