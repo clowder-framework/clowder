@@ -1,10 +1,31 @@
-@(ex: String)
-@main("ERROR") {
+@(re: RequestHeader, ex: String)
+@main("Error") {
   <div class="row">
     <div class="col-sm-12 col-md-12 col-lg-12 text-center">
       <h2>
-        The page you were looking for could not be found.
+        <img src="@routes.Assets.at("images/catsad.jpg")"/> Sorry, there was an internal error rendering this page!
       </h2>
+
+    </div>
+    <div class="col-sm-12 col-md-12 col-lg-12 text-center">
+      <button class="btn btn-default">Send Exception</button> <p id="success" hidden>Message sent.</p>
     </div>
   </div>
+  <script>
+    $('button').on('click', function(){
+
+                var request = jsRoutes.api.Events.sendExceptionEmail('@re.toString', '@ex').ajax({
+                    type: 'GET',
+                    contentType: "application/json"
+                });
+
+                request.done(function (response, textStatus, jqXHR) {
+                  $("#success").show();
+                });
+
+                request.fail(function (jqXHR, textStatus, errorThrown){
+                    console.error("The following error occured: " + textStatus, errorThrown);
+                });
+            });
+  </script>
 }
