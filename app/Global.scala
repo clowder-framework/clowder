@@ -72,11 +72,11 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
     injector.getInstance(clazz)
   }
 
-//  override def onError(request: RequestHeader, ex: Throwable) = {
-//    Future(InternalServerError(
-//      views.html.errorPage(request, ex.toString)
-//    ))
-//  }
+  override def onError(request: RequestHeader, ex: Throwable) = {
+    Future(InternalServerError(
+      views.html.errorPage(request, ex.toString)
+    ))
+  }
 
   override def onHandlerNotFound(request: RequestHeader) = {
     Future(NotFound(
