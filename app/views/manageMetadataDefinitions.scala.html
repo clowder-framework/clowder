@@ -93,7 +93,7 @@
                     }
                 });
                 if (data['query_parameter_value']) delete data['query_parameter_value'];
-                if (data.type == "list" || data.type == "listjquery") {
+                if (data.type == "list" || data.type == "listjquery" || data.type == "scientific_variable") {
                     if (!data.definitions_url) {
                         $("#validationResults").html(
                             '<div class="alert alert-danger fade in">' +
@@ -145,6 +145,7 @@
                                 case "string" => {String}
                                 case "list" => {List}
                                 case "listjquery" => {Queryable List}
+                                case "scientific_variable" => {Scientific Variable}
                                 case "listgeocode" => {Location}
                             }
                         </td>
@@ -197,6 +198,7 @@
                                     <option value="list">List</option>
                                     <option value="listjquery">Queryable List</option>
                                     <option value="listgeocode">Location</option>
+                                    <option value="scientific_variable">Scientific Variable</option>
                                 </select>
                             </div>
                         </div>

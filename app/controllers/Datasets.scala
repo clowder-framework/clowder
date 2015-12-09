@@ -121,6 +121,7 @@ class Datasets @Inject()(
               case Some(fdset) => {
                 datasetList += fdset
               }
+              case None =>
             }
         }
 

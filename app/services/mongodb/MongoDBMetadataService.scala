@@ -66,20 +66,21 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
     for (md <- metadata.toList; if (md.creator.typeOfAgent == typeofAgent)) yield md
   }
 
-  /** Remove metadata */
+  /** Remove metadata, if this metadata does exit, nothing is executed */
   def removeMetadata(id: UUID) = {
-    val md = getMetadataById(id).getOrElse(null)
-    MetadataDAO.remove(md, WriteConcern.Safe)
-    current.plugin[MongoSalatPlugin] match {
-      case None => throw new RuntimeException("No MongoSalatPlugin")
-      case Some(x) => x.collection(md.attachedTo) match {
-        case Some(c) => {
-          c.update(MongoDBObject("_id" -> new ObjectId(md.attachedTo.id.stringify)), $inc("metadataCount" -> -1))
+    getMetadataById(id) match {
+      case Some(md) =>    MetadataDAO.remove(md, WriteConcern.Safe)
+        current.plugin[MongoSalatPlugin] match {
+          case None => throw new RuntimeException("No MongoSalatPlugin")
+          case Some(x) => x.collection(md.attachedTo) match {
+            case Some(c) => {
+              c.update(MongoDBObject("_id" -> new ObjectId(md.attachedTo.id.stringify)), $inc("metadataCount" -> -1))
+            }
+            case None => {
+              Logger.error(s"Could not decrease counter for ${md.attachedTo}")
+            }
+          }
         }
-        case None => {
-          Logger.error(s"Could not increase counter for ${md.attachedTo}")
-        }
-      }
     }
   }
 

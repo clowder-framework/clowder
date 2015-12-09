@@ -24,7 +24,8 @@ class Metadata @Inject()(
   contextService: ContextLDService,
   userService: UserService,
   datasets: DatasetService,
-  files: FileService) extends ApiController {
+  files: FileService,
+  curations:CurationService) extends ApiController {
   
   def search() = PermissionAction(Permission.ViewDataset)(parse.json) { implicit request =>
     Logger.debug("Searching metadata")
@@ -169,8 +170,13 @@ class Metadata @Inject()(
       case Some(user) => {
         metadataService.getMetadataById(id) match {
           case Some(m) => {
-            metadataService.removeMetadata(id)
-            Ok(JsObject(Seq("status" -> JsString("ok"))))
+            if(m.attachedTo.resourceType == ResourceRef.curationObject && curations.get(m.attachedTo.id).map(_.status != "In Curation").getOrElse(false)
+            || m.attachedTo.resourceType == ResourceRef.curationFile && curations.getCurationByCurationFile(m.attachedTo.id).map(_.status != "In Curation").getOrElse(false)) {
+              BadRequest("Curation Object has already submitted")
+            } else {
+              metadataService.removeMetadata(id)
+              Ok(JsObject(Seq("status" -> JsString("ok"))))
+            }
           }
           case None => BadRequest(toJson("Invalid Metadata"))
         }

@@ -251,7 +251,7 @@
                                                         </a></li>
                                                     }
                                                     @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))) {
-                                                        <li><a class = "btn btn-link" href="@routes.Spaces.stagingArea(space.id)" title="Staging Area">Staging Area</a></li>
+                                                        <li><a class = "btn btn-link" href="@routes.Spaces.stagingArea(space.id)" title="Staging Area"><span class="glyphicon glyphicon-briefcase"></span> Staging Area</a></li>
                                                     }
                                                 </ul>
 

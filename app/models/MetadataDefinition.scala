@@ -52,15 +52,20 @@ object MetadataDefinition {
         Json.parse("""{
           "label":"SAS Variable Name",
           "uri":"http://ecgs.ncsa.illinois.edu/gsis/sas/vars",
-          "type":"listjquery",
-          "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/vars/map",
+          "type":"scientific_variable",
+          "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/vars/unit/udunits2",
           "query_parameter": "term"}"""),
         Json.parse("""{
           "label":"SAS Spatial Geocode",
           "uri":"http://ecgs.ncsa.illinois.edu/gsis/sas/geocode",
           "type":"listgeocode",
           "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/geocode",
-          "query_parameter": "loc"}""")
+          "query_parameter": "loc"}"""),
+        Json.parse("""{
+          "label":"Unit",
+          "uri":"http://ecgs.ncsa.illinois.edu/gsis/sas/unit/udunits2",
+          "type":"list",
+          "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/unit/udunits2"}""")
     )
     // Add the default definitions, do not update if they already exist.
     default.map(d => metadataService.addDefinition(MetadataDefinition(json = d), update=false))

@@ -91,6 +91,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             case Some(fcoll) => {
               collectionList += fcoll
             }
+            case None =>
           }
         }
 
