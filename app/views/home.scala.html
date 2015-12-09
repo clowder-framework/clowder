@@ -1,4 +1,4 @@
-@(displayedName: String,  newsfeed: List[models.Event], profile:User, datasets: List[Dataset],  dscomments: Map[UUID, Int], collections:List[Collection], spaces: List[ProjectSpace],
+@(displayedName: String,  newsfeed: List[models.Event], profile:User, datasetsList: List[Dataset],  dscomments: Map[UUID, Int], collections:List[Collection], spaces: List[ProjectSpace],
          deletePermission: Boolean,  followers: List[(UUID, String, String, String)], followedUsers: List[(UUID, String, String, String)], followedFiles: List[(UUID, String, String)],
         followedDatasets: List[(UUID, String, String)], followedCollections: List[(UUID, String, String)], followedSpaces: List[(UUID, String, String)], ownProfile: Option[Boolean])(implicit user: Option[models.User])
 
@@ -52,10 +52,10 @@
                 </div>
                 <div class="row">
 
-                @datasets.map { dataset =>
-                    @templates.dataset(dataset, None, dscomments, "col-lg-6 col-md-6 col-sm-6", false, false)
+                @datasetsList.map { dataset =>
+                    @datasets.tile(dataset, None, dscomments, "col-lg-6 col-md-6 col-sm-6", false, false)
                 }
-                @if(datasets.size < 1) {
+                @if(datasetsList.size < 1) {
                     <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
                       <div>This area will show all datasets you've created.</div>
 

@@ -12,10 +12,10 @@
                     <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)">
                 </a>
             }
-        <div class="caption break-word">
-            <h4><a href="@(routes.Datasets.dataset(dataset.id, space))">@Html(dataset.name)</a></h4>
-            <p>@Html(ellipsize(dataset.description, 200))</p>
-        </div>
+            <div class="caption break-word">
+                <h4><a href="@(routes.Datasets.dataset(dataset.id, space))">@Html(dataset.name)</a></h4>
+                <p>@Html(ellipsize(dataset.description, 200))</p>
+            </div>
         </div>
             <!-- Dataset Info -->
         <ul class="list-group">
@@ -36,7 +36,7 @@
                             <span class="glyphicon glyphicon-trash"></span></button>
                     }
                 }
-                @if(isSpace && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, UUID(space.getOrElse(""))))) {
+                @if(isSpace && space.isDefined && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, UUID(space.getOrElse(""))))) {
                     <a href='@(routes.CurationObjects.newCO(dataset.id, space.getOrElse("")))'>
                         <button class="btn btn-link btn-xs"><span class="glyphicon glyphicon-globe"></span> Publish</button>
                     </a>

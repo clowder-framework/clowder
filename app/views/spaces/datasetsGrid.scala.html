@@ -1,6 +1,5 @@
-@(datasets: List[Dataset], space: String)(implicit user: Option[models.User])
+@(datasetsList: List[Dataset], space: String)(implicit user: Option[models.User])
 
-@import _root_.util.Formatters.ellipsize
 @import api.Permission
 
 @util.masonry()
@@ -23,8 +22,8 @@
 <div class="row" id="tile-view">
     <div class="col-md-12">
         <div id="masonry">
-        @datasets.map { dataset =>
-          @templates.dataset(dataset, Some(space), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true)
+        @datasetsList.map { dataset =>
+          @datasets.tile(dataset, Some(space), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true)
 
         }
         </div>
