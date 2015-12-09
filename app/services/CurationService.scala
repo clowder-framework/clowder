@@ -66,6 +66,11 @@ trait CurationService {
   def getCurationFiles(cfs:List[UUID]): List[CurationFile]
 
   /**
+   * get the curation contains this curation file
+   */
+  def getCurationByCurationFile(curationFile: UUID): Option[CurationObject]
+
+  /**
    * Update curation object's name, description, space.
    */
   def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID)

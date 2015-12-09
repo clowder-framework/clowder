@@ -81,6 +81,10 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
     (for (cf <- cfs) yield CurationFileDAO.findOneById(new ObjectId(cf.stringify))).flatten.toList
   }
 
+  def getCurationByCurationFile(curationFile: UUID): Option[CurationObject] = {
+    CurationDAO.findOne(MongoDBObject("files" ->  new ObjectId(curationFile.stringify)))
+  }
+
   def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID) = {
     val result = CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
       $set("description" -> description, "name" -> name, "space" -> new ObjectId(newSpace.stringify)),
