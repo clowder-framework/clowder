@@ -1,6 +1,4 @@
-@(collections: List[models.Collection], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String], title: Option[String], owner:Option[String])(implicit flash: play.api.mvc.Flash,  user: Option[models.User])
-
-
+@(collectionsList: List[models.Collection], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String], title: Option[String], owner:Option[String])(implicit flash: play.api.mvc.Flash,  user: Option[models.User])
 
 @main("Collections") {
 
@@ -92,8 +90,8 @@
   <div class="row hidden" id="tile-view">
     <div class="col-md-12">
         <div id="masonry">
-            @collections.map { collection =>
-                @templates.collection(collection, "col-lg-3 col-md-3 col-sm-3", false)
+            @collectionsList.map { collection =>
+                @collections.tile(collection, "col-lg-3 col-md-3 col-sm-3", false)
              }            
         </div>
     </div>
@@ -103,7 +101,7 @@
   <div class="row hidden" id="list-view">
 	<div class="col-md-12">
 
-        @collections.map { collection =>
+        @collectionsList.map { collection =>
             <div class="panel panel-default">
                 <div class="panel-body">
                   <div class="row">

@@ -1,6 +1,5 @@
-@(collections: List[Collection], space: String)(implicit user: Option[models.User])
+@(collectionsList: List[Collection], space: String)(implicit user: Option[models.User])
 
-@import _root_.util.Formatters.ellipsize
 @import api.Permission
 <p>
     Most recent collections:
@@ -24,8 +23,8 @@
 <div class="row" id="tile-view">
     <div class="col-md-12">
         <div id="masonry">
-        @collections.map { collection =>
-                @templates.collection(collection, "col-lg-4 col-md-4 col-sm-4", false)
+        @collectionsList.map { collection =>
+                @collections.tile(collection, "col-lg-4 col-md-4 col-sm-4", false)
         }
         </div>
     </div>
