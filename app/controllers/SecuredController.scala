@@ -112,7 +112,7 @@ trait SecuredController extends Controller {
             spaces.get(id) match {
               case None => ("Space \"" + id.toString() + "\" does not exist.", "", "space")
               case Some(space) => {
-                if (space.requests.contains(RequestResource(userRequest.user.get.id))) {
+                if (userRequest.user.isDefined && space.requests.contains(RequestResource(userRequest.user.get.id))) {
                   (messageNoPermission + "space \"" + space.name + "\". \nAuthorization request is pending", "", "space")
                 } else {
                   (messageNoPermission + "space \"" + space.name + "\"", id.toString, "space")

@@ -906,3 +906,7 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 .form-md {
     padding: 10px 0px;
 }
+
+.add-resource {
+    width: 240px !important
+}

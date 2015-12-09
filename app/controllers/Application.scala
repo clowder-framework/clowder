@@ -86,6 +86,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
                   var ufEmail = uFollower.email.getOrElse("")
                   followers = followers.++(List((uFollower.id, ufEmail, uFollower.getAvatarUrl(), uFollower.fullName)))
                 }
+                case None =>
               }
             }
             var followedUsers: List[(UUID, String, String, String)] = List.empty
@@ -101,6 +102,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
                   case Some(fuser) => {
                     followedUsers = followedUsers.++(List((fuser.id, fuser.fullName, fuser.email.get, fuser.getAvatarUrl())))
                   }
+                  case None =>
                 }
               } else if (tidObject.objectType == "file") {
                 val followedFile = files.get(tidObject.id)
@@ -108,6 +110,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
                   case Some(ffile) => {
                     followedFiles = followedFiles.++(List((ffile.id, ffile.filename, ffile.contentType)))
                   }
+                  case None =>
                 }
               } else if (tidObject.objectType == "dataset") {
                 val followedDataset = datasets.get(tidObject.id)
@@ -115,6 +118,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
                   case Some(fdset) => {
                     followedDatasets = followedDatasets.++(List((fdset.id, fdset.name, fdset.description.substring(0, Math.min(maxDescLength, fdset.description.length())))))
                   }
+                  case None =>
                 }
               } else if (tidObject.objectType == "collection") {
                 val followedCollection = collections.get(tidObject.id)
@@ -122,6 +126,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
                   case Some(fcoll) => {
                     followedCollections = followedCollections.++(List((fcoll.id, fcoll.name, fcoll.description.substring(0, Math.min(maxDescLength, fcoll.description.length())))))
                   }
+                  case None =>
                 }
               } else if (tidObject.objectType == "'space") {
                 val followedSpace = spaces.get(tidObject.id)
@@ -129,6 +134,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
                   case Some(fspace) => {
                     followedSpaces = followedSpaces.++(List((fspace.id, fspace.name, fspace.description.substring(0, Math.min(maxDescLength, fspace.description.length())))))
                   }
+                  case None =>
                 }
               }
             }

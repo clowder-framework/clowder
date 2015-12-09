@@ -53,8 +53,8 @@ class CurationObjects @Inject()(
   def newCO(datasetId:UUID, spaceId: String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
     val (name, desc, spaceByDataset) = datasets.get(datasetId) match {
-      case Some(dataset) => (dataset.name, dataset.description, dataset.spaces map( id => spaces.get(id)) filter(_ != None)
-        filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.get.id)))map(_.get))
+      case Some(dataset) => (dataset.name, dataset.description, dataset.spaces.map(id => spaces.get(id)).flatten
+        .filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))))
       case None => ("", "", List.empty)
     }
     //default space is the space from which user access to the dataset
@@ -70,7 +70,7 @@ class CurationObjects @Inject()(
     }
 
     Ok(views.html.curations.newCuration(datasetId, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired))
+      RequiredFieldsConfig.isDescriptionRequired, true))
   }
 
   /**
@@ -140,6 +140,38 @@ class CurationObjects @Inject()(
       }
       case None => InternalServerError("User Not found")
     }
+  }
+
+  def editCuration(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) {
+    implicit request =>
+      implicit val user = request.user
+      curations.get(id) match {
+        case Some(c) =>
+          val (name, desc, spaceByDataset, defaultspace) = (c.name, c.description, c.datasets.head.spaces.map(id => spaces.get(id)).flatten
+            .filter(space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))), spaces.get(c.space))
+
+          Ok(views.html.curations.newCuration(id, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
+            RequiredFieldsConfig.isDescriptionRequired, false))
+
+        case None => InternalServerError("Curation Object Not found")
+      }
+  }
+
+  def updateCuration(id: UUID, spaceId:UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) (parse.multipartFormData) {
+    implicit request =>
+      implicit val user = request.user
+      curations.get(id) match {
+        case Some(c) => {
+          var COName = request.body.asFormUrlEncoded.getOrElse("name", null)
+          var CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
+          Logger.debug(COName(0))
+          curations.updateInformation(id, CODesc(0), COName(0), c.space, spaceId)
+          events.addObjectEvent(user, id, COName(0), "update_dataset_information")
+
+          Redirect(routes.CurationObjects.getCurationObject(id))
+        }
+        case None => InternalServerError("Curation Object Not found")
+      }
   }
 
   /**

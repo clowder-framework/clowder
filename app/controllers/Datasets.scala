@@ -121,6 +121,7 @@ class Datasets @Inject()(
               case Some(fdset) => {
                 datasetList += fdset
               }
+              case None =>
             }
         }
 
@@ -322,7 +323,7 @@ class Datasets @Inject()(
   /**
    * Dataset.
    */
-  def dataset(id: UUID, currentSpace: Option[String]) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def dataset(id: UUID, currentSpace: Option[String], filepage: Int) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
 
       implicit val user = request.user
       Previewers.findPreviewers.foreach(p => Logger.debug("Previewer found " + p.id))
@@ -407,12 +408,13 @@ class Datasets @Inject()(
                     case None => Logger.error(s"space with id $sp on dataset $id doesn't exist.")
                   }
           }
-
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
-          val fileList: List[File] = dataset.files.map(fileId => files.get(fileId) match {
-            case Some(file) => file
-            case None => Logger.debug(s"Unable to find file $fileId")
-          }).asInstanceOf[List[File]]
+
+          val limit: Int = 9
+          //in case filepage is less than 0, we start from filepage=0
+          val filepageUpdate = if (filepage <0) 0 else filepage
+          val next = dataset.files.length > limit * (filepageUpdate+1)
+          val limitFileList : List[File]= dataset.files.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => files.get(f)).flatten
 
           //dataset is in at least one space with editstagingarea permission, or if the user is the owner of dataset.
           val stagingarea = datasetSpaces filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id)))
@@ -423,7 +425,7 @@ class Datasets @Inject()(
           val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
-            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), fileList, filesTags, toPublish, curPubObjects, currentSpace))
+            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), limitFileList, filesTags, toPublish, curPubObjects, currentSpace, filepageUpdate, next))
         }
         case None => {
           Logger.error("Error getting dataset" + id)

@@ -74,6 +74,7 @@ POST           /extraction/upload                                               
 # FILES
 # ----------------------------------------------------------------------
 GET            /files                                                                   @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "")
+GET            /datasets/:datasetId/files                                               @controllers.Files.listByDataset(datasetId: UUID, when: String ?= "", index: Int ?= 0, limit: Int ?= 12, mode: String ?= "")
 GET            /files/new                                                               @controllers.Files.uploadFile
 GET            /files/metadataSearch                                                    @controllers.Files.metadataSearch
 GET            /files/generalMetadataSearch                                             @controllers.Files.generalMetadataSearch
@@ -101,7 +102,7 @@ GET            /datasets/createStep2                                            
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
 GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(when: String ?= "", index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
-GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None)
+GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, filepage:Int ?= 0)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
 POST           /dataset/submit                                                          @controllers.Datasets.submit
@@ -517,7 +518,7 @@ GET            /api/search/multimediasearch                                     
 # GEOSTREAMS ENDPOINT
 # ----------------------------------------------------------------------
 POST           /api/geostreams/datapoints                                               api.Geostreams.addDatapoint
-DELETE         /api/geostreams/datapoints/:id                                           api.Geostreams.deleteDatapoint(id: String)
+DELETE 		   /api/geostreams/datapoints/:id                                           api.Geostreams.deleteDatapoint(id: String)
 GET            /api/geostreams/datapoints                                               api.Geostreams.searchDatapoints(operator = "", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
 GET            /api/geostreams/datapoints/averages                                      api.Geostreams.searchDatapoints(operator = "averages", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
 GET            /api/geostreams/datapoints/trends                                        api.Geostreams.searchDatapoints(operator = "trends", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
@@ -626,10 +627,12 @@ GET            /rss/:etype                                                      
 # ----------------------------------------------------------------------
 
 GET            /dataset/:id/curations/new                                               @controllers.CurationObjects.newCO(id:UUID, space:String ?= "")
-POST           /dataset/:datasetId/curations/spaces/:spaceId/submit                     @controllers.CurationObjects.submit(datasetId:UUID, spaceId:UUID)
+POST           /dataset/:id/curations/spaces/:spaceId/submit                            @controllers.CurationObjects.submit(id:UUID, spaceId:UUID)
 GET            /spaces/:id/stagingArea                                                  @controllers.Spaces.stagingArea(id: UUID)
 GET            /spaces/curations/:id                                                    @controllers.CurationObjects.getCurationObject(id: UUID)
 DELETE         /spaces/curations/retract/:id                                            @api.CurationObjects.retractCurationObject(id: UUID)
+GET            /spaces/curations/:id/edit                                               @controllers.CurationObjects.editCuration(id: UUID)
+POST           /spaces/curations/:id/spaces/:spaceId/update                             @controllers.CurationObjects.updateCuration(id: UUID, spaceId:UUID)
 DELETE         /spaces/curations/:id                                                    @controllers.CurationObjects.deleteCuration(id: UUID)
 GET            /spaces/curations/:id/compareToRepository                                @controllers.CurationObjects.compareToRepository(id: UUID, repository:String)
 GET            /spaces/curations/:id/sendToRepository                                   @controllers.CurationObjects.sendToRepository(id: UUID)

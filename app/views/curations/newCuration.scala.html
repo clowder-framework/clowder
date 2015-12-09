@@ -1,4 +1,4 @@
-@(datasetId: UUID, name:String, desc:String, defaultspace:Option[ProjectSpace], spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean)(implicit user: Option[models.User])
+@(id: UUID, name:String, desc:String, defaultspace:Option[ProjectSpace], spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, isNew:Boolean)(implicit user: Option[models.User])
 
 @import api.Permission
 
@@ -10,10 +10,15 @@
       var isNameRequired = @isNameRequired;
       var isDescRequired = @isDescriptionRequired;
     </script>
-
-  <div class="page-header">
-    <h1>Create New Curation Object</h1>
-  </div>
+    @if(isNew) {
+        <div class="page-header">
+            <h1>Create New Curation Object</h1>
+        </div>
+    } else {
+        <div class="page-header">
+            <h1>Edit Curation Object</h1>
+        </div>
+    }
 
     <div class="row">
         <div class="col-md-12">
@@ -74,12 +79,21 @@
             <td>
             </td>
             <td>
-                <button style="margin-top: 10px; margin-right: 10px;" class="btn btn-primary" title="Create the CO" onclick="return createCuration();">
-                    <span class="glyphicon glyphicon-ok"></span> Create
-                </button>
-                <button style="margin-top: 10px;" class="btn btn-default" title="Clear the input fields" onclick="return clearFields();">
-                    <span class="glyphicon glyphicon-unchecked"></span> Reset
-                </button>
+                @if(isNew) {
+                    <button class="btn btn-primary btn-margins" title="Create the CO" onclick="return createCuration();">
+                        <span class="glyphicon glyphicon-upload"></span> Create
+                    </button>
+                    <button class="btn btn-default btn-margins" title="Clear the input fields" onclick="return clearFields();">
+                        <span class="glyphicon glyphicon-unchecked"></span> Reset
+                    </button>
+                } else {
+                    <button class="btn btn-default btn-margins" title="Edit Curation Object" onclick="return updateCuration('@id');">
+                        <span class="glyphicon glyphicon-upload"></span> Update
+                    </button>
+                    <button class="btn btn-default btn-margins" title="cancel edit" onclick="return cancelEdit('@id');">
+                        <span class="glyphicon glyphicon-remove-sign"></span> Cancel
+                    </button>
+                }
             </td>
         </tr>
 
@@ -92,12 +106,22 @@
                 <td>
                 </td>
                 <td>
-                    <button style="margin-top: 10px; margin-right: 10px;" class="btn btn-primary disabled" title="Create the CO" onclick="return createCuration();">
-                        <span class="glyphicon glyphicon-ok"></span> Create
-                    </button>
-                    <button style="margin-top: 10px;" class="btn btn-default" title="Clear the input fields" onclick="return clearFields();">
-                        <span class="glyphicon glyphicon-unchecked"></span> Reset
-                    </button>
+                    @if(isNew) {
+                        <button class="btn btn-primary btn-margins disabled" title="Create the CO" onclick="return createCuration();">
+                            <span class="glyphicon glyphicon-upload"></span> Create
+                        </button>
+                        <button class="btn btn-default btn-margins" title="Clear the input fields" onclick="return clearFields();">
+                            <span class="glyphicon glyphicon-unchecked"></span> Reset
+                        </button>
+                    } else {
+                        <button class="btn btn-primary btn-margins disabled" title="Edit Curation Object" onclick="return updateCuration('@id');">
+                            <span class="glyphicon glyphicon-upload"></span> Update
+                        </button>
+                        <button class="btn btn-default btn-margins" title="cancel edit" onclick="return cancelEdit('@id');">
+                            <span class="glyphicon glyphicon-remove-sign"></span> Cancel
+                        </button>
+                    }
+
                 </td>
             </tr>
         }
