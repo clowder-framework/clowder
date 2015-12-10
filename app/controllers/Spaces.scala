@@ -522,6 +522,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
             case Some(fspace) => {
               spaceList += fspace
             }
+            case None =>
           }
         }
 
