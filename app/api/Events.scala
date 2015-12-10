@@ -35,7 +35,8 @@ class Events @Inject() (events: EventService) extends ApiController {
     responseClass = "None", httpMethod = "GET")
   def sendExceptionEmail(re: String, ex: String) = UserAction { implicit request =>
     val subject: String = "Exception from " + AppConfiguration.getDisplayName
-    val body = Html("<p>Request: "+re+"</p><p>Error: "+ex+"</p>")
+    val body = Html("<p>Request: "+re+"</p><p>Error: "+ex+"</p><p>Version: " + sys.props.getOrElse("build.version", default = "0.0.0") + "#"+sys.props.getOrElse("build.bamboo", default = "development")
+    +" branch:" + sys.props.getOrElse("build.branch", default = "unknown") +" sha1:"+sys.props.getOrElse("build.gitsha1", default = "unknown")+"</p>")
     val recipient: String = "opensource+clowder@ncsa.illinois.edu"
     Mail.sendEmail(subject, recipient, body)
     Ok(toJson("Send Email success"))

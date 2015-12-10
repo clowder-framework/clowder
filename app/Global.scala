@@ -74,7 +74,7 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
   override def onError(request: RequestHeader, ex: Throwable) = {
     Future(InternalServerError(
-      views.html.errorPage(request, ex.toString)
+      views.html.errorPage(request, ex.fillInStackTrace().toString)
     ))
   }
 
