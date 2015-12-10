@@ -60,8 +60,36 @@ object MetadataDefinition {
           "uri":"http://ecgs.ncsa.illinois.edu/gsis/sas/geocode",
           "type":"listgeocode",
           "definitions_url":"http://ecgs.ncsa.illinois.edu/gsis/sas/geocode",
-          "query_parameter": "loc"}""")
-    )
+          "query_parameter": "loc"}"""),
+        Json.parse("""
+          {"label":"Principal Investigator(s)",
+            "uri":"http://sead-data.net/terms/PrincipalInvestigator",
+            "type":"string"}"""),
+        Json.parse("""
+          {"label":"Funding Institution",
+            "uri":"http://sead-data.net/terms/FundingInstitution",
+            "type":"string"}"""),
+        Json.parse("""
+          {"label":"Grant Number",
+            "uri":"http://sead-data.net/terms/GrantNumber",
+            "type":"string"}"""),
+        Json.parse("""
+          {"label":"Keywords",
+            "uri":"http://sead-data.net/terms/Keywords",
+            "type":"string"}"""),
+        Json.parse("""
+          {"label":"Related Publications",
+            "uri":"http://sead-data.net/terms/RelatedPublications",
+            "type":"string"}"""),
+        Json.parse("""
+          {"label":"Time Periods",
+            "uri":"http://purl.org/dc/terms/PeriodOfTime",
+            "type":"string"}"""),
+        Json.parse("""
+          {"label":"Primary/Initial Publication",
+            "uri":"http://sead-data.net/terms/PrimaryPublication",
+            "type":"string"}""")
+      )
     // Add the default definitions, do not update if they already exist.
     default.map(d => metadataService.addDefinition(MetadataDefinition(json = d), update=false))
   }

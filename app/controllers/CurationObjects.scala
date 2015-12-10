@@ -17,6 +17,7 @@ import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.libs.json.JsArray
 import play.libs.F.Promise
+import securesocial.core.Identity
 import services._
 import _root_.util.RequiredFieldsConfig
 import play.api.Play._
@@ -46,7 +47,8 @@ class CurationObjects @Inject()(
   comments: CommentService,
   sections: SectionService,
   events: EventService,
-  userService: UserService
+  userService: UserService,
+  metadataService: MetadataService
   ) extends SecuredController {
 
   def newCO(datasetId:UUID, spaceId: String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
@@ -158,8 +160,6 @@ class CurationObjects @Inject()(
     implicit val user = request.user
     Logger.debug(s"Adding user metadata to curation's dataset $id")
 
-
-
     curations.get(id) match {
       case Some(c) => {
         if (c.status == "In Curation") {
@@ -202,7 +202,7 @@ class CurationObjects @Inject()(
         } else {
           InternalServerError("Curation Object already submitted")
         }}
-      case None => InternalServerError("Curation Object Not found")
+      case None => ("Curation Object Not found")
     }
 
     Ok(toJson(Map("status" -> "success")))
@@ -237,7 +237,7 @@ class CurationObjects @Inject()(
               val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
                 "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
                 "Affiliation" -> List("UMich", "IU", "UIUC"))
-              val mmResp = callMatchmaker(c)(request)
+              val mmResp = callMatchmaker(c, user)(request)
               user match {
                 case Some(usr) => {
                   val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
@@ -250,7 +250,7 @@ class CurationObjects @Inject()(
           }
   }
 
-  def callMatchmaker(c: CurationObject)(implicit request: Request[Any]): List[MatchMakerResponse] = {
+  def callMatchmaker(c: CurationObject, user: Option[User])(implicit request: Request[Any]): List[MatchMakerResponse] = {
     val https = controllers.Utils.https(request)
     val hostUrl = api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "#aggregation"
     val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => pref._1-> Json.toJson(pref._2.toString().split(",").toList))).getOrElse(Map.empty)
@@ -271,17 +271,27 @@ class CurationObjects @Inject()(
         case None => api.routes.Users.findById(usr.id).absoluteURL(https)
 
     })
+    val rightsholder = user.map ( usr => usr.profile match {
+      case Some(prof) => prof.orcidID match {
+        case Some(oid) => oid
+        case None => api.routes.Users.findById(usr.id).absoluteURL(https)
+      }
+      case None => api.routes.Users.findById(usr.id).absoluteURL(https)
+
+    })
+    val metadataDefs = metadataService.getDefinitions()
     val aggregation = metadataJson.toMap ++ Map(
-      "Identifier" -> Json.toJson(controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(https).toString()),
+      "Identifier" -> Json.toJson(controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(https)),
       "@id" -> Json.toJson(hostUrl),
       "Title" -> Json.toJson(c.name),
       "Creator" -> Json.toJson(creator),
-      "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https).toString())
+      "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https))
       )
     val valuetoSend = Json.obj(
       "@context" -> Json.toJson(Seq(
         Json.toJson("https://w3id.org/ore/context"),
         Json.toJson(Map (
+          "Aggregates" -> Json.toJson("http://www.openarchives.org/ore/terms/aggregates"),
           "Identifier" -> Json.toJson("http://www.ietf.org/rfc/rfc4122"),
           "Aggregation Statistics" -> Json.toJson("http://sead-data.net/terms/publicationstatistics"),
           "Data Mimetypes" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
@@ -305,6 +315,7 @@ class CurationObjects @Inject()(
           "Audience" -> Json.toJson("http://purl.org/dc/terms/audience"),
           "Abstract" -> Json.toJson("http://purl.org/dc/terms/abstract"),
           "Bibliographic citation" -> Json.toJson("http://purl.org/dc/terms/bibliographicCitation"),
+          "Rights Holder" -> Json.toJson("http://purl.org/dc/terms/rightsHolder"),
           "Spatial Reference" ->
             Json.toJson(
               Map(
@@ -315,6 +326,7 @@ class CurationObjects @Inject()(
 
               ))
       )))),
+      "Rights Holder" -> Json.toJson(rightsholder),
       "Aggregation" ->
         Json.toJson(aggregation),
       "Preferences" -> userPreferences ,
@@ -356,7 +368,7 @@ class CurationObjects @Inject()(
            //TODO: Make some call to C3-PR?
            //  Ok(views.html.spaces.matchmakerReport())
 
-           val mmResp = callMatchmaker(c).filter(_.orgidentifier == repository)
+           val mmResp = callMatchmaker(c, user).filter(_.orgidentifier == repository)
 
            Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository))
         }

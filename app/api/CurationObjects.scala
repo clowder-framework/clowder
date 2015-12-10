@@ -35,7 +35,8 @@ class CurationObjects @Inject()(datasets: DatasetService,
       sections: SectionService,
       spaces: SpaceService,
       userService: UserService,
-      curationObjectController: controllers.CurationObjects
+      curationObjectController: controllers.CurationObjects,
+      metadataService: MetadataService
       ) extends ApiController {
   @ApiOperation(value = " Get Curation object ORE map",
     httpMethod = "GET")
@@ -47,16 +48,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
 
           val https = controllers.Utils.https(request)
           val filesJson = c.files.map { file =>
-            // TODO: Add file.metadata to ORE Map when we change to JSON-LD
-//            var fl_md: Map[String, Any] = Map.empty[String,Any]
-//            for ( i <- 0 to file.metadata.length -1) {
-//              fl_md = fl_md ++ file.metadata(i).asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap
-//            }
-
-//            val file_md_parsed = fl_md.map(
-//              it => it._1 -> Json.toJson( it._2.asInstanceOf[com.mongodb.BasicDBObject].toMap().asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap.map(
-//              item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
-//              )))
             val key = play.api.Play.configuration.getString("commKey").getOrElse("")
             val metadata = file.userMetadata ++ file.xmlMetadata
             val fileMetadata = metadata.map {
@@ -101,6 +92,10 @@ class CurationObjects @Inject()(datasets: DatasetService,
           val metadata = c.datasets(0).metadata ++ c.datasets(0).datasetXmlMetadata.map(metadata => metadata.xmlMetadata) ++ c.datasets(0).userMetadata
           val metadataJson = metadata.map {
             item => item.asInstanceOf[Tuple2[String, BasicDBList]]._1 -> Json.toJson(item.asInstanceOf[Tuple2[String, BasicDBList]]._2.get(0).toString())
+          }
+          val metadataDefs = metadataService.getDefinitions()
+          for(md <- metadataDefs) {
+
           }
           val parsedValue = Json.toJson(
             Map(
@@ -153,7 +148,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     "Is Version Of" -> Json.toJson("http://purl.org/dc/terms/isVersionOf"),
                     "Has Part" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
                     "similarTo" -> Json.toJson("http://sead-data.net/terms/similarTo"),
-                    "aggregates" -> Json.toJson("http://sead-data.net/terms/aggregates")
+                    "aggregates" -> Json.toJson("http://www.openarchives.org/ore/terms/aggregates")
                   )
                 )
 
@@ -202,29 +197,34 @@ class CurationObjects @Inject()(datasets: DatasetService,
     responseClass = "None", httpMethod = "POST")
   def findMatchmakingRepositories(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId)))(parse.json) { implicit request =>
     implicit val user = request.user
-
-    curations.get(curationId) match {
-      case Some(c) => {
-        val values: JsResult[Map[String, String]] = (request.body \ "data").validate[Map[String, String]]
-        values match {
-          case aMap: JsSuccess[Map[String, String]] => {
-            val userPreferences: Map[String, String] = aMap.get
-            val mmResp = curationObjectController.callMatchmaker(c)
-            if ( mmResp.size > 0) {
-              Ok(toJson(mmResp))
-            } else {
-              InternalServerError("No response from matchmaker")
+    user match {
+      case Some(usr) => {
+        curations.get(curationId) match {
+          case Some(c) => {
+            val values: JsResult[Map[String, String]] = (request.body \ "data").validate[Map[String, String]]
+            values match {
+              case aMap: JsSuccess[Map[String, String]] => {
+                val userPreferences: Map[String, String] = aMap.get
+                userService.updateRepositoryPreferences(usr.id, userPreferences)
+                val mmResp = curationObjectController.callMatchmaker(c, user)
+                if ( mmResp.size > 0) {
+                  Ok(toJson(mmResp))
+                } else {
+                  InternalServerError("No response from matchmaker")
+                }
+              }
+              case e: JsError => {
+                Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+                BadRequest(toJson("The user repository preferences are missing from the find matchmaking repositories call."))
+              }
             }
-
           }
-          case e: JsError => {
-            Logger.error("Errors: " + JsError.toFlatJson(e).toString())
-            BadRequest(toJson("The user repository preferences are missing from the find matchmaking repositories call."))
-          }
+          case None => InternalServerError("Curation Object Not found")
         }
       }
-      case None => InternalServerError("Curation Object Not found")
+      case None => InternalServerError("User not found")
     }
+
   }
   
   @ApiOperation(value = "Retract the curation object from the repository", notes = "",
