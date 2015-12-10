@@ -251,7 +251,7 @@ class CurationObjects @Inject()(
 
     val creator = userService.findByIdentity(c.author).map ( usr => usr.profile match {
       case Some(prof) => prof.orcidID match {
-        case Some(oid) => oid
+        case Some(oid) => if(oid.indexOf("orcid.org") == 0) {oid} else if(oid.indexOf("orcid.org")>0) {"orcid.org"+oid.substring(oid.lastIndexOf("/"))} else {"orcid.org/"+oid}
         case None => api.routes.Users.findById(usr.id).absoluteURL(https)
       }
         case None => api.routes.Users.findById(usr.id).absoluteURL(https)
@@ -390,7 +390,7 @@ class CurationObjects @Inject()(
           }
           val creator = Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile match {
             case Some(prof) => prof.orcidID match {
-              case Some(oid) => oid
+              case Some(oid) => if(oid.indexOf("orcid.org") == 0) {oid} else if(oid.indexOf("orcid.org")>0) {"orcid.org"+oid.substring(oid.lastIndexOf("/"))} else {"orcid.org/"+oid}
               case None => controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)
             }
             case None => controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)
@@ -402,7 +402,7 @@ class CurationObjects @Inject()(
           }
           val rightsholder = user.map ( usr => usr.profile match {
             case Some(prof) => prof.orcidID match {
-              case Some(oid) => oid
+              case Some(oid) => if(oid.indexOf("orcid.org") == 0) {oid} else if(oid.indexOf("orcid.org")>0) {"orcid.org"+oid.substring(oid.lastIndexOf("/"))} else {"orcid.org/"+oid}
               case None => api.routes.Users.findById(usr.id).absoluteURL(https)
             }
             case None => api.routes.Users.findById(usr.id).absoluteURL(https)
