@@ -221,7 +221,7 @@ class CurationObjects @Inject()(
           curations.get(curationId) match {
             case Some(c) => {
               val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
-                "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$XX Fee"),
+                "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$300 Fee"),
                 "Affiliation" -> List("UMich", "IU", "UIUC"))
               val mmResp = callMatchmaker(c, user)(request)
               user match {
