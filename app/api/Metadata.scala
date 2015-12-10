@@ -24,7 +24,8 @@ class Metadata @Inject()(
   contextService: ContextLDService,
   userService: UserService,
   datasets: DatasetService,
-  files: FileService) extends ApiController {
+  files: FileService,
+  curations:CurationService) extends ApiController {
   
   def search() = PermissionAction(Permission.ViewDataset)(parse.json) { implicit request =>
     Logger.debug("Searching metadata")
@@ -125,6 +126,10 @@ class Metadata @Inject()(
               Some(ResourceRef(ResourceRef.file, UUID((json \ "file_id").as[String])))
             else if ((json \ "dataset_id").asOpt[String].isDefined)
               Some(ResourceRef(ResourceRef.dataset, UUID((json \ "dataset_id").as[String])))
+            else if ((json \ "curationObject_id").asOpt[String].isDefined)
+              Some(ResourceRef(ResourceRef.curationObject, UUID((json \ "curationObject_id").as[String])))
+            else if ((json \ "curationFile_id").asOpt[String].isDefined)
+              Some(ResourceRef(ResourceRef.curationFile, UUID((json \ "curationFile_id").as[String])))
             else None
 
           // check if the context is a URL to external endpoint
@@ -165,8 +170,13 @@ class Metadata @Inject()(
       case Some(user) => {
         metadataService.getMetadataById(id) match {
           case Some(m) => {
-            metadataService.removeMetadata(id)
-            Ok(JsObject(Seq("status" -> JsString("ok"))))
+            if(m.attachedTo.resourceType == ResourceRef.curationObject && curations.get(m.attachedTo.id).map(_.status != "In Curation").getOrElse(false)
+            || m.attachedTo.resourceType == ResourceRef.curationFile && curations.getCurationByCurationFile(m.attachedTo.id).map(_.status != "In Curation").getOrElse(false)) {
+              BadRequest("Curation Object has already submitted")
+            } else {
+              metadataService.removeMetadata(id)
+              Ok(JsObject(Seq("status" -> JsString("ok"))))
+            }
           }
           case None => BadRequest(toJson("Invalid Metadata"))
         }

@@ -22,7 +22,7 @@
                 <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
                 <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
             </div>
-            <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new space">Create</a>
+            <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new space"> <span class="glyphicon glyphicon-ok"></span> Create</a>
         </div>
     </div>
     <script>
@@ -142,39 +142,21 @@
                         <ul class="list-group center-margin">
                         @user match {
                             case Some(viewer) => {
-
-                            <h4>
                                 <button
                                 id="followButton"
                                 type="button"
-                                class="
-                                    @if(viewer.followedEntities.filter(x => (x.id == space.id)).nonEmpty) {
-                                        btn btn-danger
-                                    } else {
-                                        btn btn-success
-                                    }
-                                "
+                                class="btn-link"
                                 data-toggle="button"
-                                aria-pressed="
-                                    @if(viewer.followedEntities.filter(x => (x.id == space.id)).nonEmpty) {
-                                        true
-                                    } else {
-                                        false
-                                    }
-                                "
                                 autocomplete="off"
                                 objectType="space"
                                 objectId="@space.id.stringify"
                                 >
                                 @if(viewer.followedEntities.filter(x => (x.id == space.id)).nonEmpty) {
-                                    Unfollow
+                                    <span class='glyphicon glyphicon-star-empty'></span> Unfollow
                                 } else {
-                                    Follow
+                                    <span class='glyphicon glyphicon-star'></span> Follow
                                 }
                                 </button>
-                            </h4>
-
-
                             }
                         }
                         </ul>
@@ -235,10 +217,12 @@
                                                 <!-- Fix for CATS-163 An exception is thrown if user is not defined -->
                                             @if(user.isEmpty || !space.followers.contains(user.get.id)) {
                                                 <button id="followButton" class="btn btn-link" objectId="@space.id" objectName="@space.name" objectType="space">
+                                                    <span class='glyphicon glyphicon-star'></span>
                                                     Follow
                                                 </button>
                                             } else {
                                                 <button id="followButton" class="btn btn-link" objectId="@space.id" objectName="@space.name" objectType="space">
+                                                    <span class='glyphicon glyphicon-star-empty'></span>
                                                     Unfollow
                                                 </button>
                                             }
@@ -274,7 +258,7 @@
                                             </a></li>
                                         }
                                         @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))) {
-                                            <li><a class = "btn btn-link" href="@routes.Spaces.stagingArea(space.id)" title="Staging Area">Staging Area</a></li>
+                                            <li><a class = "btn btn-link" href="@routes.Spaces.stagingArea(space.id)" title="Staging Area"><span class="glyphicon glyphicon-briefcase"></span> Staging Area</a></li>
                                         }
                                     </ul>
 
@@ -296,10 +280,10 @@
         <div class="col-md-12">
             <ul class="pager">
                 @if(prev >= 0) {
-                    <li class="previous"><a id="prevlink" title="Page backwards" href="#">Previous</a></li>
+                    <li class="previous"><a id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
                 }
                 @if(next >= 0) {
-                    <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next</a></li>
+                    <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next<span class="glyphicon glyphicon-chevron-right"></span></a></li>
                 }
             </ul>
         </div>

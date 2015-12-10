@@ -21,7 +21,7 @@
         </div>
         <div class="col-md-1">
         @if(user.isDefined) {
-            <a id="create-dataset" class="btn btn-primary btn-sm pull-right" href="@routes.Datasets.newDataset(space)" title="Create a new dataset">Create</a>
+            <a id="create-dataset" class="btn btn-primary btn-sm pull-right" href="@routes.Datasets.newDataset(space)" title="Create a new dataset"> <span class="glyphicon glyphicon-ok"></span> Create</a>
         }
 
         </div>
@@ -131,38 +131,21 @@
                         <ul class="list-group center-margin">
                         @user match {
                             case Some(viewer) => {
-                                <h4>
                                     <a
                                     id="followButton"
                                     type="button"
-                                    class="
-                                        @if(viewer.followedEntities.filter(x => (x.id == dataset.id)).nonEmpty) {
-                                            btn btn-danger
-                                        }else {
-                                            btn btn-success
-                                        }
-                                    "
+                                    class="btn-link "
                                     data-toggle="button"
-                                    aria-pressed="
-                                        @if(viewer.followedEntities.filter(x => (x.id == dataset.id)).nonEmpty) {
-                                            true
-                                        }else {
-                                            false
-                                        }
-                                    "
                                     autocomplete="off"
                                     objectType="dataset"
                                     objectId="@dataset.id.stringify"
                                     >
                                     @if(viewer.followedEntities.filter(x => (x.id == dataset.id)).nonEmpty) {
-                                        Unfollow
+                                        <span class='glyphicon glyphicon-star-empty'></span>  Unfollow
                                     } else {
-                                        Follow
+                                        <span class='glyphicon glyphicon-star'></span> Follow
                                     }
                                     </a>
-                                </h4>
-
-
                             }
                         }
                         </ul>
@@ -241,7 +224,7 @@
                                                 objectId="@dataset.id"
                                                 objectName="@dataset.name"
                                                 objectType="dataset">
-                                                    Follow
+                                                    <span class='glyphicon glyphicon-star'></span> Follow
                                                 </a>
                                             } else {
                                                 <a id="followButton"
@@ -249,7 +232,7 @@
                                                 objectId="@dataset.id"
                                                 objectName="@dataset.name"
                                                 objectType="dataset">
-                                                    Unfollow
+                                                    <span class='glyphicon glyphicon-star-empty'></span> Unfollow
                                                 </a>
                                             }
                                         }</li>
@@ -273,10 +256,10 @@
             <ul class="pager">
                     <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
                 @if(prev >= 0) {
-                    <li class="previous"><a id="prevlink" title="Page backwards" href="#">Previous</a></li>
+                    <li class="previous"><a id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
                 }
                 @if(next >= 0) {
-                    <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next</a></li>
+                    <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next<span class="glyphicon glyphicon-chevron-right"></span></a></li>
                 }
             </ul>
         </div>

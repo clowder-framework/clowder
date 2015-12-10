@@ -207,6 +207,7 @@ class Files @Inject() (
             case Some(ffile) => {
               fileList += ffile
             }
+            case None =>
           }
         }
 
@@ -232,7 +233,7 @@ class Files @Inject() (
           }
 
         //Pass the viewMode into the view
-        Ok(views.html.users.followingFiles(fileList.toList, commentMap, prev, next, limit, viewMode))
+        Ok(views.html.users.followingFiles(fileList.toList, commentMap, prev, next, limit, viewMode, None))
       }
       case None => InternalServerError("User not found")
     }
@@ -301,6 +302,59 @@ class Files @Inject() (
       
     //Pass the viewMode into the view
     Ok(views.html.filesList(fileList, commentMap, prev, next, limit, viewMode))
+  }
+
+  def listByDataset(datasetId: UUID, when: String, index: Int, limit: Int, mode: String) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
+    implicit val user = request.user
+    datasets.get(datasetId) match {
+      case Some(d) => {
+        val nextPage = (when == "a")
+        val title: Option[String] = Some("Following Files")
+
+        var fileList = new ListBuffer[models.File]()
+        val fileIdsToUse = d.files.slice(index*limit, (index+1)*limit)
+        val prev= index -1
+        val next = if(d.files.length > (index+1) * limit) {
+          index + 1
+        } else {
+          -1
+        }
+
+        for (tidObject <- fileIdsToUse) {
+          val followedFile = files.get(tidObject)
+          followedFile match {
+            case Some(ffile) => {
+              fileList += ffile
+            }
+          }
+        }
+
+        val commentMap = fileList.map{file =>
+          var allComments = comments.findCommentsByFileId(file.id)
+          sections.findByFileId(file.id).map { section =>
+            allComments ++= comments.findCommentsBySectionId(section.id)
+          }
+          file.id -> allComments.size
+        }.toMap
+
+        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
+        //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+        //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+        val viewMode: Option[String] =
+          if (mode == null || mode == "") {
+            request.cookies.get("view-mode") match {
+              case Some(cookie) => Some(cookie.value)
+              case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
+            }
+          } else {
+            Some(mode)
+          }
+
+        //we are using followingFiles instead of fileList since the list view of fileList is not used or updated.
+        Ok(views.html.users.followingFiles(fileList.toList, commentMap, prev, next, limit, viewMode, Some(datasetId)))
+      }
+      case None => InternalServerError("Dataset not found")
+    }
   }
 
   /**

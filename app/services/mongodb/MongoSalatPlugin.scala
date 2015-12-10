@@ -148,6 +148,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       case ResourceRef.comment => Some(collection("comments"))
       case ResourceRef.section => Some(collection("sections"))
       case ResourceRef.curationObject => Some(collection("curationObjects"))
+      case ResourceRef.curationFile => Some(collection("curationFiles"))
       case _ => {
         Logger.error(s"Can not map resource ${resourceRef.resourceType} to collection.")
         None
@@ -519,7 +520,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                 }
               }
             }
-            case None => Logger.error(s"[MongoDBUpdate : Missing dataset id")
+            case None => Logger.error(s"[MongoDBUpdate : Missing file id")
           }
         }
         appConfig.addPropertyValue("mongodb.updates", updateId)

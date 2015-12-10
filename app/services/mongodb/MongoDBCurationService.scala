@@ -4,12 +4,11 @@ import java.net.URI
 import javax.inject.{Inject, Singleton}
 
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
-import models.{CurationObject, ProjectSpace, SpaceInvite}
+import models._
 import org.bson.types.ObjectId
 import play.api.Play._
 import MongoContext.context
-import models.{User, UUID, Collection, Dataset}
-import services.{CurationService, SpaceService}
+import services.{MetadataService, CurationService, SpaceService}
 import util.Direction._
 import java.util.Date
 import play.api.Logger
@@ -19,7 +18,7 @@ import com.mongodb.casbah.Imports._
 
 
 @Singleton
-class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends CurationService {
+class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: SpaceService)  extends CurationService {
 
   def insert(curation: CurationObject) = {
 
@@ -49,26 +48,18 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
     val curation = get(id)
     curation match {
       case Some(c) => {
+        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
+        c.files.map(f => metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f)))
         spaces.removeCurationObject(c.space, c.id)
+        c.files.map(f => CurationFileDAO.remove(MongoDBObject("_id" ->new ObjectId(f.stringify))))
         CurationDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
       }
       case None =>
     }
   }
 
-  def addDatasetUserMetaData(id: UUID, json: String) {
-    Logger.debug("Adding/modifying user metadata to curation " + id + " : " + json)
-    val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
-    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("datasets.0.userMetadata" -> md),
-      false, false, WriteConcern.Safe)
-  }
-
-
-  def addFileUserMetaData(curationId: UUID, file: Int, json: String) {
-    val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
-    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(curationId.stringify)), $set("files."+file+".userMetadata" -> md),
-      false, false, WriteConcern.Safe)
-
+  def insertFile(cf: CurationFile) ={
+    CurationFileDAO.insert(cf)
   }
 
   def updateRepository(curationId: UUID, repository: String): Unit = {
@@ -85,6 +76,24 @@ class MongoDBCurationService  @Inject() (spaces: SpaceService)  extends Curation
   def getCurationObjectByDatasetId(datasetId: UUID): List[CurationObject] = {
     CurationDAO.find(MongoDBObject("datasets" -> MongoDBObject("$elemMatch" -> MongoDBObject("_id" -> new ObjectId(datasetId.stringify))))).toList
   }
+
+  def getCurationFiles(cfs:List[UUID]): List[CurationFile] ={
+    (for (cf <- cfs) yield CurationFileDAO.findOneById(new ObjectId(cf.stringify))).flatten.toList
+  }
+
+  def getCurationByCurationFile(curationFile: UUID): Option[CurationObject] = {
+    CurationDAO.findOne(MongoDBObject("files" ->  new ObjectId(curationFile.stringify)))
+  }
+
+  def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID) = {
+    val result = CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $set("description" -> description, "name" -> name, "space" -> new ObjectId(newSpace.stringify)),
+      false, false, WriteConcern.Safe)
+    if(oldSpace != newSpace) {
+      spaces.removeCurationObject(oldSpace, id)
+      spaces.addCurationObject(newSpace, id)
+    }
+  }
 }
 
 /**
@@ -94,5 +103,16 @@ object CurationDAO extends ModelCompanion[CurationObject, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[CurationObject, ObjectId](collection = x.collection("curationObjects")) {}
+  }
+}
+
+
+/**
+ * Salat CurationObjectMetadata model companion.
+ */
+object CurationFileDAO extends ModelCompanion[CurationFile, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[CurationFile, ObjectId](collection = x.collection("curationFiles")) {}
   }
 }

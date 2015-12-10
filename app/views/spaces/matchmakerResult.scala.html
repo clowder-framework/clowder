@@ -48,7 +48,7 @@
             </div>
         </div>
         <div class="col-md-9">
-                <h3>Candidate Repositories</h3>
+                <h3 id="candidate">Candidate Repositories</h3>
             @if(mmResponse.size >0 ) {
                 The results below are based on an analysis of the dataset's properties and metadata and the preferences you specified. <br/>
             } else {
@@ -155,6 +155,11 @@
 
             if(repository == ""){
                 $('#selecterror').show();
+
+                $('html, body').animate({
+                    scrollTop: $('#candidate').offset().top + 'px'
+                }, 'fast');
+
             } else{
                 window.location.href = jsRoutes.controllers.CurationObjects.compareToRepository('@curationObject.id', repository).url;
             }
