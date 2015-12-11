@@ -39,22 +39,20 @@ of the blueimp jQuery File Upload library. An open source project located here: 
                 <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
             <div class="row fileupload-buttonbar button-margins upload-files-buttons">
                 <div class="col-lg-7">
-                        <!-- The fileinput-button span is used to style the file input field as button -->
+                    <!-- The fileinput-button span is used to style the file input field as button -->
                     <span class="btn btn-default fileinput-button">
                         <i class="glyphicon glyphicon-plus"></i>
                         <span>Select Files</span>
                             <!-- The file input had "multiple" removed for the current dataset creation method. -->
                         <input type="file" name="files[]" multiple>
                     </span>
-                    <button type="submit" class="btn btn-primary start" onclick="checkZeroFiles();" title="Create the Dataset">
-                        <i class="glyphicon glyphicon-upload"></i>
-                        <span id="uploadcreate">Upload</span>
+                    <button type="submit" class="btn btn-primary start" id="uploadcreate" onclick="checkZeroFiles();" title="Upload selected files">
+                        <span class="glyphicon glyphicon-upload"></span> Upload
                     </button>
-                    <button type="reset" class="btn btn-default cancel">
-                        <i class="glyphicon glyphicon-ban-circle"></i>
-                        <span>Cancel Upload</span>
+                    <button type="submit" class="btn btn-default cancel">
+                        <span class="glyphicon glyphicon-remove"></span> Cancel Upload
                     </button>
-                        <!-- The global file processing state -->
+                    <!-- The global file processing state -->
                     <span class="fileupload-process"></span>
                 </div>
                     <!-- The global progress state -->
@@ -72,9 +70,8 @@ of the blueimp jQuery File Upload library. An open source project located here: 
                     <label>
                         <input type="checkbox" class="toggle"> Select all
                     </label>
-                    <button type="button" class="btn btn-link delete" style="margin-bottom: 0px">
-                        <i class="glyphicon glyphicon-trash"></i>
-                        <span>Delete selected</span>
+                    <button type="submit" class="btn btn-link delete" style="margin-bottom: 0px">
+                        <span class="glyphicon glyphicon-trash"></span> Delete selected
                     </button>
                 </div>
             </div>
@@ -113,14 +110,12 @@ of the blueimp jQuery File Upload library. An open source project located here: 
             <td>
                 {% if (!i && !o.options.autoUpload) { %}
                     <button class="btn btn-primary start" disabled>
-                        <i class="glyphicon glyphicon-upload"></i>
-                        <span>Start</span>
+                        <span class="glyphicon glyphicon-upload"></span> Start
                     </button>
                 {% } %}
                 {% if (!i) { %}
-                    <button class="btn btn-default cancel">
-                        <i class="glyphicon glyphicon-ban-circle"></i>
-                        <span>Cancel</span>
+                    <button type="submit" class="btn btn-default cancel">
+                        <span class="glyphicon glyphicon-remove"></span> Cancel
                     </button>
                 {% } %}
             </td>
@@ -160,14 +155,12 @@ of the blueimp jQuery File Upload library. An open source project located here: 
             </td>
             <td>
                 {% if (file.deleteUrl) { %}
-                    <button class="btn btn-danger delete" data-type="{%=file.deleteType%}" data-url="{%=file.deleteUrl%}"{% if (file.deleteWithCredentials) { %} data-xhr-fields='{"withCredentials":true}'{% } %}>
-                        <i class="glyphicon glyphicon-trash"></i>
-                        <span>Delete</span>
+                    <button type="submit" class="btn btn-link delete" data-type="{%=file.deleteType%}" data-url="{%=file.deleteUrl%}"{% if (file.deleteWithCredentials) { %} data-xhr-fields='{"withCredentials":true}'{% } %}>
+                        <span class="glyphicon glyphicon-trash"></span> Delete File
                     </button>
                 {% } else { %}
-                    <button class="btn btn-default cancel">
-                        <i class="glyphicon glyphicon-ban-circle"></i>
-                        <span>Cancel</span>
+                    <button type="submit" class="btn btn-default cancel">
+                        <span class="glyphicon glyphicon-remove"></span> Cancel
                     </button>
                 {% } %}
             </td>
