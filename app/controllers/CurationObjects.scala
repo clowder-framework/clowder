@@ -1,39 +1,23 @@
 package controllers
 
-import java.io.InputStreamReader
-import java.io.BufferedReader
 import java.util.Date
 import javax.inject.Inject
-import api.{UserRequest, Permission}
-import com.mongodb.BasicDBList
+import api.Permission
 import models._
-import org.apache.http.entity.StringEntity
-import org.apache.http.impl.client.DefaultHttpClient
-import org.apache.http.util.EntityUtils
-import org.json.JSONArray
 import play.api.Logger
-import play.api.data.{Forms, Form}
 import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.libs.json.JsArray
-import play.libs.F.Promise
-import securesocial.core.Identity
 import services._
 import _root_.util.RequiredFieldsConfig
 import play.api.Play._
-import org.apache.http.client.methods.HttpPost
 import scala.concurrent.Future
 import scala.concurrent.Await
-import play.api.mvc.{Request, Action, AnyContent, Results}
+import play.api.mvc.{Request, Action, Results}
 import play.api.libs.ws._
-import play.api.libs.ws.WS._
-import play.api.libs.functional.syntax._
-
-
 import scala.concurrent.duration._
 import play.api.libs.json.Reads._
-import play.api.libs.json.JsPath.readNullable
-import java.net.{URL, URI}
+import java.net.URI
 
 /**
  * Methods for interacting with the curation objects in the staging area.
@@ -251,7 +235,7 @@ class CurationObjects @Inject()(
 
     val creator = userService.findByIdentity(c.author).map ( usr => usr.profile match {
       case Some(prof) => prof.orcidID match {
-        case Some(oid) => if(oid.indexOf("orcid.org") == 0) {oid} else if(oid.indexOf("orcid.org")>0) {"orcid.org"+oid.substring(oid.lastIndexOf("/"))} else {"orcid.org/"+oid}
+        case Some(oid) => oid
         case None => api.routes.Users.findById(usr.id).absoluteURL(https)
       }
         case None => api.routes.Users.findById(usr.id).absoluteURL(https)
@@ -265,7 +249,6 @@ class CurationObjects @Inject()(
       case None => api.routes.Users.findById(usr.id).absoluteURL(https)
 
     })
-    val metadataDefs = metadatas.getDefinitions()
     val aggregation = metadataJson.toMap ++ Map(
       "Identifier" -> Json.toJson(controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(https)),
       "@id" -> Json.toJson(hostUrl),
@@ -338,6 +321,7 @@ class CurationObjects @Inject()(
       case response =>
         if(response.status >= 200 && response.status < 300 || response.status == 304) {
           jsonResponse = response.json
+          Logger.debug(jsonResponse.toString())
         }
         else {
           Logger.error("Error Calling Matchmaker: " + response.getAHCResponse.getResponseBody())
@@ -390,7 +374,7 @@ class CurationObjects @Inject()(
           }
           val creator = Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile match {
             case Some(prof) => prof.orcidID match {
-              case Some(oid) => if(oid.indexOf("orcid.org") == 0) {oid} else if(oid.indexOf("orcid.org")>0) {"orcid.org"+oid.substring(oid.lastIndexOf("/"))} else {"orcid.org/"+oid}
+              case Some(oid) => oid
               case None => controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)
             }
             case None => controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)
@@ -402,7 +386,7 @@ class CurationObjects @Inject()(
           }
           val rightsholder = user.map ( usr => usr.profile match {
             case Some(prof) => prof.orcidID match {
-              case Some(oid) => if(oid.indexOf("orcid.org") == 0) {oid} else if(oid.indexOf("orcid.org")>0) {"orcid.org"+oid.substring(oid.lastIndexOf("/"))} else {"orcid.org/"+oid}
+              case Some(oid) => oid
               case None => api.routes.Users.findById(usr.id).absoluteURL(https)
             }
             case None => api.routes.Users.findById(usr.id).absoluteURL(https)

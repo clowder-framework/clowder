@@ -12,11 +12,11 @@
     <ul class="indent_20 list-unstyled">
         {{#each per_rule_score}}
             <li>{{this.rule_name}} </li>
-            {{#equal this.score 0}}
+            {{#lessthan this.score 0}}
                 <li><span class="red">{{this.message}}</span> <a href='{{../../href_metadata}}'> Edit Metadata</a><br/> </li>
             {{else}}
                 <li><span class="green">All Requirements are satisfied.</span></li>
-        {{/equal}}
+        {{/lessthan}}
         {{/each}}
     </ul>
     </div>
