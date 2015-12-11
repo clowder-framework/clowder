@@ -134,7 +134,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
                   case Some(fspace) => {
                     followedSpaces = followedSpaces.++(List((fspace.id, fspace.name, fspace.description.substring(0, Math.min(maxDescLength, fspace.description.length())))))
                   }
-                  case None =>
+
                 }
               }
             }
@@ -319,6 +319,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Metadata.getUrl,
         api.routes.javascript.Metadata.addDefinition,
         api.routes.javascript.Metadata.removeMetadata,
+        api.routes.javascript.Events.sendExceptionEmail,
         controllers.routes.javascript.Files.file,
         controllers.routes.javascript.Datasets.dataset,
         controllers.routes.javascript.Datasets.newDataset,
