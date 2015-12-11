@@ -154,8 +154,7 @@
         contentType : "application/json"
     });
     request.done ( function ( response, textStatus, jqXHR ) {
-
-        console.log("Successful remove user");
+        console.log("Successful remove user " + this.id);
     });
     request.fail(function(jqXHR) {
         console.error("ERROR occurs ");
