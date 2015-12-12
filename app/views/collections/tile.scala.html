@@ -1,0 +1,60 @@
+@(collection: models.Collection, classes: String, showFollow: Boolean)(implicit user: Option[models.User])
+@import _root_.util.Formatters.ellipsize
+<div class="post-box @classes">
+    <div class="panel panel-default">
+        <div class="pull-right">
+            <a href="#" title="Bookmark" class="pull-right bookmark-link"><span class="glyphicon glyphicon-bookmark bookmark"></span></a>
+        </div>
+        <div class="panel-body">
+            @if(!collection.thumbnail_id.isEmpty){
+                <a href="@(routes.Collections.collection(collection.id))">
+                    <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)">
+                </a>
+            }
+            <div class="caption break-word">
+                <h4><a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a></h4>
+                <p>@Html(ellipsize(collection.description, 200))</p>
+            </div>
+        </div>
+            <!-- Collection Info -->
+        <ul class="list-group">
+            <li class="list-group-item">
+                <span class="glyphicon glyphicon glyphicon-file" title="@collection.datasetCount datasets"></span> @collection.datasetCount
+                @if(user.isDefined) {
+                        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                    @if( user.get.identityId.userId.equals(collection.author.identityId.userId)){
+                        <button onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
+                            <span class="glyphicon glyphicon-trash"></span></button>
+                    } else {
+                        <button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
+                            <span class="glyphicon glyphicon-trash"></span></button>
+                    }
+                }
+            </li>
+        </ul>
+        @if(showFollow) {
+            <ul class="list-group center-margin">
+            @user match {
+                case Some(viewer) => {
+                    <a
+                    id="followButton"
+                    type="button"
+                    class="btn-link"
+                    data-toggle="button"
+                    autocomplete="off"
+                    objectType="collection"
+                    objectId="@collection.id.stringify"
+                    >
+                    @if(viewer.followedEntities.filter(x => (x.id == collection.id)).nonEmpty) {
+                        <span class='glyphicon glyphicon-star-empty'></span>Unfollow
+                    } else {
+                        <span class='glyphicon glyphicon-star'></span> Follow
+                    }
+                    </a>
+
+                }
+            }
+            </ul>
+        }
+    </div>
+</div>
