@@ -144,6 +144,9 @@ line-height: 1.5;
                 });
 
                 request.done(function (response, textStatus, jqXHR) {
+                    if($('#metadata-content .panel').length == 0) {
+                        $('#metadata-content').empty();
+                    }
                     $('#metadata-content').prepend(response);
                 });
 
