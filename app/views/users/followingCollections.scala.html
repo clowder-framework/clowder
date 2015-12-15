@@ -28,6 +28,7 @@
                 <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
             </div>
             <script>
+            var removeIndicator = true;
 	        var viewMode = '@mode.getOrElse("tile")';
 	        $.cookie.raw = true;
 	        $.cookie.json = true;
