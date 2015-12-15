@@ -910,3 +910,7 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 .add-resource {
     width: 240px !important
 }
+
+.tag-padding {
+    padding-right:15px;
+}
