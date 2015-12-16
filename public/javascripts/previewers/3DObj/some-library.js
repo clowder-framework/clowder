@@ -1,31 +1,28 @@
 (function ($, Configuration) {
   console.log("3D obj previewer for " + Configuration.id);
 
-  var fileUrl = "http://" + Configuration.hostIp + ":" + window.location.port + Configuration.url + "/textures/dataset/" + Configuration.id + "/json";
-  var pathJs = "http://" + Configuration.hostIp + ":" + window.location.port + Configuration.jsPath + "/";
-  
+  var fileUrl = Configuration.url + "/textures/dataset/" + Configuration.id + "/json";
+
   var width = 750;
   var height = 550;
   
   $(Configuration.tab).append("<p>Move mouse while left-clicking and pressing CTRL to pan model. Move mouse wheel or move mouse up and down </br> while left-clicking and pressing SHIFT to change distance. Move mouse while left-clicking and not pressing CTRL or SHIFT to rotate.</p>");
-  
 
-  
   var s = document.createElement("script");
   s.type = "text/javascript";
-  s.src = pathJs + "Detector.js";
+  s.src = Configuration.previewer + "/Detector.js";
   console.log("Updating tab " + Configuration.tab);
   $(Configuration.tab).append(s);
   
-  var s = document.createElement("script");
+  s = document.createElement("script");
   s.type = "text/javascript";
-  s.src = pathJs + "Three.js";
+  s.src = Configuration.previewer + "/Three.js";
   console.log("Updating tab " + Configuration.tab);
   $(Configuration.tab).append(s);
   
-  var s = document.createElement("script");
+  s = document.createElement("script");
   s.type = "text/javascript";
-  s.src = pathJs + "RequestAnimationFrame.js";
+  s.src = Configuration.previewer + "/RequestAnimationFrame.js";
   console.log("Updating tab " + Configuration.tab);
   $(Configuration.tab).append(s);
     
@@ -33,19 +30,16 @@
 
 	var SCREEN_WIDTH = width;
 	var SCREEN_HEIGHT = height;
-	var FLOOR = 0;
 
 	var container;
 
 	var camera, scene;
 	var webglRenderer;
 
-	var zmesh, geometry;
+	var zmesh;
 
 	var mouseX = 0, mouseY = 0;
-	var windowHalfX = width / 2;
-	var windowHalfY = height / 2;
-	
+
 	var mouseDown = false;
 	
 	init();
@@ -56,10 +50,10 @@
 		container = document.getElementById(Configuration.tab.replace("#",""));		
 		container.onmousedown = function() { 
 		  mouseDown = true;
-		}
+		};
 		document.body.onmouseup = function() {
 		  mouseDown = false;
-		}
+		};
 		document.body.addEventListener( 'mousemove', onDocumentMouseMove, false );		
 		// IE, Chrome, Safari, Opera
 		document.body.addEventListener( 'mousewheel', onContainerMouseWheelMove, false );

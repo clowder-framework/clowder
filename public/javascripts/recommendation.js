@@ -18,6 +18,9 @@ var getAjaxObj = function(jsRoutes, type) {
         case 'collection':
             ajaxObj = jsRoutes.api.Collections;
             break;
+        case 'space':
+            ajaxObj = jsRoutes.api.Spaces;
+            break;
         default:
             ajaxObj = undefined;
     }
@@ -67,9 +70,9 @@ var followHandler = function (jsRoutes, id, name, type, followCallback, unfollow
     if (buttonText === 'Follow') {
         var request = ajaxObj.follow(id, name).ajax({ type: 'POST' });
         request.done(function (data) {
-            $followButton.text("Unfollow");
-            $followButton.removeClass('btn-success');
-            $followButton.addClass('btn-danger');
+            $followButton.html("<span class='glyphicon glyphicon-star-empty'></span> Unfollow");
+            $followButton.removeClass('btn-link');
+            $followButton.addClass('btn-link');
             if (followCallback !== undefined) {
                 followCallback(data);
             }
@@ -81,9 +84,9 @@ var followHandler = function (jsRoutes, id, name, type, followCallback, unfollow
     } else if (buttonText === 'Unfollow') {
         var request = ajaxObj.unfollow(id, name).ajax({ type: 'POST' });
         request.done(function (data) {
-            $followButton.text("Follow");
-            $followButton.removeClass('btn-danger');
-            $followButton.addClass('btn-success');
+            $followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
+            $followButton.removeClass('btn-link');
+            $followButton.addClass('btn-link');
             if (unfollowCallback !== undefined) {
                 unfollowCallback();
             }
@@ -115,14 +118,15 @@ var recommendationHandler = function(jsRoutes, $recPanel, $recDiv, recommendatio
                             '</div>' +
                             '<div class="panel-footer">' +
                                 '<h4>' +
-                                    '<button class="followButton btn-xs btn-success" ' +
+                                    '<button class="followButton btn-xs btn-link" ' +
                                             'data-toggle="button" ' +
                                             'aria-pressed="true" ' +
                                             'autocomplete="off" ' +
                                             'objectId="' + id + '" ' +
                                             'objectName="' + name + '" ' +
                                             'objectType="' + objectType + '">' +
-                                        'Follow' +
+                                            '<span class="glyphicon glyphicon-star"></span> ' +
+                                    'Follow' +
                                     '</button>' +
                                 '</h4>' +
                             '</div>' +

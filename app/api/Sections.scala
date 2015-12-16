@@ -1,18 +1,19 @@
 package api
 
-import play.api.libs.json.Json
+import javax.inject.{Inject, Singleton}
+
+import com.wordnik.swagger.annotations.ApiOperation
+import models.{Comment, UUID}
 import play.api.Logger
+import play.api.libs.json.Json
 import play.api.libs.json.Json._
-import models.{UUID, Comment}
+import models.{ResourceRef, UUID, Comment}
 import services._
 import javax.inject.{Inject, Singleton}
-import scala.Some
+import services._
 
 /**
  * Files sections.
- *
- * @author Luigi Marini
- *
  */
 @Singleton
 class Sections @Inject()(
@@ -30,8 +31,8 @@ class Sections @Inject()(
    * otherwise returns a BadRequest.
    * A new ObjectId is created for this section.
    */
-  def add() = SecuredAction(authorization = WithPermission(Permission.AddSections)) {
-    implicit request =>
+  def add() = PermissionAction(Permission.CreateSection)(parse.json) { implicit request =>
+    if (request.user.isEmpty) Unauthorized("Not authorized")
       request.body.\("file_id").asOpt[String] match {
         case Some(file_id) => {
             files.get(UUID(file_id.toString)) match {
@@ -39,7 +40,7 @@ class Sections @Inject()(
                 val id = sections.insert(request.body)
                 Ok(Json.obj("id" -> id))
               case None => {
-                Logger.error("The file_id " + file_id + " is not found, request body: " + request.body);
+                Logger.error("The file_id " + file_id + " is not found, request body: " + request.body)
                 NotFound(toJson("The file_id " + file_id + " is not found."))
               }
             }
@@ -51,11 +52,24 @@ class Sections @Inject()(
       }
   }
 
+  @ApiOperation(value = "Delete section",
+    notes = "Remove section file from system).",
+    responseClass = "None", httpMethod = "DELETE")
+  def delete(id: UUID) = PermissionAction(Permission.DeleteSection, Some(ResourceRef(ResourceRef.section, id))) {
+    request =>
+      sections.get(id) match {
+        case Some(s) => {
+          sections.removeSection(s)
+          Ok(toJson(Map("status"->"success")))
+        }
+        case None => Ok(toJson(Map("status" -> "success")))
+      }
+  }
+
   /**
    * REST endpoint: GET: get info of this section.
    */
-  def get(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetSections)) {
-    implicit request =>
+  def get(id: UUID) = PermissionAction(Permission.ViewSection, Some(ResourceRef(ResourceRef.section, id))) { implicit request =>
       Logger.info("Getting info for section with id " + id)
       sections.get(id) match {
         case Some(section) =>
@@ -71,8 +85,7 @@ class Sections @Inject()(
    * Returns a JSON object of multiple fields.
    * One returned field is "tags", containing a list of string values.
    */
-  def getTags(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowFile)) {
-    implicit request =>
+  def getTags(id: UUID) = PermissionAction(Permission.ViewSection, Some(ResourceRef(ResourceRef.section, id))) { implicit request =>
       Logger.info("Getting tags for section with id " + id)
       sections.get(id) match {
         case Some(section) =>
@@ -89,8 +102,7 @@ class Sections @Inject()(
    * REST endpoint: POST: Add tags to a section.
    * Requires that the request body contains a "tags" field of List[String] type.
    */
-  def addTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateTagsSections)) {
-    implicit request =>
+  def addTags(id: UUID) = PermissionAction(Permission.AddTag, Some(ResourceRef(ResourceRef.section, id)))(parse.json) { implicit request =>
       val (not_found, error_str) = tags.addTagsHelper(TagCheck_Section, id, request)
 
       // Now the real work: adding the tags.
@@ -110,8 +122,7 @@ class Sections @Inject()(
    * REST endpoint: POST: remove tags.
    * Requires that the request body contains a "tags" field of List[String] type.
    */
-  def removeTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTagsSections)) {
-    implicit request =>
+  def removeTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.section, id)))(parse.json) { implicit request =>
       val (not_found, error_str) = tags.removeTagsHelper(TagCheck_Section, id, request)
 
       if ("" == error_str) {
@@ -129,8 +140,7 @@ class Sections @Inject()(
   /**
    * REST endpoint: POST: remove all tags.
    */
-  def removeAllTags(id: UUID) = SecuredAction(authorization = WithPermission(Permission.DeleteTagsSections)) {
-    implicit request =>
+  def removeAllTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.section, id))) { implicit request =>
       Logger.info("Removing all tags for section with id: " + id)
       sections.get(id) match {
         case Some(section) => {
@@ -146,8 +156,7 @@ class Sections @Inject()(
 
   // ---------- Tags related code ends ------------------
 
-  def comment(id: UUID) = SecuredAction(authorization = WithPermission(Permission.CreateComments)) {
-    implicit request =>
+  def comment(id: UUID) = PermissionAction(Permission.AddComment, Some(ResourceRef(ResourceRef.section, id)))(parse.json) { implicit request =>
       request.user match {
         case Some(identity) => {
           (request.body \ "text").asOpt[String] match {
@@ -166,7 +175,7 @@ class Sections @Inject()(
       }
   }
   
-  def description(id: UUID) = SecuredAction(authorization=WithPermission(Permission.AddSections))  { implicit request =>
+  def description(id: UUID) = PermissionAction(Permission.EditSection, Some(ResourceRef(ResourceRef.section, id)))(parse.json)  { implicit request =>
 	  request.user match {
 	    case Some(identity) => {
 		    request.body.\("description").asOpt[String] match {
@@ -189,9 +198,7 @@ class Sections @Inject()(
   /**
    * Add thumbnail to section.
    */
-  def attachThumbnail(section_id: UUID, thumbnail_id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.AddSections),
-		  			resourceId = Some(section_id)) {
-    implicit request =>
+  def attachThumbnail(section_id: UUID, thumbnail_id: UUID) = PermissionAction(Permission.EditSection, Some(ResourceRef(ResourceRef.section, section_id))) { implicit request =>
       sections.get(section_id) match {
         case Some(section) => {
           thumbnails.get(thumbnail_id) match {

@@ -1,0 +1,167 @@
+@(spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+
+@main("Create Dataset") {
+    <!-- Custom items for the create dataset workflow -->
+    <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
+    <script type="text/javascript" language="javascript">
+            //Global so that the javascript for the dataset creation can reference this.
+            var isNameRequired = @isNameRequired;
+            var isDescRequired = @isDescriptionRequired;
+    </script>
+    <div class="page-header">
+        <h1>Create New Dataset</h1>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <p>A dataset is a container for files and metadata. Create one to upload data to the system.
+                You can keep your data private or share it with other spaces.</p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div>
+                <span id="status" class="success hiddencomplete alert alert-success" role="alert">A Status Message</span>
+                <span class="error hiddencomplete alert alert-danger" id="messageerror">An Error Message</span>
+            </div>
+            <div class="form-group">
+                <label id="namelabel" for="name">Name</label>
+                <input type="text" class="form-control" id="name" placeholder="A short name">
+                <span class="error hiddencomplete" id="nameerror">The name is a required field</span>
+            </div>
+            <div class="form-group">
+                <label id="desclabel" for="name">Description</label>
+                <textarea cols=40 rows=4 type="text" id="description" class="form-control"
+                    placeholder="A longer description"></textarea>
+                <span class="error hiddencomplete" id="descerror">This description is a required field</span>
+            </div>
+            <div class="form-group">
+                <label id="spacelabel" for="space">Share with spaces</label>
+                <select name="space" id="spaceid" class ="chosen-select" multiple>
+                    @spaces.map { space =>
+                        <option id="@(space.id)" value="@(space.id)">@(space.name)</option>
+                    }
+                    </select>
+                <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
+                    this dataset with members of one or more spaces. This is optional.</p>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <button type="submit" class="btn btn-primary start"  id="createdataset" title="Create the Dataset">
+                <span class="glyphicon glyphicon-ok"></span> Create Dataset
+            </button>
+            <button class="btn btn-default" title="Start the dataset creation process over" onclick="return resetValues();">
+                <span class="glyphicon glyphicon-unchecked"></span> Reset
+            </button>
+        </div>
+    </div>
+
+    <script src="/assets/javascripts/chosen.jquery.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="/assets/stylesheets/chosen.css">
+
+    <script language = "javascript">
+        $(".chosen-select").chosen({
+            width: "90%",
+            placeholder_text_multiple: "Spaces that will have access to the dataset (optional)"
+        })
+    </script>
+
+    <script language = "javascript">
+
+        function resetValues() {
+            $('#name').val("");
+            $('#description').val("");
+            $('#spaceid').val('').trigger('chosen:updated');
+        }
+
+        var idNameObj = {};
+
+        function isUndefined(value) {
+            return typeof value === 'undefined';
+        }
+
+        function getName(id) {
+            return idNameObj[id];
+        }
+
+        $(document).ready(function() {
+            @for(space <- spaces) {
+                idNameObj["@space.name"] = "@space.id";
+            }
+        });
+
+        $(".chosen-select").chosen().change(function(event, params) {
+            var targetId = this.getAttribute("id");
+            if(!isUndefined(params.selected)) {
+                var addedId = params.selected;
+                @for(space <- spaces) {
+                var currentId = "@space.id";
+                if(currentId != targetId) {
+                    $('#@space.id option [value='+addedId+']').remove();
+                    $('#@space.id').trigger("chosen:updated");
+
+                }
+                }
+                $('ul.chosen-choices li.search-field').css("width", "0");
+            } else if(!isUndefined(params.deselected)) {
+                var removedId = params.deselected;
+                @for(space <- spaces) {
+                    var currentId = "@space.id";
+                    if(currentId != targetId) {
+                        $('#@space.id').prepend($("<option></option>").attr("value", removedId).text(getName(removedId)));
+                        $('#@space.id').trigger("chosen:updated");
+                    }
+                }
+            }
+        });
+
+        if(@spaceId.isDefined) {
+            $('#@spaceId').prop('selected','selected');
+            $('#spaceid').trigger("chosen:updated");
+        }
+
+        $(function () {
+            $('#createdataset').click(function () {
+                var name = $('#name');
+                var desc = $('#description');
+                var spaceList = [];
+                $('#spaceid').find(":selected").each(function(i, selected) {
+                    spaceList[i] = $(selected).val();
+                });
+                var error = false;
+                if (!name.val() && isNameRequired) {
+                    $('#nameerror').show();
+                    error = true;
+                }
+                if (!desc.val() && isDescRequired) {
+                    $('#descerror').show();
+                    error = true;
+                }
+                if (!error) {
+                    var encName = htmlEncode(name.val());
+                    var encDescription = htmlEncode(desc.val());
+                    var jsonData = JSON.stringify({"name": encName, "description": encDescription, "space": spaceList});
+                    var request = jsRoutes.api.Datasets.createEmptyDataset().ajax({
+                        data: jsonData,
+                        type: 'POST',
+                        contentType: "application/json"
+                    });
+
+                    request.done(function (response, textStatus, jqXHR){
+                        location.href = jsRoutes.controllers.Datasets.createStep2(response["id"]).url;
+                    });
+
+                    request.fail(function (jqXHR, textStatus, errorThrown){
+                        console.error("The following error occured: " + textStatus, errorThrown);
+                        var errMsg = "You must be logged in to create a new dataset.";
+                        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                            notify("Error in creating dataset. : " + errorThrown, "error");
+                        }
+                    });
+                    return false;
+                }
+            });
+        });
+    </script>
+}

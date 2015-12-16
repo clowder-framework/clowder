@@ -1,6 +1,7 @@
 package api
 
 import javax.inject.Inject
+
 import com.wordnik.swagger.annotations.ApiOperation
 import models._
 import play.api.libs.json._
@@ -14,8 +15,6 @@ import play.api.Logger
 
 /**
  * API to interact with the users.
- *
- * @author Rob Kooper
  */
 class Users @Inject()(users: UserService, events: EventService) extends ApiController {
   /**
@@ -23,8 +22,8 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
    */
   @ApiOperation(value = "List all users in the system",
     responseClass = "User", httpMethod = "GET")
-  def list() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.UserAdmin)) { request =>
-    Ok(Json.toJson(users.list.map(userToJSON)))
+  def list() = ServerAdminAction { implicit request =>
+     Ok(Json.toJson(users.list.map(userToJSON)))
   }
 
   /**
@@ -32,7 +31,7 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
    */
   @ApiOperation(value = "Return the user associated with the request.",
     responseClass = "User", httpMethod = "GET")
-  def getUser() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+  def getUser() = AuthenticatedAction { implicit request =>
       request.user match {
           case Some(identity) => {
               Logger.debug("Have an identity. It is " + identity)
@@ -61,7 +60,7 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
    */
   @ApiOperation(value = "Return a single user.",
     responseClass = "User", httpMethod = "GET")
-  def findById(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+  def findById(id: UUID) = PermissionAction(Permission.ViewUser, Some(ResourceRef(ResourceRef.user, id))) { implicit request =>
     users.findById(id) match {
       case Some(x) => Ok(userToJSON(x))
       case None => BadRequest("no user found with that id.")
@@ -70,40 +69,44 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
 
   /**
    * Returns a single user based on the email specified.
+   * @deprecated use findById
    */
   @ApiOperation(value = "Return a single user.",
     responseClass = "User", httpMethod = "GET")
-  def findByEmail(email: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+  def findByEmail(email: String) = PermissionAction(Permission.ViewUser) { implicit request =>
     users.findByEmail(email) match {
       case Some(x) => Ok(userToJSON(x))
       case None => BadRequest("no user found with that email.")
     }
   }
 
+  /** @deprecated use id instead of email */
   @ApiOperation(value = "Edit User Field.",
     responseClass = "None", httpMethod = "POST")
-  def updateUserField(email: String, field: String, fieldText: Any) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+  def updateUserField(email: String, field: String, fieldText: Any) = PermissionAction(Permission.ViewUser) { implicit request =>
     users.updateUserField(email, field, fieldText)
     Ok(Json.obj("status" -> "success"))
   }
 
+  /** @deprecated use id instead of email */
   @ApiOperation(value = "Add a dataset View.",
     responseClass = "None", httpMethod = "POST")
-  def addUserDatasetView(email: String, dataset: UUID)= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+  def addUserDatasetView(email: String, dataset: UUID) = PermissionAction(Permission.ViewUser) { implicit request =>
     users.addUserDatasetView(email, dataset)
     Ok(Json.obj("status" -> "success"))
   }
 
+  /** @deprecated use id instead of email */
   @ApiOperation(value = "Create a List.",
     responseClass = "None", httpMethod = "POST")
-  def createNewListInUser(email: String, field: String, fieldList: List[Any])= SecuredAction(parse.anyContent, authorization = WithPermission(Permission.GetUser)) { request =>
+  def createNewListInUser(email: String, field: String, fieldList: List[Any])= PermissionAction(Permission.ViewUser) { implicit request =>
     users.createNewListInUser(email, field, fieldList)
     Ok(Json.obj("status" -> "success"))
   }
 
   @ApiOperation(value = "Follow a user",
     responseClass = "None", httpMethod = "POST")
-  def follow(followeeUUID: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
+  def follow(followeeUUID: UUID, name: String) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(loggedInUser) => {
@@ -125,7 +128,7 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
 
   @ApiOperation(value = "Unfollow a user",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(followeeUUID: UUID, name: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.LoggedIn)) { request =>
+  def unfollow(followeeUUID: UUID, name: String) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(loggedInUser) => {
@@ -156,11 +159,32 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
   }
 
   def userToJSON(user: User): JsValue = {
+    var profile: Map[String, JsValue] = Map.empty
+    if(user.profile.isDefined) {
+      if(user.profile.get.biography.isDefined) {
+        profile  = profile + ("biography" -> Json.toJson(user.profile.get.biography))
+      }
+      if(user.profile.get.institution.isDefined) {
+        profile = profile + ( "institution" -> Json.toJson(user.profile.get.institution))
+      }
+      if(user.profile.get.orcidID.isDefined) {
+        profile = profile + ("orcidId" -> Json.toJson(user.profile.get.orcidID))
+      }
+      if(user.profile.get.position.isDefined) {
+        profile = profile + ("position" -> Json.toJson(user.profile.get.position))
+      }
+      if(user.profile.get.institution.isDefined) {
+        profile = profile + ("institution" -> Json.toJson(user.profile.get.institution))
+      }
+
+    }
     Json.obj("id" -> user.id.stringify,
       "firstName" -> user.firstName,
       "lastName" -> user.lastName,
       "fullName" -> user.fullName,
       "email" -> user.email,
-      "avatar" -> user.getAvatarUrl())
+      "avatar" -> user.getAvatarUrl(),
+      "profile" -> Json.toJson(profile)
+     )
   }
 }

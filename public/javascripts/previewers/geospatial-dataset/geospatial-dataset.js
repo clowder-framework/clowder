@@ -1,7 +1,6 @@
 (function($, Configuration) {
 	console.log("Geospatial dataset previewer for " + Configuration.dataset_id);
-
-	$.getScript("http://openlayers.org/en/v3.0.0/build/ol.js", function () {
+	$.getScript(Configuration.path + "/../../../openlayers/ol.js", function () {
 
 		var dataset_id = Configuration.dataset_id;
 
@@ -10,7 +9,7 @@
 		// setting up ajax call to get file from the dataset
 		var file_req = $.ajax({
 			type: "GET",
-			url: "/api/datasets/" + dataset_id + "/listFiles",
+			url: jsRoutes.api.Datasets.datasetFilesList(dataset_id).url,
 			dataType: "json"
 		});
 
@@ -32,7 +31,7 @@
 					fileName: fileName,
 					fileId: fileId,
 					type: "GET",
-					url: "/api/files/" + fileId + "/technicalmetadatajson",
+					url: jsRoutes.api.Files.getTechnicalMetadataJSON(fileId).url,
 					dataType: "json"
 				});
 
@@ -95,7 +94,7 @@
 			$(Configuration.div).append("<h4>Geospatial Layers</h4>");
 
 			// adding css for ol3
-			var cssLink = $("<link rel='stylesheet' type='text/css' href='http://openlayers.org/en/v3.0.0/css/ol.css'>");
+			var cssLink = $("<link rel='stylesheet' type='text/css' href='" + Configuration.path + "/../../../openlayers/ol.css'>");
 			$(Configuration.div).append(cssLink);
 
 			// adding map div for rendering the map
@@ -224,7 +223,7 @@
 
 			// add checkbox and range input
 			var layerControl = '<div><input id="' + visVar + '" type="checkbox" checked="checked" />' +
-				' <a href="../files/' + fileId + '/">' + fileName + "</a>";
+				' <a href="../files/' + fileId + '">' + fileName + "</a>";
 			layerControl += '<input id="' + opVar + '" type="range" min="0" max="1" step="0.01" value="' + defaultOpacity + '" style="width:100px;"/></div>';
 
 			// prepend the layer not "append" since the top item means the layer on top
@@ -254,8 +253,9 @@
 			// fix for MMDB-1617
 			// force to redraw the map
 			// TODO the dom selector needs to select the current selector instead of this selection
-			$('a[href$="#tab-home"]').on('shown.bs.tab', function (e) {
+			$('a[href$="#tab-visua"]').on('shown.bs.tab', function (e) {
 				map.updateSize();
+				view.fitExtent(current_coord, map.getSize());
 			});
 		}
 	}

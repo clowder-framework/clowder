@@ -1,0 +1,169 @@
+@(curationObject: models.CurationObject, properties: Map[String, List[String]], userPreferences:  Map[String,List[String]], mmResponse: List[models.MatchMakerResponse])(implicit user: Option[models.User] )
+@main("Matchmaker") {
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <a href="@routes.Spaces.stagingArea(curationObject.space)">Staging Area</a> >
+                    <a  href ="@routes.CurationObjects.getCurationObject(curationObject.id)">Edit Metadata</a> >
+                    <u><strong>Select Repository</strong></u> >
+                    Submit to Repository
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-2">
+            <a class="btn btn-default" href ="@routes.CurationObjects.getCurationObject(curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span> Edit Metadata</a>
+        </div>
+        <div class="col-md-8 text-center">
+            <h1>Select Repository</h1>
+        </div>
+        <div class="col-md-2">
+            <button  class="btn btn-primary pull-right selectRepository">Submit to Repository <span class="glyphicon glyphicon-chevron-right"></span></button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-3">
+            @spaces.curation_summary( curationObject, "Matchmaker", false)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <h5>Publication Preferences</h5>
+                    @for((prop, value) <- properties) {
+                        <h5>@prop</h5>
+                        @for(cur<-value) {
+                            @if(userPreferences.contains(prop.replace(" ", "_").toLowerCase()) && userPreferences(prop.replace(" ", "_").toLowerCase()).contains(cur)) {
+                                <input type="checkbox" name="@prop" value="@cur" checked> @cur <br/>
+
+                            } else {
+                                <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
+                            }
+
+                        }
+                    }
+                    <div class="center-margin">
+                        <button class="btn btn-sm btn-link" id="updateResults"><span class="glyphicon glyphicon-send"></span> Update Results</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+                <h3 id="candidate">Candidate Repositories</h3>
+            @if(mmResponse.size >0 ) {
+                The results below are based on an analysis of the dataset's properties and metadata and the preferences you specified. <br/>
+            } else {
+                There was an error calling Matchmaker or there were no match's returned <br/>
+            }
+
+            <span class="error hiddencomplete" id="selecterror"> Please select a repository</span><br>
+            <div id="mmresults"></div>
+
+        </div>
+
+    </div>
+   <div class="row bottom-padding">
+        <div class="col-md-12">
+            <a class="btn btn-default" href ="@routes.CurationObjects.getCurationObject(curationObject.id)"><span class="glyphicon glyphicon-chevron-left"></span> Edit Metadata</a>
+            <button class="btn btn-primary pull-right selectRepository">Submit to Repository<span class="glyphicon glyphicon-chevron-right"></span></button>
+        </div>
+    </div>
+    <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
+    <script>
+
+        Handlebars.registerHelper('lessthan', function(lvalue, rvalue, options) {
+            if (arguments.length < 3)
+                throw new Error("Handlebars Helper equal needs 2 parameters");
+            if( lvalue>rvalue ) {
+                return options.inverse(this);
+            } else {
+                return options.fn(this);
+            }
+        });
+        var repositoryTemplate = Handlebars.getTemplate('@routes.Assets.at("templates/spaces/mmrepository")');
+        @for(curRepository <- mmResponse) {
+            var rules = [];
+            @for(rule <- curRepository.per_rule_score) {
+                rules.push({rule_name: "@rule.rule_name", score: "@rule.Score", message: "@rule.Message"});
+            }
+            @if(curationObject.repository.isDefined && curationObject.repository.get.compareTo(curRepository.orgidentifier) == 0) {
+                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", repositoryName: new Handlebars.SafeString("@curRepository.repositoryName"), orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules,  selected: true});
+                $('#mmresults').append(html);
+            } else {
+
+                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", repositoryName: new Handlebars.SafeString("@curRepository.repositoryName"),  orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules, selected: false});
+                $('#mmresults').append(html);
+            }
+        }
+
+
+        $('#updateResults').on('click', function() {
+            var access = [];
+            $("input[name='Access']:checkbox:checked").each(function(i){
+                access[i] = $(this).val();
+            });
+           var license = [];
+            $("input[name='License']:checkbox:checked").each(function(i){
+                license[i] = $(this).val();
+            });
+            var cost = [];
+            $("input[name='Cost']:checkbox:checked").each(function(i){
+                cost[i] = $(this).val();
+            });
+            var affiliation = [];
+            $("input[name='Affiliation']:checkbox:checked").each(function(i){
+                affiliation[i] = $(this).val();
+            });
+            var dataMap = {access: access.toString(), license: license.toString(), cost: cost.toString(), affiliation: affiliation.toString() };
+
+            var request = jsRoutes.api.CurationObjects.findMatchmakingRepositories('@curationObject.id').ajax({
+                type: 'POST',
+                data: JSON.stringify({"data": dataMap}),
+                dataType: 'json',
+                contentType: 'application/json; charset=utf-8'
+            });
+
+            request.done(function(response, textStatus, jqXHR) {
+                console.log("Updated Data in Preferences");
+
+                var repository = $("input[type='radio'][name='repository']:checked").val();
+                $('#mmresults').html("");
+
+                for(i in response) {
+                    var sel = repository == response[i].orgidentifier;
+                    var html  = repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", repositoryName:response[i].repositoryName, orgidentifier: response[i].orgidentifier, per_rule_score: response[i].per_rule_score, selected: repository == response[i].orgidentifier});
+                    $('#mmresults').append(html);
+
+                }
+
+                console.log(response)
+            });
+            request.fail(function( jqXHR, textStatus, errorThrown) {
+                console.error("The following error occurred: " + textStatus, errorThrown);
+                notify(jqXHR.responseText, "error");
+            });
+        });
+        $('.selectRepository').on('click', function() {
+            var radios = document.getElementsByName('repository');
+            var repository = "";
+            for (var i = 0, length = radios.length; i < length; i++) {
+                 if (radios[i].checked) {
+                    repository = radios[i].value;
+                 break;
+                }
+            }
+
+            if(repository == ""){
+                $('#selecterror').show();
+
+                $('html, body').animate({
+                    scrollTop: $('#candidate').offset().top + 'px'
+                }, 'fast');
+
+            } else{
+                window.location.href = jsRoutes.controllers.CurationObjects.compareToRepository('@curationObject.id', repository).url;
+            }
+        });
+
+    </script>
+}

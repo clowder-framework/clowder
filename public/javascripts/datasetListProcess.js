@@ -21,7 +21,7 @@ function removeDataset(datasetId,event, reloadPage){
         var errMsg = "You must be logged in to remove a dataset from the system.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The dataset was not removed due to : " + errorThrown, "error");
-        }   
+        }
 		
 	});	
 }

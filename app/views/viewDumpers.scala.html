@@ -1,5 +1,4 @@
-@* Author: Constantinos Sophocleous *@
-@()(implicit user: Option[securesocial.core.Identity])
+@()(implicit user: Option[models.User] )
 
 @main("Data dumps") {
 	<div class="page-header">
@@ -10,9 +9,9 @@
 		<div class="col-md-2">
 			<form role="form-horizontal">
 			  <div class="form-group">
-				<button class="btn btn-default dumpBtn" onclick="return fileMdDump();">Metadata of files</button>
-				<button class="btn btn-default dumpBtn" onclick="return dsMdDump();">Metadata of datasets</button>
-				<button class="btn btn-default dumpBtn" onclick="return datasetDump();">Datasets files groupings</button>	
+				<button class="btn btn-default dumpBtn btn-margins" onclick="return fileMdDump();"><span class="glyphicon glyphicon-download-alt"></span> Metadata of files</button>
+				<button class="btn btn-default dumpBtn btn-margins" onclick="return dsMdDump();"><span class="glyphicon glyphicon-download-alt"></span> Metadata of datasets</button>
+				<button class="btn btn-default dumpBtn btn-margins" onclick="return datasetDump();"><span class="glyphicon glyphicon-download-alt"></span> Datasets files groupings</button>
 			  </div>
 			</form>			
 		</div>

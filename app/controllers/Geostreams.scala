@@ -5,7 +5,6 @@ package controllers
 
 import play.api.Play._
 import play.api.mvc.Controller
-import api.WithPermission
 import api.Permission
 import services.PostgresPlugin
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
@@ -20,7 +19,7 @@ object Geostreams extends Controller with SecuredController {
 
   val pluginNotEnabled = InternalServerError("Geostreaming plugin not enabled")
 
-  def list() = SecuredAction(authorization=WithPermission(Permission.ListSensors)) { implicit request =>
+  def list() = PermissionAction(Permission.ViewSensor) { implicit request =>
     implicit val user = request.user
     plugin match {
       case Some(db) => {
@@ -39,7 +38,7 @@ object Geostreams extends Controller with SecuredController {
     }
   }
 
-  def map() = SecuredAction(authorization=WithPermission(Permission.ListSensors)) { implicit request =>
+  def map() = PermissionAction(Permission.ViewSensor) { implicit request =>
     implicit val user = request.user
     plugin match {
       case Some(db) => {
@@ -58,7 +57,7 @@ object Geostreams extends Controller with SecuredController {
     }
   }
 
-  def newSensor() = SecuredAction(authorization=WithPermission(Permission.CreateSensors)) { implicit request =>
+  def newSensor() = PermissionAction(Permission.CreateSensor) { implicit request =>
     implicit val user = request.user
     plugin match {
       case Some(db) => Ok(views.html.geostreams.create())
@@ -66,7 +65,7 @@ object Geostreams extends Controller with SecuredController {
     }
   }
 
-  def edit(id: String)= SecuredAction(authorization=WithPermission(Permission.CreateSensors)) { implicit request =>
+  def edit(id: String)= PermissionAction(Permission.CreateSensor) { implicit request =>
     implicit val user = request.user
     plugin match {
       case Some(db) => {

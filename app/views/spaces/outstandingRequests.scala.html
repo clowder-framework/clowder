@@ -1,0 +1,51 @@
+@(space: ProjectSpace, creator: Option[User], userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String])(implicit user: Option[models.User])
+
+@import api.Permission
+@import play.api.libs.json._
+@import play.api.Play.current
+
+<div class="row">
+
+        @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
+
+            @if(space.requests.isEmpty) {
+                <ul class="list-unstyled"><li>No outstanding requests</li></ul>
+            } else {
+                <div class="col-md-6">
+                <table id="outstanding-requests" class="table borderless">
+                    <tbody >
+                        @for(user <- space.requests) {
+                            <tr id="request-tr-@user.id.stringify">
+                                <td>
+                                    <a href="@routes.Profile.viewProfileUUID(user.id)">@user.name</a>
+                                </td>
+
+                                <td>
+                                    <select id="roleSelect" class="chosen-select btn btn-success btn-xs">
+                                        @for(aRole <- roleList) {
+                                            <h5>@aRole</h5>
+                                            <option value="@aRole">@aRole</option>
+                                        }
+                                    </select>
+
+                                    <button class="btn btn-link" id="request-accept-@user.id.stringify" title="Accept request" onclick="return acceptSpaceRequest('@space.id', '@user.id.toString')">
+                                        <span class="glyphicon glyphicon-thumbs-up"></span> Accept
+                                    </button>&nbsp;
+                                    <button class="btn btn-link" id="request-reject-@user.id.stringify" title="Reject request" onclick= "return rejectSpaceRequest('@space.id', '@user.id.toString')">
+                                        <span class="glyphicon glyphicon-thumbs-down"></span> Reject
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                </div>
+               }
+
+        }
+
+</div>
+
+<script src="@routes.Assets.at("javascripts/spaceModify.js")" type="text/javascript"></script>
+

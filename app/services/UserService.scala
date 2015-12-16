@@ -1,8 +1,10 @@
 package services
 
-import models.{Profile, UUID, User, MiniEntity}
+import models._
 import securesocial.core.Identity
-import util.Direction._
+import util.Direction
+import util.Direction.Direction
+import util.Direction.Direction
 
 /**
  * Service definition to interact with the users.
@@ -38,7 +40,7 @@ trait UserService  {
    * @param filter is a json representation of the filter to be applied
    *
    */
-  def list(order: Option[String] = None, direction: Direction=DESC,
+  def list(order: Option[String] = None, direction: Direction = Direction.DESC,
            start: Option[String] = None, limit: Integer = 20,
            filter: Option[String] = None): List[User]
 
@@ -85,6 +87,10 @@ trait UserService  {
   def updateUserField(email: String, field: String, fieldText: Any)
 
   /**
+   * Updates the user repository preferences.
+   */
+  def updateRepositoryPreferences(id: UUID, preferences: Map[String, String])
+  /**
    * Adds a dataset view
    * TODO: use UUID instead of email
    */
@@ -95,6 +101,94 @@ trait UserService  {
    * TODO: use UUID instead of email
    */
   def createNewListInUser(email: String, field: String, fieldList: List[Any])
+  
+  /**
+   * Add a space to a specific user.
+   * 
+   * @param userId The identifier of the user that is being modified by this service
+   * @param spaceId The identifier of the space that is being associated with the user
+   * 
+   */
+  def addUserToSpace(userId: UUID, role: Role, spaceId: UUID)
+  
+  /**
+   * Remove a space from a specific user.
+   * 
+   * @param userId The identifier of the user that is being modified by this service
+   * @param spaceId The space to be disassociated from the user
+   * 
+   */
+  def removeUserFromSpace(userId: UUID, spaceId: UUID)
+  
+  /**
+   * Update the role that a user has for a specific space.
+   * 
+   * @param userId The identifier of the user to be modified
+   * @param role The new role to be associated with the user
+   * @param spaceId The identifier of the space 
+   * 
+   */
+  def changeUserRoleInSpace(userId: UUID, role: Role, spaceId: UUID)
+  
+  /**
+   * Retrieve the role that a user has for a specific space.
+   * 
+   * @param userId The identifier of the user to retrieve
+   * @param spaceId The identifier of the space to get the role for
+   * 
+   * @return The role that the user has associated with the space specified
+   * 
+   */
+  def getUserRoleInSpace(userId: UUID, spaceId: UUID): Option[Role]
+  
+  /**
+   * List the users that are associated with a specific space.
+   * 
+   * @param spaceId The identifier of the space to build a list of users for
+   * 
+   * @return A list of users that are associated with a space
+   */
+  def listUsersInSpace(spaceId: UUID): List[User]
+
+  /**
+   * List user roles.
+   */
+  def listRoles(): List[Role]
+
+  /**
+   * Add new role.
+   */
+  def addRole(role: Role)
+
+  /**
+   * Find existing role by id.
+   */
+  def findRole(id: String): Option[Role]
+
+  /**
+   * Find existing by name
+   */
+  def findRoleByName(name: String): Option[Role]
+
+  /**
+   * Delete role.
+   */
+  def deleteRole(id: String)
+
+  /**
+   * Update role
+   */
+  def updateRole(role: Role)
+
+  /**
+   * Follow a file.
+   */
+  def followResource(followerId: UUID, resourceRef: ResourceRef)
+
+  /**
+   * Unfollow a file.
+   */
+  def unfollowResource(followerId: UUID, resourceRef: ResourceRef)
 
   /**
    * Follow a file.

@@ -1,0 +1,47 @@
+@(space: ProjectSpace)(implicit user: Option[models.User])
+
+<script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
+<script src="@routes.Assets.at("javascripts/spaceconfiguration.js")" language="javascript"></script>
+<script src="@routes.Assets.at("javascripts/errorRedirect.js")" language="javascript"></script>
+
+<div class="row ds-section-sm border-top">
+	 <!-- Advanced space elements -->
+	 <h3>Advanced Configuration</h3>
+	 <table>
+		 <tr>
+			 <td><b>Expiration Enabled: </b></td>
+			 <td id="expireenabled" style="padding-left:10px;">empty</td>
+		 </tr>
+	     <tr>
+	         <td><b>Time To Live (hours): </b></td>
+	         <td id="timetolive" style="padding-left:10px;">empty</td>
+	     </tr>
+
+	 </table>
+	 <p>
+
+	
+	 <script type="text/javascript" language="javascript">
+		 $(document).ready(function() {    
+		     var timeToLive = @space.resourceTimeToLive;
+		     timeToLive = timeToLive/3600000;
+		     $('#timetolive').html(timeToLive);
+		     
+		     var $radios = $('input:radio[name=radiogroup]');
+		     var isEnabled = @space.isTimeToLiveEnabled;
+		     
+		     if (isEnabled) {
+		    	 $radios.filter('[value=expiretrue]').prop('checked', true);
+		    	 //$('input:radio[name=radiogroup]')[0].checked = true;
+		         $('#expireenabled').html("On");
+		     }
+		     else {
+		    	 $radios.filter('[value=expirefalse]').prop('checked', true);
+		    	 //$('input:radio[name=radiogroup]')[1].checked = true;
+		         $('#expireenabled').html("Off");
+		     }
+
+		});
+	 </script>
+<!-- End License elements -->
+</div>

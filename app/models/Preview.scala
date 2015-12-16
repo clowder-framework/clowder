@@ -22,4 +22,7 @@ case class Preview(
   extractor_id: Option[String] = None,
   iipURL: Option[String] = None,
   iipImage: Option[String] = None,
-  iipKey: Option[String] = None)
+  iipKey: Option[String] = None,
+  metadataCount: Long = 0,
+  @deprecated("use Metadata","since the use of jsonld") jsonldMetadata : List[Metadata]= List.empty
+  )

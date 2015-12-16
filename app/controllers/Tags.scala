@@ -1,26 +1,20 @@
 package controllers
 
-import models.Dataset
-import models.Tag
-
-import api.WithPermission
-import api.Permission
-import util.Parsers
-import scala.collection.mutable.ListBuffer
-import play.api.Logger
-import scala.collection.mutable.Map
-import services.{SectionService, FileService, DatasetService}
 import javax.inject.Inject
+
+import api.Permission
+import api.Permission
+import api.Permission.Permission
+import models.User
 import play.api.Logger
-import services.{CollectionService, DatasetService, FileService, SectionService}
 import play.api.Play.current
+import services.{CollectionService, DatasetService, FileService, SectionService}
+import util.Parsers
 
-
+import scala.collection.mutable.ListBuffer
 
 /**
  * Tagging.
- * 
- * @author Luigi Marini
  */
 class Tags @Inject()(collections: CollectionService, datasets: DatasetService, files: FileService, sections: SectionService) extends SecuredController {
 
@@ -32,7 +26,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
    * The code will query the datasets, files and sections and combine the lists into a single sorted list
    * and display it to the user.
    */
-  def search(tag: String, start: String, size: Integer, mode: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def search(tag: String, start: String, size: Integer, mode: String) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
     var nextItems = ListBuffer.empty[AnyRef]
@@ -120,17 +114,9 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     Ok(views.html.searchByTag(tag, nextItems.slice(0, size).toList, prev, next, size, viewMode))
   }
 
-  def tagCloud() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowTags)) { implicit request =>
+  def tagListWeighted() = PrivateServerAction { implicit request =>
     implicit val user = request.user
-
-    Ok(views.html.tagCloud(computeTagWeights))
-  }
-
-  def tagListWeighted() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowTags)) { implicit request =>
-    implicit val user = request.user
-
-    val tags = computeTagWeights
-
+    val tags = computeTagWeights()
     if (tags.isEmpty) {
       Ok(views.html.tagList(List.empty[(String, Double)]))
     } else {
@@ -144,10 +130,10 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     }
   }
 
-  def tagListOrdered() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowTags)) { implicit request =>
+  def tagListOrdered() = PrivateServerAction { implicit request =>
     implicit val user = request.user
 
-    Ok(views.html.tagListChar(createTagList))
+    Ok(views.html.tagListChar(createTagList()))
   }
 
   def createTagList() = {
@@ -224,7 +210,6 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
       weightedTags(tag) = weightedTags(tag) + count * current.configuration.getInt("tags.weight.sections").getOrElse(1)
     }
 
-    Logger.debug("thelist: "+ weightedTags.toList.toString)
     weightedTags.toList
   }
 }

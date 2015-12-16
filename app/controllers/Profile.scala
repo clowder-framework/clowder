@@ -1,17 +1,20 @@
 package controllers
 
-import api.{Permission, WithPermission}
-import services.{ UserService, FileService, DatasetService, CollectionService, EventService }
-import services.mongodb.MongoDBProjectService
-import services.mongodb.MongoDBInstitutionService
 import services._
 import play.api.data.Form
 import play.api.data.Forms._
 import models._
-import play.api.Logger
 import javax.inject.Inject
+import play.api.Logger
+import play.api.data.Form
+import play.api.data.Forms._
+import services.UserService
+import services.mongodb.{MongoDBInstitutionService, MongoDBProjectService}
 
-class Profile @Inject() (users: UserService, files: FileService, datasets: DatasetService, collections: CollectionService, institutions: MongoDBInstitutionService, projects: MongoDBProjectService, events: EventService, scheduler: SchedulerService) extends SecuredController {
+// TODO CATS-66 remove MongoDBInstitutionService, make part of UserService?
+class Profile @Inject() (users: UserService, files: FileService, datasets: DatasetService, collections: CollectionService,
+                         institutions: MongoDBInstitutionService, projects: MongoDBProjectService, events: EventService,
+                         scheduler: SchedulerService, spaces: SpaceService) extends SecuredController {
 
   val bioForm = Form(
     mapping(
@@ -26,7 +29,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
     )(Profile.apply)(Profile.unapply)
   )
 
-  def editProfile() = SecuredAction(authorization = WithPermission(Permission.LoggedIn)) { implicit request =>
+  def editProfile() = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
     user match {
@@ -43,21 +46,13 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
     }
   }
 
-  def viewProfileUUID(uuid: UUID) = SecuredAction() { request =>
+
+  def viewProfileUUID(uuid: UUID) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     val viewerUser = request.user
-    var followers: List[(UUID, String, String, String)] = List.empty
-    var followedUsers: List[(UUID, String, String, String)] = List.empty
-    var followedFiles: List[(UUID, String, String)] = List.empty
-    var followedDatasets: List[(UUID, String, String)] = List.empty
-    var followedCollections: List[(UUID, String, String)] = List.empty
-    var myFiles : List[(UUID, String, String)] = List.empty
-    var myDatasets: List[(UUID, String, String)] = List.empty
-    var myCollections: List[(UUID, String, String)] = List.empty
-    var maxDescLength = 50
     var ownProfile: Option[Boolean] = None
     var muser = users.findById(uuid)
-    
+
     muser match {
       case Some(existingUser) => {
         viewerUser match {
@@ -71,68 +66,8 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
             ownProfile = None
           }
         }
-        
-        for (tidObject <- existingUser.followedEntities) {
-              if (tidObject.objectType == "user") {
-                var followedUser = users.get(tidObject.id)
-                followedUser match {
-                  case Some(fuser) => {
-                    followedUsers = followedUsers.++(List((fuser.id, fuser.fullName, fuser.email.get, fuser.getAvatarUrl())))
-                  }
-                }
-              } else if (tidObject.objectType == "file") {
-                var followedFile = files.get(tidObject.id)
-                followedFile match {
-                  case Some(ffile) => {
-                    followedFiles = followedFiles.++(List((ffile.id, ffile.filename, ffile.contentType)))
-                  }
-                }
-              } else if (tidObject.objectType == "dataset") {
-                var followedDataset = datasets.get(tidObject.id)
-                followedDataset match {
-                  case Some(fdset) => {
-                    followedDatasets = followedDatasets.++(List((fdset.id, fdset.name, fdset.description.substring(0, Math.min(maxDescLength, fdset.description.length())))))
-                  }
-                }
-              } else if (tidObject.objectType == "collection") {
-                var followedCollection = collections.get(tidObject.id)
-                followedCollection match {
-                  case Some(fcoll) => {
-                    followedCollections = followedCollections.++(List((fcoll.id, fcoll.name, fcoll.description.substring(0, Math.min(maxDescLength, fcoll.description.length())))))
-                  }
-                }
-              }
-            }
 
-            for (followerID <- existingUser.followers) {
-              var userFollower = users.findById(followerID)
-              userFollower match {
-                case Some(uFollower) => {
-                  var ufEmail = uFollower.email.getOrElse("")
-                  followers = followers.++(List((uFollower.id, ufEmail, uFollower.getAvatarUrl(), uFollower.fullName)))
-                }
-              }
-            }
-
-            existingUser.email match {
-              case Some(addr) => {
-                var userDatasets: List[Dataset] = datasets.listUserDatasetsAfter("", 12, addr.toString())
-                var userCollections: List[Collection] = collections.listUserCollectionsAfter("", 12, addr.toString())
-                var userFiles : List[File] = files.listUserFilesAfter("", 12, addr.toString())
-                
-                for (dset <- userDatasets) {
-                  myDatasets = myDatasets.++(List((dset.id, dset.name, dset.description.substring(0, Math.min(maxDescLength, dset.description.length())))))
-                }
-                for (cset <- userCollections) {
-                  myCollections = myCollections.++(List((cset.id, cset.name, cset.description.substring(0, Math.min(maxDescLength, cset.description.length())))))
-                }
-                for (fset <- userFiles) {
-                  myFiles = myFiles.++(List((fset.id, fset.filename, fset.contentType)))
-                }
-              }
-              case None => {}
-            }
-            Ok(views.html.profile(existingUser, ownProfile, followers, followedUsers, followedFiles, followedDatasets, followedCollections, myFiles, myDatasets, myCollections))
+        Ok(views.html.profile(existingUser, ownProfile))
         
       }
       case None => {
@@ -141,9 +76,8 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
       }
     }
   }
-
-  /** @deprecated use viewProfileUUID(uuid) */
-  def viewProfile(email: Option[String]) = SecuredAction() { request =>
+                /** @deprecated use viewProfileUUID(uuid) */
+  def viewProfile(email: Option[String]) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
     users.findByEmail(email.getOrElse("")) match {
@@ -155,7 +89,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
     }
   }
 
-  def submitChanges = SecuredAction(authorization = WithPermission(Permission.LoggedIn)) { implicit request =>
+  def submitChanges = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(x: User) => {

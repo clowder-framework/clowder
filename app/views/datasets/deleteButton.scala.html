@@ -1,31 +1,13 @@
 @(dataset: Dataset)(implicit user: Option[models.User])
 
+@import api.Permission
+
 @if(user.isDefined) {
-    <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-    @if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-        <div class="btn-group btn-group-xs">
-            <button id="deleteAndDetachButton" onclick="detachAndRemoveDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
-            type="button" class="btn btn-primary"><span class="glyphicon glyphicon-trash"></span> Delete Dataset</button>
-            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                <span class="caret"></span>
-                <span class="sr-only">Toggle Dropdown</span>
-            </button>
-            <ul class="dropdown-menu" role="menu">
-                <li>
-                    <a id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
-                    href="#">Delete dataset and enclosed contents</a></li>
-            </ul>
-        </div>
+    <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
+    @if(Permission.checkPermission(Permission.DeleteDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+        <a id="deleteButton" onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')"
+            class="btn-margin-bottom btn btn-link btn-sm" href="#"><span class="glyphicon glyphicon-trash"></span> Delete</a>
     } else {
-        <div class="btn-group btn-group-xs">
-            <button disabled type="button" class="btn btn-primary"><span class="glyphicon glyphicon-trash"></span> Delete Dataset</button>
-            <button disabled type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                <span class="caret"></span>
-                <span class="sr-only">Toggle Dropdown</span>
-            </button>
-            <ul class="dropdown-menu" role="menu">
-                <li><a href="#">Delete dataset and enclosed contents</a></li>
-            </ul>
-        </div>
+        <a id="deleteButton" class="btn-margin-bottom btn btn-link btn-sm disabled" href="#"><span class="glyphicon glyphicon-trash"></span> Delete</a>
     }
 }

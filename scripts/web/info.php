@@ -6,6 +6,8 @@ if(isset($_REQUEST['extractors'])) $extractors = $_REQUEST["extractors"];
 if(isset($_REQUEST['count'])) $count = $_REQUEST["count"];
 if(isset($_REQUEST['inputs'])) $inputs = $_REQUEST["inputs"];
 if(isset($_REQUEST['requests'])) $requests = $_REQUEST["requests"];
+if(isset($_REQUEST['bytes'])) $bytes = $_REQUEST["bytes"];
+if(isset($_REQUEST['files'])) $files = $_REQUEST["files"];
 if(isset($_REQUEST['headings'])) $headings = $_REQUEST["headings"];
 
 try {
@@ -96,7 +98,7 @@ try {
 			echo "<tr>";
 			echo "<td>" . (isset($document["clientIP"]) ? $document["clientIP"] : "") . "</td>";
 			echo "<td>" . (isset($document["filename"]) ? $document["filename"] : "") . "</td>";
-			echo "<td>" . (isset($document["filesize"]) ? $document["filesize"] : "") . "</td>";
+			echo "<td>" . (isset($document["fileSize"]) ? $document["fileSize"] : "") . "</td>";
 			echo "<td>" . (isset($document["input"]) ? $document["input"] : "") . "</td>";
 			echo "<td>" . (isset($document["extractors"]) ? $document["extractors"] : "") . "</td>";
 			echo "<td>" . (isset($document["startTime"]) ? $document["startTime"] : "") . "</td>";
@@ -107,8 +109,45 @@ try {
 
 		echo "</table>\n";
 	}
+	
+	//Bytes
+	if($bytes){
+		$collection = $db->dtsrequests;
+		$cursor = $collection->find();
+		$sum = 0;
+
+		if($headings) {
+			echo "<br>\n";
+			echo "<h2>Bytes</h2>\n";
+		}
+
+		foreach($cursor as $document) {
+			if(isset($document["fileSize"])) {
+				$sum += $document["fileSize"];
+			}
+		}
+
+		echo $sum;
+	}
+	
+	//Files
+	if($files){
+		$collection = $db->dtsrequests;
+		$cursor = $collection->find();
+		$count = 0;
+
+		if($headings) {
+			echo "<br>\n";
+			echo "<h2>Files</h2>\n";
+		}
+
+		foreach($cursor as $document) {
+			$count++;
+		}
+
+		echo $count;
+	}
 } catch (Exception $e) {
     echo 'Caught exception: ',  $e->getMessage(), "\n";
 }
-
 ?>

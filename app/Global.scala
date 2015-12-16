@@ -1,15 +1,19 @@
+import api.Permission
 import play.api.{GlobalSettings, Application}
 import play.api.Logger
 
 import play.filters.gzip.GzipFilter
 
 import play.libs.Akka
-import services.AppConfiguration
+import play.mvc.Result
+import services.{UserService, DI, AppConfiguration}
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
-import models.{ServerStartTime, CORSFilter, ExtractionInfoSetUp, JobsScheduler}
+import models._
 import java.util.Calendar
-import play.api.mvc.WithFilters
+import play.api.mvc.{RequestHeader, WithFilters}
+import play.api.mvc.Results._
 import akka.actor.Cancellable
 import julienrf.play.jsonp.Jsonp
 
@@ -29,6 +33,18 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
     // set admins
     AppConfiguration.setDefaultAdmins()
+
+    // create default roles
+    val users: UserService = DI.injector.getInstance(classOf[UserService])
+    if (users.listRoles().isEmpty) {
+      Logger.debug("Ensuring roles exist")
+      users.updateRole(Role.Admin)
+      users.updateRole(Role.Editor)
+      users.updateRole(Role.Viewer)
+    }
+
+    // set default metadata definitions
+    MetadataDefinition.registerDefaultDefinitions()
 
     extractorTimer = Akka.system().scheduler.schedule(0 minutes, 5 minutes) {
       ExtractionInfoSetUp.updateExtractorsInfo()
@@ -54,5 +70,21 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
   /** Used for dynamic controller dispatcher **/
   override def getControllerInstance[A](clazz: Class[A]) = {
     injector.getInstance(clazz)
+  }
+
+  override def onError(request: RequestHeader, ex: Throwable) = {
+    Future(InternalServerError(
+      views.html.errorPage(request, ex.fillInStackTrace().toString)
+    ))
+  }
+
+  override def onHandlerNotFound(request: RequestHeader) = {
+    Future(NotFound(
+      views.html.errorPage(request, "Not found")
+    ))
+  }
+
+  override def onBadRequest(request: RequestHeader, error: String) = {
+    Future(BadRequest(views.html.errorPage(request, error)))
   }
 }

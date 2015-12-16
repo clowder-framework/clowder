@@ -14,25 +14,23 @@ import services.{RelationService}
 @Singleton
 class Relations @Inject()(relations: RelationService) extends ApiController {
 
-  import models.EnumUtils.enumWrites
   implicit val myEnumReads: Reads[ResourceType.Value] = EnumUtils.enumReads(ResourceType)
   implicit val myEnumWrites: Writes[ResourceType.Value] = EnumUtils.enumWrites
   implicit val nodeReads = Json.format[Node]
   implicit val relationsReads = Json.format[Relation]
 
-  def list() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.RelationsRead)) { implicit request =>
+  def list() = PermissionAction(Permission.ViewRelation) { implicit request =>
     Ok(toJson(relations.list()))
   }
 
-  def get(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.RelationsRead)) { implicit request =>
+  def get(id: UUID) = PermissionAction(Permission.ViewRelation, Some(new ResourceRef(ResourceRef.relation, id))) { implicit request =>
     relations.get(id) match {
       case Some(r) => Ok(toJson(r))
       case None => BadRequest(Json.obj("status" ->"KO", "message" -> "resource does not exist"))
     }
   }
 
-  def add() = SecuredAction(parse.json, authorization = WithPermission(Permission.RelationsWrite)) {
-    implicit request =>
+  def add() = PermissionAction(Permission.CreateRelation)(parse.json) { implicit request =>
       // TODO get it to work with implicit formats
       var sourceId= (request.body \ "source" \ "id").as[String]
       var sourceType= ResourceType.withName((request.body \ "source" \ "resourceType").as[String])
@@ -46,13 +44,12 @@ class Relations @Inject()(relations: RelationService) extends ApiController {
       }
   }
 
-  def delete(id: UUID) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.RelationsWrite)) { implicit request =>
+  def delete(id: UUID) = PermissionAction(Permission.DeleteRelation, Some(new ResourceRef(ResourceRef.relation, id))) { implicit request =>
     relations.delete(id)
     Ok(Json.obj("status" -> "OK"))
   }
 
-  def findTargets(sourceId: String, sourceType: String, targetType: String) =
-    SecuredAction(parse.anyContent, authorization = WithPermission(Permission.RelationsRead)) { implicit request =>
+  def findTargets(sourceId: String, sourceType: String, targetType: String) = PermissionAction(Permission.ViewRelation) { implicit request =>
     Ok(toJson(relations.findTargets(sourceId, ResourceType.withName(sourceType), ResourceType.withName(targetType))))
   }
 }

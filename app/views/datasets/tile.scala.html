@@ -1,0 +1,70 @@
+@(dataset: models.Dataset, space: Option[String], comments: Map[UUID, Int],classes:String, isFollowing: Boolean, isSpace: Boolean)(implicit user: Option[models.User])
+@import _root_.util.Formatters.ellipsize
+@import api.Permission
+<div class="post-box @classes">
+    <div class="panel panel-default">
+        <div class="pull-right">
+            <a href="#" title="Bookmark" class="pull-right bookmark-link"><span class="glyphicon glyphicon-bookmark bookmark"></span></a>
+        </div>
+        <div class="panel-body">
+            @if(!dataset.thumbnail_id.isEmpty){
+                <a href="@(routes.Datasets.dataset(dataset.id,space))">
+                    <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)">
+                </a>
+            }
+            <div class="caption break-word">
+                <h4><a href="@(routes.Datasets.dataset(dataset.id, space))">@Html(dataset.name)</a></h4>
+                <p>@Html(ellipsize(dataset.description, 200))</p>
+            </div>
+        </div>
+            <!-- Dataset Info -->
+        <ul class="list-group">
+            <li class="list-group-item">
+                <span class="glyphicon glyphicon glyphicon-file" title="@dataset.files.size files"></span> @dataset.files.size
+                <span class="glyphicon glyphicon glyphicon-tags" title="@dataset.tags.size tags"></span> @dataset.tags.size
+                <span class="glyphicon glyphicon glyphicon-list" title="@(dataset.metadataCount) metadata fields"></span> @(dataset.metadataCount)
+                @if(!comments.isEmpty) {
+                    <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(dataset.id)) comments"></span> @(comments.get(dataset.id))
+                }
+                @if(user.isDefined && !isSpace) {
+                        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                    @if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
+                        <button onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
+                            <span class="glyphicon glyphicon-trash"></span></button>
+                    } else {
+                        <button disabled onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
+                            <span class="glyphicon glyphicon-trash"></span></button>
+                    }
+                }
+                @if(isSpace && space.isDefined && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, UUID(space.getOrElse(""))))) {
+                    <a href='@(routes.CurationObjects.newCO(dataset.id, space.getOrElse("")))'>
+                        <button class="btn btn-link btn-xs"><span class="glyphicon glyphicon-globe"></span> Publish</button>
+                    </a>
+                }
+            </li>
+        </ul>
+        @if(isFollowing){
+            <ul class="list-group center-margin">
+            @user match {
+                case Some(viewer) => {
+                    <a
+                    id="followButton"
+                    type="button"
+                    class="btn-link "
+                    data-toggle="button"
+                    autocomplete="off"
+                    objectType="dataset"
+                    objectId="@dataset.id.stringify"
+                    >
+                    @if(viewer.followedEntities.filter(x => (x.id == dataset.id)).nonEmpty) {
+                        <span class='glyphicon glyphicon-star-empty'></span>  Unfollow
+                    } else {
+                        <span class='glyphicon glyphicon-star'></span> Follow
+                    }
+                    </a>
+                }
+            }
+            </ul>
+        }
+    </div>
+</div>

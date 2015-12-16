@@ -1,0 +1,16 @@
+<form class="form-horizontal">
+    <div class="form-group">
+        <label for="field-value" class="col-sm-2 control-label" title="{{field_id}}">
+            <strong>{{field_label}}</strong>
+        </label>
+        <div class="col-sm-8">
+            <select id="field-value" data-id="{{field_id}}" data-label="{{field_label}}">
+                <option value=""></option>
+                {{#each options}}<option value="{{this}}">{{this}}</option>{{/each}}
+            </select>
+        </div>
+        <div class="col-sm-2">
+            <button id="add-metadata-button" type="submit" class="btn btn-default"><span class="glyphicon glyphicon-saved"></span> Submit</button>
+        </div>
+    </div>
+</form>

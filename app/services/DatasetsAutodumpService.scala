@@ -7,9 +7,6 @@ import play.api.libs.concurrent.Execution.Implicits._
 
 /**
  * Dataset file groupings automatic dump service.
- *
- * @author Constantinos Sophocleous
- *
  */
 class DatasetsAutodumpService (application: Application) extends Plugin {
 

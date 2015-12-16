@@ -41,10 +41,10 @@ span.align-right {
     float:right;
 }
 
-.error { 
-	color: red;
-	padding-left: 10px;
-	text-align:left;
+.error span{
+    color: red;
+    padding-left: 10px;
+    text-align:left;
 }
 
 .success {
@@ -194,9 +194,9 @@ code {
   padding:10px;
 }
 
-.usr_md_search_list {
-	list-style-type:none;
-}
+/*.usr_md_search_list {*/
+	/*list-style-type:none;*/
+/*}*/
 
 .usr_md_search_list_not {
 	margin-left:58px;
@@ -235,6 +235,33 @@ code {
 	left:20px;
 }
 
+#nameDescrFieldSet .control-group .controls .buttonset label
+{
+    margin-right: 10%;
+}
+
+#nameDescrFieldSet .homePages .external-link-delete
+{
+    display: inline-block;
+    margin-left:10px;
+}
+
+#nameDescrFieldSet .homePages .external-link-add {
+    display:inline-block;
+    margin-left: 10px;
+}
+
+#nameDescrFieldSet .homePages .control-group
+{
+    display:inline-block;
+    width: 85%;
+}
+
+#nameDescrFieldSet .homePages .control-label
+{
+    display: none;
+}
+
 .profilePicture {
   	width: 256px;
     height: 256px;
@@ -253,12 +280,19 @@ code {
 }
 
 #nameDescrFieldSet .control-group .controls textarea{
-	width:208px;
+	width:100%;
+    height: 100px;
 }
 #nameDescrFieldSet .control-group .controls input[type='text']{
-	width:208px;
+	width:100%;
 	height:30px;
 }
+
+.checkbox
+{
+    font-weight: normal;
+}
+
 fieldset #username_field .controls #username{
 	width:208px;
 	height:30px;
@@ -427,7 +461,11 @@ textarea, input[type='text'], input[type='password']{
 }
 
 .btn-margins {
-  margin: 20px 0px;
+     margin: 20px 0px;
+ }
+
+.btn-margin-bottom {
+    margin-bottom: 20px !important;
 }
 
 .col-section {
@@ -442,8 +480,19 @@ textarea, input[type='text'], input[type='password']{
     padding-top: 7px;
 }
 
-.error {
+span.error{
     color: red;
+}
+
+.error p{
+    color: red;
+}
+.space-head {
+    border-bottom: 1px solid #E1E1E8;
+}
+
+.space-col-left {
+    border-right: 1px solid #E1E1E8;
 }
 
 .tag {
@@ -465,6 +514,18 @@ textarea, input[type='text'], input[type='password']{
 
 .tag .tag-delete {
     margin-right: -5px;
+}
+
+.space-head {
+    border-bottom: 1px solid #E1E1E8;
+}
+
+.space-col-right {
+
+}
+
+.space-col-left {
+    border-right: 1px solid #E1E1E8;
 }
 
 .tag-first-char {
@@ -533,6 +594,28 @@ table#sensorsListTable > thead > tr > th.headerSortDown {
 
 .top-padding {
     padding-top: 15px;
+}
+
+.vertical-align {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.space-banner {
+    height: 200px;
+    background-repeat:no-repeat;
+    background-size: 100% 100%;
+}
+
+.space-banner-logo {
+    max-height: 100px;
+    max-width: 200px;
+}
+
+.nopadding {
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
 .dataset-preview {
@@ -642,7 +725,53 @@ table#sensorsListTable > thead > tr > th.headerSortDown {
     color: #fff;
 }
 
+.md-block {
+    padding: 5px 0px;
+    margin: 0px;
+    text-align: left;
+    white-space: -moz-pre-wrap;
+    white-space: -o-pre-wrap;
+    word-wrap: break-word;
+}
 
+.collapse-icon:link, .collapse-icon:visited, .collapse-icon:hover, .collapse-icon:active  {
+    text-decoration:none;
+    cursor: pointer; cursor: hand;
+}
+
+.tree li {
+    list-style-type: none;
+}
+
+
+.space-pills {
+    display: inline-block;
+    border: none;
+    padding: 1px 10px 1px 10px;
+    margin: 5px;
+    background: #eeeeee;
+    border-radius: .25em;
+}
+
+.space-pills a {
+    color: white;
+}
+
+.space-pills a:hover {
+    color: white;
+}
+
+.inline {
+    display: inline;
+}
+
+.edit-tab {
+    margin-left: 5px;
+}
+
+.align-right {
+    float: right;
+}
 
 .prevIframeWrap{
 	width: 36em;
@@ -701,4 +830,83 @@ table#sensorsListTable > thead > tr > th.headerSortDown {
 .iframeClose{
 	font-size: 30px !important;
 	margin-top: -5px !important;
+}
+
+/* For the nested table in the 'users' view, under collections */
+table#user-space-role>thead>tr>th {
+    vertical-align: middle;
+}
+table#nested-space-role-headers {
+    margin: 0;
+}
+table#nested-space-role-headers>thead>tr>th {
+    border: none;
+    padding: 0;
+}
+table#nested-space-role-pairs>tbody>tr:first-child {
+    border-top-style: hidden;
+}
+table#nested-space-role-pairs>tbody>tr>td {
+    padding: 0;
+}
+
+table.borderless tbody tr td, table.borderless tbody tr th {
+    border: none;
+}
+
+.upload-files-buttons {
+    padding-top: 20px;
+}
+
+.margin-top-h{
+    margin-top: 30px;
+}
+.center-glyphicon{
+    display:block;
+    text-align: center;
+}
+
+.center-margin {
+    text-align: center;
+    margin: 0.5em;
+}
+/*.black-border {*/
+    /*border: 2px solid black;*/
+    /*display:block;*/
+    /*padding:10px;*/
+/*}*/
+
+.green{
+    color: green;
+}
+
+.red {
+    color: red;
+}
+
+.indent_20{
+    margin-left: 20px;
+}
+
+.submitted {
+    background-color: #dff0d8 !important;
+}
+
+.in-curation {
+    background-color: #fcf8e3 !important;
+}
+
+.publish {
+    background-color: #dcdcdc !important;
+}
+
+#user-space-role .table {
+    margin-bottom: 0px;
+}
+.form-md {
+    padding: 10px 0px;
+}
+
+.add-resource {
+    width: 240px !important
 }

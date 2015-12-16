@@ -1,0 +1,2 @@
+@(myForm: Form[controllers.spaceFormData], spaceId: Option[UUID])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@newEditTemplate(myForm, title = "Edit Space", submitButton = updateButton(), spaceId)

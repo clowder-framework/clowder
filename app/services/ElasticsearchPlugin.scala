@@ -21,11 +21,6 @@ import org.elasticsearch.action.admin.indices.create.CreateIndexRequest
 /**
  * Elasticsearch plugin.
  *
- * @author Luigi Marini
- * @author Smruti Padhy
- * @author Rob Kooper
- * @authhor Constantinos Sophocleous
- *
  */
 class ElasticsearchPlugin(application: Application) extends Plugin {
   val comments: CommentService = DI.injector.getInstance(classOf[CommentService])
@@ -189,7 +184,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     var dsCollsId = ""
     var dsCollsName = ""
 
-    for (dataset <- collection.datasets) {
+    for (dataset <- datasets.listCollection(collection.id.stringify)) {
       if (recursive) {
         index(dataset, recursive)
       }
@@ -241,21 +236,29 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     var fileDsId = ""
     var fileDsName = ""
-    for (file <- dataset.files) {
-      if (recursive) {
-        index(file)
+    for (fileId <- dataset.files) {
+      files.get(fileId) match {
+        case Some(f) => {
+          if (recursive) {
+            index(f)
+          }
+          fileDsId = fileDsId + f.id.stringify + "  "
+          fileDsName = fileDsName + f.filename + "  "
+        }
+        case None => Logger.error(s"Error getting file $fileId")
+
       }
-      fileDsId = fileDsId + file.id.stringify + "  "
-      fileDsName = fileDsName + file.filename + "  "
     }
 
     var dsCollsId = ""
     var dsCollsName = ""
 
-    for (collection <- collections.listInsideDataset(dataset.id)) {
-      dsCollsId = dsCollsId + collection.id.stringify + " %%% "
-      dsCollsName = dsCollsName + collection.name + " %%% "
-    }
+    dataset.collections.foreach(c => {
+      collections.get(c).foreach(collection => {
+        dsCollsId = dsCollsId + collection.id.stringify + " %%% "
+        dsCollsName = dsCollsName + collection.name + " %%% "
+      })
+    })
 
     val formatter = new SimpleDateFormat("dd/MM/yyyy")
 

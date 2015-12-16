@@ -3,7 +3,7 @@ package services
 
 import java.io.InputStream
 import com.novus.salat.dao.SalatMongoCursor
-import models.{UUID, MultimediaFeatures, TempFile}
+import models.{MultimediaDistance, UUID, MultimediaFeatures, TempFile}
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.DBObject
 import com.mongodb.casbah.gridfs.JodaGridFSDBFile
@@ -11,9 +11,6 @@ import play.api.libs.json.JsObject
 
 /**
  * Generic file service to store blobs of files and metadata about them.
- *
- * @author Luigi Marini
- *
  */
 abstract class MultimediaQueryService {
   
@@ -56,4 +53,12 @@ abstract class MultimediaQueryService {
   def insert(multimediaFeature: MultimediaFeatures)
 
   def listAll(): SalatMongoCursor[MultimediaFeatures]
+
+  def addMultimediaDistance(d: MultimediaDistance)
+
+  def searchMultimediaDistances(querySectionId: String, representation: String, limit: Int): List[MultimediaDistance]
+
+  def recomputeAllDistances()
+
+  def computeDistances(source: MultimediaFeatures)
 }

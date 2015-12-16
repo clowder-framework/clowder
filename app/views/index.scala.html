@@ -1,5 +1,7 @@
-@(files: List[models.File], datasetsCount: Long, filesCount: Long, collectionCount: Long,
-        displayedName: String, welcomeMessage: String, newsfeed: List[models.Event])(implicit user: Option[models.User])
+@(files: List[models.File], datasetsCount: Long, datasetsCountAccess: Long, filesCount: Long,
+        collectionsCount: Long, collectionsCountAccess: Long, spacesCount: Long, spacesCountAccess: Long, usersCount: Long,
+        displayedName: String, welcomeMessage: String)(implicit user: Option[models.User])
+
 @import _root_.util.Formatters
 
 @main(displayedName) {
@@ -7,28 +9,6 @@
         <div class="col-md-7">
             <h2 class="featurette-heading">Welcome to @displayedName</h2>
             <p class="lead">@welcomeMessage</p>
-            @for(event <- newsfeed) {
-                <div class="panel panel-default">
-                    <div class="panel-body">
-                        <div class="media">
-                            <div class="media-left">
-                                <a href="@routes.Profile.viewProfileUUID(event.user.id)">
-                                    <img class="media-object" src="@event.user.avatarURL">
-                                </a>
-                            </div>
-                            <div class="media-body">
-                                <a href="@routes.Profile.viewProfileUUID(event.user.id)">
-                                    <h4 class="media-heading">@event.user.fullName</h4>
-                                </a>
-                                @newsfeedCard(event)
-                            </div>
-                            <div class="media-right">
-                                @Formatters.humanReadableTimeSince(event.created)
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
         </div>
         <div class="col-md-5" id="resources-panel-container">
             <div class="panel panel-default" id="resources-panel" data-clampedwidth=".col-md-5">
@@ -37,17 +17,20 @@
               </div>
               <div class="panel-body">
                   <ul class="list-group">
-                      <li class="list-group-item">
-                          <span class="badge">@collectionCount</span>
-                          <a href="@routes.Collections.list("")">Collections</a>
+                      <li class="list-group-item" title="Access to @spacesCountAccess spaces">
+                          <a href="@routes.Spaces.list()">Project Spaces <span class="badge pull-right">@spacesCount</span></a>
+                      </li>
+                      <li class="list-group-item" title="Access to @collectionsCountAccess collections">
+                          <a href="@routes.Collections.list("")">Collections <span class="badge pull-right">@collectionsCount</span></a>
+                      </li>
+                      <li class="list-group-item" title="Access to @datasetsCountAccess datasets">
+                          <a href="@routes.Datasets.list("")">Datasets <span class="badge pull-right">@datasetsCount</span></a>
                       </li>
                       <li class="list-group-item">
-                          <span class="badge">@datasetsCount</span>
-                          <a href="@routes.Datasets.list("")">Datasets</a>
+                          Files <span class="badge pull-right">@filesCount</span>
                       </li>
                       <li class="list-group-item">
-                          <span class="badge">@filesCount</span>
-                          <a href="@routes.Files.list("")">Files</a>
+                          Users <span class="badge pull-right">@usersCount</span>
                       </li>
                   </ul>
               </div>
