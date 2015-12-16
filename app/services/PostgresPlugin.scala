@@ -56,7 +56,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   }
 
   def addDatapoint(start: java.util.Date, end: Option[java.util.Date], geoType: String, data: String, lat: Double, lon: Double, alt: Double, stream_id: String) {
-    val ps = conn.prepareStatement("INSERT INTO datapoints(start_time, end_time, stream_id, data, geog, created) VALUES(?, ?, ?, CAST(? AS json), ST_SetSRID(ST_MakePoint(?, ?, ?), 4326), NOW());")
+    val ps = conn.prepareStatement("INSERT INTO datapoints(start_time, end_time, stream_id, data, geog, created) VALUES(?, ?, ?, CAST(? AS jsonb), ST_SetSRID(ST_MakePoint(?, ?, ?), 4326), NOW());")
     ps.setTimestamp(1, new Timestamp(start.getTime))
     if (end.isDefined) ps.setTimestamp(2, new Timestamp(end.get.getTime))
     else ps.setDate(2, null)
@@ -504,9 +504,9 @@ class PostgresPlugin(application: Application) extends Plugin {
     }
     // attributes
     if (attributes.nonEmpty) {
-      query += " AND (? = ANY(SELECT json_object_keys(datapoints.data))"
+      query += " AND (datapoints.data ?? ?"
       for (x <- 1 until attributes.size)
-        query += " OR ? = ANY(SELECT json_object_keys(datapoints.data))"
+        query += " OR (datapoints.data ?? ?)"
       query += ")"
     }
     // data source
@@ -663,9 +663,9 @@ class PostgresPlugin(application: Application) extends Plugin {
     var query = "UPDATE streams SET start_time=n.start_time, end_time=n.end_time, params=n.params FROM ("
     query += "  SELECT stream_id, min(datapoints.start_time) AS start_time, max(datapoints.end_time) AS end_time, array_agg(distinct keys) AS params"
     if (!sensor_id.isDefined) {
-      query += "    FROM datapoints, json_object_keys(data) data(keys)"
+      query += "    FROM datapoints, jsonb_object_keys(data) data(keys)"
     } else {
-      query += "    FROM datapoints, json_object_keys(data) data(keys), streams"
+      query += "    FROM datapoints, jsonb_object_keys(data) data(keys), streams"
       query += "    WHERE streams.gid=datapoints.stream_id AND streams.sensor_id=?"
     }
     query += "    GROUP by stream_id) n"
@@ -685,7 +685,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     // next update the streams
     var query = "UPDATE streams SET start_time=n.start_time, end_time=n.end_time, params=n.params FROM ("
     query += "  SELECT stream_id, min(datapoints.start_time) AS start_time, max(datapoints.end_time) AS end_time, array_agg(distinct keys) AS params"
-    query += "    FROM datapoints, json_object_keys(data) data(keys)"
+    query += "    FROM datapoints, jsonb_object_keys(data) data(keys)"
     if (stream_id.isDefined) query += " WHERE stream_id = ?"
     query += "    GROUP BY stream_id) n"
     query += "  WHERE n.stream_id=streams.gid;"
