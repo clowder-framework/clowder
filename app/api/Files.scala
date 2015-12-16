@@ -594,26 +594,6 @@ class Files @Inject()(
   }
 
   /**
-   * Upload multiple files to a specific dataset
-   */
-  @ApiOperation(value = "Upload file(s) to a specific dataset",
-    notes = "Uploads file(s), then links with the dataset. Returns file names & ids as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file to be added to the dataset.",
-    responseClass = "None", httpMethod = "POST")
-  def uploadToDatasetMulti(dataset_id: UUID) = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
-     request.user match {
-       case Some(user) => {
-         val uploaded_files = uploadUtil(request, user, dataset_id)
-         var uploaded_ids = new mutable.ArrayBuffer[String](uploaded_files.length)
-         uploaded_files.map { file =>
-            uploaded_ids.append(file.id.toString)
-         }
-         Ok(toJson(Map("ids" -> uploaded_files.toList)))
-       }
-       case None => BadRequest(toJson("Not authorized."))
-     }
-  }
-
-  /**
    * Upload file using multipart form enconding.
    */
   @ApiOperation(value = "Upload file",
@@ -834,13 +814,19 @@ class Files @Inject()(
    * Upload a file to a specific dataset
    */
   @ApiOperation(value = "Upload a file to a specific dataset",
-      notes = "Uploads the file, then links it with the dataset. Returns file id as JSON object. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file to be added to the dataset.",
+      notes = "Uploads the file, then links it with the dataset. Returns file id as JSON object, or ids with filenames if multiple files are sent. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file to be added to the dataset.",
       responseClass = "None", httpMethod = "POST")
   def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
     request.user match {
      case Some(user) => {
-        val uploaded_file = uploadUtil(request, user, dataset_id, "File", showPreviews=showPreviews, originalZipFile=originalZipFile, flagsFromPrevious=flagsFromPrevious)(0)
-        Ok(toJson(Map("id" -> uploaded_file.id)))
+        val uploaded_files = uploadUtil(request, user, dataset_id, showPreviews=showPreviews, originalZipFile=originalZipFile, flagsFromPrevious=flagsFromPrevious)
+       if (uploaded_files.length == 1) {
+         // Only one file was uploaded so return its ID only
+         Ok(toJson(Map("id" -> uploaded_files(0).id)))
+       } else {
+         // Return the full list of IDs with their filenames
+         Ok(toJson(Map("ids" -> uploaded_files.toList)))
+       }
      }
      case None => BadRequest(toJson("Not authorized."))
     }
