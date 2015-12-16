@@ -8,7 +8,7 @@
     </div>
     <div class="row">
     @for(userInfo <- followedUsers) {
-        <div class="post-box col-lg-3 col-md-3 col-sm-3 col-xs-4">
+        <div class="post-box col-lg-3 col-md-3 col-sm-3 col-xs-4" id="@userInfo._1.stringify-tile">
             <div class = "img_wrapper">
                 <div class = "img_hover">
                     <a href="@routes.Profile.viewProfileUUID(userInfo._1)">

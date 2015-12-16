@@ -1,9 +1,8 @@
-@(displayedName: String,  newsfeed: List[models.Event], profile:User, datasets: List[Dataset],  dscomments: Map[UUID, Int], collections:List[Collection], spaces: List[ProjectSpace],
+@(displayedName: String,  newsfeed: List[models.Event], profile:User, datasetsList: List[Dataset],  dscomments: Map[UUID, Int], collectionsList:List[Collection], spacesList: List[ProjectSpace],
          deletePermission: Boolean,  followers: List[(UUID, String, String, String)], followedUsers: List[(UUID, String, String, String)], followedFiles: List[(UUID, String, String)],
         followedDatasets: List[(UUID, String, String)], followedCollections: List[(UUID, String, String)], followedSpaces: List[(UUID, String, String)], ownProfile: Option[Boolean])(implicit user: Option[models.User])
 
 @import _root_.util.Formatters
-@import _root_.util.Formatters.ellipsize
 
 @main(displayedName) {
     <script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
@@ -52,46 +51,10 @@
                 </div>
                 <div class="row">
 
-                @datasets.map { dataset =>
-                    <div class="post-box col-lg-6 col-md-6 col-sm-6">
-                        <div class="panel panel-default">
-                            <div class="pull-right">
-                                <a href="#" title="Bookmark" class="pull-right bookmark-link"><span class="glyphicon glyphicon-bookmark bookmark"></span></a>
-                            </div>
-                            <div class="panel-body">
-                                @if(!dataset.thumbnail_id.isEmpty){
-                                    <a href="@(routes.Datasets.dataset(dataset.id))">
-                                        <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)">
-                                    </a>
-                                }
-                            <div class="caption break-word">
-                                <h4><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></h4>
-                                <p>@Html(ellipsize(dataset.description, 200))</p>
-                            </div>
-                            </div>
-                                <!-- Dataset Info -->
-                            <ul class="list-group">
-                                <li class="list-group-item">
-                                    <span class="glyphicon glyphicon glyphicon-file" title="@dataset.files.size files"></span> @dataset.files.size
-                                    <span class="glyphicon glyphicon glyphicon-tags" title="@dataset.tags.size tags"></span> @dataset.tags.size
-                                    <span class="glyphicon glyphicon glyphicon-list" title="@(dataset.metadataCount) metadata fields"></span> @(dataset.metadataCount)
-                                    <span class="glyphicon glyphicon glyphicon-comment" title="@(dscomments.get(dataset.id)) comments"></span> @(dscomments.get(dataset.id))
-                                    @if(user.isDefined) {
-                                            <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                                        @if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-                                            <button onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
-                                                <span class="glyphicon glyphicon-trash"></span></button>
-                                        } else {
-                                            <button disabled onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
-                                                <span class="glyphicon glyphicon-trash"></span></button>
-                                        }
-                                    }
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
+                @datasetsList.map { dataset =>
+                    @datasets.tile(dataset, None, dscomments, "col-lg-6 col-md-6 col-sm-6", false, false, routes.Application.index())
                 }
-                @if(datasets.size < 1) {
+                @if(datasetsList.size < 1) {
                     <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
                       <div>This area will show all datasets you've created.</div>
 
@@ -110,43 +73,10 @@
 
             </div>
             <div class="row">
-            @collections.map { collection =>
-                <div class="post-box col-lg-6 col-md-6 col-sm-6">
-                    <div class="panel panel-default">
-                        <div class="pull-right">
-                            <a href="#" title="Bookmark" class="pull-right bookmark-link"><span class="glyphicon glyphicon-bookmark bookmark"></span></a>
-                        </div>
-                        <div class="panel-body">
-                            @if(!collection.thumbnail_id.isEmpty){
-                                <a href="@(routes.Collections.collection(collection.id))">
-                                    <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)">
-                                </a>
-                            }
-                        <div class="caption break-word">
-                            <h4><a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a></h4>
-                            <p>@Html(ellipsize(collection.description, 200))</p>
-                        </div>
-                        </div>
-                            <!-- Collection Info -->
-                        <ul class="list-group">
-                            <li class="list-group-item">
-                                <span class="glyphicon glyphicon glyphicon-file" title="@collection.datasetCount datasets"></span> @collection.datasetCount
-                                @if(user.isDefined) {
-                                        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                                    @if(user.get.identityId.userId.equals(collection.author.identityId.userId)){
-                                        <button onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
-                                            <span class="glyphicon glyphicon-trash"></span></button>
-                                    } else {
-                                        <button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
-                                            <span class="glyphicon glyphicon-trash"></span></button>
-                                    }
-                                }
-                            </li>
-                        </ul>
-                    </div>
-                </div>
+            @collectionsList.map { collection =>
+               @collections.tile(collection, routes.Application.index(), "col-lg-6 col-md-6 col-sm-6", false)
             }
-                @if(collections.size < 1) {
+                @if(collectionsList.size < 1) {
                     <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
                         <div>This area will show all collections you've created</div>
 
@@ -164,47 +94,11 @@
 
             </div>
             <div class="row">
-            @spaces.map { space =>
-                <div class="post-box col-lg-6 col-md-6 col-sm-6 col-xs-12">
-                    <div class="panel panel-default">
-                        <div class="pull-right">
-                            <a href="#" title="Bookmark" class="pull-right bookmark-link"><span class="glyphicon glyphicon-bookmark bookmark"></span></a>
-                        </div>
-                        <div class="panel-body">
-                            @if(!space.logoURL.isEmpty) {
-                                <a href="@routes.Spaces.getSpace(space.id)">
-                                    <img class="img-responsive" src="@(space.logoURL)" alt="Thumbnail of @(space.name)">
-                                </a>
-                            }
-                        <div class="caption break-word">
-                            <h4 class="no-overflow oneline"><a href="@routes.Spaces.getSpace(space.id)">@space.name</a></h4>
-                            <p>@ellipsize(space.description, 200)</p>
-                        </div>
-                        </div>
-                            <!-- Space Info -->
-                        <ul class="list-group">
-                            <li class="list-group-item">
-                                <span class="glyphicon glyphicon-file" title="@space.datasetCount datasets"></span> @space.datasetCount
-                                <span class="glyphicon glyphicon-th-large" title="@space.collectionCount collections"></span> @space.collectionCount
-                                <span class="glyphicon glyphicon-user" title="@space.userCount users"></span> @space.userCount
-                                @if(user.isDefined) {
-                                        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                                    @if(deletePermission || user.get.identityId.userId.equals(space.creator)){
-                                        <button onclick="removeSpaceAndRedirect('@(space.id) ',' @(routes.Application.index())')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
-                                            <span class="glyphicon glyphicon-trash"></span>
-                                        </button>
-                                    } else {
-                                        <button disabled class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
-                                            <span class="glyphicon glyphicon-trash"></span>
-                                        </button>
-                                    }
-                                }
-                            </li>
-                        </ul>
-                    </div>
-                </div>
+            @spacesList.map { space =>
+                    @spaces.tile(space, "col-lg-6 col-md-6 col-sm-6 col-xs-12", routes.Application.index(), false )
+
             }
-                @if(spaces.size < 1) {
+                @if(spacesList.size < 1) {
                     <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
                         <div>This area will show all spaces you've created. </div>
 
@@ -269,7 +163,7 @@
                             <div class="panel-body caption break-word">
                                 <div class="row" style="margin-top : 15px;">
                                 @for(userInfo <- followedUsers) {
-                                    <div class="post-box col-lg-4 col-md-4 col-sm-4 col-xs-6">
+                                    <div class="post-box col-lg-4 col-md-4 col-sm-4 col-xs-6" id = "@userInfo._1.stringify-tile">
                                     <div class = "img_wrapper">
                                         <div class = "img_hover">
                                             <a href="@routes.Profile.viewProfileUUID(userInfo._1)">
@@ -300,7 +194,7 @@
                                                     </button>
                                                 }
                                                 </h4>
-
+                                                <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
                                             }
                                             </div>
                                         </div>
@@ -321,7 +215,7 @@
                                         <a data-toggle="collapse" data-parent="#accordion" href="#collapseSpaces">Spaces</a>
                                     </div>
                                     <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                                        <span class="pull-right"> <a href="@routes.Spaces.followingSpaces("", 0, 12, "")">See More</a></span>
+                                        <span class="pull-right"> <a href="@routes.Spaces.followingSpaces(0, 12, "")">See More</a></span>
                                     </div>
                                 </div>
 
@@ -330,7 +224,7 @@
                         <div id="collapseSpaces" class="panel-collapse collapse">
                             <div class="panel-body">
                             @for(info <- followedSpaces) {
-                                <div class="col-md-4" style="margin-top : 30 px">
+                                <div class="col-md-4" style="margin-top : 30 px" id="@info._1-tile">
                                     <div class="panel panel-default">
                                         <div class="panel-heading">
                                             <a href="@routes.Spaces.getSpace(info._1)">@info._2.toString</a>
@@ -395,7 +289,7 @@
                                         <a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">Files</a>
                                     </div>
                                     <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                                        <span class="pull-right"> <a href="@routes.Files.followingFiles("",0, 12, "")">See More</a></span>
+                                        <span class="pull-right"> <a href="@routes.Files.followingFiles(0, 12, "")">See More</a></span>
                                     </div>
                                 </div>
 
@@ -404,7 +298,7 @@
                         <div id="collapseTwo" class="panel-collapse collapse">
                             <div class="panel-body">
                             @for(fileInfo <- followedFiles) {
-                                <div class="col-md-4" style="margin-top: 30px">
+                                <div class="col-md-4" style="margin-top: 30px" id="@fileInfo._1-tile">
                                     <div class="panel panel-default">
                                         <div class="panel-heading caption break-word">
                                             <a href="@routes.Files.file(fileInfo._1)">@fileInfo._2.toString</a>
@@ -468,7 +362,7 @@
                                         <a data-toggle="collapse" data-parent="#accordion" href="#collapseThree">Datasets</a>
                                     </div>
                                     <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                                        <span class="pull-right"> <a href="@routes.Datasets.followingDatasets("", 0, 12, "")">See More</a></span>
+                                        <span class="pull-right"> <a href="@routes.Datasets.followingDatasets(0, 12, "")">See More</a></span>
                                     </div>
                                 </div>
 
@@ -477,7 +371,7 @@
                         <div id="collapseThree" class="panel-collapse collapse">
                             <div class="panel-body">
                             @for(datasetInfo <- followedDatasets) {
-                                <div class="col-md-4" style="margin-top: 30px">
+                                <div class="col-md-4" style="margin-top: 30px" id="@datasetInfo._1-tile">
                                     <div class="panel panel-default">
                                         <div class="panel-heading caption break-word">
                                             <a href="@routes.Datasets.dataset(datasetInfo._1)">@datasetInfo._2.toString</a>
@@ -541,7 +435,7 @@
                                         <a data-toggle="collapse" data-parent="#accordion" href="#collapseFour">Collections</a>
                                     </div>
                                     <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                                        <span class="pull-right"> <a href="@routes.Collections.followingCollections("",0, 12, "")">See More</a></span>
+                                        <span class="pull-right"> <a href="@routes.Collections.followingCollections(0, 12, "")">See More</a></span>
                                     </div>
                                 </div>
 
@@ -550,7 +444,7 @@
                         <div id="collapseFour" class="panel-collapse collapse">
                             <div class="panel-body">
                             @for(collectionInfo <- followedCollections) {
-                                <div class="col-md-4" style="margin-top: 30px">
+                                <div class="col-md-4" style="margin-top: 30px" id="@collectionInfo._1-tile">
                                     <div class="panel panel-default">
                                         <div class="panel-heading caption break-word">
                                             <a href="@routes.Collections.collection(collectionInfo._1)">@collectionInfo._2.toString</a>
@@ -615,9 +509,8 @@
     </div>
 
     <script>
-        var removeIndicator = true;
+        var removeIndicator=true;
         $(document).ready(function() {
-
             /*
             * Clamped-width.
             * Usage:

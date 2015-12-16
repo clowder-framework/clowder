@@ -1,6 +1,6 @@
 @(collectionsList: List[models.Collection], prev: Int, next: Int, limit: Int, mode: Option[String], space: Option[String], title: Option[String], owner:Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
-@main("Collections") {
+@main("Following Collections") {
 
     @util.masonry()
 
@@ -80,8 +80,8 @@
             //Function to unify the changing of the href for the next/previous links. Called on button activation for
             //viewMode style, as well as on initial load of page.
             function updatePage() {
-                $('#nextlink').attr('href', "@(routes.Collections.followingCollections("a", next, limit, ""))");
-                $('#prevlink').attr('href', "@(routes.Collections.followingCollections("b", prev, limit, ""))");
+                $('#nextlink').attr('href', "@(routes.Collections.followingCollections(next, limit, ""))");
+                $('#prevlink').attr('href', "@(routes.Collections.followingCollections(prev, limit, ""))");
             }
         </script>
         </div>
@@ -92,8 +92,7 @@
         <div class="col-md-12">
             <div id="masonry">
             @collectionsList.map { collection =>
-                    @collections.tile(collection, "col-lg-3 col-md-3 col-sm-3", true)
-
+                @collections.tile(collection, routes.Collections.followingCollections(prev+1, limit, "") ,"col-lg-3 col-md-3 col-sm-3", true)
             }
             </div>
         </div>
@@ -103,74 +102,7 @@
     <div class="row hidden" id="list-view">
         <div class="col-md-12">
         @collectionsList.map { collection =>
-            <div class="panel panel-default">
-                <div class="panel-body">
-                    <div class="row">
-                        <div class="col-md-2 col-sm-2 col-lg-2">
-                            @if(!collection.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)" width="120">}
-                        </div>
-                        <div class="col-md-10 col-sm-10 col-lg-10">
-                            <h2><a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a></h2>
-                            <div class="row">
-                                <div class="col-md-6 col-lg-6 col-sm-6">
-                                    <ul class="list-unstyled">
-                                        <li>@Html(collection.description)</li>
-                                        <li>@collection.created.format("MMM dd, yyyy")</li>
-                                        <li>
-                                            <span class="glyphicon glyphicon glyphicon-file" title="@collection.datasetCount datasets"></span> @collection.datasetCount
-                                            @if(user.isDefined) {
-                                                    <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                                                @if( user.get.identityId.userId.equals(collection.author.identityId.userId)){
-                                                    <button onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
-                                                        <span class="glyphicon glyphicon-trash"></span></button>
-                                                } else {
-                                                    <button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
-                                                        <span class="glyphicon glyphicon-trash"></span></button>
-                                                }
-                                            }
-                                        </li>
-                                    </ul>
-                                </div>
-                                <div class="col-md-6 col-lg-6 col-sm-6">
-                                    <ul class="list-unstyled">
-                                        <li>@if(user.isDefined && !collection.spaces.isEmpty){
-                                            <div id="collection-users">
-                                                <a href="@routes.Collections.users(collection.id)" class="btn btn-link ">
-                                                    <span class="glyphicon glyphicon-hand-right"></span> Users with access to the collection
-                                                </a>
-                                                <div class="alert-danger inner-item">
-                                                @flash.get("error")
-                                                </div>
-                                            </div>
-                                        }</li>
-                                        <li>
-                                        @if(user.isDefined) {
-                                            @if(!collection.followers.contains(user.get.id)) {
-                                                <button id="followButton"
-                                                class="btn btn-link"
-                                                objectId="@collection.id"
-                                                objectName="@collection.name"
-                                                objectType="collection">
-                                                    <span class='glyphicon glyphicon-star'></span> Follow
-                                                </button>
-                                            } else {
-                                                <button id="followButton"
-                                                class="btn btn-link"
-                                                objectId="@collection.id"
-                                                objectName="@collection.name"
-                                                objectType="collection">
-                                                    <span class='glyphicon glyphicon-star-empty'></span> Unfollow
-                                                </button>
-                                            }
-                                        }
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+          @collections.listitem(collection, routes.Collections.followingCollections(prev+1, limit, ""))
         }
         </div>
     </div>

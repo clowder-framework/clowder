@@ -23,7 +23,7 @@
     <div class="col-md-12">
         <div id="masonry">
         @datasetsList.map { dataset =>
-          @datasets.tile(dataset, Some(space), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true)
+          @datasets.tile(dataset, Some(space), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space)))
 
         }
         </div>

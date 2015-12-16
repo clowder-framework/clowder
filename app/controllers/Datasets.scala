@@ -98,13 +98,11 @@ class Datasets @Inject()(
     }
   }
 
-  def followingDatasets(when: String, index: Int, limit: Int, mode: String) = PrivateServerAction {implicit request =>
+  def followingDatasets(index: Int, limit: Int, mode: String) = PrivateServerAction {implicit request =>
     implicit val user = request.user
     user match {
       case Some(clowderUser)  => {
-        val nextPage = (when == "a")
         val title: Option[String] = Some("Following Datasets")
-
         var datasetList =  new ListBuffer[Dataset]()
         val datasetIds = clowderUser.followedEntities.filter(_.objectType == "dataset")
         val datasetIdsToUse = datasetIds.slice(index*limit, (index+1)*limit)

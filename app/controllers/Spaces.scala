@@ -500,11 +500,10 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
         case None => Redirect(routes.Spaces.list()).flashing("error" -> "You are not authorized to create/edit spaces.")
       }
   }
-  def followingSpaces(when: String, index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
+  def followingSpaces(index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(clowderUser) => {
-        val nextPage = (when == "a")
         val title: Option[String] = Some("Following Spaces")
 
         var spaceList = new ListBuffer[ProjectSpace]()
@@ -540,8 +539,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
             Some(mode)
           }
 
-        val deletePermission = Permission.checkPermission(user, Permission.DeleteSpace)
-        Ok(views.html.users.followingSpaces(decodedSpaceList.toList, when, "", limit, None, true, viewMode, deletePermission, prev, next, title))
+        Ok(views.html.users.followingSpaces(decodedSpaceList.toList, "", limit, None, true, viewMode, prev, next, title))
 
       }
       case None => InternalServerError("User not found")
@@ -622,8 +620,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
          Some(mode)
        }
 
-     val deletePermission = Permission.checkPermission(user, Permission.DeleteSpace)
-     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, deletePermission, prev, next, title))
+     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, prev, next, title))
    }
 
 

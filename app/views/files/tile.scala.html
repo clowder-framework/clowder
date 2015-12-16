@@ -1,0 +1,69 @@
+@(file: models.File, classes: String, redirect: Call, showFollow: Boolean)(implicit user: Option[models.User])
+
+@import org.apache.commons.io.FileUtils
+
+<div class="post-box @classes" id="@file.id-tile">
+    <div class="panel panel-default">
+        <div class="pull-right">
+            <a href="#" title="Bookmark" class="pull-right bookmark-link"><span class="glyphicon glyphicon-bookmark bookmark"></span></a>
+        </div>
+        <div class="panel-body">
+            @if(!file.thumbnail_id.isEmpty){
+                <a href="@(routes.Files.file(file.id))">
+                    <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)">
+                </a>
+            }
+        <div class="caption break-word">
+            <h4><a href="@(routes.Files.file(file.id))">@file.filename</a></h4>
+            <ul class="list-unstyled">
+                <li>Author: <strong>@file.author.fullName</strong></li>
+                <li>Uploaded: <strong>@file.uploadDate.format("dd MMM, yyyy")</strong></li>
+                <li>Size: <strong>@FileUtils.byteCountToDisplaySize(file.length)</strong></li>
+            </ul>
+        </div>
+        </div>
+        <ul class="list-group">
+            <li class="list-group-item">
+                <span class="glyphicon glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
+                <span class="glyphicon glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
+                @if(user.isDefined) {
+                    @if(user.get.identityId.userId.equals(file.author.identityId.userId)){
+                        <button onclick="removeFileAndRedirect('@(file.id)',' @redirect')" class="btn btn-link" style="text-align:right" title="Delete">
+                        <span class="glyphicon glyphicon-trash"></span></button>
+                    }
+                }
+            </li>
+        </ul>
+        @if(showFollow) {
+            @user match {
+                case Some(viewer) => {
+                    <ul class="list-group center-margin">
+                        <a
+                        id="followButton"
+                        type="button"
+                        class="btn-link"
+                        data-toggle="button"
+                        aria-pressed="
+                            @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
+                                true
+                            } else {
+                                false
+                            }
+                        "
+                        autocomplete="off"
+                        objectType="file"
+                        objectId="@file.id.stringify"
+                        >
+                        @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
+                            <span class='glyphicon glyphicon-star-empty'></span>Unfollow
+                        } else {
+                            <span class='glyphicon glyphicon-star'></span>Follow
+                        }
+                        </a>
+                    </ul>
+                }
+            }
+        }
+
+    </div>
+</div>

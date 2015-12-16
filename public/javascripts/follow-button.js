@@ -45,8 +45,8 @@ $(document).ready(function() {
     	          followButton.removeClass('btn-link');
     	          followButton.addClass('btn-link');
 				  if(removeIndicator) {
-					  followButton.closest($('.post-box')).remove();
-					  followButton.closest($('.panel')).remove();
+					  $('#'+followButton.attr('objectid')+'-tile').remove();
+					  $('#'+followButton.attr('objectid')+'-listitem').remove();
 				  }
     	          unfollowCallback();
     	        })
@@ -80,8 +80,8 @@ $(document).ready(function() {
     	          followButton.removeClass('btn-link');
     	          followButton.addClass('btn-link');
 				  if(removeIndicator) {
-					  followButton.closest($('.post-box')).remove();
-					  followButton.closest($('.panel')).remove();
+					  $('#'+followButton.attr('objectid')+'-tile').remove();
+					  $('#'+followButton.attr('objectid')+'-listitem').remove();
 				  }
     	          unfollowCallback();
     	        })
@@ -114,8 +114,8 @@ $(document).ready(function() {
     	          followButton.removeClass('btn-link');
     	          followButton.addClass('btn-link');
 				  if(removeIndicator) {
-					  followButton.closest($('.post-box')).remove();
-					  followButton.closest($('.panel')).remove();
+					  $('#'+followButton.attr('objectid')+'-tile').remove();
+					  $('#'+followButton.attr('objectid')+'-listitem').remove();
 				  }
     	          unfollowCallback();
     	        })
@@ -148,8 +148,8 @@ $(document).ready(function() {
     	          followButton.removeClass('btn-link');
     	          followButton.addClass('btn-link');
 				  if(removeIndicator) {
-					  followButton.closest($('.post-box')).remove();
-					  followButton.closest($('.panel')).remove();
+					  $('#'+followButton.attr('objectid')+'-tile').remove();
+					  $('#'+followButton.attr('objectid')+'-listitem').remove();
 				  }
     	          unfollowCallback();
     	        })
@@ -182,8 +182,8 @@ $(document).ready(function() {
 					followButton.removeClass('btn-link');
 					followButton.addClass('btn-link');
 					if(removeIndicator) {
-						followButton.closest($('.post-box')).remove();
-						followButton.closest($('.panel')).remove();
+						$('#'+followButton.attr('objectid')+'-tile').remove();
+						$('#'+followButton.attr('objectid')+'-listitem').remove();
 					}
 					unfollowCallback();
 				})

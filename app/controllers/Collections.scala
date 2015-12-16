@@ -68,14 +68,12 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       decodedCollection
   }
 
-  def followingCollections(when: String, index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
+  def followingCollections(index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(clowderUser) => {
-        val nextPage = (when == "a")
 
         val title: Option[String] = Some("Following Collections")
-
         val collectionList = new ListBuffer[Collection]()
         val collectionIds = clowderUser.followedEntities.filter(_.objectType == "collection")
         val collectionIdsToUse = collectionIds.slice(index*limit, (index+1) *limit)

@@ -1,9 +1,9 @@
-@(files: List[models.File], comments: Map[UUID, Int], prev: Int, next: Int, limit: Int, mode: Option[String], dataset:Option[UUID])(implicit user: Option[models.User])
+@(filesList: List[models.File], comments: Map[UUID, Int], prev: Int, next: Int, limit: Int, mode: Option[String], dataset:Option[UUID])(implicit user: Option[models.User])
 
 @import api.Permission
 @import org.apache.commons.io._
 
-@main("Files") {
+@main("Following Files") {
 
     @util.masonry()
     <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
@@ -85,8 +85,8 @@
 	        	$('#nextlink').attr('href', "@(routes.Files.listByDataset(dataset.getOrElse(UUID()),"a", next, limit, ""))");
 	            $('#prevlink').attr('href', "@(routes.Files.listByDataset(dataset.getOrElse(UUID()),"b", prev, limit, ""))");
 	             } else {
-	            $('#nextlink').attr('href', "@(routes.Files.followingFiles("a", next, limit, ""))");
-	            $('#prevlink').attr('href', "@(routes.Files.followingFiles("b", prev, limit, ""))");
+	            $('#nextlink').attr('href', "@(routes.Files.followingFiles(next, limit, ""))");
+	            $('#prevlink').attr('href', "@(routes.Files.followingFiles(prev, limit, ""))");
 	            }
 	        }
         </script>
@@ -96,77 +96,8 @@
     <div class="row hidden" id="tile-view">
         <div class="col-md-12">
             <div id="masonry">
-            @files.map { file =>
-                <div class="post-box col-lg-3 col-md-3 col-sm-3">
-                    <div class="panel panel-default">
-                        <div class="pull-right">
-                            <a href="#" title="Bookmark" class="pull-right bookmark-link"><span class="glyphicon glyphicon-bookmark bookmark"></span></a>
-                        </div>
-                        <div class="panel-body">
-                            @if(!file.thumbnail_id.isEmpty){
-                                <a href="@(routes.Files.file(file.id))">
-                                    <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)">
-                                </a>
-                            }
-                        <div class="caption break-word">
-                            <h4><a href="@(routes.Files.file(file.id))">@file.filename</a></h4>
-                            <ul class="list-unstyled">
-                                <li>Author: <strong>@file.author.fullName</strong></li>
-                                <li>Uploaded: <strong>@file.uploadDate.format("dd MMM, yyyy")</strong></li>
-                                <li>Size: <strong>@FileUtils.byteCountToDisplaySize(file.length)</strong></li>
-                            </ul>
-                        </div>
-                        </div>
-                        <ul class="list-group">
-                            <li class="list-group-item">
-                                <span class="glyphicon glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
-                                <span class="glyphicon glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
-                                <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(file.id)) comments"></span> @(comments.get(file.id))
-                                @if(user.isDefined) {
-                                        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                                    @if(user.get.identityId.userId.equals(file.author.identityId.userId)){
-                                        <button onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Delete">
-                                            <span class="glyphicon glyphicon-trash"></span></button>
-                                    } else {
-                                        <button disabled onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Delete">
-                                            <span class="glyphicon glyphicon-trash"></span></button>
-                                    }
-                                }
-                            </li>
-                        </ul>
-                        @if(dataset.isEmpty){
-                            <ul class="list-group center-margin">
-                            @user match {
-                                case Some(viewer) => {
-
-                                        <a
-                                        id="followButton"
-                                        type="button"
-                                        class="btn-link"
-                                        data-toggle="button"
-                                        aria-pressed="
-                                            @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
-                                                true
-                                            }else {
-                                                false
-                                            }
-                                        "
-                                        autocomplete="off"
-                                        objectType="file"
-                                        objectId="@file.id.stringify"
-                                        >
-                                        @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
-                                            <span class='glyphicon glyphicon-star-empty'></span>Unfollow
-                                        } else {
-                                            <span class='glyphicon glyphicon-star'></span>Follow
-                                        }
-                                        </a>
-                                }
-                            }
-                            </ul>
-                        }
-                    </div>
-                </div>
+            @filesList.map { file =>
+                @files.tile(file, "col-lg-3 col-md-3 col-sm-3", routes.Files.followingFiles(prev+1, limit,""), true)
             }
             </div>
         </div>
@@ -174,79 +105,9 @@
 
     <div class="row hidden" id="list-view">
         <div class="col-md-12">
-
-                @files.map { file =>
-                  <div class="panel panel-default">
-                      <div class="panel-body">
-                          <div class="row">
-                              <div class="col-md-2 col-sm-2 col-lg-2">
-                                 @if(!file.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)" width="120">}
-                              </div>
-                              <div class="col-md-10 col-sm-10 col-lg-10">
-                                  <h2><a href="@(routes.Files.file(file.id))">@file.filename</a></h2>
-                                  <div class="row">
-                                      <div class="col-md-6 col-lg-6 col-sm-6">
-                                          <ul class="list-unstyled">
-                                              <li>@(if(file.contentType != null) file.contentType else "N/A")</li>
-                                              <li>@file.uploadDate</li>
-                                              <li>
-                                                  <span class="glyphicon glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
-                                                  <span class="glyphicon glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
-                                                  <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(file.id)) comments"></span> @(comments.get(file.id))
-                                                  @if(user.isDefined) {
-                                                          <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                                                      @if(user.get.identityId.userId.equals(file.author.identityId.userId)){
-                                                          <button onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Delete">
-                                                              <span class="glyphicon glyphicon-trash"></span></button>
-                                                      } else {
-                                                          <button disabled onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Delete">
-                                                              <span class="glyphicon glyphicon-trash"></span></button>
-                                                      }
-                                                  }
-                                              </li>
-                                          </ul>
-                                      </div>
-                                      <div class="col-md-6 col-lg-6 col-sm-6">
-                                        <ul class="list-unstyled">
-                                            @if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
-                                                <li><a id="downloadButton" class="btn btn-link" type="button" onclick="window.open(jsRoutes.api.Files.download('@file.id').url, '_blank');" class="btn btn-primary" title="You don't have permission to download this file" > <span class="glyphicon glyphicon-save"></span>
-                                                    Download </a></li>
-                                            }
-                                                <li> @user match {
-                                                case Some(viewer) => {
-                                                        <a
-                                                        id="followButton"
-                                                        type="button"
-                                                        class="btn btn-link"
-                                                        data-toggle="button"
-                                                        aria-pressed="
-                                                            @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
-                                                                true
-                                                            }else {
-                                                                false
-                                                            }
-                                                        "
-                                                        autocomplete="off"
-                                                        objectType="file"
-                                                        objectId="@file.id.stringify"
-                                                        >
-                                                        @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
-                                                            <span class='glyphicon glyphicon-star-empty'></span>Unfollow
-                                                        } else {
-                                                            <span class='glyphicon glyphicon-star'></span>Follow
-                                                        }
-                                                        </a>
-                                                }
-                                            }
-                                            </li>
-                                        </ul>
-                                      </div>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-                }
+            @filesList.map { file =>
+                @files.listitem(file, comments, routes.Files.followingFiles(prev+1, limit, ""))
+            }
         </div>
     </div>
 
