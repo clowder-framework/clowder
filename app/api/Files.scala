@@ -8,8 +8,6 @@ import javax.inject.Inject
 import javax.mail.internet.MimeUtility
 
 import _root_.util.{Parsers, JSONLD}
-import play.api.libs.Files
-import play.api.mvc.MultipartFormData
 import securesocial.core.Identity
 
 import org.bson.types.ObjectId
@@ -27,7 +25,8 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json._
 import play.api.libs.json._
-import play.api.mvc.{Request, ResponseHeader, SimpleResult}
+import play.api.libs.Files
+import play.api.mvc.{Request, ResponseHeader, SimpleResult, MultipartFormData}
 
 import services._
 
@@ -378,7 +377,10 @@ class Files @Inject()(
       // Only upload the specific key we were given (e.g. "File")
       request.body.file(key) match {
         case Some(f) => List[MultipartFormData.FilePart[Files.TemporaryFile]](f)
-        case None => return List.empty[File]
+        case None => {
+          Logger.debug("Key "+key+" not found in request. No file uploaded.")
+          return List.empty[File]
+        }
       }
     }
 
@@ -413,6 +415,7 @@ class Files @Inject()(
 
         val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, realUser)
         val uploadedFile = f
+        Logger.info("Uploading Completed")
 
         // submit file for extraction
         file match {
@@ -464,12 +467,13 @@ class Files @Inject()(
                 md.map { jsonObj =>
                   val jobj = Json.parse(jsonObj)
 
-                  Logger.debug("Adding metadata to " + nameOfFile)
+                  Logger.info("Adding metadata to " + nameOfFile)
 
                   files.get(f.id) match {
                     case Some(x) => {
                       //parse request for agent/creator info
                       //creator can be UserAgent or ExtractorAgent
+                      // TODO: This is not an extractor, how should ID be handled? UserAgent?
                       val creator = ExtractorAgent(id = UUID.generate(),
                         extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/deprecatedapi")))
                       // check if the context is a URL to external endpoint
@@ -495,8 +499,9 @@ class Files @Inject()(
               case None => {}
             }
 
-            // Handle adding file to dataset if one is provided
+
             if (dataset == null) {
+              // No dataset is provided, so just upload the file.
               events.addObjectEvent(Option(user), f.id, f.filename, "upload_file")
               // TODO replace null with None
               current.plugin[RabbitmqPlugin].foreach {
@@ -511,8 +516,10 @@ class Files @Inject()(
 
                 Logger.debug("xmlmd=" + xmlToJSON)
 
-                current.plugin[ElasticsearchPlugin].foreach {
-                  _.index("data", "file", f.id, List(("filename", nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
+                if (index.equals(true)) {
+                  current.plugin[ElasticsearchPlugin].foreach {
+                    _.index("data", "file", f.id, List(("filename", nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
+                  }
                 }
 
                 //add file to RDF triple store if triple store is used
@@ -522,22 +529,23 @@ class Files @Inject()(
                 }
               }
               else {
-                current.plugin[ElasticsearchPlugin].foreach {
-                  _.index("data", "file", f.id, List(("filename", nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date()))))
+                if (index.equals(true)) {
+                  current.plugin[ElasticsearchPlugin].foreach {
+                    _.index("data", "file", f.id, List(("filename", nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date()))))
+                  }
                 }
-
               }
               current.plugin[AdminsNotifierPlugin].foreach {
                 _.sendAdminsNotification(Utils.baseUrl(request), "File", "added", f.id.stringify, nameOfFile)
               }
             } else {
-              Logger.debug("DS MATCH")
+              // Handle adding file to dataset if one is provided
               events.addSourceEvent(Option(user), f.id, f.filename, dataset.id, dataset.name, "add_file_dataset")
               current.plugin[RabbitmqPlugin].foreach {
                 _.extract(ExtractorMessage(new UUID(id), new UUID(id), host, key, extra, f.length.toString, dataset.id, ""))
               }
 
-              //for metadata files
+              //for metadata files, associate with dataset
               val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
               if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
                 val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
@@ -574,7 +582,7 @@ class Files @Inject()(
                   _.extract(ExtractorMessage(dataset.id, dataset.id, host, dtkey, Map.empty, f.length.toString, dataset.id, ""))
                 }
 
-                Logger.info("Uploading Completed")
+                Logger.info("Attached to dataset successfully.")
 
                 //add file to RDF triple store if triple store is used
                 if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
@@ -604,7 +612,6 @@ class Files @Inject()(
         f.ref.clean()
       }
     }
-    Logger.debug("END")
     return uploadedFiles.toList
   }
 
