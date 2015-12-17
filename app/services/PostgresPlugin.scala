@@ -45,6 +45,8 @@ class PostgresPlugin(application: Application) extends Plugin {
     } catch {
       case unknown: Throwable => Logger.error("Error connecting to postgres: " + unknown)
     }
+
+    updateDatabase()
   }
 
   override def onStop() {
@@ -718,5 +720,39 @@ class PostgresPlugin(application: Application) extends Plugin {
   def test() {
     addDatapoint(new java.util.Date(), None, "Feature", """{"value":"test"}""", 40.110588, -88.207270, 0.0, "http://test/stream")
     Logger.info("Searching postgis: " + searchDatapoints(None, None, None, None, None, List.empty, List.empty, false))
+  }
+
+  // ----------------------------------------------------------------------
+  // CODE TO UPDATE THE DATABASE
+  // ----------------------------------------------------------------------
+  def updateDatabase() {
+    // update datapoints to JSONB
+    updateDatapointsPropertiesToJSONB
+
+  }
+
+  private def updateDatapointsPropertiesToJSONB {
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("postgres.updates", "datapoints-properties-to-jsonb")) {
+      if (System.getProperty("POSTGRESUPDATE") != null) {
+        Logger.info("[PostgresUpdate] : Upgrading datapoints to jsonb.")
+        val query = "ALTER TABLE datapoints ALTER COLUMN data SET DATA TYPE jsonb USING data::jsonb"
+        val st = conn.prepareStatement(query)
+        Logger.debug("[PostgresUpdate] : Upgrading datapoints to jsonb: " + st)
+        st.execute()
+        st.close()
+
+        val query2 = "CREATE INDEX datapoints_data_idx ON datapoints USING gin (data)"
+        val st2 = conn.prepareStatement(query2)
+        Logger.debug("[PostgresUpdate] : Creating datapoint properties index: " + st2)
+        st2.execute()
+        st2.close()
+
+        appConfig.addPropertyValue("postgres.updates", "datapoints-properties-to-jsonb")
+      } else {
+        Logger.warn("[PostgresUpdate] : Datapoints properties column needs to be updated to JSONB. Restart Clowder with -DPOSTGRESUPDATE=1")
+      }
+    }
   }
 }
