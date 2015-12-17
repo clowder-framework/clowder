@@ -447,7 +447,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       case Some(loggedInUser) => {
         spaces.get(id) match {
           case Some(file) => {
-            events.addObjectEvent(user, id, name, "unfollow_space")
+            events.addObjectEvent(user, id, file.name, "unfollow_space")
             spaces.removeFollower(id, loggedInUser.id)
             userService.unfollowResource(loggedInUser.id, new ResourceRef(ResourceRef.space, id))
             Ok

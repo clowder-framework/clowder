@@ -47,6 +47,7 @@ $(document).ready(function() {
 				  if(removeIndicator) {
 					  $('#'+followButton.attr('objectid')+'-tile').remove();
 					  $('#'+followButton.attr('objectid')+'-listitem').remove();
+					  activate();
 				  }
     	          unfollowCallback();
     	        })
@@ -82,6 +83,7 @@ $(document).ready(function() {
 				  if(removeIndicator) {
 					  $('#'+followButton.attr('objectid')+'-tile').remove();
 					  $('#'+followButton.attr('objectid')+'-listitem').remove();
+					  activate();
 				  }
     	          unfollowCallback();
     	        })
@@ -116,6 +118,7 @@ $(document).ready(function() {
 				  if(removeIndicator) {
 					  $('#'+followButton.attr('objectid')+'-tile').remove();
 					  $('#'+followButton.attr('objectid')+'-listitem').remove();
+					  activate();
 				  }
     	          unfollowCallback();
     	        })
@@ -150,6 +153,7 @@ $(document).ready(function() {
 				  if(removeIndicator) {
 					  $('#'+followButton.attr('objectid')+'-tile').remove();
 					  $('#'+followButton.attr('objectid')+'-listitem').remove();
+					  activate();
 				  }
     	          unfollowCallback();
     	        })
@@ -184,6 +188,7 @@ $(document).ready(function() {
 					if(removeIndicator) {
 						$('#'+followButton.attr('objectid')+'-tile').remove();
 						$('#'+followButton.attr('objectid')+'-listitem').remove();
+						activate();
 					}
 					unfollowCallback();
 				})
