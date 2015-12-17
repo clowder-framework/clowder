@@ -12,10 +12,6 @@ import play.api.libs.Files
 import play.api.mvc.MultipartFormData
 import securesocial.core.Identity
 
-import scala.collection.mutable.MutableList
-
-import java.util.ArrayList 
-
 import org.bson.types.ObjectId
 
 import com.mongodb.casbah.Imports._
@@ -27,7 +23,6 @@ import models._
 import org.json.JSONObject
 import play.api.Logger
 import play.api.Play.{configuration, current}
-import play.api.libs.Files.TemporaryFile
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json._
@@ -36,8 +31,7 @@ import play.api.mvc.{Request, ResponseHeader, SimpleResult}
 
 import services._
 
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ListBuffer, ArrayBuffer}
 import scala.util.parsing.json.JSONArray
 
 
@@ -389,7 +383,7 @@ class Files @Inject()(
     }
 
     // container for list of uploaded files now that we know how many we have
-    var uploadedFiles = new mutable.ArrayBuffer[File](file_list.length)
+    var uploadedFiles = new ArrayBuffer[File](file_list.length)
 
     // Get file(s) found and iterate, uploading each
     file_list.map { f =>
