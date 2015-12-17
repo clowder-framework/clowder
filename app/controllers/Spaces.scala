@@ -3,19 +3,14 @@ package controllers
 import java.net.URL
 import java.util.{Calendar, Date}
 import javax.inject.Inject
-
 import api.Permission
 import api.Permission._
 import models._
-import play.api.data.validation._
 import play.api.{Play, Logger}
 import play.api.data.Forms._
 import play.api.data.{Form, Forms}
-import play.api.libs.concurrent.Akka
 import play.api.libs.json.Json
-import securesocial.core.providers.utils.Mailer
 import services._
-import util.Direction._
 import securesocial.core.providers.{Token, UsernamePasswordProvider}
 import org.joda.time.DateTime
 import play.api.i18n.Messages

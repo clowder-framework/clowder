@@ -13,7 +13,6 @@ import play.api.libs.json.Json._
 import play.api.libs.json.Json.toJson
 import services.{EventService, AdminsNotifierPlugin, SpaceService, UserService, DatasetService, CollectionService}
 import util.Mail
-import scala.collection.mutable.ListBuffer
 import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError

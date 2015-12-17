@@ -2,23 +2,16 @@ package controllers
 
 import api.Permission._
 import models._
-import play.api.data.Form
-import play.api.data.Forms._
-import play.api.mvc.SimpleResult
 import util.{Formatters, RequiredFieldsConfig}
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.{Inject, Singleton}
-
-import api.{UserRequest, Permission}
-import org.apache.commons.lang.StringEscapeUtils
+import api.Permission
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 import services.{CollectionService, DatasetService, _}
-import views.html.defaultpages.badRequest
-
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 import services._
