@@ -1,7 +1,5 @@
 @(spacesList: List[models.ProjectSpace], when: String, date: String, limit: Int, owner: Option[String], showAll: Boolean, mode: Option[String], prev: String, next: String, title: Option[String])(implicit user: Option[models.User])
 
-@import api.Permission
-
 @main("Spaces") {
 
         @util.masonry()
