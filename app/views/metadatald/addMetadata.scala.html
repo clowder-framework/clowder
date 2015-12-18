@@ -26,10 +26,15 @@
     </div>
 }
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/anytime.5.1.2.css")">
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/jquery-ui-timepicker-addon.css")">
 <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/anytime.5.1.2.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/anytimetz.5.1.2.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/jquery-ui-timepicker-addon.js")" type="text/javascript"></script>
 
 <style>
 .ui-autocomplete-category {
@@ -101,7 +106,7 @@ line-height: 1.5;
         var field_id = $("#@id  #field-value").data("id");
         var field_type = $("#@id  #add-metadata-select option:selected").data("type");
         var field_value = "";
-        var field_types_with_simple_values = {"string": 1, "listjquery": 1, "listgeocode": 1, "scientific_variable": 1};
+        var field_types_with_simple_values = {"string": 1, "listjquery": 1, "listgeocode": 1, "scientific_variable": 1, "datetime": 1};
         if (field_type in field_types_with_simple_values) {
             field_value = $("#@id  #field-value").val();
         } else if (field_type == "list") {
@@ -169,10 +174,10 @@ line-height: 1.5;
         var fields = response;
         for (var i = 0; i < fields.length; i++) {
             var elem = $("<option></option>");
-                elem.attr("data-type", fields[i].json.type);
-                elem.attr("data-id", fields[i].id);
-                elem.attr("value", fields[i].json.uri);
-                elem.text(fields[i].json.label);
+            elem.attr("data-type", fields[i].json.type);
+            elem.attr("data-id", fields[i].id);
+            elem.attr("value", fields[i].json.uri);
+            elem.text(fields[i].json.label);
             $("#@id  #add-metadata-select").append(elem);
         }
         // chosen pulldown configuration
@@ -194,7 +199,8 @@ line-height: 1.5;
                      "list": "add_metadata_list",
                      "listjquery": "add_metadata_listjquery",
                      "listgeocode": "add_metadata_string",
-                     "scientific_variable": "add_metadata_scientific_variable"
+                     "scientific_variable": "add_metadata_scientific_variable",
+                     "datetime": "add_metadata_datetime"
                     };
                 var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/")" + template_map[field_type]);
                 var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type});
@@ -252,10 +258,26 @@ line-height: 1.5;
                             });
                         }
                     });
+                } else if (field_type == "datetime") {
+                    /*
+                    //AnyTime.picker ("#@id #field-value")
+                    $("#field-value").AnyTime_picker(
+                        { format: "%Y-%m-%dT%T%:",
+                          formatUtcOffset: "%: (%@@)"});
+                    */
+                    ///*
+                    $("#field-value").datetimepicker(
+                        { dateFormat: 'yy-mm-dd',
+                        //{ dateFormat: 'ISO_8601', }
+                          timeFormat: 'HH:mm:ssZ',
+                          separator: 'T',
+                          timeInput: true
+                        });
+                        //*/
                 } else if (field_type == "listjquery") {
                     // Find the field with the specific uri.
                     var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
-                    $("#field-value").autocomplete({
+                    $("#@id #field-value").autocomplete({
                         minLength: 3,
                         source: function( request, response ) {
                             // Get the query parameter from the saved json, not hardcoded.
