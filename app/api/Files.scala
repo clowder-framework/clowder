@@ -465,8 +465,6 @@ class Files @Inject()(
             curr_md match {
               case Some(md) => {
                 md.map { jsonObj =>
-                  val jobj = Json.parse(jsonObj)
-
                   Logger.info("Adding metadata to " + nameOfFile)
 
                   files.get(f.id) match {
@@ -486,7 +484,7 @@ class Files @Inject()(
                       val attachedTo = ResourceRef(ResourceRef.file, f.id)
                       val version = None
                       val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                        jobj, version)
+                        Json.parse(jsonObj), version)
 
                       //add metadata to mongo
                       metadataService.addMetadata(metadata)
