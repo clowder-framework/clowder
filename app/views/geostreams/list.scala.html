@@ -1,7 +1,9 @@
 @(sensors: List[play.api.libs.json.JsValue])(implicit user: Option[models.User])
 @import services._
-
-@main("Sensors") {
+@title = @{
+    AppConfiguration.getSensorsTitle
+}
+@main(title) {
 
     <link rel="stylesheet" href="@routes.Assets.at("stylesheets/leaflet.css")">
     <!--[if lte IE 8]>
@@ -16,7 +18,7 @@
         <thead>
             <tr>
                 <th>ID <span class="glyphicon glyphicon-sort pull-right" aria-hidden="true"></span></th>
-                <th>Sensor <span class="glyphicon glyphicon-sort pull-right" aria-hidden="true"></span></th>
+                <th>@(AppConfiguration.getSensorTitle) <span class="glyphicon glyphicon-sort pull-right" aria-hidden="true"></span></th>
                 <th>Source <span class="glyphicon glyphicon-sort pull-right" aria-hidden="true"></span></th>
                 <th>Latitude <span class="glyphicon glyphicon-sort pull-right" aria-hidden="true"></span></th>
                 <th>Longitude <span class="glyphicon glyphicon-sort pull-right" aria-hidden="true"></span></th>
