@@ -1,4 +1,4 @@
-@(files: List[models.File], comments: Map[UUID, Int], prev: String, next: String, limit: Int, mode: Option[String])(implicit user: Option[models.User])
+@(filesList: List[models.File], comments: Map[UUID, Int], prev: String, next: String, limit: Int, mode: Option[String])(implicit user: Option[models.User])
 
 @import _root_.util.Formatters.ellipsize
 @import org.apache.commons.io._
@@ -83,8 +83,13 @@
             //Function to unify the changing of the href for the next/previous links. Called on button activation for
             //viewMode style, as well as on initial load of page.
 	        function updatePage() {
-	            $('#nextlink').attr('href', "@(routes.Files.list("a", next, limit))");
-	            $('#prevlink').attr('href', "@(routes.Files.list("b", prev, limit))");
+	            if(@next.startsWith("dataset")){
+                    $('#nextlink').attr('href', "@(routes.Files.listByDataset(UUID(next.split("-")(1)), prev.toInt + 1, limit))");
+                    $('#prevlink').attr('href', "@(routes.Files.listByDataset(UUID(next.split("-")(1)), prev.toInt - 1, limit))");
+	             } else {
+                    $('#nextlink').attr('href', "@(routes.Files.list("a", next, limit))");
+                    $('#prevlink').attr('href', "@(routes.Files.list("b", prev, limit))");
+	            }
 	        }
         </script>
     </div>
@@ -93,103 +98,39 @@
   <div class="row hidden" id="tile-view">
     <div class="col-md-12">
         <div id="masonry">
-            @files.map { file =>
-            <div class="post-box col-lg-3 col-md-3 col-sm-3">
-                <div class="panel panel-default">
-                    <div class="pull-right">
-                        <a href="#" title="Bookmark" class="pull-right bookmark-link"><span class="glyphicon glyphicon-bookmark bookmark"></span></a>
-                    </div>
-                    <div class="panel-body">
-                        @if(!file.thumbnail_id.isEmpty){
-                        <a href="@(routes.Files.file(file.id))">
-                            <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)">
-                        </a>
-                        }
-                        <div class="caption break-word">
-                            <h4><a href="@(routes.Files.file(file.id))">@file.filename</a></h4>
-                            <ul class="list-unstyled">
-                                <li>Author: <strong>@file.author.fullName</strong></li>
-                                <li>Uploaded: <strong>@file.uploadDate.format("dd MMM, yyyy")</strong></li>
-                                <li>Size: <strong>@FileUtils.byteCountToDisplaySize(file.length)</strong></li>
-                            </ul>
-                        </div>
-                    </div>
-                    <ul class="list-group">
-                        <li class="list-group-item">
-                            <span class="glyphicon glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
-                            <span class="glyphicon glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
-                            <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(file.id)) comments"></span> @(comments.get(file.id))
-							@if(user.isDefined) {
-							    <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-							    @if(user.get.identityId.userId.equals(file.author.identityId.userId)){
-								    <button onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Delete">
-							        <span class="glyphicon glyphicon-trash"></span></button>
-							    } else {
-							        <button disabled onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Delete">
-                                    <span class="glyphicon glyphicon-trash"></span></button>
-                                }							    
-							}
-                        </li>
-                    </ul>
-                </div>
-            </div>
+            @filesList.map { file =>
+                @if(next.startsWith("dataset")) {
+                    @files.tile(file, "col-lg-3 col-md-3 col-sm-3", routes.Files.listByDataset(UUID(next.split("-")(1)), prev.toInt), false)
+                } else {
+                    @files.tile(file, "col-lg-3 col-md-3 col-sm-3", routes.Application.index(), false)
+                }
+
             }
         </div>
     </div>
 </div>
 
-  <div class="row hidden" id="list-view">
-	<div class="col-md-12">
-		<table class="table table-bordered table-hover">
-			<thead>
-				<tr>
-					<th>Name</th>
-					<th>Type</th>
-					<th>Uploaded</th>
-					<th>Preview</th>
-					@if(user.isDefined) {
-						<th>Delete</th>
-					}
-				</tr>
-			</thead>
-			<tbody>
-				@files.map { file =>
-					<tr>
-						<td><a href="@(routes.Files.file(file.id))">@file.filename</a></td>
-						<td>@(if(file.contentType != null) file.contentType else "N/A")</td>
-						<td>@file.uploadDate</td>
-						<td>
-							@if(!file.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)" width="120">}
-							@if(file.thumbnail_id.isEmpty){No thumbnail available}
-						</td>
-
-						<td class="requiresLogin">
-							@if(user.isDefined) {
-							        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-									@if(user.get.identityId.userId.equals(file.author.identityId.userId)){
-										<button onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Delete">
-                                        <span class="glyphicon glyphicon-trash"></span></button>
-									} else {
-									    <button disabled onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" style="text-align:right" title="Delete">
-                                        <span class="glyphicon glyphicon-trash"></span></button>
-									}													
-							}
-						</td>						
-					</tr>
+    <div class="row hidden" id="list-view">
+        <div class="col-md-12">
+				@filesList.map { file =>
+                    @if(next.startsWith("dataset")){
+                        @files.listitem(file, comments, routes.Files.listByDataset(UUID(next.split("-")(1)), prev.toInt))
+                    } else {
+                        @files.listitem(file, comments, routes.Application.index())
+                    }
 				}
-			</tbody>
-		</table>
-	</div>
-</div>
+        </div>
+    </div>
+
 
 <div class="row">
     <div class="col-md-12">
         <ul class="pager">
             <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
-            @if(prev != "") {
+            @if(next.startsWith("dataset") && prev.toInt >0 ||  !next.startsWith("dataset") && prev != "") {
                 <li class="previous"><a class="btn btn-link" id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span> Previous</a></li>
             }
-            @if(next != "") {
+            @if(next.startsWith("dataset") && next.contains("next")  ||  !next.startsWith("dataset") && next != "") {
                 <li class ="next"><a class="btn btn-link" id="nextlink" title="Page forwards" href="#">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
             }
         </ul>
