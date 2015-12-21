@@ -3,7 +3,6 @@ package controllers
 import java.net.URL
 import java.util.{Calendar, Date}
 import javax.inject.Inject
-
 import api.Permission
 import api.Permission._
 import models._

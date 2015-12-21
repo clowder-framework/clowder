@@ -1,0 +1,40 @@
+@(userInfo: (UUID, String, String, String), classes: String, showFollow: Boolean)(implicit user: Option[models.User])
+
+<div class="post-box @classes">
+    <div class = "img_wrapper">
+        <div class = "img_hover">
+            <a href="@routes.Profile.viewProfileUUID(userInfo._1)">
+            @userInfo._2
+            </a>
+            @if(showFollow) {
+                <div>
+                    <h4>
+                    @if(user.get.followedEntities.filter(x => (x.id == userInfo._1)).nonEmpty) {
+                        <button id="followButton" type="button"
+                        class="btn-link"
+                        data-toggle="button"
+                        aria-pressed="true"
+                        autocomplete="off"
+                        objectId = "@userInfo._1.stringify"
+                        objectType = "user">
+                            <span class='glyphicon glyphicon-star-empty'></span> Unfollow
+                        </button>
+                    } else {
+                        <button id="followButton" type="button"
+                        class="btn btn-success"
+                        data-toggle="button"
+                        aria-pressed="false"
+                        autocomplete="off"
+                        objectId = "@userInfo._1.stringify"
+                        objectType = "user">
+                            <span class='glyphicon glyphicon-star'></span>Follow
+                        </button>
+                    }
+                    </h4>
+                    <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
+                </div>
+            }
+        </div>
+        <img src=@userInfo._4 class="img_thumbnail">
+    </div>
+</div>

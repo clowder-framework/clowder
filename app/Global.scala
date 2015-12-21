@@ -1,11 +1,7 @@
-import api.Permission
 import play.api.{GlobalSettings, Application}
 import play.api.Logger
-
 import play.filters.gzip.GzipFilter
-
 import play.libs.Akka
-import play.mvc.Result
 import services.{UserService, DI, AppConfiguration}
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -79,6 +75,7 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
   }
 
   override def onHandlerNotFound(request: RequestHeader) = {
+
     Future(NotFound(
       views.html.errorPage(request, "Not found")
     ))

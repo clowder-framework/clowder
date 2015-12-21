@@ -2,11 +2,7 @@ package services.mongodb
 
 import com.mongodb.casbah.WriteConcern
 import java.util.Date
-
 import com.mongodb.DBObject
-import com.mongodb.casbah.Imports._
-import com.mongodb.casbah.commons.MongoDBObject
-import com.mongodb.casbah.commons.TypeImports._
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import com.mongodb.util.JSON
 import com.novus.salat._
@@ -16,13 +12,10 @@ import org.bson.types.ObjectId
 import securesocial.core.Identity
 import play.api.Application
 import play.api.Play.current
-import MongoContext.context
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
 import models.Role
 import models.UserSpaceAndRole
-import models.UserSpaceAndRole
-import services.mongodb.SpaceInviteDAO
 import scala.collection.mutable.ListBuffer
 import play.api.Logger
 import securesocial.core.providers.Token
@@ -112,6 +105,32 @@ class MongoDBUserService @Inject() (
       case None => raw
     }
     orderedBy.limit(limit).toList
+  }
+
+  override def list(id: Option[String], nextPage: Boolean, limit: Integer): List[User] = {
+    val filterDate = id match {
+      case Some(d) => {
+        if(d == "") {
+          MongoDBObject()
+        } else if (nextPage) {
+          ("_id" $lt new ObjectId(d))
+        } else {
+          ("_id" $gt new ObjectId(d))
+        }
+      }
+      case None => MongoDBObject()
+    }
+    val sort = if (id.isDefined && !nextPage) {
+      MongoDBObject("_id"-> 1) ++ MongoDBObject("name" -> 1)
+    } else {
+      MongoDBObject("_id" -> -1) ++ MongoDBObject("name" -> 1)
+    }
+    if(id.isEmpty || nextPage) {
+      UserDAO.find(filterDate).sort(sort).limit(limit).toList
+    } else {
+      UserDAO.find(filterDate).sort(sort).limit(limit).toList.reverse
+    }
+
   }
 
   // ----------------------------------------------------------------------

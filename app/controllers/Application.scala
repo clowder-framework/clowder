@@ -84,7 +84,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
               userFollower match {
                 case Some(uFollower) => {
                   var ufEmail = uFollower.email.getOrElse("")
-                  followers = followers.++(List((uFollower.id, ufEmail, uFollower.getAvatarUrl(), uFollower.fullName)))
+                  followers = followers.++(List((uFollower.id, uFollower.fullName, ufEmail, uFollower.getAvatarUrl())))
                 }
                 case None =>
               }
@@ -134,7 +134,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
                   case Some(fspace) => {
                     followedSpaces = followedSpaces.++(List((fspace.id, fspace.name, fspace.description.substring(0, Math.min(maxDescLength, fspace.description.length())))))
                   }
-
+                  case None =>
                 }
               }
             }

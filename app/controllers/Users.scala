@@ -1,8 +1,6 @@
 package controllers
 
-import _root_.java.util.UUID
 import java.util.UUID
-
 import com.typesafe.plugin._
 import org.joda.time.DateTime
 import play.api.Play.current
@@ -10,10 +8,7 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.data.validation.{Constraint, Invalid, Valid, ValidationError}
 import play.api.i18n.Messages
-import play.api.libs.concurrent.Akka
-import play.api.mvc._
-import play.api.templates.Html
-import play.api.{Logger, Play}
+import play.api.Play
 import securesocial.controllers.TemplatesPlugin
 import securesocial.core.providers.utils.Mailer
 import securesocial.core.providers.{Token, UsernamePasswordProvider}
@@ -21,7 +16,7 @@ import services.AppConfiguration
 import javax.inject.Inject
 import services.UserService
 import play.api.mvc.Action
-import util.Mail
+import util.{Formatters, Mail, Direction}
 
 /**
  * Manage users.
@@ -122,10 +117,55 @@ class Users @Inject() (users: UserService) extends SecuredController {
             }
         }
 
-        Ok(views.html.users.followingUsers(followedUsers, clowderUser.fullName, clowderUser.id, prev, next, limit))
+        Ok(views.html.users.followingUsers(followedUsers, clowderUser.fullName, prev, next, limit))
 
       }
       case None => InternalServerError("User not defined")
+    }
+  }
+
+  def getUsers(when: String, id: String, limit: Int) = AuthenticatedAction { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(clowderUser) => {
+        var usersList: List[(models.UUID, String, String, String)] = List.empty
+        var nextPage = (when == "a")
+        val dbusers: List[models.User] = if(id != "") {
+          users.list(Some(id), nextPage, limit)
+        } else {
+          users.list(None, nextPage, limit)
+        }
+
+        for(usr <- dbusers) {
+          usersList = usersList.++(List((usr.id, usr.fullName, usr.email.get, usr.getAvatarUrl())))
+        }
+
+        //Check if there is a prev page
+        val prev = if(dbusers.nonEmpty && id != "") {
+          val ds = users.list(Some(dbusers.head.id.stringify), nextPage = false, 1)
+          if(ds.nonEmpty && dbusers.head.id != ds.head.id) {
+            dbusers.head.id.stringify
+          } else {
+            ""
+          }
+        } else {
+          ""
+        }
+        val next = if(dbusers.nonEmpty) {
+          val ds = users.list(Some(dbusers.last.id.stringify), nextPage=true, 1)
+          if(ds.nonEmpty && ds.head.id != dbusers.last.id) {
+            dbusers.last.id.stringify
+          } else {
+            ""
+          }
+        } else {
+          ""
+        }
+
+        Ok(views.html.users.listUsers(usersList, prev, next, limit))
+      }
+      case None => InternalServerError("User not defined")
+
     }
 
   }
@@ -148,7 +188,7 @@ class Users @Inject() (users: UserService) extends SecuredController {
           userFollower match {
             case Some(uFollower) => {
               val ufEmail = uFollower.email.getOrElse("")
-              followers = followers.++(List((uFollower.id, ufEmail, uFollower.getAvatarUrl(), uFollower.fullName)))
+              followers = followers.++(List((uFollower.id, uFollower.fullName, ufEmail, uFollower.getAvatarUrl())))
             }
           }
         }

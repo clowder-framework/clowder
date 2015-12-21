@@ -1,14 +1,10 @@
 package api
 
 import javax.inject.Inject
-
 import com.wordnik.swagger.annotations.ApiOperation
-import models._
 import play.api.libs.json._
-import play.api.mvc.Action
 import play.api.Play.current
 import services.UserService
-import java.util.Date
 import models._
 import services._
 import play.api.Logger
