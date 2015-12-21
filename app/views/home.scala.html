@@ -513,6 +513,24 @@
 
     <script>
         var removeIndicator=true;
+        function activateOne(id) {
+            // initialize Masonry
+            var $container = $('#'+id).masonry();
+            // layout Masonry again after all images have loaded
+            imagesLoaded( '#masonry', function() {
+                $container.masonry({
+                itemSelector: '.post-box',
+                columnWidth: '.post-box',
+                transitionDuration: 4
+                });
+            });
+        }
+
+        function activate(){
+            activateOne("masonry-datasets");
+            activateOne("masonry-collections");
+            activateOne("masonry-spaces");
+        }
         $(document).ready(function() {
             activate();
             /*
@@ -548,24 +566,7 @@
             });
         });
 
-        function activateOne(id) {
-            // initialize Masonry
-            var $container = $('#'+id).masonry();
-            // layout Masonry again after all images have loaded
-            imagesLoaded( '#masonry', function() {
-                $container.masonry({
-                itemSelector: '.post-box',
-                columnWidth: '.post-box',
-                transitionDuration: 4
-                });
-            });
-        }
 
-        function activate(){
-            activateOne("masonry-datasets");
-            activateOne("masonry-collections");
-            activateOne("masonry-spaces");
-        }
 
         // fire when showing from tab
         $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {

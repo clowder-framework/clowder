@@ -37,4 +37,33 @@
             }
         </div>
     </div>
+    <script>
+
+        function activateOne(id) {
+            // initialize Masonry
+            var $container = $('#'+id).masonry();
+            // layout Masonry again after all images have loaded
+            imagesLoaded( '#masonry', function() {
+                $container.masonry({
+                itemSelector: '.post-box',
+                columnWidth: '.post-box',
+                transitionDuration: 4
+                });
+            });
+        }
+
+        function activate(){
+            activateOne("masonry-datasets");
+            activateOne("masonry-collections");
+        }
+
+        $(document).ready(function () {
+            activate();
+        });
+
+        // fire when showing from tab
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+            activate();
+        })
+    </script>
 }
