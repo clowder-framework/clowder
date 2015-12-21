@@ -57,6 +57,29 @@ $(document).ready(function() {
     }
   });
 
+  // set the link to sensor types dynamically - TODO store this in the sensor config
+  var sensorTypesUrl = "https://opensource.ncsa.illinois.edu/confluence/display/IMLCZO/Data+Types";
+  var sensorTypesUrlElement = $("#sensorTypesUrl");
+  sensorTypesUrlElement.attr('href', sensorTypesUrl);
+
+  // set the sensor types dynamically - TODO store this in the sensor config
+  var sensorTypes = {
+    1: "1 Instrument, 1 Measurement, No Depth, No Time-Series",
+    2: "1 Instrument, 1 Measurement, No Depth, Yes Time-Series",
+    3: "1 Instrument, Many Measurements, No Depth, No Time-Series",
+    4: "1 Instrument, Many Measurements, No Depth, Yes Time-Series",
+    5: "Many Instruments, 1 Measurement, Many Depths, Yes Time-Series",
+    6: "Many Instruments, Many Measurements, Many Depths, Yes Time-Series",
+    7: "1 Instrument, Many Measurements, One Depth, Yes Time-Series"
+  };
+
+  var sensorType = $("#sensorType");
+  sensorType.empty();
+  $.each(sensorTypes, function(key, value) {
+    sensorType.append($("<option></option>").attr("value", key).text(value));
+  });
+
+
   var instrumentCounter = 0;
   var addInstrumentButton = $("#addInstrument");
   addInstrumentButton.on('click', instrumentCounter, function() {
@@ -78,7 +101,8 @@ $(document).ready(function() {
   });
 
 
-  $("#sensorType").on('change', function() {
+  // TODO store this in the sensor config
+  sensorType.on('change', function() {
     var sensorType = $(this).val();
     var hasDepth = $("#hasDepth");
     var sensorTypeSensorCount = $("#sensorTypeSensorCount");
@@ -150,6 +174,7 @@ $(document).ready(function() {
     data.geometry.coordinates[1] = +$("#sensorLocationLat").val();
     data.properties.type.id = $("#sensorDataSource").val().toLowerCase();
     data.properties.type.title = $("#sensorDataSource").val();
+    data.properties.type.sensorType = +$("#sensorType").val();
     data.properties.region = $("#sensorRegion").val();
 
     var sensorPOSTpromise = deferredPost(mediciSensorsURL, JSON.stringify(data));

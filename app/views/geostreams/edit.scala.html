@@ -46,13 +46,9 @@
                                         <label for="sensorType" class="col-sm-4 paddingTop7 control-label"><a href='https://opensource.ncsa.illinois.edu/confluence/display/IMLCZO/Data+Types' target="_blank">Location Type</a> <span class="glyphicon glyphicon-new-window" style="font-size: 10px; color: #C0C0C0" aria-hidden="true"></span></label>
                                         <div class="col-sm-8">
                                             <select class="form-control input-sm" id="sensorType" name="sensorType">
-                                                <option value="1">1</option>
-                                                <option value="2">2</option>
-                                                <option value="3">3</option>
-                                                <option value="4">4</option>
-                                                <option value="5">5</option>
-                                                <option value="6">6</option>
-                                                <option value="7">7</option>
+                                                @for(i <- 1 to 7) {
+                                                    <option value="@i" @if(i.toString == (sensor \ "properties" \ "type" \ "sensorType").asOpt[String].getOrElse("")) { selected }>@i</option>
+                                                }
                                             </select>
                                         </div>
                                         <div class="col-sm-4"></div>
