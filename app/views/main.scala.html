@@ -51,7 +51,9 @@
                     <li><a href="@routes.Spaces.list()">Spaces</a></li>
                     <li><a href="@routes.Datasets.list("")">Datasets</a></li>
                     <li><a href="@routes.Collections.list("")">Collections</a></li>
-                    <li><a href="@routes.Users.getUsers()">People</a></li>
+                    @if(user.isDefined){
+                        <li><a href="@routes.Users.getUsers()">People</a></li>
+                    }
                     @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">@(AppConfiguration.getSensorsTitle) <b class="caret"></b></a>
