@@ -1,7 +1,4 @@
-@(filesList: List[models.File], comments: Map[UUID, Int], prev: String, next: String, limit: Int, mode: Option[String])(implicit user: Option[models.User])
-
-@import _root_.util.Formatters.ellipsize
-@import org.apache.commons.io._
+@(filesList: List[models.File], comments: Map[UUID, Int], prev: String, next: String, limit: Int, mode: Option[String], d:Option[Dataset])(implicit user: Option[models.User])
 
 @main("Files") {
 
@@ -13,7 +10,11 @@
 
     <div class="row">
         <div class="col-md-12">
+        @if(d.isDefined) {
+            <h1>Files in Dataset @d.get.name</h1>
+        } else {
             <h1>Files</h1>
+        }
         </div>
     </div>
 
@@ -21,7 +22,7 @@
     <div class="col-md-10">
     </div>
     <div class="col-md-1">
-        @if(!next.startsWith("dataset")) {
+        @if(d.isEmpty) {
             <a class="btn btn-primary btn-sm pull-right" href="@routes.Files.upload()" title="Upload a new file"><span class="glyphicon glyphicon-upload"></span>
                 Upload</a>
         }
@@ -87,9 +88,9 @@
             //Function to unify the changing of the href for the next/previous links. Called on button activation for
             //viewMode style, as well as on initial load of page.
 	        function updatePage() {
-	            if(@next.startsWith("dataset")){
-                    $('#nextlink').attr('href', "@(routes.Files.listByDataset(UUID(next.split("-")(1)), prev.toInt + 1, limit))");
-                    $('#prevlink').attr('href', "@(routes.Files.listByDataset(UUID(next.split("-")(1)), prev.toInt - 1, limit))");
+	            if(@d.isDefined){
+                    $('#nextlink').attr('href', "@(routes.Files.listByDataset(d.get.id, prev.toInt + 1, limit))");
+                    $('#prevlink').attr('href', "@(routes.Files.listByDataset(d.get.id, prev.toInt - 1, limit))");
 	             } else {
                     $('#nextlink').attr('href', "@(routes.Files.list("a", next, limit))");
                     $('#prevlink').attr('href', "@(routes.Files.list("b", prev, limit))");
@@ -131,10 +132,10 @@
     <div class="col-md-12">
         <ul class="pager">
             <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
-            @if(next.startsWith("dataset") && prev.toInt >0 ||  !next.startsWith("dataset") && prev != "") {
+            @if(d.isDefined && prev.toInt >0 ||  d.isEmpty && prev != "") {
                 <li class="previous"><a class="btn btn-link" id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span> Previous</a></li>
             }
-            @if(next.startsWith("dataset") && next.contains("next")  ||  !next.startsWith("dataset") && next != "") {
+            @if(next != "") {
                 <li class ="next"><a class="btn btn-link" id="nextlink" title="Page forwards" href="#">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
             }
         </ul>

@@ -299,7 +299,7 @@ class Files @Inject() (
     }                     
       
     //Pass the viewMode into the view
-    Ok(views.html.filesList(fileList, commentMap, prev, next, limit, viewMode))
+    Ok(views.html.filesList(fileList, commentMap, prev, next, limit, viewMode, None))
   }
 
   def listByDataset(datasetId: UUID, filepage: Int, limit: Int, mode: String) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
@@ -307,7 +307,7 @@ class Files @Inject() (
     datasets.get(datasetId) match {
       case Some(d) => {
         //the logic of next & prev is different from Files.list. Here if next page exits, next would contains "next". prev is the index of current page.
-        val next = if (d.files.length > limit * (filepage+1) ) "dataset-"+ datasetId.toString+ "-next" else "dataset-"+ datasetId.toString
+        val next = if (d.files.length > limit * (filepage+1) ) "next" else ""
         val prev = if(filepage<0) "0" else filepage.toString
         val limitFileList = d.files.slice(limit * filepage, limit * (filepage+1)).map(f => files.get(f)).flatten
         val commentMap = limitFileList.map{file =>
@@ -326,7 +326,7 @@ class Files @Inject() (
           } else {
             Some(mode)
           }
-        Ok(views.html.filesList(limitFileList, commentMap, prev, next, limit, viewMode))
+        Ok(views.html.filesList(limitFileList, commentMap, prev, next, limit, viewMode, Some(d)))
       }
       case None => BadRequest("Dataset not found")
     }
