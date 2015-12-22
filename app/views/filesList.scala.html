@@ -9,6 +9,7 @@
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
 
     <div class="row">
         <div class="col-md-12">
@@ -20,7 +21,10 @@
     <div class="col-md-10">
     </div>
     <div class="col-md-1">
-        <a class="btn btn-primary btn-sm pull-right" href="@routes.Files.upload()" title="Upload a new file"><span class="glyphicon glyphicon-upload"></span> Upload</a>
+        @if(!next.startsWith("dataset")) {
+            <a class="btn btn-primary btn-sm pull-right" href="@routes.Files.upload()" title="Upload a new file"><span class="glyphicon glyphicon-upload"></span>
+                Upload</a>
+        }
     </div>
     <div class="col-md-1">
         <div class="btn-group btn-group-sm pull-right">                                        

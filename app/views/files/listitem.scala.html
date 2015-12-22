@@ -36,6 +36,7 @@
                                 <li><a id="downloadButton" class="btn btn-link" type="button" onclick="window.open(jsRoutes.api.Files.download('@file.id').url, '_blank');" class="btn btn-primary" title="You don't have permission to download this file" > <span class="glyphicon glyphicon-save"></span>
                                     Download </a></li>
                             }
+
                             <li> @user match {
                                 case Some(viewer) => {
                                     <a
