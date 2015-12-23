@@ -90,6 +90,14 @@ object AppConfiguration {
 
   // ----------------------------------------------------------------------
 
+  /** Set the user agreement */
+  def setUserAgreement(userAgreement: String) = appConfig.setProperty("userAgreement.message", userAgreement)
+
+  /** Get the welcome message */
+  def getUserAgreement: String = appConfig.getProperty("userAgreement.message", "")
+
+  // ----------------------------------------------------------------------
+
   /** Set the Sensors title */
   def setSensorsTitle(sensorsTitle: String) = appConfig.setProperty("sensors.title", sensorsTitle)
 
