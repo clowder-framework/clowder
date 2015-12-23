@@ -73,7 +73,7 @@
     <script type="text/javascript">
     $(document).ready(function() {
         var userAgreementElement = $("#agreementAcknowledged");
-        if (userAgreementElement) {
+        if (userAgreementElement && userAgreementElement.length) {
             // if there is a value in the Admin -> Customize menu for User Agreement,
             // this element will present. In that case, disable the submit button until
             // the user clicks the checkbox to agree to the terms
@@ -82,11 +82,13 @@
             // if the user submits the form with the checkbox checked, but there are validation errors
             // this will uncheck the form on the validation page
             userAgreementElement.attr('checked', false);
-        }
-        userAgreementElement.on('click', function() {
+
             // toggle whether the button is disabled depending on if the checkbox is checked
-            $(":submit").prop('disabled', function(i, v) { return !v; });
-        });
+            userAgreementElement.on('click', function() {
+                $(":submit").prop('disabled', function(i, v) { return !v; });
+            });
+        }
+
     })
     </script>
 }
