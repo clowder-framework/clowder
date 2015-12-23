@@ -1,4 +1,4 @@
-@(theme: String, displayName: String, welcomeMessage: String, userAgreement: String, sensors: String, sensor: String)(implicit user: Option[models.User])
+@(theme: String, displayName: String, welcomeMessage: String, userAgreement: String, sensors: String, sensor: String, parameters: String, parameter: String)(implicit user: Option[models.User])
 @main("Administration") {
 	<div class="page-header">
 		<h1>Customize</h1>
@@ -35,6 +35,13 @@
                       <input id="sensorTitle" name="sensorTitle" type="text" value="@(sensor)" />
                       <span id="sensorTitle_error" style="display:none;">Sensor must have a title.</span>
                       <br /><br />
+                      <label for="parametersTitle">Parameters title (plural form)</label>
+                      <input id="parametersTitle" name="parametersTitle" type="text" value="@(parameters)" />
+                      <span id="parametersTitle_error" style="display:none;">Parameters must have a title.</span>
+                      <label for="parameterTitle">Parameter title (singular form)</label>
+                      <input id="parameterTitle" name="parameterTitle" type="text" value="@(parameter)" />
+                      <span id="parameterTitle_error" style="display:none;">Parameter must have a title.</span>
+                      <br /><br />
                     }
                     case None => {}
                 }
@@ -51,6 +58,8 @@
             var userAgreement = $("#userAgreement").val() ? $("#userAgreement").val().trim() : "";
 			var sensorsTitle = $("#sensorsTitle").val() ? $("#sensorsTitle").val().trim() : "";
             var sensorTitle = $("#sensorTitle").val() ? $("#sensorTitle").val().trim() : "";
+            var parametersTitle = $("#parametersTitle").val() ? $("#parametersTitle").val().trim() : "";
+            var parameterTitle = $("#parameterTitle").val() ? $("#parameterTitle").val().trim() : "";
 
 			if(displayName == ""){
 				$("#displayNameField_error").css("display","inline");
@@ -64,7 +73,7 @@
 			
 			var request = $.ajax({
 				url:  "@api.routes.Admin.submitAppearance",
-				data: JSON.stringify({ displayName: displayName, welcomeMessage: welcomeMessage, userAgreement: userAgreement, sensors: sensorsTitle, sensor: sensorTitle }),
+				data: JSON.stringify({displayName: displayName, welcomeMessage: welcomeMessage, userAgreement: userAgreement, sensors: sensorsTitle, sensor: sensorTitle, parameters: parametersTitle, parameter: parameterTitle }),
 				type: "POST",
 				contentType: "application/json"
 	     	});

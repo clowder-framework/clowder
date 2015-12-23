@@ -70,6 +70,12 @@ object Admin extends Controller with ApiController {
     (request.body \ "sensor").asOpt[String] match {
       case Some(sensor) => AppConfiguration.setSensorTitle(sensor)
     }
+    (request.body \ "parameters").asOpt[String] match {
+      case Some(parameters) => AppConfiguration.setParametersTitle(parameters)
+    }
+    (request.body \ "parameter").asOpt[String] match {
+      case Some(parameter) => AppConfiguration.setParameterTitle(parameter)
+    }
     Ok(toJson(Map("status" -> "success")))
   }
 

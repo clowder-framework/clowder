@@ -545,6 +545,7 @@ GET            /api/geostreams/streams                                          
 DELETE         /api/geostreams/streams/:id                                              api.Geostreams.deleteStream(id: String)
 DELETE         /api/geostreams/dropall                                                  api.Geostreams.deleteAll
 GET            /api/geostreams/counts                                                   api.Geostreams.counts
+GET            /api/geostreams/config                                                   api.Geostreams.getConfig
 
 # ----------------------------------------------------------------------
 # THUMBNAILS ENDPOINT

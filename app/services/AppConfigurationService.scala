@@ -113,6 +113,21 @@ object AppConfiguration {
   def getSensorTitle: String = appConfig.getProperty("sensor.title", "Sensor")
 
   // ----------------------------------------------------------------------
+  /** Set the Parameters title */
+  def setParametersTitle(parametersTitle: String) = appConfig.setProperty("parameters.title", parametersTitle)
+
+  /** Get the welcome message */
+  def getParametersTitle: String = appConfig.getProperty("parameters.title", "Parameters")
+
+  // ----------------------------------------------------------------------
+
+  /** Set the Parameter title */
+  def setParameterTitle(parameterTitle: String) = appConfig.setProperty("parameter.title", parameterTitle)
+
+  /** Get the welcome message */
+  def getParameterTitle: String = appConfig.getProperty("parameter.title", "Parameter")
+
+  // ----------------------------------------------------------------------
   /**
    * Add the given admin to list of admins. This list is primarily used when a new user signs
    * up (requires registerThroughAdmins to be set to true in application.conf) or when the
