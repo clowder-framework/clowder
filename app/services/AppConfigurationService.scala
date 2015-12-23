@@ -93,7 +93,7 @@ object AppConfiguration {
   /** Set the user agreement */
   def setUserAgreement(userAgreement: String) = appConfig.setProperty("userAgreement.message", userAgreement)
 
-  /** Get the welcome message */
+  /** Get the user agreement */
   def getUserAgreement: String = appConfig.getProperty("userAgreement.message", "")
 
   // ----------------------------------------------------------------------
