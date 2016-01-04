@@ -35,7 +35,7 @@
         @if(Permission.checkPermission(Permission.AddTag, ResourceRef(ResourceRef.dataset, dataset.id))) {
             <form class="form-inline requiresLogin requiresLoginCommunity">
                 <div class="input-group input-group-sm">
-                    <input maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" type="text" id="tagField" class="form-control">
+                    <input maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" type="text" id="tagField" class="form-control add-resource">
                     <span class="input-group-btn">
                         <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
                             <span class="glyphicon glyphicon-tag"></span> Tag
@@ -46,7 +46,7 @@
         } else {
             <form class="form-inline requiresLogin requiresLoginCommunity">
                 <div class="input-group input-group-sm">
-                    <input disabled type="text" id="tagField" class="form-control">
+                    <input disabled type="text" id="tagField" class="form-control add-resource">
                     <span class="input-group-btn">
                         <button disabled class="btn btn-default btn-large" id="tagB" title="Add Tag">
                             <span class="glyphicon glyphicon-tag"></span> Tag
