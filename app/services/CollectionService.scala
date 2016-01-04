@@ -6,7 +6,7 @@ import scala.util.Try
 
 /**
  * Generic collection service.
- * 
+ *
  * @author Constantinos Sophocleous
  *
  */
@@ -122,12 +122,12 @@ trait CollectionService {
 
 
   def isInDataset(dataset: Dataset, collection: Collection): Boolean
-  
+
   /**
    * Update thumbnail used to represent this collection.
    */
   def updateThumbnail(collectionId: UUID, thumbnailId: UUID)
-  
+
   /**
    * Set new thumbnail.
    */
@@ -152,4 +152,27 @@ trait CollectionService {
    * Remove association between a collection and a space.
    */
   def removeFromSpace(collection: UUID, space: UUID)
+  /**
+    * Add subcollection to collection
+    *
+    */
+  def addSubCollection(collectionId: UUID, subCollectionId: UUID) : Try[Unit]
+
+
+  /**
+    *  Add parent to subcollection parent list
+    */
+  def addParentCollection(subCollectionId: UUID, parentCollectionId: UUID) : Try[Unit]
+
+  /**
+    * Remove subcollection from collection
+    */
+  def removeSubCollection(collectionId: UUID, subCollectionId: UUID, ignoreNotFound: Boolean = true) : Try[Unit]
+
+  def setRootFlag(collectionId: UUID, isRoot: Boolean) : Try[Unit]
+
+  def listChildCollections(parentCollectionId: UUID) : List[Collection]
+
+
+
 }
