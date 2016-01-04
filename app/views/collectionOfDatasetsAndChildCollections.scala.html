@@ -172,6 +172,40 @@
 					<li class ="next" id="datasetsPagerNext" style="visibility:hidden;"><a class="btn btn-link" href="#!">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
 				</ul>
 			</div>
+			<div class="col-md-12">
+				<h3>Datasets in the collection</h3>
+					@datasetsInCollection.map { dataset =>
+						<div class="panel panel-default" id="@dataset.id">
+							<div class="panel-body">
+								<div class="row">
+									<div class="col-md-2 col-sm-2 col-lg-2">
+										@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
+									</div>
+									<div class="col-md-10 col-sm-10 col-lg-10">
+										<div><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></div>
+										<div>@Html(dataset.description)</div>
+										<div>@dataset.created.format("MMM dd, yyyy")</div>
+										@if(user.isDefined) {
+											<div>
+												@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
+													<a onclick="removeDataset('@(dataset.id.toString)',event)" title="Detach the Dataset">
+														<span class="glyphicon glyphicon-trash"></span></a>
+												}
+											</div>
+										}
+									</div>
+								</div>
+							</div>
+						</div>
+
+					}
+
+				<ul class="pager" id="datasetsPager">
+					<li class="previous" id="datasetsPagerPrev" style="visibility:hidden;"><a class="btn btn-link" href="#!"><span class="glyphicon glyphicon-chevron-left"></span> Previous</a></li>
+					<li class ="next" id="datasetsPagerNext" style="visibility:hidden;"><a class="btn btn-link" href="#!">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
+				</ul>
+			</div>
+
 
 		</div>
 		</div>
