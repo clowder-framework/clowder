@@ -751,7 +751,7 @@ class PostgresPlugin(application: Application) extends Plugin {
 
         appConfig.addPropertyValue("postgres.updates", "datapoints-properties-to-jsonb")
       } else {
-        Logger.warn("[PostgresUpdate] : Datapoints properties column needs to be updated to JSONB. Restart Clowder with -DPOSTGRESUPDATE=1")
+        Logger.error("[PostgresUpdate] : Datapoints properties column needs to be updated to JSONB. Restart Clowder with -DPOSTGRESUPDATE=1")
       }
     }
   }
