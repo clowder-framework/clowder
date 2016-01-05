@@ -17,11 +17,11 @@
                     @play.api.Play.current.plugin[services.PostgresPlugin] match {
                         case Some(db) => {
                             <label for="sensorsTitle">Plural Title</label>
-                            <input id="sensorsTitle" name="sensorsTitle" type="text" value="@(sensors)" />
+                            <input class="form-control" id="sensorsTitle" name="sensorsTitle" type="text" value="@(sensors)" />
                             <span id="sensorsTitle_error" style="display:none;">Plural Title must have a value.</span>
 
                             <label for="sensorTitle">Singular Title</label>
-                            <input id="sensorTitle" name="sensorTitle" type="text" value="@(sensor)" />
+                            <input class="form-control" id="sensorTitle" name="sensorTitle" type="text" value="@(sensor)" />
                             <span id="sensorTitle_error" style="display:none;">Singular Title must have a value.</span>
                             <br /><br />
                         }
