@@ -7,7 +7,7 @@
 
         <p>You have been added to space <a href="@routes.Spaces.getSpace(UUID(spaceid)).absoluteURL(IdentityProvider.sslEnabled)">@spaceName</a>
             with role: @role by <a href="@routes.Profile.viewProfile(inviter.email).absoluteURL(IdentityProvider.sslEnabled)">@inviter.fullName</a>
-            on machine @routes.Application.index().absoluteURL(IdentityProvider.sslEnabled).
+            on <a href="@routes.Application.index().absoluteURL(IdentityProvider.sslEnabled)">@services.AppConfiguration.getDisplayName</a>.
         </p>
     </body>
 </html>
