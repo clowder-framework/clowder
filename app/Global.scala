@@ -73,21 +73,18 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
   }
 
   override def onError(request: RequestHeader, ex: Throwable) = {
-    Logger.info("global shutdown")
     Future(InternalServerError(
       views.html.errorPage(request, ex.fillInStackTrace().toString)
     ))
   }
 
   override def onHandlerNotFound(request: RequestHeader) = {
-    Logger.info("global shutdown")
     Future(NotFound(
       views.html.errorPage(request, "Not found")
     ))
   }
 
   override def onBadRequest(request: RequestHeader, error: String) = {
-    Logger.info("global shutdown")
     Future(BadRequest(views.html.errorPage(request, error)))
   }
 }
