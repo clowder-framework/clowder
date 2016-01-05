@@ -24,6 +24,7 @@ if (window.L) {
   marker.on('dragend', function(event){
     $('#sensorLocationLat').val(event.target._latlng.lat);
     $('#sensorLocationLong').val(event.target._latlng.lng);
+    map.panTo(getCurrentLatLong());
   });
   longElement.on('change', function() {
     marker.setLatLng(getCurrentLatLong()).update();
