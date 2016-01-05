@@ -219,21 +219,4 @@ $(document).ready(function() {
 
 
   });
-
-  if (window.L) {
-    var map = L.map('map', {scrollWheelZoom: false}).setView([39, -90 ], 5);
-
-    L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
-
-    var marker = L.marker([39, -90], {draggable: true});
-    marker.addTo(map);
-    marker.on('dragend', function(event){
-      $('#sensorLocationLat').val(event.target._latlng.lat);
-      $('#sensorLocationLong').val(event.target._latlng.lng);
-    })
-  } else {
-    console.log('no L found');
-  }
 });
