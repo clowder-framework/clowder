@@ -88,7 +88,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     parentCollectionId match {
       case Some(currentParentCollectionId) =>{
         collections.get(UUID(currentParentCollectionId)) match {
-          case Some(parentCollection) => Ok(views.html.newCollectionWithParent(null, decodedSpaceList.toList,  RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None,Some(currentParentCollectionId), parentSpaces))
+          case Some(parentCollection) => Ok(views.html.newCollectionWithParent(null, decodedSpaceList.toList,  RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None,Some(currentParentCollectionId),Some(parentCollection.name), parentSpaces))
           case None => Ok("newCollectionWithParent, no collection matches parentCollectionId")
         }
       }
@@ -319,11 +319,15 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       var colSpace = request.body.asFormUrlEncoded.getOrElse("space", List.empty)
       var colParentCollection = request.body.asFormUrlEncoded.getOrElse("collection", List.empty)
 
+      var colParentColId = request.body.asFormUrlEncoded.getOrElse("parentcolid",null)
+      var colParentSpaces = request.body.asFormUrlEncoded.getOrElse("parentspaceids",List.empty)
+
       var colRootFlag = request.body.asFormUrlEncoded.getOrElse("rootflag",List.empty)
 
       var rootFlag = false
       if (colRootFlag(0) == "true")
         rootFlag = true
+
 
 
       implicit val user = request.user
@@ -388,6 +392,32 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             }
           }
 
+          if (colParentColId != null && colParentColId.size>0) {
+            try {
+              collections.get(UUID(colParentColId(0))) match {
+                case Some(parentCollection) => {
+                  collections.addSubCollection(UUID(colParentColId(0)), collection.id)
+                }
+                case None => {
+                  Logger.error("Unable to add collection to parent ")
+                }
+              }
+            } catch {
+              case e : Exception => Logger.debug("error with parent collection id " +colParentColId)
+            }
+          }
+
+          //add to same spaces as parent collection
+          if (colParentSpaces != null && colParentSpaces.size > 0){
+            for (colParentSpace <- colParentSpaces){
+              spaceService.get(UUID(colParentSpace)) match {
+                case Some(parentSpace) => {
+                  spaceService.addCollection(collection.id,UUID(colParentSpace))
+                }
+                case None => Logger.error("no space found for " + colParentSpace)
+              }
+            }
+          }
 
           //index collection
             val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
@@ -484,7 +514,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           val decodedSpaces: List[ProjectSpace] = collectionSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
           Ok(views.html.collectionOfDatasetsAndChildCollections(decodedDatasetsInside.toList,
-            decodedChildCollections.toList, decodedParentCollections.toList, dCollection, filteredPreviewers.toList, Some(decodedSpaces)))
+            decodedChildCollections.toList, Some(decodedParentCollections.toList), dCollection, filteredPreviewers.toList, Some(decodedSpaces)))
 
         }
         case None => {

@@ -1,6 +1,6 @@
 @(datasetsInCollection: List[models.Dataset],
   childCollections: List[models.Collection],
-  parentCollections: List[models.Collection],
+  parentCollections: Option[List[models.Collection]],
   collection: models.Collection,
   previewers: List[Previewer],
   collectionSpaces: Option[List[ProjectSpace]])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
@@ -178,7 +178,7 @@
 										@if(user.isDefined) {
 											<div>
 												@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
-													<a onclick="removeDataset('@(child_collection.id.toString)',event)" title="Remove child collection">
+													<a onclick="removeChildCollection('@(child_collection.id.toString)','@(collection.id.toString)',event)" title="Remove the Child Collection">
 														<span class="glyphicon glyphicon-trash"></span></a>
 												}
 											</div>
@@ -235,6 +235,7 @@
 	<!-- right column -->
 	<div class="col-md-4">
 		@spaces.spaceAllocation(collection.id, ResourceRef.collection, collectionSpaces.getOrElse(List.empty))
+		@collections.parentAllocation(collection,collection.id, ResourceRef.collection, parentCollections.getOrElse(List.empty))
 		<br />
 		@if(user.isDefined && collectionSpaces.isDefined && !collectionSpaces.get.isEmpty){
 			<div id="collection-users">
