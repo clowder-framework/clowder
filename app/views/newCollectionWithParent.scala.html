@@ -1,4 +1,4 @@
-@(errorString: String, spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(errorString: String, spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], parentId : Option[String],parentSpaces : List[UUID])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
@@ -10,7 +10,8 @@
   <script type="text/javascript" language="javascript">
       //Global so that the javascript for the collection creation can reference this.
       var isNameRequired = @isNameRequired;
-      var isDescRequired = @isDescriptionRequired;             
+      var isDescRequired = @isDescriptionRequired;
+      var parentSpaceIds = "@parentSpaces";
   </script>
     <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
     <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
@@ -77,8 +78,8 @@
                     <input type="hidden" name="name" id="hiddenname" value="not set">
                     <input type="hidden" name="description" id="hiddendescription" value="not set">
                     <input type="hidden" name="space" id="hiddenspace" value="not set">
-                    <input type="hidden" name = "rootflag" id = "hiddenrootflag" value = "true" >
-    </form>
+                    <input type="hidden" name = "rootflag" id = "hiddenrootflag" value = "false" >
+    </form>  	 	  
     </div>
   </div>
 <script language="javascript">

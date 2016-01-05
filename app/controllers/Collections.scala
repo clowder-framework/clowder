@@ -56,13 +56,18 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
     val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
     var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
+    var parentSpaces : List[UUID] = List.empty[UUID]
+
     for (aSpace <- spacesList) {
       //For each space in the list, check if the user has permission to add something to it, if so
       //decode it and add it to the list to pass back to the view.
       if (Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, aSpace.id))) {
         decodedSpaceList += Utils.decodeSpaceElements(aSpace)
       }
+
+
     }
+
 
     //get list of possible parent collections
     val decodedCollectionsList = new ListBuffer[models.Collection]()
@@ -75,10 +80,15 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       }
     }
 
+    if (collections.get(UUID(parentCollectionId.get)).isDefined){
+      parentSpaces = collections.get(UUID(parentCollectionId.get)).get.spaces
+
+    }
+
     parentCollectionId match {
       case Some(currentParentCollectionId) =>{
         collections.get(UUID(currentParentCollectionId)) match {
-          case Some(parentCollection) => Ok(views.html.newCollection(null, decodedSpaceList.toList,  RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, Some(currentParentCollectionId)))
+          case Some(parentCollection) => Ok(views.html.newCollectionWithParent(null, decodedSpaceList.toList,  RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None,Some(currentParentCollectionId), parentSpaces))
           case None => Ok("newCollectionWithParent, no collection matches parentCollectionId")
         }
       }

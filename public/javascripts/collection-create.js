@@ -13,7 +13,8 @@ function clearErrors() {
 function createCollection() {
 	//Remove error messages if present
 	clearErrors();
-
+    console.log("testing");
+    console.log(parentSpaceIds);
 	//Update the input we are adding to the form programmatically
 	var name = $('#name');
     var desc = $('#description');
