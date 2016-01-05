@@ -47,7 +47,7 @@
             });
             @if(user) {
                 $('a.edit-sensor').removeClass('disabled');
-                $('input.delete-sensor').prop('disabled', false);
+                $('.delete-sensor').prop('disabled', false);
             }
             $('.delete-sensor').on('click', function (event) {
                 if (confirm("Delete Sensor, all its Streams, and all its Datapoints?")) {
