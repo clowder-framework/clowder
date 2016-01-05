@@ -114,6 +114,13 @@
                                         <li><a href="@routes.Admin.adminIndex">Indexes</a></li>
                                         <li><a href="@routes.Admin.viewDumpers">Dumps</a></li>
                                         <li><a href="@routes.Admin.getMetadataDefinitions">Metadata Definitions</a></li>
+                                        @play.api.Play.current.plugin[services.PostgresPlugin] match {
+                                            case Some(db) => {
+                                                <li><a href="@routes.Admin.sensors">@(AppConfiguration.getSensorsTitle)</a></li>
+                                            }
+                                            case None => {}
+                                        }
+
                                     </ul>
                                 </li>
                             }
