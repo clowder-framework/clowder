@@ -27,9 +27,11 @@ if (window.L) {
   });
   longElement.on('change', function() {
     marker.setLatLng(getCurrentLatLong()).update();
+    map.panTo(getCurrentLatLong());
   });
   latElement.on('change', function() {
     marker.setLatLng(getCurrentLatLong()).update();
+    map.panTo(getCurrentLatLong());
   });
 } else {
   console.log('no L found');
