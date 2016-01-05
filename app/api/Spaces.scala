@@ -352,6 +352,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
                         else {
                           //New user completely to the space
                           spaces.addUser(UUID(aUserId), aRole, spaceId)
+                          events.addRequestEvent(user, userService.get(UUID(aUserId)).get, spaceId, spaces.get(spaceId).get.name, "add_user_to_space")
                           val newmember = userService.get(UUID(aUserId))
                           val theHtml = views.html.spaces.inviteNotificationEmail(spaceId.stringify, space.name, user.get.getMiniUser, newmember.get.getMiniUser.fullName, aRole.name)
                           Mail.sendEmail("Added to Space", newmember.get.getMiniUser.email.get ,theHtml)
@@ -395,6 +396,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     val user = request.user
     if(spaces.getRoleForUserInSpace(spaceId, UUID(removeUser)) != None){
       spaces.removeUser(UUID(removeUser), spaceId)
+      events.addRequestEvent(user, userService.get(UUID(removeUser)).get, spaceId, spaces.get(spaceId).get.name, "remove_user_from_space")
       Ok(Json.obj("status" -> "success"))
     } else {
       Logger.error(s"Remove User $removeUser from space $spaceId does not exist.")
