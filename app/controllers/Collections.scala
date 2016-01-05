@@ -473,7 +473,8 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           val decodedSpaces: List[ProjectSpace] = collectionSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
-          Ok(views.html.collectionOfDatasetsAndChildCollections(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, Some(decodedSpaces)))
+          Ok(views.html.collectionOfDatasetsAndChildCollections(decodedDatasetsInside.toList,
+            decodedChildCollections.toList, decodedParentCollections.toList, dCollection, filteredPreviewers.toList, Some(decodedSpaces)))
 
         }
         case None => {
