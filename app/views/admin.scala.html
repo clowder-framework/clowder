@@ -24,7 +24,7 @@
 				<textarea class="form-control" name="welcomingField" id="welcomingField" style="width:300%;">@(welcomeMessage)</textarea>
 				<br /><br />
                 <label for="userAgreement">User Agreement</label>
-                <textarea class="form-control" name="userAgreement" id="userAgreement" style="width:300%;">@(userAgreement)</textarea>
+                <textarea class="form-control" name="userAgreement" id="userAgreement" style="width:300%;" placeholder="Plain text or HTML. Or leave blank and it will not be required.">@(userAgreement)</textarea>
                 <br /><br />
                   @play.api.Play.current.plugin[services.PostgresPlugin] match {
                     case Some(db) => {

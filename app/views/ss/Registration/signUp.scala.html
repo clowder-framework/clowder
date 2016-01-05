@@ -58,9 +58,17 @@
             @if(AppConfiguration.getUserAgreement) {
                 @helper.checkbox(
                     signUpForm("agreementAcknowledged"),
-                    '_label -> Messages(AppConfiguration.getUserAgreement),
+                    '_label -> "By submitting your information, you acknowledge and accept the following terms and conditions.",
                     'class -> "input-xlarge"
                 )
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Terms of Use Agreement</h3>
+                    </div>
+                    <div class="panel-body">
+                        @Html(Messages(AppConfiguration.getUserAgreement))
+                    </div>
+                </div>
             }
 
             <div class="form-actions">
