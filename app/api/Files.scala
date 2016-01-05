@@ -367,7 +367,7 @@ class Files @Inject()(
    * @param flagsFromPrevious
    * @return a list of files that were uploaded
    */
-  def uploadFiles(request: Request[MultipartFormData[Files.TemporaryFile]], user: User, dataset: Dataset = null, key: String = "",
+  private def uploadFiles(request: Request[MultipartFormData[Files.TemporaryFile]], user: User, dataset: Dataset = null, key: String = "",
                  index: Boolean = true, showPreviews: String = "DatasetLevel", originalZipFile: String = "",
                  flagsFromPrevious: String = "") : List[File] = {
     val file_list = if (key.equals("")) {
