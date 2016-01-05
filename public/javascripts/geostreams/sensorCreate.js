@@ -141,12 +141,13 @@ $(document).ready(function() {
   // enable tooltips
   $('[data-toggle="tooltip"]').tooltip();
 
-  var sensorsValid = true;
   $("#formSubmit").click(function(event) {
     event.preventDefault();
     if (!sensorForm.valid()) {
       return;
     }
+    var sensorsValid = true;
+
     $('.stream-tmpl').each(function() {
 
       $(this).validate({
