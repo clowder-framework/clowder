@@ -92,18 +92,23 @@
 							}
 							@if(childCollections.size == 0){
 								@if(user.isDefined && Permission.checkPermission(Permission.EditCollection,ResourceRef(ResourceRef.collection, collection.id))){
-									<a id="create-collection"href="@routes.Collections.newCollection(Some(collection.id))" class="btn btn-primary btn-xs">
+									<a id="create-collection"href="@routes.Collections.newCollection(Some(collection.id.stringify))" class="btn btn-primary btn-xs">
 										<span class="glyphicon glyphicon-ok"></span> Create Collection
 									</a>
 								} else {
 									@if(user.isDefined){
-										@** request access **@
+										<p> Please request access to edit this collection </p>
 									} else {
-										@** SHOW NONE **@
+										<p> There are no child collections in this collection.</p>
 									}
 								}
 							} else {
 								@** MORE THAN 0 COLLECTIONS **@
+								@if(user.isDefined && Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
+									<a id="create-collection" href="@routes.Collections.newCollection(Some(collection.id.stringify))" class="btn btn-link btn-xs"><span class="glyphicon glyphicon-ok"></span>
+										Create Collection
+									</a>
+								}
 							}
 						</div>
 							<div style="clear: both;"></div>
