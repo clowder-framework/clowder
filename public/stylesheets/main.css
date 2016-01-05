@@ -41,7 +41,7 @@ span.align-right {
     float:right;
 }
 
-.error span{
+.error span, label.error {
     color: red;
     padding-left: 10px;
     text-align:left;
