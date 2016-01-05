@@ -57,19 +57,23 @@ $(document).ready(function() {
     }
   });
 
-  var instrumentCounter = 0;
+  var insertInstrumentForm = function(data) {
+    var instrumentTemplate = Handlebars.getTemplate("/assets/templates/sensors/stream-form");
+    $("#instruments").append(instrumentTemplate(data));
+  };
+
+
+  // set to a high number to prevent colliding with stream IDs TODO improve this
+  var instrumentCounter = 500000;
   var addInstrumentButton = $("#addInstrument");
   addInstrumentButton.on('click', instrumentCounter, function() {
     instrumentCounter++;
-    var instrumentTemplate = $("#newInstrumentTemplate").html();
-    var template = Handlebars.compile(instrumentTemplate);
-    var data = {instrumentNumber: instrumentCounter.toString()};
-    var result = template(data);
-    $("#instruments").append(result);
+    var data = {id: instrumentCounter.toString()};
+    insertInstrumentForm(data);
   });
-  // add the first sensor on page load and click it to open the accordion
+
+  // add the first sensor on page load
   addInstrumentButton.click();
-  $("#instrument-link-1").click();
 
   $("#instruments").on('click', '.removeInstrument', function() {
     console.log($(this).data('id'));
@@ -119,7 +123,7 @@ $(document).ready(function() {
     if (!sensorForm.valid()) {
       return;
     }
-    $('.single-stream-tmpl').each(function() {
+    $('.stream-tmpl').each(function() {
 
       $(this).validate({
         ignore: false,
@@ -160,7 +164,7 @@ $(document).ready(function() {
       var sensorGETpromise = deferredGet(mediciSensorsURL + '?geocode=' + data.geometry.coordinates[1] + ',' + data.geometry.coordinates[0] + ',0');
       $.when(sensorGETpromise).done(function(sensorData) {
         var sensorJSON = sensorData[0];
-        $(".single-stream-tmpl").each(function() {
+        $(".stream-tmpl").each(function() {
 
           var streamJSON = {};
           var streamData = $(this).find(':input').filter(function() {return $.trim(this.value).length > 0}).serializeJSON({
