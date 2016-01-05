@@ -52,7 +52,7 @@
                     <li><a href="@routes.Datasets.list("")">Datasets</a></li>
                     <li><a href="@routes.Collections.list("")">Collections</a></li>
                     @if(user.isDefined){
-                        <li><a href="@routes.Users.getUsers()">People</a></li>
+                        <li><a href="@routes.Users.getUsers()">Users</a></li>
                     }
                     @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {
                         <li class="dropdown">

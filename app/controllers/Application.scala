@@ -100,7 +100,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
                 val followedUser = users.get(tidObject.id)
                 followedUser match {
                   case Some(fuser) => {
-                    followedUsers = followedUsers.++(List((fuser.id, fuser.fullName, fuser.email.get, fuser.getAvatarUrl())))
+                    followedUsers = followedUsers.++(List((fuser.id, fuser.fullName, fuser.email.getOrElse(""), fuser.getAvatarUrl())))
                   }
                   case None =>
                 }

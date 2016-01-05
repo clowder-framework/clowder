@@ -112,7 +112,7 @@ class Users @Inject() (users: UserService) extends SecuredController {
             val followedUser = users.get(tidObject.id)
             followedUser match {
               case Some(fuser) => {
-                followedUsers = followedUsers.++(List((fuser.id, fuser.fullName, fuser.email.get, fuser.getAvatarUrl())))
+                followedUsers = followedUsers.++(List((fuser.id, fuser.fullName, fuser.email.getOrElse(""), fuser.getAvatarUrl())))
               }
             }
         }
@@ -124,6 +124,9 @@ class Users @Inject() (users: UserService) extends SecuredController {
     }
   }
 
+  /**
+   *  Gets the users ordered by UserId.
+   */
   def getUsers(when: String, id: String, limit: Int) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {
@@ -137,7 +140,7 @@ class Users @Inject() (users: UserService) extends SecuredController {
         }
 
         for(usr <- dbusers) {
-          usersList = usersList.++(List((usr.id, usr.fullName, usr.email.get, usr.getAvatarUrl())))
+          usersList = usersList.++(List((usr.id, usr.fullName, usr.email.getOrElse(""), usr.getAvatarUrl())))
         }
 
         //Check if there is a prev page
