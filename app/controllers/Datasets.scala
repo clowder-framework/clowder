@@ -169,7 +169,7 @@ class Datasets @Inject()(
       case Some(p) => {
         space match {
           case Some(s) => {
-            title = Some(person.get.fullName + "'s Datasets in Space " + datasetSpace.get.name)
+            title = Some(person.get.fullName + "'s Datasets in Space <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
           }
           case None => {
             title = Some(person.get.fullName + "'s Datasets")
@@ -184,7 +184,7 @@ class Datasets @Inject()(
       case None => {
         space match {
           case Some(s) => {
-            title = Some("Datasets in Space " + datasetSpace.get.name)
+            title = Some("Datasets in Space <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
             if (date != "") {
               datasets.listSpace(date, nextPage, limit, s)
             } else {

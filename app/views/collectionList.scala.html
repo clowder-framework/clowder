@@ -9,7 +9,7 @@
     <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
     <div class="row">
         <div class="col-md-12">
-            <h1>@title</h1>
+            <h1>@Html(title.getOrElse("Collections"))</h1>
         </div>
     </div>
 
