@@ -32,7 +32,7 @@ import play.api.Play._
  *
  */
 @Singleton
-class MongoDBCollectionService @Inject() (datasets: DatasetService, userService: UserService)  extends CollectionService {
+class MongoDBCollectionService @Inject() (datasets: DatasetService, userService: UserService, spaceService: SpaceService)  extends CollectionService {
   /**
    * Count all collections
    */
@@ -534,6 +534,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
           datasets.removeCollection(dataset.id, collection.id)
           datasets.index(dataset.id)
         }
+
+        for (space <- collection.spaces){
+          spaceService.removeCollection(collection.id,space)
+        }
+
         for (follower <- collection.followers) {
           userService.unfollowCollection(follower, collectionId)
         }
