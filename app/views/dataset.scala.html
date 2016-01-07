@@ -102,10 +102,12 @@
                             }
                         }
                     }
-                    <a href="https://www.google.com"
-                    class="btn btn-link btn-sm btn-margin-bottom" id="launchVMBtn" title="Launch Analysis VM" role="button">
-                        <span class="glyphicon glyphicon-log-in"></span> Launch Analysis VM
-                    </a>
+                    @if(dataset.files.length > 0 && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        <a href="https://www.google.com"
+                        class="btn btn-link btn-sm btn-margin-bottom" id="launchVMBtn" title="Launch Analysis VM" role="button">
+                            <span class="glyphicon glyphicon-log-in"></span> Launch Analysis VM
+                        </a>
+                    }
                 </div>
             </div>
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
