@@ -80,15 +80,14 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       }
     }
 
-    if (collections.get(UUID(parentCollectionId.get)).isDefined){
-      parentSpaces = collections.get(UUID(parentCollectionId.get)).get.spaces
-
-    }
 
     parentCollectionId match {
       case Some(currentParentCollectionId) =>{
         collections.get(UUID(currentParentCollectionId)) match {
-          case Some(parentCollection) => Ok(views.html.newCollectionWithParent(null, decodedSpaceList.toList,  RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None,Some(currentParentCollectionId),Some(parentCollection.name), parentSpaces))
+          case Some(parentCollection) => {
+            parentSpaces = parentCollection.spaces
+            Ok(views.html.newCollectionWithParent(null, decodedSpaceList.toList,  RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None,Some(currentParentCollectionId),Some(parentCollection.name), parentSpaces))
+          }
           case None => Ok("newCollectionWithParent, no collection matches parentCollectionId")
         }
       }
@@ -180,7 +179,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * List collections.
    */
-  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String]) = PrivateServerAction { implicit request =>
+  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String], showRootOnly : Boolean) = PrivateServerAction { implicit request =>
     implicit val user = request.user
 
     val nextPage = (when == "a")
@@ -320,7 +319,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       var colParentCollection = request.body.asFormUrlEncoded.getOrElse("collection", List.empty)
 
       var colParentColId = request.body.asFormUrlEncoded.getOrElse("parentcolid",null)
-      var colParentSpaces = request.body.asFormUrlEncoded.getOrElse("parentspaceids",List.empty)
+      var colParentSpaces = request.body.asFormUrlEncoded.getOrElse("parentspacesids",List.empty)
 
       var colRootFlag = request.body.asFormUrlEncoded.getOrElse("rootflag",List.empty)
 
@@ -355,13 +354,13 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
 
           var collection : Collection = null
-          if (colSpace(0) == "default") {
+          if (colSpace.isEmpty || colSpace(0) == "default" || colSpace(0) == "") {
               collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, root_flag = rootFlag)
           }
           else {
             val stringSpaces = colSpace(0).split(",").toList
             val colSpaces: List[UUID] = stringSpaces.map(aSpace => if(aSpace != "") UUID(aSpace) else None).filter(_ != None).asInstanceOf[List[UUID]]
-            collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, spaces = colSpaces)
+            collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, spaces = colSpaces, root_flag = rootFlag)
           }
 
           Logger.debug("Saving collection " + collection.name)
@@ -409,14 +408,22 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           //add to same spaces as parent collection
           if (colParentSpaces != null && colParentSpaces.size > 0){
-            for (colParentSpace <- colParentSpaces){
-              spaceService.get(UUID(colParentSpace)) match {
-                case Some(parentSpace) => {
-                  spaceService.addCollection(collection.id,UUID(colParentSpace))
+            if (colParentSpaces(0) != ""){
+              try {
+                var parentSpaceIds = colParentSpaces(0).split(",").toList
+                for (colParentSpace <- parentSpaceIds){
+                  spaceService.get(UUID(colParentSpace)) match {
+                    case Some(parentSpace) => {
+                      spaceService.addCollection(collection.id,UUID(colParentSpace))
+                    }
+                    case None => Logger.error("no space found for " + colParentSpace)
+                  }
                 }
-                case None => Logger.error("no space found for " + colParentSpace)
+              } catch {
+                case e : Exception => Logger.debug("error with parent space id")
               }
             }
+
           }
 
           //index collection
@@ -722,6 +729,8 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     //Pass the viewMode into the view
     Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title, owner))
   }
+
+
 
 }
 

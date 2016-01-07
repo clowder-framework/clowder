@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat
 import org.bson.types.ObjectId
 import play.api.Logger
 import util.Formatters
+import scala.collection.mutable.ListBuffer
 import scala.util.Try
 import services._
 import javax.inject.{Singleton, Inject}
@@ -411,6 +412,78 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       case None => return childCollections
     }
   }
+
+  def getRootCollectionIds(collectionId : UUID) : List[UUID] = {
+    var rootCollectionIds = ListBuffer.empty[UUID]
+    Collection.findOneById(new ObjectId(collectionId.stringify)) match {
+      case Some(collection) => {
+        var parentCollectionIds = collection.parent_collection_ids
+        for (parentCollectionId <- parentCollectionIds){
+          Collection.findOneById(new ObjectId(parentCollectionId))  match {
+            case Some(parentCollection) => {
+              if (parentCollection.root_flag == true) {
+                rootCollectionIds += UUID(parentCollectionId)
+              } else {
+                rootCollectionIds++(getRootCollectionIds(UUID(parentCollectionId)))
+              }
+            }
+            case None => Logger.error("no parent collection")
+          }
+        }
+      }
+    }
+    return rootCollectionIds.toList
+  }
+
+  def getRootSpaceIds(collectionId: UUID) : List[UUID] = {
+    var rootSpaceIds = ListBuffer.empty[UUID]
+
+    var rootCollectionIds = getRootCollectionIds(collectionId)
+
+    for (rootCollectionId <- rootCollectionIds){
+      Collection.findOneById(new ObjectId(rootCollectionId.stringify)) match {
+        case Some(rootCollection) => {
+          var currentRootSpaces = rootCollection.spaces
+          rootSpaceIds ++ currentRootSpaces
+        }
+        case None => Logger.error("no root collection found with id " + rootCollectionId)
+      }
+    }
+
+    return rootSpaceIds.toList
+  }
+
+  def getRootSpacesToRemove(childCollectionId : UUID) : List[UUID] = {
+    var spacesToRemove = List.empty[UUID]
+    Collection.findOneById(new ObjectId(childCollectionId.stringify)) match {
+      case Some(collection) => {
+        val currentSpaceIds = collection.spaces
+        val rootSpaceIds = getRootSpaceIds(childCollectionId)
+        spacesToRemove = currentSpaceIds.diff(rootSpaceIds)
+      }
+      case None => Logger.error("no collection found for " + childCollectionId)
+    }
+
+    return spacesToRemove
+  }
+
+  def getAllDescendants(parentCollectionId : UUID) : List[UUID] = {
+    var descendantIds = ListBuffer.empty[UUID]
+
+    Collection.findOneById(new ObjectId(parentCollectionId.stringify)) match {
+      case Some(collection) => {
+        var childCollections = collection.child_collection_ids
+        for (childCollection <- childCollections){
+          descendantIds += UUID(childCollection)
+          descendantIds ++ getAllDescendants(UUID(childCollection))
+        }
+      }
+      case None => Logger.error("no collection found for id " + parentCollectionId)
+    }
+
+    return descendantIds.toList
+  }
+
 
   def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: Boolean = true) = Try {
     Logger.debug(s"Removing dataset $datasetId from collection $collectionId")

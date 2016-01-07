@@ -43,9 +43,9 @@ function addCollectionToParentCollection(id) {
     return false;
 }
 
-
+/*
 function removeCollectionFromSpace(spaceId, id, event){
-    /*
+
     var request = jsRoutes.api.Spaces.removeCollection(spaceId, id).ajax({
         type: 'POST'
     });
@@ -61,9 +61,10 @@ function removeCollectionFromSpace(spaceId, id, event){
             notify("The collection was not removed from the space due to : " + errorThrown, "error");
         }
     });
-    */
+
     return false;
 }
+*/
 
 
 function addDatasetToCollection(id) {

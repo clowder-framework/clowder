@@ -173,6 +173,12 @@ trait CollectionService {
 
   def listChildCollections(parentCollectionId: UUID) : List[Collection]
 
+  def getAllDescendants(parentCollectionId : UUID) : List[UUID]
 
+  def getRootCollectionIds(collectionId : UUID) : List[UUID]
+
+  def getRootSpaceIds(collectionId : UUID) : List[UUID]
+
+  def getRootSpacesToRemove(collectionId: UUID) : List[UUID]
 
 }

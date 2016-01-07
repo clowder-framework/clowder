@@ -201,7 +201,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description,
       "created" -> collection.created.toString,"author"-> collection.author.toString, "root_flag" -> collection.root_flag.toString,
       "child_collection_ids"-> collection.child_collection_ids.toString, "parent_collection_ids" -> collection.parent_collection_ids.toString,
-    "childCollectionsCount" -> collection.childCollectionsCount.getOrElse().toString, "datasetCount"-> collection.datasetCount.toString))
+    "childCollectionsCount" -> collection.childCollectionsCount.getOrElse().toString, "datasetCount"-> collection.datasetCount.toString, "spaces" -> collection.spaces.toString))
   }
 
   @ApiOperation(value = "Update a collection name",
@@ -535,7 +535,6 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       yield jsonCollection(collection)
 
     Ok(toJson(root_collections_list))
-    //Ok("not impleneted")
   }
 
   @ApiOperation(value = "Get all collections",

@@ -111,7 +111,7 @@ GET            /datasets/:id/addFiles                                           
 # ----------------------------------------------------------------------
 # COLLECTIONS
 # ----------------------------------------------------------------------
-GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
+GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None, showRootOnly: Boolean ?= true )
 GET            /collections/listChildCollections                                        @controllers.Collections.listChildCollections(parentCollectionId : String, when: String ?= "", date: String ?= "", size: Int ?= 12,  space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
 GET            /collections/new                                                         @controllers.Collections.newCollection(space: Option[String])
 GET            /collections/newCollectionWithParent                                     @controllers.Collections.newCollectionWithParent(parentCollectionId: Option[String])
@@ -412,6 +412,11 @@ POST           /api/changeAppearance                                            
 GET            /api/collections                                                         @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 GET            /api/collections/canEdit                                                 @api.Collections.listCanEdit(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 POST           /api/collections                                                         @api.Collections.createCollection()
+GET            /api/collections/getRootCollections                                      @api.Collections.getRootCollections
+GET            /api/collections/getTopLevelCollections                                  @api.Collections.getTopLevelCollections
+GET            /api/collections/getAllCollections                                       @api.Collections.getAllCollections()
+
+
 # deprecrated
 GET            /api/collections/list                                                    @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 POST           /api/collections/:id/follow                                              @api.Collections.follow(id: UUID, name: String)
