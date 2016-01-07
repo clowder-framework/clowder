@@ -165,7 +165,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     }
   }
 
-  def updateSubCollections(spaceId: UUID, collectionId: UUID) = Try  {
+  def updateSubCollections(spaceId: UUID, collectionId: UUID)  {
     collectionService.get(collectionId) match {
       case Some(collection) => {
         var childCollectionIds = collection.child_collection_ids
@@ -173,12 +173,14 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
           var currentSpacesToRemove = collectionService.getRootSpacesToRemove(UUID(childCollectionId))
           for (currentSpaceToRemove <- currentSpacesToRemove){
             spaces.removeCollection(UUID(childCollectionId),currentSpaceToRemove)
+            updateSubCollections(currentSpaceToRemove,(UUID(childCollectionId)))
+
           }
+
         }
       }
       case None => Logger.error("no collection found with id " + collectionId)
     }
-    Ok(toJson("not implemented"))
   }
 
   @ApiOperation(value = "Remove a dataset from a space",
