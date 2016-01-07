@@ -48,7 +48,7 @@ class Datasets @Inject()(
   /**
    * Display the page that allows users to create new datasets
    */
-  def newDataset(space: Option[String]) = PermissionAction(Permission.CreateDataset) { implicit request =>
+  def newDataset(space: Option[String], collection: Option[String]) = PermissionAction(Permission.CreateDataset) { implicit request =>
       implicit val user = request.user
       val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
       var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
@@ -59,19 +59,29 @@ class Datasets @Inject()(
           decodedSpaceList += Utils.decodeSpaceElements(aSpace)
         }
       }
-    space match {
+    val spaceId = space match {
       case Some(s) => {
         spaceService.get(UUID(s)) match {
-          case Some(space) => Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-            RequiredFieldsConfig.isDescriptionRequired, Some(space.id.toString))).flashing("error" -> "Please select ONE file (upload new or existing)")
-          case None => Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-            RequiredFieldsConfig.isDescriptionRequired, None)).flashing("error" -> "Please select ONE file (upload new or existing)")
+          case Some(space) =>  Some(space.id.toString)
+          case None => None
         }
-
       }
-      case None => Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-        RequiredFieldsConfig.isDescriptionRequired, None)).flashing("error" -> "Please select ONE file (upload new or existing)")
+      case None => None
     }
+
+    val collectionId = collection match {
+      case Some(c) => {
+        collections.get(UUID(c)) match {
+          case Some(collection) =>  Some(collection)
+          case None => None
+        }
+      }
+      case None => None
+    }
+
+    Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
+      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionId))
+
   }
 
   def createStep2(id: UUID) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>

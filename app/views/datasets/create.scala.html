@@ -1,4 +1,4 @@
-@(spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @main("Create Dataset") {
     <!-- Custom items for the create dataset workflow -->
@@ -15,6 +15,9 @@
         <div class="col-md-12">
             <p>A dataset is a container for files and metadata. Create one to upload data to the system.
                 You can keep your data private or share it with other spaces.</p>
+            @if(collection.isDefined){
+                <p>This dataset will be added to collection <a href="@routes.Collections.collection(collection.get.id)">@collection.get.name</a></p>
+            }
         </div>
     </div>
     <div class="row">
@@ -129,6 +132,11 @@
                 $('#spaceid').find(":selected").each(function(i, selected) {
                     spaceList[i] = $(selected).val();
                 });
+                // In case we want choose multiple collections for dataset like spaces in this page, collection is stored in a list here
+                var collectionList = [];
+                if(@collection.isDefined) {
+                    collectionList[0] = '@collection.get.id';
+                }
                 var error = false;
                 if (!name.val() && isNameRequired) {
                     $('#nameerror').show();
@@ -141,7 +149,7 @@
                 if (!error) {
                     var encName = htmlEncode(name.val());
                     var encDescription = htmlEncode(desc.val());
-                    var jsonData = JSON.stringify({"name": encName, "description": encDescription, "space": spaceList});
+                    var jsonData = JSON.stringify({"name": encName, "description": encDescription, "space": spaceList, "collection": collectionList});
                     var request = jsRoutes.api.Datasets.createEmptyDataset().ajax({
                         data: jsonData,
                         type: 'POST',
