@@ -255,4 +255,18 @@ class CurationObjects @Inject()(datasets: DatasetService,
         case None => InternalServerError("Curation Object Not found")
       }
   }
+
+  @ApiOperation(value = "Delete a file in curation object", notes = "",
+    responseClass = "None", httpMethod = "POST")
+  def deleteCurationFiles(curationId: UUID, curationFileId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
+    implicit request =>
+      implicit val user = request.user
+      curations.get(curationId) match {
+        case Some(c) => {
+          curations.deleteCurationFiles(curationId, curationFileId)
+          Ok(toJson("Success"))
+        }
+        case None => InternalServerError("Curation Object Not found")
+      }
+  }
 }

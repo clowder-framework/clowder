@@ -85,6 +85,11 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
     CurationDAO.findOne(MongoDBObject("files" ->  new ObjectId(curationFile.stringify)))
   }
 
+  def deleteCurationFiles(c: UUID, cf: UUID) = {
+    CurationFileDAO.remove(MongoDBObject("_id" ->new ObjectId(cf.stringify)))
+    CurationDAO.update(MongoDBObject("_id" ->new ObjectId(c.stringify)), $pull("files" -> new ObjectId(cf.stringify)), false, false, WriteConcern.Safe)
+  }
+
   def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID) = {
     val result = CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
       $set("description" -> description, "name" -> name, "space" -> new ObjectId(newSpace.stringify)),

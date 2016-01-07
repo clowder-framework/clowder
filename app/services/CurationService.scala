@@ -71,6 +71,11 @@ trait CurationService {
   def getCurationByCurationFile(curationFile: UUID): Option[CurationObject]
 
   /**
+   * Delete a curation file from a curation obeject
+   */
+  def deleteCurationFiles(c: UUID, cf: UUID)
+
+  /**
    * Update curation object's name, description, space.
    */
   def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID)
