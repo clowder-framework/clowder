@@ -220,15 +220,15 @@ class Datasets @Inject()(
           //for the presence of existing files.
           Logger.debug("About to call addDataset on spaces service")
           d.spaces.map{ s => spaces.addDataset(d.id, s)}
-          //Below call is not what is needed? That already does what we are doing in the Dataset constructor...
-          //Items from space model still missing. New API will be needed to update it most likely.
+          //Add this dataset to a collection if needed
           (request.body \ "collection").asOpt[List[String]] match {
             case None | Some(List("default"))=>
             case Some(collectionList) => {
-              Logger.debug(collectionList.toString())
               collectionList.map{c => collections.addDataset(UUID(c), d.id)}
             }
           }
+          //Below call is not what is needed? That already does what we are doing in the Dataset constructor...
+          //Items from space model still missing. New API will be needed to update it most likely.
           (request.body \ "existingfiles").asOpt[String].map { fileString =>
             var idArray = fileString.split(",").map(_.trim())
             for (anId <- idArray) {
