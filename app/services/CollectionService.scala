@@ -2,6 +2,7 @@ package services
 
 import api.Permission.Permission
 import models.{User, UUID, Dataset, Collection}
+import scala.collection.mutable.ListBuffer
 import scala.util.Try
 
 /**
@@ -173,11 +174,11 @@ trait CollectionService {
 
   def listChildCollections(parentCollectionId: UUID) : List[Collection]
 
-  def getAllDescendants(parentCollectionId : UUID) : List[UUID]
+  def getAllDescendants(parentCollectionId : UUID) : ListBuffer[Collection]
 
-  def getRootCollectionIds(collectionId : UUID) : List[UUID]
+  def getRootCollectionIds(collectionId : UUID) : ListBuffer[Collection]
 
-  def getRootSpaceIds(collectionId : UUID) : List[UUID]
+  def getRootSpaceIds(collectionId : UUID) : ListBuffer[UUID]
 
   def getRootSpacesToRemove(collectionId: UUID) : List[UUID]
 

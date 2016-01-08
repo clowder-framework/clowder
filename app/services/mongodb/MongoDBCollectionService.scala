@@ -413,8 +413,8 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     }
   }
 
-  def getRootCollectionIds(collectionId : UUID) : List[UUID] = {
-    var rootCollectionIds = ListBuffer.empty[UUID]
+  def getRootCollectionIds(collectionId : UUID) : ListBuffer[Collection] = {
+    var rootCollectionIds = ListBuffer.empty[Collection]
     Collection.findOneById(new ObjectId(collectionId.stringify)) match {
       case Some(collection) => {
         var parentCollectionIds = collection.parent_collection_ids
@@ -422,9 +422,9 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
           Collection.findOneById(new ObjectId(parentCollectionId))  match {
             case Some(parentCollection) => {
               if (parentCollection.root_flag == true) {
-                rootCollectionIds += UUID(parentCollectionId)
+                rootCollectionIds += parentCollection
               } else {
-                rootCollectionIds++(getRootCollectionIds(UUID(parentCollectionId)))
+                rootCollectionIds = rootCollectionIds++(getRootCollectionIds(UUID(parentCollectionId)))
               }
             }
             case None => Logger.error("no parent collection")
@@ -432,16 +432,16 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
         }
       }
     }
-    return rootCollectionIds.toList
+    return rootCollectionIds
   }
 
-  def getRootSpaceIds(collectionId: UUID) : List[UUID] = {
+  def getRootSpaceIds(collectionId: UUID) : ListBuffer[UUID] = {
     var rootSpaceIds = ListBuffer.empty[UUID]
 
-    var rootCollectionIds = getRootCollectionIds(collectionId)
+    var rootCollectionIds = getRootCollectionIds(collectionId).toList
 
     for (rootCollectionId <- rootCollectionIds){
-      Collection.findOneById(new ObjectId(rootCollectionId.stringify)) match {
+      Collection.findOneById(new ObjectId(rootCollectionId.id.stringify)) match {
         case Some(rootCollection) => {
           var currentRootSpaces = rootCollection.spaces
           rootSpaceIds ++ currentRootSpaces
@@ -450,7 +450,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       }
     }
 
-    return rootSpaceIds.toList
+    return rootSpaceIds
   }
 
   def getRootSpacesToRemove(childCollectionId : UUID) : List[UUID] = {
@@ -467,21 +467,25 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     return spacesToRemove
   }
 
-  def getAllDescendants(parentCollectionId : UUID) : List[UUID] = {
-    var descendantIds = ListBuffer.empty[UUID]
+  def getAllDescendants(parentCollectionId : UUID) : ListBuffer[models.Collection] = {
+    var descendantIds = ListBuffer.empty[models.Collection]
 
     Collection.findOneById(new ObjectId(parentCollectionId.stringify)) match {
-      case Some(collection) => {
-        var childCollections = collection.child_collection_ids
-        for (childCollection <- childCollections){
-          descendantIds += UUID(childCollection)
-          descendantIds ++ getAllDescendants(UUID(childCollection))
+      case Some(parentCollection) => {
+        var currentName = parentCollection.name
+        var childCollections = listChildCollections(parentCollectionId)
+        for (child <- childCollections){
+          descendantIds += child
+          var otherDescendants = getAllDescendants(child.id)
+          descendantIds = descendantIds ++ otherDescendants
+
         }
+
       }
       case None => Logger.error("no collection found for id " + parentCollectionId)
     }
 
-    return descendantIds.toList
+    return descendantIds
   }
 
 
@@ -535,11 +539,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
           datasets.index(dataset.id)
         }
 
-        for (space <- collection.spaces){
+        for(space <- collection.spaces){
           spaceService.removeCollection(collection.id,space)
         }
 
-        for (follower <- collection.followers) {
+        for(follower <- collection.followers) {
           userService.unfollowCollection(follower, collectionId)
         }
         Collection.remove(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)))

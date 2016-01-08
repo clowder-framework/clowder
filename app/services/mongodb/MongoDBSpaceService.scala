@@ -244,7 +244,10 @@ class MongoDBSpaceService @Inject() (
     var currentCollection = collections.get(collection).get
     var childCollectionIds = currentCollection.child_collection_ids
     for (childCollectionId <- childCollectionIds){
-      addCollection(UUID(childCollectionId), space)
+      if (collections.get(UUID(childCollectionId)).isDefined){
+        addCollection(UUID(childCollectionId), space)
+      }
+
     }
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("collectionCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
   }
