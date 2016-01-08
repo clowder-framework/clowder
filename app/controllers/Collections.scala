@@ -208,16 +208,34 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           case Some(s) => {
             title = Some("Collections in Space " + datasetSpace.get.name)
             if (date != "") {
-              collections.listSpace(date, nextPage, limit, s)
+              if (showRootOnly == true){
+                (collections.listSpace(date, nextPage, limit, s)).filter((c : Collection) => c.root_flag == true)
+              } else {
+                collections.listSpace(date, nextPage, limit, s)
+              }
+
             } else {
-              collections.listSpace(limit, s)
+              if (showRootOnly == true ){
+                (collections.listSpace(limit, s)).filter((c : Collection) => c.root_flag == true)
+              } else {
+                collections.listSpace(limit, s)
+              }
+
             }
           }
           case None => {
             if (date != "") {
-              collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
+              if (showRootOnly == true ) {
+                (collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)).filter((c : Collection) => c.root_flag == true)
+              } else {
+                collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
+              }
             } else {
-              collections.listAccess(limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
+              if (showRootOnly == true) {
+                (collections.listAccess(limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)).filter((c : Collection) => c.root_flag == true)
+              } else {
+                collections.listAccess(limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
+              }
             }
 
           }
@@ -229,11 +247,30 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     val prev = if (collectionList.nonEmpty && date != "") {
       val first = Formatters.iso8601(collectionList.head.created)
       val c = person match {
-        case Some(p) => collections.listUser(first, nextPage=false, 1, request.user, request.superAdmin, p)
+        case Some(p) => {
+          if (showRootOnly == true) {
+            (collections.listUser(first, nextPage=false, 1, request.user, request.superAdmin, p)).filter((c : Collection) => c.root_flag == true)
+          } else {
+            collections.listUser(first, nextPage=false, 1, request.user, request.superAdmin, p)
+          }
+
+        }
         case None => {
           space match {
-            case Some(s) => collections.listSpace(first, nextPage = false, 1, s)
-            case None => collections.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
+            case Some(s) => {
+              if (showRootOnly == true){
+                (collections.listSpace(first, nextPage = false, 1, s)).filter((c : Collection) => c.root_flag == true)
+              } else {
+                collections.listSpace(first, nextPage = false, 1, s)
+              }
+            }
+            case None => {
+              if (showRootOnly == true){
+                (collections.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)).filter((c : Collection) => c.root_flag == true)
+              } else {
+                collections.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
+              }
+            }
           }
         }
       }
@@ -250,11 +287,29 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     val next = if (collectionList.nonEmpty) {
       val last = Formatters.iso8601(collectionList.last.created)
       val ds = person match {
-        case Some(p) => collections.listUser(last, nextPage=true, 1, request.user, request.superAdmin, p)
+        case Some(p) => {
+          if (showRootOnly == true ){
+            (collections.listUser(last, nextPage=true, 1, request.user, request.superAdmin, p)).filter((c : Collection) => c.root_flag == true)
+          } else {
+            collections.listUser(last, nextPage=true, 1, request.user, request.superAdmin, p)
+          }
+        }
         case None => {
           space match {
-            case Some(s) => collections.listSpace(last, nextPage = true, 1, s)
-            case None => collections.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
+            case Some(s) => {
+              if (showRootOnly == true ){
+                (collections.listSpace(last, nextPage = true, 1, s)).filter((c : Collection) => c.root_flag == true)
+              } else {
+                collections.listSpace(last, nextPage = true, 1, s)
+              }
+            }
+            case None => {
+              if (showRootOnly == true){
+                (collections.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)).filter((c : Collection) => c.root_flag == true)
+              } else {
+                collections.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
+              }
+            }
           }
         }
       }

@@ -112,6 +112,7 @@ GET            /datasets/:id/addFiles                                           
 # COLLECTIONS
 # ----------------------------------------------------------------------
 GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None, showRootOnly: Boolean ?= true )
+#GET            /collections/showAll                                                     @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None, showRootOnly: Boolean ?= false )
 GET            /collections/listChildCollections                                        @controllers.Collections.listChildCollections(parentCollectionId : String, when: String ?= "", date: String ?= "", size: Int ?= 12,  space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
 GET            /collections/new                                                         @controllers.Collections.newCollection(space: Option[String])
 GET            /collections/newCollectionWithParent                                     @controllers.Collections.newCollectionWithParent(parentCollectionId: Option[String])
