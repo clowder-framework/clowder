@@ -176,7 +176,7 @@ trait CollectionService {
 
   def getAllDescendants(parentCollectionId : UUID) : ListBuffer[Collection]
 
-  def getRootCollectionIds(collectionId : UUID) : ListBuffer[Collection]
+  def getRootCollections(collectionId : UUID) : ListBuffer[Collection]
 
   def getRootSpaceIds(collectionId : UUID) : ListBuffer[UUID]
 

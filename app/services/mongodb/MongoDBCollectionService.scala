@@ -413,8 +413,8 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     }
   }
 
-  def getRootCollectionIds(collectionId : UUID) : ListBuffer[Collection] = {
-    var rootCollectionIds = ListBuffer.empty[Collection]
+  def getRootCollections(collectionId : UUID) : ListBuffer[Collection] = {
+    var rootCollections = ListBuffer.empty[Collection]
     Collection.findOneById(new ObjectId(collectionId.stringify)) match {
       case Some(collection) => {
         var parentCollectionIds = collection.parent_collection_ids
@@ -422,9 +422,9 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
           Collection.findOneById(new ObjectId(parentCollectionId))  match {
             case Some(parentCollection) => {
               if (parentCollection.root_flag == true) {
-                rootCollectionIds += parentCollection
+                rootCollections += parentCollection
               } else {
-                rootCollectionIds = rootCollectionIds++(getRootCollectionIds(UUID(parentCollectionId)))
+                rootCollections = rootCollections++( getRootCollections(UUID(parentCollectionId)))
               }
             }
             case None => Logger.error("no parent collection")
@@ -432,19 +432,19 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
         }
       }
     }
-    return rootCollectionIds
+    return rootCollections
   }
 
   def getRootSpaceIds(collectionId: UUID) : ListBuffer[UUID] = {
     var rootSpaceIds = ListBuffer.empty[UUID]
 
-    var rootCollectionIds = getRootCollectionIds(collectionId).toList
+    var rootCollectionIds =  getRootCollections(collectionId).toList
 
     for (rootCollectionId <- rootCollectionIds){
       Collection.findOneById(new ObjectId(rootCollectionId.id.stringify)) match {
         case Some(rootCollection) => {
           var currentRootSpaces = rootCollection.spaces
-          rootSpaceIds ++ currentRootSpaces
+          rootSpaceIds = rootSpaceIds ++ currentRootSpaces
         }
         case None => Logger.error("no root collection found with id " + rootCollectionId)
       }
@@ -458,8 +458,14 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     Collection.findOneById(new ObjectId(childCollectionId.stringify)) match {
       case Some(collection) => {
         val currentSpaceIds = collection.spaces
-        val rootSpaceIds = getRootSpaceIds(childCollectionId)
-        spacesToRemove = currentSpaceIds.diff(rootSpaceIds)
+        val rootCollectionIds =  getRootCollections(collection.id).toList
+        val currentRootSpaceIds = ListBuffer.empty[UUID]
+        for (rootCollectionId <- rootCollectionIds){
+          var currentSpaces = rootCollectionId.spaces
+          for (space <- currentSpaces){
+            currentRootSpaceIds += space
+          }
+        }
       }
       case None => Logger.error("no collection found for " + childCollectionId)
     }

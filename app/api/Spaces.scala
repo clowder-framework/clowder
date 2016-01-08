@@ -172,10 +172,11 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         var collectionDescendants = collectionService.getAllDescendants(collectionId)
         var collectionDescendantsList = collectionDescendants.toList
         for (descendant <- collectionDescendants){
-          var spacesToRemoveFrom = collectionService.getRootSpacesToRemove(descendant.id)
-          for (space <- spacesToRemoveFrom) {
-            var currentSpace = spaces.get(space)
-            spaces.removeCollection(descendant.id,space)
+          var rootCollectionSpaces = collectionService.getRootSpaceIds(descendant.id)
+          for (space <- descendant.spaces) {
+            if (!rootCollectionSpaces.contains(space)){
+              spaces.removeCollection(descendant.id, space)
+            }
           }
         }
       }
