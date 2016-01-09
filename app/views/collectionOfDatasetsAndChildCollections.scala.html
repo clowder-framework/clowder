@@ -228,7 +228,7 @@
 		</div>
 	<!-- right column -->
 	<div class="col-md-4">
-		@if(collection.root_flag == true){
+		@if(collection.root_flag == true || (collection.parent_collection_ids).isEmpty){
 			@spaces.spaceAllocation(collection.id, ResourceRef.collection, collectionSpaces.getOrElse(List.empty))
 		}
 		@if(collection.root_flag == false){
