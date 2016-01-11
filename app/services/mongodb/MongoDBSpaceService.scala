@@ -249,9 +249,6 @@ class MongoDBSpaceService @Inject() (
       }
 
     }
-    if (currentCollection.parent_collection_ids.isEmpty && currentCollection.root_flag==false){
-      collections.setRootFlag(collection,true)
-    }
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("collectionCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
   }
 
