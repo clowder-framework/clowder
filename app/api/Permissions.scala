@@ -101,14 +101,17 @@ object Permission extends Enumeration {
   lazy val sections: SectionService = DI.injector.getInstance(classOf[SectionService])
   lazy val metadatas: MetadataService = DI.injector.getInstance(classOf[MetadataService])
 
+  /** Returns true if the user is listed as a server admin */
 	def checkServerAdmin(user: Option[Identity]): Boolean = {
 		user.exists(u => u.email.nonEmpty && AppConfiguration.checkAdmin(u.email.get))
 	}
 
+  /** Returns true if the user is the owner of the resource, this function is used in the code for checkPermission as well. */
   def checkOwner(user: Option[User], resourceRef: ResourceRef): Boolean = {
     user.exists(checkOwner(_, resourceRef))
   }
 
+  /** Returns true if the user is the owner of the resource, this function is used in the code for checkPermission as well. */
   def checkOwner(user: User, resourceRef: ResourceRef): Boolean = {
     resourceRef match {
       case ResourceRef(ResourceRef.file, id) => files.get(id).exists(_.author.email == user.email)
