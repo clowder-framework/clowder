@@ -39,12 +39,12 @@
             @if(Permission.checkPermission(Permission.AddMetadata, ResourceRef(ResourceRef.curationObject, curationObject.id))) {
                  <div class="row">
                     <div class="col-md-12">
-                    @metadatald.addMetadata("curationObject", curationObject.id.toString)
+                    @metadatald.addMetadata("curationObject", curationObject.id.toString, "metadata-content-ds")
                     </div>
                  </div>
             }
             <div class="row">
-                <div class="col-md-12">
+                <div class="col-md-12" id="metadata-content-ds">
                 @metadatald.view(m.filter(_.attachedTo.resourceType == ResourceRef.curationObject))
                 </div>
             </div>
@@ -69,12 +69,12 @@
                     @if(Permission.checkPermission(Permission.AddMetadata, ResourceRef(ResourceRef.curationObject, curationObject.id))) {
                         <div class="row">
                             <div class="col-md-12">
-                            @metadatald.addMetadata("curationFile", file.id.toString)
+                            @metadatald.addMetadata("curationFile", file.id.toString, "metadata-content-"+file.id.stringify)
                             </div>
                         </div>
                     }
                         <div class="row">
-                            <div class="col-md-12">
+                            <div class="col-md-12" id="metadata-content-@file.id.stringify">
                             @metadatald.view(m.filter(_.attachedTo.id == file.id))
                             </div>
                         </div>

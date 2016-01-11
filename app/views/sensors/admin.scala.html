@@ -1,0 +1,58 @@
+@(sensors: String, sensor: String)(implicit user: Option[models.User])
+
+@import services.AppConfiguration
+@title = @{
+    AppConfiguration.getSensorsTitle + " Administration"
+}
+
+@main(title) {
+    <div class="page-header">
+        <h1>@(AppConfiguration.getSensorsTitle) Administration</h1>
+    </div>
+
+    <div class="row">
+        <div class="col-md-2">
+            <form role="form-horizontal">
+                <div class="form-group">
+                    @play.api.Play.current.plugin[services.PostgresPlugin] match {
+                        case Some(db) => {
+                            <label for="sensorsTitle">Plural Title</label>
+                            <input class="form-control" id="sensorsTitle" name="sensorsTitle" type="text" value="@(sensors)" />
+                            <span id="sensorsTitle_error" style="display:none;">Plural Title must have a value.</span>
+
+                            <label for="sensorTitle">Singular Title</label>
+                            <input class="form-control" id="sensorTitle" name="sensorTitle" type="text" value="@(sensor)" />
+                            <span id="sensorTitle_error" style="display:none;">Singular Title must have a value.</span>
+                            <br /><br />
+                        }
+                        case None => {}
+                    }
+
+                    <button class="btn btn-primary" onclick="return updateSensorConfig();"><span class="glyphicon glyphicon-saved"></span> Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script language="javascript">
+    function updateSensorConfig(){
+        var sensorsTitle = $("#sensorsTitle").val() ? $("#sensorsTitle").val().trim() : "";
+        var sensorTitle = $("#sensorTitle").val() ? $("#sensorTitle").val().trim() : "";
+
+        var request = $.ajax({
+            url:  "@api.routes.Admin.sensorsConfig",
+            data: JSON.stringify({ sensors: sensorsTitle, sensor: sensorTitle }),
+            type: "POST",
+            contentType: "application/json"
+        });
+        request.done(function (response, textStatus, jqXHR){
+            console.log("Response: " + response);
+            notify("Preferences successfully updated. Please refresh page.", "success", 5000);
+        });
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occurred: " + textStatus, errorThrown);
+            notify("The application preferences was not updated due to : " + errorThrown, "error");
+        });
+        return false;
+    }
+    </script>
+}

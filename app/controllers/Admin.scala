@@ -53,6 +53,11 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     Ok("""{"message":"secure test"}""").as(JSON)
   }
 
+  def sensors = ServerAdminAction { implicit request =>
+    implicit val user = request.user
+    Ok(views.html.sensors.admin(AppConfiguration.getSensorsTitle, AppConfiguration.getSensorTitle))
+  }
+
   /**
    * Gets the available Adapters from Versus
    */

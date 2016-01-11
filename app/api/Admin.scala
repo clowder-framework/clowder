@@ -21,8 +21,8 @@ object Admin extends Controller with ApiController {
     current.plugin[MongoSalatPlugin].map(_.dropAllData())
     Ok(toJson("done"))
   }
-  
-  
+
+
   def removeAdmin = ServerAdminAction(parse.json) { implicit request =>
     Logger.debug("Removing admin")
 
@@ -52,8 +52,8 @@ object Admin extends Controller with ApiController {
       case None => Unauthorized("Not authorized")
     }
   }
-  
-  
+
+
   def submitAppearance = ServerAdminAction(parse.json) { implicit request =>
     (request.body \ "displayName").asOpt[String] match {
       case Some(displayName) => AppConfiguration.setDisplayName(displayName)
@@ -64,6 +64,10 @@ object Admin extends Controller with ApiController {
     (request.body \ "userAgreement").asOpt[String] match {
       case Some(userAgreement) => AppConfiguration.setUserAgreement(userAgreement)
     }
+    Ok(toJson(Map("status" -> "success")))
+  }
+
+  def sensorsConfig = ServerAdminAction(parse.json) { implicit request =>
     (request.body \ "sensors").asOpt[String] match {
       case Some(sensors) => AppConfiguration.setSensorsTitle(sensors)
     }
@@ -80,4 +84,3 @@ object Admin extends Controller with ApiController {
   }
 
 }
-
