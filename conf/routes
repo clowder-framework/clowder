@@ -660,3 +660,7 @@ POST           /spaces/curations/:id/status                                     
 GET            /spaces/curations/:id/getStatusFromRepository                            @controllers.CurationObjects.getStatusFromRepository(id: UUID)
 
 GET            /sendEmail                                                               @api.Events.sendExceptionEmail(re:String, ex:String)
+
+# ----------------------------------------------------------------------
+# TEMPLATES ENDPOINT
+# ----------------------------------------------------------------------
