@@ -105,6 +105,23 @@ object Permission extends Enumeration {
 		user.exists(u => u.email.nonEmpty && AppConfiguration.checkAdmin(u.email.get))
 	}
 
+  def checkOwner(user: Option[User], resourceRef: ResourceRef): Boolean = {
+    user.exists(checkOwner(_, resourceRef))
+  }
+
+  def checkOwner(user: User, resourceRef: ResourceRef): Boolean = {
+    resourceRef match {
+      case ResourceRef(ResourceRef.file, id) => files.get(id).exists(_.author.email == user.email)
+      case ResourceRef(ResourceRef.collection, id) => collections.get(id).exists(_.author.email == user.email)
+      case ResourceRef(ResourceRef.dataset, id) => datasets.get(id).exists(_.author.email == user.email)
+      case ResourceRef(ResourceRef.space, id) => spaces.get(id).exists(_.creator == user.id)
+      case ResourceRef(ResourceRef.comment, id) => comments.get(id).exists(_.author.email == user.email)
+      case ResourceRef(ResourceRef.curationObject, id) => curations.get(id).exists(_.author.email == user.email)
+      case ResourceRef(ResourceRef.metadata, id) => metadatas.getMetadataById(id).exists(_.creator.id == user.id)
+      case ResourceRef(_, _) => false
+    }
+  }
+
   def checkPermission(permission: Permission)(implicit user: Option[Identity]): Boolean = {
     checkPermission(user, permission, None)
   }
@@ -162,6 +179,9 @@ object Permission extends Enumeration {
   }
 
   def checkPermission(user: Identity, permission: Permission, resourceRef: ResourceRef): Boolean = {
+    // check if user is owner, in that case they can do what they want.
+    if (checkOwner(users.findByIdentity(user), resourceRef)) return true
+
     resourceRef match {
       case ResourceRef(ResourceRef.preview, id) => {
         previews.get(id) match {
@@ -200,34 +220,31 @@ object Permission extends Enumeration {
         }
       }
       case ResourceRef(ResourceRef.file, id) => {
-        var hasPermission: Option[Boolean] = None
         for (clowderUser <- getUserByIdentity(user)) {
           datasets.findByFileId(id).foreach { dataset =>
             dataset.spaces.map{
               spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
                 if(role.permissions.contains(permission.toString))
-                  hasPermission = Some(true)
+                  return true
               }
             }
           }
         }
-        hasPermission getOrElse files.get(id).exists(_.author.email == user.email)
+        false
       }
       case ResourceRef(ResourceRef.dataset, id) => {
         datasets.get(id) match {
           case None => false
           case Some(dataset) => {
-            var hasPermission: Option[Boolean] = None
-
             for (clowderUser <- getUserByIdentity(user)) {
               dataset.spaces.map {
                 spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
                   if (role.permissions.contains(permission.toString))
-                    hasPermission = Some(true)
+                    return true
                 }
               }
             }
-            hasPermission getOrElse (dataset.author.email == user.email)
+            false
           }
         }
       }
@@ -235,23 +252,15 @@ object Permission extends Enumeration {
         collections.get(id) match {
           case None => false
           case Some(collection) => {
-            var hasPermission: Option[Boolean] = None
-
             for (clowderUser <- getUserByIdentity(user)) {
               collection.spaces.map {
                 spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
                   if (role.permissions.contains(permission.toString))
-                    hasPermission = Some(true)
+                    return true
                 }
               }
             }
-            hasPermission getOrElse {
-                  val r = for {
-                    e1 <- collection.author.email
-                    e2 <- user.email}
-                    yield e1 == e2
-                  return r getOrElse false
-            }
+            false
           }
         }
       }
@@ -263,33 +272,24 @@ object Permission extends Enumeration {
                                                       role <- users.getUserRoleInSpace(clowderUser.id, space.id)
                                                       if role.permissions.contains(permission.toString)
             } yield true
-            hasPermission getOrElse {
-              users.findById(space.creator) match {
-                case Some(realCreator) => {
-                  realCreator.email == user.email
-                }
-                case None => false
-              }
-            }
+            hasPermission getOrElse(false)
           }
         }
       }
       case ResourceRef(ResourceRef.comment, id) => {
         val comment = comments.get(id)
-        var hasPermission: Option[Boolean] = None
         if(comment.get.dataset_id.isDefined) {
           for (clowderUser <- getUserByIdentity(user)) {
             for (dataset <- datasets.get(comment.get.dataset_id.get)) {
               dataset.spaces.map {
                 spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
                   if (role.permissions.contains(permission.toString)) {
-                    hasPermission = Some(true)
+                    return true
                   }
                 }
               }
             }
           }
-          hasPermission getOrElse comment.exists(_.author.email == user.email)
         }
         else if(comment.get.file_id.isDefined) {
           val datasetList = datasets.findByFileId(comment.get.file_id.get)
@@ -297,17 +297,14 @@ object Permission extends Enumeration {
             datasetList.flatMap(_.spaces).map {
               spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
                   if(role.permissions.contains(permission.toString)) {
-                    hasPermission = Some(true)
+                    return true
                   }
                 }
 
             }
           }
-          hasPermission getOrElse comment.exists(_.author.email == user.email)
         }
-        else {
-          hasPermission getOrElse comment.exists(_.author.email == user.email)
-        }
+        false
       }
 
       case ResourceRef(ResourceRef.curationObject, id) => {
@@ -327,7 +324,7 @@ object Permission extends Enumeration {
       // for DeleteMetadata, the creator of this metadata or user with permission to delete this resource can delete metadata
       case ResourceRef(ResourceRef.metadata, id) => {
         metadatas.getMetadataById(id) match {
-          case Some(m) => getUserByIdentity(user).getOrElse(User.anonymous).id.equals(m.creator.id) || checkPermission(user, permission, m.attachedTo)
+          case Some(m) => checkPermission(user, permission, m.attachedTo)
           case None => false
         }
       }
