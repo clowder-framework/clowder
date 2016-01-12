@@ -1,13 +1,11 @@
 package api
 
-import models.{ResourceRef, User, UUID}
+import models.{ResourceRef, User}
 import play.api.Logger
 import securesocial.core._
 import play.api.mvc._
 import play.api.Play.configuration
 import services._
-
-import scala.concurrent.Future
 
 /**
  * List of all permissions used by the system to authorize users.

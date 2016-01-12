@@ -68,7 +68,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   def attachDataset(collectionId: UUID, datasetId: UUID) = PermissionAction(Permission.AddResourceToCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     // TODO this needs to be cleaned up when do permissions for adding to a resource
     if (!Permission.checkOwner(request.user, ResourceRef(ResourceRef.dataset, datasetId))) {
-      BadRequest(toJson(s"You are not the owner of the dataset"))
+      Forbidden(toJson(s"You are not the owner of the dataset"))
     } else {
       collections.addDataset(collectionId, datasetId) match {
         case Success(_) => {

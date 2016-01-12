@@ -144,7 +144,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         case (Some(s), Some(c)) => {
           // TODO this needs to be cleaned up when do permissions for adding to a resource
           if (!Permission.checkOwner(request.user, ResourceRef(ResourceRef.dataset, collectionId))) {
-            BadRequest(toJson(s"You are not the owner of the dataset"))
+            Forbidden(toJson(s"You are not the owner of the dataset"))
           } else {
             spaces.addCollection(collectionId, spaceId)
             Ok(Json.obj("collectionInSpace" -> (s.collectionCount + 1).toString))
@@ -164,7 +164,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         case (Some(s), Some(d)) => {
           // TODO this needs to be cleaned up when do permissions for adding to a resource
           if (!Permission.checkOwner(request.user, ResourceRef(ResourceRef.dataset, datasetId))) {
-            BadRequest(toJson(s"You are not the owner of the dataset"))
+            Forbidden(toJson(s"You are not the owner of the dataset"))
           } else {
             spaces.addDataset(datasetId, spaceId)
             Ok(Json.obj("datasetsInSpace" -> (s.datasetCount + 1).toString))

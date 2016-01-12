@@ -62,7 +62,10 @@ class MongoDBUserService @Inject() (
   }
 
   override def get(id: UUID): Option[User] = {
-    UserDAO.findOneById(new ObjectId(id.stringify))
+    if (id == User.anonymous.id)
+      Some(User.anonymous)
+    else
+      UserDAO.findOneById(new ObjectId(id.stringify))
   }
 
   override def delete(id: UUID): Unit = {
@@ -121,21 +124,27 @@ class MongoDBUserService @Inject() (
    * Return a specific user based on the id provided.
    */
   override def findById(id: UUID): Option[User] = {
-    UserDAO.dao.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)))
+    get(id)
   }
 
   /**
    * Return a specific user based on an Identity
    */
   override def findByIdentity(identity: Identity): Option[User] = {
-    UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> identity.identityId.userId, "identityId.providerId" -> identity.identityId.providerId))
+    if (User.anonymous == identity)
+      return Some(User.anonymous)
+    else
+      UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> identity.identityId.userId, "identityId.providerId" -> identity.identityId.providerId))
   }
 
   /**
    * Return a specific user based on an Identity
    */
   override def findByIdentity(userId: String, providerId: String): Option[User] = {
-    UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> userId, "identityId.providerId" -> providerId))
+    if (User.anonymous.identityId.userId == userId && User.anonymous.identityId.providerId == providerId)
+      return Some(User.anonymous)
+    else
+      UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> userId, "identityId.providerId" -> providerId))
   }
 
   /**
