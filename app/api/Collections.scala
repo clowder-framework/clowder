@@ -177,7 +177,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     if (mine && user.isEmpty) return List.empty[Collection]
 
     (title, date) match {
-      case (Some(t), Some(d), Some(u)) => {
+      case (Some(t), Some(d)) => {
         if (mine)
           collections.listUser(d, true, limit, t, user, superAdmin, user.get)
         else
