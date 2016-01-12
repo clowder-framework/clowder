@@ -29,11 +29,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     Ok(views.html.admin(theme,
       AppConfiguration.getDisplayName,
       AppConfiguration.getWelcomeMessage,
-      AppConfiguration.getUserAgreement,
-      AppConfiguration.getSensorsTitle,
-      AppConfiguration.getSensorTitle,
-      AppConfiguration.getParametersTitle,
-      AppConfiguration.getParameterTitle))
+      AppConfiguration.getUserAgreement))
   }
 
   def adminIndex = ServerAdminAction { implicit request =>
@@ -55,7 +51,11 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
 
   def sensors = ServerAdminAction { implicit request =>
     implicit val user = request.user
-    Ok(views.html.sensors.admin(AppConfiguration.getSensorsTitle, AppConfiguration.getSensorTitle))
+    Ok(views.html.sensors.admin(AppConfiguration.getSensorsTitle,
+      AppConfiguration.getSensorTitle,
+      AppConfiguration.getParametersTitle,
+      AppConfiguration.getParameterTitle
+    ))
   }
 
   /**

@@ -1,4 +1,4 @@
-@(theme: String, displayName: String, welcomeMessage: String, userAgreement: String, sensors: String, sensor: String, parameters: String, parameter: String)(implicit user: Option[models.User])
+@(theme: String, displayName: String, welcomeMessage: String, userAgreement: String)(implicit user: Option[models.User])
 @main("Administration") {
 	<div class="page-header">
 		<h1>Customize</h1>
@@ -26,26 +26,6 @@
                 <label for="userAgreement">User Agreement</label>
                 <textarea class="form-control" name="userAgreement" id="userAgreement" style="width:300%;" placeholder="Plain text or HTML. Or leave blank and it will not be required.">@(userAgreement)</textarea>
                 <br /><br />
-                  @play.api.Play.current.plugin[services.PostgresPlugin] match {
-                    case Some(db) => {
-                      <label for="sensorsTitle">Sensors title (plural form)</label>
-                      <input id="sensorsTitle" name="sensorsTitle" type="text" value="@(sensors)" />
-                      <span id="sensorsTitle_error" style="display:none;">Sensors must have a title.</span>
-                      <label for="sensorTitle">Sensor title (singular form)</label>
-                      <input id="sensorTitle" name="sensorTitle" type="text" value="@(sensor)" />
-                      <span id="sensorTitle_error" style="display:none;">Sensor must have a title.</span>
-                      <br /><br />
-                      <label for="parametersTitle">Parameters title (plural form)</label>
-                      <input id="parametersTitle" name="parametersTitle" type="text" value="@(parameters)" />
-                      <span id="parametersTitle_error" style="display:none;">Parameters must have a title.</span>
-                      <label for="parameterTitle">Parameter title (singular form)</label>
-                      <input id="parameterTitle" name="parameterTitle" type="text" value="@(parameter)" />
-                      <span id="parameterTitle_error" style="display:none;">Parameter must have a title.</span>
-                      <br /><br />
-                    }
-                    case None => {}
-                }
-
 			    <button class="btn btn-primary" onclick="return submitAppearance();"><span class="glyphicon glyphicon-saved"></span> Submit</button>
 			  </div>
 			</form>
@@ -55,11 +35,7 @@
 		function submitAppearance(){
 			var displayName = $("#displayNameField").val().trim();
 			var welcomeMessage = $("#welcomingField").val().trim();
-      var userAgreement = $("#userAgreement").val() ? $("#userAgreement").val().trim() : "";
-			var sensorsTitle = $("#sensorsTitle").val() ? $("#sensorsTitle").val().trim() : "";
-            var sensorTitle = $("#sensorTitle").val() ? $("#sensorTitle").val().trim() : "";
-            var parametersTitle = $("#parametersTitle").val() ? $("#parametersTitle").val().trim() : "";
-            var parameterTitle = $("#parameterTitle").val() ? $("#parameterTitle").val().trim() : "";
+            var userAgreement = $("#userAgreement").val() ? $("#userAgreement").val().trim() : "";
 
 			if(displayName == ""){
 				$("#displayNameField_error").css("display","inline");
@@ -73,7 +49,7 @@
 
 			var request = $.ajax({
 				url:  "@api.routes.Admin.submitAppearance",
-				data: JSON.stringify({displayName: displayName, welcomeMessage: welcomeMessage, userAgreement: userAgreement, sensors: sensorsTitle, sensor: sensorTitle, parameters: parametersTitle, parameter: parameterTitle }),
+				data: JSON.stringify({displayName: displayName, welcomeMessage: welcomeMessage, userAgreement: userAgreement }),
 				type: "POST",
 				contentType: "application/json"
 	     	});
