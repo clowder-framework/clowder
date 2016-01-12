@@ -18,7 +18,8 @@ case class Template (
   object Template{
     implicit val templateWrites = new Writes[Template]{
       def writes(template : Template): JsValue ={
-        Json.obj("id" -> template.id.toString, "author" -> template.author.toString, "keys"-> template.keys.toList)
+        val templateAuthor = template.author.identityId.userId
+        Json.obj("id" -> template.id.toString, "author" -> templateAuthor, "keys"-> template.keys.toList)
       }
     }
 }

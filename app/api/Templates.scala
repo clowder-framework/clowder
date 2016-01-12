@@ -13,6 +13,25 @@ import services.{TemplateService, EventService, UserService}
 import models._
 import java.util.Date
 import scala.util.{Try, Success, Failure}
+import api.Permission.Permission
+import play.api.Logger
+import play.api.Play.current
+import models._
+import play.api.http.Writeable
+import play.api.libs.json
+import services._
+import play.api.libs.json._
+import play.api.libs.json.{JsObject, JsValue}
+import play.api.libs.json.Json.toJson
+import javax.inject.{ Singleton, Inject }
+import scala.collection.immutable.HashSet
+import scala.collection.mutable.ListBuffer
+import scala.util.parsing.json.JSONArray
+import scala.util.{Try, Success, Failure}
+import com.wordnik.swagger.annotations.Api
+import com.wordnik.swagger.annotations.ApiOperation
+import java.util.Date
+import controllers.Utils
 
 
 /**
@@ -39,7 +58,7 @@ class Templates @Inject() (userService: UserService, events: EventService, templ
               case Some(id) => {
                 Ok(toJson(Map("id" -> id)))
               }
-              case None => Ok(Map("status" -> "error"))
+              case None => Ok("ok")
             }
 
           }
@@ -59,7 +78,8 @@ class Templates @Inject() (userService: UserService, events: EventService, templ
   def listTemplates() = AuthenticatedAction { implicit request =>
     val user = request.user
     val templates = templateService.list()
-    Ok(toJson(templates.toList))
+    val all_templates = for (template <- templates) yield jsonTemplate(template)
+    Ok(toJson(all_templates))
   }
 
   @ApiOperation(value = "get template by id",
@@ -89,7 +109,7 @@ class Templates @Inject() (userService: UserService, events: EventService, templ
   }
 
   def jsonTemplate(template : Template) : JsValue = {
-    toJson(Map("id" -> template.id.toString,"keys"-> template.keys, "name" -> template.name))
+    toJson(Map("id" -> template.id.toString, "keys" ->  template.keys.toString,"name" -> template.name))
   }
 
 }
