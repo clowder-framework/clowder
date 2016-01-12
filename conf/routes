@@ -664,3 +664,8 @@ GET            /sendEmail                                                       
 # ----------------------------------------------------------------------
 # TEMPLATES ENDPOINT
 # ----------------------------------------------------------------------
+
+POST        /templates/createTemplate                                                   @api.Templates.createTemplate()
+GET         /templates/listTemplates                                                    @api.Templates.listTemplates()
+GET         /templates/getTemplateById/:id                                              @api.Templates.getTemplateById(id: UUID)
+GET         /templates/getTemplateByName/:name                                          @api.Templates.getTemplateByName(name : String)
