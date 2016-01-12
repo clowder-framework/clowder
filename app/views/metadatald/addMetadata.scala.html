@@ -258,6 +258,8 @@ line-height: 1.5;
                 } else if (field_type == "datetime") {
                     // This widget uses the ISO 8601 format, such as 2016-01-01T10:00:00-06:00 or 2016-01-01T10:00:00Z.
                     // This uses Trent Richardson's jQuery UI Timepicker add-on.
+                    // jQuery UI Datepicker options: http://api.jqueryui.com/datepicker/
+                    // jQuery UI Timepicker addon options: http://trentrichardson.com/examples/timepicker/
                     $("#field-value").datetimepicker(
                         { controlType: 'select',
                           // Uses "select" instead of the default slider.
