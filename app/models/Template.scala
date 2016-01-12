@@ -8,9 +8,10 @@ import java.util.Date
   * Created by todd_n on 1/11/16.
   */
 case class Template (
-  id : UUID = UUID.generate(),
+  id : UUID = UUID.generate,
   author : Identity,
-  date : Date,
+  created : Date,
+  name : String,
   lastModified : Date = new Date(),
   keys : List[String] = List.empty)
 
