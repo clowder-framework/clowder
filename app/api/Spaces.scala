@@ -89,7 +89,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     notes = "Retrieves a list of spaces that the user has permission to add to",
     responseClass = "None", httpMethod = "GET")
   def listCanEdit(title: Option[String], date: Option[String], limit: Int) = UserAction { implicit request =>
-    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), true, request.user, request.superAdmin).map(spaceToJson)))
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.superAdmin).map(spaceToJson)))
   }
 
   /**

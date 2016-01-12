@@ -166,7 +166,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     notes = "This will check for Permission.AddResourceToCollection and Permission.EditCollection",
     responseClass = "None", httpMethod = "GET")
   def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), true, request.user, request.superAdmin)))
+    Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.superAdmin)))
   }
 
   /**
