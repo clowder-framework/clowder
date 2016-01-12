@@ -313,7 +313,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
             }
           }
           try {
-            collection("datasets").save(x)x
+            collection("datasets").save(x)
           } catch {
             case e: BSONException => {
               Logger.error(x.get("_id").toString + " : bad string\n" + x.toString, e)

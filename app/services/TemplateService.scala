@@ -7,6 +7,8 @@ import models.{UUID, Template}
   */
 trait TemplateService {
 
+  def count() : Long
+
   def insert(template : Template) : Option[String]
 
   def get(id: UUID) : Option[Template]

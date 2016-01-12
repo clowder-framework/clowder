@@ -92,7 +92,7 @@
 							}
 							@if(childCollections.size == 0){
 								@if(user.isDefined && Permission.checkPermission(Permission.EditCollection,ResourceRef(ResourceRef.collection, collection.id))){
-									<a id="create-collection"href="@routes.Collections.newCollectionWithParent(Some(collection.id.stringify))" class="btn btn-primary btn-xs">
+									<a id="create-collection"href="@routes.Collections.newCollectionWithParent(Some(collection.id.stringify))" class="btn btn-link btn-xs">
 										<span class="glyphicon glyphicon-ok"></span> Create Collection
 									</a>
 								}

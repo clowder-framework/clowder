@@ -32,10 +32,12 @@ import play.api.Play._
  *
  */
 @Singleton
-class MongoDBTemplateService @Inject()  extends TemplateService {
-  /**
-   * Count all collections
-   */
+class MongoDBTemplateService @Inject() (userService: UserService)  extends TemplateService {
+
+  def count(): Long = {
+    Template.count( MongoDBObject())
+  }
+
   def insert(template : Template): Option[String] = {
     Template.insert(template).map(_.toString)
   }
@@ -50,9 +52,11 @@ class MongoDBTemplateService @Inject()  extends TemplateService {
 
 }
 
+
 object Template extends ModelCompanion[Template, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Template, ObjectId](template = x.template("templates")) {}
+    case Some(x) => new SalatDAO[Template, ObjectId](collection = x.collection("templates")) {}
   }
 }
+

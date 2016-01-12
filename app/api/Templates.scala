@@ -1,7 +1,6 @@
 package api
 
-import com.wordnik.swagger.annotations.Api
-import com.wordnik.swagger.annotations.ApiOperation
+import com.wordnik.swagger.annotations._
 import play.api.mvc.Action
 import play.api.libs.json._
 import play.api.libs.json._
@@ -28,8 +27,6 @@ import scala.collection.immutable.HashSet
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
 import scala.util.{Try, Success, Failure}
-import com.wordnik.swagger.annotations.Api
-import com.wordnik.swagger.annotations.ApiOperation
 import java.util.Date
 import controllers.Utils
 
@@ -41,6 +38,22 @@ import controllers.Utils
 @Singleton
 class Templates @Inject() (userService: UserService, events: EventService, templateService : TemplateService) extends ApiController  {
 
+
+
+  @ApiOperation(value = "test",
+    notes = "",
+    responseClass = "None", httpMethod = "GET")
+  def test() = AuthenticatedAction {implicit request =>
+    val user = request.user
+    user match {
+      case Some(idenitity) => {
+        Ok("user")
+      }
+      case None => Ok("no user")
+    }
+
+  }
+
   @ApiOperation(value = "Create a template",
       notes = "",
       responseClass = "None", httpMethod = "POST")
@@ -51,7 +64,7 @@ class Templates @Inject() (userService: UserService, events: EventService, templ
       case Some(identity) => {
         (request.body \ "keys").asOpt[String] match {
           case Some(keys) => {
-            val name = request.body.asOpt[String].getOrElse("")
+            val name = (request.body\"name").asOpt[String].getOrElse("")
             t = Template(author = identity, created = new Date(),name = name,keys = keys.split(",").toList )
 
             templateService.insert(t) match {
