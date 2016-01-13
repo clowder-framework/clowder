@@ -77,17 +77,17 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
     CurationDAO.find(MongoDBObject("datasets" -> MongoDBObject("$elemMatch" -> MongoDBObject("_id" -> new ObjectId(datasetId.stringify))))).toList
   }
 
-  def getCurationFiles(cfs:List[UUID]): List[CurationFile] ={
-    (for (cf <- cfs) yield CurationFileDAO.findOneById(new ObjectId(cf.stringify))).flatten.toList
+  def getCurationFiles(curationFileIds:List[UUID]): List[CurationFile] ={
+    (for (cf <- curationFileIds) yield CurationFileDAO.findOneById(new ObjectId(cf.stringify))).flatten.toList
   }
 
   def getCurationByCurationFile(curationFile: UUID): Option[CurationObject] = {
     CurationDAO.findOne(MongoDBObject("files" ->  new ObjectId(curationFile.stringify)))
   }
 
-  def deleteCurationFiles(c: UUID, cf: UUID) = {
-    CurationFileDAO.remove(MongoDBObject("_id" ->new ObjectId(cf.stringify)))
-    CurationDAO.update(MongoDBObject("_id" ->new ObjectId(c.stringify)), $pull("files" -> new ObjectId(cf.stringify)), false, false, WriteConcern.Safe)
+  def deleteCurationFiles(curationId: UUID, curationFileId: UUID) = {
+    CurationFileDAO.remove(MongoDBObject("_id" ->new ObjectId(curationFileId.stringify)))
+    CurationDAO.update(MongoDBObject("_id" ->new ObjectId(curationId.stringify)), $pull("files" -> new ObjectId(curationFileId.stringify)), false, false, WriteConcern.Safe)
   }
 
   def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID) = {
