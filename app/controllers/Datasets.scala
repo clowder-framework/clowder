@@ -69,7 +69,7 @@ class Datasets @Inject()(
       case None => None
     }
 
-    val collectionId = collection match {
+    val collectionSelected = collection match {
       case Some(c) => {
         collections.get(UUID(c)) match {
           case Some(collection) =>  Some(collection)
@@ -80,7 +80,7 @@ class Datasets @Inject()(
     }
 
     Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionId))
+      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected))
 
   }
 

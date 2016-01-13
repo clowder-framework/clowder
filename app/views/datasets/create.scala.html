@@ -1,4 +1,4 @@
-@(spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection])(implicit user: Option[models.User])
 
 @main("Create Dataset") {
     <!-- Custom items for the create dataset workflow -->
@@ -134,7 +134,7 @@
                 });
                 // In case we want choose multiple collections for dataset like spaces in this page, collection is stored in a list here
                 var collectionList = [];
-                if(@collection.isDefined) {
+                @if(collection.isDefined) {
                     collectionList[0] = '@collection.get.id';
                 }
                 var error = false;
