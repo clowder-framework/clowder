@@ -8,52 +8,53 @@
 
 
 @main(Messages("securesocial.login.title")) {
-    <div class="page-header">
-        <h1>@Messages("securesocial.login.title")</h1>
-    </div>
-
-    @errorMsg.map { msg =>
-        <div class="alert alert-danger">
-            @Messages(msg)
+    <div style="background: #F8F8F8;color:#888;text-shadow: 1px 1px 1px #FFF;border:1px solid #DDD;border-radius: 5px;-webkit-border-radius: 5px;-moz-border-radius: 5px;" class="col-md-4 col-md-offset-4">
+        <div class="page-header">
+            <h1>@Messages("securesocial.login.title")</h1>
         </div>
-    }
 
-    @request.flash.get("success").map { msg =>
-        <div class="alert alert-info">
-            @msg
-        </div>
-    }
+        @errorMsg.map { msg =>
+            <div class="alert alert-danger">
+                @Messages(msg)
+            </div>
+        }
 
-    @request.flash.get("error").map { msg =>
-        <div class="alert alert-danger">
-            @msg
-        </div>
-    }
+        @request.flash.get("success").map { msg =>
+            <div class="alert alert-info">
+                @msg
+            </div>
+        }
 
+        @request.flash.get("error").map { msg =>
+            <div class="alert alert-danger">
+                @msg
+            </div>
+        }
 
-@defining( Registry.providers.all.values.filter( _.id != UsernamePassword) ) { externalProviders =>
+        @defining( Registry.providers.all.values.filter( _.id != UsernamePassword) ) { externalProviders =>
 
-        @if( externalProviders.size > 0 ) {
-            <div class="clearfix">
-                <p>@Messages("securesocial.login.instructions")</p>
-                <p>
-                    @for(p <- externalProviders) {
-                        @provider(p.id)
+            @if( externalProviders.size > 0 ) {
+                <div class="clearfix">
+                    <p>@Messages("securesocial.login.instructions")</p>
+                    <p>
+                        @for(p <- externalProviders) {
+                            @provider(p.id)
+                        }
+                    </p>
+                </div>
+            }
+
+            @Registry.providers.get(UsernamePassword).map { up =>
+                <div class="clearfix">
+                    @if( externalProviders.size > 0 ) {
+                        <p>@Messages("securesocial.login.useEmailAndPassword")</p>
+                    } else {
+                        <p>@Messages("securesocial.login.useEmailAndPasswordOnly")</p>
                     }
-                </p>
-            </div>
-        }
 
-        @Registry.providers.get(UsernamePassword).map { up =>
-            <div class="clearfix">
-                @if( externalProviders.size > 0 ) {
-                    <p>@Messages("securesocial.login.useEmailAndPassword")</p>
-                } else {
-                    <p>@Messages("securesocial.login.useEmailAndPasswordOnly")</p>
-                }
-
-               @provider("userpass", Some(loginForm))
-            </div>
+                   @provider("userpass", Some(loginForm))
+                </div>
+            }
         }
-    }
+    </div>
 }

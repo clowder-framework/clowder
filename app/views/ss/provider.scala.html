@@ -52,11 +52,12 @@
                             <button type="submit" class="btn btn-primary btn-margins"><span class="glyphicon glyphicon-log-in"></span> @Messages("securesocial.login.title")</button>
                         </div>
                         <div class="clearfix">
-                            <a href="@securesocial.core.providers.utils.RoutesHelper.startResetPassword()"><p>@Messages("securesocial.login.forgotPassword") </a></p>
+                            <a href="@securesocial.core.providers.utils.RoutesHelper.startResetPassword()"><h5>@Messages("Forgot password?") </a></h5>
                         </div>
-                            <div class="clearfix">
-                                <p>@Messages("securesocial.login.signUp") <a href="@securesocial.core.providers.utils.RoutesHelper.startSignUp()">@Messages("securesocial.login.here")</a></p>
-                            </div>
+                        <hr>
+                        <div class="clearfix">
+                            <h5>@Messages("Don't have an account?")&nbsp;&nbsp;<a href="@securesocial.core.providers.utils.RoutesHelper.startSignUp()">@Messages("Sign up »")</a></h5>
+                        </div>
                     </fieldset>
                 </form>
             }
