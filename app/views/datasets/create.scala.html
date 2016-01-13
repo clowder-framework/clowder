@@ -1,4 +1,4 @@
-@(spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection])(implicit user: Option[models.User])
+@(spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @main("Create Dataset") {
     <!-- Custom items for the create dataset workflow -->
