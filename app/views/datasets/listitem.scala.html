@@ -23,7 +23,7 @@
                                 <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(dataset.id)) comments"></span> @(comments.get(dataset.id))
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                                    @if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
+                                    @if(user.get.identityId.userId.equals(dataset.author.identityId.userId) || Permission.checkPermission(Permission.DeleteDataset, ResourceRef(ResourceRef.dataset, dataset.id))){
                                         <button onclick="removeDatasetAndRedirect('@(dataset.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     } else {

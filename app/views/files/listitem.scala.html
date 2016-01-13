@@ -19,7 +19,7 @@
                                 <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(file.id)) comments"></span> @(comments.get(file.id))
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                                    @if(user.get.identityId.userId.equals(file.author.identityId.userId)){
+                                    @if(user.get.identityId.userId.equals(file.author.identityId.userId) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
                                         <button onclick="removeFileAndRedirect('@(file.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Delete">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     } else {

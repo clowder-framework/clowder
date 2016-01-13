@@ -1,5 +1,6 @@
 @(collection: models.Collection, redirect: Call, classes: String, showFollow: Boolean)(implicit user: Option[models.User])
 @import _root_.util.Formatters.ellipsize
+@import api.Permission
 <div class="post-box @classes" id="@collection.id-tile">
     <div class="panel panel-default">
         <div class="pull-right">
@@ -22,7 +23,7 @@
                 <span class="glyphicon glyphicon glyphicon-file" title="@collection.datasetCount datasets"></span> @collection.datasetCount
                 @if(user.isDefined) {
                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                    @if( user.get.identityId.userId.equals(collection.author.identityId.userId)){
+                    @if( user.get.identityId.userId.equals(collection.author.identityId.userId) || Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
                         <button onclick="removeCollectionAndRedirect('@(collection.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
                             <span class="glyphicon glyphicon-trash"></span></button>
                     } else {
