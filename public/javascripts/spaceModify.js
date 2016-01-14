@@ -46,7 +46,6 @@ function addCollectionToSpace(id) {
 
 function removeCollectionFromSpace(spaceId, id, event){
 
-
     var request = jsRoutes.api.Spaces.removeCollection(spaceId, id).ajax({
         type: 'POST'
     });

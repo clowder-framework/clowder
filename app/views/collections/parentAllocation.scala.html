@@ -39,7 +39,7 @@
                             }
                         }
                         @if(resourceType == ResourceRef.collection) {
-                            @if(p.childCollectionsCount ==1){
+                            @if(p.childCollectionsCount.get ==1){
                                 1 collection
                             } else {
                                 @p.childCollectionsCount collections

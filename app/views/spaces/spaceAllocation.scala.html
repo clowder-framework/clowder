@@ -41,11 +41,14 @@
                             }
                         }
                         @if(resourceType == ResourceRef.collection) {
+
                             @if(s.collectionCount ==1){
                                 1 collection
                             } else {
                                 @s.collectionCount collections
+
                             }
+
                             @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
                                 | <a href="#" class="btn btn-link btn-xs" onclick="removeCollectionFromSpace('@(s.id)', '@resourceId', event)" title="Remove from space">
                                     <span class="glyphicon glyphicon-remove"></span>  Remove</a>
@@ -118,5 +121,28 @@
             }
         }
     });
+
+</script>
+<script language = "javascript">
+
+    function getCollection(id) {
+        var request = jsRoutes.api.Collections.getCollection(id).ajax({
+            type: 'GET'
+        });
+
+        request.done(function (response, textStatus, jqXHR) {
+            var o =$.parseJSON(jqXHR.responseText);
+            return o
+        });
+
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occured: " + textStatus, errorThrown);
+            var errMsg = "Error message.";
+            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                notify("Error : " + errorThrown, "error");
+            }
+        });
+        return false;
+    }
 
 </script>

@@ -323,9 +323,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
       var colRootFlag = request.body.asFormUrlEncoded.getOrElse("rootflag",List.empty)
 
-      var rootFlag = false
-      if (colRootFlag(0) == "true")
-        rootFlag = true
+      var rootFlag = true
+      if (colRootFlag(0) == "false")
+        rootFlag = false
 
 
 

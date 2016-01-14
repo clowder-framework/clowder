@@ -416,7 +416,6 @@ GET            /api/collections/getRootCollections                              
 GET            /api/collections/getTopLevelCollections                                  @api.Collections.getTopLevelCollections
 GET            /api/collections/getAllCollections                                       @api.Collections.getAllCollections()
 
-
 # deprecrated
 GET            /api/collections/list                                                    @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 POST           /api/collections/:id/follow                                              @api.Collections.follow(id: UUID, name: String)
