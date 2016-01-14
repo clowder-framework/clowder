@@ -92,7 +92,7 @@
 							}
 							@if(childCollections.size == 0){
 								@if(user.isDefined && Permission.checkPermission(Permission.EditCollection,ResourceRef(ResourceRef.collection, collection.id))){
-									<a id="create-collection"href="@routes.Collections.newCollectionWithParent(Some(collection.id.stringify))" class="btn btn-primary btn-xs">
+									<a id="create-collection"href="@routes.Collections.newCollectionWithParent(Some(collection.id.stringify))" class="btn btn-link btn-xs">
 										<span class="glyphicon glyphicon-ok"></span> Create Collection
 									</a>
 								}
@@ -228,9 +228,7 @@
 		</div>
 	<!-- right column -->
 	<div class="col-md-4">
-		@if(collection.root_flag == true){
-			@spaces.spaceAllocation(collection.id, ResourceRef.collection, collectionSpaces.getOrElse(List.empty))
-		}
+		@spaces.spaceAllocation(collection.id, ResourceRef.collection, collectionSpaces.getOrElse(List.empty))
 		@if(collection.root_flag == false){
 			@collections.parentAllocation(collection,collection.id, ResourceRef.collection, parentCollections.getOrElse(List.empty))
 		}

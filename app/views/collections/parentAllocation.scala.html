@@ -29,6 +29,7 @@
                                 @p.datasetCount datasets
                             }
 
+
                             @if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, p.id))) {
                                 | <a href="#" class="btn btn-link btn-xs" onclick="removeChildFromParent( '@(currentCollection.id)', '@(p.id)', event)" title="Remove from parent">
                                     <span class="glyphicon glyphicon-remove"></span>Remove</a>
@@ -43,6 +44,7 @@
                             } else {
                                 @p.childCollectionsCount collections
                             }
+                            @**
                             @if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, p.id))) {
                                 | <a href="#" class="btn btn-link btn-xs" onclick="removeChildFromParent( '@(currentCollection.id)', '@(p.id)', event)" title="Remove from parent">
                                     <span class="glyphicon glyphicon-remove"></span>  Remove</a>
@@ -50,6 +52,7 @@
                                 | <a href="#" class="btn btn-link btn-xs disabled" title="Remove child collection from collection">
                                     <span class="glyphicon glyphicon-remove"></span> Remove</a>
                             }
+                            **@
                         }
                     </div>
                 </div>

@@ -11,6 +11,11 @@ function addCollectionToParentCollection(id) {
     var selectedName = $("#collectionAddSelect option:selected").text();
     selectedName = selectedName.replace(/\n/g, "<br>");
 
+    if (id == selectedId){
+        notify("A collection can not be added to itself!")
+        return false;
+    }
+
     var request = jsRoutes.api.Collections.attachSubCollection(selectedId, id).ajax({
         type: 'POST'
     });
