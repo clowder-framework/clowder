@@ -3,11 +3,11 @@
 <html>
     <body>
 
-        <p>Hello, @newmember</p>
+        <p>Hello @newmember,</p>
 
-        <p>You have been added to space <a href="@routes.Spaces.getSpace(UUID(spaceid)).absoluteURL(IdentityProvider.sslEnabled)">@spaceName</a>
-            with role: @role by <a href="@routes.Profile.viewProfile(inviter.email).absoluteURL(IdentityProvider.sslEnabled)">@inviter.fullName</a>
-            on <a href="@routes.Application.index().absoluteURL(IdentityProvider.sslEnabled)">@services.AppConfiguration.getDisplayName</a>.
+        <p>You have been added by <a href="@routes.Profile.viewProfile(inviter.email).absoluteURL(IdentityProvider.sslEnabled)">@inviter.fullName</a>
+            to space <a href="@routes.Spaces.getSpace(UUID(spaceid)).absoluteURL(IdentityProvider.sslEnabled)">@spaceName</a>
+            on <a href="@routes.Application.index().absoluteURL(IdentityProvider.sslEnabled)">@services.AppConfiguration.getDisplayName</a> as @role.
         </p>
     </body>
 </html>
