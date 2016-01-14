@@ -50,7 +50,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "Creation Date" -> Json.toJson(format.format(file.uploadDate)),
               "Label" -> Json.toJson(file.filename),
               "Title" -> Json.toJson(file.filename),
-              "Uploaded By" -> Json.toJson(userService.findByIdentity(file.author).map ( usr => Json.toJson(file.author.fullName + ": " + controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)))),
+              "Uploaded By" -> Json.toJson(userService.findByIdentity(file.author).map ( usr => Json.toJson(file.author.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https)))),
               "size" -> Json.toJson(file.length),
               "Publication Date" -> Json.toJson(""),
               "External Identifier" -> Json.toJson(""),
@@ -76,7 +76,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "comment_body" -> Json.toJson(comm.text),
               "comment_date" -> Json.toJson(format.format(comm.posted)),
               "Identifier" -> Json.toJson("urn:uuid:"+comm.id),
-              "comment_author" -> Json.toJson(userService.findByIdentity(comm.author).map ( usr => Json.toJson(usr.fullName + ": " + controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https))))
+              "comment_author" -> Json.toJson(userService.findByIdentity(comm.author).map ( usr => Json.toJson(usr.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https))))
             ))
           }
           var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
@@ -106,7 +106,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     "Contact" -> Json.toJson("http://sead-data.net/terms/contact"),
                     "name" -> Json.toJson("http://sead-data.net/terms/name"),
                     "email" -> Json.toJson("http://sead-data.net/terms/email"),
-                    "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
                     "Publication Date" -> Json.toJson("http://purl.org/dc/terms/issued"),
                     "Spatial Reference" ->
                       Json.toJson(
@@ -128,13 +127,12 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     "Bibliographic citation" -> Json.toJson("http://purl.org/dc/terms/bibliographicCitation"),
                     "Published In" -> Json.toJson("http://purl.org/dc/terms/isPartOf"),
                     "Publisher" -> Json.toJson("http://purl.org/dc/terms/publisher"),
-                    "External Identifier" -> Json.toJson("http://purl.org/dc/terms/identifier"),
-                    "describes" -> Json.toJson("https://w3id.org/ore/context"),
+                    "External Identifier" -> Json.toJson("http://purl.org/dc/elements/1.1/identifier"),
                     "references" -> Json.toJson("http://purl.org/dc/terms/references"),
                     "Is Version Of" -> Json.toJson("http://purl.org/dc/terms/isVersionOf"),
                     "Has Part" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
-                    "similarTo" -> Json.toJson("https://w3id.org/ore/context"),
-                    "aggregates" -> Json.toJson("http://www.openarchives.org/ore/terms/aggregates")
+                    "similarTo" -> Json.toJson("http://www.openarchives.org/ore/terms/similarTo"),
+                    "size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length")
                   )
                 )
 
@@ -146,8 +144,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "Creation Date" -> Json.toJson(format.format(c.created)),
                   "Label" -> Json.toJson(c.name),
                   "Title" -> Json.toJson(c.name),
-                  "Uploaded By" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)))),
-                  "Creator" -> Json.toJson(userService.findByIdentity(c.author).map(usr => JsArray(Seq(Json.toJson(usr.fullName + ": " + controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)), Json.toJson(usr.profile.map(prof => prof.orcidID.map(oid=> oid))))))),
+                  "Uploaded By" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + api.routes.Users.findById(usr.id).absoluteURL(https)))),
                   "Comment" -> Json.toJson(JsArray(commentsJson)),
                   "Publication Date" -> Json.toJson(format.format(c.created)),
                   "Published In" -> Json.toJson(""),
@@ -165,7 +162,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
 
                 )),
               "Creation Date" -> Json.toJson(format.format(c.created)),
-              "Creator" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)))),
+              "Uploaded By" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https)))),
               "@type" -> Json.toJson("ResourceMap"),
               "@id" -> Json.toJson(api.routes.CurationObjects.getCurationObjectOre(curationId).absoluteURL(https))
             )

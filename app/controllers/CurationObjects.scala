@@ -375,9 +375,9 @@ class CurationObjects @Inject()(
           val creator = Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile match {
             case Some(prof) => prof.orcidID match {
               case Some(oid) => oid
-              case None => controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)
+              case None =>  api.routes.Users.findById(usr.id).absoluteURL(https)
             }
-            case None => controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)
+            case None =>  api.routes.Users.findById(usr.id).absoluteURL(https)
 
           }))
           var metadataToAdd = metadataJson.toMap
