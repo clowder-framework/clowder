@@ -118,6 +118,7 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.space, id) => spaces.get(id).exists(_.creator == user.id)
       case ResourceRef(ResourceRef.comment, id) => comments.get(id).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
       case ResourceRef(ResourceRef.curationObject, id) => curations.get(id).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
+      case ResourceRef(ResourceRef.curationFile, id) => curations.getCurationFiles(List(id)).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
       case ResourceRef(ResourceRef.metadata, id) => metadatas.getMetadataById(id).exists(_.creator.id == user.id)
       case ResourceRef(_, _) => false
     }
