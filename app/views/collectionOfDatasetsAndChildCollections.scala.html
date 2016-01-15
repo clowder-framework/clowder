@@ -228,10 +228,8 @@
 		</div>
 	<!-- right column -->
 	<div class="col-md-4">
-		@if(collection.root_flag == true ) {
-			@spaces.spaceAllocation(collection.id, ResourceRef.collection, collectionSpaces.getOrElse(List.empty))
-		}
 
+		@spaces.spaceAllocation_forParentCollection(collection.id, ResourceRef.collection, collectionSpaces.getOrElse(List.empty),collection)
 		@collections.parentAllocation(collection,collection.id, ResourceRef.collection, parentCollections.getOrElse(List.empty))
 		<br />
 		@if(user.isDefined && collectionSpaces.isDefined && !collectionSpaces.get.isEmpty){
