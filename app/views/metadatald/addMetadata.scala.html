@@ -1,4 +1,4 @@
-@(resType: String, id: String)(implicit user: Option[models.User])
+@(resType: String, id: String, contentDiv: String)(implicit user: Option[models.User])
 @import api.Permission
 @*The permission for curationObject and CurationFile is check outside this file*@
 @if(resType == "dataset" && Permission.checkPermission(Permission.AddMetadata, ResourceRef(ResourceRef.dataset, UUID(id)))
@@ -144,8 +144,10 @@ line-height: 1.5;
                 });
 
                 request.done(function (response, textStatus, jqXHR) {
-                    // TODO update gui without reloading page
-                    location.reload();
+                    if($('#'+'@contentDiv'+' .panel').length == 0) {
+                        $('#' + "@contentDiv").empty();
+                    }
+                    $('#'+"@contentDiv").prepend(response);
                 });
 
                 request.fail(function (jqXHR, textStatus, errorThrown){

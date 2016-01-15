@@ -246,6 +246,8 @@ POST           /admin/roles/update                                              
 GET            /admin/extractions                                                       @controllers.Extractors.listAllExtractions
 POST           /admin/theme                                                             @controllers.Admin.setTheme
 GET            /admin/dataDumps                                                         @controllers.Admin.viewDumpers
+GET            /admin/sensors                                                           @controllers.Admin.sensors
+POST           /api/sensors/config                                                      api.Admin.sensorsConfig
 
 # ----------------------------------------------------------------------
 # JAVASCRIPT ENDPOINTS

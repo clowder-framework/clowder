@@ -66,23 +66,28 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       notes = "",
       responseClass = "None", httpMethod = "POST")
   def attachDataset(collectionId: UUID, datasetId: UUID) = PermissionAction(Permission.AddResourceToCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
-    collections.addDataset(collectionId, datasetId) match {
-      case Success(_) => {
-        var datasetsInCollection = 0
-        collections.get(collectionId) match {
-        case Some(collection) => {
-          datasets.get(datasetId) match {
-            case Some(dataset) => {
-              events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "attach_dataset_collection") 
+    // TODO this needs to be cleaned up when do permissions for adding to a resource
+    if (!Permission.checkOwner(request.user, ResourceRef(ResourceRef.dataset, datasetId))) {
+      Forbidden(toJson(s"You are not the owner of the dataset"))
+    } else {
+      collections.addDataset(collectionId, datasetId) match {
+        case Success(_) => {
+          var datasetsInCollection = 0
+          collections.get(collectionId) match {
+            case Some(collection) => {
+              datasets.get(datasetId) match {
+                case Some(dataset) => {
+                  events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "attach_dataset_collection")
+                }
+              }
+              datasetsInCollection = collection.datasetCount
             }
           }
-          datasetsInCollection = collection.datasetCount
+          //datasetsInCollection is the number of datasets in this collection
+          Ok(Json.obj("datasetsInCollection" -> Json.toJson(datasetsInCollection) ))
         }
+        case Failure(t) => InternalServerError
       }
-      //datasetsInCollection is the number of datasets in this collection
-      Ok(Json.obj("datasetsInCollection" -> Json.toJson(datasetsInCollection) ))
-    }
-      case Failure(t) => InternalServerError
     }
   }
 
@@ -154,32 +159,47 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     notes = "This will check for Permission.ViewCollection",
     responseClass = "None", multiValueResponse=true, httpMethod = "GET")
   def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)))
+    Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.ViewCollection), false, request.user, request.superAdmin)))
   }
 
   @ApiOperation(value = "List all collections the user can edit",
     notes = "This will check for Permission.AddResourceToCollection and Permission.EditCollection",
     responseClass = "None", httpMethod = "GET")
   def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), request.user, request.superAdmin)))
+    Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.superAdmin)))
   }
 
   /**
    * Returns list of collections based on parameters and permissions.
+   * TODO this needs to be cleaned up when do permissions for adding to a resource
    */
-  private def lisCollections(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Collection] = {
+  private def lisCollections(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], mine: Boolean, user: Option[User], superAdmin: Boolean) : List[Collection] = {
+    if (mine && user.isEmpty) return List.empty[Collection]
+
     (title, date) match {
       case (Some(t), Some(d)) => {
-        collections.listAccess(d, true, limit, t, permission, user, superAdmin)
+        if (mine)
+          collections.listUser(d, true, limit, t, user, superAdmin, user.get)
+        else
+          collections.listAccess(d, true, limit, t, permission, user, superAdmin)
       }
       case (Some(t), None) => {
-        collections.listAccess(limit, t, permission, user, superAdmin)
+        if (mine)
+          collections.listUser(limit, t, user, superAdmin, user.get)
+        else
+          collections.listAccess(limit, t, permission, user, superAdmin)
       }
       case (None, Some(d)) => {
-        collections.listAccess(d, true, limit, permission, user, superAdmin)
+        if (mine)
+          collections.listUser(d, true, limit, user, superAdmin, user.get)
+        else
+          collections.listAccess(d, true, limit, permission, user, superAdmin)
       }
       case (None, None) => {
-        collections.listAccess(limit, permission, user, superAdmin)
+        if (mine)
+          collections.listUser(limit, user, superAdmin, user.get)
+        else
+          collections.listAccess(limit, permission, user, superAdmin)
       }
     }
   }

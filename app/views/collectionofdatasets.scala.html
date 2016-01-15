@@ -296,6 +296,7 @@
 			$('#edit-description').css("display", "");
 			$('#edit-description').removeClass("inline");
 			$('#collection_desc').css("display", "inline");
+			$('#collection_desc').mouseleave();
 		});
 
 		request.fail(function(jqXHR, textStatus, errorThrown) {
@@ -313,6 +314,7 @@
 		$('#edit-description').css("display", "");
 		$('#edit-description').removeClass("inline");
 		$('#collection_desc').css("display", "inline");
+		$('#collection_desc').mouseleave();
 	}
 
 	$(document).ready(function(){

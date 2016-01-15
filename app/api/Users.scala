@@ -174,13 +174,25 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
       }
 
     }
-    Json.obj("id" -> user.id.stringify,
-      "firstName" -> user.firstName,
-      "lastName" -> user.lastName,
-      "fullName" -> user.fullName,
-      "email" -> user.email,
-      "avatar" -> user.getAvatarUrl(),
-      "profile" -> Json.toJson(profile)
-     )
+    Json.obj(
+
+      "@context" -> Json.toJson(
+        Map(
+        "firstName" -> Json.toJson("http://schema.org/Person/givenName"),
+        "lastName" -> Json.toJson("http://schema.org/Person/familyName"),
+        "email" -> Json.toJson("http://schema.org/Person/email"),
+        "affiliation" -> Json.toJson("http://schema.org/Person/affiliation")
+        )
+      ),
+        "id" -> user.id.stringify,
+        "firstName" -> user.firstName,
+        "lastName" -> user.lastName,
+        "fullName" -> user.fullName,
+        "email" -> user.email,
+        "avatar" -> user.getAvatarUrl(),
+        "profile" -> Json.toJson(profile)
+    )
+
+
   }
 }
