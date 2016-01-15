@@ -236,6 +236,7 @@ class CurationObjects @Inject()(
     for(md <- metadatas.getDefinitions()) {
       metadataDefsMap((md.json\ "label").asOpt[String].getOrElse("").toString()) = Json.toJson((md.json \ "uri").asOpt[String].getOrElse(""))
     }
+
     val creator = userService.findByIdentity(c.author).map ( usr => usr.profile match {
       case Some(prof) => prof.orcidID match {
         case Some(oid) => oid
@@ -252,13 +253,20 @@ class CurationObjects @Inject()(
       case None => api.routes.Users.findById(usr.id).absoluteURL(https)
 
     })
-    val aggregation = metadataJson.toMap ++ Map(
+
+    var aggregation = metadataJson.toMap ++ Map(
       "Identifier" -> Json.toJson(controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(https)),
       "@id" -> Json.toJson(hostUrl),
       "Title" -> Json.toJson(c.name),
-      "Creator" -> Json.toJson(creator),
+      "Uploaded By" -> Json.toJson(creator),
       "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https))
       )
+    if(!metadataJson.contains("Creator")) {
+      aggregation = aggregation ++ Map("Creator" -> Json.toJson(creator))
+    }
+    if(!metadataDefsMap.contains("Creator")){
+      metadataDefsMap("Creator") = Json.toJson("http://purl.org/dc/terms/creator")
+    }
     val valuetoSend = Json.obj(
       "@context" -> Json.toJson(Seq(
         Json.toJson("https://w3id.org/ore/context"),
@@ -268,7 +276,7 @@ class CurationObjects @Inject()(
           "Aggregation" -> Json.toJson("http://sead-data.net/terms/aggregation"),
           "Title" -> Json.toJson("http://purl.org/dc/elements/1.1/title"),
           "similarTo" -> Json.toJson("http://sead-data.net/terms/similarTo"),
-          "Creator" -> Json.toJson(": http://purl.org/dc/elements/1.1/creator"),
+          "Uploaded By" -> Json.toJson("http://purl.org/dc/elements/1.1/creator"),
           "Preferences" -> Json.toJson("http://sead-data.net/terms/publicationpreferences"),
           "Aggregation Statistics" -> Json.toJson("http://sead-data.net/terms/publicationstatistics"),
           "Data Mimetypes" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
@@ -387,6 +395,24 @@ class CurationObjects @Inject()(
           if(metadataJson.toMap.get("Abstract") == None) {
             metadataToAdd = metadataJson.toMap.+("Abstract" -> Json.toJson(c.description))
           }
+          val metadataDefsMap = scala.collection.mutable.Map.empty[String, JsValue]
+          for(md <- metadatas.getDefinitions()) {
+            metadataDefsMap((md.json\ "label").asOpt[String].getOrElse("").toString()) = Json.toJson((md.json \ "uri").asOpt[String].getOrElse(""))
+          }
+          var aggregation = metadataToAdd ++
+            Map(
+              "Identifier" -> Json.toJson("urn:uuid:"+curationId),
+              "@id" -> Json.toJson(hostUrl),
+              "@type" -> Json.toJson("Aggregation"),
+              "Title" -> Json.toJson(c.name),
+              "Uploaded By" -> Json.toJson(creator)
+            )
+          if(!metadataToAdd.contains("Creator")) {
+            aggregation = aggregation ++ Map("Creator" -> Json.toJson(creator))
+          }
+          if(!metadataDefsMap.contains("Creator")){
+            metadataDefsMap("Creator") = Json.toJson("http://purl.org/dc/terms/creator")
+          }
           val rightsholder = user.map ( usr => usr.profile match {
             case Some(prof) => prof.orcidID match {
               case Some(oid) => oid
@@ -399,7 +425,7 @@ class CurationObjects @Inject()(
             Map(
               "@context" -> Json.toJson(Seq(
                 Json.toJson("https://w3id.org/ore/context"),
-                Json.toJson(
+                Json.toJson(metadataDefsMap.toMap ++
                   Map(
                     "Identifier" -> Json.toJson("http://purl.org/dc/elements/1.1/identifier"),
                     "Aggregation Statistics" -> Json.toJson("http://sead-data.net/terms/publicationstatistics"),
@@ -409,7 +435,7 @@ class CurationObjects @Inject()(
                     "Max Collection Depth" -> Json.toJson("http://sead-data.net/terms/maxcollectiondepth"),
                     "Total Size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length"),
                     "Max Dataset Size" -> Json.toJson("http://sead-data.net/terms/maxdatasetsize"),
-                    "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
+                    "Uploaded By" -> Json.toJson("http://purl.org/dc/elements/1.1/creator"),
                     "Repository" -> Json.toJson("http://sead-data.net/terms/requestedrepository"),
                     "Aggregation" -> Json.toJson("http://sead-data.net/terms/aggregation"),
                     "Title" -> Json.toJson("http://purl.org/dc/elements/1.1/title"),
@@ -431,15 +457,7 @@ class CurationObjects @Inject()(
                 "Preferences" -> Json.toJson(
                   userPreferences
                 ),
-                "Aggregation" -> Json.toJson( metadataToAdd ++
-                  Map(
-                    "Identifier" -> Json.toJson("urn:uuid:"+curationId),
-                    "@id" -> Json.toJson(hostUrl),
-                    "@type" -> Json.toJson("Aggregation"),
-                    "Title" -> Json.toJson(c.name),
-                    "Creator" -> Json.toJson(creator)
-                  )
-                ),
+                "Aggregation" -> Json.toJson(aggregation),
                 "Aggregation Statistics" -> Json.toJson(
                   Map(
                     "Max Collection Depth" -> Json.toJson("0"),
