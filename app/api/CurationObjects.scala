@@ -88,9 +88,18 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "comment_author" -> Json.toJson(userService.findByIdentity(comm.author).map ( usr => Json.toJson(usr.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https))))
             ))
           }
-          var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
+          var metadataList = scala.collection.mutable.ListBuffer.empty[MetadataPair]
+          var metadataKeys = Set.empty[String]
           metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).filter(_.creator.typeOfAgent == "cat:user").map {
-            item => metadataJson = metadataJson ++ curationObjectController.buildMetadataMap(item.content)
+            item =>
+              for((key, value) <- curationObjectController.buildMetadataMap(item.content)) {
+                metadataList += MetadataPair(key, value)
+                metadataKeys += key
+              }
+          }
+          var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
+          for(key <- metadataKeys) {
+            metadataJson = metadataJson ++ Map(key -> Json.toJson(metadataList.filter(_.label == key).map{item => item.content}toList))
           }
           val metadataDefsMap = scala.collection.mutable.Map.empty[String, JsValue]
           for(md <- metadatas.getDefinitions()) {

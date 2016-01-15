@@ -228,9 +228,18 @@ class CurationObjects @Inject()(
     val files = curations.getCurationFiles(c.files)
     val maxDataset = if (!c.files.isEmpty)  files.map(_.length).max else 0
     val totalSize = if (!c.files.isEmpty) files.map(_.length).sum else 0
-    var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
+    var metadataList = scala.collection.mutable.ListBuffer.empty[MetadataPair]
+    var metadataKeys = Set.empty[String]
     metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).filter(_.creator.typeOfAgent == "cat:user").map {
-      item => metadataJson = metadataJson ++ buildMetadataMap(item.content)
+      item =>
+        for((key, value) <- buildMetadataMap(item.content)) {
+          metadataList += MetadataPair(key, value)
+          metadataKeys += key
+        }
+    }
+    var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
+    for(key <- metadataKeys) {
+      metadataJson = metadataJson ++ Map(key -> Json.toJson(metadataList.filter(_.label == key).map{item => item.content}toList))
     }
     val metadataDefsMap = scala.collection.mutable.Map.empty[String, JsValue]
     for(md <- metadatas.getDefinitions()) {
@@ -379,9 +388,18 @@ class CurationObjects @Inject()(
           val files = curations.getCurationFiles(c.files)
           val maxDataset = if (!c.files.isEmpty)  files.map(_.length).max else 0
           val totalSize = if (!c.files.isEmpty) files.map(_.length).sum else 0
-          var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
+          var metadataList = scala.collection.mutable.ListBuffer.empty[MetadataPair]
+          var metadataKeys = Set.empty[String]
           metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).filter(_.creator.typeOfAgent == "cat:user").map {
-            item => metadataJson = metadataJson ++ buildMetadataMap(item.content)
+            item =>
+              for((key, value) <- buildMetadataMap(item.content)) {
+                metadataList += MetadataPair(key, value)
+                metadataKeys += key
+              }
+          }
+          var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
+          for(key <- metadataKeys) {
+            metadataJson = metadataJson ++ Map(key -> Json.toJson(metadataList.filter(_.label == key).map{item => item.content}toList))
           }
           val creator = Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile match {
             case Some(prof) => prof.orcidID match {
