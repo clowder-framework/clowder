@@ -253,7 +253,7 @@ class CurationObjects @Inject()(
       "Identifier" -> Json.toJson(controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(https)),
       "@id" -> Json.toJson(hostUrl),
       "Title" -> Json.toJson(c.name),
-      "Uploaded By" -> Json.toJson(creator),
+      "Creator" -> Json.toJson(creator),
       "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https))
       )
     val valuetoSend = Json.obj(
@@ -265,7 +265,7 @@ class CurationObjects @Inject()(
           "Aggregation" -> Json.toJson("http://sead-data.net/terms/aggregation"),
           "Title" -> Json.toJson("http://purl.org/dc/elements/1.1/title"),
           "similarTo" -> Json.toJson("http://sead-data.net/terms/similarTo"),
-          "Uploaded By" -> Json.toJson(": http://purl.org/dc/elements/1.1/creator"),
+          "Creator" -> Json.toJson(": http://purl.org/dc/elements/1.1/creator"),
           "Preferences" -> Json.toJson("http://sead-data.net/terms/publicationpreferences"),
           "Aggregation Statistics" -> Json.toJson("http://sead-data.net/terms/publicationstatistics"),
           "Data Mimetypes" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
@@ -405,7 +405,7 @@ class CurationObjects @Inject()(
                     "Max Collection Depth" -> Json.toJson("http://sead-data.net/terms/maxcollectiondepth"),
                     "Total Size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length"),
                     "Max Dataset Size" -> Json.toJson("http://sead-data.net/terms/maxdatasetsize"),
-                    "Uploaded By" -> Json.toJson("http://purl.org/dc/terms/creator"),
+                    "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
                     "Repository" -> Json.toJson("http://sead-data.net/terms/requestedrepository"),
                     "Aggregation" -> Json.toJson("http://sead-data.net/terms/aggregation"),
                     "Title" -> Json.toJson("http://purl.org/dc/elements/1.1/title"),
@@ -432,7 +432,7 @@ class CurationObjects @Inject()(
                     "@id" -> Json.toJson(hostUrl),
                     "@type" -> Json.toJson("Aggregation"),
                     "Title" -> Json.toJson(c.name),
-                    "Uploaded By" -> Json.toJson(creator)
+                    "Creator" -> Json.toJson(creator)
                   )
                 ),
                 "Aggregation Statistics" -> Json.toJson(
