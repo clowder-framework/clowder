@@ -61,6 +61,10 @@ object Admin extends Controller with ApiController {
     (request.body \ "welcomeMessage").asOpt[String] match {
       case Some(welcomeMessage) => AppConfiguration.setWelcomeMessage(welcomeMessage)
     }
+    Ok(toJson(Map("status" -> "success")))
+  }
+
+  def sensorsConfig = ServerAdminAction(parse.json) { implicit request =>
     (request.body \ "sensors").asOpt[String] match {
       case Some(sensors) => AppConfiguration.setSensorsTitle(sensors)
     }

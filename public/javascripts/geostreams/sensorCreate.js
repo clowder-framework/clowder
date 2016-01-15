@@ -57,19 +57,46 @@ $(document).ready(function() {
     }
   });
 
-  var instrumentCounter = 0;
+  // set the link to sensor types dynamically - TODO store this in the sensor config
+  var sensorTypesUrl = "https://opensource.ncsa.illinois.edu/confluence/display/IMLCZO/Data+Types";
+  var sensorTypesUrlElement = $("#sensorTypesUrl");
+  sensorTypesUrlElement.attr('href', sensorTypesUrl);
+
+  // set the sensor types dynamically - TODO store this in the sensor config
+  var sensorTypes = {
+    1: "1 Instrument, 1 Measurement, No Depth, No Time-Series",
+    2: "1 Instrument, 1 Measurement, No Depth, Yes Time-Series",
+    3: "1 Instrument, Many Measurements, No Depth, No Time-Series",
+    4: "1 Instrument, Many Measurements, No Depth, Yes Time-Series",
+    5: "Many Instruments, 1 Measurement, Many Depths, Yes Time-Series",
+    6: "Many Instruments, Many Measurements, Many Depths, Yes Time-Series",
+    7: "1 Instrument, Many Measurements, One Depth, Yes Time-Series"
+  };
+
+  var sensorType = $("#sensorType");
+  sensorType.empty();
+  $.each(sensorTypes, function(key, value) {
+    sensorType.append($("<option></option>").attr("value", key).text(value));
+  });
+
+
+  var insertInstrumentForm = function(data) {
+    var instrumentTemplate = Handlebars.getTemplate("/assets/templates/sensors/stream-form");
+    $("#instruments").append(instrumentTemplate(data));
+  };
+
+
+  // set to a high number to prevent colliding with stream IDs TODO improve this
+  var instrumentCounter = 500000;
   var addInstrumentButton = $("#addInstrument");
   addInstrumentButton.on('click', instrumentCounter, function() {
     instrumentCounter++;
-    var instrumentTemplate = $("#newInstrumentTemplate").html();
-    var template = Handlebars.compile(instrumentTemplate);
-    var data = {instrumentNumber: instrumentCounter.toString()};
-    var result = template(data);
-    $("#instruments").append(result);
+    var data = {id: instrumentCounter.toString()};
+    insertInstrumentForm(data);
   });
-  // add the first sensor on page load and click it to open the accordion
+
+  // add the first sensor on page load
   addInstrumentButton.click();
-  $("#instrument-link-1").click();
 
   $("#instruments").on('click', '.removeInstrument', function() {
     console.log($(this).data('id'));
@@ -78,7 +105,8 @@ $(document).ready(function() {
   });
 
 
-  $("#sensorType").on('change', function() {
+  // TODO store this in the sensor config
+  sensorType.on('change', function() {
     var sensorType = $(this).val();
     var hasDepth = $("#hasDepth");
     var sensorTypeSensorCount = $("#sensorTypeSensorCount");
@@ -113,13 +141,14 @@ $(document).ready(function() {
   // enable tooltips
   $('[data-toggle="tooltip"]').tooltip();
 
-  var sensorsValid = true;
   $("#formSubmit").click(function(event) {
     event.preventDefault();
     if (!sensorForm.valid()) {
       return;
     }
-    $('.single-stream-tmpl').each(function() {
+    var sensorsValid = true;
+
+    $('.stream-tmpl').each(function() {
 
       $(this).validate({
         ignore: false,
@@ -150,6 +179,7 @@ $(document).ready(function() {
     data.geometry.coordinates[1] = +$("#sensorLocationLat").val();
     data.properties.type.id = $("#sensorDataSource").val().toLowerCase();
     data.properties.type.title = $("#sensorDataSource").val();
+    data.properties.type.sensorType = +$("#sensorType").val();
     data.properties.region = $("#sensorRegion").val();
 
     var sensorPOSTpromise = deferredPost(mediciSensorsURL, JSON.stringify(data));
@@ -160,7 +190,7 @@ $(document).ready(function() {
       var sensorGETpromise = deferredGet(mediciSensorsURL + '?geocode=' + data.geometry.coordinates[1] + ',' + data.geometry.coordinates[0] + ',0');
       $.when(sensorGETpromise).done(function(sensorData) {
         var sensorJSON = sensorData[0];
-        $(".single-stream-tmpl").each(function() {
+        $(".stream-tmpl").each(function() {
 
           var streamJSON = {};
           var streamData = $(this).find(':input').filter(function() {return $.trim(this.value).length > 0}).serializeJSON({
@@ -189,21 +219,4 @@ $(document).ready(function() {
 
 
   });
-
-  if (window.L) {
-    var map = L.map('map', {scrollWheelZoom: false}).setView([39, -90 ], 5);
-
-    L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
-
-    var marker = L.marker([39, -90], {draggable: true});
-    marker.addTo(map);
-    marker.on('dragend', function(event){
-      $('#sensorLocationLat').val(event.target._latlng.lat);
-      $('#sensorLocationLong').val(event.target._latlng.lng);
-    })
-  } else {
-    console.log('no L found');
-  }
 });
