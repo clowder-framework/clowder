@@ -127,11 +127,10 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     "Bibliographic citation" -> Json.toJson("http://purl.org/dc/terms/bibliographicCitation"),
                     "Published In" -> Json.toJson("http://purl.org/dc/terms/isPartOf"),
                     "Publisher" -> Json.toJson("http://purl.org/dc/terms/publisher"),
-                    "External Identifier" -> Json.toJson("http://purl.org/dc/elements/1.1/identifier"),
+                    "External Identifier" -> Json.toJson("http://purl.org/dc/terms/identifier"),
                     "references" -> Json.toJson("http://purl.org/dc/terms/references"),
                     "Is Version Of" -> Json.toJson("http://purl.org/dc/terms/isVersionOf"),
                     "Has Part" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
-                    "similarTo" -> Json.toJson("http://www.openarchives.org/ore/terms/similarTo"),
                     "size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length")
                   )
                 )
@@ -150,7 +149,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "Published In" -> Json.toJson(""),
                   "External Identifier" -> Json.toJson(""),
                   "Proposed for publication" -> Json.toJson("true"),
-                  "keyword" -> Json.toJson(
+                  "Keyword" -> Json.toJson(
                     Json.toJson(c.datasets(0).tags.map(_.name))
                   ),
                   "@id" -> Json.toJson(api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "#aggregation"),
@@ -218,9 +217,9 @@ class CurationObjects @Inject()(datasets: DatasetService,
       curations.get(curationId) match {
         case Some(c) => {
           var success = false
-          var endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
-          val httpDelete = new HttpDelete(endpoint + "/" + curationId.toString())
-          var client = new DefaultHttpClient
+          val endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
+          val httpDelete = new HttpDelete(endpoint + "/urn:uuid:" + curationId.toString())
+          val client = new DefaultHttpClient
           val response = client.execute(httpDelete)
           val responseStatus = response.getStatusLine().getStatusCode()
           if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304) {
