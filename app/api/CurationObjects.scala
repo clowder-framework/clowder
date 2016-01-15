@@ -46,7 +46,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
             }
             val tempMap =  Map(
               "Identifier" -> Json.toJson("urn:uuid:"+file.id),
-              "@id" -> Json.toJson(controllers.routes.Files.file(file.fileId).absoluteURL(https)),
+              "@id" -> Json.toJson("urn:uuid:"+file.id),
               "Creation Date" -> Json.toJson(format.format(file.uploadDate)),
               "Label" -> Json.toJson(file.filename),
               "Title" -> Json.toJson(file.filename),
@@ -105,7 +105,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     "Uploaded By" -> Json.toJson("http://purl.org/dc/elements/1.1/creator"),
                     "Contact" -> Json.toJson("http://sead-data.net/terms/contact"),
                     "name" -> Json.toJson("http://sead-data.net/terms/name"),
-                    "email" -> Json.toJson("http://sead-data.net/terms/email"),
+                    "email" -> Json.toJson("http://schema.org/Person/email"),
                     "Publication Date" -> Json.toJson("http://purl.org/dc/terms/issued"),
                     "Spatial Reference" ->
                       Json.toJson(

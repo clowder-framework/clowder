@@ -253,7 +253,7 @@ class CurationObjects @Inject()(
       "Identifier" -> Json.toJson(controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(https)),
       "@id" -> Json.toJson(hostUrl),
       "Title" -> Json.toJson(c.name),
-      "Creator" -> Json.toJson(creator),
+      "Uploaded By" -> Json.toJson(creator),
       "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https))
       )
     val valuetoSend = Json.obj(
@@ -265,7 +265,7 @@ class CurationObjects @Inject()(
           "Aggregation" -> Json.toJson("http://sead-data.net/terms/aggregation"),
           "Title" -> Json.toJson("http://purl.org/dc/elements/1.1/title"),
           "similarTo" -> Json.toJson("http://sead-data.net/terms/similarTo"),
-          "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
+          "Uploaded By" -> Json.toJson(": http://purl.org/dc/elements/1.1/creator"),
           "Preferences" -> Json.toJson("http://sead-data.net/terms/publicationpreferences"),
           "Aggregation Statistics" -> Json.toJson("http://sead-data.net/terms/publicationstatistics"),
           "Data Mimetypes" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
@@ -278,12 +278,11 @@ class CurationObjects @Inject()(
           "Access" -> Json.toJson("http://sead-data.net/terms/access"),
           "License" -> Json.toJson("http://purl.org/dc/terms/license"),
           "Cost" -> Json.toJson("http://sead-data.net/terms/cost"),
-          "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
           "Repository" -> Json.toJson("http://sead-data.net/terms/requestedrepository"),
           "Alternative title" -> Json.toJson("http://purl.org/dc/terms/alternative"),
           "Contact" -> Json.toJson("http://sead-data.net/terms/contact"),
-          "name" -> Json.toJson("http://purl.org/dc/terms/name"),
-          "email" -> Json.toJson("http://purl.org/dc/terms/email"),
+          "name" -> Json.toJson("http://sead-data.net/terms/name"),
+          "email" -> Json.toJson("http://schema.org/Person/email"),
           "Description" -> Json.toJson("http://purl.org/dc/elements/1.1/description"),
           "Audience" -> Json.toJson("http://purl.org/dc/terms/audience"),
           "Abstract" -> Json.toJson("http://purl.org/dc/terms/abstract"),
@@ -406,7 +405,7 @@ class CurationObjects @Inject()(
                     "Max Collection Depth" -> Json.toJson("http://sead-data.net/terms/maxcollectiondepth"),
                     "Total Size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length"),
                     "Max Dataset Size" -> Json.toJson("http://sead-data.net/terms/maxdatasetsize"),
-                    "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
+                    "Uploaded By" -> Json.toJson("http://purl.org/dc/terms/creator"),
                     "Repository" -> Json.toJson("http://sead-data.net/terms/requestedrepository"),
                     "Aggregation" -> Json.toJson("http://sead-data.net/terms/aggregation"),
                     "Title" -> Json.toJson("http://purl.org/dc/elements/1.1/title"),
@@ -433,7 +432,7 @@ class CurationObjects @Inject()(
                     "@id" -> Json.toJson(hostUrl),
                     "@type" -> Json.toJson("Aggregation"),
                     "Title" -> Json.toJson(c.name),
-                    "Creator" -> Json.toJson(creator)
+                    "Uploaded By" -> Json.toJson(creator)
                   )
                 ),
                 "Aggregation Statistics" -> Json.toJson(
