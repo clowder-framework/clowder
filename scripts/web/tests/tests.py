@@ -327,7 +327,12 @@ def extract(host, port, key, file, wait):
 	data["fileurl"] = file
 
 	if key:
-		file_id = requests.post('http://' + host + ':' + port + '/api/extractions/upload_url?key=' + key, headers={'Content-Type': 'application/json'}, data=json.dumps(data)).json()['id']
+                r = requests.post('http://' + host + ':' + str(port) + '/api/extractions/upload_url?key=' + key, headers={'Content-Type': 'application/json'}, data=json.dumps(data))
+		if r.status_code != 200:
+			print("ERROR: " + r.text)
+			return ""
+		else:
+			file_id = r.json()['id']
 	else:
 		file_id = requests.post('http://' + host + ':' + port + '/api/extractions/upload_url?key=' + key, auth=(username, password), headers={'Content-Type': 'application/json'}, data=json.dumps(data)).json()['id']
 
