@@ -396,10 +396,15 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   def attachSubCollection(collectionId: UUID, subCollectionId: UUID) = PermissionAction(Permission.AddResourceToCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     collections.addSubCollection(collectionId, subCollectionId) match {
       case Success(_) => {
+        //update spaces for subcollection
         collections.get(collectionId) match {
           case Some(collection) => {
             collections.get(subCollectionId) match {
               case Some(sub_collection) => {
+                var parentSpaces = collection.spaces
+                for (space <- parentSpaces){
+                  spaces.addCollection(sub_collection.id,space)
+                }
                 events.addSourceEvent(request.user, sub_collection.id, sub_collection.name, collection.id, collection.name, "add_sub_collection")
                 Ok(jsonCollection(collection))
               }
