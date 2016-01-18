@@ -41,7 +41,7 @@ trait MetadataService {
   /** Add vocabulary definitions, leaving it unchanged if the update argument is set to false, defaults to update **/
   def addDefinition(definition: MetadataDefinition, update: Boolean = true)
 
-  /** Delete vocabulary **/
+  /** Delete vocabulary definitions**/
   def deleteDefinition(id: UUID)
 
   /** Search for resources matching a particular query **/
