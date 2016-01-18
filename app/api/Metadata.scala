@@ -154,7 +154,7 @@ class Metadata @Inject()(
             //add metadata to mongo
             metadataService.addMetadata(metadata)
 
-            Ok(views.html.metadatald.view(List(metadata))(request.user))
+            Ok(views.html.metadatald.view(List(metadata), true)(request.user))
           } else {
             BadRequest(toJson("Invalid resource type"))
           }
