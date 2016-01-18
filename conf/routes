@@ -102,11 +102,14 @@ GET            /datasets/createStep2                                            
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
 GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(when: String ?= "", index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
+GET            /datasets/toolManager                                                    @controllers.Datasets.toolManager
+GET            /datasets/launchTool                                                     @controllers.Datasets.launchTool
 GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, filepage:Int ?= 0)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
 POST           /dataset/submit                                                          @controllers.Datasets.submit
 GET            /datasets/:id/addFiles                                                   @controllers.Datasets.addFiles(id: UUID)
+
 
 # ----------------------------------------------------------------------
 # COLLECTIONS

@@ -762,4 +762,34 @@ class Datasets @Inject()(
       implicit val user = request.user
       Ok(views.html.generalMetadataSearch())
   }
+
+  /**
+    * Controller for launching tool or VM on dataset. Requires dataset ID.
+    *
+    */
+  def toolManager() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    val sessions: List[String] = current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        mgr.getRunningSessions()
+      }
+      case None => List[String]()
+    }
+
+    Ok(views.html.datasets.toolManager(sessions))
+  }
+  def launchTool() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+    val datasetid = request.queryString.get("dsid").flatMap(_.headOption).getOrElse("")
+
+    current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        val launched = mgr.launchTool(datasetid)
+      }
+      case None => {}
+    }
+
+    Ok("Launching tool.")
+  }
 }

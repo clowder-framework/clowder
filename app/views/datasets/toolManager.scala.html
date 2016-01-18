@@ -1,0 +1,41 @@
+@(sessions: List[String])(implicit user: Option[models.User])
+
+@import helper._
+@import play.api.Play.current
+@import services.ToolManagerPlugin
+
+@main("Tool Manager") {
+  <link rel="stylesheet" href="@routes.Assets.at("stylesheets/tableborder.css")" />
+
+  <div class="row">
+    <div class="col-md-12">
+      <h1>Tool Manager</h1>
+    </div>
+  </div>
+
+  <div class="row" id="tile-view">
+    <div class="col-md-12">
+      <div id="session-table">
+        <table border="1" style="width:100%">
+          <tr>
+            <th>Session Name</th>
+            <th>User</th>
+            <th>URL</th>
+            <th>Size</th>
+            <th>Uptime</th>
+          </tr>
+          @sessions.map { sessionName =>
+            <tr>
+              <td>@sessionName</td>
+              <td>mburnet2@@illinois.edu</td>
+              <td><a href="http://141.142.208.144/clowder/">http://141.142.208.144/clowder/</a></td>
+              <td>214 MB</td>
+              <td>13:40</td>
+            </tr>
+          }
+        </table>
+      </div>
+    </div>
+  </div>
+}
+
