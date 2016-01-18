@@ -267,7 +267,7 @@ class CurationObjects @Inject()(
       "Identifier" -> Json.toJson(controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(https)),
       "@id" -> Json.toJson(hostUrl),
       "Title" -> Json.toJson(c.name),
-      "Creator" -> Json.toJson(creator),
+      "Uploaded By" -> Json.toJson(creator),
       "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https))
       )
     if(!metadataJson.contains("Creator")) {
