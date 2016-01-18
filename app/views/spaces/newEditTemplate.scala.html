@@ -43,9 +43,9 @@
           @defining(myForm("isTimeToLiveEnabled")) { isTimeToLiveEnabled =>
             <input type="hidden" name="isTimeToLiveEnabled" id="isTimeToLiveEnabled", value = @isTimeToLiveEnabled.value>
           }
-          @helper.inputText(myForm("editTime"), 'class -> "form-control", '_label -> "Time to live (hours):")
+          <input type="hidden" name="Time to live (hours):" value="@myForm.data.get("editTime")" />
           @helper.input(myForm("space_id"), 'class -> "form-control", '_label ->"") {(id, name, value, args) =>
-            <input type="hidden" name="@id" value="@value">
+          <input type="hidden" name="@id" value="@value">
           }
         </fieldset>
         @submitButton
@@ -153,5 +153,7 @@
     }
 
   });
+
+  $("#expiration").closest(".control-group").hide();
   </script>
 }
