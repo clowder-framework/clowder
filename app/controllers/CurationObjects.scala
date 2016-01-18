@@ -76,14 +76,15 @@ class CurationObjects @Inject()(
           case Some(dataset) => {
             if (spaces.get(spaceId) != None) {
 
-              //copy file list from FileDAO. and save curartion file metadata
+              //copy file list from FileDAO. and save curartion file metadata. metadataCount is 0 since
+              // metadatas.getMetadataByAttachTo will increase metadataCount
               var newFiles: List[UUID]= List.empty
               for ( fileId <- dataset.files) {
                 files.get(fileId) match {
                   case Some(f) => {
                     val cf = CurationFile(fileId = f.id, path= f.path, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
                       contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
-                    thumbnail_id = f.thumbnail_id, metadataCount = f.metadataCount, licenseData = f.licenseData, notesHTML = f.notesHTML)
+                    thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, notesHTML = f.notesHTML)
                     curations.insertFile(cf)
                     newFiles = cf.id :: newFiles
                     metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id))))
@@ -103,7 +104,8 @@ class CurationObjects @Inject()(
                 datasets = List(dataset),
                 files = newFiles,
                 repository = None,
-                status = "In Curation")
+                status = "In Curation"
+              )
 
               // insert curation
               Logger.debug("create curation object: " + newCuration.id)
