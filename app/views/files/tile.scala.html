@@ -1,7 +1,7 @@
 @(file: models.File, classes: String, redirect: Call, showFollow: Boolean)(implicit user: Option[models.User])
 
 @import org.apache.commons.io.FileUtils
-
+@import api.Permission
 <div class="post-box @classes" id="@file.id-tile">
     <div class="panel panel-default">
         <div class="pull-right">
@@ -27,7 +27,7 @@
                 <span class="glyphicon glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
                 <span class="glyphicon glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
                 @if(user.isDefined) {
-                    @if(user.get.identityId.userId.equals(file.author.identityId.userId)){
+                    @if(user.get.identityId.userId.equals(file.author.identityId.userId) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
                         <button onclick="removeFileAndRedirect('@(file.id)',' @redirect')" class="btn btn-link" style="text-align:right" title="Delete">
                         <span class="glyphicon glyphicon-trash"></span></button>
                     }

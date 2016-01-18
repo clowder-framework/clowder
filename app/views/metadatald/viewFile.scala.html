@@ -13,11 +13,11 @@
     </div>
     <div class="row">
         <div class="col-md-12">
-            @addMetadata("file", file.id.toString)
+            @addMetadata("file", file.id.toString, "metadata-content")
         </div>
     </div>
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-12" id="metadata-content">
             @view(metadata)
         </div>
     </div>

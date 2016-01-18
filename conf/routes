@@ -245,6 +245,8 @@ POST           /admin/roles/update                                              
 GET            /admin/extractions                                                       @controllers.Extractors.listAllExtractions
 POST           /admin/theme                                                             @controllers.Admin.setTheme
 GET            /admin/dataDumps                                                         @controllers.Admin.viewDumpers
+GET            /admin/sensors                                                           @controllers.Admin.sensors
+POST           /api/sensors/config                                                      api.Admin.sensorsConfig
 
 # ----------------------------------------------------------------------
 # JAVASCRIPT ENDPOINTS
@@ -607,8 +609,8 @@ GET            /api/curations/:curationId/ore                                   
 # ----------------------------------------------------------------------
 # USERS Controller
 # ----------------------------------------------------------------------
-GET            /controllers/users/followers                                             @controllers.Users.getFollowers(index: Int ?= 0, limit: Int ?=12)
-GET            /controllers/users/following                                             @controllers.Users.getFollowing(index: Int ?= 0, limit: Int ?=12)
+GET            /users/followers                                             @controllers.Users.getFollowers(index: Int ?= 0, limit: Int ?=12)
+GET            /users/following                                             @controllers.Users.getFollowing(index: Int ?= 0, limit: Int ?=12)
 
 # ----------------------------------------------------------------------
 # MEDICI STATUS API

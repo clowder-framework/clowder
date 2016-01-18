@@ -159,11 +159,11 @@
                       </div>
                       <div class="row">
                           <div class="col-md-12">
-                            @metadatald.addMetadata("dataset", dataset.id.toString)
+                            @metadatald.addMetadata("dataset", dataset.id.toString, "metadata-content")
                           </div>
                       </div>
                       <div class="row">
-                          <div class="col-md-12">
+                          <div class="col-md-12" id="metadata-content">
                           @metadatald.view(m)
                           </div>
                       </div>
@@ -271,6 +271,8 @@
                     $('#editlicense').addClass("hiddencomplete");
                 });
             }
+            var description = $('#ds_description').html().trim();
+            $('#ds_description').html(urlify(description));
 
         });
 
@@ -324,7 +326,7 @@
 		$('.edit_desc').append('<button id = "update_desc" class= "btn btn-sm btn-primary btn-margins" onclick = "saveDescription()"> <span class="glyphicon glyphicon-send"> </span> Save </button>');
 		$('.edit_desc').append('<button id="cancel_desc" class="btn btn-sm edit-tab btn-default btn-margins" onclick="cancelDescription()"> <span class="glyphicon glyphicon-remove"></span> Cancel </button>');
 		if(cur_description.indexOf("Add a description") != 0) {
-		    $('#desc_input').val(cur_description.replace(new RegExp("<br>", "g"), "\n"));
+		    $('#desc_input').val(htmlDecode(cur_description.replace(new RegExp("<br>", "g"), "\n")));
 		}
 		$('#ds_description').text("");
 		$('#edit-description').css("display", "none");
@@ -337,7 +339,7 @@
         $('#ds_description').css("display", "inline");
         $('#edit-description').removeClass("inline");
         $('#edit-description').css("display", "");
-
+        $('#ds-description').mouseleave();
     }
 
 	function saveDescription() {
@@ -352,11 +354,12 @@
 		});
 
 		request.done(function(response, textStatus,jqXHR) {
-			$('#ds_description').html(description.replace(/\n/g, "<br>"));
+			$('#ds_description').html(urlify(htmlEncode(description).replace(/\n/g, "<br>")));
 			$('.edit_desc').remove();
 			$('#ds_description').css("display", "inline");
 			$('#edit-description').removeClass("inline");
             $('#edit-description').css("display", "");
+            $('#ds-description').mouseleave();
 		});
 
 		request.fail(function(jqXHR, textStatus, errorThrown) {
@@ -368,6 +371,14 @@
 		});
 
 	 }
+
+    function urlify(text) {
+        var urlRegex =/(\b(https?|ftp|file):\/\/[-A-Z0-9+&@@#\/%?=~_|!:,.;]*[-A-Z0-9+&@@#\/%=~_|])/ig;
+        return text.replace(urlRegex, function(url) {
+            return '<a href="' + url + '">' + url + '</a>';
+        })
+    }
+
     </script>
 }
 

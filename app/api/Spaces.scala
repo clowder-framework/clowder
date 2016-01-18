@@ -81,32 +81,47 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     notes = "Retrieves information about spaces",
     responseClass = "None", httpMethod = "GET")
   def list(title: Option[String], date: Option[String], limit: Int) = UserAction { implicit request =>
-    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.ViewSpace), request.user, request.superAdmin).map(spaceToJson)))
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.ViewSpace), false, request.user, request.superAdmin).map(spaceToJson)))
   }
 
   @ApiOperation(value = "List spaces the user can add to",
     notes = "Retrieves a list of spaces that the user has permission to add to",
     responseClass = "None", httpMethod = "GET")
   def listCanEdit(title: Option[String], date: Option[String], limit: Int) = UserAction { implicit request =>
-    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), request.user, request.superAdmin).map(spaceToJson)))
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.superAdmin).map(spaceToJson)))
   }
 
   /**
    * Returns list of collections based on parameters and permissions.
+   * TODO this needs to be cleaned up when do permissions for adding to a resource
    */
-  private def listSpaces(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[ProjectSpace] = {
+  private def listSpaces(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], mine: Boolean, user: Option[User], superAdmin: Boolean) : List[ProjectSpace] = {
+    if (mine && user.isEmpty) return List.empty[ProjectSpace]
+
     (title, date) match {
       case (Some(t), Some(d)) => {
-        spaces.listAccess(d, true, limit, t, permission, user, superAdmin)
+        if (mine)
+          spaces.listUser(d, true, limit, t, user, superAdmin, user.get)
+        else
+          spaces.listAccess(d, true, limit, t, permission, user, superAdmin)
       }
       case (Some(t), None) => {
-        spaces.listAccess(limit, t, permission, user, superAdmin)
+        if (mine)
+          spaces.listUser(limit, t, user, superAdmin, user.get)
+        else
+          spaces.listAccess(limit, t, permission, user, superAdmin)
       }
       case (None, Some(d)) => {
-        spaces.listAccess(d, true, limit, permission, user, superAdmin)
+        if (mine)
+          spaces.listUser(d, true, limit, user, superAdmin, user.get)
+        else
+          spaces.listAccess(d, true, limit, permission, user, superAdmin)
       }
       case (None, None) => {
-        spaces.listAccess(limit, permission, user, superAdmin)
+        if (mine)
+          spaces.listUser(limit, user, superAdmin, user.get)
+        else
+          spaces.listAccess(limit, permission, user, superAdmin)
       }
     }
   }
@@ -126,8 +141,13 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     implicit request =>
       (spaces.get(spaceId), collectionService.get(collectionId)) match {
         case (Some(s), Some(c)) => {
-          spaces.addCollection(collectionId, spaceId)
-          Ok(Json.obj("collectionInSpace" -> (s.collectionCount +1).toString))
+          // TODO this needs to be cleaned up when do permissions for adding to a resource
+          if (!Permission.checkOwner(request.user, ResourceRef(ResourceRef.dataset, collectionId))) {
+            Forbidden(toJson(s"You are not the owner of the dataset"))
+          } else {
+            spaces.addCollection(collectionId, spaceId)
+            Ok(Json.obj("collectionInSpace" -> (s.collectionCount + 1).toString))
+          }
         }
         case (_, _) => NotFound
       }
@@ -141,8 +161,13 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     implicit request =>
       (spaces.get(spaceId), datasetService.get(datasetId)) match {
         case (Some(s), Some(d)) => {
-          spaces.addDataset(datasetId, spaceId)
-          Ok(Json.obj("datasetsInSpace" -> (s.datasetCount+1).toString))
+          // TODO this needs to be cleaned up when do permissions for adding to a resource
+          if (!Permission.checkOwner(request.user, ResourceRef(ResourceRef.dataset, datasetId))) {
+            Forbidden(toJson(s"You are not the owner of the dataset"))
+          } else {
+            spaces.addDataset(datasetId, spaceId)
+            Ok(Json.obj("datasetsInSpace" -> (s.datasetCount + 1).toString))
+          }
         }
         case (_, _) => NotFound
       }
@@ -351,6 +376,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
                         else {
                           //New user completely to the space
                           spaces.addUser(UUID(aUserId), aRole, spaceId)
+                          events.addRequestEvent(user, userService.get(UUID(aUserId)).get, spaceId, spaces.get(spaceId).get.name, "add_user_to_space")
                           val newmember = userService.get(UUID(aUserId))
                           val theHtml = views.html.spaces.inviteNotificationEmail(spaceId.stringify, space.name, user.get.getMiniUser, newmember.get.getMiniUser.fullName, aRole.name)
                           Mail.sendEmail("Added to Space", newmember.get.getMiniUser.email.get ,theHtml)
@@ -394,6 +420,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     val user = request.user
     if(spaces.getRoleForUserInSpace(spaceId, UUID(removeUser)) != None){
       spaces.removeUser(UUID(removeUser), spaceId)
+      events.addRequestEvent(user, userService.get(UUID(removeUser)).get, spaceId, spaces.get(spaceId).get.name, "remove_user_from_space")
       Ok(Json.obj("status" -> "success"))
     } else {
       Logger.error(s"Remove User $removeUser from space $spaceId does not exist.")

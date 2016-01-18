@@ -1,5 +1,5 @@
 @(collection: models.Collection, redirect: Call)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
-
+@import api.Permission
 <div class="panel panel-default" id="@collection.id-listitem">
     <div class="panel-body">
         <div class="row">
@@ -17,7 +17,7 @@
                                 <span class="glyphicon glyphicon glyphicon-file" title="@collection.datasetCount datasets"></span> @collection.datasetCount
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                                    @if( user.get.identityId.userId.equals(collection.author.identityId.userId)){
+                                    @if( user.get.identityId.userId.equals(collection.author.identityId.userId) || Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
                                         <button onclick="removeCollectionAndRedirect('@(collection.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     } else {

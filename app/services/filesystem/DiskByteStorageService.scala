@@ -1,6 +1,7 @@
 package services.filesystem
 
-import java.io.{FileOutputStream, FileInputStream, File, InputStream}
+import java.io.{FileInputStream, File, InputStream}
+import java.nio.file.{Paths, Files}
 
 import models.UUID
 import play.Logger
@@ -49,12 +50,8 @@ class DiskByteStorageService extends ByteStorageService {
 
         // save actual bytes
         Logger.debug("Saving file to " + filePath)
-        // FIXME is there a better way than casting to FileInputStream?
-        val f = inputStream.asInstanceOf[FileInputStream].getChannel
-        val f2 = new FileOutputStream(new File(filePath)).getChannel
-        f.transferTo(0, f.size(), f2)
-        f2.close()
-        f.close()
+        Files.copy(inputStream, Paths.get(filePath))
+        inputStream.close()
 
         // store metadata to mongo
         Some(relativePath)

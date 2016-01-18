@@ -72,6 +72,31 @@ $(document).ready(function() {
   };
 
 
+  // set the link to sensor types dynamically - TODO store this in the sensor config
+  var sensorTypesUrl = "https://opensource.ncsa.illinois.edu/confluence/display/IMLCZO/Data+Types";
+  var sensorTypesUrlElement = $("#sensorTypesUrl");
+  sensorTypesUrlElement.attr('href', sensorTypesUrl);
+
+  // set the sensor types dynamically - TODO store this in the sensor config
+  var sensorTypes = {
+    1: "1 Instrument, 1 Measurement, No Depth, No Time-Series",
+    2: "1 Instrument, 1 Measurement, No Depth, Yes Time-Series",
+    3: "1 Instrument, Many Measurements, No Depth, No Time-Series",
+    4: "1 Instrument, Many Measurements, No Depth, Yes Time-Series",
+    5: "Many Instruments, 1 Measurement, Many Depths, Yes Time-Series",
+    6: "Many Instruments, Many Measurements, Many Depths, Yes Time-Series",
+    7: "1 Instrument, Many Measurements, One Depth, Yes Time-Series"
+  };
+
+  var sensorType = $("#sensorType");
+  var selectedSensorType = sensorType.val();
+  sensorType.empty();
+  $.each(sensorTypes, function(key, value) {
+    var insertOption = $("<option></option>").attr("value", key).text(value);
+    if (+key == +selectedSensorType) { insertOption.attr('selected', 'selected'); }
+    sensorType.append(insertOption);
+  });
+
   // setup form validation
   var sensorForm = $('#sensor-edit');
   sensorForm.validate({
@@ -83,15 +108,16 @@ $(document).ready(function() {
     }
   });
 
+  var insertInstrumentForm = function(data) {
+    var instrumentTemplate = Handlebars.getTemplate("/assets/templates/sensors/stream-form");
+    $("#instruments").append(instrumentTemplate(data));
+  };
+
   var instrumentCounter = 0;
   var addInstrumentButton = $("#addInstrument");
-  addInstrumentButton.on('click', instrumentCounter, function() {
+    addInstrumentButton.on('click', instrumentCounter, function() {
     instrumentCounter++;
-    var instrumentTemplate = $("#newInstrumentTemplate").html();
-    var template = Handlebars.compile(instrumentTemplate);
-    var data = {instrumentNumber: instrumentCounter.toString()};
-    var result = template(data);
-    $("#instruments").append(result);
+    insertInstrumentForm();
   });
 
   $("#instruments").on('click', '.removeInstrument', function() {
@@ -100,7 +126,7 @@ $(document).ready(function() {
   });
 
 
-  $("#sensorType").on('change', function() {
+  sensorType.on('change', function() {
     var sensorType = $(this).val();
     var hasDepth = $("#hasDepth");
     var sensorTypeSensorCount = $("#sensorTypeSensorCount");
@@ -142,23 +168,8 @@ $(document).ready(function() {
     if (!sensorForm.valid()) {
       return;
     }
-    $('.single-stream-tmpl').each(function() {
 
-      $(this).validate({
-        ignore: false,
-        messages: {
-          instrumentName: "You must provide a name for this instrument",
-          instrumentID: "You must provide a unique ID for this instrument"
-        }
-      });
-      if (!$(this).valid()) {
-        $(this).find('.collapse').collapse('show');
-        instrumentsValid = false;
-        return false;
-      }
-    });
-
-    $('.new-stream-tmpl').each(function() {
+    $('.stream-tmpl').each(function() {
 
       $(this).validate({
         ignore: false,
@@ -190,6 +201,7 @@ $(document).ready(function() {
     data.geometry.coordinates[1] = +$("#sensorLocationLat").val();
     data.properties.type.id = $("#sensorDataSource").val().toLowerCase();
     data.properties.type.title = $("#sensorDataSource").val();
+    data.properties.type.sensorType = +$("#sensorType").val();
     data.properties.region = $("#sensorRegion").val();
 
     var sensorPUTpromise = deferredPut(mediciUpdateSensorMetadataURL, JSON.stringify(data.properties));
@@ -197,24 +209,8 @@ $(document).ready(function() {
     $.when(sensorPUTpromise).done(function(data) {
         var sensorJSON = data;
 
-        // update existing streams
-        $(".single-stream-tmpl").each(function() {
-
-          var streamID = $(this).find(".stream-id").val();
-          var streamData = $(this).find(':input').filter(function () {
-            return $.trim(this.value).length > 0
-          }).serializeJSON({
-            parseNumbers: true,
-            parseBooleans: true
-          });
-
-          var mediciUpdateStreamMetadataURL = jsRoutes.api.Geostreams.patchStreamMetadata(streamID).url;
-          var streamDeferred = deferredPut(mediciUpdateStreamMetadataURL, JSON.stringify(streamData));
-          deferredStreams.push(streamDeferred);
-        });
-
-        // create any new streams
-        $('.new-stream-tmpl').each(function() {
+        // update or create streams
+        $('.stream-tmpl').each(function() {
           var streamJSON = {};
           var streamData = $(this).find(':input').filter(function() {return $.trim(this.value).length > 0}).serializeJSON({
             parseNumbers: true,
@@ -223,15 +219,25 @@ $(document).ready(function() {
 
           streamJSON['name'] = streamData['instrumentName'];
           delete streamData['instrumentName'];
-          streamJSON['properties'] = streamData;
+          if (streamData['id']) {
+            streamJSON['id'] = streamData['id'];
+            delete streamData['id'];
+          }
 
+          streamJSON['properties'] = streamData;
           streamJSON['geometry'] = sensorJSON['geometry'];
           streamJSON['sensor_id'] = sensorJSON['id'].toString();
           streamJSON['type'] = sensorJSON['type'];
-          var postDeferred = deferredPost(mediciStreamsURL, JSON.stringify(streamJSON));
-          deferredStreams.push(postDeferred);
-        });
+          if (streamJSON.id) {
+            var mediciUpdateStreamMetadataURL = jsRoutes.api.Geostreams.patchStreamMetadata(streamJSON.id).url;
+            var streamDeferred = deferredPut(mediciUpdateStreamMetadataURL, JSON.stringify(streamJSON.properties));
+            deferredStreams.push(streamDeferred);
+          } else {
+            var postDeferred = deferredPost(mediciStreamsURL, JSON.stringify(streamJSON));
+            deferredStreams.push(postDeferred);
+          }
 
+        });
 
         $.when.apply($, deferredStreams).done(function(data) {
           // redirect to the sensors list
@@ -242,28 +248,8 @@ $(document).ready(function() {
 
   });
 
-
-
   $("#cancelSubmit").click(function(event) {
     event.preventDefault();
     window.location.href = jsRoutes.controllers.Geostreams.list().url
   });
-
-
-  if (window.L) {
-    var map = L.map('map', {scrollWheelZoom: false}).setView([39, -90 ], 5);
-
-    L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
-
-    var marker = L.marker([39, -90], {draggable: true});
-    marker.addTo(map);
-    marker.on('dragend', function(event){
-      $('#sensorLocationLat').val(event.target._latlng.lat);
-      $('#sensorLocationLong').val(event.target._latlng.lng);
-    })
-  } else {
-    console.log('no L found');
-  }
 });

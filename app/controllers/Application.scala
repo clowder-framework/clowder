@@ -134,8 +134,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
                   case Some(fspace) => {
                     followedSpaces = followedSpaces.++(List((fspace.id, fspace.name, fspace.description.substring(0, Math.min(maxDescLength, fspace.description.length())))))
                   }
-                  case None =>
-
+                  case None => {}
                 }
               }
             }
