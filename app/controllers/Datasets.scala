@@ -764,8 +764,8 @@ class Datasets @Inject()(
   }
 
   /**
-    * Controller for launching tool or VM on dataset. Requires dataset ID.
-    *
+    * With permission, prepare Tool Manager page with list of currently running tool instances
+    * and load the page.
     */
   def toolManager() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
@@ -779,6 +779,11 @@ class Datasets @Inject()(
 
     Ok(views.html.datasets.toolManager(sessions))
   }
+
+  /**
+    * With permission, send request to launch a tool with dataset ID if provided.
+    *
+    */
   def launchTool() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
     val datasetid = request.queryString.get("dsid").flatMap(_.headOption).getOrElse("")

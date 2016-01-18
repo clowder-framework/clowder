@@ -50,8 +50,8 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     //val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython/notebooks")
     //                                        .withHeaders("Content-Type" -> "application/json")
     //                                        .withQueryString("dataset" -> datasetid)
-    //                                        .withQueryString("user" -> "mburnet2@illinois.edu")
-    //                                        .withQueryString("pw" -> "tSzx7dINA8RxFEKp7sX8")
+    //                                        .withQueryString("user" -> "")
+    //                                        .withQueryString("pw" -> "")
     //                                        .get()
 
     statusRequest.map( response => {
@@ -64,6 +64,10 @@ class ToolManagerPlugin(application: Application) extends Plugin {
   }
 
   def attachDataset(): Boolean = {
+    true
+  }
+
+  def closeSession(): Boolean = {
     true
   }
 
