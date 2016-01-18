@@ -288,7 +288,7 @@ GET            /api/metadata/definitions                                        
 GET            /api/metadata/definitions/:id                                            @api.Metadata.getDefinition(id: UUID)
 GET            /api/metadata/url/*in_url                                                @api.Metadata.getUrl(in_url: String)
 POST           /api/metadata/definitions                                                @api.Metadata.addDefinition
-
+DELETE         /admin/metadata/definitions/:id                                          @api.Metadata.deleteDefinition(id: UUID)
 
 
 # ----------------------------------------------------------------------
