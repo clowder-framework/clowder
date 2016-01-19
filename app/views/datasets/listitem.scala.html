@@ -1,0 +1,90 @@
+@(dataset: models.Dataset, comments: Map[UUID, Int], redirect: Call)(implicit  flash: play.api.mvc.Flash, user: Option[models.User])
+@import api.Permission
+
+<div class = "panel panel-default" id="@dataset.id-listitem">
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-md-2 col-sm-2 col-lg-2">
+                @if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
+            </div>
+            <div class="col-md-10 col-sm-10 col-lg-10">
+                <h2><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></h2>
+                <div class ="row">
+                    <div class="col-md-6 col-sm-6 col-lg-6">
+                        <ul class="list-unstyled">
+                            <li>Created by <a href= "@routes.Profile.viewProfile(dataset.author.email)"> @dataset.author.fullName </a></li>
+                            <li>@Html(dataset.description)</li>
+                            <li>@dataset.created.format("MMM dd, yyyy")</li>
+
+                            <li>
+                                <span class="glyphicon glyphicon glyphicon-file" title="@dataset.files.size files"></span> @dataset.files.size
+                                <span class="glyphicon glyphicon glyphicon-tags" title="@dataset.tags.size tags"></span> @dataset.tags.size
+                                <span class="glyphicon glyphicon glyphicon-list" title="@(dataset.metadataCount) metadata fields"></span> @(dataset.metadataCount)
+                                <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(dataset.id)) comments"></span> @(comments.get(dataset.id))
+                                @if(user.isDefined) {
+                                        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                                    @if(user.get.identityId.userId.equals(dataset.author.identityId.userId) || Permission.checkPermission(Permission.DeleteDataset, ResourceRef(ResourceRef.dataset, dataset.id))){
+                                        <button onclick="removeDatasetAndRedirect('@(dataset.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
+                                            <span class="glyphicon glyphicon-trash"></span></button>
+                                    } else {
+                                        <button disabled onclick="removeDatasetAndRedirect('@(dataset.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
+                                            <span class="glyphicon glyphicon-trash"></span></button>
+                                    }
+                                }
+                            </li>
+                        </ul>
+
+                    </div>
+                    <div class="col-md-6 col-sm-6 col-lg-6">
+                        <ul class="list-unstyled">
+                            @if(user.isDefined && !dataset.spaces.isEmpty) {
+                                <li>
+                                    <div id='dataset-users' class="row">
+                                        <div class="col-md-12">
+                                            <a href="@routes.Datasets.users(dataset.id)" class="btn btn-link ">
+                                                <span class="glyphicon glyphicon-hand-right"></span> Users with access to the dataset
+                                            </a>
+                                            <div class="alert-danger inner-item">
+                                            @flash.get("error")
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+                            @if(dataset.files.length > 0 && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                                <li><a id='download-dataset-url' href="#"
+                                onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id').url, '_blank');"
+                                class="btn btn-link" title="Download All Files as Zip" role="button">
+                                    <span class="glyphicon glyphicon-download-alt"></span>
+                                    Download All Files
+                                </a></li>
+                            }
+                            <li>@if(user.isDefined) {
+                                @if(!dataset.followers.contains(user.get.id)) {
+                                    <a id="followButton"
+                                    class="btn btn-link"
+                                    objectId="@dataset.id"
+                                    objectName="@dataset.name"
+                                    objectType="dataset">
+                                        <span class='glyphicon glyphicon-star'></span>
+                                        Follow
+                                    </a>
+                                } else {
+                                    <a id="followButton"
+                                    class="btn btn-link"
+                                    objectId="@dataset.id"
+                                    objectName="@dataset.name"
+                                    objectType="dataset">
+                                        <span class='glyphicon glyphicon-star-empty'></span>
+                                        Unfollow
+                                    </a>
+                                }
+                            }</li>
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

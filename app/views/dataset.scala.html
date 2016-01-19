@@ -118,7 +118,7 @@
                       @if(! (filepage == 0 && !next) ) {
                           <div class="row">
                               <div class="col-md-12 box-white-space">
-                                  <a id="allfiles" class="btn btn-link" href="@(routes.Files.listByDataset(dataset.id))">
+                                  <a id="allfiles" class="btn btn-link" href="@(routes.Files.listByDataset(dataset.id, 0))">
                                       <span class="glyphicon glyphicon-th"></span>  All Files</a>
                               </div>
                           </div>
@@ -164,7 +164,7 @@
                       </div>
                       <div class="row">
                           <div class="col-md-12" id="metadata-content">
-                          @metadatald.view(m)
+                          @metadatald.view(m, true)
                           </div>
                       </div>
 

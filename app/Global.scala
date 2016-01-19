@@ -1,3 +1,4 @@
+import java.io.{StringWriter, PrintWriter}
 import play.api.{GlobalSettings, Application}
 import play.api.Logger
 import play.filters.gzip.GzipFilter
@@ -69,8 +70,11 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
   }
 
   override def onError(request: RequestHeader, ex: Throwable) = {
+    val sw = new StringWriter()
+    val pw = new PrintWriter(sw)
+    ex.printStackTrace(pw)
     Future(InternalServerError(
-      views.html.errorPage(request, ex.fillInStackTrace().toString)
+      views.html.errorPage(request, sw.toString.replace("\n", "   "))
     ))
   }
 

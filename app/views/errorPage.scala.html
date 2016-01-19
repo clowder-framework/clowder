@@ -13,9 +13,10 @@
   </div>
   <script>
     $('button').on('click', function(){
-
-                var request = jsRoutes.api.Events.sendExceptionEmail('@re.toString', '@ex').ajax({
-                    type: 'GET',
+                var jsonData = JSON.stringify({"badRequest": '@re.toString', "exceptions":'@ex'});
+                var request = jsRoutes.api.Events.sendExceptionEmail().ajax({
+                    data: jsonData,
+                    type: 'POST',
                     contentType: "application/json"
                 });
 

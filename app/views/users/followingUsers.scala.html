@@ -26,6 +26,7 @@
         </div>
     </div>
     <script type="text/javascript" language="javascript">
+        var removeIndicator = true;
         $(document).ready(function() {
            $('#nextlink').attr('href', "@(routes.Users.getFollowing( next, limit))");
 	       $('#prevlink').attr('href', "@(routes.Users.getFollowing(prev, limit))");

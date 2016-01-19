@@ -2,23 +2,16 @@ package controllers
 
 import api.Permission._
 import models._
-import play.api.data.Form
-import play.api.data.Forms._
-import play.api.mvc.SimpleResult
 import util.{Formatters, RequiredFieldsConfig}
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.{Inject, Singleton}
-
-import api.{UserRequest, Permission}
-import org.apache.commons.lang.StringEscapeUtils
+import api.Permission
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 import services.{CollectionService, DatasetService, _}
-import views.html.defaultpages.badRequest
-
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 import services._
@@ -68,14 +61,12 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       decodedCollection
   }
 
-  def followingCollections(when: String, index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
+  def followingCollections(index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(clowderUser) => {
-        val nextPage = (when == "a")
 
         val title: Option[String] = Some("Following Collections")
-
         val collectionList = new ListBuffer[Collection]()
         val collectionIds = clowderUser.followedEntities.filter(_.objectType == "collection")
         val collectionIdsToUse = collectionIds.slice(index*limit, (index+1) *limit)
@@ -147,7 +138,8 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       case Some(p) => {
         space match {
           case Some(s) => {
-            title = Some(person.get.fullName + "'s Collections in Space " + collectionSpace.get.name)
+            title = Some(person.get.fullName + "'s Collections in Space <a href="
+              + routes.Spaces.getSpace(collectionSpace.get.id) + ">" + collectionSpace.get.name + "</a>")
           }
           case None => {
             title = Some(person.get.fullName + "'s Collections")
@@ -162,7 +154,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       case None => {
         space match {
           case Some(s) => {
-            title = Some("Collections in Space " + collectionSpace.get.name)
+            title = Some("Collections in Space <a href=" + routes.Spaces.getSpace(collectionSpace.get.id) + ">" + collectionSpace.get.name + "</a>")
             if (date != "") {
               collections.listSpace(date, nextPage, limit, s)
             } else {

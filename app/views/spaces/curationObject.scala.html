@@ -45,14 +45,14 @@
             }
             <div class="row">
                 <div class="col-md-12" id="metadata-content-ds">
-                @metadatald.view(m.filter(_.attachedTo.resourceType == ResourceRef.curationObject))
+                @metadatald.view(m.filter(_.attachedTo.resourceType == ResourceRef.curationObject), true)
                 </div>
             </div>
         </div>
 
 
 
-        @if(curationObject.datasets(0).files.size > 0 ){
+        @if(files.size > 0 ){
             <h2> Files</h2>
         }
 
@@ -60,32 +60,37 @@
             <ul style = "list-style-type: none">
             @for(file<- files) {
 
-                <li><h3><a href=@routes.Files.file(file.fileId)>@file.filename</a></h3>
-                <div id ='allMetadata_@(file.id)'>
-                    <button class="btn btn-link" type="button">Show File metadata</button>
-                    <div style="display:none;">
-                <div class="row border-top">
-                    <div class="col-md-12">
-                    @if(Permission.checkPermission(Permission.AddMetadata, ResourceRef(ResourceRef.curationObject, curationObject.id))) {
-                        <div class="row">
-                            <div class="col-md-12">
-                            @metadatald.addMetadata("curationFile", file.id.toString, "metadata-content-"+file.id.stringify)
-                            </div>
-                        </div>
+                <li>
+                    <h3><a href=@routes.Files.file(file.fileId)>@file.filename</a>
+                    @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curationObject.id))) {
+                        <a id="@file.id" title="Delete curation file" class="btn btn-link delete-file">
+                            <span class="glyphicon glyphicon-trash"></span>
+                        </a>
                     }
-                        <div class="row">
-                            <div class="col-md-12" id="metadata-content-@file.id.stringify">
-                            @metadatald.view(m.filter(_.attachedTo.id == file.id))
+                    </h3>
+                    <div id ='allMetadata_@(file.id)'>
+                        <button class="btn btn-link" type="button">Show File metadata</button>
+                        <div style="display:none;">
+                            <div class="row border-top">
+                                <div class="col-md-12">
+                                @if(Permission.checkPermission(Permission.AddMetadata, ResourceRef(ResourceRef.curationObject, curationObject.id))) {
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            @metadatald.addMetadata("curationFile", file.id.toString, "metadata-content-"+file.id.stringify)
+                                        </div>
+                                    </div>
+                                }
+                                <div class="row">
+                                    <div class="col-md-12" id="metadata-content-@file.id.stringify">
+                                        @metadatald.view(m.filter(_.attachedTo.id == file.id), true)
+                                    </div>
+                                </div>
+                                </div>
                             </div>
+
                         </div>
-
-
                     </div>
-                </div>
-
-                </div>
-                </div>
-                    </li>
+                </li>
 
                 <script>
                     $("#allMetadata_@(file.id.toString) > button").on('click', function(){
@@ -97,7 +102,27 @@
                             $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
                             $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file metadata";
                         }
+                    });
+
+                   $('.delete-file').unbind().on('click', function(){
+                        var delete_file = $(this);
+                        var request = jsRoutes.api.CurationObjects.deleteCurationFiles('@curationObject.id', this.id).ajax({
+                            type: 'DELETE'
                         });
+
+                        request.done(function (response, textStatus, jqXHR) {
+                            console.log("success");
+                            delete_file.closest("LI").remove();
+                        });
+
+                        request.fail(function (jqXHR, textStatus, errorThrown){
+                            console.error("The following error occured: " + textStatus, errorThrown);
+                            var errMsg = "You must be logged in to delete curation file";
+                            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                              notify("Curation file was not removed due to : " + errorThrown, "error");
+                            }
+                        });
+                     });
                 </script>
             }
             </ul>

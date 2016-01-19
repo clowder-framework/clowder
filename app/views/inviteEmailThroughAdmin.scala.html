@@ -6,7 +6,7 @@
 
         <p>Hello,</p>
 
-        <p>You have been invited to space @spaceName by @inviter. Please follow this
+        <p>You have been invited to space @spaceName by @inviter at <a href="@routes.Application.index().absoluteURL(IdentityProvider.sslEnabled)">@services.AppConfiguration.getDisplayName</a>. Please follow this
             <a href="@securesocial.core.providers.utils.RoutesHelper.signUp(token).absoluteURL(IdentityProvider.sslEnabled)">link</a> to accept this invitation.
         </p>
         <p>@message</p>

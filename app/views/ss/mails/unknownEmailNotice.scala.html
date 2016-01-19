@@ -1,9 +1,10 @@
 @(implicit request: RequestHeader)
+@import securesocial.core.IdentityProvider
 <html>
 <body>
 <p>Hello,</p>
 
-<p>We received a request to reset a password in our system.  The attempt has failed because we do not have
+<p>We received a request to reset a password in our system at <a href="@routes.Application.index().absoluteURL(IdentityProvider.sslEnabled)">@services.AppConfiguration.getDisplayName</a>.  The attempt has failed because we do not have
     a registered account with this email address. It could be that you logged in using an external account such as Twitter
     or Facebook.</p>
 

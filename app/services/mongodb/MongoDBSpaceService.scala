@@ -240,8 +240,13 @@ class MongoDBSpaceService @Inject() (
   def delete(id: UUID): Unit = {
     // only curation objects in this space are removed, since dataset & collection doesn't need to belong to a space.
     get(id) match {
-      case Some(s) =>
+      case Some(s) => {
         s.curationObjects.map(c => curations.remove(c))
+        for(follower <- s.followers) {
+          users.unfollowResource(follower, ResourceRef(ResourceRef.space, id))
+        }
+      }
+
     }
     ProjectSpaceDAO.removeById(new ObjectId(id.stringify))
   }
