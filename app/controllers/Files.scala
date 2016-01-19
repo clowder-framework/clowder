@@ -306,7 +306,7 @@ class Files @Inject() (
     implicit val user = request.user
     datasets.get(datasetId) match {
       case Some(d) => {
-        val next = if (d.files.length > limit * (filepage+1) ) "next" else ""
+        val next = if (d.files.length > limit * (filepage+1) ) "dataset-" +datasetId.toString + "-next" else "dataset-" +datasetId.toString
         val currentPage = if(filepage<0) "0" else filepage.toString
         val limitFileList = d.files.slice(limit * filepage, limit * (filepage+1)).map(f => files.get(f)).flatten
         val commentMap = limitFileList.map{file =>

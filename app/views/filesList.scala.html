@@ -129,7 +129,7 @@
             @if(d.isDefined && prev.toInt >0 ||  d.isEmpty && prev != "") {
                 <li class="previous"><a class="btn btn-link" id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span> Previous</a></li>
             }
-            @if(next != "") {
+            @if(d.isDefined && next.contains("next") ||  d.isEmpty && next != "") {
                 <li class ="next"><a class="btn btn-link" id="nextlink" title="Page forwards" href="#">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
             }
         </ul>
