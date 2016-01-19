@@ -27,7 +27,7 @@ import scala.collection.mutable.ListBuffer
 import play.api.Logger
 import securesocial.core.providers.Token
 import securesocial.core._
-import services.{FileService, DatasetService, CollectionService}
+import services.{FileService, DatasetService, CollectionService, SpaceService}
 import services.mongodb.MongoContext.context
 import _root_.util.Direction._
 import javax.inject.Inject
@@ -43,7 +43,8 @@ import javax.inject.Inject
 class MongoDBUserService @Inject() (
   files: FileService,
   datasets: DatasetService,
-  collections: CollectionService) extends services.UserService {
+  collections: CollectionService,
+  spaces: SpaceService) extends services.UserService {
   // ----------------------------------------------------------------------
   // Code to implement the common CRUD services
   // ----------------------------------------------------------------------
@@ -412,6 +413,12 @@ class MongoDBUserService @Inject() (
       case "collection" => {
         collections.get(uuid) match {
           case Some(collection) => collection.name
+          case None => default
+        }
+      }
+      case "'space" => {
+        spaces.get(uuid) match {
+          case Some(space) => space.name
           case None => default
         }
       }
