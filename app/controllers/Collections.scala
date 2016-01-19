@@ -131,14 +131,15 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
-    val datasetSpace = space.flatMap(o => spaceService.get(UUID(o)))
+    val collectionSpace = space.flatMap(o => spaceService.get(UUID(o)))
     var title: Option[String] = Some("Collections")
 
     val collectionList = person match {
       case Some(p) => {
         space match {
           case Some(s) => {
-            title = Some(person.get.fullName + "'s Collections in Space " + datasetSpace.get.name)
+            title = Some(person.get.fullName + "'s Collections in Space <a href="
+              + routes.Spaces.getSpace(collectionSpace.get.id) + ">" + collectionSpace.get.name + "</a>")
           }
           case None => {
             title = Some(person.get.fullName + "'s Collections")
@@ -153,7 +154,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       case None => {
         space match {
           case Some(s) => {
-            title = Some("Collections in Space " + datasetSpace.get.name)
+            title = Some("Collections in Space <a href=" + routes.Spaces.getSpace(collectionSpace.get.id) + ">" + collectionSpace.get.name + "</a>")
             if (date != "") {
               collections.listSpace(date, nextPage, limit, s)
             } else {
