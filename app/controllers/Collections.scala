@@ -512,7 +512,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           val decodedSpaces: List[ProjectSpace] = collectionSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
-          Ok(views.html.collectionOfdatasetsAndChildCollections(decodedDatasetsInside.toList,
+          Ok(views.html.collectionOfDatasetsAndChildCollections(decodedDatasetsInside.toList,
             decodedChildCollections.toList, Some(decodedParentCollections.toList), dCollection, filteredPreviewers.toList, Some(decodedSpaces)))
 
         }
