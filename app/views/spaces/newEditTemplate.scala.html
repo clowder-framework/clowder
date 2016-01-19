@@ -2,6 +2,7 @@
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f)}
+@import play.api.Play.current
 
 @main("Space") {
   <div class="page-header">
@@ -153,9 +154,9 @@
     }
 
   });
-
-  $("#expiration").closest(".control-group").hide();
-  $("#editTime").closest(".control-group").hide();
-
+  @if(!play.api.Play.configuration.getBoolean("enable_expiration").getOrElse(false)) {
+    $("#expiration").closest(".control-group").hide();
+    $("#editTime").closest(".control-group").hide();
+  }
   </script>
 }
