@@ -644,4 +644,4 @@ GET            /spaces/curations/:id/curationFile                               
 POST           /spaces/curations/:id/status                                             @controllers.CurationObjects.savePublishedObject(id: UUID)
 GET            /spaces/curations/:id/getStatusFromRepository                            @controllers.CurationObjects.getStatusFromRepository(id: UUID)
 
-GET            /sendEmail                                                               @api.Events.sendExceptionEmail(re:String, ex:String)
+POST            /sendEmail                                                               @api.Events.sendExceptionEmail()
