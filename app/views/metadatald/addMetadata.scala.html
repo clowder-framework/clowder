@@ -144,6 +144,8 @@ line-height: 1.5;
                 });
 
                 request.done(function (response, textStatus, jqXHR) {
+                    // reset submission value
+                    $('#field-value').val('');
                     if($('#'+'@contentDiv'+' .panel').length == 0) {
                         $('#' + "@contentDiv").empty();
                     }
