@@ -7,6 +7,8 @@ import com.mongodb.CommandFailureException
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import models._
+import org.apache.commons.codec.digest.DigestUtils
+import org.apache.commons.io.input.CountingInputStream
 import org.bson.BSONException
 import play.api.libs.json._
 import play.api.{ Play, Plugin, Logger, Application }
@@ -17,9 +19,8 @@ import com.mongodb.casbah.MongoDB
 import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.gridfs.GridFS
 import org.bson.types.ObjectId
-import securesocial.core.Identity
+import services.filesystem.DiskByteStorageService
 import services.{MetadataService, DI, AppConfigurationService}
-import org.joda.time.DateTime
 
 /**
  * Mongo Salat service.
@@ -223,6 +224,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Adds creation date and expiration date to Space Invites assumes they were just created.
     updateSpaceInvites
+
+    // Add file length, sha512 to all uploads and fixes path
+    addLengthSha512PathFile
   }
 
   private def updateMongoChangeUserType {
@@ -579,4 +583,79 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
+  private def addLengthSha512PathFile: Unit = {
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", "update-file-length-sha512-path")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        val dbss = new DiskByteStorageService()
+        lazy val rootPath = Play.current.configuration.getString("medici2.diskStorage.path").getOrElse("")
+        for (prefix <- List[String]("uploads", "previews", "textures", "geometries", "thumbnails", "tiles")) {
+          val files = gridFS(prefix)
+          collection(prefix + ".files").foreach { file =>
+            val relpath = file.getOrElse("path", "").toString
+            val id = file.getAsOrElse[ObjectId]("_id", new ObjectId())
+            var deletepath = false
+            if (relpath.contains("/")) {
+              val fullpath = if (relpath.startsWith("/"))
+                relpath
+              else
+                dbss.makePath(rootPath, prefix, relpath)
+              file.put("path", fullpath)
+              file.put("loader", classOf[DiskByteStorageService].getClass.getName)
+              dbss.load(fullpath, prefix) match {
+                case Some(is) => {
+                  val cis = new CountingInputStream(is)
+                  val sha512 = DigestUtils.sha512Hex(cis)
+                  cis.close()
+                  file.put("sha512", sha512)
+                  file.put("length", cis.getByteCount)
+                }
+                case None => {
+                  file.put("sha512", "")
+                  file.put("length", -1)
+                }
+              }
+            } else {
+              if (file.containsField("path"))
+                deletepath = true
+              file.put("loader", classOf[MongoDBByteStorage].getName)
+              files.findOne(id) match {
+                case Some(f) => {
+                  try {
+                    val cis = new CountingInputStream(f.inputStream)
+                    val sha512 = DigestUtils.sha512Hex(cis)
+                    cis.close()
+                    file.put("sha512", sha512)
+                    file.put("length", cis.getByteCount)
+                  } catch {
+                    case _: Throwable => {
+                      file.put("sha512", "")
+                      file.put("length", -1)
+                    }
+                  }
+                }
+                case None => {
+                  file.put("sha512", "")
+                  file.put("length", -1)
+                }
+              }
+            }
+            Logger.info(prefix + " " + id + " " + file.get("filename") + " " + file.get("path") + " " + file.get("sha512") + " " + file.get("length"))
+            try {
+              collection(prefix + ".files").save(file, WriteConcern.Safe)
+              if (deletepath)
+                collection(prefix + ".files").update(MongoDBObject("_id" -> id), $unset("path"))
+            }
+            catch {
+              case e: Exception => Logger.error("Unable to update file :" + id.toString(), e)
+            }
+          }
+        }
+      }
+      appConfig.addPropertyValue("mongodb.updates", "update-file-length-sha512-path")
+    } else {
+      Logger.warn("[MongoDBUpdate : Missing fix to add file length, sha512 and path")
+    }
+  }
 }

@@ -12,10 +12,10 @@ import models.UUID
  */
 trait ByteStorageService {
   /**
-   * Save the inputstream, returns a path to where the bytes are stored. The
+   * Save the inputstream, returns a (path, sha512, length) to where the bytes are stored. The
    * path can be later used to load/delete the bytes
    */
-  def save(inputStream: InputStream, prefix: String, id: UUID): Option[String]
+  def save(inputStream: InputStream, prefix: String, id: UUID): Option[(String, String, Long)]
 
   /**
    * Load the bytes from the backing storage, returns an InputStream. The path

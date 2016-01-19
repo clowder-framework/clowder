@@ -6,9 +6,9 @@
   extractionsStatus: List[Extraction], outputFormats: Option[List[String]])(implicit user: Option[models.User])
 
 @import helper._
-@import collection.JavaConverters._
 @import play.api.Play.current
 @import api.Permission
+@import org.apache.commons.io.FileUtils
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
 
@@ -495,13 +495,42 @@
             <div class="row ds-section-sm file-info">
                 <table class="table table-condensed">
                     <tr><td><b>Filename:</b></td><td>@file.filename</td></tr>
-                    <tr><td><b>Type:</b></td><td>@file.contentType</td></tr>
-                    <tr><td><b>Uploaded on:</b></td><td>@file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
-                    <tr><td><b>Uploaded by:</b></td><td> <a href = "@routes.Profile.viewProfile(file.author.email)"> @file.author.fullName</a></td></tr>
+					<tr><td><b>Type:</b></td><td>@file.contentType</td></tr>
+					<tr><td><b>File&nbsp;size:</b></td><td title="@file.length bytes">@FileUtils.byteCountToDisplaySize(file.length)</td></tr>
+					@if(Permission.checkServerAdmin(user)) {
+						<tr><td><b>File&nbsp;location:</b></td>
+						@if(file.loader == "services.mongodb.MongoDBByteStorage") {
+							<td>mongo</td>
+						}
+						@if(file.loader == "services.filesystem.DiskByteStorageService") {
+							@if(file.path.isEmpty) {
+								<td>missing</td>
+							} else {
+								<td>
+								@if(file.path.get.length>10) {
+									<span title="@file.path.get">...@file.path.get.substring(file.path.get.length-10, file.path.get.length)</span>
+								} else {
+									@file.path.get
+								}
+								<a class="btn btn-link btn-sm clipboard" data-copy="@file.path.get" title="Copy path to clipboard"><span class="glyphicon glyphicon-edit"></span> copy</a></td>
+							}
+						}
+						</tr>
+					}
+					<tr><td><b>SHA&nbsp;512:</b></td><td>
+						@if(file.sha512.length > 10) {
+							<span title="@file.sha512">...@file.sha512.substring(file.sha512.length-10, file.sha512.length)</span>
+						} else {
+							@file.sha512
+						}
+						<a class="btn btn-link btn-sm clipboard" data-copy="@file.sha512" title="Copy SHA to clipboard"><span class="glyphicon glyphicon-edit"></span> copy</a></td></tr>
+
+					<tr><td><b>Uploaded&nbsp;on:</b></td><td>@file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
+                    <tr><td><b>Uploaded&nbsp;by:</b></td><td> <a href = "@routes.Profile.viewProfile(file.author.email)"> @file.author.fullName</a></td></tr>
                 </table>
             </div>
 
-            <!-- License elements-->
+			<!-- License elements-->
             <div class="row ds-section-sm border-top">
                 <div class="accordion" id="accordion6">
                     <div class="accordion-group">
