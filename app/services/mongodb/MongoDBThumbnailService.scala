@@ -43,7 +43,7 @@ class MongoDBThumbnailService @Inject()(storage: ByteStorageService) extends Thu
    * Save blob.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
-    MongoUtils.writeBlob[Thumbnail](inputStream, filename, contentType, Map.empty[String, AnyRef], "thumbnails", "medici2.mongodb.storeThumbnails").fold("")(_.stringify)
+    MongoUtils.writeBlob[Thumbnail](inputStream, filename, contentType, Map.empty[String, AnyRef], "thumbnails", "medici2.mongodb.storeThumbnails").fold("")(_._1.stringify)
   }
 
   /**

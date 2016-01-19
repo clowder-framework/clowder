@@ -11,7 +11,7 @@
 			</h2>
 		</div>
 			@if(user.isDefined && (id != null && !id.isEmpty)) {
-				@if( resourceType.compareTo("space") ==0 ){
+				@if( resourceType != null && resourceType.compareTo("space") ==0 ){
 					<div class="col-sm-12 col-md-12 col-lg-12 text-center">
 					<a class="btn btn-default btn-margins accordion-toggle collapsed"
 						href="@(routes.Spaces.addRequest(UUID(id)))"><span class="glyphicon glyphicon-envelope"></span>

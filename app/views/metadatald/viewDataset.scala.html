@@ -14,12 +14,12 @@
     </div>
     <div class="row">
         <div class="col-md-12">
-            @addMetadata("dataset", dataset.id.toString)
+            @addMetadata("dataset", dataset.id.toString, "metadata-content")
         </div>
     </div>
     <div class="row">
-        <div class="col-md-12">
-            @view(metadata)
+        <div class="col-md-12" id="metadata-content">
+            @view(metadata, true)
         </div>
     </div>
 }

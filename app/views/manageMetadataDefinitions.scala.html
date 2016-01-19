@@ -104,6 +104,26 @@
                 }
                 addDefinition(data, window.location.href);
             });
+
+             $('.delete-definition').unbind().on('click', function(){
+                        var delete_object = $(this);
+                        var request = jsRoutes.api.Metadata.deleteDefinition(this.id).ajax({
+                            type: 'DELETE'
+                        });
+
+                        request.done(function (response, textStatus, jqXHR) {
+                            console.log("success");
+                            delete_object.closest("TR").remove();
+                        });
+
+                        request.fail(function (jqXHR, textStatus, errorThrown){
+                            console.error("The following error occured: " + textStatus, errorThrown);
+                            var errMsg = "You must be logged in to delete metadata definition";
+                            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                              notify("Metadata definition was not removed due to : " + errorThrown, "error");
+                            }
+                        });
+                     });
         });
 
     </script>
@@ -156,7 +176,9 @@
                         <td>
                             @((m.json \ "query_parameter").asOpt[String].getOrElse(""))
                         </td>
-                        <td><a href="#addDefinition" onclick="editDefinition('@(m.id)', '@(m.json)', this);">Edit</a></td>
+                        <td><a href="#addDefinition" onclick="editDefinition('@(m.id)', '@(m.json)', this);">Edit</a>
+                            / <a id="@m.id" href="#" title="Delete metadata definition" class="delete-definition">Delete</a>
+                        </td>
                     </tr>
                 }
             </tbody>
