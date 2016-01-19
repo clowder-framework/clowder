@@ -764,8 +764,7 @@ class Datasets @Inject()(
   }
 
   /**
-    * With permission, prepare Tool Manager page with list of currently running tool instances
-    * and load the page.
+    * With permission, prepare Tool Manager page with list of currently running tool instances.
     */
   def toolManager() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
@@ -781,8 +780,7 @@ class Datasets @Inject()(
   }
 
   /**
-    * With permission, send request to launch a tool with dataset ID if provided.
-    *
+    * With permission, send request to ToolManagerPlugin to launch a tool with dataset ID if provided.
     */
   def launchTool() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
@@ -796,5 +794,18 @@ class Datasets @Inject()(
     }
 
     Ok("Launching tool.")
+  }
+
+  def getRunningTools() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        val running = mgr.getRunningSessions()
+      }
+      case None => {}
+    }
+
+    Ok("Running tools")
   }
 }

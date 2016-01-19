@@ -1,5 +1,7 @@
 package services
 
+import models.UUID
+
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -20,55 +22,134 @@ class ToolManagerPlugin(application: Application) extends Plugin {
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
   var toolsList: List[String] = List[String]()
-  var launchedURLs: List[String] = List[String]()
+  var runningTools: List[String] = List[String]()
 
 
   override def onStart() {
     Logger.debug("Initializing ToolManagerPlugin")
-    updateToolsList
+    _refreshToolsList
+    _refreshRunningSessions
   }
 
-  def updateToolsList(): Boolean = {
-    // This will be a call to NDS API to get eligible tools
+  /**
+    * Call external API to get list of valid endpoints for tool selection.
+    */
+  def _refreshToolsList() = {
     toolsList = List("PlantCV", "Frogger")
-    true
+
+    val request: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython/notebooks")
+      .withHeaders("Content-Type" -> "application/json")
+      .withQueryString("user" -> "")
+      .withQueryString("pw" -> "")
+      .get()
+
+    request.map( response => {
+      Logger.info(response.body.toString)
+      // toolsList = response.body.list
+    })
   }
 
+  /**
+    * Call external API to get list of valid endpoints for tool selection.
+    * @return list of tools that can be selected for launch
+    */
+  def getToolsList(): List[String] = {
+    _refreshToolsList
+    return toolsList
+  }
+
+  /**
+    * Fetch URLs of all running tool sessions the current user can access.
+    */
+  def _refreshRunningSessions() = {
+    runningTools = List("PlantCV Instance 338127", "PlantCV Instance 544712")
+
+    val request: Future[Response] = url("http://141.142.209.108:8080/getRunningTools")
+      .withHeaders("Content-Type" -> "application/json")
+      .withQueryString("user" -> "")
+      .withQueryString("pw" -> "")
+      .get()
+
+    request.map( response => {
+      Logger.info(response.body.toString)
+      // runningTools = response.body.list
+    })
+  }
+
+  /**
+    * Fetch URLs of all running tool sessions the current user can access.
+    * @return list of URLs for currently running sessions
+    */
   def getRunningSessions(): List[String] = {
-    // Get active tool/VM sessions for this user
-
-    // launchedURLs
-    List("PlantCV Instance 338127", "PlantCV Instance 544712")
+    _refreshRunningSessions
+    return runningTools
   }
 
-  def launchTool(datasetid: String): Boolean = {
-    // Initiate the process of creating a new Tool container
+  /**
+    * Send request to API to launch a new tool.
+    * @param datasetid clowder ID of dataset to attach
+    * @return ID of session that was launched
+    */
+  def launchTool(datasetid: String): UUID = {
+    val newSessionID = UUID()
 
-    Logger.info("LAUNCH TOOL PLUGIN")
-    Logger.info(datasetid)
-    val statusRequest: Future[Response] = url("http://ned.usgs.gov/epqs/pqs.php?x=-88.22&y=40.12&output=json").get()
-    //val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython/notebooks")
-    //                                        .withHeaders("Content-Type" -> "application/json")
-    //                                        .withQueryString("dataset" -> datasetid)
-    //                                        .withQueryString("user" -> "")
-    //                                        .withQueryString("pw" -> "")
-    //                                        .get()
+    Logger.info("LAUNCH TOOL PLUGIN WITH "+datasetid)
+    val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython/notebooks")
+                                            .withHeaders("Content-Type" -> "application/json")
+                                            .withQueryString("dataset" -> datasetid)
+                                            .withQueryString("user" -> "")
+                                            .withQueryString("pw" -> "")
+                                            .get()
 
     statusRequest.map( response => {
       Logger.info("RESPONSE FROM EXTERNAL API")
       Logger.info(response.body.toString)
-      // launchedURLs :+ response.body.URL
+      // newSessionID =  response.body.id
+    })
+
+    return newSessionID
+  }
+
+  /**
+    * Attach a dataset's files to an existing session.
+    * @param sessionid ID of session to attach dataset to
+    * @param datasetid clowder ID of dataset to attach
+    */
+  def attachDataset(sessionid: String, datasetid: String): Boolean = {
+    Logger.info("LAUNCH TOOL PLUGIN WITH "+datasetid)
+    val statusRequest: Future[Response] = url("http://141.142.209.108:8080/attachDataset")
+      .withHeaders("Content-Type" -> "application/json")
+      .withQueryString("session" -> sessionid)
+      .withQueryString("dataset" -> datasetid)
+      .withQueryString("user" -> "")
+      .withQueryString("pw" -> "")
+      .get()
+
+    statusRequest.map( response => {
+      Logger.info(response.body.toString)
     })
 
     return true
   }
 
-  def attachDataset(): Boolean = {
-    true
-  }
+  /**
+    * Terminate a running tool session.
+    * @param sessionid ID of session to stop
+    * @return
+    */
+  def closeSession(sessionid: String): Boolean = {
+    val statusRequest: Future[Response] = url("http://141.142.209.108:8080/terminate")
+      .withHeaders("Content-Type" -> "application/json")
+      .withQueryString("session" -> sessionid)
+      .withQueryString("user" -> "")
+      .withQueryString("pw" -> "")
+      .get()
 
-  def closeSession(): Boolean = {
-    true
+    statusRequest.map( response => {
+      Logger.info(response.body.toString)
+    })
+
+    return true
   }
 
   override def onStop() {
