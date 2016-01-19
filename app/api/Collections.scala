@@ -402,8 +402,13 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             collections.get(subCollectionId) match {
               case Some(sub_collection) => {
                 var parentSpaces = collection.spaces
-                for (space <- parentSpaces){
-                  spaces.addCollection(sub_collection.id,space)
+                for (spaceId <- parentSpaces){
+                  try {
+                    spaces.addCollection(sub_collection.id,spaceId)
+                  } catch {
+                    case e : Exception => Logger.debug("failure adding subcollection : " + subCollectionId + " to space : " + spaceId)
+                  }
+
                 }
                 events.addSourceEvent(request.user, sub_collection.id, sub_collection.name, collection.id, collection.name, "add_sub_collection")
                 Ok(jsonCollection(collection))
