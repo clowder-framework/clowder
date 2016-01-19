@@ -180,9 +180,29 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     (spaces.get(spaceId), collectionService.get(collectionId)) match {
       case (Some(s), Some(c)) => {
         spaces.removeCollection(collectionId, spaceId)
+        updateSubCollections(spaceId, collectionId)
         Ok(toJson("success"))
       }
       case (_, _) => NotFound
+    }
+  }
+
+  def updateSubCollections(spaceId: UUID, collectionId: UUID)  {
+    collectionService.get(collectionId) match {
+      case Some(collection) => {
+        var currentCollectionName = collection.name
+        var collectionDescendants = collectionService.getAllDescendants(collectionId)
+        var collectionDescendantsList = collectionDescendants.toList
+        for (descendant <- collectionDescendants){
+          var rootCollectionSpaces = collectionService.getRootSpaceIds(descendant.id)
+          for (space <- descendant.spaces) {
+            if (!rootCollectionSpaces.contains(space)){
+              spaces.removeCollection(descendant.id, space)
+            }
+          }
+        }
+      }
+      case None => Logger.error("no collection found with id " + collectionId)
     }
   }
 
