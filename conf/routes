@@ -97,7 +97,7 @@ GET            /file_by_section/:id                                             
 # DATASETS
 # ----------------------------------------------------------------------
 GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
-GET            /datasets/new                                                            @controllers.Datasets.newDataset(space: Option[String])
+GET            /datasets/new                                                            @controllers.Datasets.newDataset(space: Option[String], collection: Option[String])
 GET            /datasets/createStep2                                                    @controllers.Datasets.createStep2(id: UUID)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch

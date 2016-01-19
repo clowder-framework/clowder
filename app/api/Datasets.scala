@@ -213,15 +213,22 @@ class Datasets @Inject()(
         case None => InternalServerError("User Not found")
       }
       events.addObjectEvent(request.user, d.id, d.name, "create_dataset")
+
       datasets.insert(d) match {
         case Some(id) => {
           //In this case, the dataset has been created and inserted. Now notify the space service and check
           //for the presence of existing files.
           Logger.debug("About to call addDataset on spaces service")
           d.spaces.map{ s => spaces.addDataset(d.id, s)}
+          //Add this dataset to a collection if needed
+          (request.body \ "collection").asOpt[List[String]] match {
+            case None | Some(List("default"))=>
+            case Some(collectionList) => {
+              collectionList.map{c => collections.addDataset(UUID(c), d.id)}
+            }
+          }
           //Below call is not what is needed? That already does what we are doing in the Dataset constructor...
           //Items from space model still missing. New API will be needed to update it most likely.
-
           (request.body \ "existingfiles").asOpt[String].map { fileString =>
             var idArray = fileString.split(",").map(_.trim())
             for (anId <- idArray) {
@@ -249,7 +256,6 @@ class Datasets @Inject()(
         }
         case None => Ok(toJson(Map("status" -> "error")))
       }
-
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
   

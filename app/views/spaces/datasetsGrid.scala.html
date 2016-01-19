@@ -8,7 +8,7 @@
     Most recent datasets:
     <span class="pull-right">
         @if(user.isDefined &&  Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
-            <a id ="create-dataset" href="@routes.Datasets.newDataset(Some(space))" class="btn btn-link btn-xs">
+            <a id ="create-dataset" href="@routes.Datasets.newDataset(Some(space), None)" class="btn btn-link btn-xs">
                 <span class="glyphicon glyphicon-ok"></span> Create Dataset
             </a>
         }
