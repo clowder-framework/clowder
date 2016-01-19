@@ -123,7 +123,7 @@
             });
         })
 
-
+        var counter = @metadata.length;
         $(function () {
             $('.delete-icon').unbind().on('click', function(){
                 var delete_icon = $(this);
@@ -134,6 +134,8 @@
                 request.done(function (response, textStatus, jqXHR) {
                     console.log("success");
                     delete_icon.closest(".panel").remove();
+                    counter--;
+                    $('#metadata-counter').html("Metadata ("+ counter +")");
                 });
 
                 request.fail(function (jqXHR, textStatus, errorThrown){
