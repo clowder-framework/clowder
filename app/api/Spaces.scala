@@ -13,7 +13,6 @@ import play.api.libs.json.Json._
 import play.api.libs.json.Json.toJson
 import services.{EventService, AdminsNotifierPlugin, SpaceService, UserService, DatasetService, CollectionService}
 import util.Mail
-import scala.collection.mutable.ListBuffer
 import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError
@@ -473,8 +472,8 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     user match {
       case Some(loggedInUser) => {
         spaces.get(id) match {
-          case Some(file) => {
-            events.addObjectEvent(user, id, name, "unfollow_space")
+          case Some(space) => {
+            events.addObjectEvent(user, id, space.name, "unfollow_space")
             spaces.removeFollower(id, loggedInUser.id)
             userService.unfollowResource(loggedInUser.id, new ResourceRef(ResourceRef.space, id))
             Ok

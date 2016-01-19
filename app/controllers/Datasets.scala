@@ -1,15 +1,9 @@
 package controllers
 
-import play.api.Logger
-import play.api.data.Form
-import play.api.data.Forms._
-import play.api.libs.json.Json
-import play.api.mvc.Cookie
 import java.io.FileInputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.Inject
-
 import api.Permission
 import api.Permission.Permission
 import fileutils.FilesUtils
@@ -19,7 +13,6 @@ import play.api.Play.current
 import play.api.libs.json.Json._
 import services._
 import util.{Formatters, RequiredFieldsConfig}
-
 import scala.collection.immutable._
 import scala.collection.mutable.ListBuffer
 
@@ -108,13 +101,11 @@ class Datasets @Inject()(
     }
   }
 
-  def followingDatasets(when: String, index: Int, limit: Int, mode: String) = PrivateServerAction {implicit request =>
+  def followingDatasets(index: Int, limit: Int, mode: String) = PrivateServerAction {implicit request =>
     implicit val user = request.user
     user match {
       case Some(clowderUser)  => {
-        val nextPage = (when == "a")
         val title: Option[String] = Some("Following Datasets")
-
         var datasetList =  new ListBuffer[Dataset]()
         val datasetIds = clowderUser.followedEntities.filter(_.objectType == "dataset")
         val datasetIdsToUse = datasetIds.slice(index*limit, (index+1)*limit)

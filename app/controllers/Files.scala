@@ -184,13 +184,11 @@ class Files @Inject() (
     }
   }
 
-  def followingFiles(when: String, index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
+  def followingFiles(index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(clowderUser) => {
-        val nextPage = (when == "a")
         val title: Option[String] = Some("Following Files")
-
         var fileList = new ListBuffer[models.File]()
         val fileIds = clowderUser.followedEntities.filter(_.objectType == "file")
         val fileIdsToUse = fileIds.slice(index*limit, (index+1)*limit)

@@ -8,7 +8,6 @@ import java.text.SimpleDateFormat
 import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
 import java.util.zip._
 import javax.inject.{Inject, Singleton}
-
 import com.wordnik.swagger.annotations.{Api, ApiOperation}
 import controllers.{Previewers, Utils}
 import jsonutils.JsonUtil
@@ -23,7 +22,6 @@ import play.api.libs.json.Json._
 import play.api.mvc.AnyContent
 import services._
 import _root_.util.{JSONLD, License}
-
 import scala.concurrent.{ExecutionContext, Future}
 
 /**

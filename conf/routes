@@ -78,7 +78,7 @@ GET            /datasets/:datasetId/files                                       
 GET            /files/new                                                               @controllers.Files.uploadFile
 GET            /files/metadataSearch                                                    @controllers.Files.metadataSearch
 GET            /files/generalMetadataSearch                                             @controllers.Files.generalMetadataSearch
-GET            /files/following                                                         @controllers.Files.followingFiles(when: String ?= "", index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
+GET            /files/following                                                         @controllers.Files.followingFiles(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
 GET            /files/:id                                                               @controllers.Files.file(id: UUID)
 GET            /files/:id/blob                                                          @controllers.Files.download(id: UUID)
 GET            /files/:id/download/:format                                              @controllers.Files.downloadAsFormat(id: UUID, format: String)
@@ -101,7 +101,7 @@ GET            /datasets/new                                                    
 GET            /datasets/createStep2                                                    @controllers.Datasets.createStep2(id: UUID)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
-GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(when: String ?= "", index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
+GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
 GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, filepage:Int ?= 0)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
@@ -113,7 +113,7 @@ GET            /datasets/:id/addFiles                                           
 # ----------------------------------------------------------------------
 GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
 GET            /collections/new                                                         @controllers.Collections.newCollection(space: Option[String])
-GET            /collections/following                                                   @controllers.Collections.followingCollections(when: String ?= "", index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
+GET            /collections/following                                                   @controllers.Collections.followingCollections(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
 POST           /collection/submit                                                       @controllers.Collections.submit
 GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)
 GET            /collection/:id/users                                                    @controllers.Collections.users(id: UUID)
@@ -124,7 +124,7 @@ GET            /collections/:collection_id/previews                             
 # ----------------------------------------------------------------------
 GET            /spaces                                                                  @controllers.Spaces.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "", owner: Option[String] ?= None, showAll: Boolean ?= true)
 GET            /spaces/new                                                              @controllers.Spaces.newSpace
-GET            /spaces/following                                                        @controllers.Spaces.followingSpaces(when: String ?= "", index: Int ?=0, size: Int ?= 12, mode: String ?= "")
+GET            /spaces/following                                                        @controllers.Spaces.followingSpaces(index: Int ?=0, size: Int ?= 12, mode: String ?= "")
 GET            /spaces/:id                                                              @controllers.Spaces.getSpace(id: UUID, size: Int ?= 9, direction: String ?= "desc")
 GET            /spaces/:id/updateSpace                                                  @controllers.Spaces.updateSpace(id:UUID)
 GET            /spaces/:id/addRequest                                                   @controllers.Spaces.addRequest(id:UUID)
@@ -609,8 +609,8 @@ GET            /api/curations/:curationId/ore                                   
 # ----------------------------------------------------------------------
 # USERS Controller
 # ----------------------------------------------------------------------
-GET            /controllers/users/followers                                             @controllers.Users.getFollowers(index: Int ?= 0, limit: Int ?=12)
-GET            /controllers/users/following                                             @controllers.Users.getFollowing(index: Int ?= 0, limit: Int ?=12)
+GET            /users/followers                                             @controllers.Users.getFollowers(index: Int ?= 0, limit: Int ?=12)
+GET            /users/following                                             @controllers.Users.getFollowing(index: Int ?= 0, limit: Int ?=12)
 
 # ----------------------------------------------------------------------
 # MEDICI STATUS API
