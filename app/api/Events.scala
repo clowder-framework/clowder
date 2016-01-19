@@ -39,7 +39,7 @@ class Events @Inject() (events: EventService) extends ApiController {
     val subject: String = "Exception from " + AppConfiguration.getDisplayName
     val body = Html("<p>Request: "+re+"</p><p>Error: "+ex.replace("   ", "\n")+"</p><p>Version: " + sys.props.getOrElse("build.version", default = "0.0.0") + "#"+sys.props.getOrElse("build.bamboo", default = "development")
     +" branch:" + sys.props.getOrElse("build.branch", default = "unknown") +" sha1:"+sys.props.getOrElse("build.gitsha1", default = "unknown")+"</p>")
-    val recipient: String = "yanzhao3@illinois.edu"
+    val recipient: String = "opensource+clowder@ncsa.illinois.edu"
     Mail.sendEmail(subject, recipient, body)
     Ok(toJson("Send Email success"))
   }
