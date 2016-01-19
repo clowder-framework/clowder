@@ -643,5 +643,7 @@ POST           /spaces/curations/:id/matchmaker                                 
 GET            /spaces/curations/:id/curationFile                                       @api.CurationObjects.getCurationFiles(id: UUID)
 POST           /spaces/curations/:id/status                                             @controllers.CurationObjects.savePublishedObject(id: UUID)
 GET            /spaces/curations/:id/getStatusFromRepository                            @controllers.CurationObjects.getStatusFromRepository(id: UUID)
+DELETE         /spaces/curations/:id/files/:curationFileId                              @api.CurationObjects.deleteCurationFiles(id: UUID, curationFileId: UUID)
+
 
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()

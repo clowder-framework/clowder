@@ -55,10 +55,10 @@
         <div class="row">
           <div class="col-md-12 box-white-space">
             @if(m.filter(_.attachedTo.resourceType == ResourceRef.curationObject).size > 0) {
-           	  <h5>Metadata</h5>
+           	  <h4>Metadata</h4>
             }
             <div  class='usr_md_'>
-            @metadatald.view(m.filter(_.attachedTo.resourceType == ResourceRef.curationObject))
+            @metadatald.view(m.filter(_.attachedTo.resourceType == ResourceRef.curationObject), false)
             </div>
           </div>
         </div>
@@ -83,7 +83,7 @@
                   @if(m.filter(_.attachedTo.id == file.id).size > 0) {
                  	 <h4>Metadata</h4>
                   }
-                  @metadatald.view(m.filter(_.attachedTo.id == file.id))
+                  @metadatald.view(m.filter(_.attachedTo.id == file.id), false)
                 </div>
               </div>
             </div>

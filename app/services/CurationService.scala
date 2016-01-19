@@ -63,12 +63,17 @@ trait CurationService {
   /**
    * List curation files of a curation obeject
    */
-  def getCurationFiles(cfs:List[UUID]): List[CurationFile]
+  def getCurationFiles(curationFileIds:List[UUID]): List[CurationFile]
 
   /**
    * get the curation contains this curation file
    */
   def getCurationByCurationFile(curationFile: UUID): Option[CurationObject]
+
+  /**
+   * Delete a curation file from a curation obeject
+   */
+  def deleteCurationFiles(curationId: UUID, curationFileId: UUID)
 
   /**
    * Update curation object's name, description, space.
