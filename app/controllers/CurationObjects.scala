@@ -104,8 +104,7 @@ class CurationObjects @Inject()(
                 datasets = List(dataset),
                 files = newFiles,
                 repository = None,
-                status = "In Curation"
-              )
+                status = "In Curation")
 
               // insert curation
               Logger.debug("create curation object: " + newCuration.id)

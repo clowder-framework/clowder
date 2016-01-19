@@ -123,10 +123,10 @@
             });
         })
 
-        var counter = @metadata.length;
         $(function () {
             $('.delete-icon').unbind().on('click', function(){
                 var delete_icon = $(this);
+
                 var request = jsRoutes.api.Metadata.removeMetadata(this.id).ajax({
                     type: 'DELETE'
                 });
@@ -134,8 +134,10 @@
                 request.done(function (response, textStatus, jqXHR) {
                     console.log("success");
                     delete_icon.closest(".panel").remove();
-                    counter--;
-                    $('#metadata-counter').html("Metadata ("+ counter +")");
+                    var sd=$('#metadata-counter').text();
+                    console.log(sd);
+                    sd=parseInt(sd.split('(')[1]) -1;
+                    $('#metadata-counter').text("Metadata ("+ sd +")");
                 });
 
                 request.fail(function (jqXHR, textStatus, errorThrown){

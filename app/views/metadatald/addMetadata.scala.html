@@ -150,7 +150,7 @@ line-height: 1.5;
                     $('#'+"@contentDiv").prepend(response);
                     var sd=$('#metadata-counter').text();
                     sd=parseInt(sd.split('(')[1]) +1;
-                    $('#metadata-counter').html("Metadata ("+ sd +")");
+                    $('#metadata-counter').text("Metadata ("+ sd +")");
                 });
 
                 request.fail(function (jqXHR, textStatus, errorThrown){
