@@ -76,7 +76,7 @@ class CurationObjects @Inject()(
           case Some(dataset) => {
             if (spaces.get(spaceId) != None) {
 
-              //copy file list from FileDAO. and save curartion file metadata. metadataCount is 0 since
+              //copy file list from FileDAO. and save curation file metadata. metadataCount is 0 since
               // metadatas.getMetadataByAttachTo will increase metadataCount
               var newFiles: List[UUID]= List.empty
               for ( fileId <- dataset.files) {
@@ -152,7 +152,7 @@ class CurationObjects @Inject()(
           val CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
           Logger.debug(COName(0))
           curations.updateInformation(id, CODesc(0), COName(0), c.space, spaceId)
-          events.addObjectEvent(user, id, COName(0), "update_dataset_information")
+          events.addObjectEvent(user, id, COName(0), "update_curation_information")
 
           Redirect(routes.CurationObjects.getCurationObject(id))
         }
