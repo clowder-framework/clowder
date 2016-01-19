@@ -602,7 +602,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
               else
                 dbss.makePath(rootPath, prefix, relpath)
               file.put("path", fullpath)
-              file.put("loader", classOf[DiskByteStorageService].getClass.getName)
+              file.put("loader", classOf[DiskByteStorageService].getName)
               dbss.load(fullpath, prefix) match {
                 case Some(is) => {
                   val cis = new CountingInputStream(is)
