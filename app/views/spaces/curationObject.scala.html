@@ -63,7 +63,7 @@
                 <li>
                     <h3><a href=@routes.Files.file(file.fileId)>@file.filename</a>
                     @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curationObject.id))) {
-                        <a id="@file.id" title="Delete curation file" class="btn btn-link delete-file">
+                        <a id="file-@file.id" title="Delete curation file" class="btn btn-link delete-file">
                             <span class="glyphicon glyphicon-trash"></span>
                         </a>
                     }
@@ -106,7 +106,7 @@
 
                    $('.delete-file').unbind().on('click', function(){
                         var delete_file = $(this);
-                        var request = jsRoutes.api.CurationObjects.deleteCurationFiles('@curationObject.id', this.id).ajax({
+                        var request = jsRoutes.api.CurationObjects.deleteCurationFiles('@curationObject.id', this.id.split("-")[1]).ajax({
                             type: 'DELETE'
                         });
 
