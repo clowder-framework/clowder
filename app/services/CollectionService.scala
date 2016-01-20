@@ -169,12 +169,6 @@ trait CollectionService {
     */
   def addSubCollection(collectionId: UUID, subCollectionId: UUID) : Try[Unit]
 
-
-  /**
-    *  Add parent to subcollection parent list
-    */
-  def addParentCollection(subCollectionId: UUID, parentCollectionId: UUID) : Try[Unit]
-
   /**
     * Remove subcollection from collection
     */

@@ -416,10 +416,9 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
 
   def listChildCollections(parentCollectionId : UUID): List[Collection] = {
     val childCollections = List.empty[Collection]
-    Collection.findOneById(new ObjectId(parentCollectionId.stringify)) match {
+    get(parentCollectionId) match {
       case Some(collection) => {
         val childCollectionIds = collection.child_collection_ids
-        //val list = for (collection <- listAccess(0, Set[Permission](Permission.ViewCollection), user, showAll); if (isInDataset(dataset, collection))) yield collection
         val childList = for (childCollectionId <- childCollectionIds; if (get(UUID(childCollectionId)).isDefined)) yield (get(UUID(childCollectionId))).get
         return childList
       }
@@ -473,11 +472,10 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
 
     Collection.findOneById(new ObjectId(parentCollectionId.stringify)) match {
       case Some(parentCollection) => {
-        var currentName = parentCollection.name
-        var childCollections = listChildCollections(parentCollectionId)
+        val childCollections = listChildCollections(parentCollectionId)
         for (child <- childCollections){
           descendantIds += child
-          var otherDescendants = getAllDescendants(child.id)
+          val otherDescendants = getAllDescendants(child.id)
           descendantIds = descendantIds ++ otherDescendants
 
         }
@@ -691,24 +689,6 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   }
 
 
-  def addParentCollection(subCollectionId: UUID, parentCollectionId: UUID) =Try {
-    Collection.findOneById(new ObjectId(subCollectionId.stringify)) match {
-      case Some(sub_collection) => {
-        Collection.findOneById(new ObjectId(parentCollectionId.stringify)) match {
-          case Some(parent_collection) => {
-            Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)),
-              $addToSet("parent_collections" ->  Collection.toDBObject(parent_collection)), false, false, WriteConcern.Safe)
-          } case None => {
-            Logger.error("Error getting subcollection" + subCollectionId);
-            Failure
-          }
-        }
-      } case None => {
-        Logger.error("Error getting collection" + subCollectionId);
-        Failure
-      }
-    }
-  }
 
   def addSubCollection(collectionId :UUID, subCollectionId: UUID) = Try{
     Collection.findOneById(new ObjectId(collectionId.stringify)) match {
