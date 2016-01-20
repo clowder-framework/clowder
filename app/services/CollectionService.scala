@@ -190,6 +190,5 @@ trait CollectionService {
 
   def getRootSpaceIds(collectionId : UUID) : ListBuffer[UUID]
 
-  def getRootSpacesToRemove(collectionId: UUID) : List[UUID]
 
 }

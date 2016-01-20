@@ -467,25 +467,6 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     return rootSpaceIds
   }
 
-  def getRootSpacesToRemove(childCollectionId : UUID) : List[UUID] = {
-    var spacesToRemove = List.empty[UUID]
-    Collection.findOneById(new ObjectId(childCollectionId.stringify)) match {
-      case Some(collection) => {
-        val currentSpaceIds = collection.spaces
-        val rootCollectionIds =  getRootCollections(collection.id).toList
-        val currentRootSpaceIds = ListBuffer.empty[UUID]
-        for (rootCollectionId <- rootCollectionIds){
-          var currentSpaces = rootCollectionId.spaces
-          for (space <- currentSpaces){
-            currentRootSpaceIds += space
-          }
-        }
-      }
-      case None => Logger.error("no collection found for " + childCollectionId)
-    }
-
-    return spacesToRemove
-  }
 
   def getAllDescendants(parentCollectionId : UUID) : ListBuffer[models.Collection] = {
     var descendantIds = ListBuffer.empty[models.Collection]
