@@ -221,7 +221,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description,
       "created" -> collection.created.toString,"author"-> collection.author.toString, "root_flag" -> collection.root_flag.toString,
       "child_collection_ids"-> collection.child_collection_ids.toString, "parent_collection_ids" -> collection.parent_collection_ids.toString,
-    "childCollectionsCount" -> collection.childCollectionsCount.getOrElse().toString, "datasetCount"-> collection.datasetCount.toString, "spaces" -> collection.spaces.toString))
+    "childCollectionsCount" -> collection.childCollectionsCount.toString, "datasetCount"-> collection.datasetCount.toString, "spaces" -> collection.spaces.toString))
   }
 
   @ApiOperation(value = "Update a collection name",
@@ -456,7 +456,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         case Some(identity) => {
           val description = (request.body \ "description").asOpt[String].getOrElse("")
           (request.body \ "space").asOpt[String] match {
-            case None | Some("default") =>  c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, childCollectionsCount = Some(0), author = identity)
+            case None | Some("default") =>  c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, childCollectionsCount = 0, author = identity)
             case Some(space) => if (spaces.get(UUID(space)).isDefined) {
               c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)))
             } else {
