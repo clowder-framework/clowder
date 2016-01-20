@@ -1,0 +1,122 @@
+@(resourceId: UUID, resourceType: Symbol, resourceSpaces: List[ProjectSpace])(implicit user: Option[models.User])
+@import api.Permission
+@import play.api.libs.json.Json
+    <div class="row bottom-padding">
+        <div class="col-md-12">
+        @if(resourceType == ResourceRef.collection) {
+            <h4>Spaces containing the collection</h4>
+        } else {
+            <h4>Spaces containing the dataset</h4>
+        }
+        </div>
+    </div>
+
+    <div class="row">
+        <div id="spacesList" class="col-md-12">
+        @resourceSpaces.map { s =>
+            <div id="col_@s.id" class="row bottom-padding">
+                <div class="col-md-2">
+                    @if(s.logoURL.isDefined) {
+                        <img src="@s.logoURL.get" width="100%">
+                    }
+                </div>
+                <div class="col-md-10">
+                    <div>
+                        <a href="@routes.Spaces.getSpace(s.id)" id='@s.id' class ="space">@Html(s.name)</a>
+                    </div>
+                    <div>
+                        @if(resourceType == ResourceRef.dataset) {
+                            @if(s.datasetCount ==1){
+                                1 dataset
+                            } else {
+                                @s.datasetCount datasets
+                            }
+
+                            @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
+                                | <a href="#" class="btn btn-link btn-xs" onclick="removeDatasetFromSpace( '@(s.id)', '@resourceId', event)" title="Remove from space">
+                                    <span class="glyphicon glyphicon-remove"></span>Remove</a>
+                            } else {
+                                 |  <a href="#" class="btn btn-link btn-xs disabled" title="Remove dataset from space">
+                                    <span class="glyphicon glyphicon-remove"></span> Remove</a>
+                            }
+                        }
+                        @if(resourceType == ResourceRef.collection) {
+                            @if(s.collectionCount ==1){
+                                1 collection
+                            } else {
+                                @s.collectionCount collections
+                            }
+                            @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
+                                | <a href="#" class="btn btn-link btn-xs" onclick="removeCollectionFromSpace('@(s.id)', '@resourceId', event)" title="Remove from space">
+                                    <span class="glyphicon glyphicon-remove"></span>  Remove</a>
+                            } else {
+                                | <a href="#" class="btn btn-link btn-xs disabled" title="Remove collection from space">
+                                    <span class="glyphicon glyphicon-remove"></span> Remove</a>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        </div>
+    </div>
+
+
+
+    <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
+    @if(Permission.checkOwner(user, ResourceRef(resourceType, resourceId))) {
+        <div class="form-inline">
+            <div class="input-group input-group-sm col-md-8">
+                <select id="spaceAddSelect" class="form-control add-resource">
+                </select>
+                @if(resourceType == ResourceRef.dataset) {
+                    <span class="input-group-btn">
+                    <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add dataset to Space" onclick="addDatasetToSpace('@resourceId')">
+                        <span class="glyphicon glyphicon-plus"></span> Add
+                    </a>
+                    </span>
+                } else {
+                    <span class="input-group-btn">
+                    <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add collection to Space" onclick="addCollectionToSpace('@resourceId')">
+                        <span class="glyphicon glyphicon-plus"></span> Add
+                    </a>
+                    </span>
+                }
+            </div>
+        </div>
+    }
+
+
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
+<script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/spaceModify.js")" type="text/javascript"></script>
+
+<script language="javascript">
+    $("#spaceAddSelect").select2({
+        theme: "bootstrap",
+        placeholder: "Select a space",
+        allowClear: true,
+        ajax: {
+            url: function(params) {
+                return jsRoutes.api.Spaces.listCanEdit(params.term, null, 5).url;
+            },
+            data: function(params) {
+                return { title: params.term };
+            },
+            processResults: function(data, page) {
+                return {results: data.filter(function(x) {
+                    var ids = $('.space').map(function() {
+                        return $(this).attr('id');
+                    });
+                    return $.inArray(x["id"], ids) == -1;
+                }).map(function(x) {
+                    return {
+                        text: x["name"],
+                        id: x["id"]
+                    }
+                })};
+            }
+        }
+    });
+
+</script>
