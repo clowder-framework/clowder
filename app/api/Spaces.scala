@@ -190,11 +190,9 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   def updateSubCollections(spaceId: UUID, collectionId: UUID)  {
     collectionService.get(collectionId) match {
       case Some(collection) => {
-        var currentCollectionName = collection.name
-        var collectionDescendants = collectionService.getAllDescendants(collectionId)
-        var collectionDescendantsList = collectionDescendants.toList
+        val collectionDescendants = collectionService.getAllDescendants(collectionId)
         for (descendant <- collectionDescendants){
-          var rootCollectionSpaces = collectionService.getRootSpaceIds(descendant.id)
+          val rootCollectionSpaces = collectionService.getRootSpaceIds(descendant.id)
           for (space <- descendant.spaces) {
             if (!rootCollectionSpaces.contains(space)){
               spaces.removeCollection(descendant.id, space)

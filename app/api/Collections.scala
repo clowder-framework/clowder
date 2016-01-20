@@ -596,11 +596,10 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
   @ApiOperation(value = "Get child collection ids in collection",
     responseClass = "None", httpMethod = "GET")
-  def getChildCollectionIds(collectionId: UUID) = PermissionAction(Permission.ViewCollection){implicit request =>
+  def getChildCollectionIds(collectionId: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection,collectionId))){implicit request =>
     collections.get(collectionId) match {
       case Some(collection) => {
         var childCollectionIds = collection.child_collection_ids
-
         Ok(toJson(childCollectionIds))
       }
       case None => BadRequest(toJson("collection not found"))
@@ -609,11 +608,10 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
   @ApiOperation(value = "Get parent collection ids in collection",
     responseClass = "None", httpMethod = "GET")
-  def getParentCollectionIds(collectionId: UUID) = PermissionAction(Permission.ViewCollection){implicit request =>
+  def getParentCollectionIds(collectionId: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection,collectionId))){implicit request =>
     collections.get(collectionId) match {
       case Some(collection) => {
-        var parentCollectionIds = collection.parent_collection_ids
-
+        val parentCollectionIds = collection.parent_collection_ids
         Ok(toJson(parentCollectionIds))
       }
       case None => BadRequest(toJson("collection not found"))
@@ -624,7 +622,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
   @ApiOperation(value = "Get child collections in collection",
     responseClass = "None", httpMethod = "GET")
-  def getChildCollections(collectionId: UUID) = PermissionAction(Permission.ViewCollection){implicit request =>
+  def getChildCollections(collectionId: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection,collectionId))){implicit request =>
     collections.get(collectionId) match {
       case Some(collection) => {
         val childCollections = ListBuffer.empty[JsValue]
@@ -647,7 +645,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
   @ApiOperation(value = "Get parent collections for collection",
     responseClass = "None", httpMethod = "GET")
-  def getParentCollections(collectionId: UUID) = PermissionAction(Permission.ViewCollection){implicit request =>
+  def getParentCollections(collectionId: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection,collectionId))){implicit request =>
     collections.get(collectionId) match {
       case Some(collection) => {
         val parentCollections = ListBuffer.empty[JsValue]
