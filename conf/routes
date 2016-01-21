@@ -414,9 +414,9 @@ POST           /api/changeAppearance                                            
 GET            /api/collections                                                         @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 GET            /api/collections/canEdit                                                 @api.Collections.listCanEdit(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 POST           /api/collections                                                         @api.Collections.createCollection()
-GET            /api/collections/getRootCollections                                      @api.Collections.getRootCollections
-GET            /api/collections/getTopLevelCollections                                  @api.Collections.getTopLevelCollections
-GET            /api/collections/getAllCollections                                       @api.Collections.getAllCollections()
+GET            /api/collections/rootCollections                                         @api.Collections.getRootCollections
+GET            /api/collections/topLevelCollections                                     @api.Collections.getTopLevelCollections
+GET            /api/collections/allCollections                                          @api.Collections.getAllCollections()
 
 # deprecrated
 GET            /api/collections/list                                                    @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)

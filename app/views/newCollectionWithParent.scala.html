@@ -48,19 +48,7 @@
                 <textarea class="form-control" cols=40 rows=4 type="text" id="description"></textarea>
                 <span class="error hiddencomplete" id="descerror"> This description is a required field</span><br>
             </td>
-        </tr>        
-        @**
-        <tr>
-            <td style="width: 20%; vertical-align:top;" class="input-table-cell">Share with spaces (optional):</td>
-            <td style="width: 35%; vertical-align:top;" class="input-table-cell" id="desccell">
-                <select name="space" id="spaceid" class = "form-control chosen-select" multiple style="width: 342px;">
-                    @spaces.map { space =>
-                        <option id = "@(space.id)" value="@(space.id)">@(space.name)</option>
-                    }
-                </select>
-            </td>
         </tr>
-        **@
         <tr>
             <td>	                            
             </td>
@@ -93,56 +81,5 @@
         placeholder_text_multiple: "Select spaces for this collection."
     });
 </script>
-@**
-<script language = "javascript">
-    var idNameObj = {};
 
-    function isUndefined(value) {
-        return typeof value === 'undefined';
-    }
-
-    function getName(id) {
-        return idNameObj[id];
-    }
-
-    $(document).ready(function() {
-        @for(space <- spaces) {
-            idNameObj["@space.name"] = "@space.id";
-
-        }
-        $(".chosen-choices").addClass("form-control");
-    });
-
-    $(".chosen-select").chosen().change(function(event, params) {
-    var targetId = this.getAttribute("id");
-    if(!isUndefined(params.selected)) {
-        var addedId = params.selected;
-        @for(space <- spaces) {
-            var currentId = "@space";
-            if(currentId != targetId) {
-                $("#@space.id option [value="+addedId +']').remove();
-                $('#@space.id').trigger("chosen:updated");
-            }
-        }
-        $('ul.chosen-choices li.search-field').css("width", "0");
-
-    }
-    else if (!isUndefined(params.deselected)) {
-        var removedId = params.deselected;
-        @for(space <- spaces) {
-            var currentId = "@space";
-            if(currentId != targetId) {
-                $('#@space.id').prepend($("<option></option>").attr("value", removedId).text(getName(removedId)));
-                $('#@space.id').trigger("chosen:updated");
-            }
-        }
-    }
-    })
-
-    if(@spaceId.isDefined) {
-        $('#@spaceId').prop('selected','selected');
-        $('#spaceid').trigger("chosen:updated");
-    }
-  </script>
-    **@
 }
