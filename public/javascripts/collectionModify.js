@@ -4,7 +4,6 @@ resource_type_enum = {
     COLLECTION : 1
 }
 
-
 function addCollectionToParentCollection(id) {
     var selectedId = $("#collectionAddSelect").val();
     if (!selectedId) return false;
@@ -48,30 +47,6 @@ function addCollectionToParentCollection(id) {
     return false;
 }
 
-/*
-function removeCollectionFromSpace(spaceId, id, event){
-
-    var request = jsRoutes.api.Spaces.removeCollection(spaceId, id).ajax({
-        type: 'POST'
-    });
-
-    request.done(function (response, textStatus, jqXHR){
-        $('#col_'+spaceId).remove();
-    });
-
-    request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to remove a collection from a space.";
-        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("The collection was not removed from the space due to : " + errorThrown, "error");
-        }
-    });
-
-    return false;
-}
-*/
-
-
 function addDatasetToCollection(id) {
     var selectedId = $("#collectionAddSelect").val();
     if (!selectedId) return false;
@@ -110,34 +85,13 @@ function addDatasetToCollection(id) {
     return false;
 }
 
-
 function removeChildFromParent(parentId, id, event){
     notify("You must be viewing the parent collection to remove a child");
-    /*
-    var request = jsRoutes.api.Collections.removeSubCollection(parentId, id).ajax({
-        type: 'POST'
-    });
-
-    request.done(function (response, textStatus, jqXHR){
-        $('#col_'+parentId).remove();
-    });
-
-    request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to remove a dataset from a collection.";
-        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("The dataset was not removed from the collection due to : " + errorThrown, "error");
-        }
-    });
-    return false;
-    */
 }
-
 
 function updateCollectionEditLink(collection_id, collection_name) {
     $('#collection_link').attr("href", jsRoutes.controllers.Collections.collection(collection_id).url).text(collection_name);
 }
-
 
 function updateUsersInCollection(collectionId) {
     //Generate the string for each level
@@ -182,42 +136,5 @@ function updateUsersInCollection(collectionId) {
 
     });
 
-    return false;
-}
-
-function acceptCollectionRequest(id, user){
-    /*
-    var role = $("#roleSelect").val();
-    var request = jsRoutes.controllers.Spaces.acceptRequest(id, user, role).ajax({
-        type : 'GET',
-        contentType : "application/json"
-    });
-    request.done ( function ( response, textStatus, jqXHR ) {
-        $("#request-tr-"+user).hide();
-        console.log("Successful accept request");
-    });
-    request.fail(function(jqXHR, textStatus, errorThrown) {
-        console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to accept request.";
-    });
-    */
-    return false;
-}
-
-function rejectCollectionRequest(id, user){
-    /*
-    var request = jsRoutes.controllers.Spaces.rejectRequest(id, user).ajax({
-        type : 'GET',
-        contentType : "application/json"
-    });
-    request.done ( function ( response, textStatus, jqXHR ) {
-        $("#request-tr-"+user).hide();
-        console.log("Successful reject request");
-    });
-    request.fail(function(jqXHR, textStatus, errorThrown) {
-        console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to reject request.";
-    });
-    */
     return false;
 }
