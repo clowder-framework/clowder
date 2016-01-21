@@ -50,6 +50,19 @@ class MongoDBTemplateService @Inject() (userService: UserService)  extends Templ
     Template.findAll().toList
   }
 
+  def delete(id: UUID) =  Try {
+    Template.findOneById(new ObjectId(id.stringify)) match {
+      case Some(t) => {
+        Template.remove(MongoDBObject("_id" -> new ObjectId(t.id.stringify)))
+        Success
+      }
+      case None => Success
+    }
+
+  }
+
+  def update(id: UUID, )
+
 }
 
 
