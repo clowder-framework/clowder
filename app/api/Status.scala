@@ -74,7 +74,8 @@ class Status @Inject()(spaces: SpaceService,
     result.put("rabbitmq", current.plugin[RabbitmqPlugin] match {
       case Some(p) => {
         if (Permission.checkServerAdmin(user)) {
-          Json.obj("uri" -> p.rabbitmquri)
+          Json.obj("uri" -> p.rabbitmquri,
+            "exchange" -> p.exchange)
         } else {
           jsontrue
         }
