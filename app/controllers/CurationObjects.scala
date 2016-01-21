@@ -84,7 +84,7 @@ class CurationObjects @Inject()(
                   case Some(f) => {
                     val cf = CurationFile(fileId = f.id, path= f.path, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
                       contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
-                    thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, notesHTML = f.notesHTML)
+                    thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, notesHTML = f.notesHTML, sha512 = f.sha512)
                     curations.insertFile(cf)
                     newFiles = cf.id :: newFiles
                     metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id))))

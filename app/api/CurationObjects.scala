@@ -51,9 +51,11 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "Label" -> Json.toJson(file.filename),
               "Title" -> Json.toJson(file.filename),
               "Uploaded By" -> Json.toJson(userService.findByIdentity(file.author).map ( usr => Json.toJson(file.author.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https)))),
-              "size" -> Json.toJson(file.length),
+              "Size" -> Json.toJson(file.length),
+              "Mimetype" -> Json.toJson(file.contentType),
               "Publication Date" -> Json.toJson(""),
               "External Identifier" -> Json.toJson(""),
+              "SHA512 Hash" -> Json.toJson(files.get(file.fileId).map{ f => f.sha512}),
               "Keyword" -> Json.toJson(file.tags.map(_.name)),
               "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2015/File")),
               "Is Version Of" -> Json.toJson(controllers.routes.Files.file(file.fileId).absoluteURL(https) + "?key=" + key),
@@ -131,7 +133,9 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     "references" -> Json.toJson("http://purl.org/dc/terms/references"),
                     "Is Version Of" -> Json.toJson("http://purl.org/dc/terms/isVersionOf"),
                     "Has Part" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
-                    "size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length")
+                    "Size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length"),
+                    "Mimetype" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
+                    "SHA512 Hash" -> Json.toJson("http://sead-data.net/terms/hasSHA512Digest")
                   )
                 )
 
@@ -154,7 +158,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   ),
                   "@id" -> Json.toJson(api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "#aggregation"),
                   "@type" -> Json.toJson(Seq("Aggregation", "http://cet.ncsa.uiuc.edu/2015/Dataset")),
-                  "Is Version of" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https)),
+                  "Is Version Of" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https)),
                   "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https)),
                   "aggregates" -> Json.toJson(filesJson),
                   "Has Part" -> Json.toJson(hasPart)
