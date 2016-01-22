@@ -34,8 +34,6 @@ import scala.util.parsing.json.JSONArray
 /**
  * Use Mongodb to store datasets.
  *
- * @author Luigi Marini
- *
  */
 @Singleton
 class MongoDBDatasetService @Inject() (
@@ -1013,7 +1011,7 @@ class MongoDBDatasetService @Inject() (
           comments.removeComment(comment)
         }
         for (f <- dataset.files) {
-          var notTheDataset = for (currDataset <- findByFileId(f) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
+          val notTheDataset = for (currDataset <- findByFileId(f) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
           if (notTheDataset.size == 0)
             files.removeFile(f)
         }

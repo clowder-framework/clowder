@@ -6,8 +6,6 @@ import scala.util.Try
 
 /**
  * Generic collection service.
- * 
- * @author Constantinos Sophocleous
  *
  */
 trait CollectionService {

@@ -9,8 +9,6 @@ import models.File
 /**
  * Generic dataset service.
  *
- * @author Luigi Marini
- *
  */
 trait DatasetService {
   /**

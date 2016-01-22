@@ -102,6 +102,9 @@
                             }
                         }
                     }
+                    @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        <a href="@routes.Folders.newFolder(TypedID( id=dataset.id, objectType='dataset'), dataset.id)"
+                    }
                 </div>
             </div>
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->

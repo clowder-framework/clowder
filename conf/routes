@@ -104,6 +104,7 @@ GET            /datasets/generalMetadataSearch                                  
 GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
 GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, filepage:Int ?= 0)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
+GET            /datasets/:parentDataset/newFolder                                       @controllers.Folders.newFolder(parent: TypedID, parentDataset: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
 POST           /dataset/submit                                                          @controllers.Datasets.submit
 GET            /datasets/:id/addFiles                                                   @controllers.Datasets.addFiles(id: UUID)
@@ -151,7 +152,6 @@ GET            /metadata/search                                                 
 GET            /metadata/:id                                                            @controllers.Metadata.view(id: UUID)
 GET            /files/:file_id/metadata                                                 @controllers.Metadata.file(file_id: UUID)
 GET            /datasets/:dataset_id/metadata                                           @controllers.Metadata.dataset(dataset_id: UUID)
-
 # Tags
 GET            /tags/search                                                             @controllers.Tags.search(tag, start: String ?= "", size: Integer ?= 12, mode: String ?= "")
 GET            /tags/list/ordered                                                       @controllers.Tags.tagListOrdered
