@@ -112,7 +112,7 @@ class Metadata @Inject()(
         Ok(JsObject(Seq("status" -> JsString("ok"))))
       }
 
-      case None => BadRequest(toJson("Invalid metadata defination"))
+      case None => BadRequest(toJson("Invalid metadata definition"))
     }
   }
 

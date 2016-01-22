@@ -1,4 +1,6 @@
 @(datasetsInCollection: List[models.Dataset],
+  childCollections: List[models.Collection],
+  parentCollections: List[models.Collection],
   collection: models.Collection,
   previewers: List[Previewer],
   collectionSpaces: Option[List[ProjectSpace]])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
@@ -144,6 +146,13 @@
 				</div>
 			</div>
 			<div class="row">
+			<div class="col-md-12">
+				<h3>Child Collections in the collection</h3>
+					@childCollections.map { child_collection =>
+						
+					}
+
+			</div>
 			<div class="col-md-12">
 				<h3>Datasets in the collection</h3>
 					@datasetsInCollection.map { dataset =>

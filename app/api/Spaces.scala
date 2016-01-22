@@ -134,16 +134,16 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   }
 
   @ApiOperation(value = " Associate a collection to a space",
-  notes = "",
-  responseClass = "None", httpMethod="POST"
+    notes = "",
+    responseClass = "None", httpMethod="POST"
   )
   def addCollectionToSpace(spaceId: UUID, collectionId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) {
     implicit request =>
       (spaces.get(spaceId), collectionService.get(collectionId)) match {
         case (Some(s), Some(c)) => {
           // TODO this needs to be cleaned up when do permissions for adding to a resource
-          if (!Permission.checkOwner(request.user, ResourceRef(ResourceRef.dataset, collectionId))) {
-            Forbidden(toJson(s"You are not the owner of the dataset"))
+          if (!Permission.checkOwner(request.user, ResourceRef(ResourceRef.collection, collectionId))) {
+            Forbidden(toJson(s"You are not the owner of the collection"))
           } else {
             spaces.addCollection(collectionId, spaceId)
             Ok(Json.obj("collectionInSpace" -> (s.collectionCount + 1).toString))
@@ -153,7 +153,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       }
   }
 
-  @ApiOperation(value = " Associate a collection to a space",
+  @ApiOperation(value = " Associate a dataset to a space",
     notes = "",
     responseClass = "None", httpMethod="POST"
   )
