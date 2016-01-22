@@ -2,10 +2,12 @@ package services
 
 import models.UUID
 
+import scala.collection.mutable.Map
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import play.api.mvc._
+import play.api.libs.json._
 import play.api.libs.ws.Response
 import play.api.libs.ws.WS._
 import play.api.{Plugin, Logger, Application}
@@ -23,6 +25,8 @@ class ToolManagerPlugin(application: Application) extends Plugin {
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
   var toolsList: List[String] = List[String]()
   var runningTools: List[String] = List[String]()
+
+  var idMap: Map[UUID, String] = Map()
 
 
   override def onStart() {
@@ -81,8 +85,9 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     * @return list of URLs for currently running sessions
     */
   def getRunningSessions(): List[String] = {
-    _refreshRunningSessions
-    return runningTools
+    //_refreshRunningSessions
+    //return runningTools
+    return List("Plant1", "Plant2")
   }
 
   /**
@@ -90,24 +95,50 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     * @param datasetid clowder ID of dataset to attach
     * @return ID of session that was launched
     */
-  def launchTool(datasetid: String): UUID = {
-    val newSessionID = UUID()
+  def launchTool(hostURL: String, sessionId: UUID, datasetid: UUID) = {
+    val dsUrl = ("http://" + hostURL + "/datasets/" + datasetid.toString)
+    Logger.debug("LAUNCH TOOL WITH DATASET: "+dsUrl)
+    Logger.debug("SESSIONID GENERATED: "+sessionId)
 
-    Logger.info("LAUNCH TOOL PLUGIN WITH "+datasetid)
+    val postdata = Json.obj(
+      "dataset" -> dsUrl,
+      "user" -> "",
+      "pw" -> ""
+    )
+    //val statusRequest: Future[Response] = url("http://ned.usgs.gov/epqs/pqs.php?x=-88.22&y=40.12&output=json").get()
     val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython/notebooks")
-                                            .withHeaders("Content-Type" -> "application/json")
-                                            .withQueryString("dataset" -> datasetid)
-                                            .withQueryString("user" -> "")
-                                            .withQueryString("pw" -> "")
-                                            .get()
+                                            .withHeaders("Content-Type" -> "application/json").post(postdata)
 
     statusRequest.map( response => {
-      Logger.info("RESPONSE FROM EXTERNAL API")
-      Logger.info(response.body.toString)
-      // newSessionID =  response.body.id
-    })
+      Logger.debug(("API RESPONSED: "+response.body.toString))
 
-    return newSessionID
+      //val resp = (Json.parse(response.body) \ "USGS_Elevation_Point_Query_Service" \ "Elevation_Query" \ "Units")
+      val resp = (Json.parse(response.body) \ "URL")
+      Logger.debug(resp.toString)
+
+      resp match {
+        case _: JsUndefined => {}
+        case _ => {
+          Logger.debug(("MAPPING "+sessionId+" TO "+resp.toString))
+          idMap += (sessionId -> resp.toString)
+        }
+      }
+    })
+  }
+
+  /**
+    * Check to see whether request UUID has received a URL from API yet.
+   */
+  def checkForSessionUrl(sessionId: UUID): Option[String] = {
+    var completed: Option[String] = None
+
+    Logger.debug("CHECKING STATUS OF SESSIONID: "+sessionId)
+
+    if (idMap.contains(sessionId)) {
+      completed = idMap.get(sessionId)
+    }
+
+    return completed
   }
 
   /**

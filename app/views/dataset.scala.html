@@ -105,7 +105,7 @@
                     }
                     @if(dataset.files.length > 0 && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
 
-                        <a href="#" onclick="launchToolRequest()" class="btn btn-link btn-sm btn-margin-bottom" id="launchVMBtn" role="button">
+                        <a href="#" onclick="launchToolRequest()" class="btn btn-link btn-sm btn-margin-bottom" id="launchToolBtn" role="button">
                             <span class="glyphicon glyphicon-log-in"></span>&nbsp;Launch Tool
                         </a>
                     }
@@ -389,21 +389,43 @@
     function launchToolRequest() {
         // Send request to ToolManagerPlugin to launch a Tool with current dataset attached.
 
-        console.log("Sending launchToolRequest...");
-
         var request = new XMLHttpRequest();
         request.onreadystatechange = function() {
             if (request.readyState == 4 && request.status == 200) {
-                console.log("launchToolRequest came back OK");
-                console.log(request)
-                //launchToolWindow(request.URL)
+                var sessionId = request.response
+                console.log("launchToolRequest OK. sessionId created: "+ sessionId)
+
+                // Hide Launch button and introduce Check Status button in its place
+                $('<a href="#" onclick="checkToolStatus(\''+sessionId+'\')" class="btn btn-link btn-sm btn-margin-bottom" id="checkToolBtn" role="button"> <span class="glyphicon glyphicon-log-in"></span>&nbsp;Check Tool Status </a>').insertAfter($('#launchToolBtn'));
+                $('#launchToolBtn').css("display", "none");
             }
             else if (request.readyState == 4 && (request.status != 200))
                 console.log("launchToolRequest came back with "+request.status.toString());
         }
 
-        var params = "?dsid=@dataset.id"
-        request.open("GET", jsRoutes.controllers.Datasets.launchTool().url+params, true);
+        request.open("GET", jsRoutes.controllers.Datasets.launchTool(window.location.host, "@dataset.id").url, true);
+        request.send();
+    }
+
+    function checkToolStatus(sessionid) {
+        // Check status of a previously launched SessionID - is there a URL ready yet?
+        console.log("checking status of sessionID "+sessionid)
+
+        var request = new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (request.readyState == 4 && request.status == 200) {
+                var responseUrl = request.response
+                if (responseUrl != "") {
+                    window.open("checkToolStatus OK. "+responseUrl)
+                } else {
+                    console.log("checkToolStatus OK. No URL available.")
+                }
+            }
+            else if (request.readyState == 4 && (request.status != 200))
+                console.log("checkToolStatus came back with "+request.status.toString());
+        }
+
+        request.open("GET", jsRoutes.controllers.Datasets.requestSessionURL(sessionid).url, true);
         request.send();
     }
 

@@ -783,18 +783,21 @@ class Datasets @Inject()(
   /**
     * With permission, send request to ToolManagerPlugin to launch a tool with dataset ID if provided.
     */
-  def launchTool() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+  def launchTool(hostURL: String, datasetid: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
-    val datasetid = request.queryString.get("dsid").flatMap(_.headOption).getOrElse("")
+
+    // This token will be used later, to check whether external API has responded
+    val sessionId = UUID()
 
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
-        val launched = mgr.launchTool(datasetid)
+        mgr.launchTool(hostURL, sessionId, datasetid)
       }
       case None => {}
     }
 
-    Ok("Launching tool.")
+    // Return the session token for reference
+    Ok(sessionId.toString)
   }
 
   def getRunningTools() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
@@ -808,5 +811,23 @@ class Datasets @Inject()(
     }
 
     Ok("Running tools")
+  }
+
+  def requestSessionURL(sessionId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        val status = mgr.checkForSessionUrl(sessionId)
+        status match {
+          case Some(s) => {
+            Logger.debug(s.toString)
+            Ok(s)
+          }
+          case None => Ok("")
+        }
+      }
+      case None => Ok("")
+    }
   }
 }
