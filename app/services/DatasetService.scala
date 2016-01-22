@@ -146,6 +146,16 @@ trait DatasetService {
   def removeFile(datasetId: UUID, fileId: UUID)
 
   /**
+   * Add Folder to dataset.
+   */
+  def addFolder(datasetId: UUID, folderId: UUID)
+
+  /**
+   * Remove folder from dataset.
+   */
+  def removeFolder(datasetId: UUID, folderId: UUID)
+
+  /**
    * Set new thumbnail.
    */
   def createThumbnail(datasetId: UUID)

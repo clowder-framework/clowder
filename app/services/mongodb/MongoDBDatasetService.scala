@@ -965,6 +965,11 @@ class MongoDBDatasetService @Inject() (
     Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $addToSet("files" -> new ObjectId(file.id.stringify)), false, false, WriteConcern.Safe)
   }
 
+  def addFolder(datasetId: UUID, folderId: UUID) {
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $addToSet("folders" -> new ObjectId(folderId.stringify)), false, false, WriteConcern.Safe)
+  }
+
+
   def addCollection(datasetId: UUID, collectionId: UUID) {
     Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $addToSet("collections" -> new ObjectId(collectionId.stringify)), false, false, WriteConcern.Safe)
   }
@@ -976,6 +981,10 @@ class MongoDBDatasetService @Inject() (
   def removeFile(datasetId: UUID, fileId: UUID) {
     Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("files" -> new ObjectId(fileId.stringify)), false, false, WriteConcern.Safe)
     removeXMLMetadata(datasetId, fileId)
+  }
+
+  def removeFolder(datasetId: UUID, folderId: UUID) {
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("folders" -> new ObjectId(folderId.stringify)), false, false, WriteConcern.Safe)
   }
 
   def newThumbnail(datasetId: UUID) {

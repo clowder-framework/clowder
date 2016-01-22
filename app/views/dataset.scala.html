@@ -103,7 +103,9 @@
                         }
                     }
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                        <a href="@routes.Folders.newFolder(TypedID( id=dataset.id, objectType='dataset'), dataset.id)"
+                        <a href="@routes.Folders.newFolder("dataset", Some(dataset.id.stringify), dataset.id)" class="btn btn-link btn-sm btn-margin-bottom">
+                            <span class="glyphicon glyphicon-ok"></span> Create Folder
+                        </a>
                     }
                 </div>
             </div>

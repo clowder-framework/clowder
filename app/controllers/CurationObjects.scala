@@ -65,8 +65,8 @@ class CurationObjects @Inject()(
   def submit(datasetId:UUID, spaceId:UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) (parse.multipartFormData)  { implicit request =>
 
     //get name, des, space from request
-    var COName = request.body.asFormUrlEncoded.getOrElse("name", null)
-    var CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
+    val COName = request.body.asFormUrlEncoded.getOrElse("name", null)
+    val CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
 
     implicit val user = request.user
     user match {

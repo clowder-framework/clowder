@@ -28,7 +28,8 @@ class MongoDBFolderService @Inject() (files: FileService) extends FolderService{
    * Create a Folder
    */
   def insert(folder: Folder): Option[String] = {
-   Folder.insert(folder).map(_.toString)
+
+    Folder.insert(folder).map(_.toString)
   }
 
   def update(folder: Folder) {

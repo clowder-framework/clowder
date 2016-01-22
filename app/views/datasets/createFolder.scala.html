@@ -1,5 +1,81 @@
-@(parentDataset: UUID, parent: TypedID)(implicit user: Option[models.User])
+@(parentType: String, parentId: UUID, parentName: String, parentDataset: UUID, parentDatasetName: String)(implicit user: Option[models.User])
 
 @main("Create Folder") {
+    <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
+    <div class="page-header">
+        <h1>Create new folder in @parentType
+            @if(parentType == "dataset") {
+                <a href="@routes.Datasets.dataset(parentId)"> @parentName</a>
+            } else {
+                //TODO: Link to a Folder's page?
+                @parentName
+            }
+        </h1>
+        @if(parentType == "folder") {
+            Parent dataset:  <a href="@routes.Datasets.dataset(parentDataset)"> @parentName</a>
+        }
 
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <p>A folder is a container for files and other folders. They are contained within datasets. Create one to keep your files organized.</p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div>
+                <span id="status" class="success hiddencomplete alert alert-success" role="alert">A Status Message</span>
+                <span class="error hiddencomplete alert alert-danger" id="messageerror">An Error Message</span>
+            </div>
+            <div class="form-group">
+                <label id="namelabel" for="name">Name</label>
+                <input type="text" class="form-control" id="name" placeholder="A short name">
+                <span class="error hiddencomplete" id="nameerror">The name is a required field</span>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <button type="submit" class="btn btn-primary start"  id="createFolder" title="Create the Dataset">
+                <span class="glyphicon glyphicon-ok"></span> Create Folder
+            </button>
+            <button class="btn btn-default" title="Start the dataset creation process over" onclick="return resetValues();">
+                <span class="glyphicon glyphicon-unchecked"></span> Reset
+            </button>
+        </div>
+    </div>
+    <form id="foldercreate" action="@routes.Folders.submit(parentDataset)" method="POST" enctype ="multipart/form-data">
+        <input type="hidden" name="name" id="hiddenname" value="not set">
+        <input type="hidden" name="parentId" id="hiddenparentid" value="not set">
+        <input type="hidden" name="parentType" id="hiddenparenttype" value="not set">
+    </form>
+    <script language="javascript">
+        function resetValues() {
+            $("#name").val("");
+        }
+
+        $(function() {
+            $('#createFolder').click(function() {
+                var name=$('#name');
+
+                var error = false;
+                if(!name.val()) {
+                    $('#nameerror').show();
+                    error = true;
+                }
+                if(!error) {
+                    var encName  = htmlEncode(name.val());
+                    $('#hiddenname').val(encName);
+                    $('#hiddenparentid').val("@parentId");
+                    $('#hiddenparenttype').val("@parentType");
+
+                    //Submit the form
+                    $('#foldercreate').submit();
+                    return true;
+
+                }
+                return false;
+            });
+        });
+    </script>
 }
