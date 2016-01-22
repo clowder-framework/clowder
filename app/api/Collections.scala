@@ -421,6 +421,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           case Some(collection) => {
             collections.get(subCollectionId) match {
               case Some(sub_collection) => {
+                /*
                 var parentSpaces = collection.spaces
                 for (spaceId <- parentSpaces){
                   try {
@@ -430,6 +431,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
                   }
 
                 }
+                */
                 events.addSourceEvent(request.user, sub_collection.id, sub_collection.name, collection.id, collection.name, "add_sub_collection")
                 Ok(jsonCollection(collection))
               }

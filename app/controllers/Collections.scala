@@ -81,10 +81,10 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             parentSpaces = parentCollection.spaces
             Ok(views.html.newCollectionWithParent(null, decodedSpaceList.toList,  RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None,Some(currentParentCollectionId),Some(parentCollection.name), parentSpaces))
           }
-          case None => Ok("newCollectionWithParent, no collection matches parentCollectionId")
+          case None => Ok(toJson("newCollectionWithParent, no collection matches parentCollectionId"))
         }
       }
-      case None => Ok("newCollectionWithParent, no parentCollectionId provided")
+      case None => Ok(toJson("newCollectionWithParent, no parentCollectionId provided"))
     }
   }
 
@@ -372,6 +372,17 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
                 collections.get(UUID(parentCollectionId)) match {
                   case Some(parentCollection) => {
                     collections.addSubCollection(UUID(parentCollectionId), collection.id)
+                    /*
+                    var parentSpaceIds = parentCollection.spaces
+                    for (parentSpaceId <- parentSpaceIds){
+                      spaceService.get(parentSpaceId) match {
+                        case Some(parentSpace) => {
+                          spaceService.addCollection(collection.id,parentSpaceId)
+                        }
+                        case None => Logger.error("Cannot add to space, now space found for " + parentSpaceId)
+                      }
+                    }
+                    */
                   }
                   case None => {
                     Logger.error("Unable to add collection to parent collection with id " + parentCollectionId)
@@ -399,6 +410,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           }
 
           //add to same spaces as parent collection
+          /*
           if (colParentSpaces != null && colParentSpaces.size > 0){
             if (colParentSpaces(0) != ""){
               try {
@@ -417,6 +429,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             }
 
           }
+          */
 
           //index collection
             val dateFormat = new SimpleDateFormat("dd/MM/yyyy")

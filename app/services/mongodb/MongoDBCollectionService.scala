@@ -697,6 +697,16 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
         if (!isSubCollectionIdInCollection(subCollectionId,collection)){
           addSubCollectionId(subCollectionId,collection)
           addParentCollectionId(subCollectionId,collectionId)
+          //add sub collection to the spaces the parent has
+          var parentSpaceIds = collection.spaces
+          for (parentSpaceId <- parentSpaceIds){
+            spaceService.get(parentSpaceId) match {
+              case Some(parentSpace) => {
+                spaceService.addCollection(subCollectionId,parentSpaceId)
+              }
+              case None => Logger.error("no space found for parent space " + parentSpaceId)
+            }
+          }
           index(collection.id)
           Collection.findOneById(new ObjectId(subCollectionId.stringify)) match {
             case Some(sub_collection) => {
