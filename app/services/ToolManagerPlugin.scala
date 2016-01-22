@@ -102,12 +102,12 @@ class ToolManagerPlugin(application: Application) extends Plugin {
 
     val postdata = Json.obj(
       "dataset" -> dsUrl,
-      "user" -> "",
-      "pw" -> ""
+      "user" -> "mburnet2@illinois.edu",
+      "pw" -> "tSzx7dINA8RxFEKp7sX8",
+      "host" -> "http://141.142.209.108"
     )
     //val statusRequest: Future[Response] = url("http://ned.usgs.gov/epqs/pqs.php?x=-88.22&y=40.12&output=json").get()
-    val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython/notebooks")
-                                            .withHeaders("Content-Type" -> "application/json").post(postdata)
+    val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython").post(postdata)
 
     statusRequest.map( response => {
       Logger.debug(("API RESPONSED: "+response.body.toString))
