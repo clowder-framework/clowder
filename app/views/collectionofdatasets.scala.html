@@ -1,6 +1,6 @@
 @(datasetsInCollection: List[models.Dataset],
   childCollections: List[models.Collection],
-  parentCollections: List[models.Collection],
+  parentCollections: Option[List[models.Collection]],
   collection: models.Collection,
   previewers: List[Previewer],
   collectionSpaces: Option[List[ProjectSpace]])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
@@ -149,7 +149,7 @@
 			<div class="col-md-12">
 				<h3>Child Collections in the collection</h3>
 					@childCollections.map { child_collection =>
-						
+
 					}
 
 			</div>
@@ -191,6 +191,7 @@
 	<!-- right column -->
 	<div class="col-md-4">
 		@spaces.spaceAllocation(collection.id, ResourceRef.collection, collectionSpaces.getOrElse(List.empty))
+		@collections.parentAllocation(collection,collection.id,ResourceRef.collection, parentCollections.getOrElse(List.empty)))
 		<br />
 		@if(user.isDefined && collectionSpaces.isDefined && !collectionSpaces.get.isEmpty){
 			<div id="collection-users">
