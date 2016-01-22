@@ -105,6 +105,17 @@ class Metadata @Inject()(
       }
   }
 
+  def deleteDefinition(id: UUID) = ServerAdminAction { implicit request =>
+    metadataService.getDefinition(id) match {
+      case Some(md) => {
+        metadataService.deleteDefinition(id)
+        Ok(JsObject(Seq("status" -> JsString("ok"))))
+      }
+
+      case None => BadRequest(toJson("Invalid metadata definition"))
+    }
+  }
+
   def addUserMetadata() = PermissionAction(Permission.AddMetadata)(parse.json) {
     implicit request =>
       request.user match {
@@ -154,7 +165,7 @@ class Metadata @Inject()(
             //add metadata to mongo
             metadataService.addMetadata(metadata)
 
-            Ok(views.html.metadatald.view(List(metadata))(request.user))
+            Ok(views.html.metadatald.view(List(metadata), true)(request.user))
           } else {
             BadRequest(toJson("Invalid resource type"))
           }

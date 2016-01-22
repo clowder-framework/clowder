@@ -76,14 +76,15 @@ class CurationObjects @Inject()(
           case Some(dataset) => {
             if (spaces.get(spaceId) != None) {
 
-              //copy file list from FileDAO. and save curartion file metadata
+              //copy file list from FileDAO. and save curation file metadata. metadataCount is 0 since
+              // metadatas.getMetadataByAttachTo will increase metadataCount
               var newFiles: List[UUID]= List.empty
               for ( fileId <- dataset.files) {
                 files.get(fileId) match {
                   case Some(f) => {
                     val cf = CurationFile(fileId = f.id, path= f.path, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
                       contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
-                    thumbnail_id = f.thumbnail_id, metadataCount = f.metadataCount, licenseData = f.licenseData, notesHTML = f.notesHTML)
+                    thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, notesHTML = f.notesHTML)
                     curations.insertFile(cf)
                     newFiles = cf.id :: newFiles
                     metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id))))
@@ -151,7 +152,7 @@ class CurationObjects @Inject()(
           val CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
           Logger.debug(COName(0))
           curations.updateInformation(id, CODesc(0), COName(0), c.space, spaceId)
-          events.addObjectEvent(user, id, COName(0), "update_dataset_information")
+          events.addObjectEvent(user, id, COName(0), "update_curation_information")
 
           Redirect(routes.CurationObjects.getCurationObject(id))
         }
@@ -265,7 +266,7 @@ class CurationObjects @Inject()(
           "Aggregation" -> Json.toJson("http://sead-data.net/terms/aggregation"),
           "Title" -> Json.toJson("http://purl.org/dc/elements/1.1/title"),
           "similarTo" -> Json.toJson("http://sead-data.net/terms/similarTo"),
-          "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
+          "Creator" -> Json.toJson(": http://purl.org/dc/elements/1.1/creator"),
           "Preferences" -> Json.toJson("http://sead-data.net/terms/publicationpreferences"),
           "Aggregation Statistics" -> Json.toJson("http://sead-data.net/terms/publicationstatistics"),
           "Data Mimetypes" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
@@ -278,12 +279,11 @@ class CurationObjects @Inject()(
           "Access" -> Json.toJson("http://sead-data.net/terms/access"),
           "License" -> Json.toJson("http://purl.org/dc/terms/license"),
           "Cost" -> Json.toJson("http://sead-data.net/terms/cost"),
-          "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
           "Repository" -> Json.toJson("http://sead-data.net/terms/requestedrepository"),
           "Alternative title" -> Json.toJson("http://purl.org/dc/terms/alternative"),
           "Contact" -> Json.toJson("http://sead-data.net/terms/contact"),
-          "name" -> Json.toJson("http://purl.org/dc/terms/name"),
-          "email" -> Json.toJson("http://purl.org/dc/terms/email"),
+          "name" -> Json.toJson("http://sead-data.net/terms/name"),
+          "email" -> Json.toJson("http://schema.org/Person/email"),
           "Description" -> Json.toJson("http://purl.org/dc/elements/1.1/description"),
           "Audience" -> Json.toJson("http://purl.org/dc/terms/audience"),
           "Abstract" -> Json.toJson("http://purl.org/dc/terms/abstract"),
@@ -375,9 +375,9 @@ class CurationObjects @Inject()(
           val creator = Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile match {
             case Some(prof) => prof.orcidID match {
               case Some(oid) => oid
-              case None => controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)
+              case None =>  api.routes.Users.findById(usr.id).absoluteURL(https)
             }
-            case None => controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)
+            case None =>  api.routes.Users.findById(usr.id).absoluteURL(https)
 
           }))
           var metadataToAdd = metadataJson.toMap

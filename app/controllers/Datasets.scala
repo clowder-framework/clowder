@@ -1,15 +1,9 @@
 package controllers
 
-import play.api.Logger
-import play.api.data.Form
-import play.api.data.Forms._
-import play.api.libs.json.Json
-import play.api.mvc.Cookie
 import java.io.FileInputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.Inject
-
 import api.Permission
 import api.Permission.Permission
 import fileutils.FilesUtils
@@ -19,7 +13,6 @@ import play.api.Play.current
 import play.api.libs.json.Json._
 import services._
 import util.{Formatters, RequiredFieldsConfig}
-
 import scala.collection.immutable._
 import scala.collection.mutable.ListBuffer
 
@@ -48,7 +41,7 @@ class Datasets @Inject()(
   /**
    * Display the page that allows users to create new datasets
    */
-  def newDataset(space: Option[String]) = PermissionAction(Permission.CreateDataset) { implicit request =>
+  def newDataset(space: Option[String], collection: Option[String]) = PermissionAction(Permission.CreateDataset) { implicit request =>
       implicit val user = request.user
       val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
       var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
@@ -59,19 +52,29 @@ class Datasets @Inject()(
           decodedSpaceList += Utils.decodeSpaceElements(aSpace)
         }
       }
-    space match {
+    val spaceId = space match {
       case Some(s) => {
         spaceService.get(UUID(s)) match {
-          case Some(space) => Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-            RequiredFieldsConfig.isDescriptionRequired, Some(space.id.toString))).flashing("error" -> "Please select ONE file (upload new or existing)")
-          case None => Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-            RequiredFieldsConfig.isDescriptionRequired, None)).flashing("error" -> "Please select ONE file (upload new or existing)")
+          case Some(space) =>  Some(space.id.toString)
+          case None => None
         }
-
       }
-      case None => Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-        RequiredFieldsConfig.isDescriptionRequired, None)).flashing("error" -> "Please select ONE file (upload new or existing)")
+      case None => None
     }
+
+    val collectionSelected = collection match {
+      case Some(c) => {
+        collections.get(UUID(c)) match {
+          case Some(collection) =>  Some(collection)
+          case None => None
+        }
+      }
+      case None => None
+    }
+
+    Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
+      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected))
+
   }
 
   def createStep2(id: UUID) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
@@ -98,13 +101,11 @@ class Datasets @Inject()(
     }
   }
 
-  def followingDatasets(when: String, index: Int, limit: Int, mode: String) = PrivateServerAction {implicit request =>
+  def followingDatasets(index: Int, limit: Int, mode: String) = PrivateServerAction {implicit request =>
     implicit val user = request.user
     user match {
       case Some(clowderUser)  => {
-        val nextPage = (when == "a")
         val title: Option[String] = Some("Following Datasets")
-
         var datasetList =  new ListBuffer[Dataset]()
         val datasetIds = clowderUser.followedEntities.filter(_.objectType == "dataset")
         val datasetIdsToUse = datasetIds.slice(index*limit, (index+1)*limit)
@@ -178,7 +179,7 @@ class Datasets @Inject()(
       case Some(p) => {
         space match {
           case Some(s) => {
-            title = Some(person.get.fullName + "'s Datasets in Space " + datasetSpace.get.name)
+            title = Some(person.get.fullName + "'s Datasets in Space <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
           }
           case None => {
             title = Some(person.get.fullName + "'s Datasets")
@@ -193,7 +194,7 @@ class Datasets @Inject()(
       case None => {
         space match {
           case Some(s) => {
-            title = Some("Datasets in Space " + datasetSpace.get.name)
+            title = Some("Datasets in Space <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
             if (date != "") {
               datasets.listSpace(date, nextPage, limit, s)
             } else {

@@ -1,3 +1,5 @@
+import java.io.{StringWriter, PrintWriter}
+
 import api.Permission
 import play.api.{GlobalSettings, Application}
 import play.api.Logger
@@ -73,8 +75,11 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
   }
 
   override def onError(request: RequestHeader, ex: Throwable) = {
+    val sw = new StringWriter()
+    val pw = new PrintWriter(sw)
+    ex.printStackTrace(pw)
     Future(InternalServerError(
-      views.html.errorPage(request, ex.fillInStackTrace().toString)
+      views.html.errorPage(request, sw.toString.replace("\n", "   "))
     ))
   }
 

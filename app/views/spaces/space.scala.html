@@ -1,15 +1,19 @@
 @(space: ProjectSpace, collections: List[Collection], datasets: List[Dataset], userRoleMap: Map[User, String])(implicit user: Option[models.User])
-
 @import play.api.Play.current
 
 @main(space.name) {
 
-    @if(space.bannerURL.isDefined) {
+
+    @if( space.bannerURL.isDefined || space.logoURL.isDefined){
         <div class="row">
+        @if(space.bannerURL.isDefined) {
             <div class="space-banner nopadding col-md-12 col-lg-12 col-sm-12" style="background-image:url('@(space.bannerURL)');">
-                @if(space.logoURL.isDefined) {
-                    <img class="space-banner-logo pull-left" src="@(space.logoURL)" alt="Thumbnail of @(space.name)">
-                }
+        } else {
+            <div class="col-md-12 col-lg-12 col-sm-12">
+        }
+            @if(space.logoURL.isDefined) {
+                <img class="space-banner-logo pull-left" src="@(space.logoURL)" alt="Thumbnail of @(space.name)">
+            }
             </div>
         </div>
     }
@@ -38,4 +42,34 @@
             }
         </div>
     </div>
+    <script>
+
+        function activateOne(id) {
+            // initialize Masonry
+            var $container = $('#'+id).masonry();
+            // layout Masonry again after all images have loaded
+            imagesLoaded( '#masonry', function() {
+                $container.masonry({
+                itemSelector: '.post-box',
+                columnWidth: '.post-box',
+                transitionDuration: 4
+                });
+            });
+        }
+
+        function activate(){
+            activateOne("masonry-datasets");
+            activateOne("masonry-collections");
+        }
+
+        $(document).ready(function () {
+            activate();
+        });
+
+        // fire when showing from tab
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+            activate();
+        })
+    </script>
+    <script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
 }
