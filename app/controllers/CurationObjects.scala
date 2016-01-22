@@ -419,7 +419,8 @@ class CurationObjects @Inject()(
                     "Access" -> Json.toJson("http://sead-data.net/terms/access"),
                     "License" -> Json.toJson("http://purl.org/dc/terms/license"),
                     "Rights Holder" -> Json.toJson("http://purl.org/dc/terms/rightsHolder"),
-                    "Cost" -> Json.toJson("http://sead-data.net/terms/cost")
+                    "Cost" -> Json.toJson("http://sead-data.net/terms/cost"),
+                    "Dataset Description" -> Json.toJson("http://sead-data.net/terms/datasetdescription")
 
                 )
               ))),
@@ -433,7 +434,8 @@ class CurationObjects @Inject()(
                     "@id" -> Json.toJson(hostUrl),
                     "@type" -> Json.toJson("Aggregation"),
                     "Title" -> Json.toJson(c.name),
-                    "Creator" -> Json.toJson(creator)
+                    "Creator" -> Json.toJson(creator),
+                    "Dataset Description" -> Json.toJson(c.description)
                   )
                 ),
                 "Aggregation Statistics" -> Json.toJson(

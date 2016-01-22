@@ -135,7 +135,8 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     "Has Part" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
                     "Size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length"),
                     "Mimetype" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
-                    "SHA512 Hash" -> Json.toJson("http://sead-data.net/terms/hasSHA512Digest")
+                    "SHA512 Hash" -> Json.toJson("http://sead-data.net/terms/hasSHA512Digest"),
+                    "Dataset Description" -> Json.toJson("http://sead-data.net/terms/datasetdescription")
                   )
                 )
 
@@ -147,6 +148,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "Creation Date" -> Json.toJson(format.format(c.created)),
                   "Label" -> Json.toJson(c.name),
                   "Title" -> Json.toJson(c.name),
+                  "Dataset Description" -> Json.toJson(c.description),
                   "Uploaded By" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + api.routes.Users.findById(usr.id).absoluteURL(https)))),
                   "Comment" -> Json.toJson(JsArray(commentsJson)),
                   "Publication Date" -> Json.toJson(format.format(c.created)),
