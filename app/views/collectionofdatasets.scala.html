@@ -92,6 +92,8 @@
 							@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
 								<a id="create_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
 									<span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
+								<a id="create_childcollection" href="@routes.Collections.newCollectionWithParent(Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Delete Collection but not Child Collections">
+									<span class="glyphicon glyphicon-ok"></span> Create Collection</a>
 							}
 
 						</div>
