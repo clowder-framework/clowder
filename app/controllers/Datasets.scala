@@ -770,14 +770,25 @@ class Datasets @Inject()(
   def toolManager() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
-    val sessions: List[String] = current.plugin[ToolManagerPlugin] match {
+    // Get list of client-side session IDs
+    val sessions: List[UUID] = current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
-        mgr.getRunningSessions()
+        mgr.getRunningSessionIDs()
       }
-      case None => List[String]()
+      case None => List[UUID]()
     }
 
-    Ok(views.html.datasets.toolManager(sessions))
+    // Get mapping of session IDs to URLs API has returned
+    val sessionIDMap: scala.collection.mutable.Map[UUID, String] = current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        mgr.idMap
+      }
+      case None => scala.collection.mutable.Map[UUID, String]()
+    }
+
+    Logger.debug("LOADING LIST FOR MANAGER")
+    Logger.debug(sessionIDMap.toString)
+    Ok(views.html.datasets.toolManager(sessionIDMap.keys.toList, sessionIDMap))
   }
 
   /**
@@ -800,19 +811,6 @@ class Datasets @Inject()(
     Ok(sessionId.toString)
   }
 
-  def getRunningTools() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
-    implicit val user = request.user
-
-    current.plugin[ToolManagerPlugin] match {
-      case Some(mgr) => {
-        val running = mgr.getRunningSessions()
-      }
-      case None => {}
-    }
-
-    Ok("Running tools")
-  }
-
   def requestSessionURL(sessionId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
@@ -820,10 +818,7 @@ class Datasets @Inject()(
       case Some(mgr) => {
         val status = mgr.checkForSessionUrl(sessionId)
         status match {
-          case Some(s) => {
-            Logger.debug(s.toString)
-            Ok(s)
-          }
+          case Some(s) => Ok(s)
           case None => Ok("")
         }
       }

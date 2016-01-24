@@ -1,4 +1,4 @@
-@(sessions: List[String])(implicit user: Option[models.User])
+@(sessions: List[UUID], sessionMap: scala.collection.mutable.Map[UUID, String])(implicit user: Option[models.User])
 
 @import helper._
 @import play.api.Play.current
@@ -19,18 +19,21 @@
         <table border="1" style="width:100%">
           <tr>
             <th>Session Name</th>
-            <th>User</th>
             <th>URL</th>
-            <th>Size</th>
-            <th>Uptime</th>
           </tr>
           @sessions.map { sessionName =>
             <tr>
               <td>@sessionName</td>
-              <td>mburnet2@@illinois.edu</td>
-              <td><a href="http://141.142.208.144/clowder/">http://141.142.208.144/clowder/</a></td>
-              <td>214 MB</td>
-              <td>13:40</td>
+              <td>@{
+                  val noneyet: String = "Not yet ready."
+                  sessionMap.get(sessionName) match {
+                  case Some(s) => {
+                    if (s == "") {noneyet}
+                    else {"<a href="+s+">"+s+"</a>"}
+                  }
+                  case None => noneyet
+                }
+              }</td>
             </tr>
           }
         </table>

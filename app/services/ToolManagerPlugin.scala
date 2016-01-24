@@ -63,7 +63,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
   }
 
   /**
-    * Fetch URLs of all running tool sessions the current user can access.
+    * Fetch URLs of all running tool sessions the current user can access from external API.
     */
   def _refreshRunningSessions() = {
     runningTools = List("PlantCV Instance 338127", "PlantCV Instance 544712")
@@ -84,10 +84,12 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     * Fetch URLs of all running tool sessions the current user can access.
     * @return list of URLs for currently running sessions
     */
-  def getRunningSessions(): List[String] = {
+  def getRunningSessionIDs(): List[UUID] = {
     //_refreshRunningSessions
     //return runningTools
-    return List("Plant1", "Plant2")
+
+    val sessionids = idMap.keys.toList
+    return sessionids
   }
 
   /**
@@ -99,6 +101,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     val dsUrl = ("http://" + hostURL + "/datasets/" + datasetid.toString)
     Logger.debug("LAUNCH TOOL WITH DATASET: "+dsUrl)
     Logger.debug("SESSIONID GENERATED: "+sessionId)
+    idMap(sessionId) = ""
 
     val postdata = Json.obj(
       "dataset" -> dsUrl,
@@ -106,21 +109,17 @@ class ToolManagerPlugin(application: Application) extends Plugin {
       "pw" -> "tSzx7dINA8RxFEKp7sX8",
       "host" -> "http://141.142.209.108"
     )
-    //val statusRequest: Future[Response] = url("http://ned.usgs.gov/epqs/pqs.php?x=-88.22&y=40.12&output=json").get()
     val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython").post(postdata)
 
     statusRequest.map( response => {
       Logger.debug(("API RESPONSED: "+response.body.toString))
-
-      //val resp = (Json.parse(response.body) \ "USGS_Elevation_Point_Query_Service" \ "Elevation_Query" \ "Units")
       val resp = (Json.parse(response.body) \ "URL")
-      Logger.debug(resp.toString)
 
       resp match {
         case _: JsUndefined => {}
         case _ => {
           Logger.debug(("MAPPING "+sessionId+" TO "+resp.toString))
-          idMap += (sessionId -> resp.toString)
+          idMap(sessionId) = resp.toString
         }
       }
     })
