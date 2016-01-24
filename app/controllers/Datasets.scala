@@ -14,7 +14,7 @@ import play.api.libs.json.Json._
 import services._
 import util.{Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ListBuffer, Map => MutableMap}
 
 
 /**
@@ -773,28 +773,35 @@ class Datasets @Inject()(
     // Get list of client-side session IDs
     val sessions: List[UUID] = current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
-        mgr.getRunningSessionIDs()
+        mgr.getRunningSessionIDs();
       }
-      case None => List[UUID]()
+      case None => List[UUID]();
     }
 
     // Get mapping of session IDs to URLs API has returned
-    val sessionIDMap: scala.collection.mutable.Map[UUID, String] = current.plugin[ToolManagerPlugin] match {
+    val sessionIDMap: MutableMap[UUID, String] = current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
-        mgr.idMap
+        mgr.idMap;
       }
-      case None => scala.collection.mutable.Map[UUID, String]()
+      case None => MutableMap[UUID, String]()
     }
 
-    Logger.debug("LOADING LIST FOR MANAGER")
-    Logger.debug(sessionIDMap.toString)
-    Ok(views.html.datasets.toolManager(sessionIDMap.keys.toList, sessionIDMap))
+    val sessionDSMap: MutableMap[UUID, List[MutableMap[String,String]]] = current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        Logger.debug("DATASETMAP")
+        Logger.debug(mgr.dsMap.toString)
+        mgr.dsMap;
+      }
+      case None => MutableMap[UUID, List[MutableMap[String,String]]]();
+    }
+
+    Ok(views.html.datasets.toolManager(sessionIDMap.keys.toList, sessionIDMap, sessionDSMap))
   }
 
   /**
     * With permission, send request to ToolManagerPlugin to launch a tool with dataset ID if provided.
     */
-  def launchTool(hostURL: String, datasetid: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+  def launchTool(hostURL: String, datasetid: UUID, datasetname: String) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
     // This token will be used later, to check whether external API has responded
@@ -802,7 +809,7 @@ class Datasets @Inject()(
 
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
-        mgr.launchTool(hostURL, sessionId, datasetid)
+        mgr.launchTool(hostURL, sessionId, datasetid, datasetname)
       }
       case None => {}
     }

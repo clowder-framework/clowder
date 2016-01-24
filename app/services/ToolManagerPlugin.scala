@@ -26,7 +26,8 @@ class ToolManagerPlugin(application: Application) extends Plugin {
   var toolsList: List[String] = List[String]()
   var runningTools: List[String] = List[String]()
 
-  var idMap: Map[UUID, String] = Map()
+  var idMap: Map[UUID, String] = Map() // SessionID -> URL from api, or empty string
+  var dsMap: Map[UUID, List[Map[String,String]]] = Map() // SessionID -> list of attached dataset (name, url) pairs
 
 
   override def onStart() {
@@ -97,19 +98,22 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     * @param datasetid clowder ID of dataset to attach
     * @return ID of session that was launched
     */
-  def launchTool(hostURL: String, sessionId: UUID, datasetid: UUID) = {
+  def launchTool(hostURL: String, sessionId: UUID, datasetid: UUID, datasetname: String) = {
     val dsUrl = ("http://" + hostURL + "/datasets/" + datasetid.toString)
     Logger.debug("LAUNCH TOOL WITH DATASET: "+dsUrl)
     Logger.debug("SESSIONID GENERATED: "+sessionId)
-    idMap(sessionId) = ""
+
+    // Map session to empty URL for now, and add this dataset to its list
+    idMap(sessionId) = "";
+    dsMap(sessionId) = List(Map(datasetname -> dsUrl));
 
     val postdata = Json.obj(
       "dataset" -> dsUrl,
       "user" -> "mburnet2@illinois.edu",
       "pw" -> "tSzx7dINA8RxFEKp7sX8",
       "host" -> "http://141.142.209.108"
-    )
-    val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython").post(postdata)
+    );
+    val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython").post(postdata);
 
     statusRequest.map( response => {
       Logger.debug(("API RESPONSED: "+response.body.toString))

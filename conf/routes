@@ -103,7 +103,7 @@ GET            /datasets/metadataSearch                                         
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
 GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
 GET            /datasets/toolManager                                                    @controllers.Datasets.toolManager
-GET            /datasets/launchTool                                                     @controllers.Datasets.launchTool(hostURL: String, datasetid: UUID)
+GET            /datasets/launchTool                                                     @controllers.Datasets.launchTool(hostURL: String, datasetid: UUID, datasetname: String)
 GET            /datasets/requestSessionURL                                              @controllers.Datasets.requestSessionURL(sessionid: UUID)
 GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, filepage:Int ?= 0)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)

@@ -404,7 +404,7 @@
                 console.log("launchToolRequest came back with "+request.status.toString());
         }
 
-        request.open("GET", jsRoutes.controllers.Datasets.launchTool(window.location.host, "@dataset.id").url, true);
+        request.open("GET", jsRoutes.controllers.Datasets.launchTool(window.location.host, "@dataset.id", "@dataset.name").url, true);
         request.send();
     }
 
