@@ -785,7 +785,7 @@ class Datasets @Inject()(
     Ok(views.html.datasets.toolManager(sessionIDMap.keys.toList, sessionIDMap, sessionDSMap))
   }
 
-  def refreshToolList() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+  def refreshToolList(datasetid: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
     var sessionIDMap = MutableMap[UUID, String]();
@@ -800,7 +800,7 @@ class Datasets @Inject()(
       case None => {}
     }
 
-    Ok(views.html.datasets.tools(sessionIDMap.keys.toList, sessionIDMap, sessionDSMap))
+    Ok(views.html.datasets.tools(sessionIDMap.keys.toList, sessionIDMap, sessionDSMap, datasetid))
   }
 
   /**

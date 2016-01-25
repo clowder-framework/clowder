@@ -205,7 +205,7 @@
             @if(current.plugin[services.PostgresPlugin].isDefined) {
                 @sensors.relatedSensors(relatedSensors, "Dataset", dataset.id.stringify)
             }
-            <div id="toolList">
+            <div id="toolListContainer">
                 @{
                     if(current.plugin[services.ToolManagerPlugin].isDefined) {
                         var sessionIDMap = MutableMap[UUID, String]();
@@ -218,7 +218,7 @@
                             }
                             case None => {}
                         }
-                        datasets.tools(sessionIDMap.keys.toList, sessionIDMap, sessionDSMap);
+                        datasets.tools(sessionIDMap.keys.toList, sessionIDMap, sessionDSMap, dataset.id);
                     }
                 }
             </div>
@@ -411,10 +411,6 @@
             if (request.readyState == 4 && request.status == 200) {
                 var sessionId = request.response
                 console.log("launchToolRequest OK. sessionId created: "+ sessionId)
-
-                // Hide Launch button and introduce Check Status button in its place
-                $('<a href="#" onclick="checkToolStatus(\''+sessionId+'\')" class="btn btn-link btn-sm btn-margin-bottom" id="checkToolBtn" role="button"> <span class="glyphicon glyphicon-log-in"></span>&nbsp;Check Tool URL </a>').insertAfter($('#launchToolBtn'));
-                $('#launchToolBtn').css("display", "none");
                 refreshToolSidebar();
             }
             else if (request.readyState == 4 && (request.status != 200))
@@ -455,11 +451,11 @@
             if (request.readyState == 4 && request.status == 200) {
                 console.log("refresh OK: "+ request.response)
 
-                $('#toolList').html(request.response);
+                $('#toolListContainer').html(request.response);
             }
         }
 
-        request.open("GET", jsRoutes.controllers.Datasets.refreshToolList().url, true);
+        request.open("GET", jsRoutes.controllers.Datasets.refreshToolList("@dataset.id").url, true);
         request.send();
     }
 
