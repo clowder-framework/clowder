@@ -107,7 +107,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     dsMap(sessionId) = List(Map(datasetname -> dsUrl));
     
     val postdata = Json.obj(
-      "dataset" -> (dsUrl.replace("/datasets", "/api/datasets")+"/download"),
+      "dataset" -> (dsUrl.replace("/datasets", "/api/datasets").replace("#","")+"/download"),
       "user" -> "mburnet2@illinois.edu",
       "pw" -> "tSzx7dINA8RxFEKp7sX8",
       "host" -> "http://141.142.209.108"
