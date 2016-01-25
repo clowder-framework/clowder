@@ -770,32 +770,37 @@ class Datasets @Inject()(
   def toolManager() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
-    // Get list of client-side session IDs
-    val sessions: List[UUID] = current.plugin[ToolManagerPlugin] match {
-      case Some(mgr) => {
-        mgr.getRunningSessionIDs();
-      }
-      case None => List[UUID]();
-    }
+    var sessionIDMap = MutableMap[UUID, String]();
+    var sessionDSMap = MutableMap[UUID, List[MutableMap[String,String]]]();
 
     // Get mapping of session IDs to URLs API has returned
-    val sessionIDMap: MutableMap[UUID, String] = current.plugin[ToolManagerPlugin] match {
+    current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
-        mgr.idMap;
+        sessionIDMap = mgr.idMap;
+        sessionDSMap = mgr.dsMap;
       }
-      case None => MutableMap[UUID, String]()
-    }
-
-    val sessionDSMap: MutableMap[UUID, List[MutableMap[String,String]]] = current.plugin[ToolManagerPlugin] match {
-      case Some(mgr) => {
-        Logger.debug("DATASETMAP")
-        Logger.debug(mgr.dsMap.toString)
-        mgr.dsMap;
-      }
-      case None => MutableMap[UUID, List[MutableMap[String,String]]]();
+      case None => {}
     }
 
     Ok(views.html.datasets.toolManager(sessionIDMap.keys.toList, sessionIDMap, sessionDSMap))
+  }
+
+  def refreshToolList() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    var sessionIDMap = MutableMap[UUID, String]();
+    var sessionDSMap = MutableMap[UUID, List[MutableMap[String,String]]]();
+
+    // Get mapping of session IDs to URLs API has returned
+    current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        sessionIDMap = mgr.idMap;
+        sessionDSMap = mgr.dsMap;
+      }
+      case None => {}
+    }
+
+    Ok(views.html.datasets.tools(sessionIDMap.keys.toList, sessionIDMap, sessionDSMap))
   }
 
   /**

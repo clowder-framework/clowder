@@ -1,0 +1,72 @@
+@(sessions: List[UUID], sessionMap: scala.collection.mutable.Map[UUID, String], sessionDsMap: scala.collection.mutable.Map[UUID, List[scala.collection.mutable.Map[String,String]]])(implicit user: Option[models.User])
+
+@import helper._
+@import play.api.Play.current
+@import services.ToolManagerPlugin
+@import scala.io.Source
+@import scala.xml.parsing.XhtmlParser
+
+
+<div class="row border-top bottom-padding">
+  <div class="col-md-12">
+    <h4>Running Tool Sessions</h4>
+  </div>
+</div>
+
+<div class="row" id="tile-view">
+  <div class="col-md-12">
+    <div id="session-table">
+      <table border="1" style="width:100%">
+        <tr>
+          <th width="20%">Session ID</th>
+          <th width="25%">Attached Datasets</th>
+          <th width="25%">URL</th>
+        </tr>
+        @sessions.map { sessionName =>
+          <tr>
+            <td>@sessionName</td>
+            <td>@{
+                  sessionDsMap.get(sessionName) match {
+                  case Some(ds_list) => {
+                    var liststr = ""
+                    ds_list.foreach { curr_ds =>
+                      val dsname = curr_ds.keys.head
+                      val dsurl = curr_ds.get(dsname) match {
+                        case Some(u) => u
+                        case None => "#";
+                      }
+                      liststr += "<a href="+dsurl+">"+dsname+"</a></br>"
+                    }
+                    Html(liststr)
+                  }
+                  case None => {};
+                }
+            }</td>
+            <td>@{
+                val linkstr = sessionMap.get(sessionName) match {
+                  case Some(s) => {
+                    if (s == "") { "Not yet ready" }
+                    else {
+                      val displaystr = s.replace("\"","")
+                      "<a href="+s+">"+displaystr+"</a>"
+                    }
+                  }
+                  case None => ""
+                }
+              Html(linkstr)
+            }</td>
+          </tr>
+        }
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="row bottom-padding">
+  <div class="col-md-12">
+    <a class="btn btn-link" href="toolManager">
+      <span class="glyphicon glyphicon-log-in"></span>&nbsp;Go to Tool Manager
+    </a>
+  </div>
+</div>
+

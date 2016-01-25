@@ -21,14 +21,16 @@
       <div id="session-table">
         <table border="1" style="width:100%">
           <tr>
-            <th width="20%">Session Name</th>
-            <th width="45%">Attached Datasets</th>
+            <th width="20%">Session ID</th>
+            <th width="20%">Tool Description</th>
+            <th width="25%">Attached Datasets</th>
             <th width="25%">URL</th>
-            <th width="10%">Remove</th>
+            <th width="10%">Remove Session</th>
           </tr>
           @sessions.map { sessionName =>
             <tr>
               <td>@sessionName</td>
+              <td>Jupyter Basic</td>
               <td>@{
                     sessionDsMap.get(sessionName) match {
                     case Some(ds_list) => {
@@ -47,16 +49,19 @@
                   }
               }</td>
               <td>@{
-                  val noneyet: String = "Not yet ready"
-                  sessionMap.get(sessionName) match {
-                  case Some(s) => {
-                    if (s == "") {noneyet}
-                    else {Html("<a href="+s+">"+s+"</a>")}
+                  val linkstr = sessionMap.get(sessionName) match {
+                    case Some(s) => {
+                      if (s == "") { "Not yet ready" }
+                      else {
+                        val displaystr = s.replace("\"","")
+                        "<a href="+s+">"+displaystr+"</a>"
+                      }
+                    }
+                    case None => ""
                   }
-                  case None => noneyet
-                }
+                Html(linkstr)
               }</td>
-              <td><a href="#" onclick="removeSession('@sessionName')" id="removeSessionBtn" role="button">&nbsp;Remove</a>
+              <td><a href="#" onclick="removeSession('@sessionName')" id="removeSessionBtn" role="button">Remove</a>
               </td>
             </tr>
           }

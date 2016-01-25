@@ -98,8 +98,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     * @param datasetid clowder ID of dataset to attach
     * @return ID of session that was launched
     */
-  def launchTool(hostURL: String, sessionId: UUID, datasetid: UUID, datasetname: String) = {
-    val dsUrl = ("http://" + hostURL + "/datasets/" + datasetid.toString)
+  def launchTool(dsUrl: String, sessionId: UUID, datasetid: UUID, datasetname: String) = {
     Logger.debug("LAUNCH TOOL WITH DATASET: "+dsUrl)
     Logger.debug("SESSIONID GENERATED: "+sessionId)
 

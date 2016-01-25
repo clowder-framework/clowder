@@ -17,6 +17,7 @@
 @import helper._
 @import api.Permission
 @import play.api.Play.current
+@import scala.collection.mutable.{Map => MutableMap}
 
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
@@ -103,8 +104,7 @@
                             }
                         }
                     }
-                    @if(dataset.files.length > 0 && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
-
+                    @if(dataset.files.length > 0 && Permission.checkPermission(Permission.ExecuteOnDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
                         <a href="#" onclick="launchToolRequest()" class="btn btn-link btn-sm btn-margin-bottom" id="launchToolBtn" role="button">
                             <span class="glyphicon glyphicon-log-in"></span>&nbsp;Launch Tool
                         </a>
@@ -202,9 +202,26 @@
             @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
                 @datasets.listCurationObjects(curationObjects)
             }
-            @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {
+            @if(current.plugin[services.PostgresPlugin].isDefined) {
                 @sensors.relatedSensors(relatedSensors, "Dataset", dataset.id.stringify)
             }
+            <div id="toolList">
+                @{
+                    if(current.plugin[services.ToolManagerPlugin].isDefined) {
+                        var sessionIDMap = MutableMap[UUID, String]();
+                        var sessionDSMap = MutableMap[UUID, List[MutableMap[String,String]]]();
+
+                        current.plugin[services.ToolManagerPlugin] match {
+                            case Some(mgr) => {
+                                sessionIDMap = mgr.idMap;
+                                sessionDSMap = mgr.dsMap;
+                            }
+                            case None => {}
+                        }
+                        datasets.tools(sessionIDMap.keys.toList, sessionIDMap, sessionDSMap);
+                    }
+                }
+            </div>
 		</div>
 	</div>
 
@@ -396,15 +413,15 @@
                 console.log("launchToolRequest OK. sessionId created: "+ sessionId)
 
                 // Hide Launch button and introduce Check Status button in its place
-                $('<a href="#" onclick="checkToolStatus(\''+sessionId+'\')" class="btn btn-link btn-sm btn-margin-bottom" id="checkToolBtn" role="button"> <span class="glyphicon glyphicon-log-in"></span>&nbsp;Check Tool Status </a>').insertAfter($('#launchToolBtn'));
-                $('<a href="toolManager" class="btn btn-link btn-sm btn-margin-bottom" id="toolMgrBtn" role="button"> <span class="glyphicon glyphicon-log-in"></span>&nbsp;Tool Manager </a>').insertAfter($('#checkToolBtn'));
+                $('<a href="#" onclick="checkToolStatus(\''+sessionId+'\')" class="btn btn-link btn-sm btn-margin-bottom" id="checkToolBtn" role="button"> <span class="glyphicon glyphicon-log-in"></span>&nbsp;Check Tool URL </a>').insertAfter($('#launchToolBtn'));
                 $('#launchToolBtn').css("display", "none");
+                refreshToolSidebar();
             }
             else if (request.readyState == 4 && (request.status != 200))
                 console.log("launchToolRequest came back with "+request.status.toString());
         }
 
-        request.open("GET", jsRoutes.controllers.Datasets.launchTool(window.location.host, "@dataset.id", "@dataset.name").url, true);
+        request.open("GET", jsRoutes.controllers.Datasets.launchTool(window.location.href, "@dataset.id", "@dataset.name").url, true);
         request.send();
     }
 
@@ -431,10 +448,19 @@
         request.send();
     }
 
-    function launchToolWindow(URL) {
-        // Load response URL in a new window.
-        console.log("launchTool: "+URL)
-        window.open(URL)
+    function refreshToolSidebar() {
+        // Get current status from ToolManagerPlugin and refresh sidebar table
+        var request = new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (request.readyState == 4 && request.status == 200) {
+                console.log("refresh OK: "+ request.response)
+
+                $('#toolList').html(request.response);
+            }
+        }
+
+        request.open("GET", jsRoutes.controllers.Datasets.refreshToolList().url, true);
+        request.send();
     }
 
     </script>
