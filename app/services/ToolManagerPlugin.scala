@@ -105,9 +105,9 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     // Map session to empty URL for now, and add this dataset to its list
     idMap(sessionId) = "";
     dsMap(sessionId) = List(Map(datasetname -> dsUrl));
-
+    
     val postdata = Json.obj(
-      "dataset" -> dsUrl,
+      "dataset" -> (dsUrl.replace("/datasets", "/api/datasets")+"/download"),
       "user" -> "mburnet2@illinois.edu",
       "pw" -> "tSzx7dINA8RxFEKp7sX8",
       "host" -> "http://141.142.209.108"
