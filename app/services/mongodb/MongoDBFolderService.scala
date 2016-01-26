@@ -87,6 +87,12 @@ class MongoDBFolderService @Inject() (files: FileService) extends FolderService{
     Folder.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $set("parentId" -> new ObjectId(parent.id.stringify)), false, false, WriteConcern.Safe)
     Folder.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $set("parentType" -> parent.objectType), false, false, WriteConcern.Safe)
   }
+
+  def updateName(folderId: UUID, name: String) {
+    val result = Folder.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)),
+      $set("name" -> name),
+      false, false, WriteConcern.Safe)
+  }
 }
 
 object Folder extends ModelCompanion[Folder, ObjectId] {

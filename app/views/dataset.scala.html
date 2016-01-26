@@ -361,6 +361,7 @@
                 $('#h-edit-title').removeClass("inline");
                 $('#h-edit-title').css("display", "");
                 $('#ds-title').mouseleave();
+                notify("Dataset name updated successfully", "success", false, 2000 );
             });
 
             request.fail(function(jqXHR, textStatus, errorThrown) {
@@ -414,6 +415,7 @@
 			$('#edit-description').removeClass("inline");
             $('#edit-description').css("display", "");
             $('#ds-description').mouseleave();
+            notify("Dataset description updated successfully", "success", false, 2000 );
 		});
 
 		request.fail(function(jqXHR, textStatus, errorThrown) {

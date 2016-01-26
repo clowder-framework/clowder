@@ -40,4 +40,9 @@ trait FolderService {
    * Update parent of a folder
    */
   def updateParent(folderId: UUID, parent: TypedID)
+
+  /**
+   * Update name for a folder
+   */
+  def updateName(folderId: UUID, name: String)
 }

@@ -8,7 +8,16 @@
                 <h1 class="text-center"><span class="glyphicon glyphicon-folder-close"></span></h1>
             </div>
             <div class="col-md-10 col-sm-10 col-lg-10">
-                <h2><a href="@routes.Datasets.dataset(parentDataset, currentSpace, 0, Some(folder.id.stringify))">@folder.name</a></h2>
+                <div id="folder-title-@folder.id">
+                    <h2 id ="@folder.id-name" class="inline"><a href="@routes.Datasets.dataset(parentDataset, currentSpace, 0, Some(folder.id.stringify))">@folder.name</a></h2>
+                    @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))) {
+                        <h3 id="h-edit-@folder.id" class="hiddencomplete">
+                            <a id="edit-@folder-id" href="javascript:updateFolderName('@parentDataset', '@folder.id')" title="Click to edit folder name">
+                                <span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
+                            </a>
+                        </h3>
+                    }
+                </div>
 
                 <div class="row">
                     <div class="col-md-6 col-lg-6 col-sm-6">
@@ -49,3 +58,17 @@
         </div>
     </div>
 </div>
+    <script>
+
+        $(document).ready(function(){
+           if(@Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))) {
+                 $(document).on('mouseenter', '#folder-title-@folder.id', function() {
+                    $('#h-edit-@folder.id').removeClass("hiddencomplete");
+                    $('#h-edit-@folder.id').addClass("inline");
+                 }).on('mouseleave', '#folder-title-@folder.id', function() {
+                    $('#h-edit-@folder.id').removeClass("inline");
+                    $('#h-edit-@folder.id').addClass("hiddencomplete");
+                 });
+            }
+        });
+    </script>

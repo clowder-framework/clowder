@@ -446,6 +446,7 @@ POST           /api/datasets/searchmetadata                                     
 GET            /api/datasets/listOutsideCollection/:coll_id                             @api.Datasets.listOutsideCollection(coll_id: UUID)
 POST           /api/datasets/:ds_id/filesRemove/:file_id/:ignoreNotFound                @api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound)
 DELETE         /api/datasets/:parentDataset/deleteFolder/:folderId                      @api.Folders.deleteFolder(parentDataset: UUID, folderId: UUID)
+PUT            /api/datasets/:parentDatasetId/updateName/:folderId                        @api.Folders.updateFolderName(parentDatasetId: UUID, folderId: UUID)
 DELETE         /api/datasets/:ds_id/:file_id                                            @api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound ?= "True")
 GET            /api/datasets/getRDFURLsForDataset/:id                                   @api.Datasets.getRDFURLsForDataset(id: UUID)
 GET            /api/datasets/rdfUserMetadata/:id                                        @api.Datasets.getRDFUserMetadata(id: UUID, mappingNum: String ?= "1")

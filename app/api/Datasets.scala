@@ -4,7 +4,6 @@ import java.io._
 import java.net.URL
 import java.util.Date
 import api.Permission.Permission
-import java.text.SimpleDateFormat
 import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
 import java.util.zip._
 import javax.inject.{Inject, Singleton}
@@ -722,7 +721,7 @@ class Datasets @Inject()(
     if (UUID.isValid(id.stringify)) {
 
       //Set up the vars we are looking for
-      var name: String = null;
+      var name: String = null
 
       val aResult = (request.body \ "name").validate[String]
 

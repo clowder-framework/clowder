@@ -4,6 +4,7 @@ import models.{ResourceRef, Folder}
 import models.UUID
 import javax.inject.{Inject, Singleton}
 import com.wordnik.swagger.annotations.Api
+import play.libs.Json
 import services._
 import play.api.Logger
 import play.api.libs.json.Json._
@@ -90,5 +91,32 @@ class Folders @Inject() (
     }
 
   }
+
+   def updateFolderName(parentDatasetId: UUID, folderId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, parentDatasetId)))(parse.json) { implicit request =>
+    implicit val user = request.user
+     datasets.get(parentDatasetId) match {
+       case Some(parentDataset) => {
+          folders.get(folderId) match {
+            case Some(folder) => {
+              var name: String = null
+              val aResult = (request.body \ "name").asOpt[String]
+
+              aResult match {
+                case Some(s) => name = s
+                case None => BadRequest(toJson("Name is missing"))
+              }
+              Logger.debug(s"Update information for folder with id $folderId. New name is $name")
+
+              folders.updateName(folder.id, name)
+              //TODO: Add Update event
+              Ok(toJson(Map("status" -> "success", "link" -> "")))
+
+            }
+            case None => InternalServerError(s"Folder $folderId not found")
+          }
+       }
+       case None => InternalServerError(s"Parent dataset $parentDatasetId not found")
+     }
+   }
 
 }
