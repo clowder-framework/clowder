@@ -107,7 +107,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
   def followingCollections(index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
     implicit val user = request.user
-    user match {
+    user match {x
       case Some(clowderUser) => {
 
         val title: Option[String] = Some("Following Collections")
@@ -372,17 +372,6 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
                 collections.get(UUID(parentCollectionId)) match {
                   case Some(parentCollection) => {
                     collections.addSubCollection(UUID(parentCollectionId), collection.id)
-                    /*
-                    var parentSpaceIds = parentCollection.spaces
-                    for (parentSpaceId <- parentSpaceIds){
-                      spaceService.get(parentSpaceId) match {
-                        case Some(parentSpace) => {
-                          spaceService.addCollection(collection.id,parentSpaceId)
-                        }
-                        case None => Logger.error("Cannot add to space, now space found for " + parentSpaceId)
-                      }
-                    }
-                    */
                   }
                   case None => {
                     Logger.error("Unable to add collection to parent collection with id " + parentCollectionId)
@@ -408,28 +397,6 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
               case e : Exception => Logger.debug("error with parent collection id " +colParentColId)
             }
           }
-
-          //add to same spaces as parent collection
-          /*
-          if (colParentSpaces != null && colParentSpaces.size > 0){
-            if (colParentSpaces(0) != ""){
-              try {
-                var parentSpaceIds = colParentSpaces(0).split(",").toList
-                for (colParentSpace <- parentSpaceIds){
-                  spaceService.get(UUID(colParentSpace)) match {
-                    case Some(parentSpace) => {
-                      spaceService.addCollection(collection.id,UUID(colParentSpace))
-                    }
-                    case None => Logger.error("no space found for " + colParentSpace)
-                  }
-                }
-              } catch {
-                case e : Exception => Logger.debug("error with parent space id")
-              }
-            }
-
-          }
-          */
 
           //index collection
             val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
