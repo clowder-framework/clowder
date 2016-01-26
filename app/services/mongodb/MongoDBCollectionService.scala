@@ -693,28 +693,33 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   def addSubCollection(collectionId :UUID, subCollectionId: UUID) = Try{
     Collection.findOneById(new ObjectId(collectionId.stringify)) match {
       case Some(collection) => {
-
-        if (!isSubCollectionIdInCollection(subCollectionId,collection)){
-          addSubCollectionId(subCollectionId,collection)
-          addParentCollectionId(subCollectionId,collectionId)
-          //add sub collection to the spaces the parent has
-          var parentSpaceIds = collection.spaces
-          for (parentSpaceId <- parentSpaceIds){
-            spaceService.get(parentSpaceId) match {
-              case Some(parentSpace) => {
-                spaceService.addCollection(subCollectionId,parentSpaceId)
+        get(subCollectionId) match {
+          case Some(sub_collection) => {
+            if (!isSubCollectionIdInCollection(subCollectionId,collection)){
+              addSubCollectionId(subCollectionId,collection)
+              addParentCollectionId(subCollectionId,collectionId)
+              var parentSpaceIds = collection.spaces
+              for (parentSpaceId <- parentSpaceIds){
+                if (!sub_collection.spaces.contains(parentSpaceId)){
+                  spaceService.get(parentSpaceId) match {
+                    case Some(parentSpace) => {
+                      spaceService.addCollection(subCollectionId,parentSpaceId)
+                    }
+                    case None => Logger.error("No space found for " + parentSpaceId)
+                  }
+                }
               }
-              case None => Logger.error("no space found for parent space " + parentSpaceId)
+              index(collection.id)
+              Collection.findOneById(new ObjectId(subCollectionId.stringify)) match {
+                case Some(sub_collection) => {
+                  index(sub_collection.id)
+                } case None =>
+                  Logger.error("Error getting subcollection" + subCollectionId);
+                  Failure
+              }
             }
           }
-          index(collection.id)
-          Collection.findOneById(new ObjectId(subCollectionId.stringify)) match {
-            case Some(sub_collection) => {
-              index(sub_collection.id)
-            } case None =>
-              Logger.error("Error getting subcollection" + subCollectionId);
-              Failure
-          }
+          case None => Logger.error("Error getting subcollection")
         }
       } case None => {
         Logger.error("Error getting collection" + collectionId);
