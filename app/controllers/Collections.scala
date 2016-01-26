@@ -107,7 +107,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
   def followingCollections(index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
     implicit val user = request.user
-    user match {x
+    user match {
       case Some(clowderUser) => {
 
         val title: Option[String] = Some("Following Collections")
