@@ -1,0 +1,51 @@
+@(folder: Folder, parentDataset: UUID, currentSpace: Option[String])(implicit user: Option[models.User])
+
+@import api.Permission
+<div class="panel panel-default" id="@folder.id-listitem">
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-md-2 col-sm-2 col-lg-2">
+                <h1 class="text-center"><span class="glyphicon glyphicon-folder-close"></span></h1>
+            </div>
+            <div class="col-md-10 col-sm-10 col-lg-10">
+                <h2><a href="@routes.Datasets.dataset(parentDataset, currentSpace, 0, Some(folder.id.stringify))">@folder.name</a></h2>
+
+                <div class="row">
+                    <div class="col-md-6 col-lg-6 col-sm-6">
+                        <ul class="list-unstyled">
+                            <li>
+                                <span class="glyphicon glyphicon-folder-close"></span> @folder.folders.length
+                                <span class="glyphicon glyphicon-file"></span> @folder.files.length
+                                @if(user.isDefined) {
+                                    @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))){
+                                        <button onclick="removeFolder('@parentDataset', '@folder.id')" class="btn btn-link" style="text-align:right" title="Delete">
+                                            <span class="glyphicon glyphicon-trash"></span></button>
+                                    } else {
+                                        <button disabled onclick="" class="btn btn-link" style="text-align:right" title="Delete">
+                                            <span class="glyphicon glyphicon-trash"></span></button>
+                                    }
+                                }
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6 col-lg-6 col-sm-6">
+                        <ul class="list-unstyled">
+                            <li> @user match {
+                                case Some(viewer) => {
+                                    <a id="followButton" type="button" class="btn btn-link" objectType="folder" objectId="@folder.id">
+                                    @if(viewer.followedEntities.filter(x => (x.id == folder.id)).nonEmpty) {
+                                        <span class='glyphicon glyphicon-star-empty'></span>Unfollow
+                                    } else {
+                                        <span class='glyphicon glyphicon-star'></span>Follow
+                                    }
+                                    </a>
+                                }
+                            }
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

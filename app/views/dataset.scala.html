@@ -7,11 +7,15 @@
   relatedSensors: List[(String,String,String)],
   datasetSpaces: Option[List[ProjectSpace]],
   fileList: List[File],
+  fileComments: Map[UUID, Int],
   filesTags: scala.collection.immutable.TreeSet[String],
   toPublish: Boolean,
   curationObjects: List[models.CurationObject],
   currentSpace: Option[String],
   filepage: Int,
+  currentFolder: Option[UUID],
+  foldersList: List[Folder],
+  folderHierarchy: List[Folder],
   next: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
@@ -55,7 +59,6 @@
 
                             }
                         </div>
-
                         @datasets.editLicense(dataset)
                     </ul>
                 </div>
@@ -103,9 +106,33 @@
                         }
                     }
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                        <a href="@routes.Folders.newFolder("dataset", Some(dataset.id.stringify), dataset.id)" class="btn btn-link btn-sm btn-margin-bottom">
+                        <a data-toggle="modal" data-target="#folder-modal" class="btn btn-link btn-sm btn-margin-bottom">
                             <span class="glyphicon glyphicon-ok"></span> Create Folder
                         </a>
+                        <div class="modal fade" id="folder-modal" tabindex="-1" role ="dialog" aria-labelledby="folder-modal-label">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h4 class="modal-title" id="folder-modal-label"> Create new Folder</h4>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="form-group">
+                                            <label id="namelabel" for="name">Name</label>
+                                            <input type="text" class="form-control" id="name" placeholder="A short name">
+                                            <span class="error hiddencomplete" id="nameerror">The name is a required field</span>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-primary start"  id="createFolder" title="Create the Dataset">
+                                            <span class="glyphicon glyphicon-ok"></span> Create Folder
+                                        </button>
+                                        <button class="btn btn-default" title="Cancel creation of folder" data-dismiss="modal">
+                                            <span class="glyphicon glyphicon-remove"></span> Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     }
                 </div>
             </div>
@@ -128,7 +155,21 @@
                               </div>
                           </div>
                       }
-                      @files.grid(fileList, dataset.id)
+                      @if(folderHierarchy.length > 0 ) {
+                          <h2> <a href="@routes.Datasets.dataset(dataset.id, currentSpace,0, None)">@dataset.name</a>
+                          @folderHierarchy.map { cFolder =>
+                              > <a href="@routes.Datasets.dataset(dataset.id, currentSpace, 0, Some(cFolder.id.stringify))"> @cFolder.name</a>
+                          }
+                          </h2>
+                      }
+
+                      <div id="folderListDiv">
+                          @foldersList.map { folder =>
+                              @folders.listitem(folder, dataset.id, currentSpace)
+                          }
+                      </div>
+
+                      @files.grid(fileList, fileComments, dataset.id)
                       <div class="row">
                           <div class="col-md-12">
                               <ul class="pager">
@@ -213,7 +254,11 @@
     <script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
     <script src="@routes.Assets.at("javascripts/tinymce/tinymce.min.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/folderListProcess.js")" type="text/javascript"></script>
     <script>
+        var parentId = "@dataset.id";
+        var parentType = "dataset";
+
         tinymce.init ( { selector : '.notesArea',
             theme : "modern",
             plugins :[
@@ -244,6 +289,10 @@
         }
 
         $(document).ready(function(){
+            if(@currentFolder.isDefined) {
+                parentId = '@currentFolder.getOrElse("")';
+                parentType = "folder";
+            }
             if(@dataset.spaces.size < 1 ) {
                 $('#dataset-users').hide();
             }
@@ -383,6 +432,43 @@
             return '<a href="' + url + '">' + url + '</a>';
         })
     }
+
+    $(function() {
+            $('#createFolder').click(function() {
+                var name=$('#name');
+
+                var error = false;
+                if(!name.val()) {
+                    $('#nameerror').show();
+                    error = true;
+                }
+                if(!error) {
+
+                    var encName  = htmlEncode(name.val());
+                    var jsonData = JSON.stringify({"name": encName, "parentId": parentId, "parentType": parentType, "currentSpace": "@currentSpace"});
+                    var request = jsRoutes.api.Folders.createFolder("@dataset.id").ajax({
+                        data:jsonData,
+                        type: 'POST',
+                        contentType: "application/json"
+                    });
+                    request.done(function(response, textStatus, jqXHR){
+                        $('#folder-modal').modal('hide');
+                        $('#folderListDiv').prepend(response);
+                        notify("Folder created successfully", "success", false, 2000 );
+                    });
+
+                    request.fail(function (jqXHR, textStatus, errorThrown){
+                        console.error("The following error occured: " + textStatus, errorThrown);
+                        var errMsg = "You must be logged in to create a new dataset.";
+                        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                            notify("Error in creating folder. : " + errorThrown, "error");
+                        }
+                    });
+
+                };
+                return false;
+            });
+        });
 
     </script>
 }

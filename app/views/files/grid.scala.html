@@ -1,4 +1,4 @@
-@(filesList: List[File], dsId: UUID)(implicit user: Option[models.User])
+@(filesList: List[File], fileComments: Map[UUID, Int], dsId: UUID)(implicit user: Option[models.User])
 
 @import org.apache.commons.io._
 
@@ -8,10 +8,10 @@
 
 <div class="row" id="tile-view">
     <div class="col-md-12">
-        <div id="masonry">
+
         @filesList.map { file =>
-                @files.tile(file, "col-lg-4 col-md-4 col-sm-4", (routes.Datasets.dataset(dsId)), false)
+            @files.listitem(file, fileComments, (routes.Datasets.dataset(dsId)))
         }
-        </div>
+
     </div>
 </div>
