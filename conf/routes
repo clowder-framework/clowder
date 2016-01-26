@@ -104,11 +104,9 @@ GET            /datasets/generalMetadataSearch                                  
 GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
 GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, filepage:Int ?= 0, folder: Option[String] ?= None)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
-GET            /datasets/:parentDataset/newFolder                                       @controllers.Folders.newFolder(parentType: String ?= "dataset", parentId: Option[String] ?= None, parentDataset: UUID)
-POST           /datasets/:parentDataset/newFolder                                       @controllers.Folders.submit(parentDataset: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
-POST           /dataset/submit                                                          @controllers.Datasets.submit
-GET            /datasets/:id/addFiles                                                   @controllers.Datasets.addFiles(id: UUID)
+POST           /dataset/submit                                                          @controllers.Datasets.submit(folderId: Option[String] ?= None)
+GET            /datasets/:id/addFiles                                                   @controllers.Datasets.addFiles(id: UUID, folder: Option[String] ?= None)
 
 # ----------------------------------------------------------------------
 # COLLECTIONS

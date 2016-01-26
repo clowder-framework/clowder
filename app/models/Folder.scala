@@ -9,5 +9,6 @@ case class Folder (
     files: List[UUID] = List.empty,
     folders: List[UUID] = List.empty,
     parentId: UUID,
-    parentType: String)
+    parentType: String,
+    parentDatasetId: UUID)
 

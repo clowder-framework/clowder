@@ -1,6 +1,6 @@
 @(file: models.File, id: String, comments: List[Comment],
   previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]],
-  sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset],
+  sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset], folders: List[Folder],
   mds: List[models.Metadata],
   rdfExported: Boolean,
   extractionsStatus: List[Extraction], outputFormats: Option[List[String]])(implicit user: Option[models.User])
@@ -757,11 +757,25 @@
             }
             </div>
 
+			@if(datasets.length > 0) {
+				<div class="row ds-section-sm border-top">
+					<h4>Datasets containing the file</h4>
+					@datasetsContainingFile(file, datasets)
+				</div>
+			}
 
-        <div class="row ds-section-sm border-top">
-            <h4>Datasets containing the file</h4>
-            @datasetsContainingFile(file, datasets)
-        </div>
+			@if(folders.length > 0) {
+				<div class="row ds-section-sm border-top">
+					<h4>Folders containing the file</h4>
+					@folders.map { folder =>
+						<ul class="list-unstyled">
+							<li><a href="@routes.Datasets.dataset(folder.parentDatasetId, None, 0, Some(folder.id.stringify))">@folder.name</a></li>
+						</ul>
+					}
+				</div>
+			}
+
+
 
     </div> @* End of small right hand side column *@
 

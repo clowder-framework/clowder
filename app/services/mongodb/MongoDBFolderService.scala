@@ -74,6 +74,9 @@ class MongoDBFolderService @Inject() (files: FileService) extends FolderService{
     Folder.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $addToSet("files" -> new ObjectId(fileId.stringify)), false, false, WriteConcern.Safe)
   }
 
+  def removeFile(folderId: UUID, fileId: UUID) {
+    Folder.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $pull("files" -> new ObjectId(fileId.stringify)), false, false, WriteConcern.Safe)
+  }
   /**
    * Add Subfolder to folder
    */
@@ -81,6 +84,10 @@ class MongoDBFolderService @Inject() (files: FileService) extends FolderService{
     Folder.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $addToSet("folders" -> new ObjectId(subFolderId.stringify)),false, false, WriteConcern.Safe)
     Folder.update(MongoDBObject("_id" -> new ObjectId(subFolderId.stringify)), $set("parentId" -> new ObjectId(folderId.stringify)), false, false, WriteConcern.Safe)
     Folder.update(MongoDBObject("_id" -> new ObjectId(subFolderId.stringify)), $set("parentType" -> "Folder"), false, false, WriteConcern.Safe)
+  }
+
+  def removeSubFolder(folderId: UUID, subFolderId: UUID) {
+    Folder.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $pull("folders" -> new ObjectId(subFolderId.stringify)), false, false, WriteConcern.Safe)
   }
 
   def updateParent(folderId: UUID, parent: TypedID) {
@@ -92,6 +99,10 @@ class MongoDBFolderService @Inject() (files: FileService) extends FolderService{
     val result = Folder.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)),
       $set("name" -> name),
       false, false, WriteConcern.Safe)
+  }
+
+  def findByFileId(file_id:UUID): List[Folder] = {
+    Folder.dao.find(MongoDBObject("files" -> new ObjectId(file_id.stringify))).toList
   }
 }
 

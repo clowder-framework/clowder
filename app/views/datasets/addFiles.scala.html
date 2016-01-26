@@ -1,4 +1,4 @@
-@(dataset: Dataset)(implicit user: Option[models.User])
+@(dataset: Dataset, folder: Option[Folder])(implicit user: Option[models.User])
 
 @main("Add Files to Dataset") {
     <!-- Custom items for the create dataset workflow -->
@@ -7,19 +7,42 @@
 
     <div class="page-header">
         <h1>
-            <a href="@routes.Datasets.dataset(dataset.id)" class="btn btn-link" title="Navigate back to dataset">
+
+            <a href="
+            @folder match {
+                case Some(f) => {@routes.Datasets.dataset(dataset.id, None, 0, Some(f.id.stringify))}
+                case None => {@routes.Datasets.dataset(dataset.id)}
+            }
+            " class="btn btn-link" title="Navigate back to dataset">
                 <span class="glyphicon glyphicon-chevron-left" style="font-size: 150%;"></span>
             </a>
-            Add Files to Dataset</h1>
+            Add Files to
+            @folder match {
+                case Some(f) => {Folder}
+                case None =>  {Dataset}
+            }
+        </h1>
     </div>
     <div class="row">
         <div class="col-md-12">
             <ul class="list-unstyled">
-                <li>Dataset <a href="@routes.Datasets.dataset(dataset.id)">@dataset.name</a></li>
+                @folder match {
+                    case Some(f) => {
+                        <li> Folder <a href="@routes.Datasets.dataset(dataset.id, None, 0, Some(f.id.stringify))">@f.name</a></li>
+                        <li>Parent Dataset <a href="@routes.Datasets.dataset(dataset.id)">@dataset.name</a></li>
+                    }
+
+                    case None => {<li>Dataset <a href="@routes.Datasets.dataset(dataset.id)">@dataset.name</a></li>}
+                }
+
                 <li>Created by <a href= "@routes.Profile.viewProfile(dataset.author.email)"> @dataset.author.fullName </a></li>
                 <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
             </ul>
         </div>
     </div>
-    @datasets.uploadFiles(dataset)
+    @folder match {
+        case Some(f) => {@datasets.uploadFiles(dataset, Some(f.id.stringify)) }
+        case None => {@datasets.uploadFiles(dataset, None) }
+    }
+
 }

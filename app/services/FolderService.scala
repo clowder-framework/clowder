@@ -32,10 +32,19 @@ trait FolderService {
   def addFile(folderId: UUID, fileId: UUID)
 
   /**
+   * Remove file from folder
+   */
+  def removeFile(folderId: UUID, fileId: UUID)
+
+  /**
    * Add Subfolder to folder
    */
   def addSubFolder(folderId: UUID, subFolderId: UUID)
 
+  /**
+   * Remove subfolder.
+   */
+  def removeSubFolder(folderId: UUID, subFolderId: UUID)
   /**
    * Update parent of a folder
    */
@@ -45,4 +54,9 @@ trait FolderService {
    * Update name for a folder
    */
   def updateName(folderId: UUID, name: String)
+
+  /**
+   * Find folders that contain a file by id.
+   */
+  def findByFileId(file_id: UUID): List[Folder]
 }

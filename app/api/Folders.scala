@@ -31,11 +31,11 @@ class Folders @Inject() (
                       case Some(parentDataset) => {
                         var folder: Folder = null
                         if(UUID(parentId) == parentDatasetId) {
-                          folder = Folder(name = name, files = List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType)
+                          folder = Folder(name = name, files = List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType, parentDatasetId = parentDatasetId)
                         }  else if(parentType == "folder") {
                           folders.get(UUID(parentId)) match {
                             case Some(pfolder) => {
-                              folder = Folder(name = name, files=List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType)
+                              folder = Folder(name = name, files=List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType, parentDatasetId = parentDatasetId)
                             }
                             case None => InternalServerError(s"parent folder $parentId not found")
                           }
@@ -80,12 +80,18 @@ class Folders @Inject() (
           case Some(folder) => {
             //TODO: Add Deleted folder event? Make everyone unfollow the folder. Add followers field to the model?
             folders.delete(folderId)
-            datasets.removeFolder(parentDatasetId, folderId)
+            if(folder.parentType == "dataset") {
+              datasets.removeFolder(parentDatasetId, folderId)
+            } else if(folder.parentDatasetId == "Folder") {
+              folders.get(folder.parentId) match {
+                case Some(parentFolder) => folders.removeSubFolder(parentFolder.id, folder.id)
+                case None =>
+              }
+            }
             Ok(toJson(Map("status" -> "success", "folderId" -> folderId.stringify)))
           }
           case None => InternalServerError(s"Folder $folderId not found")
         }
-
       }
       case None => InternalServerError(s"Parent Dataset $parentDatasetId not found")
     }

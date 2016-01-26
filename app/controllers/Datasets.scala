@@ -90,11 +90,19 @@ class Datasets @Inject()(
     }
   }
 
-  def addFiles(id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def addFiles(id: UUID, folder: Option[String]) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
-        Ok(views.html.datasets.addFiles(dataset))
+        folder match {
+          case Some(folderId) => {
+            folders.get(UUID(folderId)) match {
+              case Some(f) => Ok(views.html.datasets.addFiles(dataset, Some(f)))
+              case None => Ok(views.html.datasets.addFiles(dataset, None))
+            }
+          }
+          case None => Ok(views.html.datasets.addFiles(dataset, None))
+        }
       }
       case None => {
         InternalServerError(s"Dataset $id not found")
@@ -519,7 +527,7 @@ class Datasets @Inject()(
    * the checks are made here as well. 
    * 
    */
-  def submit() = PermissionAction(Permission.CreateDataset)(parse.multipartFormData) { implicit request =>
+  def submit(folderId: Option[String]) = PermissionAction(Permission.CreateDataset)(parse.multipartFormData) { implicit request =>
     implicit val user = request.user
     Logger.debug("------- in Datasets.submit ---------")
     var dsName = request.body.asFormUrlEncoded.getOrElse("name", null)
@@ -631,7 +639,22 @@ class Datasets @Inject()(
                   val host = Utils.baseUrl(request)
 
                   //directly add the file to the dataset via the service
-                  datasets.addFile(dataset.id, f)
+                  folderId match {
+                    case Some(fId) =>  {
+                      folders.get(UUID(fId)) match {
+                        case Some(folder) => {
+                          //TODO: Add Event
+                          folders.addFile(folder.id, f.id)
+                        }
+                        case None => {
+                          //TODO: Add the file to dataset or don't do anything?
+                          datasets.addFile(dataset.id, f)
+                        }
+                      }
+                    }
+                    case None => datasets.addFile(dataset.id, f)
+                  }
+
 
                   val dsId = dataset.id
                   val dsName = dataset.name
