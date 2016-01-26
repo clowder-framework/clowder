@@ -72,6 +72,16 @@
   <script>
     function removeSession(sessionId) {
       console.log("Eventually remove session "+sessionId)
+      // Get current status from ToolManagerPlugin and refresh sidebar table
+      var request = new XMLHttpRequest();
+      request.onreadystatechange = function() {
+        if (request.readyState == 4 && request.status == 200) {
+          location.reload();
+        }
+      }
+
+      request.open("GET", jsRoutes.controllers.Datasets.removeSession(sessionId).url, true);
+      request.send();
     }
   </script>
 }

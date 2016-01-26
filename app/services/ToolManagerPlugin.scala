@@ -170,17 +170,20 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     * @param sessionid ID of session to stop
     * @return
     */
-  def closeSession(sessionid: String): Boolean = {
-    val statusRequest: Future[Response] = url("http://141.142.209.108:8080/terminate")
-      .withHeaders("Content-Type" -> "application/json")
-      .withQueryString("session" -> sessionid)
-      .withQueryString("user" -> "")
-      .withQueryString("pw" -> "")
-      .get()
+  def removeSession(sessionId: UUID): Boolean = {
+    //val statusRequest: Future[Response] = url("http://141.142.209.108:8080/terminate")
+     // .withHeaders("Content-Type" -> "application/json")
+     // .withQueryString("session" -> sessionid)
+     // .withQueryString("user" -> "")
+     // .withQueryString("pw" -> "")
+     // .get()
 
-    statusRequest.map( response => {
-      Logger.info(response.body.toString)
-    })
+    //statusRequest.map( response => {
+    //  Logger.info(response.body.toString)
+    //})
+
+    idMap = idMap - sessionId
+    dsMap = dsMap - sessionId
 
     return true
   }

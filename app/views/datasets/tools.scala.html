@@ -41,7 +41,7 @@
                 }
               }
               @if(Permission.checkPermission(Permission.ExecuteOnDataset, ResourceRef(ResourceRef.dataset, datasetid))) {
-                | <a href="#" class="btn btn-link btn-xs" title="Attach current dataset">
+                | <a href="#" class="btn btn-link btn-xs disabled" title="Attach current dataset">
                   <span class="glyphicon glyphicon-remove"></span>Attach This Dataset</a>
               } else {
                 |  <a href="#" class="btn btn-link btn-xs disabled" title="Attach current dataset">
