@@ -113,6 +113,10 @@
     $(document).ready(function() {
         @streams.map { stream =>
             var streamJson = @Html(Json.stringify(Json.toJson(stream)));
+            streamJson.sensorsTitle = "@(AppConfiguration.getSensorsTitle)";
+            streamJson.sensorTitle = "@(AppConfiguration.getSensorTitle)";
+            streamJson.formType = "edit";
+            streamJson.permalink = jsRoutes.api.Geostreams.getStream(streamJson.id).url;
             insertInstrumentForm(streamJson);
         }
     });

@@ -47,10 +47,6 @@
                                             <select class="form-control input-sm" id="sensorType" name="sensorType">
                                             </select>
                                         </div>
-                                        <div class="col-sm-4"></div>
-                                        <div class="col-sm-8 paddingTop7">
-                                            <p>Location Type <span id="sensorTypeSummary">1</span> can have <span id="sensorTypeSensorCount">1</span> instrument<span id="sensorTypeMultipleInstruments"></span>.</p>
-                                        </div>
                                         <label for="sensorLocationLat" class="col-sm-4 paddingTop7 control-label">Lat / Long</label>
                                         <div class="col-sm-4">
                                             <input type="number" class="form-control input-sm" id="sensorLocationLat" name="sensorLocationLat" placeholder="latitude (required)" required>
@@ -70,10 +66,6 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="panel-footer">
-                            <p>Each location will contain at least one instrument, depending on it's Location Type.</p>
-
-                        </div>
                     </div>
                 </div>
             </div>
@@ -83,11 +75,9 @@
                 <!-- additional instruments will be added here as the "Add Instrument" button is clicked -->
         </div>
 
-        <div class="btn btn-default" id="addInstrument" style="display: none"><span class="glyphicon glyphicon-plus"></span> Add Instrument</div>
+        <div class="btn btn-primary" id="addInstrument" style="..."><span class="glyphicon glyphicon-plus"></span> Add Instrument</div>
 
-        <br />
-
-        <button type="submit" class="btn btn-primary submit" id="formSubmit"><span class="glyphicon glyphicon-ok"></span> Create</button>
+        <button type="submit" class="btn btn-primary submit" id="formSubmit"><span class="glyphicon glyphicon-send"></span> Create</button>
 
     </div>
 
