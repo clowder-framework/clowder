@@ -62,7 +62,7 @@
         allowClear: true,
         ajax: {
             url: function(params) {
-                return jsRoutes.api.Collections.listCanEdit(params.term, null, 10).url;
+                return jsRoutes.api.Collections.listCanEditNoLoop( '@resourceId', params.term,null, 10).url;
             },
             data: function(params) {
                 return { title: params.term };
