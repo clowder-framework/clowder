@@ -38,19 +38,12 @@
             <div class="input-group input-group-sm col-md-8">
                 <select id="collectionAddSelect" class="form-control add-resource">
                 </select>
-                @if(resourceType == ResourceRef.dataset) {
-                    <span class="input-group-btn">
-                    <a href="#" class="btn btn-default btn-large" id="addParentBtn" title="Add dataset to collection" onclick="addDataset('@resourceId',event)">
-                        <span class="glyphicon glyphicon-plus"></span>
-                    </a>
-                    </span>
-                } else {
                     <span class="input-group-btn">
                     <a href="#" class="btn btn-default btn-large" id="addParentBtn" title="Add collection to parent" onclick="addCollectionToParentCollection('@currentCollection.id',event)">
                         <span class="glyphicon glyphicon-plus"></span>
                     </a>
                     </span>
-                }
+
             </div>
         </div>
     }
@@ -69,7 +62,6 @@
         allowClear: true,
         ajax: {
             url: function(params) {
-                console.log("returning collections list can edit")
                 return jsRoutes.api.Collections.listCanEdit(params.term, null, 10).url;
             },
             data: function(params) {

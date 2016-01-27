@@ -742,6 +742,26 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),$set("root_flag" -> isRoot), false, false, WriteConcern.Safe )
   }
 
+  def getSelfAndAncestors(collectionId : UUID) : List[Collection] = {
+    var selfAndAncestors : ListBuffer[models.Collection] = ListBuffer.empty[models.Collection]
+    get(collectionId) match {
+      case Some(collection) => {
+        selfAndAncestors += collection
+        for (parentCollectionId <- collection.parent_collection_ids){
+          get(UUID(parentCollectionId)) match {
+            case Some(parent_collection) => {
+              selfAndAncestors = selfAndAncestors ++ getSelfAndAncestors(UUID(parentCollectionId))
+            }
+
+          }
+        }
+      }
+
+    }
+    return selfAndAncestors.toList
+
+
+  }
 
   private def isSubCollectionIdInCollection(subCollectionId: UUID, collection: Collection) : Boolean = {
     for(child_collection_id <- collection.child_collection_ids){
