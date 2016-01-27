@@ -61,7 +61,9 @@ class MongoDBTemplateService @Inject() (userService: UserService)  extends Templ
 
   }
 
-  def update(id: UUID, )
+  def update(id: UUID ): Unit = {
+    //not implemented
+  }
 
 }
 

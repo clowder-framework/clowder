@@ -667,6 +667,7 @@ GET            /sendEmail                                                       
 
 POST        /t2c2/templates/createExperimentTemplate                                                   @api.Templates.createTemplate()
 GET         /t2c2/templates/test                                                                       @api.Templates.test
+GET         /t2c2/templates/unsecuredTest                                                              @api.Templates.unsecuredTest()
 GET         /t2c2/templates/listExperimentTemplates                                                    @api.Templates.listTemplates()
 GET         /t2c2/templates/getExperimentTemplateById/:id                                              @api.Templates.getTemplateById(id: UUID)
 GET         /t2c2/templates/getExperimentTemplateByName/:name                                          @api.Templates.getTemplateByName(name : String)

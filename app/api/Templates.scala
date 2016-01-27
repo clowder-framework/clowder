@@ -46,12 +46,19 @@ class Templates @Inject() (userService: UserService, events: EventService, templ
   def test() = AuthenticatedAction {implicit request =>
     val user = request.user
     user match {
-      case Some(idenitity) => {
-        Ok("user")
+      case Some(identity) => {
+        Ok(toJson(Map("user" -> identity.toString)))
       }
       case None => Ok("no user")
     }
 
+  }
+
+  @ApiOperation(value = "test",
+    notes = "",
+    responseClass = "None", httpMethod = "GET")
+  def unsecuredTest() = Action {
+    Ok("this is only a test")
   }
 
   @ApiOperation(value = "Create a template",
