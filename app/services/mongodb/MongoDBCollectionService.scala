@@ -468,15 +468,15 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
 
 
   def getAllDescendants(parentCollectionId : UUID) : ListBuffer[models.Collection] = {
-    var descendantIds = ListBuffer.empty[models.Collection]
+    var descendants = ListBuffer.empty[models.Collection]
 
     Collection.findOneById(new ObjectId(parentCollectionId.stringify)) match {
       case Some(parentCollection) => {
         val childCollections = listChildCollections(parentCollectionId)
         for (child <- childCollections){
-          descendantIds += child
+          descendants += child
           val otherDescendants = getAllDescendants(child.id)
-          descendantIds = descendantIds ++ otherDescendants
+          descendants = descendants ++ otherDescendants
 
         }
 
@@ -484,7 +484,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       case None => Logger.error("no collection found for id " + parentCollectionId)
     }
 
-    return descendantIds
+    return descendants
   }
 
 
