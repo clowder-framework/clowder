@@ -619,13 +619,21 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
    }
 
 
-  def stagingArea(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, id))) {
+  def stagingArea(id: UUID, index: Int, limit: Int) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, id))) {
     implicit request =>
       implicit val user  = request.user
       spaces.get(id) match {
         case Some(s) => {
-          val curationDatasets: List[CurationObject] = s.curationObjects.map{curObject => curationService.get(curObject)}.flatten
-          Ok(views.html.spaces.stagingarea(s, curationDatasets ))
+          val curationIds = s.curationObjects.slice(index*limit, (index+1)*limit)
+          val curationDatasets: List[CurationObject] = curationIds.map{curObject => curationService.get(curObject)}.flatten
+
+          val prev = index-1
+          val next = if(s.curationObjects.length > (index+1) * limit) {
+            index + 1
+          } else {
+            -1
+          }
+          Ok(views.html.spaces.stagingarea(s, curationDatasets, prev, next, limit ))
         }
         case None => InternalServerError("Space Not found")
       }

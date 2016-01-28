@@ -44,6 +44,7 @@ trait UserService  {
            start: Option[String] = None, limit: Integer = 20,
            filter: Option[String] = None): List[User]
 
+  def list(date: Option[String], nextPage: Boolean, limit: Integer): List[User]
   /**
    * The number of users
    */
