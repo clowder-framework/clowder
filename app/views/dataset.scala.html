@@ -16,7 +16,7 @@
   currentFolder: Option[UUID],
   foldersList: List[Folder],
   folderHierarchy: List[Folder],
-  next: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  next: Boolean, limit: Int)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -150,43 +150,11 @@
                 </ul>
                 <div class="tab-content">
                   <div role="tabpanel" class="tab-pane  fade in active" id="tab-files">
-
-                      @if(! (filepage == 0 && !next) ) {
-                          <div class="row">
-                              <div class="col-md-12 box-white-space">
-                                  <a id="allfiles" class="btn btn-link" href="@(routes.Files.listByDataset(dataset.id, 0))">
-                                      <span class="glyphicon glyphicon-th"></span>  All Files</a>
-                              </div>
-                          </div>
-                      }
-                      @if(folderHierarchy.length > 0 ) {
-                          <h2> <a href="@routes.Datasets.dataset(dataset.id, currentSpace,0, None)">@dataset.name</a>
-                          @folderHierarchy.map { cFolder =>
-                              > <a href="@routes.Datasets.dataset(dataset.id, currentSpace, 0, Some(cFolder.id.stringify))"> @cFolder.name</a>
-                          }
-                          </h2>
+                      @currentFolder match {
+                        case Some(folder) => {@datasets.filesAndFolders(dataset, Some(folder.stringify), foldersList, folderHierarchy, currentSpace, filepage, next, fileList, fileComments)}
+                        case None => {@datasets.filesAndFolders(dataset, None, foldersList, folderHierarchy, currentSpace, filepage, next, fileList, fileComments)}
                       }
 
-                      <div id="folderListDiv">
-                          @foldersList.map { folder =>
-                              @folders.listitem(folder, dataset.id, currentSpace)
-                          }
-                      </div>
-
-                      @files.grid(fileList, fileComments, dataset.id)
-                      <div class="row">
-                          <div class="col-md-12">
-                              <ul class="pager">
-                                      <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
-                                  @if(filepage > 0) {
-                                      <li class="previous"><a id="prevlink" title="Page backwards" href="@(routes.Datasets.dataset(dataset.id, currentSpace, filepage-1))"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
-                                  }
-                                  @if(next) {
-                                      <li class ="next"><a id="nextlink" title="Page forwards" href="@(routes.Datasets.dataset(dataset.id, currentSpace, filepage+1))">Next<span class="glyphicon glyphicon-chevron-right"></span></a></li>
-                                  }
-                              </ul>
-                          </div>
-                      </div>
                   </div>
                   <div role="tabpanel" class="tab-pane fade" id="tab-comments">
                       <!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->
@@ -465,7 +433,7 @@
 
                     request.fail(function (jqXHR, textStatus, errorThrown){
                         console.error("The following error occured: " + textStatus, errorThrown);
-                        var errMsg = "You must be logged in to create a new dataset.";
+                        var errMsg = "You must be logged in to create a new folder.";
                         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
                             notify("Error in creating folder. : " + errorThrown, "error");
                         }
@@ -475,6 +443,25 @@
                 return false;
             });
         });
+
+       function getUpdatedFilesAndFolders(pageIndex, folderId) {
+         var request = jsRoutes.controllers.Datasets.getUpdatedFilesAndFolders("@dataset.id", @limit, @currentSpace, folderId, pageIndex).ajax({
+            type: 'GET'
+         });
+
+         request.done(function(response, textStatus, jsXHR){
+          $('#tab-files').html("");
+          $('#tab-files').html(response);
+         });
+         request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occured: " + textStatus, errorThrown);
+            var errMsg = "You must be logged in to see files and folders.";
+            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                notify("Error in getting more files and folders. : " + errorThrown, "error");
+            }
+         });
+
+       }
 
     </script>
 }

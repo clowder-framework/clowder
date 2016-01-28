@@ -759,9 +759,9 @@ class Datasets @Inject()(
     if (UUID.isValid(id.stringify)) {
 
       //Set up the vars we are looking for
-      var description: String = null;
+      var description: String = null
 
-      var aResult: JsResult[String] = (request.body \ "description").validate[String]
+      val aResult: JsResult[String] = (request.body \ "description").validate[String]
 
       // Pattern matching
       aResult match {

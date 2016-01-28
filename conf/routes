@@ -102,7 +102,8 @@ GET            /datasets/createStep2                                            
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
 GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
-GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, filepage:Int ?= 0, folder: Option[String] ?= None)
+GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, filepage:Int ?= 0, folder: Option[String] ?= None, limit: Int ?= 12)
+GET            /datasets/:datasetId/updatedFilesAndFolders                              @controllers.Datasets.getUpdatedFilesAndFolders(datasetId: UUID, limit: Int ?= 12, currentSpace: Option[String] ?= None, folderId: Option[String]?= None, pageIndex: Int ?= 0)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
 POST           /dataset/submit                                                          @controllers.Datasets.submit(folderId: Option[String] ?= None)
