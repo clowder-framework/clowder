@@ -20,6 +20,8 @@ class ToolSession () {
   var id: UUID = UUID()
   var name = ""
   var url: String = ""
+  var externalId: String = "" // For tracking token used by external API
+  var toolType: String = ""
   var attachedDatasets: Map[UUID, String] = Map()
   var created = Calendar.getInstance.getTime
   var updated = created
@@ -47,6 +49,11 @@ class ToolSession () {
     updateTimestamp()
   }
 
+  def setToolType(tooltype: String): Unit = {
+    toolType = tooltype
+    updateTimestamp()
+  }
+
   def updateTimestamp(): Unit = {
     updated = Calendar.getInstance.getTime
   }
@@ -61,97 +68,56 @@ class ToolManagerPlugin(application: Application) extends Plugin {
   val files: FileService = DI.injector.getInstance(classOf[FileService])
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
-  var toolsList: List[String] = List[String]()
-  var runningTools: List[String] = List[String]()
 
-  var idMap: Map[UUID, String] = Map() // SessionID -> URL from api, or empty string
-  var dsMap: Map[UUID, List[Map[String,String]]] = Map() // SessionID -> list of attached dataset (name, url) pairs
+  var toolsList: List[String] = List[String]()
   var sessionMap: Map[UUID, ToolSession] = Map() // ToolManager SessionId -> ToolSession instance
 
   override def onStart() {
     Logger.debug("Initializing ToolManagerPlugin")
-    _refreshToolsList
-    _refreshRunningSessions
-  }
-
-  /**
-    * Call external API to get list of valid endpoints for tool selection.
-    */
-  def _refreshToolsList() = {
-    toolsList = List("PlantCV", "Frogger")
-
-    val request: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython/notebooks")
-      .withHeaders("Content-Type" -> "application/json")
-      .withQueryString("user" -> "")
-      .withQueryString("pw" -> "")
-      .get()
-
-    request.map( response => {
-      Logger.info(response.body.toString)
-      // toolsList = response.body.list
-    })
   }
 
   /**
     * Call external API to get list of valid endpoints for tool selection.
     * @return list of tools that can be selected for launch
     */
-  def getToolsList(): List[String] = {
-    _refreshToolsList
+  def getLaunchableTools(): List[String] = {
+    toolsList = List("Jupyter", "PlantCV")
+
+    //val request: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython/notebooks")
+    //  .withHeaders("Content-Type" -> "application/json")
+    //  .withQueryString("user" -> "")
+    //  .withQueryString("pw" -> "")
+    //  .get()
+
+    //request.map( response => {
+    //  Logger.info(response.body.toString)
+    //  // toolsList = response.body.list
+    //})
+
     return toolsList
   }
-
-  /**
-    * Fetch URLs of all running tool sessions the current user can access from external API.
-    */
-  def _refreshRunningSessions() = {
-    runningTools = List("PlantCV Instance 338127", "PlantCV Instance 544712")
-
-    val request: Future[Response] = url("http://141.142.209.108:8080/getRunningTools")
-      .withHeaders("Content-Type" -> "application/json")
-      .withQueryString("user" -> "")
-      .withQueryString("pw" -> "")
-      .get()
-
-    request.map( response => {
-      Logger.info(response.body.toString)
-      // runningTools = response.body.list
-    })
-  }
-
-  /**
-    * Fetch URLs of all running tool sessions the current user can access.
-    * @return list of URLs for currently running sessions
-    */
-  def getRunningSessionIDs(): List[UUID] = {
-    //_refreshRunningSessions
-    //return runningTools
-
-    val sessionids = idMap.keys.toList
-    return sessionids
-  }
-
-
 
   /**
     * Send request to API to launch a new tool.
     * @param datasetid clowder ID of dataset to attach
     * @return ID of session that was launched
     */
-  def launchTool(sessionName: String, datasetId: UUID): UUID = {
+  def launchTool(sessionName: String, toolType: String, datasetId: UUID): UUID = {
     // Generate a new session & add to sessionMap
-    var newSession = new ToolSession()
+    val newSession = new ToolSession()
     newSession.setName(sessionName)
+    newSession.setToolType(toolType)
     newSession.attachDataset(datasetId)
     sessionMap(newSession.id) = newSession
 
     // Send request to API to launch Tool
     val dsURL = controllers.routes.Datasets.dataset(datasetId).url
-    //val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython").post(Json.obj(
-    val statusRequest: Future[Response] = url("http://141.142.209.108:8080/gonnafail").post(Json.obj(
+    Logger.debug("TARGET")
+    Logger.debug(dsURL.replace("/datasets", "/api/datasets")+"/download")
+    val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython").post(Json.obj(
       "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
       "user" -> "mburnet2@illinois.edu",
-      "pw" -> "clowdSTRIFE",
+      "pw" -> "tSzx7dINA8RxFEKp7sX8",
       "host" -> "http://141.142.209.108"
     ))
 
@@ -207,9 +173,9 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     return attached
   }
 
-  def getUnattachedSessions(datasetId: UUID): List[UUID] = {
+  def getUnattachedSessions(datasetId: UUID): Map[String, String] = {
     // Return a list of tool session Ids that do NOT have datasetID attached already
-    var unSess = List[UUID]()
+    val unSess = Map[String, String]()
 
     for ((sessId, sess) <- sessionMap) {
       val attachedDsMap = sess.attachedDatasets
@@ -217,7 +183,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
       for (dsId <- attachedDsMap.keys.toList) {
         if (dsId == datasetId) foundDs = true
       }
-      if (foundDs == false) unSess = unSess ::: List(sessId)
+      if (foundDs == false) unSess(sessId.toString)  = sess.name
     }
 
     return unSess
@@ -254,16 +220,13 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     //val statusRequest: Future[Response] = url("http://141.142.209.108:8080/terminate")
      // .withHeaders("Content-Type" -> "application/json")
      // .withQueryString("session" -> sessionid)
-     // .withQueryString("user" -> "")
-     // .withQueryString("pw" -> "")
-     // .get()
+     // .delete()
 
     //statusRequest.map( response => {
     //  Logger.info(response.body.toString)
     //})
 
-    idMap = idMap - sessionId
-    dsMap = dsMap - sessionId
+    sessionMap = sessionMap - sessionId
 
     return true
   }

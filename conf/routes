@@ -103,12 +103,11 @@ GET            /datasets/metadataSearch                                         
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
 GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
 GET            /datasets/toolManager                                                    @controllers.Datasets.toolManager
-GET            /datasets/refreshToolList                                                @controllers.Datasets.refreshToolList(datasetid: UUID)
+GET            /datasets/refreshToolList                                                @controllers.Datasets.refreshToolSidebar(datasetid: UUID)
 GET            /datasets/launchableTools                                                @controllers.Datasets.getLaunchableTools
 GET            /datasets/unattachedSessions                                             @controllers.Datasets.getUnattachedSessions(datasetid: UUID)
 GET            /datasets/removeToolSession                                              @controllers.Datasets.removeSession(sessionid: UUID)
-GET            /datasets/launchTool                                                     @controllers.Datasets.launchTool(sessionName: String, datasetid: UUID)
-GET            /datasets/requestSessionURL                                              @controllers.Datasets.requestSessionURL(sessionid: UUID)
+GET            /datasets/launchTool                                                     @controllers.Datasets.launchTool(sessionName: String, ttype: String, datasetId: UUID)
 GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, filepage:Int ?= 0)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
