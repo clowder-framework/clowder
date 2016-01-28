@@ -631,7 +631,7 @@ GET            /rss/:etype                                                      
 
 GET            /dataset/:id/curations/new                                               @controllers.CurationObjects.newCO(id:UUID, space:String ?= "")
 POST           /dataset/:id/curations/spaces/:spaceId/submit                            @controllers.CurationObjects.submit(id:UUID, spaceId:UUID)
-GET            /spaces/:id/stagingArea                                                  @controllers.Spaces.stagingArea(id: UUID)
+GET            /spaces/:id/stagingArea                                                  @controllers.Spaces.stagingArea(id: UUID, index: Int ?=0, limit: Int ?= 12)
 GET            /spaces/curations/:id                                                    @controllers.CurationObjects.getCurationObject(id: UUID)
 DELETE         /spaces/curations/retract/:id                                            @api.CurationObjects.retractCurationObject(id: UUID)
 GET            /spaces/curations/:id/edit                                               @controllers.CurationObjects.editCuration(id: UUID)
