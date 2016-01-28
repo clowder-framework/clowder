@@ -177,7 +177,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "List all collections the user can edit except itself and its parent collections",
     notes = "This will check for Permission.AddResourceToCollection and Permission.EditCollection",
     responseClass = "None", httpMethod = "GET")
-  def listCanEditNoLoop(currentCollectionId : String, title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+  def listPossibleParents(currentCollectionId : String, title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
     val selfAndAncestors = collections.getSelfAndAncestors(UUID(currentCollectionId))
     val descendants = collections.getAllDescendants(UUID(currentCollectionId)).toList
     val allCollections = lisCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.superAdmin)
