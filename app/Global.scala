@@ -48,14 +48,17 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
     // set default metadata definitions
     MetadataDefinition.registerDefaultDefinitions()
 
-    extractorTimer = Akka.system().scheduler.schedule(0 minutes, 5 minutes) {
-      ExtractionInfoSetUp.updateExtractorsInfo()
+    if (extractorTimer == null) {
+      extractorTimer = Akka.system().scheduler.schedule(0 minutes, 5 minutes) {
+        ExtractionInfoSetUp.updateExtractorsInfo()
+      }
     }
 
     // Use if Mailer Server and stmp in Application.conf are set up
-
-    jobTimer = Akka.system().scheduler.schedule(0 minutes, 1 minutes) {
-      JobsScheduler.runScheduledJobs()
+    if (jobTimer == null) {
+      jobTimer = Akka.system().scheduler.schedule(0 minutes, 1 minutes) {
+        JobsScheduler.runScheduledJobs()
+      }
     }
 
     Logger.info("Application has started")
