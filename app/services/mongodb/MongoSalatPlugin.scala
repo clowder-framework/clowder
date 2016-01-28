@@ -167,7 +167,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   /**
    * Drop all collections
    */
-  def dropAllData(resetAll: Boolean = false) {
+  def dropAllData(resetAll: Boolean) {
     Logger.debug("**DANGER** Deleting data collections **DANGER**")
 
     collection("collections").drop()

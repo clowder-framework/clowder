@@ -17,7 +17,7 @@ object Admin extends Controller with ApiController {
   /**
    * DANGER: deletes all data, keep users.
    */
-  def deleteAllData(resetAll: Boolean = false) = ServerAdminAction { implicit request =>
+  def deleteAllData(resetAll: Boolean) = ServerAdminAction { implicit request =>
     current.plugin[MongoSalatPlugin].map(_.dropAllData(resetAll))
     current.plugin[ElasticsearchPlugin].map(_.deleteAll)
 
