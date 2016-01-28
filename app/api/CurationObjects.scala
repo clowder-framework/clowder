@@ -44,22 +44,31 @@ class CurationObjects @Inject()(datasets: DatasetService,
             metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, file.id)).filter(_.creator.typeOfAgent == "cat:user").map {
               item => fileMetadata = fileMetadata ++ curationObjectController.buildMetadataMap(item.content)
             }
-            val tempMap =  Map(
+            val size = files.get(file.fileId) match {
+              case Some(f) => f.length
+              case None => 0
+            }
+
+            var tempMap =  Map(
               "Identifier" -> Json.toJson("urn:uuid:"+file.id),
               "@id" -> Json.toJson("urn:uuid:"+file.id),
               "Creation Date" -> Json.toJson(format.format(file.uploadDate)),
               "Label" -> Json.toJson(file.filename),
               "Title" -> Json.toJson(file.filename),
               "Uploaded By" -> Json.toJson(userService.findByIdentity(file.author).map ( usr => Json.toJson(file.author.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https)))),
-              "size" -> Json.toJson(file.length),
+              "size" -> Json.toJson(size),
               "Publication Date" -> Json.toJson(""),
               "External Identifier" -> Json.toJson(""),
-              "Keyword" -> Json.toJson(file.tags.map(_.name)),
               "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2015/File")),
               "Is Version Of" -> Json.toJson(controllers.routes.Files.file(file.fileId).absoluteURL(https) + "?key=" + key),
               "similarTo" -> Json.toJson(api.routes.Files.download(file.fileId).absoluteURL(https)  + "?key=" + key)
             )
+            if(file.tags.size > 0 ) {
+              tempMap = tempMap ++ Map("Keyword" -> Json.toJson(file.tags.map(_.name)))
+            }
+
             tempMap ++ fileMetadata
+
           }
           val hasPart = c.files.map(file => "urn:uuid:"+file)
           var commentsByDataset = comments.findCommentsByDatasetId(c.datasets(0).id)
@@ -79,15 +88,24 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "comment_author" -> Json.toJson(userService.findByIdentity(comm.author).map ( usr => Json.toJson(usr.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https))))
             ))
           }
-          var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
+          var metadataList = scala.collection.mutable.ListBuffer.empty[MetadataPair]
+          var metadataKeys = Set.empty[String]
           metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).filter(_.creator.typeOfAgent == "cat:user").map {
-            item => metadataJson = metadataJson ++ curationObjectController.buildMetadataMap(item.content)
+            item =>
+              for((key, value) <- curationObjectController.buildMetadataMap(item.content)) {
+                metadataList += MetadataPair(key, value)
+                metadataKeys += key
+              }
+          }
+          var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
+          for(key <- metadataKeys) {
+            metadataJson = metadataJson ++ Map(key -> Json.toJson(metadataList.filter(_.label == key).map{item => item.content}toList))
           }
           val metadataDefsMap = scala.collection.mutable.Map.empty[String, JsValue]
           for(md <- metadatas.getDefinitions()) {
             metadataDefsMap((md.json\ "label").asOpt[String].getOrElse("").toString()) = Json.toJson((md.json \ "uri").asOpt[String].getOrElse(""))
           }
-          val parsedValue = Json.toJson(
+          var parsedValue =
             Map(
               "@context" -> Json.toJson(Seq(
                 Json.toJson("https://w3id.org/ore/context"),
@@ -144,14 +162,12 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "Label" -> Json.toJson(c.name),
                   "Title" -> Json.toJson(c.name),
                   "Uploaded By" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + api.routes.Users.findById(usr.id).absoluteURL(https)))),
-                  "Comment" -> Json.toJson(JsArray(commentsJson)),
+
                   "Publication Date" -> Json.toJson(format.format(c.created)),
                   "Published In" -> Json.toJson(""),
                   "External Identifier" -> Json.toJson(""),
                   "Proposed for publication" -> Json.toJson("true"),
-                  "Keyword" -> Json.toJson(
-                    Json.toJson(c.datasets(0).tags.map(_.name))
-                  ),
+
                   "@id" -> Json.toJson(api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "#aggregation"),
                   "@type" -> Json.toJson(Seq("Aggregation", "http://cet.ncsa.uiuc.edu/2015/Dataset")),
                   "Is Version of" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https)),
@@ -166,7 +182,15 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "@id" -> Json.toJson(api.routes.CurationObjects.getCurationObjectOre(curationId).absoluteURL(https))
             )
 
-          )
+
+          if(c.datasets(0).tags.size > 0) {
+            parsedValue = parsedValue ++ Map("Keyword" -> Json.toJson(
+              Json.toJson(c.datasets(0).tags.map(_.name))
+            ))
+          }
+          if(commentsJson.size > 0) {
+            parsedValue = parsedValue ++ Map( "Comment" -> Json.toJson(JsArray(commentsJson)))
+          }
 
           Ok(Json.toJson(parsedValue))
         }
@@ -237,7 +261,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
 
 
   }
-
 
   @ApiOperation(value = "Get files in curation", notes = "",
     responseClass = "None", httpMethod = "GET")
