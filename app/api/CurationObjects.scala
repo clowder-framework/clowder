@@ -246,7 +246,8 @@ class CurationObjects @Inject()(datasets: DatasetService,
           val client = new DefaultHttpClient
           val response = client.execute(httpDelete)
           val responseStatus = response.getStatusLine().getStatusCode()
-          if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304) {
+           // responseStatus = 404 when this curation object is deleted via other method, with message "RO with ID urn:uuid:xxx does not exist"
+          if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304 || responseStatus == 404) {
             curations.updateStatus(curationId, "In Curation")
             success = true
           }
