@@ -1,18 +1,56 @@
 package services
 
-import models.UUID
-
+import java.util.Calendar
+import javax.inject.Inject
 import scala.collection.mutable.Map
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import play.api.mvc._
 import play.api.libs.json._
 import play.api.libs.ws.Response
 import play.api.libs.ws.WS._
 import play.api.{Plugin, Logger, Application}
 
+import models.UUID
 
+/**
+  * ToolSession describes a running external Tool/VM associated with one or more datasets in Clowder.
+  */
+class ToolSession () {
+  var id: UUID = UUID()
+  var name = ""
+  var url: String = ""
+  var attachedDatasets: Map[UUID, String] = Map()
+  var created = Calendar.getInstance.getTime
+  var updated = created
+  val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+
+  def attachURL(sessionurl: String): Unit = {
+    // Define the external Tool URL this ToolSession points to
+    url = sessionurl
+    updateTimestamp()
+  }
+
+  def attachDataset(datasetId: UUID): Unit = {
+    // Register a new Dataset to this ToolSession (does not send request to API)
+    datasets.get(datasetId) match {
+      case Some(ds) => {
+        attachedDatasets(datasetId) = ds.name
+      }
+      case None => {}
+    }
+    updateTimestamp()
+  }
+
+  def setName(sessname: String): Unit = {
+    name = sessname
+    updateTimestamp()
+  }
+
+  def updateTimestamp(): Unit = {
+    updated = Calendar.getInstance.getTime
+  }
+}
 
 /**
   * ToolManager plugin.
@@ -28,7 +66,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
 
   var idMap: Map[UUID, String] = Map() // SessionID -> URL from api, or empty string
   var dsMap: Map[UUID, List[Map[String,String]]] = Map() // SessionID -> list of attached dataset (name, url) pairs
-
+  var sessionMap: Map[UUID, ToolSession] = Map() // ToolManager SessionId -> ToolSession instance
 
   override def onStart() {
     Logger.debug("Initializing ToolManagerPlugin")
@@ -93,54 +131,96 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     return sessionids
   }
 
+
+
   /**
     * Send request to API to launch a new tool.
     * @param datasetid clowder ID of dataset to attach
     * @return ID of session that was launched
     */
-  def launchTool(dsUrl: String, sessionId: UUID, datasetid: UUID, datasetname: String) = {
-    Logger.debug("LAUNCH TOOL WITH DATASET: "+dsUrl)
-    Logger.debug("SESSIONID GENERATED: "+sessionId)
+  def launchTool(sessionName: String, datasetId: UUID): UUID = {
+    // Generate a new session & add to sessionMap
+    var newSession = new ToolSession()
+    newSession.setName(sessionName)
+    newSession.attachDataset(datasetId)
+    sessionMap(newSession.id) = newSession
 
-    // Map session to empty URL for now, and add this dataset to its list
-    idMap(sessionId) = "";
-    dsMap(sessionId) = List(Map(datasetname -> dsUrl));
-    
-    val postdata = Json.obj(
-      "dataset" -> (dsUrl.replace("/datasets", "/api/datasets").replace("#","")+"/download"),
+    // Send request to API to launch Tool
+    val dsURL = controllers.routes.Datasets.dataset(datasetId).url
+    //val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython").post(Json.obj(
+    val statusRequest: Future[Response] = url("http://141.142.209.108:8080/gonnafail").post(Json.obj(
+      "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
       "user" -> "mburnet2@illinois.edu",
-      "pw" -> "tSzx7dINA8RxFEKp7sX8",
+      "pw" -> "clowdSTRIFE",
       "host" -> "http://141.142.209.108"
-    );
-    val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython").post(postdata);
+    ))
 
     statusRequest.map( response => {
       Logger.debug(("API RESPONSED: "+response.body.toString))
-      val resp = (Json.parse(response.body) \ "URL")
+      val externalURL = (Json.parse(response.body) \ "URL")
 
-      resp match {
+      externalURL match {
         case _: JsUndefined => {}
         case _ => {
-          Logger.debug(("MAPPING "+sessionId+" TO "+resp.toString))
-          idMap(sessionId) = resp.toString
+          Logger.debug(("MAPPING "+newSession.id.toString+" TO "+externalURL.toString))
+          var matchedSess = sessionMap(newSession.id)
+          matchedSess.attachURL(externalURL.toString)
+          sessionMap(newSession.id) = matchedSess
         }
       }
     })
+
+    return newSession.id
   }
 
   /**
     * Check to see whether request UUID has received a URL from API yet.
    */
-  def checkForSessionUrl(sessionId: UUID): Option[String] = {
-    var completed: Option[String] = None
+  def checkForSessionUrl(sessionId: UUID): String = {
+    var completed = ""
 
-    Logger.debug("CHECKING STATUS OF SESSIONID: "+sessionId)
-
-    if (idMap.contains(sessionId)) {
-      completed = idMap.get(sessionId)
+    if (sessionMap.contains(sessionId)) {
+      sessionMap.get(sessionId) match {
+        case Some(sess) => completed = sess.url
+        case None => {}
+      }
     }
 
     return completed
+  }
+
+  def getAttachedSessions(datasetId: UUID): Map[UUID, ToolSession] = {
+    // Return sessionMap filtered to only sessions containing provided UUID
+    val attachedIds = for{(sessId, sess) <- sessionMap
+                        if sess.attachedDatasets.contains(datasetId)
+                        }yield sessId
+
+    val attached = Map[UUID,ToolSession]()
+    for (sessionId <- attachedIds) {
+      Logger.debug(sessionId.toString)
+      sessionMap.get(sessionId) match {
+        case Some(ts) => attached(sessionId) = ts
+        case None => {}
+      }
+    }
+
+    return attached
+  }
+
+  def getUnattachedSessions(datasetId: UUID): List[UUID] = {
+    // Return a list of tool session Ids that do NOT have datasetID attached already
+    var unSess = List[UUID]()
+
+    for ((sessId, sess) <- sessionMap) {
+      val attachedDsMap = sess.attachedDatasets
+      var foundDs = false
+      for (dsId <- attachedDsMap.keys.toList) {
+        if (dsId == datasetId) foundDs = true
+      }
+      if (foundDs == false) unSess = unSess ::: List(sessId)
+    }
+
+    return unSess
   }
 
   /**

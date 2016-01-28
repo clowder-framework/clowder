@@ -785,42 +785,58 @@ class Datasets @Inject()(
     Ok(views.html.datasets.toolManager(sessionIDMap.keys.toList, sessionIDMap, sessionDSMap))
   }
 
-  def refreshToolList(datasetid: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+  /**
+    * Construct the sidebar listing active tools relevant to the given datasetId
+    * @param datasetId UUID of dataset that is currently displayed
+    * @return
+    */
+  def refreshToolList(datasetId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
-    var sessionIDMap = MutableMap[UUID, String]();
-    var sessionDSMap = MutableMap[UUID, List[MutableMap[String,String]]]();
-
     // Get mapping of session IDs to URLs API has returned
+    var sessionMap = MutableMap[UUID, ToolSession]()
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
-        sessionIDMap = mgr.idMap;
-        sessionDSMap = mgr.dsMap;
+        // Get mapping of SessionId -> ToolSession instances, only if dataset is attached
+        sessionMap = mgr.getAttachedSessions(datasetId)
       }
       case None => {}
     }
-
-    Ok(views.html.datasets.tools(sessionIDMap.keys.toList, sessionIDMap, sessionDSMap, datasetid))
+    Ok(views.html.datasets.tools(sessionMap.keys.toList, sessionMap, datasetId))
   }
 
   /**
     * With permission, send request to ToolManagerPlugin to launch a tool with dataset ID if provided.
     */
-  def launchTool(hostURL: String, datasetid: UUID, datasetname: String) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+  def launchTool(sessionName: String, datasetId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
-
-    // This token will be used later, to check whether external API has responded
-    val sessionId = UUID()
 
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
-        mgr.launchTool(hostURL, sessionId, datasetid, datasetname)
+        val sessionId = mgr.launchTool(sessionName, datasetId)
+        Ok(sessionId.toString)
       }
-      case None => {}
+      case None => {
+        Ok("No ToolManagerPlugin found.")
+      }
     }
+  }
 
-    // Return the session token for reference
-    Ok(sessionId.toString)
+  def getLaunchableTools() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+    Ok(toJson(List("Jupyter","PlantCV")))
+  }
+
+  def getUnattachedSessions(datasetId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        val sessions = mgr.getUnattachedSessions(datasetId)
+        Ok(toJson(sessions))
+      }
+      case None => Ok("{}")
+    }
   }
 
   def requestSessionURL(sessionId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
@@ -829,10 +845,7 @@ class Datasets @Inject()(
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
         val status = mgr.checkForSessionUrl(sessionId)
-        status match {
-          case Some(s) => Ok(s)
-          case None => Ok("")
-        }
+        Ok(status)
       }
       case None => Ok("")
     }

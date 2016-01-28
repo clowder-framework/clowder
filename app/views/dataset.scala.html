@@ -205,23 +205,7 @@
             @if(current.plugin[services.PostgresPlugin].isDefined) {
                 @sensors.relatedSensors(relatedSensors, "Dataset", dataset.id.stringify)
             }
-            <div id="toolListContainer">
-                @{
-                    if(current.plugin[services.ToolManagerPlugin].isDefined) {
-                        var sessionIDMap = MutableMap[UUID, String]();
-                        var sessionDSMap = MutableMap[UUID, List[MutableMap[String,String]]]();
-
-                        current.plugin[services.ToolManagerPlugin] match {
-                            case Some(mgr) => {
-                                sessionIDMap = mgr.idMap;
-                                sessionDSMap = mgr.dsMap;
-                            }
-                            case None => {}
-                        }
-                        datasets.tools(sessionIDMap.keys.toList, sessionIDMap, sessionDSMap, dataset.id);
-                    }
-                }
-            </div>
+            <div id="toolListContainer"></div>
 		</div>
 	</div>
 
@@ -298,6 +282,7 @@
             var description = $('#ds_description').html().trim();
             $('#ds_description').html(urlify(description));
 
+            refreshToolSidebar()
         });
 
         function cancelTitle() {
@@ -417,7 +402,7 @@
                 console.log("launchToolRequest came back with "+request.status.toString());
         }
 
-        request.open("GET", jsRoutes.controllers.Datasets.launchTool(window.location.href, "@dataset.id", "@dataset.name").url, true);
+        request.open("GET", jsRoutes.controllers.Datasets.launchTool("Some Session Name", "@dataset.id").url, true);
         request.send();
     }
 

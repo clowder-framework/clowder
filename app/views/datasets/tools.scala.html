@@ -1,57 +1,42 @@
-@(sessions: List[UUID], sessionMap: scala.collection.mutable.Map[UUID, String], sessionDsMap: scala.collection.mutable.Map[UUID, List[scala.collection.mutable.Map[String,String]]], datasetid:UUID)(implicit user: Option[models.User])
+@(sessions: List[UUID], sessionMap: scala.collection.mutable.Map[UUID, services.ToolSession], datasetId: UUID)(implicit user: Option[models.User])
 
 @import api.Permission
 
 <div class="row border-top bottom-padding">
   <div class="col-md-12">
-    <h4>Running Tool Sessions</h4>
+    <h4>Tool sessions containing the dataset</h4>
   </div>
 </div>
 
 <div class="row">
   <div class="col-md-12">
-
     <div id="toolsList">
-      @sessions.map { sess =>
-        <div id="col_@sess" class="row bottom-padding">
+      @sessions.map { sessId =>
+        <div id="col_@sessId" class="row bottom-padding">
           <div class="col-md-10">
             <div>
               @{
-                val linkstr = sessionMap.get(sess) match {
-                  case Some(s) => {
-                    if (s == "") { sess+" (not yet ready)" }
-                    else { "<a href="+s+">"+sess+"</a>" }
+                var htmlStr = ""
+                sessionMap.get(sessId) match {
+                  case Some(ts) => {
+                    if (ts.url == "") htmlStr += ts.name+" (not yet ready)"
+                    else htmlStr += "<a href="+ts.url+">"+ts.name+"</a>"
+
+                    htmlStr += "</br>" //"<div>"
+                    if (ts.attachedDatasets.keys.toList.length == 1) htmlStr += "1 dataset"
+                    else htmlStr += ts.attachedDatasets.keys.toList.length.toString + " datasets"
+
                   }
-                  case None => ""
+                  case None => {}
                 }
-                Html(linkstr)
-              }
-            </div>
-            <div>
-              @sessionDsMap.get(sess) match {
-                case Some(ds_list) => {
-                  @if(ds_list.length ==1) {
-                    1 dataset
-                  } else {
-                    @ds_list.length datasets
-                  }
-                }
-                case None => {
-                  No datasets
-                }
-              }
-              @if(Permission.checkPermission(Permission.ExecuteOnDataset, ResourceRef(ResourceRef.dataset, datasetid))) {
-                | <a href="#" class="btn btn-link btn-xs disabled" title="Attach current dataset">
-                  <span class="glyphicon glyphicon-remove"></span>Attach This Dataset</a>
-              } else {
-                |  <a href="#" class="btn btn-link btn-xs disabled" title="Attach current dataset">
-                  <span class="glyphicon glyphicon-remove"></span>Attach This Dataset</a>
+                Html(htmlStr)
               }
             </div>
           </div>
         </div>
       }
     </div>
+  </div>
 </div>
 
 <div class="row bottom-padding">
@@ -60,8 +45,79 @@
       <span class="glyphicon glyphicon-log-in"></span>&nbsp;Refresh List
     </a>
     <a class="btn btn-link" href="toolManager">
-      <span class="glyphicon glyphicon-log-in"></span>&nbsp;Go to Tool Manager
+      <span class="glyphicon glyphicon-log-in"></span>&nbsp;Tool Manager
     </a>
+
+    <div class="form-inline">
+      <div class="input-group input-group-sm col-md-8">
+        <select id="toolSessionLaunchSelect" class="form-control add-resource">
+        </select>
+        <span class="input-group-btn">
+          <a href="#" class="btn btn-default btn-large" id="launchNewSessionBtn" title="Launch New Tool Session">
+            <span class="glyphicon glyphicon-plus"></span> Launch
+          </a>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-12">
+    <h4>Other tool sessions</h4>
+    <div class="form-inline">
+      <div class="input-group input-group-sm col-md-8">
+        <select id="toolSessionAddSelect" class="form-control add-resource">
+        </select>
+        <span class="input-group-btn">
+          <a href="#" class="btn btn-default btn-large" id="addToolSessionBtn" title="Attach Dataset to Tool Session">
+            <span class="glyphicon glyphicon-plus"></span> Attach
+          </a>
+        </span>
+      </div>
+    </div>
   </div>
 </div>
 
+<script language="javascript">
+  $("#toolSessionAddSelect").select2({
+    theme: "bootstrap",
+    placeholder: "Select a tool session",
+    allowClear: true,
+    ajax: {
+      url: function(datasetId) {
+        // GET LIST AND REMOVE ANY THE DATASET IS ALREADY ATTACHED TO
+        return jsRoutes.controllers.Datasets.getUnattachedSessions("@datasetId").url;
+      },
+      processResults: function(data, page) {
+        console.log(data)
+        return {
+            results: data.map(function(x) {
+              return {
+                text: x,
+                id: x
+              }
+        })};
+      }
+    }
+  });
+
+  $("#toolSessionLaunchSelect").select2({
+    theme: "bootstrap",
+    placeholder: "Select a new tool to launch",
+    allowClear: true,
+    ajax: {
+      url: function() {
+        return jsRoutes.controllers.Datasets.getLaunchableTools().url;
+      },
+      processResults: function(data, page) {
+        console.log(data)
+        return {
+          results: data.map(function(x) {
+            return {
+              text: x,
+              id: x
+            }
+          })};
+      }
+    }
+  });
+</script>
