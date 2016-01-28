@@ -1,0 +1,72 @@
+@(parent: models.Collection, collection: models.Collection, redirect: Call)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@import api.Permission
+<div class="panel panel-default" id="@collection.id-listitem">
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-md-2 col-sm-2 col-lg-2">
+                @if(!collection.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)" width="120">}
+            </div>
+            <div class="col-md-10 col-sm-10 col-lg-10">
+                <h2><a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a></h2>
+                <div class="row">
+                    <div class="col-md-6 col-lg-6 col-sm-6">
+                        <ul class="list-unstyled">
+                            <li>@Html(collection.description)</li>
+                            <li>@collection.created.format("MMM dd, yyyy")</li>
+                            <li>
+                                <span class="glyphicon glyphicon glyphicon-file" title="@collection.datasetCount datasets"></span> @collection.datasetCount
+                                @if(user.isDefined) {
+                                        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                                    @if( user.get.identityId.userId.equals(collection.author.identityId.userId) || Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
+                                        <button onclick="removeChildCollectionFromParent('@(parent.id)','@(collection.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Detach the Child Collection">
+                                            <span class="glyphicon glyphicon-trash"></span></button>
+                                    } else {
+                                        <button disabled onclick="removeChildCollectionFromParent('@(parent.id)','@(collection.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Detach the Child Collection">
+                                            <span class="glyphicon glyphicon-trash"></span></button>
+                                    }
+                                }
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6 col-lg-6 col-sm-6">
+                        <ul class="list-unstyled">
+                            <li>@if(user.isDefined && !collection.spaces.isEmpty){
+                                <div id="collection-users">
+                                    <a href="@routes.Collections.users(collection.id)" class="btn btn-link ">
+                                        <span class="glyphicon glyphicon-hand-right"></span> Users with access to the collection
+                                    </a>
+                                    <div class="alert-danger inner-item">
+                                    @flash.get("error")
+                                    </div>
+                                </div>
+                            }</li>
+                            <li>
+                            @if(user.isDefined) {
+                                @if(!collection.followers.contains(user.get.id)) {
+                                    <button id="followButton"
+                                    class="btn btn-link"
+                                    objectId="@collection.id"
+                                    objectName="@collection.name"
+                                    objectType="collection">
+                                        <span class='glyphicon glyphicon-star'></span>
+                                        Follow
+                                    </button>
+                                } else {
+                                    <button id="followButton"
+                                    class="btn btn-link"
+                                    objectId="@collection.id"
+                                    objectName="@collection.name"
+                                    objectType="collection">
+                                        <span class='glyphicon glyphicon-star-empty'></span>
+                                        Unfollow
+                                    </button>
+                                }
+                            }
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
