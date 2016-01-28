@@ -27,6 +27,7 @@ object Permission extends Enumeration {
     DeleteDataset,
     EditDataset,
     AddResourceToDataset,
+    ExecuteOnDataset,
 
     // collections
     ViewCollection,
