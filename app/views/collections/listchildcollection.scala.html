@@ -19,10 +19,10 @@
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                     @if( user.get.identityId.userId.equals(collection.author.identityId.userId) || Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
                                         <button onclick="removeChildCollectionFromParent('@(parent.id)','@(collection.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Detach the Child Collection">
-                                            <span class="glyphicon glyphicon-trash"></span></button>
+                                            <span class="glyphicon glyphicon-remove"></span></button>
                                     } else {
                                         <button disabled onclick="removeChildCollectionFromParent('@(parent.id)','@(collection.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Detach the Child Collection">
-                                            <span class="glyphicon glyphicon-trash"></span></button>
+                                            <span class="glyphicon glyphicon-remove"></span></button>
                                     }
                                 }
                             </li>
