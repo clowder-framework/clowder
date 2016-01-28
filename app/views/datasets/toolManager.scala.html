@@ -69,7 +69,7 @@
                       if (s.url == "") { "Not yet ready" }
                       else {
                         val displaystr = s.url.replace("\"","")
-                        "<a href="+s+">"+displaystr+"</a>"
+                        "<a href="+s.url+" target='_blank'>"+displaystr+"</a>"
                       }
                     }
                     case None => ""

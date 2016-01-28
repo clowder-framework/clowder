@@ -1,7 +1,7 @@
 package services
 
-import java.util.Calendar
-import javax.inject.Inject
+import java.util.{Calendar, Base64}
+import java.nio.charset.StandardCharsets
 import scala.collection.mutable.Map
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -99,7 +99,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
 
   /**
     * Send request to API to launch a new tool.
-    * @param datasetid clowder ID of dataset to attach
+    * @param datasetId clowder ID of dataset to attach
     * @return ID of session that was launched
     */
   def launchTool(sessionName: String, toolType: String, datasetId: UUID): UUID = {
@@ -111,24 +111,21 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     sessionMap(newSession.id) = newSession
 
     // Send request to API to launch Tool
+    // TODO: Figure out something better than the key here
     val dsURL = controllers.routes.Datasets.dataset(datasetId).url
-    Logger.debug("TARGET")
-    Logger.debug(dsURL.replace("/datasets", "/api/datasets")+"/download")
     val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython").post(Json.obj(
       "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
-      "user" -> "mburnet2@illinois.edu",
-      "pw" -> "tSzx7dINA8RxFEKp7sX8",
+      "key" -> play.Play.application().configuration().getString("commKey"),
       "host" -> "http://141.142.209.108"
     ))
 
     statusRequest.map( response => {
-      Logger.debug(("API RESPONSED: "+response.body.toString))
+      Logger.debug(("TOOL API RESPONSED: "+response.body.toString))
       val externalURL = (Json.parse(response.body) \ "URL")
 
       externalURL match {
         case _: JsUndefined => {}
         case _ => {
-          Logger.debug(("MAPPING "+newSession.id.toString+" TO "+externalURL.toString))
           var matchedSess = sessionMap(newSession.id)
           matchedSess.attachURL(externalURL.toString)
           sessionMap(newSession.id) = matchedSess
@@ -195,7 +192,6 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     * @param datasetid clowder ID of dataset to attach
     */
   def attachDataset(sessionid: String, datasetid: String): Boolean = {
-    Logger.info("LAUNCH TOOL PLUGIN WITH "+datasetid)
     val statusRequest: Future[Response] = url("http://141.142.209.108:8080/attachDataset")
       .withHeaders("Content-Type" -> "application/json")
       .withQueryString("session" -> sessionid)
@@ -213,7 +209,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
 
   /**
     * Terminate a running tool session.
-    * @param sessionid ID of session to stop
+    * @param sessionId ID of session to stop
     * @return
     */
   def removeSession(sessionId: UUID): Boolean = {
@@ -233,6 +229,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
 
   override def onStop() {
     toolsList = List[String]()
+    sessionMap = Map()
     Logger.info("ToolManagerPlugin has stopped")
   }
 
