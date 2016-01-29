@@ -127,8 +127,8 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     // Send request to API to launch Tool
     // TODO: Figure out something better than the key here
     var dsURL = controllers.routes.Datasets.dataset(datasetId).url
-    val appContext = play.Play.application().configuration().getString("application.context")
-    if (appContext != null) dsURL = appContext+dsURL
+    //val appContext = play.Play.application().configuration().getString("application.context")
+    //if (appContext != null) dsURL = appContext+dsURL
     dsURL = hostURL + dsURL
 
     Logger.debug(dsURL.replace("/datasets", "/api/datasets")+"/download")
