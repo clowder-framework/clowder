@@ -172,7 +172,7 @@
 											<div>
 												@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
 													<a onclick="removeDataset('@(dataset.id.toString)',event)" title="Detach the Dataset">
-														<span class="glyphicon glyphicon-remove"></span></a>
+														<span class="glyphicon glyphicon-remove"></span> Remove from @collection.name </a>
 												}
 											</div>
 										}
