@@ -1,4 +1,4 @@
-@(sessions: List[UUID], sessionMap: scala.collection.mutable.Map[UUID, String], sessionDsMap: scala.collection.mutable.Map[UUID, List[scala.collection.mutable.Map[String,String]]])(implicit user: Option[models.User])
+@(sessions: List[UUID], sessionMap: scala.collection.mutable.Map[UUID, services.ToolSession])(implicit user: Option[models.User])
 
 @import helper._
 @import play.api.Play.current
@@ -12,63 +12,85 @@
 
   <div class="row">
     <div class="col-md-12">
-      <h1>Tool Manager</h1>
+      <h1>Active Analysis Environments</h1>
     </div>
   </div>
 
-  <div class="row" id="tile-view">
-    <div class="col-md-12">
-      <div id="session-table">
-        <table border="1" style="width:100%">
-          <tr>
-            <th width="20%">Session ID</th>
-            <th width="20%">Tool Description</th>
-            <th width="25%">Attached Datasets</th>
-            <th width="25%">URL</th>
-            <th width="10%">Remove Session</th>
-          </tr>
-          @sessions.map { sessionName =>
-            <tr>
-              <td>@sessionName</td>
-              <td>Jupyter Basic</td>
-              <td>@{
-                    sessionDsMap.get(sessionName) match {
-                    case Some(ds_list) => {
-                      var liststr = ""
-                      ds_list.foreach { curr_ds =>
-                        val dsname = curr_ds.keys.head
-                        val dsurl = curr_ds.get(dsname) match {
-                          case Some(u) => u
-                          case None => "#";
+  <div>
+  @sessions.map { sessId =>
+    @sessionMap.get(sessId) match {
+      case Some(ts) => {
+          <div class = "panel panel-default" id="@sessId-listitem">
+            <div class="panel-body">
+              <div class="row">
+                <div class="col-md-12 col-sm-12 col-lg-12">
+
+                  <h2>
+                    @if(ts.url == "") {
+                      @ts.name (not yet ready)
+                    } else {
+                      <a href="@ts.url.replace("\"","")" target="_blank">@ts.name</a>
+                    }
+                  </h2>
+
+                  <div class ="row">
+                    <div class="col-md-6 col-sm-6 col-lg-6">
+                      <ul class="list-unstyled">
+                        @ts.owner match {
+                          case Some(u) => {
+                            <li>Created by <a href= "@routes.Profile.viewProfile(u.email)"> @u.fullName </a></li>
+                          }
+                          case None => {}
                         }
-                        liststr += "<a href="+dsurl+">"+dsname+"</a></br>"
-                      }
-                      Html(liststr)
-                    }
-                    case None => {};
-                  }
-              }</td>
-              <td>@{
-                  val linkstr = sessionMap.get(sessionName) match {
-                    case Some(s) => {
-                      if (s == "") { "Not yet ready" }
-                      else {
-                        val displaystr = s.replace("\"","")
-                        "<a href="+s+">"+displaystr+"</a>"
-                      }
-                    }
-                    case None => ""
-                  }
-                Html(linkstr)
-              }</td>
-              <td><a href="#" onclick="removeSession('@sessionName')" id="removeSessionBtn" role="button">Remove</a>
-              </td>
-            </tr>
-          }
-        </table>
-      </div>
-    </div>
+
+                        <li>Environment: @Html(ts.toolType)</li>
+                        <li>Created @ts.created.format("MMM dd, yyyy")</li>
+                        <li>Updated @ts.updated.format("MMM dd, yyyy")</li>
+
+                        <li>
+                          <a class="btn btn-link" data-toggle="collapse" aria-expanded="false" aria-controls="collapseExample" href="#datasets-@ts.id">
+                            <span class="glyphicon glyphicon-collapse-down" title="@ts.attachedDatasets.keys.size datasets"></span> Expand @ts.attachedDatasets.keys.size attached dataset(s)
+                          </a>
+                          <div class="collapse" id="datasets-@ts.id" aria-hidden="true">
+                            <div class="well"> @{
+                              var dsList = ""
+                              sessionMap.get(sessId) match {
+                                case Some(ts) => {
+                                  for ((dsId, dsName) <- ts.attachedDatasets) {
+                                    val dsURL = controllers.routes.Datasets.dataset(dsId).url
+                                    dsList += "<a href="+dsURL+">"+dsName+"</a></br>"
+                                  }
+                                }
+                                case None => {}
+                              }
+                              Html(dsList)
+                            }
+                            </div>
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
+                    <div class="col-md-6 col-sm-6 col-lg-6">
+                      <ul class="list-unstyled">
+                          <li>
+                            <a id='download-dataset-url' href="#" onclick="removeSession('@sessId')" class="btn btn-link"role="button">
+                              <span class="glyphicon glyphicon-stop"></span>
+                              Stop Session
+                            </a>
+                          </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      case None => {}
+    }
+  }
   </div>
+
   <script>
     function removeSession(sessionId) {
       console.log("Eventually remove session "+sessionId)

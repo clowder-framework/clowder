@@ -19,8 +19,11 @@
                 var htmlStr = ""
                 sessionMap.get(sessId) match {
                   case Some(ts) => {
-                    if (ts.url == "") htmlStr += ts.name+" (not yet ready)"
-                    else htmlStr += "<a href="+ts.url+">"+ts.name+"</a>"
+                    if (ts.url == "") {
+                      htmlStr += ts.name+" (not yet ready)</br>"
+                      htmlStr += ts.id
+                    }
+                    else htmlStr += "<a href="+ts.url+" target='_blank'>"+ts.name+"</a>"
 
                     htmlStr += "</br>" //"<div>"
                     if (ts.attachedDatasets.keys.toList.length == 1) htmlStr += "1 dataset"
@@ -47,14 +50,17 @@
     <a class="btn btn-link" href="toolManager">
       <span class="glyphicon glyphicon-log-in"></span>&nbsp;Tool Manager
     </a>
+  </div>
 
+  <div class="col-md-12">
+    <h4>Launch new tool session</h4>
     <div class="form-inline">
       <div class="input-group input-group-sm col-md-8">
-        <select id="toolSessionLaunchSelect" class="form-control add-resource">
-        </select>
+        <input type="text" id="newToolNameField" class="form-control add-resource" placeholder="Enter session name">
+        <select id="launchNewToolSession" class="form-control add-resource"></select>
         <span class="input-group-btn">
-          <a href="#" class="btn btn-default btn-large" id="launchNewSessionBtn" title="Launch New Tool Session">
-            <span class="glyphicon glyphicon-plus"></span> Launch
+          <a href="#" onclick="launchToolRequest()" class="btn btn-default btn-large" id="launchtoolBtn" title="Launch New Tool Session">
+            <span class="glyphicon glyphicon-plus"></span> New
           </a>
         </span>
       </div>
@@ -65,11 +71,11 @@
     <h4>Other tool sessions</h4>
     <div class="form-inline">
       <div class="input-group input-group-sm col-md-8">
-        <select id="toolSessionAddSelect" class="form-control add-resource">
+        <select id="addToExistingToolSession" class="form-control add-resource">
         </select>
         <span class="input-group-btn">
           <a href="#" class="btn btn-default btn-large" id="addToolSessionBtn" title="Attach Dataset to Tool Session">
-            <span class="glyphicon glyphicon-plus"></span> Attach
+            <span class="glyphicon glyphicon-plus"></span> Add
           </a>
         </span>
       </div>
@@ -78,7 +84,28 @@
 </div>
 
 <script language="javascript">
-  $("#toolSessionAddSelect").select2({
+  $("#launchNewToolSession").select2({
+    theme: "bootstrap",
+    placeholder: "Select a new tool to launch",
+    allowClear: true,
+    ajax: {
+      url: function() {
+        return jsRoutes.controllers.Datasets.getLaunchableTools().url;
+      },
+      processResults: function(data, page) {
+        var results = {
+          results: data.map(function(x) {
+            return {
+              text: x,
+              id: x
+            }
+          })};
+        return results
+      }
+    }
+  });
+
+  $("#addToExistingToolSession").select2({
     theme: "bootstrap",
     placeholder: "Select a tool session",
     allowClear: true,
@@ -88,35 +115,11 @@
         return jsRoutes.controllers.Datasets.getUnattachedSessions("@datasetId").url;
       },
       processResults: function(data, page) {
-        console.log(data)
-        return {
-            results: data.map(function(x) {
-              return {
-                text: x,
-                id: x
-              }
-        })};
-      }
-    }
-  });
-
-  $("#toolSessionLaunchSelect").select2({
-    theme: "bootstrap",
-    placeholder: "Select a new tool to launch",
-    allowClear: true,
-    ajax: {
-      url: function() {
-        return jsRoutes.controllers.Datasets.getLaunchableTools().url;
-      },
-      processResults: function(data, page) {
-        console.log(data)
-        return {
-          results: data.map(function(x) {
-            return {
-              text: x,
-              id: x
-            }
-          })};
+        var outlist = []
+        for (var sessId in data) {
+          outlist.push({text: data[sessId], id: sessId.toString()})
+        }
+        return {results: outlist}
       }
     }
   });
