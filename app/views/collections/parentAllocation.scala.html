@@ -3,11 +3,7 @@
 @import play.api.libs.json.Json
     <div class="row bottom-padding">
         <div class="col-md-12">
-        @if(resourceType == ResourceRef.collection) {
             <h4>Parent collections</h4>
-        } else {
-            <h4>Parent collections</h4>
-        }
         </div>
     </div>
 
@@ -22,38 +18,11 @@
                         <a href="@routes.Collections.collection(p.id)" id='@p.id' class ="collection">@Html(p.name)</a>
                     </div>
                     <div>
-                        @if(resourceType == ResourceRef.dataset) {
-                            @if(p.datasetCount ==1){
-                                1 dataset
-                            } else {
-                                @p.datasetCount datasets
-                            }
-
-
-                            @if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, p.id))) {
-                                | <a href="#" class="btn btn-link btn-xs" onclick="removeChildFromParent( '@(currentCollection.id)', '@(p.id)', event)" title="Remove from parent">
-                                    <span class="glyphicon glyphicon-remove"></span>Remove</a>
-                            } else {
-                                 |  <a href="#" class="btn btn-link btn-xs disabled" title="Remove child collection from collection">
-                                    <span class="glyphicon glyphicon-remove"></span> Remove</a>
-                            }
-                        }
-                        @if(resourceType == ResourceRef.collection) {
-                            @if(p.childCollectionsCount.get ==1){
-                                1 collection
-                            } else {
-                                @p.childCollectionsCount collections
-                            }
-                            @**
-                            @if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, p.id))) {
-                                | <a href="#" class="btn btn-link btn-xs" onclick="removeChildFromParent( '@(currentCollection.id)', '@(p.id)', event)" title="Remove from parent">
-                                    <span class="glyphicon glyphicon-remove"></span>  Remove</a>
-                            } else {
-                                | <a href="#" class="btn btn-link btn-xs disabled" title="Remove child collection from collection">
-                                    <span class="glyphicon glyphicon-remove"></span> Remove</a>
-                            }
-                            **@
-                        }
+                    @if(p.childCollectionsCount ==1){
+                        1 collection
+                    } else {
+                        @p.childCollectionsCount collections
+                    }
                     </div>
                 </div>
             </div>
@@ -64,24 +33,17 @@
 
 
     <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
-    @if(user.isDefined) {
+    @if(Permission.checkOwner(user, ResourceRef(resourceType, resourceId))) {
         <div class="form-inline">
             <div class="input-group input-group-sm col-md-8">
                 <select id="collectionAddSelect" class="form-control add-resource">
                 </select>
-                @if(resourceType == ResourceRef.dataset) {
-                    <span class="input-group-btn">
-                    <a href="#" class="btn btn-default btn-large" id="addParentBtn" title="Add dataset to collection" onclick="addDataset('@resourceId',event)">
-                        <span class="glyphicon glyphicon-plus"></span>
-                    </a>
-                    </span>
-                } else {
                     <span class="input-group-btn">
                     <a href="#" class="btn btn-default btn-large" id="addParentBtn" title="Add collection to parent" onclick="addCollectionToParentCollection('@currentCollection.id',event)">
                         <span class="glyphicon glyphicon-plus"></span>
                     </a>
                     </span>
-                }
+
             </div>
         </div>
     }
@@ -100,8 +62,7 @@
         allowClear: true,
         ajax: {
             url: function(params) {
-                console.log("returning collections list can edit")
-                return jsRoutes.api.Collections.listCanEdit(params.term, null, 10).url;
+                return jsRoutes.api.Collections.listPossibleParents( '@resourceId', params.term,null, 10).url;
             },
             data: function(params) {
                 return { title: params.term };

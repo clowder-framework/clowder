@@ -66,7 +66,7 @@
 
 
     <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
-    @if(user.isDefined) {
+    @if(Permission.checkOwner(user, ResourceRef(resourceType, resourceId))) {
         <div class="form-inline">
             <div class="input-group input-group-sm col-md-8">
                 <select id="spaceAddSelect" class="form-control add-resource">
@@ -74,13 +74,13 @@
                 @if(resourceType == ResourceRef.dataset) {
                     <span class="input-group-btn">
                     <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add dataset to Space" onclick="addDatasetToSpace('@resourceId')">
-                        <span class="glyphicon glyphicon-plus"></span>
+                        <span class="glyphicon glyphicon-plus"></span> Add
                     </a>
                     </span>
                 } else {
                     <span class="input-group-btn">
                     <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add collection to Space" onclick="addCollectionToSpace('@resourceId')">
-                        <span class="glyphicon glyphicon-plus"></span>
+                        <span class="glyphicon glyphicon-plus"></span> Add
                     </a>
                     </span>
                 }
@@ -120,28 +120,5 @@
             }
         }
     });
-
-</script>
-<script language = "javascript">
-
-    function getCollection(id) {
-        var request = jsRoutes.api.Collections.getCollection(id).ajax({
-            type: 'GET'
-        });
-
-        request.done(function (response, textStatus, jqXHR) {
-            var o =$.parseJSON(jqXHR.responseText);
-            return o
-        });
-
-        request.fail(function (jqXHR, textStatus, errorThrown){
-            console.error("The following error occured: " + textStatus, errorThrown);
-            var errMsg = "Error message.";
-            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                notify("Error : " + errorThrown, "error");
-            }
-        });
-        return false;
-    }
 
 </script>

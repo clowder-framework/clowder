@@ -60,7 +60,7 @@ class MongoDBTileService @Inject() (previews: PreviewService, storage: ByteStora
    * Save blob.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
-    MongoUtils.writeBlob[Tile](inputStream, filename, contentType, Map.empty[String, AnyRef], "tiles", "medici2.mongodb.storeTiles").fold("")(_.stringify)
+    MongoUtils.writeBlob[Tile](inputStream, filename, contentType, Map.empty[String, AnyRef], "tiles", "medici2.mongodb.storeTiles").fold("")(_._1.stringify)
   }
 
   /**

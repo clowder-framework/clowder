@@ -1,6 +1,7 @@
-@(collection: models.Collection, classes: String, showFollow: Boolean)(implicit user: Option[models.User])
+@(collection: models.Collection, redirect: Call, classes: String, showFollow: Boolean)(implicit user: Option[models.User])
 @import _root_.util.Formatters.ellipsize
-<div class="post-box @classes">
+@import api.Permission
+<div class="post-box @classes" id="@collection.id-tile">
     <div class="panel panel-default">
         <div class="pull-right">
             <a href="#" title="Bookmark" class="pull-right bookmark-link"><span class="glyphicon glyphicon-bookmark bookmark"></span></a>
@@ -20,14 +21,14 @@
         <ul class="list-group">
             <li class="list-group-item">
                 <span class="glyphicon glyphicon glyphicon-file" title="@collection.datasetCount datasets"></span> @collection.datasetCount
-                <span class="glyphicon glyphicon glyphicon-file" title="@collection.childCollectionsCount child collections"></span> @collection.childCollectionsCount
+                <span class="glyphicon glyphicon glyphicon-th-large" title="@collection.childCollectionsCount child collections"></span> @collection.childCollectionsCount
                 @if(user.isDefined) {
                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                    @if( user.get.identityId.userId.equals(collection.author.identityId.userId)){
-                        <button onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
+                    @if( user.get.identityId.userId.equals(collection.author.identityId.userId) || Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
+                        <button onclick="removeCollectionAndRedirect('@(collection.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
                             <span class="glyphicon glyphicon-trash"></span></button>
                     } else {
-                        <button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
+                        <button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
                             <span class="glyphicon glyphicon-trash"></span></button>
                     }
                 }

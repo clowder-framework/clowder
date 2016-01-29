@@ -20,7 +20,7 @@ case class Collection(
   child_collection_ids : List[String] = List.empty,
   root_flag : Boolean = true,
   metadataCount: Long = 0,
-  childCollectionsCount: Option[Integer] = None,
+  childCollectionsCount: Integer = 0,
   @deprecated("use Metadata","since the use of jsonld") jsonldMetadata : List[Metadata]= List.empty)
 
 object Collection {

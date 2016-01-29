@@ -1,4 +1,6 @@
 @(datasetsInCollection: List[models.Dataset],
+  childCollections: List[models.Collection],
+  parentCollections: Option[List[models.Collection]],
   collection: models.Collection,
   previewers: List[Previewer],
   collectionSpaces: Option[List[ProjectSpace]])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
@@ -63,11 +65,11 @@
 							<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 							@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
 									<button id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')"
-											style="margin-right:15px;" class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
+											class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
 									<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							} else {
 									<button disabled id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')"
-											style="margin-right:15px;" class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
+											class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
 									<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							}
 							@if(user.isDefined) {
@@ -87,6 +89,13 @@
 									</button>
 								}
 							}
+							@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
+								<a id="create_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
+									<span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
+								<a id="create_childcollection" href="@routes.Collections.newCollectionWithParent(Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Delete Collection but not Child Collections">
+									<span class="glyphicon glyphicon-ok"></span> Create Collection</a>
+							}
+
 						</div>
 							<div style="clear: both;"></div>
 
@@ -140,6 +149,13 @@
 			</div>
 			<div class="row">
 			<div class="col-md-12">
+				<h3>Child Collections in the collection</h3>
+					@childCollections.map { child_collection =>
+						@collections.listchildcollection(collection, child_collection, routes.Collections.collection(collection.id))
+					}
+
+			</div>
+			<div class="col-md-12">
 				<h3>Datasets in the collection</h3>
 					@datasetsInCollection.map { dataset =>
 						<div class="panel panel-default" id="@dataset.id">
@@ -156,7 +172,7 @@
 											<div>
 												@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
 													<a onclick="removeDataset('@(dataset.id.toString)',event)" title="Detach the Dataset">
-														<span class="glyphicon glyphicon-trash"></span></a>
+														<span class="glyphicon glyphicon-remove"></span> Remove from @collection.name </a>
 												}
 											</div>
 										}
@@ -176,7 +192,8 @@
 		</div>
 	<!-- right column -->
 	<div class="col-md-4">
-		@spaces.spaceAllocation(collection.id, ResourceRef.collection, collectionSpaces.getOrElse(List.empty))
+		@spaces.spaceAllocation(collection.id, ResourceRef.collection, collectionSpaces.getOrElse(List.empty), Some(collection))
+		@collections.parentAllocation(collection,collection.id,ResourceRef.collection, parentCollections.getOrElse(List.empty))
 		<br />
 		@if(user.isDefined && collectionSpaces.isDefined && !collectionSpaces.get.isEmpty){
 			<div id="collection-users">
@@ -296,6 +313,7 @@
 			$('#edit-description').css("display", "");
 			$('#edit-description').removeClass("inline");
 			$('#collection_desc').css("display", "inline");
+			$('#collection_desc').mouseleave();
 		});
 
 		request.fail(function(jqXHR, textStatus, errorThrown) {
@@ -313,6 +331,7 @@
 		$('#edit-description').css("display", "");
 		$('#edit-description').removeClass("inline");
 		$('#collection_desc').css("display", "inline");
+		$('#collection_desc').mouseleave();
 	}
 
 	$(document).ready(function(){

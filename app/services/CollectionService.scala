@@ -68,9 +68,19 @@ trait CollectionService {
   def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Collection]
 
   /**
+   * Return a list of collections the user has created with matching title.
+   */
+  def listUser(limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[Collection]
+
+  /**
    * Return a list of collections the user has created starting at a specific date.
    */
   def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Collection]
+
+  /**
+   * Return a list of collections the user has access to starting at a specific date with matching title.
+   */
+  def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[Collection]
 
   /**
    * Get collection.
@@ -159,15 +169,12 @@ trait CollectionService {
     */
   def addSubCollection(collectionId: UUID, subCollectionId: UUID) : Try[Unit]
 
-
-  /**
-    *  Add parent to subcollection parent list
-    */
-  def addParentCollection(subCollectionId: UUID, parentCollectionId: UUID) : Try[Unit]
-
   /**
     * Remove subcollection from collection
     */
+
+  def getSelfAndAncestors(collectionId :UUID) : List[Collection]
+
   def removeSubCollection(collectionId: UUID, subCollectionId: UUID, ignoreNotFound: Boolean = true) : Try[Unit]
 
   def setRootFlag(collectionId: UUID, isRoot: Boolean) : Try[Unit]
@@ -180,6 +187,5 @@ trait CollectionService {
 
   def getRootSpaceIds(collectionId : UUID) : ListBuffer[UUID]
 
-  def getRootSpacesToRemove(collectionId: UUID) : List[UUID]
 
 }

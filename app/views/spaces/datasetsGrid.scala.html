@@ -8,7 +8,7 @@
     Most recent datasets:
     <span class="pull-right">
         @if(user.isDefined &&  Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
-            <a id ="create-dataset" href="@routes.Datasets.newDataset(Some(space))" class="btn btn-link btn-xs">
+            <a id ="create-dataset" href="@routes.Datasets.newDataset(Some(space), None)" class="btn btn-link btn-xs">
                 <span class="glyphicon glyphicon-ok"></span> Create Dataset
             </a>
         }
@@ -21,9 +21,9 @@
 
 <div class="row" id="tile-view">
     <div class="col-md-12">
-        <div id="masonry">
+        <div id="masonry-datasets">
         @datasetsList.map { dataset =>
-          @datasets.tile(dataset, Some(space), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true)
+          @datasets.tile(dataset, Some(space), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space)))
 
         }
         </div>

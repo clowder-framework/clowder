@@ -46,11 +46,11 @@ class CurationObjects @Inject()(datasets: DatasetService,
             }
             val tempMap =  Map(
               "Identifier" -> Json.toJson("urn:uuid:"+file.id),
-              "@id" -> Json.toJson(controllers.routes.Files.file(file.fileId).absoluteURL(https)),
+              "@id" -> Json.toJson("urn:uuid:"+file.id),
               "Creation Date" -> Json.toJson(format.format(file.uploadDate)),
               "Label" -> Json.toJson(file.filename),
               "Title" -> Json.toJson(file.filename),
-              "Uploaded By" -> Json.toJson(userService.findByIdentity(file.author).map ( usr => Json.toJson(file.author.fullName + ": " + controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)))),
+              "Uploaded By" -> Json.toJson(userService.findByIdentity(file.author).map ( usr => Json.toJson(file.author.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https)))),
               "size" -> Json.toJson(file.length),
               "Publication Date" -> Json.toJson(""),
               "External Identifier" -> Json.toJson(""),
@@ -76,7 +76,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "comment_body" -> Json.toJson(comm.text),
               "comment_date" -> Json.toJson(format.format(comm.posted)),
               "Identifier" -> Json.toJson("urn:uuid:"+comm.id),
-              "comment_author" -> Json.toJson(userService.findByIdentity(comm.author).map ( usr => Json.toJson(usr.fullName + ": " + controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https))))
+              "comment_author" -> Json.toJson(userService.findByIdentity(comm.author).map ( usr => Json.toJson(usr.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https))))
             ))
           }
           var metadataJson = scala.collection.mutable.Map.empty[String, JsValue]
@@ -105,8 +105,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     "Uploaded By" -> Json.toJson("http://purl.org/dc/elements/1.1/creator"),
                     "Contact" -> Json.toJson("http://sead-data.net/terms/contact"),
                     "name" -> Json.toJson("http://sead-data.net/terms/name"),
-                    "email" -> Json.toJson("http://sead-data.net/terms/email"),
-                    "Creator" -> Json.toJson("http://purl.org/dc/terms/creator"),
+                    "email" -> Json.toJson("http://schema.org/Person/email"),
                     "Publication Date" -> Json.toJson("http://purl.org/dc/terms/issued"),
                     "Spatial Reference" ->
                       Json.toJson(
@@ -129,12 +128,10 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     "Published In" -> Json.toJson("http://purl.org/dc/terms/isPartOf"),
                     "Publisher" -> Json.toJson("http://purl.org/dc/terms/publisher"),
                     "External Identifier" -> Json.toJson("http://purl.org/dc/terms/identifier"),
-                    "describes" -> Json.toJson("https://w3id.org/ore/context"),
                     "references" -> Json.toJson("http://purl.org/dc/terms/references"),
                     "Is Version Of" -> Json.toJson("http://purl.org/dc/terms/isVersionOf"),
                     "Has Part" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
-                    "similarTo" -> Json.toJson("https://w3id.org/ore/context"),
-                    "aggregates" -> Json.toJson("http://www.openarchives.org/ore/terms/aggregates")
+                    "size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length")
                   )
                 )
 
@@ -146,14 +143,13 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "Creation Date" -> Json.toJson(format.format(c.created)),
                   "Label" -> Json.toJson(c.name),
                   "Title" -> Json.toJson(c.name),
-                  "Uploaded By" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)))),
-                  "Creator" -> Json.toJson(userService.findByIdentity(c.author).map(usr => JsArray(Seq(Json.toJson(usr.fullName + ": " + controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)), Json.toJson(usr.profile.map(prof => prof.orcidID.map(oid=> oid))))))),
+                  "Uploaded By" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + api.routes.Users.findById(usr.id).absoluteURL(https)))),
                   "Comment" -> Json.toJson(JsArray(commentsJson)),
                   "Publication Date" -> Json.toJson(format.format(c.created)),
                   "Published In" -> Json.toJson(""),
                   "External Identifier" -> Json.toJson(""),
                   "Proposed for publication" -> Json.toJson("true"),
-                  "keyword" -> Json.toJson(
+                  "Keyword" -> Json.toJson(
                     Json.toJson(c.datasets(0).tags.map(_.name))
                   ),
                   "@id" -> Json.toJson(api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "#aggregation"),
@@ -165,7 +161,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
 
                 )),
               "Creation Date" -> Json.toJson(format.format(c.created)),
-              "Creator" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + controllers.routes.Profile.viewProfileUUID(usr.id).absoluteURL(https)))),
+              "Uploaded By" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https)))),
               "@type" -> Json.toJson("ResourceMap"),
               "@id" -> Json.toJson(api.routes.CurationObjects.getCurationObjectOre(curationId).absoluteURL(https))
             )
@@ -221,9 +217,9 @@ class CurationObjects @Inject()(datasets: DatasetService,
       curations.get(curationId) match {
         case Some(c) => {
           var success = false
-          var endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
-          val httpDelete = new HttpDelete(endpoint + "/" + curationId.toString())
-          var client = new DefaultHttpClient
+          val endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
+          val httpDelete = new HttpDelete(endpoint + "/urn:uuid:" + curationId.toString())
+          val client = new DefaultHttpClient
           val response = client.execute(httpDelete)
           val responseStatus = response.getStatusLine().getStatusCode()
           if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304) {
@@ -251,6 +247,20 @@ class CurationObjects @Inject()(datasets: DatasetService,
       curations.get(curationId) match {
         case Some(c) => {
           Ok(toJson(Map("cf" -> curations.getCurationFiles(c.files))))
+        }
+        case None => InternalServerError("Curation Object Not found")
+      }
+  }
+
+  @ApiOperation(value = "Delete a file in curation object", notes = "",
+    responseClass = "None", httpMethod = "POST")
+  def deleteCurationFiles(curationId: UUID, curationFileId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
+    implicit request =>
+      implicit val user = request.user
+      curations.get(curationId) match {
+        case Some(c) => {
+          curations.deleteCurationFiles(curationId, curationFileId)
+          Ok(toJson("Success"))
         }
         case None => InternalServerError("Curation Object Not found")
       }

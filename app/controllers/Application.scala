@@ -134,7 +134,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
                   case Some(fspace) => {
                     followedSpaces = followedSpaces.++(List((fspace.id, fspace.name, fspace.description.substring(0, Math.min(maxDescLength, fspace.description.length())))))
                   }
-
+                  case None => {}
                 }
               }
             }
@@ -278,6 +278,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Geostreams.patchStreamMetadata,
         api.routes.javascript.Collections.list,
         api.routes.javascript.Collections.listCanEdit,
+        api.routes.javascript.Collections.listPossibleParents,
         api.routes.javascript.Collections.attachPreview,
         api.routes.javascript.Collections.attachDataset,
         api.routes.javascript.Collections.removeDataset,
@@ -315,12 +316,14 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.CurationObjects.findMatchmakingRepositories,
         api.routes.javascript.CurationObjects.retractCurationObject,
         api.routes.javascript.CurationObjects.getCurationFiles,
+        api.routes.javascript.CurationObjects.deleteCurationFiles,
         api.routes.javascript.Metadata.addUserMetadata,
         api.routes.javascript.Metadata.searchByKeyValue,
         api.routes.javascript.Metadata.getDefinitions,
         api.routes.javascript.Metadata.getDefinition,
         api.routes.javascript.Metadata.getUrl,
         api.routes.javascript.Metadata.addDefinition,
+        api.routes.javascript.Metadata.deleteDefinition,
         api.routes.javascript.Metadata.removeMetadata,
         api.routes.javascript.Events.sendExceptionEmail,
         controllers.routes.javascript.Files.file,

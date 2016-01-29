@@ -143,6 +143,10 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
     */
   def updateMetadata(metadataId: UUID, json: JsValue) = {}
 
+  def deleteDefinition(id :UUID): Unit = {
+    MetadataDefinitionDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
+  }
+
   /**
     * Search by metadata. Uses mongodb query structure.
     * @param query

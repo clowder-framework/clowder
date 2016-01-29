@@ -2,23 +2,16 @@ package controllers
 
 import api.Permission._
 import models._
-import play.api.data.Form
-import play.api.data.Forms._
-import play.api.mvc.SimpleResult
 import util.{Formatters, RequiredFieldsConfig}
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.{Inject, Singleton}
-
-import api.{UserRequest, Permission}
-import org.apache.commons.lang.StringEscapeUtils
+import api.Permission
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 import services.{CollectionService, DatasetService, _}
-import views.html.defaultpages.badRequest
-
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 import services._
@@ -88,10 +81,10 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             parentSpaces = parentCollection.spaces
             Ok(views.html.newCollectionWithParent(null, decodedSpaceList.toList,  RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None,Some(currentParentCollectionId),Some(parentCollection.name), parentSpaces))
           }
-          case None => Ok("newCollectionWithParent, no collection matches parentCollectionId")
+          case None => Ok(toJson("newCollectionWithParent, no collection matches parentCollectionId"))
         }
       }
-      case None => Ok("newCollectionWithParent, no parentCollectionId provided")
+      case None => Ok(toJson("newCollectionWithParent, no parentCollectionId provided"))
     }
   }
 
@@ -112,14 +105,12 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       decodedCollection
   }
 
-  def followingCollections(when: String, index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
+  def followingCollections(index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(clowderUser) => {
-        val nextPage = (when == "a")
 
         val title: Option[String] = Some("Following Collections")
-
         val collectionList = new ListBuffer[Collection]()
         val collectionIds = clowderUser.followedEntities.filter(_.objectType == "collection")
         val collectionIdsToUse = collectionIds.slice(index*limit, (index+1) *limit)
@@ -184,14 +175,15 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
-    val datasetSpace = space.flatMap(o => spaceService.get(UUID(o)))
+    val collectionSpace = space.flatMap(o => spaceService.get(UUID(o)))
     var title: Option[String] = Some("Collections")
 
     val collectionList = person match {
       case Some(p) => {
         space match {
           case Some(s) => {
-            title = Some(person.get.fullName + "'s Collections in Space " + datasetSpace.get.name)
+            title = Some(person.get.fullName + "'s Collections in Space <a href="
+              + routes.Spaces.getSpace(collectionSpace.get.id) + ">" + collectionSpace.get.name + "</a>")
           }
           case None => {
             title = Some(person.get.fullName + "'s Collections")
@@ -206,7 +198,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       case None => {
         space match {
           case Some(s) => {
-            title = Some("Collections in Space " + datasetSpace.get.name)
+            title = Some("Collections in Space <a href=" + routes.Spaces.getSpace(collectionSpace.get.id) + ">" + collectionSpace.get.name + "</a>")
             if (date != "") {
               collections.listSpace(date, nextPage, limit, s)
             } else {
@@ -406,26 +398,6 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             }
           }
 
-          //add to same spaces as parent collection
-          if (colParentSpaces != null && colParentSpaces.size > 0){
-            if (colParentSpaces(0) != ""){
-              try {
-                var parentSpaceIds = colParentSpaces(0).split(",").toList
-                for (colParentSpace <- parentSpaceIds){
-                  spaceService.get(UUID(colParentSpace)) match {
-                    case Some(parentSpace) => {
-                      spaceService.addCollection(collection.id,UUID(colParentSpace))
-                    }
-                    case None => Logger.error("no space found for " + colParentSpace)
-                  }
-                }
-              } catch {
-                case e : Exception => Logger.debug("error with parent space id")
-              }
-            }
-
-          }
-
           //index collection
             val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
             current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
@@ -520,8 +492,12 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           val decodedSpaces: List[ProjectSpace] = collectionSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
-          Ok(views.html.collectionOfDatasetsAndChildCollections(decodedDatasetsInside.toList,
-            decodedChildCollections.toList, Some(decodedParentCollections.toList), dCollection, filteredPreviewers.toList, Some(decodedSpaces)))
+
+          //Ok(views.html.collection(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, Some(decodedSpaces)))
+
+          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList, Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList, Some(decodedSpaces)))
+          //Ok(views.html.collectionOfDatasetsAndChildCollections(decodedDatasetsInside.toList,
+            //decodedChildCollections.toList, Some(decodedParentCollections.toList), dCollection, filteredPreviewers.toList, Some(decodedSpaces)))
 
         }
         case None => {

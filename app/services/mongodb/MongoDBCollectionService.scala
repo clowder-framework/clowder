@@ -111,10 +111,24 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   }
 
   /**
+   * Return a list of collections the user has created with matching title.
+   */
+  def listUser(limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[Collection] = {
+    list(None, false, limit, Some(title), None, Set[Permission](Permission.ViewCollection), user, showAll, Some(owner))
+  }
+
+  /**
    * Return a list of collections the user has created starting at a specific date.
    */
   def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Collection] = {
     list(Some(date), nextPage, limit, None, None, Set[Permission](Permission.ViewCollection), user, showAll, Some(owner))
+  }
+
+  /**
+   * Return a list of collections the user has created starting at a specific date with matching title.
+   */
+  def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[Collection] = {
+    list(Some(date), nextPage, limit, Some(title), None, Set[Permission](Permission.ViewCollection), user, showAll, Some(owner))
   }
 
   /**
@@ -402,10 +416,9 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
 
   def listChildCollections(parentCollectionId : UUID): List[Collection] = {
     val childCollections = List.empty[Collection]
-    Collection.findOneById(new ObjectId(parentCollectionId.stringify)) match {
+    get(parentCollectionId) match {
       case Some(collection) => {
         val childCollectionIds = collection.child_collection_ids
-        //val list = for (collection <- listAccess(0, Set[Permission](Permission.ViewCollection), user, showAll); if (isInDataset(dataset, collection))) yield collection
         val childList = for (childCollectionId <- childCollectionIds; if (get(UUID(childCollectionId)).isDefined)) yield (get(UUID(childCollectionId))).get
         return childList
       }
@@ -453,37 +466,17 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     return rootSpaceIds
   }
 
-  def getRootSpacesToRemove(childCollectionId : UUID) : List[UUID] = {
-    var spacesToRemove = List.empty[UUID]
-    Collection.findOneById(new ObjectId(childCollectionId.stringify)) match {
-      case Some(collection) => {
-        val currentSpaceIds = collection.spaces
-        val rootCollectionIds =  getRootCollections(collection.id).toList
-        val currentRootSpaceIds = ListBuffer.empty[UUID]
-        for (rootCollectionId <- rootCollectionIds){
-          var currentSpaces = rootCollectionId.spaces
-          for (space <- currentSpaces){
-            currentRootSpaceIds += space
-          }
-        }
-      }
-      case None => Logger.error("no collection found for " + childCollectionId)
-    }
-
-    return spacesToRemove
-  }
 
   def getAllDescendants(parentCollectionId : UUID) : ListBuffer[models.Collection] = {
-    var descendantIds = ListBuffer.empty[models.Collection]
+    var descendants = ListBuffer.empty[models.Collection]
 
     Collection.findOneById(new ObjectId(parentCollectionId.stringify)) match {
       case Some(parentCollection) => {
-        var currentName = parentCollection.name
-        var childCollections = listChildCollections(parentCollectionId)
+        val childCollections = listChildCollections(parentCollectionId)
         for (child <- childCollections){
-          descendantIds += child
-          var otherDescendants = getAllDescendants(child.id)
-          descendantIds = descendantIds ++ otherDescendants
+          descendants += child
+          val otherDescendants = getAllDescendants(child.id)
+          descendants = descendants ++ otherDescendants
 
         }
 
@@ -491,7 +484,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       case None => Logger.error("no collection found for id " + parentCollectionId)
     }
 
-    return descendantIds
+    return descendants
   }
 
 
@@ -696,40 +689,37 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   }
 
 
-  def addParentCollection(subCollectionId: UUID, parentCollectionId: UUID) =Try {
-    Collection.findOneById(new ObjectId(subCollectionId.stringify)) match {
-      case Some(sub_collection) => {
-        Collection.findOneById(new ObjectId(parentCollectionId.stringify)) match {
-          case Some(parent_collection) => {
-            Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)),
-              $addToSet("parent_collections" ->  Collection.toDBObject(parent_collection)), false, false, WriteConcern.Safe)
-          } case None => {
-            Logger.error("Error getting subcollection" + subCollectionId);
-            Failure
-          }
-        }
-      } case None => {
-        Logger.error("Error getting collection" + subCollectionId);
-        Failure
-      }
-    }
-  }
 
   def addSubCollection(collectionId :UUID, subCollectionId: UUID) = Try{
     Collection.findOneById(new ObjectId(collectionId.stringify)) match {
       case Some(collection) => {
-
-        if (!isSubCollectionIdInCollection(subCollectionId,collection)){
-          addSubCollectionId(subCollectionId,collection)
-          addParentCollectionId(subCollectionId,collectionId)
-          index(collection.id)
-          Collection.findOneById(new ObjectId(subCollectionId.stringify)) match {
-            case Some(sub_collection) => {
-              index(sub_collection.id)
-            } case None =>
-              Logger.error("Error getting subcollection" + subCollectionId);
-              Failure
+        get(subCollectionId) match {
+          case Some(sub_collection) => {
+            if (!isSubCollectionIdInCollection(subCollectionId,collection)){
+              addSubCollectionId(subCollectionId,collection)
+              addParentCollectionId(subCollectionId,collectionId)
+              var parentSpaceIds = collection.spaces
+              for (parentSpaceId <- parentSpaceIds){
+                if (!sub_collection.spaces.contains(parentSpaceId)){
+                  spaceService.get(parentSpaceId) match {
+                    case Some(parentSpace) => {
+                      spaceService.addCollection(subCollectionId,parentSpaceId)
+                    }
+                    case None => Logger.error("No space found for " + parentSpaceId)
+                  }
+                }
+              }
+              index(collection.id)
+              Collection.findOneById(new ObjectId(subCollectionId.stringify)) match {
+                case Some(sub_collection) => {
+                  index(sub_collection.id)
+                } case None =>
+                  Logger.error("Error getting subcollection" + subCollectionId);
+                  Failure
+              }
+            }
           }
+          case None => Logger.error("Error getting subcollection")
         }
       } case None => {
         Logger.error("Error getting collection" + collectionId);
@@ -752,6 +742,26 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),$set("root_flag" -> isRoot), false, false, WriteConcern.Safe )
   }
 
+  def getSelfAndAncestors(collectionId : UUID) : List[Collection] = {
+    var selfAndAncestors : ListBuffer[models.Collection] = ListBuffer.empty[models.Collection]
+    get(collectionId) match {
+      case Some(collection) => {
+        selfAndAncestors += collection
+        for (parentCollectionId <- collection.parent_collection_ids){
+          get(UUID(parentCollectionId)) match {
+            case Some(parent_collection) => {
+              selfAndAncestors = selfAndAncestors ++ getSelfAndAncestors(UUID(parentCollectionId))
+            }
+
+          }
+        }
+      }
+
+    }
+    return selfAndAncestors.toList
+
+
+  }
 
   private def isSubCollectionIdInCollection(subCollectionId: UUID, collection: Collection) : Boolean = {
     for(child_collection_id <- collection.child_collection_ids){
