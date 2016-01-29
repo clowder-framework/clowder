@@ -810,9 +810,13 @@ class Datasets @Inject()(
   def launchTool(sessionName: String, ttype: String, datasetId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
+    val userId: Option[UUID] = user match {
+      case Some(u) => Some(u.id)
+      case None => None
+    }
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
-        val sessionId = mgr.launchTool(sessionName, ttype, datasetId)
+        val sessionId = mgr.launchTool(sessionName, ttype, datasetId, userId)
         Ok(sessionId.toString)
       }
       case None => {

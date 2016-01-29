@@ -14,7 +14,7 @@ import play.api.{Plugin, Logger, Application}
 import models.UUID
 
 /**
-  * ToolSession describes a running external Tool/VM associated with one or more datasets in Clowder.
+  * ToolSession describes a running external Tool/VM associated with one or more attached datasets.
   */
 class ToolSession () {
   var id: UUID = UUID()
@@ -23,9 +23,12 @@ class ToolSession () {
   var externalId: String = "" // For tracking token used by external API
   var toolType: String = ""
   var attachedDatasets: Map[UUID, String] = Map()
+  var owner = None: Option[models.User]
   var created = Calendar.getInstance.getTime
   var updated = created
+
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+  val users: UserService = DI.injector.getInstance(classOf[UserService])
 
   def attachURL(sessionurl: String): Unit = {
     // Define the external Tool URL this ToolSession points to
@@ -49,6 +52,14 @@ class ToolSession () {
     updateTimestamp()
   }
 
+  def setOwner(ownerId: UUID): Unit = {
+    users.get(ownerId) match {
+      case Some(u) => owner = Some(u)
+      case None => owner = None
+    }
+    updateTimestamp()
+  }
+
   def setToolType(tooltype: String): Unit = {
     toolType = tooltype
     updateTimestamp()
@@ -61,7 +72,8 @@ class ToolSession () {
 
 /**
   * ToolManager plugin.
-  *
+  * This manages ToolSessions(), each describing a running tool/analysis environment/VM that was launched
+  * from Clowder. Supports launching, stopping, getting info of analysis environment sessions.
   */
 class ToolManagerPlugin(application: Application) extends Plugin {
   val comments: CommentService = DI.injector.getInstance(classOf[CommentService])
@@ -83,11 +95,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
   def getLaunchableTools(): List[String] = {
     toolsList = List("Jupyter", "PlantCV")
 
-    //val request: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython/notebooks")
-    //  .withHeaders("Content-Type" -> "application/json")
-    //  .withQueryString("user" -> "")
-    //  .withQueryString("pw" -> "")
-    //  .get()
+    //val request: Future[Response] = url("http://141.142.209.108:8080/tools").get()
 
     //request.map( response => {
     //  Logger.info(response.body.toString)
@@ -99,15 +107,21 @@ class ToolManagerPlugin(application: Application) extends Plugin {
 
   /**
     * Send request to API to launch a new tool.
+    * @param sessionName user-provided name of Session to display
     * @param datasetId clowder ID of dataset to attach
+    * @param toolType name of environment type that is being launched
     * @return ID of session that was launched
     */
-  def launchTool(sessionName: String, toolType: String, datasetId: UUID): UUID = {
+  def launchTool(sessionName: String, toolType: String, datasetId: UUID, ownerId: Option[UUID]): UUID = {
     // Generate a new session & add to sessionMap
     val newSession = new ToolSession()
     newSession.setName(sessionName)
     newSession.setToolType(toolType)
     newSession.attachDataset(datasetId)
+    ownerId match {
+      case Some(o) => newSession.setOwner(o)
+      case None => {}
+    }
     sessionMap(newSession.id) = newSession
 
     // Send request to API to launch Tool
@@ -116,6 +130,8 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython").post(Json.obj(
       "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
       "key" -> play.Play.application().configuration().getString("commKey"),
+      "user" -> "mburnet2@illinois.edu",
+      "pw" -> "tSzx7dINA8RxFEKp7sX8",
       "host" -> "http://141.142.209.108"
     ))
 
@@ -137,23 +153,25 @@ class ToolManagerPlugin(application: Application) extends Plugin {
   }
 
   /**
-    * Check to see whether request UUID has received a URL from API yet.
+    * Return URL associated with sessionID if available, otherwise a blank string
+    * @param sessionId sessionID to check
+    * @return URL string or blank string depending on availability
    */
   def checkForSessionUrl(sessionId: UUID): String = {
-    var completed = ""
-
-    if (sessionMap.contains(sessionId)) {
-      sessionMap.get(sessionId) match {
-        case Some(sess) => completed = sess.url
-        case None => {}
-      }
+    val completed: String = sessionMap.get(sessionId) match {
+      case Some(sess) => sess.url
+      case None => ""
     }
 
     return completed
   }
 
+  /**
+    * Get a subset of sessionMap which only includes ToolSessions that have datasetId attached
+    * @param datasetId filter sessionMap to sessions with this dataset attached
+    * @return Map of sessionId to ToolSession instance
+    */
   def getAttachedSessions(datasetId: UUID): Map[UUID, ToolSession] = {
-    // Return sessionMap filtered to only sessions containing provided UUID
     val attachedIds = for{(sessId, sess) <- sessionMap
                         if sess.attachedDatasets.contains(datasetId)
                         }yield sessId
@@ -170,8 +188,12 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     return attached
   }
 
+  /**
+    * Get a map of SessionID to sessionName that only includes sessions that don't have datasetId attached
+    * @param datasetId Result will include sessions without this dataset attached
+    * @return Map of sessionID string to user-defined session Name
+    */
   def getUnattachedSessions(datasetId: UUID): Map[String, String] = {
-    // Return a list of tool session Ids that do NOT have datasetID attached already
     val unSess = Map[String, String]()
 
     for ((sessId, sess) <- sessionMap) {
@@ -188,17 +210,15 @@ class ToolManagerPlugin(application: Application) extends Plugin {
 
   /**
     * Attach a dataset's files to an existing session.
-    * @param sessionid ID of session to attach dataset to
+    * @param sessionId ID of session to attach dataset to
     * @param datasetid clowder ID of dataset to attach
     */
-  def attachDataset(sessionid: String, datasetid: String): Boolean = {
-    val statusRequest: Future[Response] = url("http://141.142.209.108:8080/attachDataset")
-      .withHeaders("Content-Type" -> "application/json")
-      .withQueryString("session" -> sessionid)
-      .withQueryString("dataset" -> datasetid)
-      .withQueryString("user" -> "")
-      .withQueryString("pw" -> "")
-      .get()
+  def attachDataset(sessionId: String, datasetid: String): Boolean = {
+    val statusRequest: Future[Response] = url("http://141.142.209.108:8080/attachDataset").post(Json.obj(
+      "key" -> play.Play.application().configuration().getString("commKey"),
+      "session" -> sessionId,
+      "host" -> "http://141.142.209.108"
+    ))
 
     statusRequest.map( response => {
       Logger.info(response.body.toString)
@@ -209,22 +229,21 @@ class ToolManagerPlugin(application: Application) extends Plugin {
 
   /**
     * Terminate a running tool session.
-    * @param sessionId ID of session to stop
-    * @return
+    * @param sessionId ID of Tool Session to stop
     */
-  def removeSession(sessionId: UUID): Boolean = {
-    //val statusRequest: Future[Response] = url("http://141.142.209.108:8080/terminate")
-     // .withHeaders("Content-Type" -> "application/json")
-     // .withQueryString("session" -> sessionid)
-     // .delete()
+  def removeSession(sessionId: UUID): Unit = {
+    //val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython/<id>").delete()
 
+    sessionMap.get(sessionId) match {
+      case Some(ts) => {
+        val sessApiId = ts.externalId // External identifier on NDS api
+      }
+    }
     //statusRequest.map( response => {
     //  Logger.info(response.body.toString)
     //})
 
     sessionMap = sessionMap - sessionId
-
-    return true
   }
 
   override def onStop() {
