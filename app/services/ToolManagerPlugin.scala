@@ -112,7 +112,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     * @param toolType name of environment type that is being launched
     * @return ID of session that was launched
     */
-  def launchTool(sessionName: String, toolType: String, datasetId: UUID, ownerId: Option[UUID]): UUID = {
+  def launchTool(hostURL: String, sessionName: String, toolType: String, datasetId: UUID, ownerId: Option[UUID]): UUID = {
     // Generate a new session & add to sessionMap
     val newSession = new ToolSession()
     newSession.setName(sessionName)
@@ -126,7 +126,12 @@ class ToolManagerPlugin(application: Application) extends Plugin {
 
     // Send request to API to launch Tool
     // TODO: Figure out something better than the key here
-    val dsURL = controllers.routes.Datasets.dataset(datasetId).url
+    var dsURL = controllers.routes.Datasets.dataset(datasetId).url
+    val appContext = play.Play.application().configuration().getString("application.context")
+    if (appContext != null) dsURL = appContext+dsURL
+    dsURL = hostURL + dsURL
+
+    Logger.debug(dsURL.replace("/datasets", "/api/datasets")+"/download")
     val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython").post(Json.obj(
       "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
       "key" -> play.Play.application().configuration().getString("commKey"),
