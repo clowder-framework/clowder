@@ -1,5 +1,3 @@
-# List of authors
-
 Following is a list of contributors in alphabetical order:
 
 - Ashwini Vaidya
