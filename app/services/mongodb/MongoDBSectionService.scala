@@ -129,14 +129,17 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
     val fileId = section.file_id
     Logger.debug("File ID: " + fileId)
 
-    // Get dataset that the file is part of
-    val datasetList = datasets.findByFileId(fileId).get
+    // Get the list of datasets that the file is part of
+    val datasetList = datasets.findByFileId(fileId).toList
     val spaceList = new ArrayBuffer[UUID]
 
-    for (dataset <- datasetList) {
-      //spaceList.++(dataset.spaces)
-      spaceList.+=:(dataset)
-    }
+    // Iterate through each dataset and get the IDs of spaces that it belongs to
+    datasetList.foreach(dataset => {
+      // Iterate through each space ID and add it to the spaceList
+      dataset.spaces.foreach(space => {
+        spaceList.+=(space)
+      })
+    })
 
     // Return the spaces (after removing duplicates) that the section is belonging to
     return spaceList.distinct
