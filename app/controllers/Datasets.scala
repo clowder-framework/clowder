@@ -15,7 +15,7 @@ import services._
 import util.{Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
 import scala.collection.mutable.ListBuffer
-
+import play.api.mvc.Results
 
 /**
  * A dataset is a collection of files and streams.
@@ -90,19 +90,26 @@ class Datasets @Inject()(
     }
   }
 
-  def addFiles(id: UUID, folder: Option[String]) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def addFilesToFolder(id: UUID, folderId: String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
-        folder match {
-          case Some(folderId) => {
             folders.get(UUID(folderId)) match {
-              case Some(f) => Ok(views.html.datasets.addFiles(dataset, Some(f)))
+              case Some(folder) => Ok(views.html.datasets.addFiles(dataset, Some(folder)))
               case None => Ok(views.html.datasets.addFiles(dataset, None))
             }
-          }
-          case None => Ok(views.html.datasets.addFiles(dataset, None))
-        }
+      }
+      case None => {
+        InternalServerError(s"Dataset $id not found")
+      }
+    }
+  }
+
+  def addFiles(id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    implicit val user = request.user
+    datasets.get(id) match {
+      case Some(dataset) => {
+        Ok(views.html.datasets.addFiles(dataset, None))
       }
       case None => {
         InternalServerError(s"Dataset $id not found")
@@ -502,11 +509,13 @@ class Datasets @Inject()(
     }
   }
 
-  def getUpdatedFilesAndFolders(datasetId: UUID, limit: Int, currentSpace: Option[String], folderId: Option[String], pageIndex: Int)  = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
+  def getUpdatedFilesAndFolders(datasetId: UUID, limit: Int, pageIndex: Int)  = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) (parse.json) { implicit request =>
     implicit val user = request.user
     val filepageUpdate = if (pageIndex < 0) 0 else pageIndex
     datasets.get(datasetId) match {
       case Some(dataset) => {
+        val folderId = (request.body \ "folderId").asOpt[String]
+        val currentSpace = (request.body \ "currentSpace").asOpt[String]
         folderId match {
           case Some(fId) => {
             folders.get(UUID(fId)) match {
