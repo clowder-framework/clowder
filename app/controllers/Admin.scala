@@ -467,6 +467,24 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
               //The form data is coming in with the permissions containing spaces. Need to collapse all spaces in order for the permissions to be correctly updated.
               val updated_role = role.copy(name = formData.name  , description = formData.description, permissions = formData.permissions.map(_.trim().replaceAll("\\s+", "")).toSet )
               userService.updateRole(updated_role)
+
+
+              // iterate through spaces, updating all users with this role ID to the new role parameters
+              val spaceService: SpaceService = DI.injector.getInstance(classOf[SpaceService])
+
+              val spaceList = spaceService.list() //List[models.ProjectSpace]
+              for (sp <- spaceList) {
+                for (spu <- spaceService.getUsersInSpace(sp.id)) {
+                    spaceService.getRoleForUserInSpace(sp.id, spu.id) match {
+                      case Some(r) => {
+                        if (r.id == updated_role.id) spaceService.changeUserRole(spu.id, updated_role, sp.id)
+                      }
+                      case None => {}
+                  }
+                }
+              }
+
+
               Redirect(routes.Admin.listRoles())
             }
             case None =>
