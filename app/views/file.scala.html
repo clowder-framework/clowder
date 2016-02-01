@@ -769,7 +769,7 @@
 					<h4>Folders containing the file</h4>
 					@folders.map { folder =>
 						<ul class="list-unstyled">
-							<li><a href="@routes.Datasets.dataset(folder.parentDatasetId, None, 0, Some(folder.id.stringify))">@folder.name</a></li>
+							<li><a href="@routes.Datasets.dataset(folder.parentDatasetId, None, 0, Some(folder.id.stringify))">@folder.displayName</a></li>
 						</ul>
 					}
 				</div>

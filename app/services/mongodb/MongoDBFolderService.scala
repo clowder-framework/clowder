@@ -66,7 +66,14 @@ class MongoDBFolderService @Inject() (files: FileService) extends FolderService{
     }
 
   }
+  def countByName(name: String): Long = {
+    Folder.count(MongoDBObject("name" -> name))
+  }
 
+   def countByDisplayName(displayName: String): Long = {
+     Folder.count(MongoDBObject("displayName" -> displayName))
+   }
+  
   /**
    * Add File to Folder
    */

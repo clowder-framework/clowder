@@ -30,12 +30,23 @@ class Folders @Inject() (
                     datasets.get(parentDatasetId) match {
                       case Some(parentDataset) => {
                         var folder: Folder = null
+                        var displayName = name
+                        val countByName = folders.countByName(name)
+                        if(countByName > 0) {
+                          displayName = name + " (" + countByName + ")"
+                        } else {
+                          val countByDisplayName = folders.countByDisplayName(name)
+                          if(countByDisplayName > 0) {
+                            displayName = name + " (" + countByDisplayName + ")"
+                          }
+                        }
+
                         if(UUID(parentId) == parentDatasetId) {
-                          folder = Folder(name = name, files = List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType, parentDatasetId = parentDatasetId)
+                          folder = Folder(name = name.trim(), displayName = displayName.trim(), files = List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType, parentDatasetId = parentDatasetId)
                         }  else if(parentType == "folder") {
                           folders.get(UUID(parentId)) match {
                             case Some(pfolder) => {
-                              folder = Folder(name = name, files=List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType, parentDatasetId = parentDatasetId)
+                              folder = Folder(name = name.trim(), displayName = displayName.trim(), files=List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType, parentDatasetId = parentDatasetId)
                             }
                             case None => InternalServerError(s"parent folder $parentId not found")
                           }

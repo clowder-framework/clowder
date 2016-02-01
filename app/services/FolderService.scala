@@ -59,4 +59,14 @@ trait FolderService {
    * Find folders that contain a file by id.
    */
   def findByFileId(file_id: UUID): List[Folder]
+
+  /**
+   * Count how many folders have the same base name
+   */
+  def countByName(name: String): Long
+
+  /**
+   * Count how many folders have the same display name
+   */
+  def countByDisplayName(name: String): Long
 }

@@ -3,7 +3,7 @@
 @if(folderHierarchy.length > 0 ) {
     <h2> <a href="javascript:getUpdatedFilesAndFolders(0, null)"><span class="glyphicon glyphicon-home"></span></a>
         @folderHierarchy.map { cFolder =>
-        > <a href="javascript:getUpdatedFilesAndFolders(0, '@cFolder.id.stringify')"> @cFolder.name</a>
+        > <a href="javascript:getUpdatedFilesAndFolders(0, '@cFolder.id.stringify')"> @cFolder.displayName</a>
         }
     </h2>
 }
