@@ -307,6 +307,14 @@ class MongoDBUserService @Inject() (
 
   def updateRole(role: Role): Unit = {
     RoleDAO.save(role)
+    // iterate through users, updating all spaces with this role ID to the new role parameters
+    for (u <- list()) {
+      for (sp_role <- u.spaceandrole) {
+        if (sp_role.role.id == role.id) {
+          changeUserRoleInSpace(u.id, role, sp_role.spaceId)
+        }
+      }
+    }
   }
 
   override def followResource(followerId: UUID, resourceRef: ResourceRef) {
