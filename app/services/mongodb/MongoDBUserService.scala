@@ -307,8 +307,8 @@ class MongoDBUserService @Inject() (
 
   def updateRole(role: Role): Unit = {
     RoleDAO.save(role)
-    UserDAO.dao.update(MongoDBObject("spaceandrole.role._id" -> new ObjectId(role.id.stringify)),
-      $set({"spaceandrole.$.role" -> RoleDAO.toDBObject(role)}), false, false, WriteConcern.Safe)
+    UserDAO.update(MongoDBObject("spaceandrole.role._id" -> new ObjectId(role.id.stringify)),
+      $set({"spaceandrole.$.role" -> RoleDAO.toDBObject(role)}), false, true, WriteConcern.Safe)
   }
 
   override def followResource(followerId: UUID, resourceRef: ResourceRef) {
