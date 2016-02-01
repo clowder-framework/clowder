@@ -315,6 +315,11 @@ class MongoDBUserService @Inject() (
         }
       }
     }
+
+    val query = MongoDBObject("spaceandrole.role._id" -> role.id)
+    val update = MongoDBObject("spaceandrole.role" -> role)
+    UserDAO.dao.update(query, $set(update))
+
   }
 
   override def followResource(followerId: UUID, resourceRef: ResourceRef) {
