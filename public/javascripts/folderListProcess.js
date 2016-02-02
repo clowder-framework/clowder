@@ -49,7 +49,7 @@ function saveFolderName(parentDataset, folderId) {
         contentType: "application/json"
     });
     request.done(function(response, textStatus, jqXHR){
-        $('#'+folderId+'-name').html('<a href="'+cur_hrefs[folderId]+'">'+encName.replace(/\n/g, "<br>")+'</a>');
+        $('#'+folderId+'-name').html('<a href="'+cur_hrefs[folderId]+'">'+response.newname.replace(/\n/g, "<br>")+'</a>');
         $('.edit_title_'+folderId).remove();
         $('#'+folderId+'-name').css("display", "inline");
         $('#h-edit-'+folderId).removeClass("inline");

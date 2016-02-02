@@ -463,7 +463,7 @@ class Datasets @Inject()(
                   currentFolder = Some(f.id)
                   folderHierarchy += f
                   var f1: Folder = f
-                  while(f1.parentType == "Folder") {
+                  while(f1.parentType == "folder") {
                     folders.get(f.parentId) match {
                       case Some(fparent) => {
                         folderHierarchy += fparent
@@ -510,7 +510,7 @@ class Datasets @Inject()(
                 var folderHierarchy = new ListBuffer[Folder]()
                 folderHierarchy += folder
                 var f1: Folder = folder
-                while(f1.parentType == "Folder") {
+                while(f1.parentType == "folder") {
                   folders.get(f1.parentId) match {
                     case Some(fparent) => {
                       folderHierarchy += fparent

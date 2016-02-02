@@ -53,7 +53,7 @@ trait FolderService {
   /**
    * Update name for a folder
    */
-  def updateName(folderId: UUID, name: String)
+  def updateName(folderId: UUID, name: String, displayName: String)
 
   /**
    * Find folders that contain a file by id.

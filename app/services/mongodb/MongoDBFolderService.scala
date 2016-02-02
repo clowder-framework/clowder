@@ -108,9 +108,9 @@ class MongoDBFolderService @Inject() (files: FileService, datasets: DatasetServi
     Folder.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $set("parentType" -> parent.objectType), false, false, WriteConcern.Safe)
   }
 
-  def updateName(folderId: UUID, name: String) {
+  def updateName(folderId: UUID, name: String, displayName: String) {
     val result = Folder.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)),
-      $set("name" -> name),
+      $set("name" -> name, "displayName" -> displayName),
       false, false, WriteConcern.Safe)
   }
 

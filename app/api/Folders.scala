@@ -125,10 +125,22 @@ class Folders @Inject() (
                 case None => BadRequest(toJson("Name is missing"))
               }
               Logger.debug(s"Update information for folder with id $folderId. New name is $name")
+              var displayName = name
+              // Avoid folders with the same name within a folder/dataset (parent). Check the name, and display name.
+              // And if it already exists, add a (x) with the corresponding number to the display name.
+              val countByName = folders.countByName(name, folder.parentType, folder.parentId.stringify)
+              if(countByName > 0) {
+                displayName = name + " (" + countByName + ")"
+              } else {
+                val countByDisplayName = folders.countByDisplayName(name, folder.parentType, folder.parentId.stringify)
+                if(countByDisplayName > 0) {
+                  displayName = name + " (" + countByDisplayName + ")"
+                }
+              }
 
-              folders.updateName(folder.id, name)
+              folders.updateName(folder.id, name, displayName)
               //TODO: Add Update event
-              Ok(toJson(Map("status" -> "success", "link" -> "")))
+              Ok(toJson(Map("status" -> "success", "newname" -> displayName)))
 
             }
             case None => InternalServerError(s"Folder $folderId not found")
