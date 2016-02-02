@@ -23,7 +23,7 @@ import play.api.libs.json._
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
 import javax.inject.{ Singleton, Inject }
-import scala.collection.immutable.HashSet
+import scala.collection.immutable.{List, HashSet}
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
 import scala.util.{Try, Success, Failure}
@@ -64,7 +64,7 @@ class Templates @Inject() (userService: UserService, events: EventService, templ
   @ApiOperation(value = "Create a template",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def createTemplate() = AuthenticatedAction (parse.json) { implicit request =>
+  def createTemplateFromJson() = AuthenticatedAction (parse.json) { implicit request =>
     val user = request.user
     var t : Template = null
     user match {
@@ -93,20 +93,46 @@ class Templates @Inject() (userService: UserService, events: EventService, templ
     @ApiOperation(value = "Create a template",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def createTemplateForm() = AuthenticatedAction (parse.multipartFormData) { implicit request =>
+  def createTemplate() = AuthenticatedAction (parse.multipartFormData) { implicit request =>
+    Logger.debug("creating template from form")
     val user = request.user
     var formName = request.body.asFormUrlEncoded.getOrElse("name", null)
     var formKeys = request.body.asFormUrlEncoded.getOrElse("keys",null)
+
+    var name : String = ""
+    if (formName != null){
+      try {
+        name = formName(0)
+      } catch {
+        case e : Exception => Logger.debug("no name provided")
+      }
+    }
+
+    var keys = List.empty[String]
+
+    if (formKeys != null) {
+      keys = formKeys(0).split(',').toList
+    }
+
     var t : Template = null
     user match {
       case Some(identity) => {
-        if (formKeys == null) {
-          BadRequest("no keys provided")
+        if (formKeys != null){
+          t = Template(author = Some(identity), created = new Date(),name = name,keys = keys )
+
+          templateService.insert(t) match {
+            case Some(id) => {
+              Ok(toJson(Map("id" -> id)))
+            }
+            case None => Ok("insert did not provide id")
+          }
+
         } else {
-          Ok("not implemented")
+          BadRequest("No keys supplied!")
         }
+
       }
-      case None => Ok("No user")
+      case None => BadRequest("No user")
     }
   }
 
