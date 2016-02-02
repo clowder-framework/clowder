@@ -18,8 +18,6 @@ import controllers.Utils
 
 /**
  * Manipulate collections.
- * 
- * @author Constantinos Sophocleous
  */
 @Api(value = "/collections", listingPath = "/api-docs.json/collections", description = "Collections are groupings of datasets")
 @Singleton

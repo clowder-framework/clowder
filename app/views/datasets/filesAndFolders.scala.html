@@ -1,0 +1,30 @@
+@(dataset: Dataset, currentFolder: Option[String], foldersList: List[Folder], folderHierarchy: List[Folder], currentSpace: Option[String], filepage: Int, next: Boolean, fileList:List[File], fileComments: Map[UUID, Int])(implicit user: Option[models.User])
+
+@if(folderHierarchy.length > 0 ) {
+    <h2> <a href="javascript:getUpdatedFilesAndFolders(0, null)"><span class="glyphicon glyphicon-home"></span></a>
+        @folderHierarchy.map { cFolder =>
+        > <a href="javascript:getUpdatedFilesAndFolders(0, '@cFolder.id.stringify')"> @cFolder.displayName</a>
+        }
+    </h2>
+}
+
+<div id="folderListDiv">
+@foldersList.map { folder =>
+    @folders.listitem(folder, dataset.id, currentSpace)
+}
+</div>
+
+@files.grid(fileList, fileComments, dataset.id)
+<div class="row">
+    <div class="col-md-12">
+        <ul class="pager">
+                <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
+            @if(filepage > 0) {
+                <li class="previous"><a id="prevlink" title="Page backwards" href="javascript:getUpdatedFilesAndFolders(@(filepage-1), '@currentFolder')"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
+            }
+            @if(next) {
+                <li class ="next"><a id="nextlink" title="Page forwards"  href="javascript:getUpdatedFilesAndFolders(@(filepage+1),'@currentFolder')">Next<span class="glyphicon glyphicon-chevron-right"></span></a></li>
+            }
+        </ul>
+    </div>
+</div>

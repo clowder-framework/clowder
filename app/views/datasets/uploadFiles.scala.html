@@ -1,4 +1,4 @@
-@(dataset: Dataset)(implicit user: Option[models.User])
+@(dataset: Dataset, folderId: Option[String])(implicit user: Option[models.User])
 
 <!--
 The sections of this file dealing with the multi file uploader library are loosely based on the demo
@@ -31,7 +31,7 @@ of the blueimp jQuery File Upload library. An open source project located here: 
         <p>Select files using the button below or drag files directly from the desktop to this window.
         Then click the upload button to upload them to the dataset.</p>
             <!-- The file upload form used as target for the file upload widget -->
-        <form id="fileupload" action='@routes.Datasets.submit' method="POST" enctype="multipart/form-data">
+        <form id="fileupload" action='@routes.Datasets.submit(folderId)' method="POST" enctype="multipart/form-data">
                 <!-- Redirect browsers with JavaScript disabled to the origin page -->
             <noscript>Javascript is required in order to use the uploader to create a new dataset.</noscript>
 

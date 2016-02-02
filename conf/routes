@@ -103,11 +103,13 @@ GET            /datasets/createStep2                                            
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
 GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
-GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, filepage:Int ?= 0)
+GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, filepage:Int ?= 0, folder: Option[String] ?= None, limit: Int ?= 20)
+POST           /datasets/:datasetId/updatedFilesAndFolders                              @controllers.Datasets.getUpdatedFilesAndFolders(datasetId: UUID, limit: Int ?= 20, pageIndex: Int ?= 0)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
-POST           /dataset/submit                                                          @controllers.Datasets.submit
+POST           /dataset/submit                                                          @controllers.Datasets.submit(folderId: Option[String] ?= None)
 GET            /datasets/:id/addFiles                                                   @controllers.Datasets.addFiles(id: UUID)
+GET            /datasets/:id/:folderId/addFiles                                         @controllers.Datasets.addFilesToFolder(id: UUID, folderId: String)
 
 # ----------------------------------------------------------------------
 # COLLECTIONS
@@ -152,7 +154,6 @@ GET            /metadata/search                                                 
 GET            /metadata/:id                                                            @controllers.Metadata.view(id: UUID)
 GET            /files/:file_id/metadata                                                 @controllers.Metadata.file(file_id: UUID)
 GET            /datasets/:dataset_id/metadata                                           @controllers.Metadata.dataset(dataset_id: UUID)
-
 # Tags
 GET            /tags/search                                                             @controllers.Tags.search(tag, start: String ?= "", size: Integer ?= 12, mode: String ?= "")
 GET            /tags/list/ordered                                                       @controllers.Tags.tagListOrdered
@@ -445,6 +446,8 @@ POST           /api/datasets/searchusermetadata                                 
 POST           /api/datasets/searchmetadata                                             @api.Datasets.searchDatasetsGeneralMetadata
 GET            /api/datasets/listOutsideCollection/:coll_id                             @api.Datasets.listOutsideCollection(coll_id: UUID)
 POST           /api/datasets/:ds_id/filesRemove/:file_id/:ignoreNotFound                @api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound)
+DELETE         /api/datasets/:parentDataset/deleteFolder/:folderId                      @api.Folders.deleteFolder(parentDataset: UUID, folderId: UUID)
+PUT            /api/datasets/:parentDatasetId/updateName/:folderId                      @api.Folders.updateFolderName(parentDatasetId: UUID, folderId: UUID)
 DELETE         /api/datasets/:ds_id/:file_id                                            @api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound ?= "True")
 GET            /api/datasets/getRDFURLsForDataset/:id                                   @api.Datasets.getRDFURLsForDataset(id: UUID)
 GET            /api/datasets/rdfUserMetadata/:id                                        @api.Datasets.getRDFUserMetadata(id: UUID, mappingNum: String ?= "1")
@@ -477,6 +480,7 @@ POST           /api/datasets/:ds_id/files/:file_id                              
 GET            /api/datasets/:id                                                        @api.Datasets.get(id: UUID)
 DELETE         /api/datasets/:id                                                        @api.Datasets.deleteDataset(id: UUID)
 POST           /api/datasets/:id/detachdelete                                           @api.Datasets.detachAndDeleteDataset(id: UUID)
+POST           /api/datasets/:parentDataset/newFolder                                   @api.Folders.createFolder(parentDataset: UUID)
 
 # ----------------------------------------------------------------------
 # PREVIEWS ENDPOINT
@@ -521,7 +525,7 @@ GET            /api/search/multimediasearch                                     
 # GEOSTREAMS ENDPOINT
 # ----------------------------------------------------------------------
 POST           /api/geostreams/datapoints                                               api.Geostreams.addDatapoint
-DELETE 		   /api/geostreams/datapoints/:id                                           api.Geostreams.deleteDatapoint(id: String)
+DELETE         /api/geostreams/datapoints/:id                                           api.Geostreams.deleteDatapoint(id: String)
 GET            /api/geostreams/datapoints                                               api.Geostreams.searchDatapoints(operator = "", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
 GET            /api/geostreams/datapoints/averages                                      api.Geostreams.searchDatapoints(operator = "averages", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
 GET            /api/geostreams/datapoints/trends                                        api.Geostreams.searchDatapoints(operator = "trends", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
@@ -610,8 +614,8 @@ GET            /api/curations/:curationId/ore                                   
 # ----------------------------------------------------------------------
 # USERS Controller
 # ----------------------------------------------------------------------
-GET            /users/followers                                             @controllers.Users.getFollowers(index: Int ?= 0, limit: Int ?=12)
-GET            /users/following                                             @controllers.Users.getFollowing(index: Int ?= 0, limit: Int ?=12)
+GET            /users/followers                                                         @controllers.Users.getFollowers(index: Int ?= 0, limit: Int ?=12)
+GET            /users/following                                                         @controllers.Users.getFollowing(index: Int ?= 0, limit: Int ?=12)
 
 # ----------------------------------------------------------------------
 # MEDICI STATUS API
