@@ -151,8 +151,8 @@
 			<div class="row">
 			<div class="col-md-12">
 				@if(childCollections.isEmpty){
-					<h3>No Child Collections in collection</h3>
-					<a id="create_first_childcollection" href="@routes.Collections.newCollectionWithParent(Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Create Child Collection">Create Child Collection</a>
+					<h3>No Child collections in collection</h3>
+					<a id="create_first_childcollection" href="@routes.Collections.newCollectionWithParent(Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Create Child Collection"><i> Create Child Collection</i></a>
 				} else {
 					<h3>Child Collections in the collection</h3>
 					@childCollections.map { child_collection =>
@@ -163,7 +163,7 @@
 			<div class="col-md-12">
 				@if(datasetsInCollection.isEmpty){
 					<h3>No Datasets in collection</h3>
-					<a id="create_first_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Create New Dataset">Create Dataset</a>
+					<a id="create_first_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Create New Dataset"><i>Create Dataset</i></a>
 				} else {
 					<h3>Datasets in the collection</h3>
 					@datasetsInCollection.map { dataset =>
