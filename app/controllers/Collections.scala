@@ -452,6 +452,17 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             decodedDatasetsInside += dDataset
           }
 
+          val commentMap = datasetsInside.map { dataset =>
+            var allComments = comments.findCommentsByDatasetId(dataset.id)
+            dataset.files.map { file =>
+              allComments ++= comments.findCommentsByFileId(file)
+              sections.findByFileId(file).map { section =>
+                allComments ++= comments.findCommentsBySectionId(section.id)
+              }
+            }
+            dataset.id -> allComments.size
+          }.toMap
+
           val child_collections_ids = dCollection.child_collection_ids
           val decodedChildCollections = ListBuffer.empty[models.Collection]
           for (child_collection_id <- child_collections_ids) {
@@ -495,7 +506,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           //Ok(views.html.collection(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, Some(decodedSpaces)))
 
-          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList, Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList, Some(decodedSpaces)))
+          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList, Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap, Some(decodedSpaces)))
           //Ok(views.html.collectionOfDatasetsAndChildCollections(decodedDatasetsInside.toList,
             //decodedChildCollections.toList, Some(decodedParentCollections.toList), dCollection, filteredPreviewers.toList, Some(decodedSpaces)))
 

@@ -3,6 +3,7 @@
   parentCollections: Option[List[models.Collection]],
   collection: models.Collection,
   previewers: List[Previewer],
+  commentMap : Map[UUID, Int],
   collectionSpaces: Option[List[ProjectSpace]])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import models.ResourceRef
@@ -90,10 +91,10 @@
 								}
 							}
 							@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
-								<a id="create_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
+								<a id="create_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Create New Dataset">
 									<span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
-								<a id="create_childcollection" href="@routes.Collections.newCollectionWithParent(Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Delete Collection but not Child Collections">
-									<span class="glyphicon glyphicon-ok"></span> Create Collection</a>
+								<a id="create_childcollection" href="@routes.Collections.newCollectionWithParent(Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Create Child Collection">
+									<span class="glyphicon glyphicon-ok"></span> Create Child Collection</a>
 							}
 
 						</div>
@@ -158,35 +159,8 @@
 			<div class="col-md-12">
 				<h3>Datasets in the collection</h3>
 					@datasetsInCollection.map { dataset =>
-						<div class="panel panel-default" id="@dataset.id">
-							<div class="panel-body">
-								<div class="row">
-									<div class="col-md-2 col-sm-2 col-lg-2">
-										@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
-									</div>
-									<div class="col-md-10 col-sm-10 col-lg-10">
-										<div><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></div>
-										<div>@Html(dataset.description)</div>
-										<div>@dataset.created.format("MMM dd, yyyy")</div>
-										@if(user.isDefined) {
-											<div>
-												@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
-													<a onclick="removeDataset('@(dataset.id.toString)',event)" title="Detach the Dataset">
-														<span class="glyphicon glyphicon-remove"></span> Remove from @collection.name </a>
-												}
-											</div>
-										}
-									</div>
-								</div>
-							</div>
-						</div>
-
+					  @datasets.listitem(dataset,commentMap , routes.Collections.collection(collection.id))
 					}
-
-				<ul class="pager" id="datasetsPager">
-					<li class="previous" id="datasetsPagerPrev" style="visibility:hidden;"><a class="btn btn-link" href="#!"><span class="glyphicon glyphicon-chevron-left"></span> Previous</a></li>
-					<li class ="next" id="datasetsPagerNext" style="visibility:hidden;"><a class="btn btn-link" href="#!">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
-				</ul>
 			</div>
 		</div>
 		</div>

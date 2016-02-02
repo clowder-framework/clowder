@@ -28,4 +28,5 @@ Following is a list of contributors in alphabetical order:
 - Xiaocheng Yuan
 - Yan Zhao
 - Yibo Guo
+- Todd Nicholson
 
