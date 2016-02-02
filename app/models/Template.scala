@@ -10,7 +10,7 @@ import java.util.Date
 case class Template (
   id : UUID = UUID.generate,
   author : Identity,
-  created : Date = None,
+  created : Date = new Date(),
   name : String = None,
   lastModified : Date = new Date(),
   keys : List[String] = List.empty)
