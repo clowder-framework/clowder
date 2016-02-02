@@ -67,9 +67,9 @@ class Folders @Inject() (
                             case None => InternalServerError(s"Parent folder $parentId not found")
                           }
                         }
-                        val space = (request.body \ "currentSpace").asOpt[String]
+
                         //TODO: Add Created folder event
-                        Ok(views.html.folders.listitem(folder, parentDataset.id, space) (request.user))
+                        Ok(toJson(Map("status" -> "success")))
                       }
                       case None => InternalServerError(s"Parent Dataset $parentDatasetId not found")
                     }
@@ -95,7 +95,7 @@ class Folders @Inject() (
             folders.delete(folderId)
             if(folder.parentType == "dataset") {
               datasets.removeFolder(parentDatasetId, folderId)
-            } else if(folder.parentDatasetId == "Folder") {
+            } else if(folder.parentType == "folder") {
               folders.get(folder.parentId) match {
                 case Some(parentFolder) => folders.removeSubFolder(parentFolder.id, folder.id)
                 case None =>

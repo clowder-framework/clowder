@@ -109,7 +109,7 @@ GET            /datasets_by_section/:id                                         
 POST           /dataset/submit                                                          @controllers.Datasets.submit(folderId: Option[String] ?= None)
 GET            /datasets/:id/addFiles                                                   @controllers.Datasets.addFiles(id: UUID)
 GET            /datasets/:id/:folderId/addFiles                                         @controllers.Folders.addFiles(id: UUID, folderId: String)
-
+POST           /datasets/:parentDatasetId/newFolder                                     @controllers.Folders.createFolder(parentDatasetId: UUID)
 # ----------------------------------------------------------------------
 # COLLECTIONS
 # ----------------------------------------------------------------------

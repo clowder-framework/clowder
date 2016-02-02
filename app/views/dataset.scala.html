@@ -151,8 +151,8 @@
                 <div class="tab-content">
                   <div role="tabpanel" class="tab-pane  fade in active" id="tab-files">
                       @currentFolder match {
-                        case Some(folder) => {@datasets.filesAndFolders(dataset, Some(folder.stringify), foldersList, folderHierarchy, currentSpace, filepage, next, fileList, fileComments)}
-                        case None => {@datasets.filesAndFolders(dataset, None, foldersList, folderHierarchy, currentSpace, filepage, next, fileList, fileComments)}
+                        case Some(folder) => {@datasets.filesAndFolders(dataset, Some(folder.stringify), foldersList, folderHierarchy, filepage, next, fileList, fileComments)}
+                        case None => {@datasets.filesAndFolders(dataset, None, foldersList, folderHierarchy, filepage, next, fileList, fileComments)}
                       }
 
                   </div>
@@ -422,7 +422,7 @@
 
                     var encName  = htmlEncode(name.val());
                     var jsonData = JSON.stringify({"name": encName, "parentId": parentId, "parentType": parentType, "currentSpace": "@currentSpace"});
-                    var request = jsRoutes.api.Folders.createFolder("@dataset.id").ajax({
+                    var request = jsRoutes.controllers.Folders.createFolder("@dataset.id").ajax({
                         data:jsonData,
                         type: 'POST',
                         contentType: "application/json"

@@ -499,7 +499,6 @@ class Datasets @Inject()(
     datasets.get(datasetId) match {
       case Some(dataset) => {
         val folderId = (request.body \ "folderId").asOpt[String]
-        val currentSpace = (request.body \ "currentSpace").asOpt[String]
         folderId match {
           case Some(fId) => {
             folders.get(UUID(fId)) match {
@@ -528,7 +527,7 @@ class Datasets @Inject()(
                 }.toMap
                 val next = folder.files.length + folder.folders.length > limit * (filepageUpdate+1)
 
-                Ok(views.html.datasets.filesAndFolders(dataset, Some(folder.id.stringify), foldersList, folderHierarchy.reverse.toList, currentSpace, pageIndex, next, limitFileList.toList, fileComments)(request.user))
+                Ok(views.html.datasets.filesAndFolders(dataset, Some(folder.id.stringify), foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, fileComments)(request.user))
 
               }
               case None => InternalServerError(s"No folder with id $fId found")
@@ -550,7 +549,7 @@ class Datasets @Inject()(
 
             val folderHierarchy = new ListBuffer[Folder]()
             val next = dataset.files.length + dataset.folders.length > limit * (filepageUpdate+1)
-            Ok(views.html.datasets.filesAndFolders(dataset, None, foldersList, folderHierarchy.reverse.toList, currentSpace, pageIndex, next, limitFileList.toList, fileComments)(request.user))
+            Ok(views.html.datasets.filesAndFolders(dataset, None, foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, fileComments)(request.user))
           }
         }
       }

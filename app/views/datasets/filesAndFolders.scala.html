@@ -1,4 +1,4 @@
-@(dataset: Dataset, currentFolder: Option[String], foldersList: List[Folder], folderHierarchy: List[Folder], currentSpace: Option[String], filepage: Int, next: Boolean, fileList:List[File], fileComments: Map[UUID, Int])(implicit user: Option[models.User])
+@(dataset: Dataset, currentFolder: Option[String], foldersList: List[Folder], folderHierarchy: List[Folder], filepage: Int, next: Boolean, fileList:List[File], fileComments: Map[UUID, Int])(implicit user: Option[models.User])
 
 @if(folderHierarchy.length > 0 ) {
     <h2> <a href="javascript:getUpdatedFilesAndFolders(0, null)"><span class="glyphicon glyphicon-home"></span></a>
@@ -10,7 +10,7 @@
 
 <div id="folderListDiv">
 @foldersList.map { folder =>
-    @folders.listitem(folder, dataset.id, currentSpace)
+    @folders.listitem(folder, dataset.id)
 }
 </div>
 
