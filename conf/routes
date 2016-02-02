@@ -666,6 +666,7 @@ GET            /sendEmail                                                       
 # ----------------------------------------------------------------------
 
 POST        /t2c2/templates/createExperimentTemplate                                                   @api.Templates.createTemplate()
+GET         /t2c2/templates/createExperimentTemplateForm                                               @api.Templates.createTemplateForm()
 GET         /t2c2/templates/test                                                                       @api.Templates.test
 GET         /t2c2/templates/unsecuredTest                                                              @api.Templates.unsecuredTest()
 GET         /t2c2/templates/listExperimentTemplates                                                    @api.Templates.listTemplates()

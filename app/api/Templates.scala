@@ -88,9 +88,29 @@ class Templates @Inject() (userService: UserService, events: EventService, templ
       }
       case None => Ok("no user")
     }
-
-
   }
+
+    @ApiOperation(value = "Create a template",
+      notes = "",
+      responseClass = "None", httpMethod = "POST")
+  def createTemplateForm() = AuthenticatedAction (parse.multipartFormData) { implicit request =>
+    val user = request.user
+    var formName = request.body.asFormUrlEncoded.getOrElse("name", null)
+    var formKeys = request.body.asFormUrlEncoded.getOrElse("keys",null)
+    var t : Template = null
+    user match {
+      case Some(identity) => {
+        if (formKeys == null) {
+          BadRequest("no keys provided")
+        } else {
+          Ok("not implemented")
+        }
+      }
+      case None => Ok("No user")
+    }
+  }
+
+
 
   @ApiOperation(value = "list templates",
           notes = "",

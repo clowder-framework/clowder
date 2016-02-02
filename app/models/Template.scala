@@ -10,16 +10,15 @@ import java.util.Date
 case class Template (
   id : UUID = UUID.generate,
   author : Identity,
-  created : Date,
-  name : String,
+  created : Date = None,
+  name : String = None,
   lastModified : Date = new Date(),
   keys : List[String] = List.empty)
 
   object Template{
     implicit val templateWrites = new Writes[Template]{
       def writes(template : Template): JsValue ={
-        val templateAuthor = template.author.identityId.userId
-        Json.obj("id" -> template.id.toString, "author" -> templateAuthor, "keys"-> template.keys.toList)
+        Json.obj("id" -> template.id.toString, "keys"-> template.keys.toList)
       }
     }
 }
