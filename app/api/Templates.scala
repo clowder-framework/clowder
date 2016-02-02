@@ -72,7 +72,7 @@ class Templates @Inject() (userService: UserService, events: EventService, templ
         (request.body \ "keys").asOpt[String] match {
           case Some(keys) => {
             val name = (request.body\"name").asOpt[String].getOrElse("")
-            t = Template(author = identity, created = new Date(),name = name,keys = keys.split(",").toList )
+            t = Template(author = Some(identity), created = new Date(),name = name,keys = keys.split(",").toList )
 
             templateService.insert(t) match {
               case Some(id) => {

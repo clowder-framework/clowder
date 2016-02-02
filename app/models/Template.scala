@@ -9,9 +9,9 @@ import java.util.Date
   */
 case class Template (
   id : UUID = UUID.generate,
-  author : Identity,
+  author : Option[Identity],
   created : Date = new Date(),
-  name : String = None,
+  name : String = "",
   lastModified : Date = new Date(),
   keys : List[String] = List.empty)
 
