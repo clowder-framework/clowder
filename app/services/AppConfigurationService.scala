@@ -90,7 +90,7 @@ object AppConfiguration {
 
   // ----------------------------------------------------------------------
 
-  /** Set the welcome message */
+  /** Set the google analytics code */
   def setGoogleAnalytics(gacode: String) = appConfig.setProperty("google.analytics", gacode)
 
   /** Get the welcome message */
