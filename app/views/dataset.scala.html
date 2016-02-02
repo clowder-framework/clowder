@@ -450,7 +450,11 @@
         if(folderId == "") {
             folderId = null;
         }
-         var jsonData = JSON.stringify({"currentSpace": @currentSpace.getOrElse("null"), "folderId": folderId});
+        var currentSpace = null;
+        if(@currentSpace.isDefined){
+           currentSpace = "@currentSpace";
+        }
+         var jsonData = JSON.stringify({"currentSpace": currentSpace, "folderId": folderId});
          var request = jsRoutes.controllers.Datasets.getUpdatedFilesAndFolders("@dataset.id", @limit, pageIndex).ajax({
             data: jsonData,
             type: 'POST',
