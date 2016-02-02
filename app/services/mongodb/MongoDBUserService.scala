@@ -316,9 +316,6 @@ class MongoDBUserService @Inject() (
         }
       }
     }
-
-    //UserDAO.update(MongoDBObject("spaceandrole.role._id" -> new ObjectId(role.id.stringify)),
-    //  $set({"spaceandrole.$.role" -> RoleDAO.toDBObject(role)}), false, true, WriteConcern.Safe)
   }
 
   override def followResource(followerId: UUID, resourceRef: ResourceRef) {
