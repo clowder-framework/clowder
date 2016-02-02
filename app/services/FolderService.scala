@@ -63,10 +63,10 @@ trait FolderService {
   /**
    * Count how many folders have the same base name
    */
-  def countByName(name: String): Long
+  def countByName(name: String, parentType: String, parentId: String): Long
 
   /**
    * Count how many folders have the same display name
    */
-  def countByDisplayName(name: String): Long
+  def countByDisplayName(name: String, parentType: String, parentId: String): Long
 }

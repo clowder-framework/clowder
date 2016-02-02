@@ -76,7 +76,7 @@
                         <a id="addFilesLink" href="
                             @currentFolder match {
                                 case None => {@(routes.Datasets.addFiles(dataset.id))}
-                                case Some(folder) => {@routes.Datasets.addFilesToFolder(dataset.id, folder.stringify)}
+                                case Some(folder) => {@routes.Folders.addFiles(dataset.id, folder.stringify)}
                             }"
                         class="btn btn-link btn-sm btn-margin-bottom" id="fileUploadBtn" title="Add File to Dataset" role="button">
                             <span class="glyphicon glyphicon-plus"></span> Add Files
@@ -227,7 +227,9 @@
     <script src="@routes.Assets.at("javascripts/tinymce/tinymce.min.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/folderListProcess.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
     <script type="text/javascript">
+        var removeIndicator = false;
         var parentId = "@dataset.id";
         var parentType = "dataset";
 
@@ -461,7 +463,11 @@
           if(folderId != null) {
             parentType = 'folder';
             parentId = folderId;
-            $('#addFilesLink').attr("href", jsRoutes.controllers.Datasets.addFilesToFolder('@dataset.id', folderId).url);
+            $('#addFilesLink').attr("href", jsRoutes.controllers.Folders.addFiles('@dataset.id', folderId).url);
+          } else {
+              parentId = "@dataset.id";
+              parentType = "dataset";
+              $('#addFilesLink').attr("href", jsRoutes.controllers.Datasets.addFiles('@dataset.id').url);
           }
          });
          request.fail(function (jqXHR, textStatus, errorThrown){

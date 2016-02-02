@@ -15,7 +15,7 @@ import services.mongodb.MongoContext.context
  * Use Mongodb to store folders
  */
 @Singleton
-class MongoDBFolderService @Inject() (files: FileService) extends FolderService{
+class MongoDBFolderService @Inject() (files: FileService, datasets: DatasetService) extends FolderService{
 
   /**
    * Get Folder
@@ -60,18 +60,24 @@ class MongoDBFolderService @Inject() (files: FileService) extends FolderService{
           }
         }
 
+        if(folder.parentType == "dataset") {
+          datasets.removeFolder(folder.parentId, folder.id)
+        } else if (folder.parentType.toLowerCase == "folder") {
+          removeSubFolder(folder.parentId, folder.id)
+        }
+
         Folder.remove(MongoDBObject("_id" -> new ObjectId(folder.id.stringify)))
       }
       case None =>
     }
 
   }
-  def countByName(name: String): Long = {
-    Folder.count(MongoDBObject("name" -> name))
+  def countByName(name: String,  parentType: String, parentId: String): Long = {
+    Folder.count(MongoDBObject("name" -> name, "parentType" -> parentType, "parentId" -> new ObjectId(parentId)))
   }
 
-   def countByDisplayName(displayName: String): Long = {
-     Folder.count(MongoDBObject("displayName" -> displayName))
+   def countByDisplayName(displayName: String,  parentType: String, parentId: String): Long = {
+     Folder.count(MongoDBObject("displayName" -> displayName, "parentType" -> parentType, "parentId" -> new ObjectId(parentId)))
    }
   
   /**
@@ -90,7 +96,7 @@ class MongoDBFolderService @Inject() (files: FileService) extends FolderService{
   def addSubFolder(folderId: UUID, subFolderId: UUID) {
     Folder.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $addToSet("folders" -> new ObjectId(subFolderId.stringify)),false, false, WriteConcern.Safe)
     Folder.update(MongoDBObject("_id" -> new ObjectId(subFolderId.stringify)), $set("parentId" -> new ObjectId(folderId.stringify)), false, false, WriteConcern.Safe)
-    Folder.update(MongoDBObject("_id" -> new ObjectId(subFolderId.stringify)), $set("parentType" -> "Folder"), false, false, WriteConcern.Safe)
+    Folder.update(MongoDBObject("_id" -> new ObjectId(subFolderId.stringify)), $set("parentType" -> "folder"), false, false, WriteConcern.Safe)
   }
 
   def removeSubFolder(folderId: UUID, subFolderId: UUID) {

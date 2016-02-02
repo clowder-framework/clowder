@@ -31,22 +31,24 @@ class Folders @Inject() (
                       case Some(parentDataset) => {
                         var folder: Folder = null
                         var displayName = name
-                        val countByName = folders.countByName(name)
+                        // Avoid folders with the same name within a folder/dataset (parent). Check the name, and display name.
+                        // And if it already exists, add a (x) with the corresponding number to the display name.
+                        val countByName = folders.countByName(name, parentType, parentId)
                         if(countByName > 0) {
                           displayName = name + " (" + countByName + ")"
                         } else {
-                          val countByDisplayName = folders.countByDisplayName(name)
+                          val countByDisplayName = folders.countByDisplayName(name, parentType, parentId)
                           if(countByDisplayName > 0) {
                             displayName = name + " (" + countByDisplayName + ")"
                           }
                         }
 
                         if(UUID(parentId) == parentDatasetId) {
-                          folder = Folder(name = name.trim(), displayName = displayName.trim(), files = List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType, parentDatasetId = parentDatasetId)
+                          folder = Folder(name = name.trim(), displayName = displayName.trim(), files = List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType.toLowerCase(), parentDatasetId = parentDatasetId)
                         }  else if(parentType == "folder") {
                           folders.get(UUID(parentId)) match {
                             case Some(pfolder) => {
-                              folder = Folder(name = name.trim(), displayName = displayName.trim(), files=List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType, parentDatasetId = parentDatasetId)
+                              folder = Folder(name = name.trim(), displayName = displayName.trim(), files=List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType.toLowerCase(), parentDatasetId = parentDatasetId)
                             }
                             case None => InternalServerError(s"parent folder $parentId not found")
                           }

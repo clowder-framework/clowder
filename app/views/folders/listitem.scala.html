@@ -49,6 +49,7 @@
                                     }
                                     </a>
                                 }
+                                case None => {}
                             }
                             </li>
                         </ul>
@@ -61,14 +62,17 @@
     <script>
 
         $(document).ready(function(){
-           if(@Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))) {
-                 $(document).on('mouseenter', '#folder-title-@folder.id', function() {
-                    $('#h-edit-@folder.id').removeClass("hiddencomplete");
-                    $('#h-edit-@folder.id').addClass("inline");
-                 }).on('mouseleave', '#folder-title-@folder.id', function() {
-                    $('#h-edit-@folder.id').removeClass("inline");
-                    $('#h-edit-@folder.id').addClass("hiddencomplete");
-                 });
+
+            @if(user.isDefined) {
+                if(@Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))) {
+                     $(document).on('mouseenter', '#folder-title-@folder.id', function() {
+                        $('#h-edit-@folder.id').removeClass("hiddencomplete");
+                        $('#h-edit-@folder.id').addClass("inline");
+                     }).on('mouseleave', '#folder-title-@folder.id', function() {
+                        $('#h-edit-@folder.id').removeClass("inline");
+                        $('#h-edit-@folder.id').addClass("hiddencomplete");
+                     });
+                }
             }
         });
     </script>
