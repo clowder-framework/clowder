@@ -303,16 +303,57 @@ class MongoDBUserService @Inject() (
    */
   def deleteRole(id: String): Unit = {
     RoleDAO.removeById(id)
+
+
   }
 
   def updateRole(role: Role): Unit = {
     RoleDAO.save(role)
 
-    // iterate through users, updating all spaces with this role ID to the new role parameters
-    for (u <- list()) {
-      for (sp_role <- u.spaceandrole) {
-        if (sp_role.role.id == role.id) {
-          changeUserRoleInSpace(u.id, role, sp_role.spaceId)
+    val dao = current.plugin[MongoSalatPlugin] match {
+      case None => throw new RuntimeException("No MongoSalatPlugin");
+      case Some(msp) => {
+        // Get only list of users with the updated Role in one of their spaces so we don't fetch them all
+        msp.collection("social.users").find(MongoDBObject("spaceandrole.role._id" -> new ObjectId(role.id.stringify))).foreach { u =>
+          val userid: UUID = u.get("_id") match {
+            case i: ObjectId => UUID(i.toString)
+            case i: UUID => i
+            case None => UUID("")
+          }
+
+          // Get list of space+role combination objects for this user
+          u.get("spaceandrole") match {
+            case sp_roles: BasicDBList => {
+              for (sp_role <- sp_roles) {
+                sp_role match {
+                  case s: BasicDBObject => {
+                    val spaceid: UUID = s.get("spaceId") match {
+                      case i: ObjectId => UUID(i.toString)
+                      case i: UUID => i
+                      case None => UUID("")
+                    }
+
+                    // For each one, check whether this role is the changed one and change if so
+                    s.get("role") match {
+                      case r: BasicDBObject => {
+                        val roleid: UUID = r.get("_id") match {
+                          case i: ObjectId => UUID(i.toString)
+                          case i: UUID => i
+                          case None => UUID("")
+                        }
+
+                        if (roleid == role.id)
+                          changeUserRoleInSpace(userid, role, spaceid)
+                      }
+                      case None => {}
+                    }
+                  }
+                  case None => {}
+                }
+              }
+            }
+            case None => {}
+            }
         }
       }
     }
