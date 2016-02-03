@@ -1,0 +1,65 @@
+@(space: models.ProjectSpace, classes: String, route: Call, showFollow: Boolean)(implicit user: Option[models.User])
+@import _root_.util.Formatters.ellipsize
+@import api.Permission
+<div class="post-box @classes" id="@space.id-tile">
+    <div class="panel panel-default">
+        <div class="pull-right">
+            <a href="#" title="Bookmark" class="pull-right bookmark-link"><span class="glyphicon glyphicon-bookmark bookmark"></span></a>
+        </div>
+        <div class="panel-body">
+            @if(!space.logoURL.isEmpty) {
+                <a href="@routes.Spaces.getSpace(space.id)">
+                    <img class="img-responsive" src="@(space.logoURL)" alt="Thumbnail of @(space.name)">
+                </a>
+            }
+        <div class="caption break-word">
+            <h4 class="no-overflow oneline"><a href="@routes.Spaces.getSpace(space.id)">@space.name</a></h4>
+            <p>@ellipsize(space.description, 200)</p>
+        </div>
+        </div>
+            <!-- Space Info -->
+        <ul class="list-group">
+            <li class="list-group-item">
+                <span class="glyphicon glyphicon-file" title="@space.datasetCount datasets"></span> @space.datasetCount
+                <span class="glyphicon glyphicon-th-large" title="@space.collectionCount collections"></span> @space.collectionCount
+                <span class="glyphicon glyphicon-user" title="@space.userCount users"></span> @space.userCount
+                @if(user.isDefined) {
+                        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                    @if(Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id)) || user.get.identityId.userId.equals(space.creator)){
+                        <button onclick="confirmDeleteResource('space','@(space.id)','@(space.name)','@route')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
+                            <span class="glyphicon glyphicon-trash"></span>
+                        </button>
+                    } else {
+                        <button disabled class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
+                            <span class="glyphicon glyphicon-trash"></span>
+                        </button>
+                    }
+                }
+            </li>
+        </ul>
+        @if(showFollow) {
+            @user match {
+                case Some(viewer) => {
+                    <ul class="list-group center-margin">
+                        <button
+                        id="followButton"
+                        type="button"
+                        class="btn-link"
+                        data-toggle="button"
+                        autocomplete="off"
+                        objectType="space"
+                        objectId="@space.id.stringify"
+                        >
+                        @if(viewer.followedEntities.filter(x => (x.id == space.id)).nonEmpty) {
+                            <span class='glyphicon glyphicon-star-empty'></span> Unfollow
+                        } else {
+                            <span class='glyphicon glyphicon-star'></span> Follow
+                        }
+                        </button>
+                    </ul>
+                }
+            }
+
+        }
+    </div>
+</div>

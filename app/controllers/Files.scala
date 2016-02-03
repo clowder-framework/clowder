@@ -184,12 +184,10 @@ class Files @Inject() (
     }
   }
 
-  def followingFiles(when: String, index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
+  def followingFiles(index: Int, limit: Int, mode: String) = PrivateServerAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(clowderUser) => {
-        val nextPage = (when == "a")
-        val title: Option[String] = Some("Following Files")
 
         var fileList = new ListBuffer[models.File]()
         val fileIds = clowderUser.followedEntities.filter(_.objectType == "file")
@@ -233,7 +231,7 @@ class Files @Inject() (
           }
 
         //Pass the viewMode into the view
-        Ok(views.html.users.followingFiles(fileList.toList, commentMap, prev, next, limit, viewMode, None))
+        Ok(views.html.users.followingFiles(fileList.toList, commentMap, prev, next, limit, viewMode))
       }
       case None => InternalServerError("User not found")
     }
@@ -301,45 +299,23 @@ class Files @Inject() (
     }                     
       
     //Pass the viewMode into the view
-    Ok(views.html.filesList(fileList, commentMap, prev, next, limit, viewMode))
+    Ok(views.html.filesList(fileList, commentMap, prev, next, limit, viewMode, None))
   }
 
-  def listByDataset(datasetId: UUID, when: String, index: Int, limit: Int, mode: String) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
+  def listByDataset(datasetId: UUID, filepage: Int, limit: Int, mode: String) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
     datasets.get(datasetId) match {
       case Some(d) => {
-        val nextPage = (when == "a")
-        val title: Option[String] = Some("Following Files")
-
-        var fileList = new ListBuffer[models.File]()
-        val fileIdsToUse = d.files.slice(index*limit, (index+1)*limit)
-        val prev= index -1
-        val next = if(d.files.length > (index+1) * limit) {
-          index + 1
-        } else {
-          -1
-        }
-
-        for (tidObject <- fileIdsToUse) {
-          val followedFile = files.get(tidObject)
-          followedFile match {
-            case Some(ffile) => {
-              fileList += ffile
-            }
-          }
-        }
-
-        val commentMap = fileList.map{file =>
+        val next = if (d.files.length > limit * (filepage+1) ) "dataset-" +datasetId.toString + "-next" else "dataset-" +datasetId.toString
+        val currentPage = if(filepage<0) "0" else filepage.toString
+        val limitFileList = d.files.slice(limit * filepage, limit * (filepage+1)).map(f => files.get(f)).flatten
+        val commentMap = limitFileList.map{file =>
           var allComments = comments.findCommentsByFileId(file.id)
           sections.findByFileId(file.id).map { section =>
             allComments ++= comments.findCommentsBySectionId(section.id)
           }
           file.id -> allComments.size
         }.toMap
-
-        //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
-        //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
-        //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
         val viewMode: Option[String] =
           if (mode == null || mode == "") {
             request.cookies.get("view-mode") match {
@@ -349,11 +325,9 @@ class Files @Inject() (
           } else {
             Some(mode)
           }
-
-        //we are using followingFiles instead of fileList since the list view of fileList is not used or updated.
-        Ok(views.html.users.followingFiles(fileList.toList, commentMap, prev, next, limit, viewMode, Some(datasetId)))
+        Ok(views.html.filesList(limitFileList, commentMap, currentPage, next, limit, viewMode, Some(d)))
       }
-      case None => InternalServerError("Dataset not found")
+      case None => BadRequest("Dataset not found")
     }
   }
 

@@ -58,17 +58,14 @@
 								</dd>
 							</dl>
 					<div class="col-md-12">
-
-
-
 							<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 							@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
 									<button id="deleteButton" onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name)','@(routes.Collections.list(""))')"
-											style="margin-right:15px;" class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
+											class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
 									<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							} else {
 									<button disabled id="deleteButton" onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name)','@(routes.Collections.list(""))')"
-											style="margin-right:15px;" class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
+											class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
 									<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							}
 							@if(user.isDefined) {
@@ -87,6 +84,10 @@
 									objectType="collection"><span class="glyphicon glyphicon-star-empty"></span> Unfollow
 									</button>
 								}
+							}
+							@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
+								<a id="create_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
+									<span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
 							}
 						</div>
 							<div style="clear: both;"></div>

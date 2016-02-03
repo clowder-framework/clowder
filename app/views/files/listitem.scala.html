@@ -1,0 +1,66 @@
+@(file: File, comments: Map[UUID, Int], redirect: Call)(implicit user: Option[models.User])
+@import api.Permission
+<div class="panel panel-default" id="@file.id-listitem">
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-md-2 col-sm-2 col-lg-2">
+            @if(!file.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)" width="120">}
+            </div>
+            <div class="col-md-10 col-sm-10 col-lg-10">
+                <h2><a href="@(routes.Files.file(file.id))">@file.filename</a></h2>
+                <div class="row">
+                    <div class="col-md-6 col-lg-6 col-sm-6">
+                        <ul class="list-unstyled">
+                            <li>@(if(file.contentType != null) file.contentType else "N/A")</li>
+                            <li>@file.uploadDate.format("MMM dd, yyyy")</li>
+                            <li>
+                                <span class="glyphicon glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
+                                <span class="glyphicon glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
+                                <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(file.id)) comments"></span> @(comments.get(file.id))
+                                @if(user.isDefined) {
+                                        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                                    @if(user.get.identityId.userId.equals(file.author.identityId.userId) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
+                                        <button onclick="confirmDeleteResource('file','@(file.id)','@(file.filename)','@redirect')" class="btn btn-link" style="text-align:right" title="Delete">
+                                            <span class="glyphicon glyphicon-trash"></span></button>
+                                    } else {
+                                        <button disabled onclick="confirmDeleteResource('file','@(file.id)','@(file.filename)','@redirect')" class="btn btn-link" style="text-align:right" title="Delete">
+                                            <span class="glyphicon glyphicon-trash"></span></button>
+                                    }
+                                }
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6 col-lg-6 col-sm-6">
+                        <ul class="list-unstyled">
+                            @if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
+                                <li><a id="downloadButton" class="btn btn-link" type="button" onclick="window.open(jsRoutes.api.Files.download('@file.id').url, '_blank');" class="btn btn-primary" title="You don't have permission to download this file" > <span class="glyphicon glyphicon-save"></span>
+                                    Download </a></li>
+                            }
+
+                            <li> @user match {
+                                case Some(viewer) => {
+                                    <a
+                                    id="followButton"
+                                    type="button"
+                                    class="btn btn-link"
+                                    autocomplete="off"
+                                    objectType="file"
+                                    objectId="@file.id.stringify"
+                                    >
+                                    @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
+                                        <span class='glyphicon glyphicon-star-empty'></span>Unfollow
+                                    } else {
+                                        <span class='glyphicon glyphicon-star'></span>Follow
+                                    }
+                                    </a>
+                                }
+                                case None => {}
+                            }
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

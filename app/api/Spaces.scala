@@ -13,7 +13,6 @@ import play.api.libs.json.Json._
 import play.api.libs.json.Json.toJson
 import services.{EventService, AdminsNotifierPlugin, SpaceService, UserService, DatasetService, CollectionService}
 import util.Mail
-import scala.collection.mutable.ListBuffer
 import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError
@@ -135,16 +134,16 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   }
 
   @ApiOperation(value = " Associate a collection to a space",
-  notes = "",
-  responseClass = "None", httpMethod="POST"
+    notes = "",
+    responseClass = "None", httpMethod="POST"
   )
   def addCollectionToSpace(spaceId: UUID, collectionId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) {
     implicit request =>
       (spaces.get(spaceId), collectionService.get(collectionId)) match {
         case (Some(s), Some(c)) => {
           // TODO this needs to be cleaned up when do permissions for adding to a resource
-          if (!Permission.checkOwner(request.user, ResourceRef(ResourceRef.dataset, collectionId))) {
-            Forbidden(toJson(s"You are not the owner of the dataset"))
+          if (!Permission.checkOwner(request.user, ResourceRef(ResourceRef.collection, collectionId))) {
+            Forbidden(toJson(s"You are not the owner of the collection"))
           } else {
             spaces.addCollection(collectionId, spaceId)
             Ok(Json.obj("collectionInSpace" -> (s.collectionCount + 1).toString))
@@ -154,7 +153,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       }
   }
 
-  @ApiOperation(value = " Associate a collection to a space",
+  @ApiOperation(value = " Associate a dataset to a space",
     notes = "",
     responseClass = "None", httpMethod="POST"
   )
@@ -473,8 +472,8 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     user match {
       case Some(loggedInUser) => {
         spaces.get(id) match {
-          case Some(file) => {
-            events.addObjectEvent(user, id, name, "unfollow_space")
+          case Some(space) => {
+            events.addObjectEvent(user, id, space.name, "unfollow_space")
             spaces.removeFollower(id, loggedInUser.id)
             userService.unfollowResource(loggedInUser.id, new ResourceRef(ResourceRef.space, id))
             Ok

@@ -2,6 +2,7 @@
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f)}
+@import play.api.Play.current
 
 @main("Space") {
   <div class="page-header">
@@ -45,7 +46,7 @@
           }
           @helper.inputText(myForm("editTime"), 'class -> "form-control", '_label -> "Time to live (hours):")
           @helper.input(myForm("space_id"), 'class -> "form-control", '_label ->"") {(id, name, value, args) =>
-            <input type="hidden" name="@id" value="@value">
+          <input type="hidden" name="@id" value="@value">
           }
         </fieldset>
         @submitButton
@@ -153,5 +154,9 @@
     }
 
   });
+  @if(!play.api.Play.configuration.getBoolean("enable_expiration").getOrElse(false)) {
+    $("#expiration").closest(".control-group").hide();
+    $("#editTime").closest(".control-group").hide();
+  }
   </script>
 }
