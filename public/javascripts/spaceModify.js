@@ -177,15 +177,14 @@ function updateUsersInSpace(spaceId) {
 }
 
 function acceptSpaceRequest(spaceId, userId, userName){
-    var role = $("#roleSelect").val();
+    var role = $("#roleSelect-"+userId).val();
     var request = jsRoutes.controllers.Spaces.acceptRequest(spaceId, userId, role).ajax({
         type : 'GET',
         contentType : "application/json"
     });
     request.done ( function ( response, textStatus, jqXHR ) {
-        $("#request-tr-"+userId).hide();
+        $("#request-tr-"+userId).remove();
         var sd=$('#request-counter').text();
-        console.log(sd);
         sd=parseInt(sd.split('(')[1]) -1;
         $('#request-counter').text("Requests ("+ sd +")");
         var addUesr ='<li><a href= "'+jsRoutes.controllers.Profile.viewProfileUUID(userId).url+'" id="'+userId+'">'
@@ -207,9 +206,8 @@ function rejectSpaceRequest(id, user){
         contentType : "application/json"
     });
     request.done ( function ( response, textStatus, jqXHR ) {
-        $("#request-tr-"+user).hide();
+        $("#request-tr-"+user).remove();
         var sd=$('#request-counter').text();
-        console.log(sd);
         sd=parseInt(sd.split('(')[1]) -1;
         $('#request-counter').text("Requests ("+ sd +")");
         console.log("Successful reject request");

@@ -21,7 +21,7 @@
                                 </td>
 
                                 <td>
-                                    <select id="roleSelect" class="chosen-select btn btn-success btn-xs">
+                                    <select id="roleSelect-@user.id.stringify" class="chosen-select btn btn-success btn-xs">
                                         @for(aRole <- roleList) {
                                             <h5>@aRole</h5>
                                             <option value="@aRole">@aRole</option>
