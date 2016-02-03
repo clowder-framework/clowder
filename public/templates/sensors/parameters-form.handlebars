@@ -4,16 +4,16 @@
     {{!-- the current scope of 'this' is the stream's json. all values are directly available. so we'll use 'params' here instead of this.params --}}
     {{!-- params will exist if this stream has datapoints --}}
     {{#if params}}
-      <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+      <div class="panel-group" id="accordion-{{id}}" role="tablist" aria-multiselectable="true">
         <div class="panel panel-default">
           <div class="panel-heading" role="tab" id="headingOne">
             <h4 class="panel-title">
-              <a role="button" data-toggle="collapse" data-parent="#accordion" href="#parameterTable" aria-expanded="true" aria-controls="parameterTable">
+              <a role="button" data-toggle="collapse" data-parent="#accordion-{{id}}" href="#parameterTable-{{id}}" aria-expanded="true">
                 Parameters
               </a>
             </h4>
           </div>
-          <div id="parameterTable" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
+          <div id="parameterTable-{{id}}" class="panel-collapse collapse in" role="tabpanel">
             <div class="panel-body">
               The following parameters were found in the data for this {{ sensorTitle }}. The following table allows you to create mappings from the original parameter names to a controlled vocabulary term. For example, an instrument may measure temperature and record the measurement as "temp c" in the raw data. A sensor from another manufacturer might record it as "Temperature". Here you can map the values to a known term in a controlled vocabulary. Administrators can add new Controlled Vocabularies in "Metadata Definitions" in the Admin menu and they will be available as Controlled Vocabulary options below.
             </div>
