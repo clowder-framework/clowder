@@ -107,13 +107,17 @@
 
                 {{> parameters this}}
 
-                <div class="row">
-                  <div class="col-md-12">
-                    <div class="pull-right instrument-delete">
-                      <div class="btn btn-primary btn-sm removeInstrument" id="instrument-delete-{{id}}" data-id="{{id}}">Remove Instrument</div>
+                {{!-- the remove instrument button is only used on new forms to cancel adding one. existing streams shouldn't be deleted without deleting the datapoints, etc. --}}
+                {{#unless name}}
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="pull-right instrument-delete">
+                        <div class="btn btn-primary btn-sm removeInstrument" id="instrument-delete-{{id}}" data-id="{{id}}">Remove Instrument</div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                {{/unless}}
+
 
                 <div class="row">
                   <div class="col-md-12">
