@@ -385,7 +385,7 @@ class MongoDBUserService @Inject() (
                     }
 
                     if (roleid == role.id)
-                      UserDAO.dao.update(MongoDBObject("spaceandrole.spaceId" -> new ObjectId(spaceid.stringify)),
+                      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userid.stringify), "spaceandrole.spaceId" -> new ObjectId(spaceid.stringify)),
                         $set({"spaceandrole.$.role" -> RoleDAO.toDBObject(role)}), false, true, WriteConcern.Safe)
                   }
                   case None => {}
