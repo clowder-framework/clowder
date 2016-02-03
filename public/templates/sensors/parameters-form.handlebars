@@ -1,7 +1,8 @@
 <div class="row">
   <div class="col-md-12">
     <hr />
-    {{!-- {{log this}} --}}
+    {{!-- the current scope of 'this' is the stream's json. all values are directly available. so we'll use 'params' here instead of this.params --}}
+    {{!-- params will exist if this stream has datapoints --}}
     {{#if params}}
       <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
         <div class="panel panel-default">
@@ -25,48 +26,59 @@
           <div class="col-md-3"><b>Original Parameter</b></div>
           <div class="col-md-3"><b>Controlled Vocabulary</b></div>
           <div class="col-md-3"><b>Selected Parameter</b></div>
-          <!--<div class="col-md-3"><b>Actions</b></div>-->
         </div>
         <hr>
-        {{#with properties}}
-          {{log metadata}}
-          {{#each ../params}}
+          {{!-- we will now loop through each of the params on the stream. --}}
+          {{#each params}}
+            {{!-- the scope of 'this' just changed. we are now inside the each loop. 'this' now refers to the param we are iterating (a string). --}}
+            {{!-- to get back to the stream.json, we now would use ../params or ../properties, etc --}}
+
             <form class="form-inline">
               <div class="row">
                 <div class="form-group col-md-3">
+                    {{!-- 'this' is just a string for a param name --}}
                     <p>{{this}}</p>
                 </div>
                 <div class="form-group col-md-3">
+                  {{!-- 'slugify' is a handlebars helper in views/geostreams/edit.scala.html. It converts spaces to dashes and lowercases --}}
                   <label for="md-{{slugify this}}-def"></label>
-                  <select id="md-{{slugify this}}-def" name="metadata[mappings][{{slugify this}}][source-definition]" data-id="{{slugify this}}">
-                    {{!-- {{log ../properties.metadata.mappings.water-temperature-c.source-definition}} --}}
-                      {{#each ../../metadataDefinitions}}
-                        {{log ../this}}
-                        {{!-- {{log (lookup (lookup ../properties.metadata.mappings currentParam) 'source-definition') }} --}}
-                        {{#select (lookup (lookup ../../metadata.mappings ../this) 'source-definition') }}
+                  <select id="md-{{slugify this}}-def" name="metadata[mappings][{{slugify this}}][source-definition]">
+                      {{!-- we access the parent scope which is all of the stream.json values by calling ../metadataDefinitions --}}
+                      {{!-- we added metadataDefinitions dynamically to the stream.json when we compiled this handlebars template --}}
+                      {{#each ../metadataDefinitions}}
+                        {{!-- the scope of 'this' just changed. we are now two levels deep and are looping through each of the metadataDefinitions --}}
+                        {{!-- to get back to stream.json, we use ../../ and here we check to see if metadata mappings have been added to the stream's properties --}}
+                        {{!-- the 'select' helper is in views/geostreams/edit.scala.html and it allows us to check to see if one of the select options should be selected by default --}}
+                        {{!-- we are also using 'lookup' which is a handlebars helper that allows us to get the value of a variable --}}
+                        {{!-- and we are doing a nested lookup because one of the variables we are looking up is a variable --}}
+                        {{!-- the value of ../this goes back up to the param, so this next line would look like this if extrapolated: --}}
+                        {{!-- select properties.metadata.mappings.water-temperature-c.source-definition --}}
+                        {{!-- so if we have a value for the source definition, we'll see if any of our select options has the same value and we will mark it as selected --}}
+                        {{#select (lookup (lookup ../../properties.metadata.mappings ../this) 'source-definition') }}
+
+                          {{!-- our scope hasn't changed inside the select, so this.json.uri refers to the metadataDefinition loop --}}
                           <option value="{{this.json.uri}}">{{this.json.label}}</option>
                         {{/select}}
                       {{/each}}
+                      {{!-- the scope of 'this' is back to the param we are iterating --}}
 
                   </select>
                 </div>
                 <div class="form-group col-md-3">
                   <label for="md-{{slugify this}}-value"></label>
-                  <input id="md-{{slugify this}}-value" name="metadata[mappings][{{slugify this}}][source-value]" data-id="{{slugify this}}" type="text"
-                    {{#if (lookup (lookup ../metadata.mappings this) 'source-value')}}
-                      value="{{lookup (lookup ../metadata.mappings this) 'source-value'}}"
+                  <input id="md-{{slugify this}}-value" name="metadata[mappings][{{slugify this}}][source-value]" type="text"
+                    {{!-- the scope of 'this' is the param we are iterating, so we will use lookup to see if the stream has a value in properties.metadata.mappings for this param --}}
+                    {{#if (lookup (lookup ../properties.metadata.mappings this) 'source-value')}}
+                      {{!-- scope doesn't change inside an if helper --}}
+                      value="{{lookup (lookup ../properties.metadata.mappings this) 'source-value'}}"
                     {{/if}}
                   />
                 </div>
-                <!--<div class="form-group col-md-3">-->
-                  <!--<a role="button" class="btn btn-primary md-save">Save</a>-->
-                  <!--<a role="button" class="btn btn-default md-cancel">Cancel</a>-->
-                  <!--<a role="button" class="btn btn-danger md-delete">Delete</a>-->
-                <!--</div>-->
               </div>
             </form>
           {{/each}}
-        {{/with}}
+          {{!-- the scope of 'this' is back to the stream.json --}}
+
       </div>
 
 
