@@ -188,7 +188,7 @@ $(document).ready(function() {
 
         $.when.apply($, deferredStreams).done(function(data) {
           // redirect to the sensors list
-          window.location.href = jsRoutes.controllers.Geostreams.list().url;
+          window.location.reload();
         });
 
       });
