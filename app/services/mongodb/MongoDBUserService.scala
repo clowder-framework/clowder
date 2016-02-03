@@ -304,12 +304,62 @@ class MongoDBUserService @Inject() (
   def deleteRole(id: String): Unit = {
     RoleDAO.removeById(id)
 
+    // Stored role data in the users table must also be deleted
+    val dao = current.plugin[MongoSalatPlugin] match {
+      case None => throw new RuntimeException("No MongoSalatPlugin");
+      case Some(msp) => {
+        // Get only list of users with the updated Role in one of their spaces so we don't fetch them all
+        msp.collection("social.users").find(MongoDBObject("spaceandrole.role._id" -> new ObjectId(id))).foreach { u =>
+          val userid: UUID = u.get("_id") match {
+            case i: ObjectId => UUID(i.toString)
+            case i: UUID => i
+            case None => UUID("")
+          }
 
+          // Get list of space+role combination objects for this user
+          u.get("spaceandrole") match {
+            case sp_roles: BasicDBList => {
+              for (sp_role <- sp_roles) {
+                sp_role match {
+                  case s: BasicDBObject => {
+                    val spaceid: UUID = s.get("spaceId") match {
+                      case i: ObjectId => UUID(i.toString)
+                      case i: UUID => i
+                      case None => UUID("")
+                    }
+
+                    // For each one, check whether this role is the changed one and change if so
+                    s.get("role") match {
+                      case r: BasicDBObject => {
+                        val roleid: String = r.get("_id") match {
+                          case i: ObjectId => i.toString
+                          case i: UUID => i.toString
+                          case None => ""
+                        }
+
+                        if (roleid.toString == id) {
+                          removeUserFromSpace(userid, spaceid)
+                        }
+
+                      }
+                      case None => {}
+                    }
+                  }
+                  case None => {}
+                }
+              }
+            }
+            case None => {}
+          }
+        }
+      }
+    }
   }
 
   def updateRole(role: Role): Unit = {
     RoleDAO.save(role)
 
+    // Stored role data in the users table must also be updated
     val dao = current.plugin[MongoSalatPlugin] match {
       case None => throw new RuntimeException("No MongoSalatPlugin");
       case Some(msp) => {
