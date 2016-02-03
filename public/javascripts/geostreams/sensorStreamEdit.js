@@ -116,7 +116,7 @@ $(document).ready(function() {
   var instrumentCounter = 0;
   var addInstrumentButton = $("#addInstrument");
     addInstrumentButton.on('click', instrumentCounter, function() {
-    instrumentCounter++;
+    instrumentCounter--;
     insertInstrumentForm({id: instrumentCounter});
   });
 
