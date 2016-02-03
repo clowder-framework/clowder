@@ -81,6 +81,8 @@ $(document).ready(function() {
 
 
   var insertInstrumentForm = function(data) {
+    var parametersTemplate = Handlebars.getTemplate("/assets/templates/sensors/parameters-form");
+    Handlebars.registerPartial('parameters', parametersTemplate);
     var instrumentTemplate = Handlebars.getTemplate("/assets/templates/sensors/stream-form");
     $("#instruments").append(instrumentTemplate(data));
   };

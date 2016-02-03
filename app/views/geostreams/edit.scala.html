@@ -1,4 +1,4 @@
-@(sensor: play.api.libs.json.JsValue, streams: List[play.api.libs.json.JsValue])(implicit user: Option[models.User])
+@(sensor: play.api.libs.json.JsValue, streams: List[play.api.libs.json.JsValue], definitions: List[models.MetadataDefinition])(implicit user: Option[models.User])
 @import play.api.libs.json.Json
 
 @import helper._
@@ -52,10 +52,7 @@
                                                 }
                                             </select>
                                         </div>
-                                        <div class="col-sm-4"></div>
-                                        <div class="col-sm-8 paddingTop7">
-                                            <p>Location Type <span id="sensorTypeSummary">1</span> can have <span id="sensorTypeSensorCount">1</span> instrument<span id="sensorTypeMultipleSensors"></span>.</p>
-                                        </div>
+
                                         <label for="sensorLocationLat" class="col-sm-4 paddingTop7 control-label">Lat / Long</label>
                                         <div class="col-sm-4">
                                             <input type="number" class="form-control input-sm" id="sensorLocationLat" name="sensorLocationLat" value="@((sensor \ "geometry" \ "coordinates")(1))" required>
@@ -100,23 +97,38 @@
 
 <script src="@routes.Assets.at("javascripts/leaflet.js")"></script>
 <script src="@routes.Assets.at("javascripts/jquery.validate.js")"></script>
-<script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")"></script>
+<script src="@routes.Assets.at("javascripts/lib/handlebars-v4.0.5.js")"></script>
 <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/lib/jquery.serializejson.min.js")"></script>
 <script src="@routes.Assets.at("javascripts/geostreams/sensorStreamEdit.js")"></script>
 
 <script type="text/javascript">
     var insertInstrumentForm = function(data) {
+
+        Handlebars.registerHelper('select', function( value, options ){
+            var $el = $('<select />').html( options.fn(this) );
+            $el.find('[value="' + value + '"]').attr({'selected':'selected'});
+            return $el.html();
+        });
+
+        Handlebars.registerHelper('slugify', function(string) {
+            return string.replace(/[\s]+/g, "-").replace(/[^\w|-]+/g, "").toLowerCase();
+        });
+        var parametersTemplate = Handlebars.getTemplate("/assets/templates/sensors/parameters-form");
+        Handlebars.registerPartial('parameters', parametersTemplate);
         var instrumentTemplate = Handlebars.getTemplate("/assets/templates/sensors/stream-form");
         $("#instruments").append(instrumentTemplate(data));
+
+
     };
-    $(document).ready(function() {
+    $(document).ready(function(metadataDefinitions) {
         @streams.map { stream =>
             var streamJson = @Html(Json.stringify(Json.toJson(stream)));
             streamJson.sensorsTitle = "@(AppConfiguration.getSensorsTitle)";
             streamJson.sensorTitle = "@(AppConfiguration.getSensorTitle)";
             streamJson.formType = "edit";
             streamJson.permalink = jsRoutes.api.Geostreams.getStream(streamJson.id).url;
+            streamJson.metadataDefinitions = @(Html(Json.stringify(Json.toJson(definitions))));
             insertInstrumentForm(streamJson);
         }
     });

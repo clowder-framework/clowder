@@ -1,0 +1,80 @@
+<div class="row">
+  <div class="col-md-12">
+    <hr />
+    {{!-- {{log this}} --}}
+    {{#if params}}
+      <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+        <div class="panel panel-default">
+          <div class="panel-heading" role="tab" id="headingOne">
+            <h4 class="panel-title">
+              <a role="button" data-toggle="collapse" data-parent="#accordion" href="#parameterTable" aria-expanded="true" aria-controls="parameterTable">
+                Parameters
+              </a>
+            </h4>
+          </div>
+          <div id="parameterTable" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
+            <div class="panel-body">
+              The following parameters were found in the data for this {{ sensorTitle }}. The following table allows you to create mappings from the original parameter names to a controlled vocabulary term. For example, an instrument may measure temperature and record the measurement as "temp c" in the raw data. A sensor from another manufacturer might record it as "Temperature". Here you can map the values to a known term in a controlled vocabulary. Administrators can add new Controlled Vocabularies in "Metadata Definitions" in the Admin menu and they will be available as Controlled Vocabulary options below.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="row">
+          <div class="col-md-3"><b>Original Parameter</b></div>
+          <div class="col-md-3"><b>Controlled Vocabulary</b></div>
+          <div class="col-md-3"><b>Selected Parameter</b></div>
+          <!--<div class="col-md-3"><b>Actions</b></div>-->
+        </div>
+        <hr>
+        {{#with properties}}
+          {{log metadata}}
+          {{#each ../params}}
+            <form class="form-inline">
+              <div class="row">
+                <div class="form-group col-md-3">
+                    <p>{{this}}</p>
+                </div>
+                <div class="form-group col-md-3">
+                  <label for="md-{{slugify this}}-def"></label>
+                  <select id="md-{{slugify this}}-def" name="metadata[mappings][{{slugify this}}][source-definition]" data-id="{{slugify this}}">
+                    {{!-- {{log ../properties.metadata.mappings.water-temperature-c.source-definition}} --}}
+                      {{#each ../../metadataDefinitions}}
+                        {{log ../this}}
+                        {{!-- {{log (lookup (lookup ../properties.metadata.mappings currentParam) 'source-definition') }} --}}
+                        {{#select (lookup (lookup ../../metadata.mappings ../this) 'source-definition') }}
+                          <option value="{{this.json.uri}}">{{this.json.label}}</option>
+                        {{/select}}
+                      {{/each}}
+
+                  </select>
+                </div>
+                <div class="form-group col-md-3">
+                  <label for="md-{{slugify this}}-value"></label>
+                  <input id="md-{{slugify this}}-value" name="metadata[mappings][{{slugify this}}][source-value]" data-id="{{slugify this}}" type="text"
+                    {{#if (lookup (lookup ../metadata.mappings this) 'source-value')}}
+                      value="{{lookup (lookup ../metadata.mappings this) 'source-value'}}"
+                    {{/if}}
+                  />
+                </div>
+                <!--<div class="form-group col-md-3">-->
+                  <!--<a role="button" class="btn btn-primary md-save">Save</a>-->
+                  <!--<a role="button" class="btn btn-default md-cancel">Cancel</a>-->
+                  <!--<a role="button" class="btn btn-danger md-delete">Delete</a>-->
+                <!--</div>-->
+              </div>
+            </form>
+          {{/each}}
+        {{/with}}
+      </div>
+
+
+    {{else}}
+      <h4>Parameters</h4>
+      <div class="well well-lg">
+        This instrument does not have any datapoints in the api yet. Once datapoints are added, you'll be able to identify parameter names.
+      </div>
+    {{/if}}
+  </div>
+</div>

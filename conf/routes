@@ -139,10 +139,10 @@ POST           /spaces/submit                                                   
 # ----------------------------------------------------------------------
 # SENSORS
 # ----------------------------------------------------------------------
-GET            /geostreams                                                              controllers.Geostreams.map
-GET            /geostreams/sensors                                                      controllers.Geostreams.list
-GET            /geostreams/sensors/new                                                  controllers.Geostreams.newSensor
-GET            /geostreams/sensors/:id                                                  controllers.Geostreams.edit(id)
+GET            /geostreams                                                              @controllers.Geostreams.map
+GET            /geostreams/sensors                                                      @controllers.Geostreams.list
+GET            /geostreams/sensors/new                                                  @controllers.Geostreams.newSensor
+GET            /geostreams/sensors/:id                                                  @controllers.Geostreams.edit(id)
 
 # ----------------------------------------------------------------------
 # JSON-LD Metadata

@@ -19,7 +19,11 @@
                 </a>
                 {{#if permalink}}
                   <span class="label pull-right">
-                    <a href="{{permalink}}" target="_blank">json</a>
+                    <a href="{{permalink}}" target="_blank">
+                      <span class="label label-default">
+                        API ID: {{id}} <span class="glyphicon glyphicon-new-window"></span>
+                      </span>
+                    </a>
                   </span>
                 {{/if}}
               </h4>
@@ -100,6 +104,8 @@
                     </div>
                   </div>
                 </div>
+
+                {{> parameters this}}
 
                 <div class="row">
                   <div class="col-md-12">
