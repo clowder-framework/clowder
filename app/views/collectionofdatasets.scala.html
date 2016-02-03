@@ -162,6 +162,9 @@
 				@datasetsInCollection.map { dataset =>
 					@datasets.listitem(dataset,commentMap , routes.Collections.collection(collection.id))
 				}
+				@if(datasetsInCollection.isEmpty){
+					There are not datasets in this collection. To add a dataset, click <a id="create_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Create New Dataset">here</a>
+				}
 			</div>
 		</div>
 		</div>
