@@ -205,9 +205,7 @@ class CurationObjects @Inject()(
       implicit val user = request.user
           curations.get(curationId) match {
             case Some(c) => {
-              val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
-                "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$300 Fee"),
-                "Affiliation" -> List("UMich", "IU", "UIUC"), "Purpose" -> List("Testing-Only", "Submission"))
+              val propertiesMap: Map[String, List[String]] = Map("Purpose" -> List("Testing-Only", "Submission"))
               val mmResp = callMatchmaker(c, user)(request)
               user match {
                 case Some(usr) => {
@@ -440,6 +438,7 @@ class CurationObjects @Inject()(
             case None => api.routes.Users.findById(usr.id).absoluteURL(https)
 
           })
+          val license = c.datasets(0).licenseData.m_licenseText
           val valuetoSend = Json.toJson(
             Map(
               "@context" -> Json.toJson(Seq(
@@ -489,7 +488,8 @@ class CurationObjects @Inject()(
                   )),
                 "Rights Holder" -> Json.toJson(rightsholder),
                 "Publication Callback" -> Json.toJson(controllers.routes.CurationObjects.savePublishedObject(c.id).absoluteURL(https) +"?key=" + key),
-                "Environment Key" -> Json.toJson(play.api.Play.configuration.getString("commKey").getOrElse(""))
+                "Environment Key" -> Json.toJson(play.api.Play.configuration.getString("commKey").getOrElse("")),
+                "License" -> Json.toJson(license)
               )
             )
           Logger.debug("Submitting request for publication: " + valuetoSend)

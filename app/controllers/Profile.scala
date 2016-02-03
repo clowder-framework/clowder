@@ -97,6 +97,12 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
           errors => BadRequest(views.html.editProfile(errors, List.empty, List.empty, List.empty)),
           profile => {
             users.updateProfile(x.id, profile)
+            profile.institution match {
+              case Some(institution) =>{
+                val preference = Map("Affiliation" -> institution )
+                users.updateRepositoryPreferences(x.id, preference)
+              }
+            }
 
             profile.emailsettings match {
               case Some(setting) => {
