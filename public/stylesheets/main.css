@@ -41,7 +41,7 @@ span.align-right {
     float:right;
 }
 
-.error span{
+.error span, label.error {
     color: red;
     padding-left: 10px;
     text-align:left;
@@ -909,4 +909,8 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 
 .add-resource {
     width: 240px !important
+}
+
+.tag-padding {
+    padding-right:15px;
 }

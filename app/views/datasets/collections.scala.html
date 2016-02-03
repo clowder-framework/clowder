@@ -37,7 +37,7 @@
                                 <span class="glyphicon glyphicon-remove"></span>   Remove</a>
                         } else {
                             | <a href="#" class="btn btn-link btn-xs disabled" onclick="return false;" title="Remove from collection">
-                                <span class="glyphicon glyphicon-remove"></span>Remove</a>
+                                <span class="glyphicon glyphicon-remove"></span> Remove</a>
                         }
                     </div>
                 </div>
@@ -47,14 +47,14 @@
 </div>
 
 <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
-@if(user.isDefined) {
+@if(Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))) {
     <div class="form-inline">
         <div class="input-group input-group-sm col-md-8">
             <select id="collectionAddSelect" class="form-control add-resource">
             </select>
             <span class="input-group-btn">
                 <a href="#" class="btn btn-default btn-large" id="addCollectionBtn" title="Add Dataset to Collection" onclick="addToCollection('@dataset.id')">
-                    <span class="glyphicon glyphicon-plus"></span>
+                    <span class="glyphicon glyphicon-plus"></span> Add
                 </a>
             </span>
         </div>

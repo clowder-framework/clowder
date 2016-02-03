@@ -1,4 +1,4 @@
-@(resType: String, id: String)(implicit user: Option[models.User])
+@(resType: String, id: String, contentDiv: String)(implicit user: Option[models.User])
 @import api.Permission
 @*The permission for curationObject and CurationFile is check outside this file*@
 @if(resType == "dataset" && Permission.checkPermission(Permission.AddMetadata, ResourceRef(ResourceRef.dataset, UUID(id)))
@@ -26,10 +26,12 @@
     </div>
 }
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/jquery-ui-timepicker-addon.css")">
 <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/jquery-ui-timepicker-addon.js")" type="text/javascript"></script>
 
 <style>
 .ui-autocomplete-category {
@@ -101,10 +103,10 @@ line-height: 1.5;
         var field_id = $("#@id  #field-value").data("id");
         var field_type = $("#@id  #add-metadata-select option:selected").data("type");
         var field_value = "";
-        var field_types_with_simple_values = {"string": 1, "listjquery": 1, "listgeocode": 1, "scientific_variable": 1};
+        var field_types_with_simple_values = {"string": 1, "listjquery": 1, "listgeocode": 1, "scientific_variable": 1, "datetime": 1};
         if (field_type in field_types_with_simple_values) {
             field_value = $("#@id  #field-value").val();
-        } else if (field_type == "list") {
+        } else if (field_type === "list") {
             field_value = $("#@id  #field-value option:selected").val();
         }  else {
             console.log("Wrong field type: " + field_type);
@@ -114,16 +116,16 @@ line-height: 1.5;
             var context = {};
             context[field_label] = field_id;
             var content = {};
-            if (field_type == "listgeocode") {
+            if (field_type === "listgeocode") {
                 // geocode example: "Champaign, IL, USA: 40.12, -88.24"
                 var parts = field_value.split(":");
                 content[field_label] = parts[0].trim();
                 var lat_lng = parts[1].trim().split(",");
                 content["Latitude"] = lat_lng[0].trim();
                 content["Longitude"] = lat_lng[1].trim();
-            } else if (field_type == "scientific_variable") {
+            } else if (field_type === "scientific_variable") {
                 content[field_label] = field_value;
-                var unit_val = $("#unit-value").val();
+                var unit_val = $("#@id #unit-value").val();
                 if (unit_val) {
                     content["Unit"] = unit_val;
                 }
@@ -144,8 +146,17 @@ line-height: 1.5;
                 });
 
                 request.done(function (response, textStatus, jqXHR) {
-                    // TODO update gui without reloading page
-                    location.reload();
+                    // reset submission value
+                    $("#@id  #selected_field").empty();
+                    $("#@id #add-metadata-select").val('').trigger("chosen:updated");
+                    if($('#'+'@contentDiv'+' .panel').length == 0) {
+                        $('#' + "@contentDiv").empty();
+                    }
+                    $('#'+"@contentDiv").prepend(response);
+                    var sd=$('#metadata-counter').text();
+                    sd=parseInt(sd.split('(')[1]) +1;
+                    $('#metadata-counter').text("Metadata ("+ sd +")");
+                    notify("Metadata successfully added.", "success", false, 2000);
                 });
 
                 request.fail(function (jqXHR, textStatus, errorThrown){
@@ -169,10 +180,10 @@ line-height: 1.5;
         var fields = response;
         for (var i = 0; i < fields.length; i++) {
             var elem = $("<option></option>");
-                elem.attr("data-type", fields[i].json.type);
-                elem.attr("data-id", fields[i].id);
-                elem.attr("value", fields[i].json.uri);
-                elem.text(fields[i].json.label);
+            elem.attr("data-type", fields[i].json.type);
+            elem.attr("data-id", fields[i].id);
+            elem.attr("value", fields[i].json.uri);
+            elem.text(fields[i].json.label);
             $("#@id  #add-metadata-select").append(elem);
         }
         // chosen pulldown configuration
@@ -194,7 +205,8 @@ line-height: 1.5;
                      "list": "add_metadata_list",
                      "listjquery": "add_metadata_listjquery",
                      "listgeocode": "add_metadata_string",
-                     "scientific_variable": "add_metadata_scientific_variable"
+                     "scientific_variable": "add_metadata_scientific_variable",
+                     "datetime": "add_metadata_datetime"
                     };
                 var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/")" + template_map[field_type]);
                 var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type});
@@ -203,7 +215,7 @@ line-height: 1.5;
                 // register submit listener
                 $("#@id  #add-metadata-button").click(submit_@id);
 
-                if (field_type == "scientific_variable") {
+                if (field_type === "scientific_variable") {
                     // Find the field with the specific uri.
                     var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
                     $("#@id  #field-value").catcomplete({
@@ -230,7 +242,7 @@ line-height: 1.5;
                             });
                         }
                     });
-                    $("#unit-value").autocomplete({
+                    $("#@id #unit-value").autocomplete({
                         minLength: 1,
                         source: function( request, response ) {
                             var url = encodeURIComponent(field[0].json.definitions_url);
@@ -252,10 +264,25 @@ line-height: 1.5;
                             });
                         }
                     });
-                } else if (field_type == "listjquery") {
+                } else if (field_type === "datetime") {
+                    // This widget uses the ISO 8601 format, such as 2016-01-01T10:00:00-06:00 or 2016-01-01T10:00:00Z.
+                    // This uses Trent Richardson's jQuery UI Timepicker add-on.
+                    // jQuery UI Datepicker options: http://api.jqueryui.com/datepicker/
+                    // jQuery UI Timepicker addon options: http://trentrichardson.com/examples/timepicker/
+                    $("#field-value").datetimepicker(
+                        { controlType: 'select',
+                          // Uses "select" instead of the default slider.
+                          // If we put "T" in the "separator" option instead of "timeFormat", the widget changes 2-digit year values xx we put directly into the field to 20xx; if we put "T" in timeFormat, then the year values are kept. So we used the latter.
+                          dateFormat: $.datepicker.ISO_8601,
+                          timeFormat: "'T'HH:mm:ssZ",
+                          separator: '',
+                          // Allows direct input.
+                          timeInput: true
+                        });
+                } else if (field_type === "listjquery") {
                     // Find the field with the specific uri.
                     var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
-                    $("#field-value").autocomplete({
+                    $("#@id #field-value").autocomplete({
                         minLength: 3,
                         source: function( request, response ) {
                             // Get the query parameter from the saved json, not hardcoded.
@@ -275,7 +302,7 @@ line-height: 1.5;
                             });
                         }
                     });
-                } else if (field_type == "listgeocode") {
+                } else if (field_type === "listgeocode") {
                     // Find the field with the specific uri.
                     var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
                     $("#@id  #field-value").autocomplete({
@@ -296,7 +323,7 @@ line-height: 1.5;
                             });
                         }
                     });
-                } else if (field_type == "list") {
+                } else if (field_type === "list") {
                     // find field with the specific uri
                     var field = $.grep(fields, function(e){ return e.json.uri == field_id; });
 
@@ -311,7 +338,7 @@ line-height: 1.5;
                         // modalTemplate was assigned above using the map.
                         var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type,
                             'options': vocabulary});
-                        $('#@id  #selected_field').html(html);
+                        $("#@id  #selected_field").html(html);
                         // chosen pulldown configuration
                         $("#@id  #field-value").chosen({
                             no_results_text: "Not found. Press enter to add ",

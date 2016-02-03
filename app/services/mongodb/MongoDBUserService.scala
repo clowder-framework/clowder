@@ -2,11 +2,7 @@ package services.mongodb
 
 import com.mongodb.casbah.WriteConcern
 import java.util.Date
-
 import com.mongodb.DBObject
-import com.mongodb.casbah.Imports._
-import com.mongodb.casbah.commons.MongoDBObject
-import com.mongodb.casbah.commons.TypeImports._
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import com.mongodb.util.JSON
 import com.novus.salat._
@@ -16,18 +12,15 @@ import org.bson.types.ObjectId
 import securesocial.core.Identity
 import play.api.Application
 import play.api.Play.current
-import MongoContext.context
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
 import models.Role
 import models.UserSpaceAndRole
-import models.UserSpaceAndRole
-import services.mongodb.SpaceInviteDAO
 import scala.collection.mutable.ListBuffer
 import play.api.Logger
 import securesocial.core.providers.Token
 import securesocial.core._
-import services.{FileService, DatasetService, CollectionService}
+import services.{FileService, DatasetService, CollectionService, SpaceService}
 import services.mongodb.MongoContext.context
 import _root_.util.Direction._
 import javax.inject.Inject
@@ -43,7 +36,8 @@ import javax.inject.Inject
 class MongoDBUserService @Inject() (
   files: FileService,
   datasets: DatasetService,
-  collections: CollectionService) extends services.UserService {
+  collections: CollectionService,
+  spaces: SpaceService) extends services.UserService {
   // ----------------------------------------------------------------------
   // Code to implement the common CRUD services
   // ----------------------------------------------------------------------
@@ -62,7 +56,10 @@ class MongoDBUserService @Inject() (
   }
 
   override def get(id: UUID): Option[User] = {
-    UserDAO.findOneById(new ObjectId(id.stringify))
+    if (id == User.anonymous.id)
+      Some(User.anonymous)
+    else
+      UserDAO.findOneById(new ObjectId(id.stringify))
   }
 
   override def delete(id: UUID): Unit = {
@@ -114,6 +111,32 @@ class MongoDBUserService @Inject() (
     orderedBy.limit(limit).toList
   }
 
+  override def list(id: Option[String], nextPage: Boolean, limit: Integer): List[User] = {
+    val filterDate = id match {
+      case Some(d) => {
+        if(d == "") {
+          MongoDBObject()
+        } else if (nextPage) {
+          ("_id" $lt new ObjectId(d))
+        } else {
+          ("_id" $gt new ObjectId(d))
+        }
+      }
+      case None => MongoDBObject()
+    }
+    val sort = if (id.isDefined && !nextPage) {
+      MongoDBObject("_id"-> 1) ++ MongoDBObject("name" -> 1)
+    } else {
+      MongoDBObject("_id" -> -1) ++ MongoDBObject("name" -> 1)
+    }
+    if(id.isEmpty || nextPage) {
+      UserDAO.find(filterDate).sort(sort).limit(limit).toList
+    } else {
+      UserDAO.find(filterDate).sort(sort).limit(limit).toList.reverse
+    }
+
+  }
+
   // ----------------------------------------------------------------------
   // Code implementing specific functions
   // ----------------------------------------------------------------------
@@ -121,21 +144,27 @@ class MongoDBUserService @Inject() (
    * Return a specific user based on the id provided.
    */
   override def findById(id: UUID): Option[User] = {
-    UserDAO.dao.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)))
+    get(id)
   }
 
   /**
    * Return a specific user based on an Identity
    */
   override def findByIdentity(identity: Identity): Option[User] = {
-    UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> identity.identityId.userId, "identityId.providerId" -> identity.identityId.providerId))
+    if (User.anonymous == identity)
+      return Some(User.anonymous)
+    else
+      UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> identity.identityId.userId, "identityId.providerId" -> identity.identityId.providerId))
   }
 
   /**
    * Return a specific user based on an Identity
    */
   override def findByIdentity(userId: String, providerId: String): Option[User] = {
-    UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> userId, "identityId.providerId" -> providerId))
+    if (User.anonymous.identityId.userId == userId && User.anonymous.identityId.providerId == providerId)
+      return Some(User.anonymous)
+    else
+      UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> userId, "identityId.providerId" -> providerId))
   }
 
   /**
@@ -403,6 +432,12 @@ class MongoDBUserService @Inject() (
       case "collection" => {
         collections.get(uuid) match {
           case Some(collection) => collection.name
+          case None => default
+        }
+      }
+      case "'space" => {
+        spaces.get(uuid) match {
+          case Some(space) => space.name
           case None => default
         }
       }

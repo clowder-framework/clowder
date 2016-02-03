@@ -1,9 +1,8 @@
 @(profile: User, ownProfile: Option[Boolean])(implicit user: Option[models.User] = None)
 @main("Profile") {
-<div class="page-header">
-  <table>
-    <tr>
-      <td valign="top">
+<div class="row">
+
+      <div class="col-md-3 col-lg-3 col-sm-5">
         <img src=@profile.getAvatarUrl(256) class="profilePicture">
         <div align="center">
             <h4>
@@ -100,7 +99,7 @@
                         var id = $(this).attr('objectId');
                         var name = $(this).attr('objectName');
                         var type = $(this).attr('objectType');
-                        if ($(this).attr('id') === '') {
+                        if ($(this).attr('id') == undefined || $(this).attr('id') === '') {
                           followHandler.call(this, jsRoutes, id, name, type, undefined, undefined);
                         } else {
                           followHandler.call(this, jsRoutes, id, name, type, followCallback, unfollowCallback);
@@ -114,8 +113,8 @@
             case None => {}
           }
         </div>
-      </td>
-      <td valign="top">
+      </div>
+      <div clas="col-md-9 col-lg-9 col-sm-7">
 	      <div style="margin-left: 45px;">
 	          <h1>@profile.fullName</h1>
           </div>
@@ -176,9 +175,8 @@
 
 			</div>
 
-	  </td> 
-    </tr>
-  </table>
+	  </div>
+
 </div>
 
 

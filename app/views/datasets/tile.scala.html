@@ -1,7 +1,7 @@
-@(dataset: models.Dataset, space: Option[String], comments: Map[UUID, Int],classes:String, isFollowing: Boolean, isSpace: Boolean)(implicit user: Option[models.User])
+@(dataset: models.Dataset, space: Option[String], comments: Map[UUID, Int],classes:String, isFollowing: Boolean, isSpace: Boolean, redirect: Call)(implicit user: Option[models.User])
 @import _root_.util.Formatters.ellipsize
 @import api.Permission
-<div class="post-box @classes">
+<div class="post-box @classes" id="@dataset.id-tile">
     <div class="panel panel-default">
         <div class="pull-right">
             <a href="#" title="Bookmark" class="pull-right bookmark-link"><span class="glyphicon glyphicon-bookmark bookmark"></span></a>
@@ -26,21 +26,23 @@
                 @if(!comments.isEmpty) {
                     <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(dataset.id)) comments"></span> @(comments.get(dataset.id))
                 }
-                @if(user.isDefined && !isSpace) {
-                        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                    @if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-                        <button onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
-                            <span class="glyphicon glyphicon-trash"></span></button>
-                    } else {
-                        <button disabled onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
-                            <span class="glyphicon glyphicon-trash"></span></button>
+                @if(user.isDefined) {
+                    @if(isSpace && space.isDefined && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, UUID(space.getOrElse(""))))) {
+                        <a href='@(routes.CurationObjects.newCO(dataset.id, space.getOrElse("")))'>
+                            <button class="btn btn-link btn-xs"><span class="glyphicon glyphicon-globe"></span> Publish</button>
+                        </a>
+                    } else  {
+
+                        @if(user.get.identityId.userId.equals(dataset.author.identityId.userId) || Permission.checkPermission(Permission.DeleteDataset, ResourceRef(ResourceRef.dataset, dataset.id))){
+                            <button onclick="removeDatasetAndRedirect('@(dataset.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
+                                <span class="glyphicon glyphicon-trash"></span></button>
+                        } else {
+                            <button disabled onclick="removeDatasetAndRedirect('@(dataset.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
+                                <span class="glyphicon glyphicon-trash"></span></button>
+                        }
                     }
                 }
-                @if(isSpace && space.isDefined && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, UUID(space.getOrElse(""))))) {
-                    <a href='@(routes.CurationObjects.newCO(dataset.id, space.getOrElse("")))'>
-                        <button class="btn btn-link btn-xs"><span class="glyphicon glyphicon-globe"></span> Publish</button>
-                    </a>
-                }
+
             </li>
         </ul>
         @if(isFollowing){

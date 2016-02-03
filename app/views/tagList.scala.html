@@ -2,12 +2,19 @@
 
 @main("Tag list") {
     <div class="row">
+        <div class="col-md-12">
+            <h1>Tags</h1>
+        </div>
+    </div>
+    <div class="row">
         <div id="tagList" class="col-md-12" style="text-align: justify">
             @if(weightedTags.isEmpty) {
                 No tags found.
             } else {
                 @for(weightedTag <- weightedTags.sorted) {
-                    <a href="@routes.Tags.search(weightedTag._1)" style="font-size: @(weightedTag._2)em">@weightedTag._1</a>
+                  <span class="tag-padding">
+                      <a href="@routes.Tags.search(weightedTag._1)" style="font-size: @(weightedTag._2)em">@weightedTag._1</a>
+                  </span>
                 }
             }
         </div>

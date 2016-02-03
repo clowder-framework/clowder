@@ -1,8 +1,13 @@
 package services.filesystem
 
-import java.io.{FileOutputStream, FileInputStream, File, InputStream}
+import java.io.{FileInputStream, File, InputStream}
+import java.nio.file.{Paths, Files}
+import java.security.{MessageDigest, DigestInputStream}
 
 import models.UUID
+import org.apache.commons.codec.binary.Hex
+import org.apache.commons.codec.digest.DigestUtils
+import org.apache.commons.io.input.CountingInputStream
 import play.Logger
 import play.api.Play
 import services.ByteStorageService
@@ -14,9 +19,9 @@ import services.ByteStorageService
  */
 class DiskByteStorageService extends ByteStorageService {
   /**
-   * Save the bytes to disk
+   * Save the bytes to disk, returns (path, sha512, length)
    */
-  def save(inputStream: InputStream, prefix: String, id: UUID): Option[String] = {
+  def save(inputStream: InputStream, prefix: String, id: UUID): Option[(String, String, Long)] = {
     Play.current.configuration.getString("medici2.diskStorage.path") match {
       case Some(root) => {
         var depth = Play.current.configuration.getInt("medici2.diskStorage.depth").getOrElse(3)
@@ -48,16 +53,18 @@ class DiskByteStorageService extends ByteStorageService {
         }
 
         // save actual bytes
+        val md = MessageDigest.getInstance("SHA-512")
+        val cis = new CountingInputStream(inputStream)
+        val dis = new DigestInputStream(cis, md)
         Logger.debug("Saving file to " + filePath)
-        // FIXME is there a better way than casting to FileInputStream?
-        val f = inputStream.asInstanceOf[FileInputStream].getChannel
-        val f2 = new FileOutputStream(new File(filePath)).getChannel
-        f.transferTo(0, f.size(), f2)
-        f2.close()
-        f.close()
+        Files.copy(dis, Paths.get(filePath))
+        dis.close()
+
+        val sha512 = Hex.encodeHexString(md.digest())
+        val length = cis.getByteCount
 
         // store metadata to mongo
-        Some(relativePath)
+        Some((filePath, sha512, length))
       }
       case None => None
     }
@@ -66,38 +73,44 @@ class DiskByteStorageService extends ByteStorageService {
   /**
    * Get the bytes from disk
    */
-  def load(relativePath: String, prefix: String): Option[InputStream] = {
-    Play.current.configuration.getString("medici2.diskStorage.path") match {
-      case Some(root) => {
-        // combine all pieces
-        val filePath = makePath(root, prefix, relativePath)
-
-        // load the bytes
-        Logger.debug("Loading file from " + filePath)
-        if (new File(filePath).exists()) {
-          Some(new FileInputStream(filePath))
-        } else {
-          None
-        }
-      }
-      case None => None
+  def load(path: String, ignored: String): Option[InputStream] = {
+    // load the bytes
+    Logger.debug("Loading file from " + path)
+    if (new File(path).exists()) {
+      Some(new FileInputStream(path))
+    } else {
+      None
     }
   }
 
   /**
    * Delete actualy bytes from disk
    */
-  def delete(relativePath: String, prefix: String): Boolean = {
+  def delete(path: String, prefix: String): Boolean = {
     Play.current.configuration.getString("medici2.diskStorage.path") match {
       case Some(root) => {
-        // combine all pieces
-        val filePath = makePath(root, prefix, relativePath)
+        if (path.startsWith(makePath(root, prefix, ""))) {
+          // delete the bytes
+          Logger.debug("Removing file " + path)
+          var file = new File(path)
+          val result = if (file.exists())
+            file.delete()
+          else
+            true
 
-        // delete the bytes
-        Logger.info("Removing file " + filePath)
-        if (new File(filePath).exists()) new File(filePath).delete() else true
+          // cleanup folder
+          file = file.getParentFile
+          while (file.list().isEmpty && file.getName != prefix) {
+            file.delete()
+            file = file.getParentFile
+          }
+          result
+        } else {
+          Logger.warn(s"Not removing file ${path}, not inside ${root}")
+          true
+        }
       }
-      case None => false
+      case None => true
     }
   }
 
