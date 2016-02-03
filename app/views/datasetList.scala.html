@@ -7,6 +7,7 @@
 @util.masonry()
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
 
@@ -127,10 +128,10 @@
                                           @if(user.isDefined) {
                                                   <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                               @if(user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-                                                  <button onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
+                                                  <button onclick="confirmDeleteResource('dataset','@(dataset.id)','@(dataset.name)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
                                                       <span class="glyphicon glyphicon-trash"></span></button>
                                               } else {
-                                                  <button disabled onclick="removeDatasetAndRedirect('@(dataset.id)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
+                                                  <button disabled onclick="confirmDeleteResource('dataset','@(dataset.id)','@(dataset.name)','@(routes.Datasets.list(""))')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
                                                       <span class="glyphicon glyphicon-trash"></span></button>
                                               }
                                           }

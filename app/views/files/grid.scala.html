@@ -5,6 +5,7 @@
 @util.masonry()
 
 <script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
 
 <div class="row" id="tile-view">
     <div class="col-md-12">
@@ -35,7 +36,7 @@
                             <span class="glyphicon glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
                             <span class="glyphicon glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
                             @if(user.isDefined) {
-                                <a href="#" onclick="removeFileAndRedirect('@(file.id)','@(routes.Datasets.dataset(dsId))')" class="btn btn-link" style="text-align:right" title="Delete">
+                                <a href="#" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename)','@(routes.Datasets.dataset(dsId))')" class="btn btn-link" style="text-align:right" title="Delete">
                                     <span class="glyphicon glyphicon-trash"></span></a>
                             }
                         </li>

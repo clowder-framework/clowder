@@ -5,6 +5,7 @@
     @util.masonry()
 
     <script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
     <div class="row">
@@ -120,10 +121,10 @@
                                             @if(user.isDefined) {
                                                     <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                                 @if( user.get.identityId.userId.equals(collection.author.identityId.userId)){
-                                                    <button onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
+                                                    <button onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
                                                         <span class="glyphicon glyphicon-trash"></span></button>
                                                 } else {
-                                                    <button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
+                                                    <button disabled onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name)','@(routes.Collections.list(""))')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
                                                         <span class="glyphicon glyphicon-trash"></span></button>
                                                 }
                                             }

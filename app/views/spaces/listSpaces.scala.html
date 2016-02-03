@@ -8,6 +8,7 @@
         @util.masonry()
 
         <script src="@routes.Assets.at("javascripts/spaceListProcess.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
         <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
         <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
         <div class="row">
@@ -141,7 +142,7 @@
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                     @if(deletePermission || user.get.identityId.userId.equals(space.creator)){
-                                        <button onclick="removeSpaceAndRedirect ( '@(space.id) ',' @(routes.Spaces.list(when, date, limit, "", owner, showAll)) ')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
+                                        <button onclick="confirmDeleteResource('space','@(space.id)','@(space.name)','@(routes.Spaces.list(when, date, limit, "", owner, showAll))')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
                                             <span class="glyphicon glyphicon-trash"></span>
                                         </button>
                                     } else {
@@ -184,7 +185,7 @@
                                                     @if(user.isDefined) {
                                                             <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                                         @if(deletePermission || user.get.identityId.userId.equals(space.creator)){
-                                                            <button onclick="removeSpaceAndRedirect ( '@(space.id) ',' @(routes.Spaces.list(when, date, limit, "", owner, showAll)) ')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
+                                                            <button onclick="confirmDeleteResource('space','@(space.id)','@(space.name)','@(routes.Spaces.list(when, date, limit, "", owner, showAll))')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
                                                                 <span class="glyphicon glyphicon-trash"></span>
                                                             </button>
                                                         } else {
