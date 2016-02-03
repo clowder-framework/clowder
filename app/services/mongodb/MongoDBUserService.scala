@@ -225,8 +225,8 @@ class MongoDBUserService @Inject() (
    * 
    */
   def changeUserRoleInSpace(userId: UUID, role: Role, spaceId: UUID): Unit = {
-      removeUserFromSpace(userId, spaceId)
-      addUserToSpace(userId, role, spaceId)
+    removeUserFromSpace(userId, spaceId)
+    addUserToSpace(userId, role, spaceId)
   }
   
   /**
@@ -351,7 +351,6 @@ class MongoDBUserService @Inject() (
     }
   }
 
-
   def updateRole(role: Role): Unit = {
     RoleDAO.save(role)
 
@@ -386,7 +385,8 @@ class MongoDBUserService @Inject() (
                     }
 
                     if (roleid == role.id)
-                      changeUserRoleInSpace(userid, role, spaceid)
+                      UserDAO.dao.update(MongoDBObject("spaceandrole.spaceId" -> new ObjectId(spaceid.stringify)),
+                        $set({"spaceandrole.$.role" -> RoleDAO.toDBObject(role)}), false, true, WriteConcern.Safe)
                   }
                   case None => {}
                 }
