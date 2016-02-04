@@ -22,7 +22,7 @@
                 <h4>@roleLevel</h4>
                 @defining(roleLevel.replaceAll("\\s+", "")) { currRole =>
 
-                    <ul id='@currRole.concat("-current")'>
+                    <ul id='@currRole.concat("-current")' class="user-role">
                         @for((k,v) <- userRoleMap) {
                             @if(roleLevel == v) {
                                 <li>

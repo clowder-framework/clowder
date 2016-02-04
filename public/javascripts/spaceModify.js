@@ -191,6 +191,11 @@ function acceptSpaceRequest(spaceId, userId, userName){
                       + userName + '</a>'
         + '<a class="remove-user" id="'+ userId +'"><span class="glyphicon glyphicon-remove"></span></a></li>';
         $('#'+role+'-current').append(addUesr);
+        $("option[value='"+userId+"']").each(function() {
+            $(this).remove();
+            console.log("haha");
+        });
+        $( ".chosen-select" ).trigger("chosen:updated");
         console.log("Successful accept request");
     });
     request.fail(function(jqXHR, textStatus, errorThrown) {
