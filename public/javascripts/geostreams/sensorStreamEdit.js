@@ -77,26 +77,6 @@ $(document).ready(function() {
   var sensorTypesUrlElement = $("#sensorTypesUrl");
   sensorTypesUrlElement.attr('href', sensorTypesUrl);
 
-  // set the sensor types dynamically - TODO store this in the sensor config
-  var sensorTypes = {
-    1: "1 Instrument, 1 Measurement, No Depth, No Time-Series",
-    2: "1 Instrument, 1 Measurement, No Depth, Yes Time-Series",
-    3: "1 Instrument, Many Measurements, No Depth, No Time-Series",
-    4: "1 Instrument, Many Measurements, No Depth, Yes Time-Series",
-    5: "Many Instruments, 1 Measurement, Many Depths, Yes Time-Series",
-    6: "Many Instruments, Many Measurements, Many Depths, Yes Time-Series",
-    7: "1 Instrument, Many Measurements, One Depth, Yes Time-Series"
-  };
-
-  var sensorType = $("#sensorType");
-  var selectedSensorType = sensorType.val();
-  sensorType.empty();
-  $.each(sensorTypes, function(key, value) {
-    var insertOption = $("<option></option>").attr("value", key).text(value);
-    if (+key == +selectedSensorType) { insertOption.attr('selected', 'selected'); }
-    sensorType.append(insertOption);
-  });
-
   // setup form validation
   var sensorForm = $('#sensor-edit');
   sensorForm.validate({
@@ -133,7 +113,7 @@ $(document).ready(function() {
   var deferredStreams = [];
   $("#formSubmit").click(function(event) {
     event.preventDefault();
-    if (!sensorForm.valid()) {
+    if (!$("#sensor-edit").valid()) {
       return;
     }
 

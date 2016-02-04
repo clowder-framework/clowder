@@ -47,7 +47,7 @@ $(document).ready(function() {
   };
 
   // setup form validation
-  var sensorForm = $('#sensor-create');
+  var sensorForm = $('#sensor-edit');
   sensorForm.validate({
     messages: {
       sensorFullName: "You must provide a name",
@@ -61,24 +61,6 @@ $(document).ready(function() {
   var sensorTypesUrl = "https://opensource.ncsa.illinois.edu/confluence/display/IMLCZO/Data+Types";
   var sensorTypesUrlElement = $("#sensorTypesUrl");
   sensorTypesUrlElement.attr('href', sensorTypesUrl);
-
-  // set the sensor types dynamically - TODO store this in the sensor config
-  var sensorTypes = {
-    1: "1 Instrument, 1 Measurement, No Depth, No Time-Series",
-    2: "1 Instrument, 1 Measurement, No Depth, Yes Time-Series",
-    3: "1 Instrument, Many Measurements, No Depth, No Time-Series",
-    4: "1 Instrument, Many Measurements, No Depth, Yes Time-Series",
-    5: "Many Instruments, 1 Measurement, Many Depths, Yes Time-Series",
-    6: "Many Instruments, Many Measurements, Many Depths, Yes Time-Series",
-    7: "1 Instrument, Many Measurements, One Depth, Yes Time-Series"
-  };
-
-  var sensorType = $("#sensorType");
-  sensorType.empty();
-  $.each(sensorTypes, function(key, value) {
-    sensorType.append($("<option></option>").attr("value", key).text(value));
-  });
-
 
   var insertInstrumentForm = function(data) {
     var parametersTemplate = Handlebars.getTemplate("/assets/templates/sensors/parameters-form");
@@ -111,7 +93,7 @@ $(document).ready(function() {
 
   $("#formSubmit").click(function(event) {
     event.preventDefault();
-    if (!sensorForm.valid()) {
+    if (!$("#sensor-edit").valid()) {
       return;
     }
     var sensorsValid = true;
@@ -121,8 +103,7 @@ $(document).ready(function() {
       $(this).validate({
         ignore: false,
         messages: {
-          instrumentName: "You must provide a name for this instrument",
-          instrumentID: "You must provide a unique ID for this instrument"
+          instrumentName: "You must provide a name for this instrument"
         }
       });
       if (!$(this).valid()) {
