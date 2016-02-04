@@ -166,10 +166,10 @@ $(document).ready(function() {
 
           streamJSON['name'] = streamData['instrumentName'];
           delete streamData['instrumentName'];
-          if (streamData['id']) {
+          if (streamData['id'] > 0) {
             streamJSON['id'] = streamData['id'];
-            delete streamData['id'];
           }
+          delete streamData['id'];
 
           streamJSON['properties'] = streamData;
           streamJSON['geometry'] = sensorJSON['geometry'];
