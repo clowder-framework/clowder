@@ -663,10 +663,10 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
           case Some(sub_collection) => {
             if(isSubCollectionIdInCollection(subCollectionId,collection)){
               // remove sub collection from list of child collection
-              Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $pull("child_collection_ids" -> subCollectionId.stringify), false, false, WriteConcern.Safe)
+              Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $pull("child_collection_ids" -> Some(new ObjectId(subCollectionId.stringify))), false, false, WriteConcern.Safe)
               Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $inc("childCollectionsCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
               //remove collection from the list of parent collection for sub collection
-              Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)), $pull("parent_collection_ids" -> collectionId.stringify), false, false, WriteConcern.Safe)
+              Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)), $pull("parent_collection_ids" -> Some(new ObjectId(collectionId.stringify))), false, false, WriteConcern.Safe)
               Logger.info("Removing subcollection from collection completed")
             }
             else{
@@ -764,11 +764,12 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   }
 
   private def isSubCollectionIdInCollection(subCollectionId: UUID, collection: Collection) : Boolean = {
-    for(child_collection_id <- collection.child_collection_ids){
-      if(child_collection_id == subCollectionId.stringify)
-        return true
+    if (collection.child_collection_ids.contains(subCollectionId)){
+      return true
     }
-    return false
+    else{
+      return false
+    }
   }
 }
 
