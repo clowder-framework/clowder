@@ -30,8 +30,6 @@ function addCollectionToParentCollection(id) {
         } else {
             txt = txt + o.childCollectionsCount +' collections';
         }
-        txt = txt + ' | <a href="#" class="btn btn-link btn-xs" onclick="removeChildFromParent(\''+selectedId+'\', \''+id+'\', event)" title="Remove from space">' +
-            '<span class="glyphicon glyphicon-remove"></span> Remove</a></div></div></div>';
         $("#collectionsList").append(txt);
         $("#collectionAddSelect").select2("val", "");
     });
