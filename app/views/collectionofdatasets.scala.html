@@ -156,6 +156,14 @@
 				@childCollections.map { child_collection =>
 					@collections.listchildcollection(collection, child_collection, routes.Collections.collection(collection.id))
 				}
+				@if(childCollections.isEmpty){
+					@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
+						There are no child collections in this collection. To create a child collection, click <a id="create_first_childcollection" href="@routes.Collections.newCollectionWithParent(Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Create Child Collection">here</a>
+					} else {
+						There are no child collections in this collection.
+					}
+
+				}
 			</div>
 			<div class="col-md-12">
 				<h3>Datasets in the collection</h3>
@@ -163,7 +171,12 @@
 					@datasets.listitem(dataset,commentMap , routes.Collections.collection(collection.id))
 				}
 				@if(datasetsInCollection.isEmpty){
-					There are not datasets in this collection. To add a dataset, click <a id="create_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Create New Dataset">here</a>
+					@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
+						There are not datasets in this collection. To create a dataset, click <a id="create_first_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Create New Dataset">here</a>
+					} else {
+						There are no datasets in this collection.
+					}
+
 				}
 			</div>
 		</div>
