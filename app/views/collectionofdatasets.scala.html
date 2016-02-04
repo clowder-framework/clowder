@@ -60,11 +60,11 @@
 					<div class="col-md-12">
 							<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 							@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
-									<button id="deleteButton" onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name)','@(routes.Collections.list(""))')"
+									<button id="deleteButton" onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name.replace("'","&#39;"))','@(routes.Collections.list(""))')"
 											class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
 									<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							} else {
-									<button disabled id="deleteButton" onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name)','@(routes.Collections.list(""))')"
+									<button disabled id="deleteButton" onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name.replace("'","&#39;")))','@(routes.Collections.list(""))')"
 											class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
 									<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							}
