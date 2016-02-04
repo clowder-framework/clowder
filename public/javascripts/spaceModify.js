@@ -193,7 +193,6 @@ function acceptSpaceRequest(spaceId, userId, userName){
         $('#'+role+'-current').append(addUesr);
         $("option[value='"+userId+"']").each(function() {
             $(this).remove();
-            console.log("haha");
         });
         $( ".chosen-select" ).trigger("chosen:updated");
         console.log("Successful accept request");
