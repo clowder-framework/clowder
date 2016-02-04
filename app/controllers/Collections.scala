@@ -466,7 +466,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           val child_collections_ids = dCollection.child_collection_ids
           val decodedChildCollections = ListBuffer.empty[models.Collection]
           for (child_collection_id <- child_collections_ids) {
-            collections.get(UUID(child_collection_id)) match {
+            collections.get(child_collection_id) match {
               case Some(child_collection) => {
                 val decodedChild = Utils.decodeCollectionElements(child_collection)
                 decodedChildCollections += decodedChild
@@ -480,7 +480,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           val parent_collection_ids = dCollection.parent_collection_ids
           val decodedParentCollections = ListBuffer.empty[models.Collection]
           for (parent_collection_id <- parent_collection_ids){
-            collections.get(UUID(parent_collection_id)) match {
+            collections.get(parent_collection_id) match {
               case Some(parent_collection) => {
                 val decodedParent = Utils.decodeCollectionElements(parent_collection)
                 decodedParentCollections += decodedParent

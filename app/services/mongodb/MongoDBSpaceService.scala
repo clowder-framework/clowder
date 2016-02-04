@@ -263,8 +263,8 @@ class MongoDBSpaceService @Inject() (
     var currentCollection = collections.get(collection).get
     var childCollectionIds = currentCollection.child_collection_ids
     for (childCollectionId <- childCollectionIds){
-      if (collections.get(UUID(childCollectionId)).isDefined){
-        addCollection(UUID(childCollectionId), space)
+      if (collections.get(childCollectionId).isDefined){
+        addCollection(childCollectionId, space)
       }
 
     }

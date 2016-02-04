@@ -419,7 +419,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     get(parentCollectionId) match {
       case Some(collection) => {
         val childCollectionIds = collection.child_collection_ids
-        val childList = for (childCollectionId <- childCollectionIds; if (get(UUID(childCollectionId)).isDefined)) yield (get(UUID(childCollectionId))).get
+        val childList = for (childCollectionId <- childCollectionIds; if (get(childCollectionId).isDefined)) yield (get(childCollectionId)).get
         return childList
       }
       case None => return childCollections
@@ -432,12 +432,12 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       case Some(collection) => {
         var parentCollectionIds = collection.parent_collection_ids
         for (parentCollectionId <- parentCollectionIds){
-          Collection.findOneById(new ObjectId(parentCollectionId))  match {
+          Collection.findOneById(new ObjectId(parentCollectionId.stringify))  match {
             case Some(parentCollection) => {
               if (parentCollection.root_flag == true) {
                 rootCollections += parentCollection
               } else {
-                rootCollections = rootCollections++( getRootCollections(UUID(parentCollectionId)))
+                rootCollections = rootCollections++( getRootCollections(parentCollectionId))
               }
             }
             case None => Logger.error("no parent collection")
@@ -730,12 +730,12 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
 
 
   def addSubCollectionId(subCollectionId: UUID, collection: Collection) = Try {
-    Collection.update(MongoDBObject("_id" -> new ObjectId((collection.id).stringify)), $addToSet("child_collection_ids" -> subCollectionId.stringify), false, false, WriteConcern.Safe)
+    Collection.update(MongoDBObject("_id" -> new ObjectId((collection.id).stringify)), $addToSet("child_collection_ids" -> Some(new ObjectId(subCollectionId.stringify))), false, false, WriteConcern.Safe)
     Collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)), $inc("childCollectionsCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
   }
 
   def addParentCollectionId(subCollectionId: UUID, parentCollectionId: UUID) = Try {
-    Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)), $addToSet("parent_collection_ids" -> parentCollectionId.stringify), false, false, WriteConcern.Safe)
+    Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)), $addToSet("parent_collection_ids" -> Some(new ObjectId(parentCollectionId.stringify))), false, false, WriteConcern.Safe)
   }
 
   def setRootFlag(collectionId : UUID, isRoot : Boolean) = Try {
@@ -748,9 +748,9 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       case Some(collection) => {
         selfAndAncestors += collection
         for (parentCollectionId <- collection.parent_collection_ids){
-          get(UUID(parentCollectionId)) match {
+          get(parentCollectionId) match {
             case Some(parent_collection) => {
-              selfAndAncestors = selfAndAncestors ++ getSelfAndAncestors(UUID(parentCollectionId))
+              selfAndAncestors = selfAndAncestors ++ getSelfAndAncestors(parentCollectionId)
             }
 
           }

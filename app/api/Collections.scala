@@ -631,7 +631,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         val childCollections = ListBuffer.empty[JsValue]
         var childCollectionIds = collection.child_collection_ids
         for (childCollectionId <- childCollectionIds) {
-          collections.get(UUID(childCollectionId)) match {
+          collections.get(childCollectionId) match {
             case Some(child_collection) => {
               childCollections += jsonCollection(child_collection )
             }
@@ -654,7 +654,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         val parentCollections = ListBuffer.empty[JsValue]
         var parentCollectionIds = collection.parent_collection_ids
         for (parentCollectionId <- parentCollectionIds) {
-          collections.get(UUID(parentCollectionId)) match {
+          collections.get(parentCollectionId) match {
             case Some(parent_collection) => {
               parentCollections += jsonCollection(parent_collection )
             }
