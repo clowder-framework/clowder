@@ -135,16 +135,15 @@ object AppConfiguration {
   def getAdmins: List[String] = appConfig.getProperty[List[String]]("admins", List.empty[String])
 
   /**
-   * Sets default admins as specified in application.conf. This list is primarily used when a new
+   * Sets default admins as specified in application.conf. This list is used when a new
    * user signs up (requires registerThroughAdmins to be set to true in application.conf) or when
-   * the plugin is enabled to send emails on creating of new datasets, collections and/or files.
+   * the plugin is enabled to send emails on creating of new datasets, collections and/or files,
+   * as well as all server tasks that require admin privileges.
    */
   def setDefaultAdmins() = {
-    if (!appConfig.getProperty[List[String]]("admins").isDefined) {
-      val x = play.Play.application().configuration().getString("initialAdmins")
-      if (x != "") {
-        appConfig.setProperty("admins", x.trim.split("\\s*,\\s*").toList)
-      }
+    val admins = play.Play.application().configuration().getString("initialAdmins")
+    for(x <- admins.trim.split("\\s*,\\s*") if (x != "")) {
+      appConfig.addPropertyValue("admins", x)
     }
   }
 }
