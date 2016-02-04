@@ -19,5 +19,6 @@ case class MultimediaDistance(
   source_section: UUID,
   target_section: UUID,
   representation: String,
-  distance: Double)
+  distance: Double,
+  source_spaces: List[UUID])
 
