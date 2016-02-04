@@ -223,7 +223,14 @@ class CurationObjects @Inject()(
     val https = controllers.Utils.https(request)
     val hostUrl = api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "#aggregation"
     val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => if(pref._1 != "Purpose") { pref._1-> Json.toJson(pref._2.toString().split(",").toList)} else {pref._1-> Json.toJson(pref._2.toString())})).getOrElse(Map.empty)
-    val userPreferences = userPrefMap + ("Repository" -> Json.toJson(c.repository))
+    var userPreferences = userPrefMap + ("Repository" -> Json.toJson(c.repository))
+    user.map ( usr => usr.profile match {
+      case Some(prof) => prof.institution match {
+        case Some(institution) => userPreferences += ("Affiliations" -> Json.toJson(institution))
+        case None =>
+      }
+      case None =>
+    })
     val files = curations.getCurationFiles(c.files)
     val maxDataset = if (!c.files.isEmpty)  files.map(_.length).max else 0
     val totalSize = if (!c.files.isEmpty) files.map(_.length).sum else 0
@@ -383,7 +390,14 @@ class CurationObjects @Inject()(
           val https = controllers.Utils.https(request)
           val hostUrl = api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "?key=" + key
           val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => if(pref._1 != "Purpose") { pref._1-> Json.toJson(pref._2.toString().split(",").toList)} else {pref._1-> Json.toJson(pref._2.toString())})).getOrElse(Map.empty)
-          val userPreferences = userPrefMap
+          var userPreferences = userPrefMap
+          user.map ( usr => usr.profile match {
+            case Some(prof) => prof.institution match {
+              case Some(institution) => userPreferences += ("Affiliations" -> Json.toJson(institution))
+              case None =>
+            }
+            case None =>
+          })
           val files = curations.getCurationFiles(c.files)
           val maxDataset = if (!c.files.isEmpty)  files.map(_.length).max else 0
           val totalSize = if (!c.files.isEmpty) files.map(_.length).sum else 0

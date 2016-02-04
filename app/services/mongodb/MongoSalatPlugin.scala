@@ -227,6 +227,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Add file length, sha512 to all uploads and fixes path
     addLengthSha512PathFile
+
+    //remove Affiliation and License, access and cost in user.repositoryPreferences
+    updateUserPreference
   }
 
   private def updateMongoChangeUserType {
@@ -656,6 +659,22 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       appConfig.addPropertyValue("mongodb.updates", "update-file-length-sha512-path")
     } else {
       Logger.warn("[MongoDBUpdate : Missing fix to add file length, sha512 and path")
+    }
+  }
+
+  private def updateUserPreference{
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", "update-user-preference")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.access"), multi=true)
+        collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.affiliation"), multi=true)
+        collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.cost"), multi=true)
+        collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.license"), multi=true)
+      }
+      appConfig.addPropertyValue("mongodb.updates", "update-user-preference")
+    } else {
+      Logger.warn("[MongoDBUpdate : Missing fix to remove fileds in user.repositoryPreferences ")
     }
   }
 }
