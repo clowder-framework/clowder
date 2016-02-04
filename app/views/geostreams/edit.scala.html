@@ -18,7 +18,16 @@
                 <div class="col-md-12">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <h4>@(AppConfiguration.getSensorTitle) Information</h4>
+                            <h4>
+                                @(AppConfiguration.getSensorTitle) Information
+                                <span class="label pull-right">
+                                    <a href="@(api.routes.Geostreams.getSensor((sensor \ "id").toString).url)" target="_blank">
+                                        <span class="label label-default">
+                                            SENSOR ID: @(sensor \ "id") <span class="glyphicon glyphicon-new-window"></span>
+                                        </span>
+                                    </a>
+                                </span>
+                            </h4>
                         </div>
                         <div class="panel-body">
                             <div class="row">
