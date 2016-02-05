@@ -1,0 +1,78 @@
+@(folder: Folder, parentDataset: UUID)(implicit user: Option[models.User])
+
+@import api.Permission
+<div class="panel panel-default" id="@folder.id-listitem">
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-md-2 col-sm-2 col-lg-2">
+                <h1 class="text-center"><span class="glyphicon glyphicon-folder-close"></span></h1>
+            </div>
+            <div class="col-md-10 col-sm-10 col-lg-10">
+                <div id="folder-title-@folder.id">
+                    <h2 id ="@folder.id-name" class="inline"><a href="javascript:getUpdatedFilesAndFolders(0, '@folder.id.stringify')">@folder.displayName</a></h2>
+                    @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))) {
+                        <h3 id="h-edit-@folder.id" class="hiddencomplete">
+                            <a id="edit-@folder-id" href="javascript:updateFolderName('@parentDataset', '@folder.id')" title="Click to edit folder name">
+                                <span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
+                            </a>
+                        </h3>
+                    }
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 col-lg-6 col-sm-6">
+                        <ul class="list-unstyled">
+                            <li>
+                                <span class="glyphicon glyphicon-folder-close"></span> @folder.folders.length
+                                <span class="glyphicon glyphicon-file"></span> @folder.files.length
+                                @if(user.isDefined) {
+                                    @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))){
+                                        <button onclick="removeFolder('@parentDataset', '@folder.id')" class="btn btn-link" style="text-align:right" title="Delete">
+                                            <span class="glyphicon glyphicon-trash"></span></button>
+                                    } else {
+                                        <button disabled onclick="" class="btn btn-link" style="text-align:right" title="Delete">
+                                            <span class="glyphicon glyphicon-trash"></span></button>
+                                    }
+                                }
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6 col-lg-6 col-sm-6">
+                        <ul class="list-unstyled">
+                            <li> @user match {
+                                case Some(viewer) => {
+                                    <a id="followButton" type="button" class="btn btn-link" objectType="folder" objectId="@folder.id">
+                                    @if(viewer.followedEntities.filter(x => (x.id == folder.id)).nonEmpty) {
+                                        <span class='glyphicon glyphicon-star-empty'></span>Unfollow
+                                    } else {
+                                        <span class='glyphicon glyphicon-star'></span>Follow
+                                    }
+                                    </a>
+                                }
+                                case None => {}
+                            }
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    <script>
+
+        $(document).ready(function(){
+
+            @if(user.isDefined) {
+                if(@Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))) {
+                     $(document).on('mouseenter', '#folder-title-@folder.id', function() {
+                        $('#h-edit-@folder.id').removeClass("hiddencomplete");
+                        $('#h-edit-@folder.id').addClass("inline");
+                     }).on('mouseleave', '#folder-title-@folder.id', function() {
+                        $('#h-edit-@folder.id').removeClass("inline");
+                        $('#h-edit-@folder.id').addClass("hiddencomplete");
+                     });
+                }
+            }
+        });
+    </script>

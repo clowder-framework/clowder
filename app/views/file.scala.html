@@ -1,6 +1,6 @@
 @(file: models.File, id: String, comments: List[Comment],
   previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]],
-  sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset],
+  sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset], folders: List[Folder],
   mds: List[models.Metadata],
   rdfExported: Boolean,
   extractionsStatus: List[Extraction], outputFormats: Option[List[String]])(implicit user: Option[models.User])
@@ -106,6 +106,24 @@
 
 	<div class="row">
 		<div class="col-md-8 col-right-border">
+			<h1>@file.filename</h1>
+			<h4>in
+			@if(datasets.length > 0) {
+				@datasets.map {dataset =>
+					<span class="caption break-word">
+						<a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id'>@Html(dataset.name)</a>
+					</span>
+				}
+			}
+
+			@if(folders.length > 0) {
+					@folders.map { folder =>
+						<span class="caption break-word">
+							<a href="@routes.Datasets.dataset(folder.parentDatasetId, None, 0, Some(folder.id.stringify))">@folder.displayName</a>
+						</span>
+					}
+			}
+			</h4>
 		@for((f, pvs) <- previews) {
 			<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
 		    	<div class="col-md-12">
@@ -494,7 +512,6 @@
 
             <div class="row ds-section-sm file-info">
                 <table class="table table-condensed">
-                    <tr><td><b>Filename:</b></td><td>@file.filename</td></tr>
 					<tr><td><b>Type:</b></td><td>@file.contentType</td></tr>
 					<tr><td><b>File&nbsp;size:</b></td><td title="@file.length bytes">@FileUtils.byteCountToDisplaySize(file.length)</td></tr>
 					@if(Permission.checkServerAdmin(user)) {
@@ -758,10 +775,8 @@
             </div>
 
 
-        <div class="row ds-section-sm border-top">
-            <h4>Datasets containing the file</h4>
-            @datasetsContainingFile(file, datasets)
-        </div>
+
+
 
     </div> @* End of small right hand side column *@
 

@@ -914,3 +914,7 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 .tag-padding {
     padding-right:15px;
 }
+
+.margin-bottom-20 {
+    margin-bottom: 20px !important;
+}

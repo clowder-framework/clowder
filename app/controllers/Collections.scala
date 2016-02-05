@@ -261,9 +261,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
    */
   def submit() = PermissionAction(Permission.CreateCollection)(parse.multipartFormData) { implicit request =>
       Logger.debug("------- in Collections.submit ---------")
-      var colName = request.body.asFormUrlEncoded.getOrElse("name", null)
-      var colDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
-      var colSpace = request.body.asFormUrlEncoded.getOrElse("space", List.empty)
+      val colName = request.body.asFormUrlEncoded.getOrElse("name", null)
+      val colDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
+      val colSpace = request.body.asFormUrlEncoded.getOrElse("space", List.empty)
 
       implicit val user = request.user
       user match {
@@ -304,7 +304,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
 
           //Add to Events Table
-          var option_user = users.findByIdentity(identity)
+          val option_user = users.findByIdentity(identity)
           events.addObjectEvent(option_user, collection.id, collection.name, "create_collection")
 
           // redirect to collection page

@@ -192,6 +192,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("contexld").drop()
     collection("spaces.projects").drop()
     collection("spaces.users").drop()
+    collection("folders").drop()
     Logger.debug("**DANGER** Data deleted **DANGER**")
   }
 

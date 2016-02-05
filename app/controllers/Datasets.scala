@@ -16,7 +16,6 @@ import util.{Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
 import scala.collection.mutable.ListBuffer
 
-
 /**
  * A dataset is a collection of files and streams.
  */
@@ -34,6 +33,7 @@ class Datasets @Inject()(
   spaceService: SpaceService,
   curationService: CurationService,
   relations: RelationService,
+  folders: FolderService,
   metadata: MetadataService) extends SecuredController {
 
   object ActivityFound extends Exception {}
@@ -93,7 +93,7 @@ class Datasets @Inject()(
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
-        Ok(views.html.datasets.addFiles(dataset))
+        Ok(views.html.datasets.addFiles(dataset, None))
       }
       case None => {
         InternalServerError(s"Dataset $id not found")
@@ -324,7 +324,7 @@ class Datasets @Inject()(
   /**
    * Dataset.
    */
-  def dataset(id: UUID, currentSpace: Option[String], filepage: Int) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def dataset(id: UUID, currentSpace: Option[String], filepage: Int, folder: Option[String], limit: Int) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
 
       implicit val user = request.user
       Previewers.findPreviewers.foreach(p => Logger.debug("Previewer found " + p.id))
@@ -411,12 +411,34 @@ class Datasets @Inject()(
           }
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
-          val limit: Int = 9
           //in case filepage is less than 0, we start from filepage=0
           val filepageUpdate = if (filepage <0) 0 else filepage
-          val next = dataset.files.length > limit * (filepageUpdate+1)
-          val limitFileList : List[File]= dataset.files.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => files.get(f)).flatten
 
+          val fileIds: List[UUID] = folder match {
+            case Some(folderId) => {
+              folders.get(UUID(folderId)) match {
+                case Some(f) => f.files
+                case None => List.empty
+              }
+            }
+            case None => dataset.files
+          }
+
+          var folderIds = List.empty[UUID]
+          folder match {
+            case Some(folderId) => { folders.get(UUID(folderId)) match {
+              case Some(f) =>  folderIds = f.folders
+              case None => {}
+            }
+            }
+            case None => folderIds = dataset.folders
+          }
+
+          val foldersList = folderIds.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => folders.get(f)).flatten
+
+          val limitFileList : List[File]= fileIds.reverse.slice(limit * filepageUpdate - folderIds.length, limit * (filepageUpdate+1) - folderIds.length).map(f => files.get(f)).flatten
+
+          val next = folderIds.length + fileIds.length > limit * (filepageUpdate+1)
           //dataset is in at least one space with editstagingarea permission, or if the user is the owner of dataset.
           val stagingarea = datasetSpaces filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id)))
           val toPublish = ! stagingarea.isEmpty
@@ -424,9 +446,45 @@ class Datasets @Inject()(
           val curObjectsPublished: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(_.status == 'Published)
           val curObjectsPermission: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(curation => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id)))
           val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
+          val fileComments = limitFileList.map{file =>
+            var allComments = comments.findCommentsByFileId(file.id)
+            sections.findByFileId(file.id).map { section =>
+              allComments ++= comments.findCommentsBySectionId(section.id)
+            }
+            file.id -> allComments.size
+          }.toMap
+
+          var currentFolder: Option[UUID] = None
+          var folderHierarchy = new ListBuffer[Folder]()
+          folder match {
+            case Some(folderId) => {
+              folders.get(UUID(folderId)) match {
+                case Some(f) => {
+                  currentFolder = Some(f.id)
+                  folderHierarchy += f
+                  var f1: Folder = f
+                  while(f1.parentType == "folder") {
+                    folders.get(f.parentId) match {
+                      case Some(fparent) => {
+                        folderHierarchy += fparent
+                        f1 = fparent
+                      }
+                      case None =>
+                    }
+
+                  }
+
+                }
+                case None =>
+              }
+            }
+            case None =>
+          }
+
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
-            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), limitFileList, filesTags, toPublish, curPubObjects, currentSpace, filepageUpdate, next))
+            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), limitFileList,
+            fileComments, filesTags, toPublish, curPubObjects, currentSpace, filepageUpdate, currentFolder, foldersList.toList, folderHierarchy.reverse.toList, next, limit))
         }
         case None => {
           Logger.error("Error getting dataset" + id)
@@ -434,6 +492,71 @@ class Datasets @Inject()(
         }
     }
   }
+
+  def getUpdatedFilesAndFolders(datasetId: UUID, limit: Int, pageIndex: Int)  = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) (parse.json) { implicit request =>
+    implicit val user = request.user
+    val filepageUpdate = if (pageIndex < 0) 0 else pageIndex
+    datasets.get(datasetId) match {
+      case Some(dataset) => {
+        val folderId = (request.body \ "folderId").asOpt[String]
+        folderId match {
+          case Some(fId) => {
+            folders.get(UUID(fId)) match {
+              case Some(folder) => {
+
+                val foldersList = folder.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => folders.get(f)).flatten
+                val limitFileList : List[File]= folder.files.reverse.slice(limit * filepageUpdate - folder.folders.length, limit * (filepageUpdate+1) - folder.folders.length).map(f => files.get(f)).flatten
+                var folderHierarchy = new ListBuffer[Folder]()
+                folderHierarchy += folder
+                var f1: Folder = folder
+                while(f1.parentType == "folder") {
+                  folders.get(f1.parentId) match {
+                    case Some(fparent) => {
+                      folderHierarchy += fparent
+                      f1 = fparent
+                    }
+                    case None =>
+                  }
+                }
+                val fileComments = limitFileList.map{file =>
+                  var allComments = comments.findCommentsByFileId(file.id)
+                  sections.findByFileId(file.id).map { section =>
+                    allComments ++= comments.findCommentsBySectionId(section.id)
+                  }
+                  file.id -> allComments.size
+                }.toMap
+                val next = folder.files.length + folder.folders.length > limit * (filepageUpdate+1)
+
+                Ok(views.html.datasets.filesAndFolders(dataset, Some(folder.id.stringify), foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, fileComments)(request.user))
+
+              }
+              case None => InternalServerError(s"No folder with id $fId found")
+            }
+          }
+          case None => {
+
+            val foldersList = dataset.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => folders.get(f)).flatten
+
+            val limitFileList : List[File]= dataset.files.reverse.slice(limit * filepageUpdate - dataset.folders.length, limit * (filepageUpdate+1) - dataset.folders.length).map(f => files.get(f)).flatten
+
+            val fileComments = limitFileList.map{file =>
+              var allComments = comments.findCommentsByFileId(file.id)
+              sections.findByFileId(file.id).map { section =>
+                allComments ++= comments.findCommentsBySectionId(section.id)
+              }
+              file.id -> allComments.size
+            }.toMap
+
+            val folderHierarchy = new ListBuffer[Folder]()
+            val next = dataset.files.length + dataset.folders.length > limit * (filepageUpdate+1)
+            Ok(views.html.datasets.filesAndFolders(dataset, None, foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, fileComments)(request.user))
+          }
+        }
+      }
+      case None => InternalServerError(s"Dataset with id $datasetId not Found")
+    }
+  }
+
 
   /**
    * Dataset by section.
@@ -456,7 +579,7 @@ class Datasets @Inject()(
    * the checks are made here as well. 
    * 
    */
-  def submit() = PermissionAction(Permission.CreateDataset)(parse.multipartFormData) { implicit request =>
+  def submit(folderId: Option[String]) = PermissionAction(Permission.CreateDataset)(parse.multipartFormData) { implicit request =>
     implicit val user = request.user
     Logger.debug("------- in Datasets.submit ---------")
     var dsName = request.body.asFormUrlEncoded.getOrElse("name", null)
@@ -568,7 +691,22 @@ class Datasets @Inject()(
                   val host = Utils.baseUrl(request)
 
                   //directly add the file to the dataset via the service
-                  datasets.addFile(dataset.id, f)
+                  folderId match {
+                    case Some(fId) =>  {
+                      folders.get(UUID(fId)) match {
+                        case Some(folder) => {
+                          //TODO: Add Event
+                          folders.addFile(folder.id, f.id)
+                        }
+                        case None => {
+                          //TODO: Add the file to dataset or don't do anything?
+                          datasets.addFile(dataset.id, f)
+                        }
+                      }
+                    }
+                    case None => datasets.addFile(dataset.id, f)
+                  }
+
 
                   val dsId = dataset.id
                   val dsName = dataset.name
