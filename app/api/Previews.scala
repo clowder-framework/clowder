@@ -173,7 +173,13 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    */
   def getMetadata(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.preview, id))) { implicit request =>
         previews.get(id) match {
-          case Some(preview) => Ok(toJson(Map("id" -> preview.id.toString, "contentType" -> preview.contentType)))
+          case Some(preview) => {
+            val title = preview.title match {
+              case Some(t) => t
+              case None => null
+            }
+            Ok(toJson(Map("id" -> preview.id.toString, "contentType" -> preview.contentType, "title" -> title)))
+          }
           case None => Logger.error("Preview metadata not found " + id); InternalServerError
         }
     }

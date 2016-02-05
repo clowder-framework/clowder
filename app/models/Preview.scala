@@ -17,6 +17,7 @@ case class Preview(
   filename: Option[String] = None,
   contentType: String,
   preview_type: Option[String] = None,
+  title: Option[String] = None,
   annotations: List[ThreeDAnnotation] = List.empty,
   length: Long,
   extractor_id: Option[String] = None,

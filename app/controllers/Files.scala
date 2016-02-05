@@ -71,6 +71,7 @@ class Files @Inject() (
         val previewsFromDB = previews.findByFileId(file.id)
         Logger.debug("Previews available: " + previewsFromDB)
         val previewers = Previewers.findPreviewers
+
         //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
         val previewsWithPreviewer = {
           val pvf = for (
@@ -78,7 +79,11 @@ class Files @Inject() (
             if (!p.collection);
             if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))
           ) yield {
-            (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
+              val tabtitle = pv.title match {
+                case Some(x) => x
+                case None => ""
+              }
+              (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length, tabtitle)
           }
           if (pvf.length > 0) {
             Map(file -> pvf)
@@ -89,10 +94,10 @@ class Files @Inject() (
               if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))
             ) yield {
               if (file.licenseData.isDownloadAllowed(user)) {
-                (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+                (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length, "")
               }
               else {
-                (file.id.toString, p.id, p.path, p.main, "null", file.contentType, file.length)
+                (file.id.toString, p.id, p.path, p.main, "null", file.contentType, file.length, "")
               }
             }
             Map(file -> ff)
