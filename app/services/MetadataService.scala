@@ -41,6 +41,9 @@ trait MetadataService {
   /** Add vocabulary definitions, leaving it unchanged if the update argument is set to false, defaults to update **/
   def addDefinition(definition: MetadataDefinition, update: Boolean = true)
 
+  /** Edit vocabulary definitions**/
+  def editDefinition(id:UUID, json: JsValue)
+
   /** Delete vocabulary definitions**/
   def deleteDefinition(id: UUID)
 

@@ -288,6 +288,7 @@ POST           /api/metadata/search                                             
 GET            /api/metadata/definitions                                                @api.Metadata.getDefinitions()
 GET            /api/metadata/definitions/:id                                            @api.Metadata.getDefinition(id: UUID)
 GET            /api/metadata/url/*in_url                                                @api.Metadata.getUrl(in_url: String)
+POST           /api/metadata/definitions/:id                                            @api.Metadata.editDefinition(id:UUID)
 POST           /api/metadata/definitions                                                @api.Metadata.addDefinition
 DELETE         /admin/metadata/definitions/:id                                          @api.Metadata.deleteDefinition(id: UUID)
 
@@ -521,7 +522,7 @@ GET            /api/search/multimediasearch                                     
 # GEOSTREAMS ENDPOINT
 # ----------------------------------------------------------------------
 POST           /api/geostreams/datapoints                                               api.Geostreams.addDatapoint
-DELETE 		   /api/geostreams/datapoints/:id                                           api.Geostreams.deleteDatapoint(id: String)
+DELETE         /api/geostreams/datapoints/:id                                           api.Geostreams.deleteDatapoint(id: String)
 GET            /api/geostreams/datapoints                                               api.Geostreams.searchDatapoints(operator = "", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
 GET            /api/geostreams/datapoints/averages                                      api.Geostreams.searchDatapoints(operator = "averages", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
 GET            /api/geostreams/datapoints/trends                                        api.Geostreams.searchDatapoints(operator = "trends", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
@@ -610,8 +611,8 @@ GET            /api/curations/:curationId/ore                                   
 # ----------------------------------------------------------------------
 # USERS Controller
 # ----------------------------------------------------------------------
-GET            /users/followers                                             @controllers.Users.getFollowers(index: Int ?= 0, limit: Int ?=12)
-GET            /users/following                                             @controllers.Users.getFollowing(index: Int ?= 0, limit: Int ?=12)
+GET            /users/followers                                                         @controllers.Users.getFollowers(index: Int ?= 0, limit: Int ?=12)
+GET            /users/following                                                         @controllers.Users.getFollowing(index: Int ?= 0, limit: Int ?=12)
 
 # ----------------------------------------------------------------------
 # MEDICI STATUS API

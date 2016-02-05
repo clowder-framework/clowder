@@ -93,8 +93,30 @@ class Metadata @Inject()(
           val body = request.body
 
           if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
+
             val definition = MetadataDefinition(json = body)
             metadataService.addDefinition(definition)
+
+            Ok(JsObject(Seq("status" -> JsString("ok"))))
+          } else {
+            BadRequest(toJson("Invalid resource type"))
+          }
+
+        }
+        case None => BadRequest(toJson("Invalid user"))
+      }
+  }
+
+
+  def editDefinition(id:UUID) = ServerAdminAction (parse.json) {
+    implicit request =>
+      request.user match {
+        case Some(user) => {
+          val body = request.body
+
+          if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
+
+              metadataService.editDefinition(id, body)
             Ok(JsObject(Seq("status" -> JsString("ok"))))
           } else {
             BadRequest(toJson("Invalid resource type"))

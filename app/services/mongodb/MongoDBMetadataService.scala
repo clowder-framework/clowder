@@ -66,6 +66,14 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
     for (md <- metadata.toList; if (md.creator.typeOfAgent == typeofAgent)) yield md
   }
 
+  /**
+   * Update metadata
+   * TODO: implement
+   * @param metadataId
+   * @param json
+   */
+  def updateMetadata(metadataId: UUID, json: JsValue) = {}
+
   /** Remove metadata, if this metadata does exit, nothing is executed */
   def removeMetadata(id: UUID) = {
     getMetadataById(id) match {
@@ -135,13 +143,12 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
     }
   }
 
-  /**
-    * Update metadata
-    * TODO: implement
-    * @param metadataId
-    * @param json
-    */
-  def updateMetadata(metadataId: UUID, json: JsValue) = {}
+
+  def editDefinition(id: UUID, json: JsValue) = {
+
+    MetadataDefinitionDAO.update(MongoDBObject("_id" ->new ObjectId(id.stringify)),
+      $set("json" -> JSON.parse(json.toString()).asInstanceOf[DBObject]) , false, false, WriteConcern.Safe)
+  }
 
   def deleteDefinition(id :UUID): Unit = {
     MetadataDefinitionDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
