@@ -19,6 +19,10 @@ case class Metadata (
     content: JsValue,
     version: Option[String] = None)
 
+case class MetadataPair(
+     label: String,
+     content: JsValue)
+
 trait Agent {
   val id: UUID
   def operation: String
