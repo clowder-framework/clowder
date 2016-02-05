@@ -134,6 +134,21 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
 
               previews.setIIPReferences(id, iipURL, iipImage, iipKey)
             }
+
+            // Check whether a title for the preview was sent
+            request.body.dataParts.get("title") match {
+              case Some(t) => {
+                t match {
+                  case tstr: String => previews.updateTitle(id, tstr)
+                  case tseq: Seq[String] => previews.updateTitle(id, tseq(1))
+                  case tlis: List[String] => previews.updateTitle(id, tlis(1))
+                  case _ => Logger.debug("Can't determine preview title format.")
+                }
+
+              }
+              case None => Logger.debug("no title")
+            }
+
             Logger.debug("Preview id "+id.toString)
             Ok(toJson(Map("id" -> id.stringify)))
           } finally {

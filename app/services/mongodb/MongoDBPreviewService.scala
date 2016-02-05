@@ -252,6 +252,13 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
       case _ => Logger.error("Expected a JSObject")
     }
   }
+
+  def updateTitle(previewId: UUID, title: String) {
+    PreviewDAO.dao.collection.update(
+          MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
+          $set("title" -> title),
+          false, false, WriteConcern.Safe)
+  }
   
   /**
    * Get metadata from the mongo db as a map. 
