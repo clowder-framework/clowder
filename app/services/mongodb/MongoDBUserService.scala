@@ -2,11 +2,7 @@ package services.mongodb
 
 import com.mongodb.casbah.WriteConcern
 import java.util.Date
-
 import com.mongodb.DBObject
-import com.mongodb.casbah.Imports._
-import com.mongodb.casbah.commons.MongoDBObject
-import com.mongodb.casbah.commons.TypeImports._
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import com.mongodb.util.JSON
 import com.novus.salat._
@@ -16,18 +12,15 @@ import org.bson.types.ObjectId
 import securesocial.core.Identity
 import play.api.Application
 import play.api.Play.current
-import MongoContext.context
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
 import models.Role
 import models.UserSpaceAndRole
-import models.UserSpaceAndRole
-import services.mongodb.SpaceInviteDAO
 import scala.collection.mutable.ListBuffer
 import play.api.Logger
 import securesocial.core.providers.Token
 import securesocial.core._
-import services.{FileService, DatasetService, CollectionService}
+import services.{FileService, DatasetService, CollectionService, SpaceService}
 import services.mongodb.MongoContext.context
 import _root_.util.Direction._
 import javax.inject.Inject
@@ -43,7 +36,8 @@ import javax.inject.Inject
 class MongoDBUserService @Inject() (
   files: FileService,
   datasets: DatasetService,
-  collections: CollectionService) extends services.UserService {
+  collections: CollectionService,
+  spaces: SpaceService) extends services.UserService {
   // ----------------------------------------------------------------------
   // Code to implement the common CRUD services
   // ----------------------------------------------------------------------
@@ -115,6 +109,32 @@ class MongoDBUserService @Inject() (
       case None => raw
     }
     orderedBy.limit(limit).toList
+  }
+
+  override def list(id: Option[String], nextPage: Boolean, limit: Integer): List[User] = {
+    val filterDate = id match {
+      case Some(d) => {
+        if(d == "") {
+          MongoDBObject()
+        } else if (nextPage) {
+          ("_id" $lt new ObjectId(d))
+        } else {
+          ("_id" $gt new ObjectId(d))
+        }
+      }
+      case None => MongoDBObject()
+    }
+    val sort = if (id.isDefined && !nextPage) {
+      MongoDBObject("_id"-> 1) ++ MongoDBObject("name" -> 1)
+    } else {
+      MongoDBObject("_id" -> -1) ++ MongoDBObject("name" -> 1)
+    }
+    if(id.isEmpty || nextPage) {
+      UserDAO.find(filterDate).sort(sort).limit(limit).toList
+    } else {
+      UserDAO.find(filterDate).sort(sort).limit(limit).toList.reverse
+    }
+
   }
 
   // ----------------------------------------------------------------------
@@ -412,6 +432,12 @@ class MongoDBUserService @Inject() (
       case "collection" => {
         collections.get(uuid) match {
           case Some(collection) => collection.name
+          case None => default
+        }
+      }
+      case "'space" => {
+        spaces.get(uuid) match {
+          case Some(space) => space.name
           case None => default
         }
       }

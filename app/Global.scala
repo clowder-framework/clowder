@@ -1,13 +1,8 @@
 import java.io.{StringWriter, PrintWriter}
-
-import api.Permission
 import play.api.{GlobalSettings, Application}
 import play.api.Logger
-
 import play.filters.gzip.GzipFilter
-
 import play.libs.Akka
-import play.mvc.Result
 import services.{UserService, DI, AppConfiguration}
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -48,14 +43,17 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
     // set default metadata definitions
     MetadataDefinition.registerDefaultDefinitions()
 
-    extractorTimer = Akka.system().scheduler.schedule(0 minutes, 5 minutes) {
-      ExtractionInfoSetUp.updateExtractorsInfo()
+    if (extractorTimer == null) {
+      extractorTimer = Akka.system().scheduler.schedule(0 minutes, 5 minutes) {
+        ExtractionInfoSetUp.updateExtractorsInfo()
+      }
     }
 
     // Use if Mailer Server and stmp in Application.conf are set up
-
-    jobTimer = Akka.system().scheduler.schedule(0 minutes, 1 minutes) {
-      JobsScheduler.runScheduledJobs()
+    if (jobTimer == null) {
+      jobTimer = Akka.system().scheduler.schedule(0 minutes, 1 minutes) {
+        JobsScheduler.runScheduledJobs()
+      }
     }
 
     Logger.info("Application has started")
@@ -84,6 +82,7 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
   }
 
   override def onHandlerNotFound(request: RequestHeader) = {
+
     Future(NotFound(
       views.html.errorPage(request, "Not found")
     ))

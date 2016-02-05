@@ -167,32 +167,81 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   /**
    * Drop all collections
    */
-  def dropAllData() {
+  def dropAllData(resetAll: Boolean) {
     Logger.debug("**DANGER** Deleting data collections **DANGER**")
+
     collection("collections").drop()
     collection("comments").drop()
+    collection("contextld").drop()
+    collection("curationFiles").drop()
+    collection("curationObjects").drop()
     collection("datasets").drop()
+    collection("datasetxmlmetadata").drop()
     collection("dtsrequests").drop()
+    collection("events").drop()
     collection("extractions").drop()
-    collection("extractor.servers").drop()
-    collection("extractor.names").drop()
+    collection("extractor.details").drop()
     collection("extractor.inputtypes").drop()
-    collection("multimedia.features").drop()
-    collection("previews.chunks").drop()
-    collection("previews.files").drop()
-    collection("sections").drop()
-    collection("streams").drop()
-    collection("thumbnails.chunks").drop()
-    collection("thumbnails.files").drop()
-    collection("uploads.chunks").drop()
-    collection("uploads.files").drop()
-    collection("uploadquery.files").drop()
-    collection("versus.descriptors").drop()
+    collection("extractor.names").drop()
+    collection("extractor.servers").drop()
+    collection("extractors.info").drop()
+    removeFiles("geometries")
+    collection("licensedata").drop()
     collection("metadata").drop()
-    collection("contexld").drop()
+    collection("metadata.definitions").drop()
+    collection("multimedia.distances").drop()
+    collection("multimedia.features").drop()
+    removeFiles("previews")
+    collection("previews.files.annotations").drop()
+    collection("relations").drop()
+    collection("sectionIndexInfo").drop()
+    collection("sections").drop()
+    collection("spaceandrole").drop()
+    collection("spaces.extractors").drop()
+    collection("spaces.invites").drop()
     collection("spaces.projects").drop()
     collection("spaces.users").drop()
+    collection("streams").drop()
+    collection("tags").drop()
+    removeFiles("textures")
+    removeFiles("thumbnails")
+    removeFiles("tiles")
+    collection("uploadquery.files").drop()
+    removeFiles("uploads")
+    collection("versus.descriptors").drop()
+    collection("webpage.resources").drop()
+
+    if (resetAll) {
+      collection("app.configuration").drop()
+      collection("institutions").drop()
+      collection("jobs").drop()
+      collection("projects").drop()
+      collection("social.authenticator").drop()
+      collection("social.token").drop()
+      collection("social.users").drop()
+      collection("roles").drop()
+
+      // call global onStart to initialize
+      app.global.onStart(app)
+    }
+
+    // call onStart to make sure all indices exist.
+    onStart()
+
     Logger.debug("**DANGER** Data deleted **DANGER**")
+  }
+
+  private def removeFiles(name: String): Unit = {
+    // delete blobs
+    collection(name + ".files").find(new BasicDBObject("loader", new BasicDBObject("$ne", classOf[MongoDBByteStorage].getName))).foreach { x =>
+      Logger.info(x.getOrElse("_id", "?") + " " + x.getOrElse("path", "?"))
+      x.getAs[ObjectId]("_id") match {
+        case Some(id) => MongoUtils.removeBlob(UUID(id.toString), name, "nevereverused")
+        case None =>
+      }
+    }
+    collection(name + ".chunks").drop()
+    collection(name + ".files").drop()
   }
 
   // ----------------------------------------------------------------------
@@ -425,13 +474,13 @@ class MongoSalatPlugin(app: Application) extends Plugin {
             collection("datasets").save(ds, WriteConcern.Safe)
           }
           catch {
-            case e: BSONException => Logger.error("Unable to update files in dataset:" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString() )
+            case e: BSONException => Logger.error("Unable to update files in dataset:" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString())
           }
         }
+        appConfig.addPropertyValue("mongodb.updates", "replace-dataset-files-with-id")
+      } else {
+        Logger.warn("[MongoDBUpdate : Missing fix to replace the files in the dataset with UUIDs")
       }
-      appConfig.addPropertyValue("mongodb.updates", "replace-dataset-files-with-id")
-    } else {
-      Logger.warn("[MongoDBUpdate : Missing fix to replace the files in the dataset with UUIDs")
     }
   }
 
@@ -564,22 +613,22 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           val DefaultDuration = securesocial.controllers.Registration.DefaultDuration
           val TokenDuration = Play.current.configuration.getInt(TokenDurationKey).getOrElse(DefaultDuration)
           invite.put("creationTime", new Date())
-          val ONE_MINUTE_IN_MILLIS=60000
+          val ONE_MINUTE_IN_MILLIS = 60000
           val date: Calendar = Calendar.getInstance()
-          val t= date.getTimeInMillis()
-          val afterAddingMins: Date=new Date(t + (TokenDuration * ONE_MINUTE_IN_MILLIS))
-          invite.put("expirationTime",  afterAddingMins)
+          val t = date.getTimeInMillis()
+          val afterAddingMins: Date = new Date(t + (TokenDuration * ONE_MINUTE_IN_MILLIS))
+          invite.put("expirationTime", afterAddingMins)
           try {
             collection("spaces.invites").save(invite, WriteConcern.Safe)
           }
           catch {
-            case e: BSONException => Logger.error("Unable to update invite:" + invite.getAsOrElse[ObjectId]("_id", new ObjectId()).toString() )
+            case e: BSONException => Logger.error("Unable to update invite:" + invite.getAsOrElse[ObjectId]("_id", new ObjectId()).toString())
           }
         }
+        appConfig.addPropertyValue("mongodb.updates", "update-space-invites")
+      } else {
+        Logger.warn("[MongoDBUpdate : Missing fix to add creation and expiration time to invites")
       }
-      appConfig.addPropertyValue("mongodb.updates", "update-space-invites")
-    } else {
-      Logger.warn("[MongoDBUpdate : Missing fix to add creation and expiration time to invites")
     }
   }
 
@@ -641,7 +690,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                 }
               }
             }
-            Logger.info(prefix + " " + id + " " + file.get("filename") + " " + file.get("path") + " " + file.get("sha512") + " " + file.get("length"))
+            //Logger.info(prefix + " " + id + " " + file.get("filename") + " " + file.get("path") + " " + file.get("sha512") + " " + file.get("length"))
             try {
               collection(prefix + ".files").save(file, WriteConcern.Safe)
               if (deletepath)
@@ -652,10 +701,10 @@ class MongoSalatPlugin(app: Application) extends Plugin {
             }
           }
         }
+        appConfig.addPropertyValue("mongodb.updates", "update-file-length-sha512-path")
+      } else {
+        Logger.warn("[MongoDBUpdate : Missing fix to add file length, sha512 and path")
       }
-      appConfig.addPropertyValue("mongodb.updates", "update-file-length-sha512-path")
-    } else {
-      Logger.warn("[MongoDBUpdate : Missing fix to add file length, sha512 and path")
     }
   }
 }
