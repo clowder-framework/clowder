@@ -373,7 +373,7 @@ GET            /api/files/:id                                                   
 # ----------------------------------------------------------------------
 # DANGEROUS ENDPOINTS
 # ----------------------------------------------------------------------
-GET            /api/delete-data                                                         api.Admin.deleteAllData
+DELETE         /api/delete-data                                                         api.Admin.deleteAllData(resetAll: Boolean ?= false)
 POST           /api/remove-admin                                                        api.Admin.removeAdmin
 POST           /api/changeAppearance                                                    api.Admin.submitAppearance
 POST           /api/dumpFilesMd                                                         @api.Files.dumpFilesMetadata
