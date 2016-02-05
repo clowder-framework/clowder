@@ -91,9 +91,7 @@ class Metadata @Inject()(
       request.user match {
         case Some(user) => {
           val body = request.body
-
           if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
-
             val definition = MetadataDefinition(json = body)
             metadataService.addDefinition(definition)
 
@@ -113,9 +111,7 @@ class Metadata @Inject()(
       request.user match {
         case Some(user) => {
           val body = request.body
-
           if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
-
               metadataService.editDefinition(id, body)
             Ok(JsObject(Seq("status" -> JsString("ok"))))
           } else {
