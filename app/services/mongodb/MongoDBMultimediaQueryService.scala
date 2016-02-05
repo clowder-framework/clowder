@@ -183,9 +183,8 @@ def getFile(id: UUID): Option[TempFile] = {
       source.features.foreach { fs =>
 
         val targetSpaces  = sections.getParentSpaces(target.section_id.get) // Get spaces that the target section is belonging to
-        val commonSpaces = sourceSpaces.intersect(targetSpaces) // Get common spaces between source and target
 
-        if (source.section_id != target.section_id && commonSpaces.length > 0) {
+        if (source.section_id != target.section_id) {
           target.features.find(_.representation == fs.representation) match {
             case Some(ft) => {
               val distance = ImageMeasures.getDistance(FeatureType.valueOf(fs.representation),
@@ -196,9 +195,9 @@ def getFile(id: UUID): Option[TempFile] = {
                   Logger.debug(s"Skipping ${fs.representation} distance ${source.section_id.get} -> ${target.section_id.get} = $distance")
                 } else {
                   addMultimediaDistance(
-                    MultimediaDistance(source.section_id.get, target.section_id.get, fs.representation, distance, sourceSpaces.toList))
+                    MultimediaDistance(source.section_id.get, target.section_id.get, fs.representation, distance, targetSpaces.toList))
                   addMultimediaDistance(
-                    MultimediaDistance(target.section_id.get, source.section_id.get, fs.representation, distance, targetSpaces.toList)) // Adding reverse distance to complete the matrix
+                    MultimediaDistance(target.section_id.get, source.section_id.get, fs.representation, distance, sourceSpaces.toList)) // Adding reverse distance to complete the matrix
                   Logger.trace(s"Distance ${source.section_id.get} -> ${target.section_id.get} = $distance")
                 }
               } else {
