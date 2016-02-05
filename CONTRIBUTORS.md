@@ -22,11 +22,12 @@ Following is a list of contributors in alphabetical order:
 - Sandeep Puthanveetil Satheesan
 - Smruti Padhy
 - Theerasit Issaranon
+- Todd Nicholson
 - Varun Kethineedi
 - Will Hennessy
 - Winston Jansz
 - Xiaocheng Yuan
 - Yan Zhao
 - Yibo Guo
-- Todd Nicholson
+
 
