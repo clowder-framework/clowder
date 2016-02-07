@@ -106,7 +106,6 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
     PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
         request.body.file("File").map { f =>
           try {
-            Logger.debug("Uploading file " + f.filename)
             Logger.debug("########Uploading Preview----" + f.filename)
             // store file
             //change stored preview type for zoom.it previews to avoid messup with uploaded XML metadata files
@@ -139,17 +138,16 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
             request.body.dataParts.get("title") match {
               case Some(t) => {
                 t match {
-                  case tstr: String => previews.updateTitle(id, tstr)
-                  case tseq: Seq[String] => previews.updateTitle(id, tseq(1))
-                  case tlis: List[String] => previews.updateTitle(id, tlis(1))
+                  //case tstr: String => previews.updateTitle(id, tstr)
+                  //case tseq: Seq[String] => previews.updateTitle(id, tseq.head)
+                  case tlis: List[String] => previews.updateTitle(id, tlis.head)
                   case _ => Logger.debug("Can't determine preview title format.")
                 }
 
               }
-              case None => Logger.debug("no title")
+              case None => {}
             }
 
-            Logger.debug("Preview id "+id.toString)
             Ok(toJson(Map("id" -> id.stringify)))
           } finally {
             f.ref.clean()
