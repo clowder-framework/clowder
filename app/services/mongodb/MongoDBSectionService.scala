@@ -123,26 +123,33 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
    */
   def getParentSpaces(querySectionId: UUID): ArrayBuffer[UUID] = {
     // Get section
-    val section = get(querySectionId).get
+    get(querySectionId) match {
 
-    // Get file ID
-    val fileId = section.file_id
-    Logger.debug("File ID: " + fileId)
+      case Some(section) => {
+        // Get file ID
+        val fileId = section.file_id
+        Logger.debug("File ID: " + fileId)
 
-    // Get the list of datasets that the file is part of
-    val datasetList = datasets.findByFileId(fileId).toList
-    val spaceList = new ArrayBuffer[UUID]
+        // Get the list of datasets that the file is part of
+        val datasetList = datasets.findByFileId(fileId).toList
+        val spaceList = new ArrayBuffer[UUID]
 
-    // Iterate through each dataset and get the IDs of spaces that it belongs to
-    datasetList.foreach(dataset => {
-      // Iterate through each space ID and add it to the spaceList
-      dataset.spaces.foreach(space => {
-        spaceList.+=(space)
-      })
-    })
+        // Iterate through each dataset and get the IDs of spaces that it belongs to
+        datasetList.foreach(dataset => {
+          // Iterate through each space ID and add it to the spaceList
+          dataset.spaces.foreach(space => {
+            spaceList.+=(space)
+          })
+        })
 
-    // Return the spaces (after removing duplicates) that the section is belonging to
-    return spaceList.distinct
+        // Return the spaces (after removing duplicates) that the section is belonging to
+        return spaceList.distinct
+
+      }
+      case None => {
+        return ArrayBuffer.empty
+      }
+    }
   }
   
 }
