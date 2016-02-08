@@ -146,9 +146,20 @@ def getFile(id: UUID): Option[TempFile] = {
     MultimediaDistanceDAO.save(d)
   }
 
-  def searchMultimediaDistances(querySectionId: String, representation: String, limit: Int): List[MultimediaDistance] = {
-    MultimediaDistanceDAO.find(MongoDBObject("source_section"->new ObjectId(querySectionId),"representation"->representation))
-      .sort(MongoDBObject("distance" -> 1)).limit(limit).toList
+  def searchMultimediaDistances(querySectionId: String, representation: String, limit: Int, userSpaceIDs: List[UUID]): List[MultimediaDistance] = {
+
+    // Converting UUIDs to Object IDs
+    val userSpaceObjectIDs = new MongoDBList()
+    userSpaceIDs.foreach(spaceId => {
+      userSpaceObjectIDs.+=:(new ObjectId(spaceId.toString()))
+    })
+
+    // MongoDB query
+    MultimediaDistanceDAO.find(MongoDBObject("source_section"->new ObjectId(querySectionId),
+      "representation"->representation, "target_spaces" -> MongoDBObject("$in" -> userSpaceObjectIDs)))
+      .sort(MongoDBObject("distance" -> 1))
+      .limit(limit)
+      .toList
   }
 
   def recomputeAllDistances(): Unit = {
