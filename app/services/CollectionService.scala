@@ -169,13 +169,14 @@ trait CollectionService {
     */
   def addSubCollection(collectionId: UUID, subCollectionId: UUID) : Try[Unit]
 
-  /**
-    * Remove subcollection from collection
-    */
 
   def getSelfAndAncestors(collectionId :UUID) : List[Collection]
 
   def removeSubCollection(collectionId: UUID, subCollectionId: UUID, ignoreNotFound: Boolean = true) : Try[Unit]
+
+  def removeSubCollectionId(subCollectionId: UUID, collection: Collection,ignoreNotFound: Boolean = true) : Try[Unit]
+
+  def removeParentCollectionId(parentCollectionId: UUID, collection: Collection, ignoreNotFound: Boolean = true) : Try[Unit]
 
   def setRootFlag(collectionId: UUID, isRoot: Boolean) : Try[Unit]
 

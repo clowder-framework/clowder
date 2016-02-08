@@ -62,18 +62,6 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     }
 
 
-    //get list of possible parent collections
-    val decodedCollectionsList = new ListBuffer[models.Collection]()
-
-    val collectionsList = collections.listAccess(50, Set[Permission](Permission.EditCollection), request.user, request.superAdmin)
-
-    for (aCollection <- collectionsList){
-      if (Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.collection, aCollection.id))){
-        decodedCollectionsList += Utils.decodeCollectionElements(aCollection)
-      }
-    }
-
-
     parentCollectionId match {
       case Some(currentParentCollectionId) =>{
         collections.get(UUID(currentParentCollectionId)) match {
@@ -418,7 +406,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * Collection.
    */
-  def collection(id: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, id))) {
+  def collection(id: UUID, index: Int, limit: Int) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, id))) {
     implicit request =>
       Logger.debug(s"Showing collection $id")
       implicit val user = request.user
@@ -501,14 +489,17 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             }
           }
 
+          val prev = index-1
+          val next = if(datasetsInside.length > (index+1) * limit) {
+            index + 1
+          } else {
+            -1
+          }
+
           val decodedSpaces: List[ProjectSpace] = collectionSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
 
-          //Ok(views.html.collection(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, Some(decodedSpaces)))
-
           Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList, Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap, Some(decodedSpaces)))
-          //Ok(views.html.collectionOfDatasetsAndChildCollections(decodedDatasetsInside.toList,
-            //decodedChildCollections.toList, Some(decodedParentCollections.toList), dCollection, filteredPreviewers.toList, Some(decodedSpaces)))
 
         }
         case None => {

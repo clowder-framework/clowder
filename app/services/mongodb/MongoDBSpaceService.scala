@@ -259,6 +259,7 @@ class MongoDBSpaceService @Inject() (
    */
   def addCollection(collection: UUID, space: UUID): Unit = {
     log.debug(s"Adding $collection to $space")
+    val previousCollectionsCount = get(space).get.collectionCount
     collections.addToSpace(collection, space)
     var currentCollection = collections.get(collection).get
     var childCollectionIds = currentCollection.child_collection_ids
@@ -268,6 +269,7 @@ class MongoDBSpaceService @Inject() (
       }
 
     }
+    val currentCollectionsCount = get(space).get.collectionCount
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("collectionCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
   }
 

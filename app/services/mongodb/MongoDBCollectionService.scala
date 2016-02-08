@@ -734,6 +734,21 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     Collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)), $inc("childCollectionsCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
   }
 
+  def removeSubCollectionId(subCollectionId: UUID, collection : Collection,ignoreNotFound: Boolean = true) = Try {
+    Collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)),
+      $pull("child_collection_ids" -> Some(new ObjectId(subCollectionId.stringify))),
+      false, false)
+    Collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)), $inc("childCollectionsCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
+
+  }
+
+  def removeParentCollectionId(parentCollectionId: UUID, collection : Collection,ignoreNotFound: Boolean = true) = Try {
+    Collection.update(MongoDBObject("_id" -> new ObjectId((collection.id).stringify)),
+      $pull("parent_collection_ids" -> Some(new ObjectId(parentCollectionId.stringify))),
+      false, false)
+
+  }
+
   def addParentCollectionId(subCollectionId: UUID, parentCollectionId: UUID) = Try {
     Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)), $addToSet("parent_collection_ids" -> Some(new ObjectId(parentCollectionId.stringify))), false, false, WriteConcern.Safe)
   }

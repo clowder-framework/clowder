@@ -637,6 +637,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             }
             case None =>
               Logger.debug("No child collection with id : " + childCollectionId)
+              collections.removeSubCollectionId(childCollectionId,collection)
           }
         }
 
@@ -659,7 +660,8 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
               parentCollections += jsonCollection(parent_collection )
             }
             case None =>
-              Logger.debug("No child collection with id : " + parentCollectionId)
+              Logger.debug("No parent collection with id : " + parentCollectionId)
+              collections.removeParentCollectionId(parentCollectionId,collection)
           }
         }
 

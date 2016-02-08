@@ -148,7 +148,12 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
             Forbidden(toJson(s"You are not the owner of the collection"))
           } else {
             spaces.addCollection(collectionId, spaceId)
-            Ok(Json.obj("collectionInSpace" -> (s.collectionCount + 1).toString))
+            spaces.get(spaceId) match {
+              case Some(space) => {
+                Ok(Json.obj("collectionInSpace" -> space.collectionCount.toString))
+              }
+              case None => NotFound
+            }
           }
         }
         case (_, _) => NotFound
