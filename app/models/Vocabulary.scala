@@ -14,13 +14,15 @@ case class Vocabulary (
   created : Date = new Date(),
   name : String = "",
   lastModified : Date = new Date(),
-  keys : List[String] = List.empty)                    
+  keys : List[String] = List.empty,
+  spaces : List[UUID] = List.empty)
 
 
 object Vocabulary{
-  implicit val vocabularyWritew = new Writes[Vocabulary] {
+  implicit val vocabularyWrites = new Writes[Vocabulary] {
     def writes(vocabulary : Vocabulary) : JsValue = {
-      Json.obj("id" -> vocabulary.id.toString, "keys" -> vocabulary.keys.toList)
+      val vocabularyAuthor = vocabulary.author.get.identityId.userId
+      Json.obj("id" -> vocabulary.id.toString,"author" -> vocabularyAuthor, "keys" -> vocabulary.keys.toList)
     }
   }
 }
