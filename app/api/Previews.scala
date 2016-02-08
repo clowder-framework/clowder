@@ -138,8 +138,6 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
             request.body.dataParts.get("title") match {
               case Some(t) => {
                 t match {
-                  //case tstr: String => previews.updateTitle(id, tstr)
-                  //case tseq: Seq[String] => previews.updateTitle(id, tseq.head)
                   case tlis: List[String] => previews.updateTitle(id, tlis.head)
                   case _ => Logger.debug("Can't determine preview title format.")
                 }
@@ -332,6 +330,9 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
     * Update the title field of a preview to change what is displayed on preview tab
     * @param preview_id UUID of preview to change
     */
+  @ApiOperation(value = "Update displayed title of preview",
+    notes = "Change the title of the preview that is displayed when viewing the associated file. String must be passed as 'title' parameter in request.",
+    responseClass = "None", httpMethod = "POST")
   def updateTitle(preview_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.preview, preview_id)))(parse.json) { implicit request =>
     request.body match {
       case JsObject(fields) => {

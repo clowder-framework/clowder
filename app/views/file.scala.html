@@ -121,7 +121,7 @@
 			  		<div class="tabbable">
 						<ul class="nav nav-pills" id="myTab_@(f.id.toString)">
 							@for(i <- pvs.indices) {
-								<!--TODO: allow users to rename this tab title and update pvs(i).title if so-->
+								<!-- Use preview.title as tab title if defined; otherwise use previewer name. -->
 								@if(pvs(i)._8 != "") {
 									<li class=""><a href="#previewer_@(f.id.toString)_@i" data-toggle="tab">@pvs(i)._8</a></li>
 								} else {

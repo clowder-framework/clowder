@@ -79,10 +79,7 @@ class Files @Inject() (
             if (!p.collection);
             if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))
           ) yield {
-              val tabtitle = pv.title match {
-                case Some(x) => x
-                case None => ""
-              }
+              val tabtitle: String = pv.title.getOrElse("")
               (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length, tabtitle)
           }
           if (pvf.length > 0) {
