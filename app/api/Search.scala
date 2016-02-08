@@ -2,11 +2,10 @@ package api
 
 import services.{RdfSPARQLService, DatasetService, FileService, CollectionService, PreviewService, MultimediaQueryService, ElasticsearchPlugin}
 import play.Logger
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ListBuffer, HashMap}
 import scala.collection.JavaConversions.mapAsScalaMap
 import edu.illinois.ncsa.isda.lsva.ImageMeasures
 import edu.illinois.ncsa.isda.lsva.ImageDescriptors.FeatureType
-import scala.collection.mutable.{ HashMap, ListBuffer }
 import util.DistancePriorityQueue
 import util.SearchResult
 import util.MultimediaIndex
@@ -135,8 +134,12 @@ class Search @Inject() (files: FileService, datasets: DatasetService, collection
        responseClass = "None", httpMethod = "GET")
   def searchMultimediaIndex(section_id: UUID) = PermissionAction(Permission.ViewDataset) {
     implicit request =>
-    
+
+    // Finding IDs of spaces that the user has access to
+    val user = request.user
+    val spaceIDsList = user.get.spaceandrole.map(_.spaceId)
     Logger.debug("Searching multimedia index " + section_id.stringify)
+
     // TODO handle multiple previews found
     val preview = previews.findBySectionId(section_id)(0)
     queries.findFeatureBySection(section_id) match {
@@ -145,8 +148,8 @@ class Search @Inject() (files: FileService, datasets: DatasetService, collection
         // setup priority queues
         val queues = new HashMap[String, List[MultimediaDistance]]
         val representations = feature.features.map { f =>
-          queues(f.representation) = queries.searchMultimediaDistances(section_id.toString,f.representation,20)
-        }        
+          queues(f.representation) = queries.searchMultimediaDistances(section_id.toString,f.representation,20, spaceIDsList)
+        }
 
         val items = new HashMap[String, ListBuffer[SearchResult]]
         queues map {
