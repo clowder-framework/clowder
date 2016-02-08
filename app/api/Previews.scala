@@ -328,6 +328,33 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
         }
     }
 
+  /**
+    * Update the title field of a preview to change what is displayed on preview tab
+    * @param preview_id UUID of preview to change
+    */
+  def updateTitle(preview_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.preview, preview_id)))(parse.json) { implicit request =>
+    request.body match {
+      case JsObject(fields) => {
+        previews.get(preview_id) match {
+          case Some(preview) =>
+            var found = false
+            for (entry <- fields) {
+              if (entry._1.toString == "title") {
+                previews.updateTitle(preview_id, entry._2.toString.replace("\"", ""))
+                found = true
+              }
+            }
+            if (found == true)
+              Ok(toJson(Map("status" -> "success")))
+            else
+              BadRequest(toJson("Preview title not found"))
+          case None => BadRequest(toJson("Preview not found"))
+        }
+      }
+      case _ => Logger.error("Expected a JSObject"); BadRequest(toJson("Expected a JSObject"))
+    }
+  }
+
   def jsonAnnotation(annotation: ThreeDAnnotation): JsValue = {
     toJson(Map("x_coord" -> annotation.x_coord.toString, "y_coord" -> annotation.y_coord.toString, "z_coord" -> annotation.z_coord.toString, "description" -> annotation.description))
   }

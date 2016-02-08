@@ -490,6 +490,7 @@ GET            /api/previews/:id/metadata                                       
 POST           /api/previews/:id/annotationAdd                                          @api.Previews.attachAnnotation(id: UUID)
 POST           /api/previews/:id/annotationEdit                                         @api.Previews.editAnnotation(id: UUID)
 GET            /api/previews/:id/annotationsList                                        @api.Previews.listAnnotations(id: UUID)
+POST           /api/previews/:id/title                                                  @api.Previews.updateTitle(id: UUID)
 GET            /api/previews                                                            @api.Previews.list
 GET            /api/previews/:id                                                        @api.Previews.download(id: UUID)
 DELETE         /api/previews/:id                                                        @api.Previews.removePreview(id: UUID)
