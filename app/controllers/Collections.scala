@@ -318,7 +318,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * Collection.
    */
-  def collection(id: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, id))) {
+  def collection(id: UUID, index: Int, limit: Int) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, id))) {
     implicit request =>
       Logger.debug(s"Showing collection $id")
       implicit val user = request.user
@@ -346,8 +346,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           //Decode the datasets so that their free text will display correctly in the view
           val datasetsInside = datasets.listCollection(id.stringify)
+          val datasetIdsToUse = datasetsInside.slice(index*limit, (index+1)*limit)
           val decodedDatasetsInside = ListBuffer.empty[models.Dataset]
-          for (aDataset <- datasetsInside) {
+          for (aDataset <- datasetIdsToUse) {
             val dDataset = Utils.decodeDatasetElements(aDataset)
             decodedDatasetsInside += dDataset
           }
@@ -362,9 +363,16 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             }
           }
 
+          val prev = index-1
+          val next = if(datasetsInside.length > (index+1) * limit) {
+            index + 1
+          } else {
+            -1
+          }
+
           val decodedSpaces: List[ProjectSpace] = collectionSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
-          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, Some(decodedSpaces)))
+          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, dCollection, filteredPreviewers.toList, Some(decodedSpaces), prev, next, limit))
 
         }
         case None => {

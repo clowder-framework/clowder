@@ -20,10 +20,10 @@
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                     @if(user.get.identityId.userId.equals(file.author.identityId.userId) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
-                                        <button onclick="removeFileAndRedirect('@(file.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Delete">
+                                        <button onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;")),'@redirect')" class="btn btn-link" style="text-align:right" title="Delete">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     } else {
-                                        <button disabled onclick="removeFileAndRedirect('@(file.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Delete">
+                                        <button disabled onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))','@redirect')" class="btn btn-link" style="text-align:right" title="Delete">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     }
                                 }
