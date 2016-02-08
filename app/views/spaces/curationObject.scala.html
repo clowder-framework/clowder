@@ -1,4 +1,4 @@
-@(curationObject: models.CurationObject, m: List[models.Metadata], rdfExported: Boolean, files :List[CurationFile] )(implicit user: Option[models.User])
+@(curationObject: models.CurationObject, m: List[models.Metadata], rdfExported: Boolean, folders :List[CurationFolder], files :List[CurationFile] )(implicit user: Option[models.User])
 @import api.Permission
 @import helper._
 @import collection.JavaConverters._
@@ -49,6 +49,21 @@
                 </div>
             </div>
         </div>
+
+
+            @if(folders.size > 0 ){
+                <h2> Folders</h2>
+            }
+            <div>
+                <ul style = "list-style-type: none">
+                @for(folder<- folders) {
+
+                    <li>
+                        <h3><a href=@routes.CurationObjects.getCurationFolder(curationObject.id, folder.id)>@folder.displayName</a></h3>
+                    </li>
+                }
+                    </ul>
+                </div>
 
 
 

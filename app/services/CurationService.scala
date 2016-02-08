@@ -45,6 +45,11 @@ trait CurationService {
   def insertFile(curationFile : CurationFile)
 
   /**
+   * insert a new curation object folder.
+   */
+  def insertFolder(curationFolder : CurationFolder)
+
+  /**
    * Update the repository selected
    */
   def updateRepository(curationId: UUID, repository: String)
@@ -66,9 +71,19 @@ trait CurationService {
   def getCurationFiles(curationFileIds:List[UUID]): List[CurationFile]
 
   /**
+   * List curation folders of a curation obeject
+   */
+  def getCurationFolders(curationFolderIds:List[UUID]): List[CurationFolder]
+
+  /**
    * get the curation contains this curation file
    */
   def getCurationByCurationFile(curationFile: UUID): Option[CurationObject]
+
+  /**
+   * get the curation folder
+   */
+  def getCurationFolder(curationFolderId: UUID): Option[CurationFolder]
 
   /**
    * Delete a curation file from a curation obeject

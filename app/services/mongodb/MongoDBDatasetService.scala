@@ -42,7 +42,8 @@ class MongoDBDatasetService @Inject() (
   comments: CommentService,
   sparql: RdfSPARQLService,
   spaces: SpaceService,
-  userService: UserService) extends DatasetService {
+  userService: UserService,
+  folders:FolderService) extends DatasetService {
 
   object MustBreak extends Exception {}
 
@@ -985,6 +986,34 @@ class MongoDBDatasetService @Inject() (
 
   def removeFolder(datasetId: UUID, folderId: UUID) {
     Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("folders" -> new ObjectId(folderId.stringify)), false, false, WriteConcern.Safe)
+  }
+
+  def getAllFiles(id:UUID, hierarchy:Boolean): List[UUID] ={
+    get(id) match {
+      case Some(dataset) => {
+        if (hierarchy) {
+          dataset.files ::: getAllFolders(id, true).map(f => folders.get(f)).flatten.map(f => f.files).flatten
+        } else {
+          dataset.files
+        }
+      }
+      case None => List.empty
+    }
+  }
+
+  def getAllFolders(id:UUID, hierarchy:Boolean): List[UUID] ={
+    get(id) match {
+      case Some(dataset) => {
+        if (hierarchy) {
+          var foldersInDataset = dataset.folders
+          for (f <- foldersInDataset) foldersInDataset ::: folders.get(f).map(subfolder => subfolder.folders).getOrElse(List.empty)
+          foldersInDataset
+        } else {
+          dataset.folders
+        }
+      }
+      case None => List.empty
+    }
   }
 
   def newThumbnail(datasetId: UUID) {

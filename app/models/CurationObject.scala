@@ -21,6 +21,7 @@ case class CurationObject (
   datasets: List[Dataset] =  List.empty,
   collections: List[Collection] = List.empty,
   files: List[UUID] =  List.empty,  //id of curationFile, different from live object
+  folders: List[UUID] =  List.empty,  //id of curationFolder, different from live object
   repository: Option[String],
   status: String,
   externalIdentifier: Option[URI] = None,
@@ -152,3 +153,11 @@ object CurationFile {
     }
   }
 }
+
+case class CurationFolder (
+                    id: UUID = UUID.generate,
+                    folderId: UUID,
+                    name: String = "N/A",
+                    displayName: String = "N/A",
+                    files: List[UUID] = List.empty,
+                    folders: List[UUID] = List.empty)

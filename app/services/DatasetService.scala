@@ -146,6 +146,11 @@ trait DatasetService {
   def removeFile(datasetId: UUID, fileId: UUID)
 
   /**
+   * get all files from dataset.
+   */
+  def getAllFiles(id:UUID, hierarchy:Boolean): List[UUID]
+
+  /**
    * Add Folder to dataset.
    */
   def addFolder(datasetId: UUID, folderId: UUID)
@@ -154,6 +159,11 @@ trait DatasetService {
    * Remove folder from dataset.
    */
   def removeFolder(datasetId: UUID, folderId: UUID)
+
+  /**
+   * get all files from dataset.
+   */
+  def getAllFolders(id:UUID, hierarchy:Boolean): List[UUID]
 
   /**
    * Set new thumbnail.

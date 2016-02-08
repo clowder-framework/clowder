@@ -62,6 +62,10 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
     CurationFileDAO.insert(cf)
   }
 
+  def insertFolder(cf: CurationFolder) ={
+    CurationFolderDAO.insert(cf)
+  }
+
   def updateRepository(curationId: UUID, repository: String): Unit = {
     CurationDAO.update(MongoDBObject("_id" -> new ObjectId(curationId.stringify)), $set("repository" -> repository),
       false, false, WriteConcern.Safe)
@@ -78,7 +82,15 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
   }
 
   def getCurationFiles(curationFileIds:List[UUID]): List[CurationFile] ={
-    (for (cf <- curationFileIds) yield CurationFileDAO.findOneById(new ObjectId(cf.stringify))).flatten.toList
+    (for (cf <- curationFileIds) yield CurationFileDAO.findOneById(new ObjectId(cf.stringify))).flatten
+  }
+
+  def getCurationFolders(curationFolderIds:List[UUID]): List[CurationFolder] = {
+    (for (cf <- curationFolderIds) yield CurationFolderDAO.findOneById(new ObjectId(cf.stringify))).flatten
+  }
+
+  def getCurationFolder(curationFolderId: UUID): Option[CurationFolder] = {
+    CurationFolderDAO.findOneById(new ObjectId(curationFolderId.stringify))
   }
 
   def getCurationByCurationFile(curationFile: UUID): Option[CurationObject] = {
@@ -119,5 +131,16 @@ object CurationFileDAO extends ModelCompanion[CurationFile, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[CurationFile, ObjectId](collection = x.collection("curationFiles")) {}
+  }
+}
+
+
+/**
+ * Salat CurationObjectMetadata model companion.
+ */
+object CurationFolderDAO extends ModelCompanion[CurationFolder, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[CurationFolder, ObjectId](collection = x.collection("curationFolders")) {}
   }
 }
