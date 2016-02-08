@@ -35,8 +35,11 @@ trait MetadataService {
   /** Vocabulary definitions for user fields **/
   def getDefinitions(spaceId: Option[UUID] = None): List[MetadataDefinition]
 
-  /** Get vocabulary based on uri **/
+  /** Get vocabulary based on id **/
   def getDefinition(id: UUID): Option[MetadataDefinition]
+
+  /** Get vocabulary based on uri **/
+  def getDefinitionByUri(uri:String):Option[MetadataDefinition]
 
   /** Add vocabulary definitions, leaving it unchanged if the update argument is set to false, defaults to update **/
   def addDefinition(definition: MetadataDefinition, update: Boolean = true)

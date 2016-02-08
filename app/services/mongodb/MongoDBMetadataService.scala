@@ -122,6 +122,10 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
     MetadataDefinitionDAO.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)))
   }
 
+  def getDefinitionByUri(uri:String):Option[MetadataDefinition] = {
+    MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri))
+  }
+
   /** Add vocabulary definitions, leaving it unchanged if the update argument is set to false **/
   def addDefinition(definition: MetadataDefinition, update: Boolean = true): Unit = {
     val uri = (definition.json \ "uri").as[String]

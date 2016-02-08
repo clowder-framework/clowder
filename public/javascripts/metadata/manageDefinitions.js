@@ -14,11 +14,7 @@ function addDefinition(data, pageURL){
 
     });
     request.fail(function (jqXHR, textStatus, errorThrown) {
-      console.error(
-          "The following error occured: " +
-          textStatus, errorThrown
-      );
-      notify("ERROR: " + errorThrown + ". Metadata Definition not edited.", error);
+      notify("ERROR: " + jqXHR.responseJSON + " Metadata Definition not edited.");
     });
   }
   else {
@@ -35,11 +31,7 @@ function addDefinition(data, pageURL){
 
     });
     request.fail(function (jqXHR, textStatus, errorThrown) {
-      console.error(
-          "The following error occured: " +
-          textStatus, errorThrown
-      );
-      notify("ERROR: " + errorThrown + ". Metadata Definition not added.", error);
+      notify("ERROR: " + jqXHR.responseJSON + " Metadata Definition not added.");
     });
   }
 }

@@ -92,10 +92,16 @@ class Metadata @Inject()(
         case Some(user) => {
           val body = request.body
           if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
-            val definition = MetadataDefinition(json = body)
-            metadataService.addDefinition(definition)
+            val uri = (body \ "uri").as[String]
+            metadataService.getDefinitionByUri(uri) match {
+              case Some(metadata) => BadRequest(toJson("Metadata definition with same uri exists."))
+              case None => {
+                val definition = MetadataDefinition(json = body)
+                metadataService.addDefinition(definition)
+                Ok(JsObject(Seq("status" -> JsString("ok"))))
+              }
+            }
 
-            Ok(JsObject(Seq("status" -> JsString("ok"))))
           } else {
             BadRequest(toJson("Invalid resource type"))
           }
@@ -112,8 +118,14 @@ class Metadata @Inject()(
         case Some(user) => {
           val body = request.body
           if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
-              metadataService.editDefinition(id, body)
-            Ok(JsObject(Seq("status" -> JsString("ok"))))
+            val uri = (body \ "uri").as[String]
+            metadataService.getDefinitionByUri(uri) match {
+              case Some(metadata) => BadRequest(toJson("Metadata definition with same uri exists."))
+              case None => {
+                metadataService.editDefinition(id, body)
+                Ok(JsObject(Seq("status" -> JsString("ok"))))
+              }
+            }
           } else {
             BadRequest(toJson("Invalid resource type"))
           }
