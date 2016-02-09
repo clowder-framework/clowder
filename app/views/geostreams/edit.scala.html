@@ -33,6 +33,7 @@
 <script src="@routes.Assets.at("javascripts/lib/handlebars-v4.0.5.js")"></script>
 <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/lib/jquery.serializejson.min.js")"></script>
+<script src="@routes.Assets.at("javascripts/metadata/definitionDropdowns.js")"></script>
 <script src="@routes.Assets.at("javascripts/geostreams/sensorStreamEdit.js")"></script>
 
 <script type="text/javascript">
@@ -86,6 +87,29 @@
             streamJson.metadataDefinitions = @(Html(Json.stringify(Json.toJson(definitions))));
             insertInstrumentForm(streamJson);
         }
+
+        $(".controlled-vocabulary-value").each(function(index, item) {
+            var targetID = $(item).data('id');
+            var definitionElement = $('select[data-id="' + targetID + '"]');
+
+            var registerNow = function(selectElement, inputElement) {
+                var selectedOption = $(selectElement).find(':selected');
+                var definition = {
+                    uri: selectedOption.val(),
+                    type: selectedOption.data('type'),
+                    definitions_url: selectedOption.data('definitions_url'),
+                    query_parameter: selectedOption.data('query_parameter')
+                };
+                registerMDAutocomplete(inputElement, definition);
+            };
+
+            $(definitionElement).on('change', function(){
+                registerNow(this, item);
+            });
+
+            registerNow(definitionElement, item);
+        });
+
     });
 </script>
 <script src="@routes.Assets.at("javascripts/geostreams/updateMap.js")"></script>
