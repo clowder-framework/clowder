@@ -1,15 +1,17 @@
 package services.mongodb
 
+import com.mongodb.casbah.commons.MongoDBObject
+import services.mongodb.MongoContext.context
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import com.mongodb.casbah.Imports._
 import org.bson.types.ObjectId
 import models._
 import javax.inject.{Singleton, Inject}
-import com.mongodb.casbah.commons.MongoDBObject
+
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
-import com.mongodb.casbah.commons.MongoDBObject
 import services.{VocabularyService, UserService}
-
+import play.api.Play._
 import scala.util.{Success, Try}
 
 /**
@@ -30,8 +32,12 @@ class MongoDBVocabularyService @Inject() (userService: UserService) extends Voca
     Vocabulary.findAll().toList
   }
 
+  def get(id: UUID) : Option[Vocabulary] = {
+    Vocabulary.findOneById(new ObjectId(id.stringify))
+  }
+
   def delete(id : UUID) = Try {
-    get(id) match {
+    Vocabulary.findOneById(new ObjectId(id.stringify)) match {
       case Some(vocab) => {
         Vocabulary.remove(MongoDBObject("_id" -> new ObjectId(vocab.id.stringify)))
         Success
