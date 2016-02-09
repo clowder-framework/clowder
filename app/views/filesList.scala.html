@@ -112,9 +112,9 @@
         <div class="col-md-12">
 				@filesList.map { file =>
                     @if(next.startsWith("dataset")){
-                        @files.listitem(file, comments, routes.Files.listByDataset(UUID(next.split("-")(1)), prev.toInt))
+                        @files.listitem(file, comments, routes.Files.listByDataset(UUID(next.split("-")(1)), prev.toInt), None)
                     } else {
-                        @files.listitem(file, comments, routes.Application.index())
+                        @files.listitem(file, comments, routes.Application.index(), None)
                     }
 				}
         </div>
