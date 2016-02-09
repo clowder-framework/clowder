@@ -1,5 +1,9 @@
 package services.mongodb
 
+import java.security.{DigestInputStream, MessageDigest}
+
+import org.apache.commons.codec.binary.Hex
+import org.apache.commons.io.input.CountingInputStream
 import play.api.mvc.Request
 import services._
 import models._
@@ -163,6 +167,24 @@ class MongoDBFileService @Inject() (
                     "author" -> SocialUserDAO.toDBObject(author),
                     "licenseData" -> grater[LicenseData].asDBObject(License.fromAppConfig()))
     MongoUtils.writeBlob[File](inputStream, filename, contentType, extra, "uploads", "medici2.mongodb.storeFiles").flatMap(x => get(x._1))
+  }
+
+  /**
+    * Save existing path to bytes on disk, returns (path, sha512, length)
+    */
+  def saveInPlace(filePath: String, inputStream: InputStream): Option[(String, String, Long)] = {
+    // save actual bytes
+    val md = MessageDigest.getInstance("SHA-512")
+    val cis = new CountingInputStream(inputStream)
+    val dis = new DigestInputStream(cis, md)
+    Logger.debug("Saving existing file at " + filePath)
+    dis.close()
+
+    val sha512 = Hex.encodeHexString(md.digest())
+    val length = cis.getByteCount
+
+    // store metadata to mongo
+    Some((filePath, sha512, length))
   }
 
   /**

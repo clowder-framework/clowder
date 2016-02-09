@@ -33,8 +33,9 @@ import play.api.mvc.{ResponseHeader, SimpleResult}
 import services._
 
 import scala.collection.mutable.ListBuffer
+import scala.util.control.Breaks._
 import scala.util.parsing.json.JSONArray
-
+import scala.collection.JavaConversions._
 
 import javax.imageio.ImageIO
 
@@ -505,12 +506,106 @@ class Files @Inject()(
         case None => BadRequest(toJson("Not authorized."))
       }
   }
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
 
   /**
+    * Upload file using multipart form enconding.
+    */
+  @ApiOperation(value = "Upload file",
+    notes = "Upload the attached file using multipart form enconding. Returns file id as JSON object, or ids with filenames if multiple files are sent. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file.",
+    responseClass = "None", httpMethod = "POST")
+  def uploadTest() = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
+    request.user match {
+      case Some(user) => {
+
+        Logger.debug("UPLOAD TEST")
+        if (request.body.files.length == 0) {
+          // No files so let's try path instead
+          for ((k,v) <- request.body.dataParts) {
+            if (k == "path") {
+              for (path <- v) {
+                Logger.debug("Checking "+path)
+                play.api.Play.configuration.getStringList("filesystem.sourcepaths") match {
+                  case Some(sourcelist) => {
+                    breakable {
+                      for (validfolder <- sourcelist) {
+                        if (path.indexOfSlice(validfolder) == 0) {
+                          Logger.debug(path + " is a valid file; in whitelisted folder " + validfolder)
+                          val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
+                          Logger.debug("  filename: "+filename)
+                          val f = new java.io.BufferedInputStream(new FileInputStream(path))
+                          val contentType = java.net.URLConnection.guessContentTypeFromStream(f)
+                          Logger.debug("  content type: "+contentType)
+                          val sip = files.saveInPlace(path, f)
+                          Logger.debug("  saveInPlace: "+sip.toString)
+                          break
+                        }
+                      }
+                    }
+                  }
+                  case None => {}
+                }
+              }
+            }
+          }
+
+        }
+        Ok("test OK")
+      }
+      case None => BadRequest(toJson("Not authorized."))
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
    * Reindex a file.
    */
   @ApiOperation(value = "Reindex a file",

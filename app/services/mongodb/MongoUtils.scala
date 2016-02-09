@@ -56,6 +56,7 @@ object MongoUtils {
           (x, id)
         } else {
           // write empty array
+          // TODO: For saveInPlace, this is the relevant portion
           val x = files.createFile(Array[Byte]())
           x.save()
           val id = UUID(x.getId.toString)

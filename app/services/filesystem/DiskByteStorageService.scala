@@ -73,7 +73,7 @@ class DiskByteStorageService extends ByteStorageService {
   /**
     * Save existing path to bytes on disk, returns (path, sha512, length)
     */
-  def saveInPlace(filePath: String, inputStream: InputStream, prefix: String, id: UUID): Option[(String, String, Long)] = {
+  def saveInPlace(filePath: String, inputStream: InputStream): Option[(String, String, Long)] = {
     // save actual bytes
     val md = MessageDigest.getInstance("SHA-512")
     val cis = new CountingInputStream(inputStream)

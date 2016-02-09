@@ -300,6 +300,7 @@ POST           /api/files/:three_d_file_id/3dTextures/:texture_id               
 POST           /api/files/:file_id/thumbnails/:thumbnail_id                             @api.Files.attachThumbnail(file_id: UUID,thumbnail_id: UUID)
 POST           /api/queries/:file_id/thumbnails/:thumbnail_id                           @api.Files.attachQueryThumbnail(file_id: UUID,thumbnail_id: UUID)
 GET            /api/files                                                               @api.Files.list
+POST           /api/files/test                                                          @api.Files.uploadTest
 POST           /api/files                                                               @api.Files.upload(showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String ?= "")
 POST           /api/files/withFlags/:flags                                              @api.Files.upload(showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String)
 POST           /api/files/searchusermetadata                                            @api.Files.searchFilesUserMetadata
@@ -334,6 +335,7 @@ DELETE         /api/files/:id/tags                                              
 POST           /api/files/:id/license                                                   @api.Files.updateLicense(id: UUID)
 GET            /api/files/:id/extracted_metadata                                        @api.Files.extract(id:UUID)
 POST           /api/files/:id/reindex                                                   @api.Files.reindex(id:UUID)
+
 
 # ----------------------------------------------------------------------
 # EXTRACTORS ENDPOINTS
