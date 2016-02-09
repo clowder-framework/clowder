@@ -1,6 +1,6 @@
-@(followedUsers: List[(UUID, String, String, String)], name: String, profileId: UUID, prev: Int, next: Int, limit: Int)(implicit user: Option[models.User])
+@(followedUsers: List[(UUID, String, String, String)], name: String, prev: Int, next: Int, limit: Int)(implicit user: Option[models.User])
 
-@main("Followers") {
+@main("Following Users") {
     <div class="row">
         <div class="col-md-12">
             <h1>Users @name is Following</h1>
@@ -8,44 +8,7 @@
     </div>
     <div class="row">
     @for(userInfo <- followedUsers) {
-        <div class="post-box col-lg-3 col-md-3 col-sm-3 col-xs-4">
-            <div class = "img_wrapper">
-                <div class = "img_hover">
-                    <a href="@routes.Profile.viewProfileUUID(userInfo._1)">
-                    @userInfo._2
-                    </a>
-                    <div>
-
-                        <h4>
-                        @if(user.get.followedEntities.filter(x => (x.id == userInfo._1)).nonEmpty) {
-                            <button id="followButton" type="button"
-                            class="btn-link"
-                            data-toggle="button"
-                            aria-pressed="true"
-                            autocomplete="off"
-                            objectId = "@userInfo._1.stringify"
-                            objectType = "user">
-                                <span class='glyphicon glyphicon-star-empty'></span> Unfollow
-                            </button>
-                        } else {
-                            <button id="followButton" type="button"
-                            class="btn btn-success"
-                            data-toggle="button"
-                            aria-pressed="false"
-                            autocomplete="off"
-                            objectId = "@userInfo._1.stringify"
-                            objectType = "user">
-                                <span class='glyphicon glyphicon-star'></span>Follow
-                            </button>
-                        }
-                        </h4>
-                        <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
-
-                    </div>
-                </div>
-                <img src=@userInfo._4 class="img_thumbnail">
-            </div>
-        </div>
+       @users.tile(userInfo, "col-lg-2 col-md-2 col-sm-3 col-xs-4", true)
     }
 
     </div>
@@ -54,19 +17,19 @@
             <ul class="pager">
                     <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
                 @if(prev >= 0) {
-                    <li class="previous"><a id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
+                    <li class="previous"><a id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span> Previous</a></li>
                 }
                 @if(next >= 0) {
-                    <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next<span class="glyphicon glyphicon-chevron-right"></span></a></li>
+                    <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
                 }
             </ul>
         </div>
     </div>
     <script type="text/javascript" language="javascript">
+        var removeIndicator = true;
         $(document).ready(function() {
-                $('#nextlink').attr('href', "@(routes.Users.getFollowing( next, limit))");
-	            $('#prevlink').attr('href', "@(routes.Users.getFollowing(prev, limit))");
-
+           $('#nextlink').attr('href', "@(routes.Users.getFollowing( next, limit))");
+	       $('#prevlink').attr('href', "@(routes.Users.getFollowing(prev, limit))");
         });
     </script>
 }

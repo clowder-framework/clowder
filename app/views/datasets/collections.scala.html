@@ -47,7 +47,7 @@
 </div>
 
 <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
-@if(user.isDefined) {
+@if(Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))) {
     <div class="form-inline">
         <div class="input-group input-group-sm col-md-8">
             <select id="collectionAddSelect" class="form-control add-resource">

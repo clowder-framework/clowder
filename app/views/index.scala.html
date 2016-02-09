@@ -30,7 +30,12 @@
                           Files <span class="badge pull-right">@filesCount</span>
                       </li>
                       <li class="list-group-item">
-                          Users <span class="badge pull-right">@usersCount</span>
+                          @if(user.isDefined) {
+                              <a href="@routes.Users.getUsers()"> Users <span class="badge pull-right">@usersCount</span></a>
+                          }else {
+                             Users <span class="badge pull-right">@usersCount</span>
+                          }
+
                       </li>
                   </ul>
               </div>

@@ -1,8 +1,11 @@
 package services.irods
 
 import java.io._
+import java.security.{DigestInputStream, MessageDigest}
 
 import models.UUID
+import org.apache.commons.codec.binary.Hex
+import org.apache.commons.io.input.CountingInputStream
 import org.irods.jargon.core.exception.JargonException
 import org.irods.jargon.core.pub.io.IRODSFile
 import play.api.{Logger, Play}
@@ -20,7 +23,7 @@ class IRODSByteStorageService extends ByteStorageService {
   /**
    * Save the bytes to IRODS
    */
-  def save(inputStream: InputStream, prefix: String, id: UUID): Option[String] = {
+  def save(inputStream: InputStream, prefix: String, id: UUID): Option[(String, String, Long)] = {
     current.plugin[IRODSPlugin] match {
       case None => {
         Logger.error("No IRODSPlugin")
@@ -61,16 +64,22 @@ class IRODSByteStorageService extends ByteStorageService {
           }
 
           // fill a buffer Array
+          val md = MessageDigest.getInstance("SHA-512")
+          val cis = new CountingInputStream(inputStream)
+          val dis = new DigestInputStream(cis, md)
           val fos = ipg.getFileFactory().instanceIRODSFileOutputStream(file)
           val buffer = new Array[Byte](16384)
           var count: Int  = -1
-          while({count = inputStream.read(buffer); count > 0}) {
+          while({count = dis.read(buffer); count > 0}) {
             fos.write(buffer, 0, count)
           }
           fos.close()
 
+          val sha512 = Hex.encodeHexString(md.digest())
+          val length = cis.getByteCount
+
           // finished
-          Some(relativePath)
+          Some(relativePath, sha512, length)
         } catch {
           case e: JargonException => {
             Logger.error("Could not save file " + filePath)

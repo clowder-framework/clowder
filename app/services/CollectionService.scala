@@ -67,9 +67,19 @@ trait CollectionService {
   def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Collection]
 
   /**
+   * Return a list of collections the user has created with matching title.
+   */
+  def listUser(limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[Collection]
+
+  /**
    * Return a list of collections the user has created starting at a specific date.
    */
   def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Collection]
+
+  /**
+   * Return a list of collections the user has access to starting at a specific date with matching title.
+   */
+  def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[Collection]
 
   /**
    * Get collection.

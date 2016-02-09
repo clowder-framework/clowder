@@ -52,7 +52,7 @@ CREATE TABLE datapoints (
     geog geography(PointZ,4326),
     start_time timestamp with time zone,
     end_time timestamp with time zone,
-    data json,
+    data jsonb,
     stream_id integer
 );
 
@@ -240,6 +240,8 @@ CREATE INDEX streams_sensor_id_idx ON streams USING btree (sensor_id);
 CREATE INDEX geoindex_times ON datapoints (start_time, end_time);
 
 CREATE INDEX geoindex_stream_id ON datapoints (stream_id);
+
+CREATE INDEX datapoints_data_idx ON datapoints USING gin (data);
 
 --
 -- PostgreSQL database dump complete

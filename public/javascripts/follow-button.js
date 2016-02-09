@@ -8,10 +8,10 @@ function unfollowCallback() {
     var $followerSize = $('#followerSize');
     var followerSize = parseInt($followerSize.text());
     $followerSize.text(followerSize - 1);
-    location.reload(true);
 }
 
-$(document ).ready(function() {
+
+$(document).ready(function() {
 	var followButtonList = $("[id=followButton]");
 	
 	followButtonList.click(function() {
@@ -44,6 +44,11 @@ $(document ).ready(function() {
     	          followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
     	          followButton.removeClass('btn-link');
     	          followButton.addClass('btn-link');
+				  if(removeIndicator) {
+					  $('#'+followButton.attr('objectid')+'-tile').remove();
+					  $('#'+followButton.attr('objectid')+'-listitem').remove();
+					  activate();
+				  }
     	          unfollowCallback();
     	        })
     	        .fail(function(data) {
@@ -75,6 +80,11 @@ $(document ).ready(function() {
     	          followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
     	          followButton.removeClass('btn-link');
     	          followButton.addClass('btn-link');
+				  if(removeIndicator) {
+					  $('#'+followButton.attr('objectid')+'-tile').remove();
+					  $('#'+followButton.attr('objectid')+'-listitem').remove();
+					  activate();
+				  }
     	          unfollowCallback();
     	        })
     	        .fail(function(data) {
@@ -105,6 +115,11 @@ $(document ).ready(function() {
     	          followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
     	          followButton.removeClass('btn-link');
     	          followButton.addClass('btn-link');
+				  if(removeIndicator) {
+					  $('#'+followButton.attr('objectid')+'-tile').remove();
+					  $('#'+followButton.attr('objectid')+'-listitem').remove();
+					  activate();
+				  }
     	          unfollowCallback();
     	        })
     	        .fail(function(data) {
@@ -135,6 +150,11 @@ $(document ).ready(function() {
     	          followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
     	          followButton.removeClass('btn-link');
     	          followButton.addClass('btn-link');
+				  if(removeIndicator) {
+					  $('#'+followButton.attr('objectid')+'-tile').remove();
+					  $('#'+followButton.attr('objectid')+'-listitem').remove();
+					  activate();
+				  }
     	          unfollowCallback();
     	        })
     	        .fail(function(data) {
@@ -165,6 +185,11 @@ $(document ).ready(function() {
 					followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
 					followButton.removeClass('btn-link');
 					followButton.addClass('btn-link');
+					if(removeIndicator) {
+						$('#'+followButton.attr('objectid')+'-tile').remove();
+						$('#'+followButton.attr('objectid')+'-listitem').remove();
+						activate();
+					}
 					unfollowCallback();
 				})
 				.fail(function(data) {
