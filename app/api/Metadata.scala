@@ -120,7 +120,12 @@ class Metadata @Inject()(
           if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
             val uri = (body \ "uri").as[String]
             metadataService.getDefinitionByUri(uri) match {
-              case Some(metadata) => BadRequest(toJson("Metadata definition with same uri exists."))
+              case Some(metadata)  => if( metadata.id != id) {
+                BadRequest(toJson("Metadata definition with same uri exists."))
+              } else {
+                metadataService.editDefinition(id, body)
+                Ok(JsObject(Seq("status" -> JsString("ok"))))
+              }
               case None => {
                 metadataService.editDefinition(id, body)
                 Ok(JsObject(Seq("status" -> JsString("ok"))))

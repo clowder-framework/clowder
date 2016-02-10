@@ -14,7 +14,7 @@ function addDefinition(data, pageURL){
 
     });
     request.fail(function (jqXHR, textStatus, errorThrown) {
-      notify("ERROR: " + jqXHR.responseJSON + " Metadata Definition not edited.");
+      notify("ERROR: " + jqXHR.responseJSON + " Metadata Definition not edited.", "error");
     });
   }
   else {
@@ -31,7 +31,7 @@ function addDefinition(data, pageURL){
 
     });
     request.fail(function (jqXHR, textStatus, errorThrown) {
-      notify("ERROR: " + jqXHR.responseJSON + " Metadata Definition not added.");
+      notify("ERROR: " + jqXHR.responseJSON + " Metadata Definition not added.", "error");
     });
   }
 }
@@ -39,6 +39,8 @@ function addDefinition(data, pageURL){
 function editDefinition(id, json, element) {
   reset();
   $(".definitionAction").text("Edit");
+  $(".definitionActionButton").text("Save");
+  $(".glyphicon-plus").attr("class", "glyphicon glyphicon-save");
   $(".definitionAction").attr("id",id);
   json = JSON.parse(json);
   if (json.label) {
@@ -66,4 +68,6 @@ function reset(element) {
   $(element).hide();
   $("#validationResults").empty();
   $('.definitionAction').text('Add');
+  $(".definitionActionButton").text("Add");
+  $(".glyphicon-save").attr("class", "glyphicon glyphicon-plus");
 }
