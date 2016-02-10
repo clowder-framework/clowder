@@ -45,8 +45,10 @@
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <h2> My Datasets </h2>
                 </div>
-                <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                    <span class=" margin-top-h pull-right"> <a href="@routes.Datasets.list("","",12, None, "", Some(profile.id.stringify))">See More</a></span>
+                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                    <span class="margin-top-h pull-right">
+                        <a href="@routes.Datasets.newDataset(None, None)" class="btn btn-link" title="Create a new dataset">Create Dataset</a>
+                        <a href="@routes.Datasets.list("","",12, None, "", Some(profile.id.stringify))">See More</a></span>
                 </div>
 
                 </div>
@@ -58,8 +60,6 @@
                 @if(datasetsList.size < 1) {
                     <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
                       <div>This area will show all datasets you've created.</div>
-
-                         <div> <a class="btn-link" href="@routes.Datasets.newDataset(None, None)" title="Create a new dataset">Create Dataset</a></div>
                     </div>
                 }
             </div>
@@ -68,7 +68,10 @@
                     <h2> My Collections </h2>
                 </div>
                 <div class="margin-top-h col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                    <span class="pull-right"> <a href="@routes.Collections.list("","",12, None, "", Some(profile.id.stringify))">See More</a></span>
+                    <span class="pull-right">
+                        <a href="@routes.Collections.newCollection(None)" class="btn btn-link" title="Create a new collection">Create Collection</a>
+                        <a href="@routes.Collections.list("","",12, None, "", Some(profile.id.stringify))">See More</a>
+                    </span>
                 </div>
 
             </div>
@@ -79,8 +82,6 @@
                 @if(collectionsList.size < 1) {
                     <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
                         <div>This area will show all collections you've created</div>
-
-                        <div> <a class="btn-link" href="@routes.Collections.newCollection(None)" title="Create a new collection">Create Collection</a></div>
                     </div>
                 }
             </div>
@@ -89,7 +90,10 @@
                     <h2> My Spaces </h2>
                 </div>
                 <div class="margin-top-h col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                    <span class="pull-right"> <a href="@routes.Spaces.list("","",12, "", Some(profile.id.stringify))">See More</a></span>
+                    <span class="pull-right">
+                        <a href="@routes.Spaces.newSpace()" class="btn btn-link" title="Create a new space">Create Space</a>
+                        <a href="@routes.Spaces.list("","",12, "", Some(profile.id.stringify))">See More</a>
+                    </span>
                 </div>
             </div>
             <div class="row" id="masonry-spaces">
@@ -100,8 +104,6 @@
                 @if(spacesList.size < 1) {
                     <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
                         <div>This area will show all spaces you've created. </div>
-
-                        <div> <a class="btn-link" href="@routes.Spaces.newSpace()" title="Create a new space">Create Space</a></div>
                     </div>
                 }
             </div>
