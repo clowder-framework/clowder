@@ -129,7 +129,8 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     var dsURL = controllers.routes.Datasets.dataset(datasetId).url
     dsURL = hostURL + dsURL
 
-    val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython").post(Json.obj(
+    val apipath = play.Play.application().configuration().getString("toolmanager.host") + ":" + play.Play.application().configuration().getString("toolmanager.port")  + play.Play.application().configuration().getString("toolmanager.paths")
+    val statusRequest: Future[Response] = url(apipath).post(Json.obj(
       "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
       "key" -> play.Play.application().configuration().getString("commKey"),
       "user" -> "mburnet2@illinois.edu",
