@@ -187,10 +187,10 @@ function acceptSpaceRequest(spaceId, userId, userName){
         var sd=$('#request-counter').text();
         sd=parseInt(sd.split('(')[1]) -1;
         $('#request-counter').text("Requests ("+ sd +")");
-        var addUesr ='<li><a href= "'+jsRoutes.controllers.Profile.viewProfileUUID(userId).url+'" id="'+userId+'">'
+        var addUser ='<li><a href= "'+jsRoutes.controllers.Profile.viewProfileUUID(userId).url+'" id="'+userId+'">'
                       + userName + '</a>'
         + '<a class="remove-user" id="'+ userId +'"><span class="glyphicon glyphicon-remove"></span></a></li>';
-        $('#'+role+'-current').append(addUesr);
+        $('#'+role+'-current').append(addUser);
         $("option[value='"+userId+"']").each(function() {
             $(this).remove();
         });
