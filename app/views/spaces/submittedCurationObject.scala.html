@@ -6,11 +6,15 @@
   @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
   @main(curationObject.name) {
-    <div class = "row">
-      <ol class="breadcrumb">
-        <li> <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a></li>
-        <li class= "active"> Submitted Curation</li>
-      </ol>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a> >
+                    <strong> Submitted Curation</strong>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="container row">
@@ -107,7 +111,7 @@
 
     </div>
     <div class="col-md-6">
-    <b>Submission Status in repository &nbsp</b><button id="status" class ="btn btn-default btn-xs"><span class="glyphicon glyphicon-send"></span> Update</button>
+    <b>Submission Status in repository</b><button id="status" class ="btn btn-default btn-xs margin-left"><span class="glyphicon glyphicon-send"></span> Update</button>
     <br/><br/>
     <div id="showStatus"></div>
       <script>
