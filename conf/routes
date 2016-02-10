@@ -116,7 +116,7 @@ GET            /collections                                                     
 GET            /collections/new                                                         @controllers.Collections.newCollection(space: Option[String])
 GET            /collections/following                                                   @controllers.Collections.followingCollections(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
 POST           /collection/submit                                                       @controllers.Collections.submit
-GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)
+GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID, index: Int ?=0, limit: Int ?= 12)
 GET            /collection/:id/users                                                    @controllers.Collections.users(id: UUID)
 GET            /collections/:collection_id/previews                                     @controllers.Collections.previews(collection_id: UUID)
 
@@ -372,7 +372,7 @@ GET            /api/files/:id                                                   
 # ----------------------------------------------------------------------
 # DANGEROUS ENDPOINTS
 # ----------------------------------------------------------------------
-GET            /api/delete-data                                                         api.Admin.deleteAllData
+DELETE         /api/delete-data                                                         api.Admin.deleteAllData(resetAll: Boolean ?= false)
 POST           /api/remove-admin                                                        api.Admin.removeAdmin
 POST           /api/changeAppearance                                                    api.Admin.submitAppearance
 POST           /api/dumpFilesMd                                                         @api.Files.dumpFilesMetadata
