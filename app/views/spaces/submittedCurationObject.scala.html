@@ -19,7 +19,7 @@
         <h2>@curationObject.name</h2>
         @curationObject.description<br/><br/>
         <b>Creator</b>: @curationObject.author.fullName <br/>
-        <b>Uploaded</b>: @curationObject.created.date.format("yyyy-mm-dd hh:mm") <br/>
+        <b>Uploaded</b>: @curationObject.created.date.format("MMM dd, yyyy") <br/>
         <b>Repository</b>: @curationObject.repository.getOrElse("Not select.") <br/>
         <b>Submmitted</b>: @{curationObject.submittedDate match {
         case Some(d) => d.format("MMM dd, yyyy")
