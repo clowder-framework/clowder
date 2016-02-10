@@ -102,7 +102,7 @@ case class ClowderUser(
   // spaces
   spaceandrole: List[UserSpaceAndRole] = List.empty,
   //staging area
-  repositoryPreferences: Map[String,Any] = Map.empty
+  repositoryPreferences: Map[String,Any] = Map("Purpose" -> "Testing-Only")
 
 ) extends User
 
