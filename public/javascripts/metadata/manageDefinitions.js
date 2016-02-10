@@ -40,7 +40,7 @@ function editDefinition(id, json, element) {
   reset();
   $(".definitionAction").text("Edit");
   $(".definitionActionButton").text("Save");
-  $(".glyphicon-plus").attr("class", "glyphicon glyphicon-save");
+  $(".glyphicon-plus").attr("class", "glyphicon glyphicon-send");
   $(".definitionAction").attr("id",id);
   json = JSON.parse(json);
   if (json.label) {
@@ -69,5 +69,5 @@ function reset(element) {
   $("#validationResults").empty();
   $('.definitionAction').text('Add');
   $(".definitionActionButton").text("Add");
-  $(".glyphicon-save").attr("class", "glyphicon glyphicon-plus");
+  $(".glyphicon-send").attr("class", "glyphicon glyphicon-plus");
 }
