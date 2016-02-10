@@ -129,13 +129,14 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     var dsURL = controllers.routes.Datasets.dataset(datasetId).url
     dsURL = hostURL + dsURL
 
-    val apipath = play.Play.application().configuration().getString("toolmanager.host") + ":" + play.Play.application().configuration().getString("toolmanager.port")  + play.Play.application().configuration().getString("toolmanager.paths")
+    val apihost = play.Play.application().configuration().getString("toolmanager.host")
+    val apipath = apihost + ":" + play.Play.application().configuration().getString("toolmanager.port")  + play.Play.application().configuration().getString("toolmanager.paths")
     val statusRequest: Future[Response] = url(apipath).post(Json.obj(
       "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
       "key" -> play.Play.application().configuration().getString("commKey"),
       "user" -> "mburnet2@illinois.edu",
       "pw" -> "tSzx7dINA8RxFEKp7sX8",
-      "host" -> "http://141.142.209.108"
+      "host" -> apihost
     ))
 
     statusRequest.map( response => {
@@ -217,10 +218,11 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     * @param datasetid clowder ID of dataset to attach
     */
   def attachDataset(sessionId: String, datasetid: String): Boolean = {
-    val statusRequest: Future[Response] = url("http://141.142.209.108:8080/attachDataset").post(Json.obj(
+    val apihost = play.Play.application().configuration().getString("toolmanager.host")
+    val statusRequest: Future[Response] = url(apihost+":8080/attachDataset").post(Json.obj(
       "key" -> play.Play.application().configuration().getString("commKey"),
       "session" -> sessionId,
-      "host" -> "http://141.142.209.108"
+      "host" -> apihost
     ))
 
     statusRequest.map( response => {
