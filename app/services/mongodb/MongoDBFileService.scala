@@ -229,7 +229,6 @@ class MongoDBFileService @Inject() (
     * Directly insert a file into the db (even with a local path)
     */
   def insert(file: File): Option[String] = {
-    Logger.debug("FILE SERVICE INSERT")
     FileDAO.insert(file).map(_.toString)
   }
 
