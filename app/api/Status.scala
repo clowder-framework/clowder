@@ -88,7 +88,8 @@ class Status @Inject()(spaces: SpaceService,
       case Some(p) => {
         if (Permission.checkServerAdmin(user)) {
           Json.obj("catalog" -> p.conn.getCatalog,
-            "schema" -> p.conn.getSchema)
+            "schema" -> p.conn.getSchema,
+            "updates" -> appConfig.getProperty[List[String]]("postgres.updates", List.empty[String]))
         } else {
           jsontrue
         }
