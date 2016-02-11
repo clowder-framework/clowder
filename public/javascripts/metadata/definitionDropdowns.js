@@ -1,26 +1,37 @@
-var registerMDAutocomplete = function(inputElement, definitionData) {
-  if (definitionData.type == 'list') {
-    console.log('list found');
-    $.ajax(definitionData.definitions_url, {
-      method: "GET",
-      dataType: 'jsonp'
-    }).done(function(data) {
-      $(inputElement).autocomplete({
-        source: data
-      });
-    });
-  } else if (definitionData.type == 'listjquery') {
-    console.log('listjquery found');
+/**
+ * Register AutoComplete Dropdowns for Metadata Definitions
+ *
+ * @param inputElement - the target input box where autocomplete should appear
+ * @param definitionData - the metadata definition (in JSON format) to register for this input box
+ * @param selectElement - the select element can be referenced if you need to de-register events when
+ *                      a new metadata definition is selected from the dropdown
+ */
+var registerMDAutocomplete = function(inputElement, definitionData, selectElement) {
+
+  // call the internal function based on the type
+  // if the metadata definition is a "list", we expect to find a function called this.list below
+  // otherwise we will not autocomplete
+  if (this[definitionData.type] && typeof this[definitionData.type] == 'function') {
+    this[definitionData.type](inputElement, definitionData, selectElement);
+  } else {
+    if ($(inputElement).prop('autocomplete')) {
+      $(inputElement).autocomplete("destroy");
+    }
+  }
+
+  this.list = function(inputElement, definitionData) {
     $(inputElement).autocomplete({
       source: function(request, response) {
-        var d = {};
-        d[definitionData.query_parameter] = request.term;
+        var url;
+        if (definitionData.query_parameter) {
+          url = encodeURIComponent(definitionData.definitions_url + "?" + definitionData.query_parameter + "=" + request.term);
+        } else {
+          url = encodeURIComponent(definitionData.definitions_url);
+        }
         $.ajax({
-          url: definitionData.definitions_url,
-          dataType: "jsonp",
-          data: d,
+          url: jsRoutes.api.Metadata.getUrl(url).url,
+          dataType: 'json',
           success: function(data) {
-            console.log(data);
             var searchspace;
             if ('cat_data' in data) {
               searchspace = data.cat_data.concat(data.vars_data);
@@ -36,61 +47,74 @@ var registerMDAutocomplete = function(inputElement, definitionData) {
         });
       }
     });
-  } else {
-    if ($(inputElement).prop('autocomplete')) {
-      $(inputElement).autocomplete("destroy");
-    }
-  }
-};
+  };
 
-$(document).ready(function() {
-// Assumption: the input list contains: <cat_short_name>;<cat_display_name> or <cat_short_name>:<var_name>, where <cat_display_name> contains no ":", and <var_name> contains no ";".
-  $.widget( "custom.catcomplete", $.ui.autocomplete, {
-    _create: function() {
-      this._super();
-      this.widget().menu( "option", "items", "> :not(.ui-autocomplete-category)" );
-    },
-    _renderMenu: function( ul, items ) {
-      var that = this;
-      var currentCategory = "";
-      var category = "";
-      var dispCatMap = new Map();
-      $.each( items, function( index, item ) {
-        //console.log("in renderMenu: item: ", item);
-        var label = item.label;
-        var char_index = label.indexOf(";");
-        if (char_index > -1) {
-          var shortName = label.slice(0, char_index);
-          var displName = label.slice(char_index + 1);
-          //console.log("Setting category name '" + shortName + "' to '" + displName + "'");
-          dispCatMap.set(shortName, displName);
-        }
-      });
-      $.each( items, function( index, item ) {
-        var li;
-        // Each item from an original array of strings was converted to an object { label: "val1", value: "val1" }.
-        //console.log("item: ", item);
-        var label = item.label;
-        var char_index = label.indexOf(":");
-        if (char_index > -1) {
-          category = label.slice(0, char_index);
-          item.label = label.slice(char_index + 1);
-        }
-        if ( category != currentCategory ) {
-          //console.log("category changed from " + currentCategory + " to: " + category);
-          var displayed_cat_name = category;
-          if (dispCatMap.has(category)) {
-            displayed_cat_name = dispCatMap.get(category);
+  this.listjquery = this.list;
+
+  this.listgeocode = function(inputElement, definitionData) {
+    $(inputElement).autocomplete({
+      source: function(request, response) {
+        var url = encodeURIComponent(definitionData.definitions_url + "?" + definitionData.query_parameter + "=" + request.term);
+        $.ajax({
+          url: jsRoutes.api.Metadata.getUrl(url).url,
+          dataType: 'json',
+          success: function(data) {
+            response(data);
           }
-          ul.append( "<li class='ui-autocomplete-category'>" + displayed_cat_name + "</li>" );
-          currentCategory = category;
-        }
-        // Used to be: Display only the items containing ":".
-        // Don't display the items containing ";".
-        if (label.indexOf(";") <= 0) {
-          li = that._renderItemData( ul, item );
-        }
+        });
+      }
+    });
+  };
+
+  this.scientific_variable = function(inputElement, definitionData) {
+    $(inputElement).autocomplete({
+      source: function(request, response) {
+        var url = encodeURIComponent(definitionData.definitions_url + "?" + definitionData.query_parameter + "=" + request.term);
+        $.ajax({
+          url: jsRoutes.api.Metadata.getUrl(url).url,
+          dataType: 'json',
+          success: function(data) {
+            // The vars list is in data.vars_data, and the categories in data.cat_data.
+            // Assuming that "listjquery" will use a URL that returns filtered data,
+            // we don't filter again. Returns cat_data with the vars list
+            // if present, otherwise returns the original data.
+            if ('cat_data' in data) {
+              var res = data.cat_data.concat(data.vars_data);
+              response(res);
+            } else {
+              response(data);
+            }
+          }
+        });
+      }
+    });
+  };
+
+  this.datetime = function(inputElement, definitionData, selectElement) {
+    // calling getScript makes sure that $.datepicker is available
+    $.getScript("/assets/javascripts/jquery-ui-timepicker-addon.js", function(e) {
+
+      // register an event listener to stop showing the datepicker if a different
+      // metadata definition is later selected
+      $(selectElement).on('change', function(event) {
+        $(inputElement).datepicker('destroy');
       });
-    }
-  });
-});
+
+      // This widget uses the ISO 8601 format, such as 2016-01-01T10:00:00-06:00 or 2016-01-01T10:00:00Z.
+      // This uses Trent Richardson's jQuery UI Timepicker add-on.
+      // jQuery UI Datepicker options: http://api.jqueryui.com/datepicker/
+      // jQuery UI Timepicker addon options: http://trentrichardson.com/examples/timepicker/
+      $(inputElement).datetimepicker(
+        { controlType: 'select',
+          // Uses "select" instead of the default slider.
+          // If we put "T" in the "separator" option instead of "timeFormat", the widget changes 2-digit year values xx we put directly into the field to 20xx; if we put "T" in timeFormat, then the year values are kept. So we used the latter.
+          dateFormat: $.datepicker.ISO_8601,
+          timeFormat: "'T'HH:mm:ssZ",
+          separator: '',
+          // Allows direct input.
+          timeInput: true
+        }
+      );
+    });
+  };
+};

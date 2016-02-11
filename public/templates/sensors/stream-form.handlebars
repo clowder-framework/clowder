@@ -33,70 +33,74 @@
                 <div class="row">
                   <div class="col-md-12">
                     <div class="form-group">
-                      <label for="instrumentName" class="col-sm-4 paddingTop7 control-label" data-toggle="tooltip" data-placement="left"
-                             title="The full description of the instrument, typically provided by the Data Source. Should be concise, but descriptive.">Name</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="instrumentName" name="instrumentName" value="{{name}}" placeholder="Falls Creek Northeast Temperature Monitor" required>
+                      <div class="row">
+                        <label for="instrumentName" class="col-sm-4 paddingTop7 control-label" data-toggle="tooltip" data-placement="left"
+                               title="The full description of the instrument, typically provided by the Data Source. Should be concise, but descriptive.">Name</label>
+                        <div class="col-sm-8">
+                          <input type="text" class="form-control input-sm" id="instrumentName" name="instrumentName" value="{{name}}" placeholder="Falls Creek Northeast Temperature Monitor" required>
+                        </div>
                       </div>
 
-                      <div class="col-md-12">
-                        <h3></h3>
+                      <div class="row">
+                        <input type="hidden" name="id" value="{{id}}" />
+                        <label for="instrumentMake" class="col-sm-4 paddingTop7 control-label">Make</label>
+                        <div class="col-sm-8">
+                          <input type="text" class="form-control input-sm" id="instrumentMake" name="instrumentMake" value="{{properties.instrumentMake}}" placeholder="PISCES">
+                        </div>
                       </div>
 
-                      <input type="hidden" name="id" value="{{id}}" />
-                      <label for="instrumentMake" class="col-sm-4 paddingTop7 control-label">Make</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="instrumentMake" name="instrumentMake" value="{{properties.instrumentMake}}" placeholder="PISCES">
-                      </div>
-                      <label for="instrumentModel" class="col-sm-4 paddingTop7 control-label">Model</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="instrumentModel" name="instrumentModel" value="{{properties.instrumentModel}}" placeholder="PT-5000">
+                      <div class="row">
+                        <label for="instrumentModel" class="col-sm-4 paddingTop7 control-label">Model</label>
+                        <div class="col-sm-8">
+                          <input type="text" class="form-control input-sm" id="instrumentModel" name="instrumentModel" value="{{properties.instrumentModel}}" placeholder="PT-5000">
+                        </div>
                       </div>
 
-                      <div class="col-md-12">
+                      <div class="row">
                         <h3></h3>
                       </div>
 
                       <div id="hasDepth">
-                        <label for="instrumentVerticalOffset" class="col-sm-4 paddingTop7 control-label"
-                               data-toggle="tooltip" data-placement="left"
-                               title="The vertical 'offset', or how far the instrument is above or below the surface. Use negative values for items below the surface.">
-                          Elevation
-                        </label>
-                        <div class="col-sm-4">
-                          <input type="text" class="form-control input-sm" id="instrumentVerticalOffset" name="instrumentVerticalOffset" value="{{properties.instrumentVerticalOffset}}" placeholder="use negative values to indicate items below the surface">
-                        </div>
-                        <div class="col-sm-4">
-                          <input type="text" class="form-control input-sm" id="instrumentVerticalOffsetUnits" name="instrumentVerticalOffsetUnits" value="{{properties.instrumentVerticalOffsetUnits}}" placeholder="meters">
-                        </div>
-
-                        <div class="col-md-12">
-                          <h3></h3>
+                        <div class="row">
+                          <label for="instrumentVerticalOffset" class="col-sm-4 paddingTop7 control-label"
+                                 data-toggle="tooltip" data-placement="left"
+                                 title="The vertical 'offset', or how far the instrument is above or below the surface. Use negative values for items below the surface.">
+                            Elevation
+                          </label>
+                          <div class="col-sm-4">
+                            <input type="text" class="form-control input-sm" id="instrumentVerticalOffset" name="instrumentVerticalOffset" value="{{properties.instrumentVerticalOffset}}" placeholder="use negative values to indicate items below the surface">
+                          </div>
+                          <div class="col-sm-4">
+                            <input type="text" class="form-control input-sm" id="instrumentVerticalOffsetUnits" name="instrumentVerticalOffsetUnits" value="{{properties.instrumentVerticalOffsetUnits}}" placeholder="meters">
+                          </div>
                         </div>
 
-                        <label for="instrumentHorizontalOffset" class="col-sm-4 paddingTop7 control-label"
+                        <div class="row">
+                          <label for="instrumentHorizontalOffset" class="col-sm-4 paddingTop7 control-label"
                                data-toggle="tooltip" data-placement="left"
                                title="An 'horizontal offset' instrument is at the same lat/long, but positioned slightly away.">
-                          Horizontal Offset
-                        </label>
-                        <div class="col-sm-4">
-                          <input type="number" class="form-control input-sm" id="instrumentHorizontalOffset" name="instrumentHorizontalOffset" value="{{properties.instrumentHorizontalOffset}}" placeholder="5">
-                        </div>
-                        <div class="col-sm-4">
-                          <input type="text" class="form-control input-sm" id="instrumentHorizontalOffsetUnits" name="instrumentHorizontalOffsetUnits" value="{{properties.instrumentHorizontalOffsetUnits}}" placeholder="meters">
-                        </div>
-                        <label for="instrumentOffsetHorizontalOrientation" class="col-sm-4 paddingTop7 control-label">Horizontal Offset Orientation (in compass degrees)</label>
-                        <div class="col-sm-8">
-                          <input type="number" class="form-control input-sm" id="instrumentHorizontalOffsetOrientation" name="instrumentHorizontalOffsetOrientation" value="{{properties.instrumentHorizontalOffsetOrientation}}" placeholder="180 (ie: south of the lat/long)">
+                            Horizontal Offset
+                          </label>
+                          <div class="col-sm-4">
+                            <input type="number" class="form-control input-sm" id="instrumentHorizontalOffset" name="instrumentHorizontalOffset" value="{{properties.instrumentHorizontalOffset}}" placeholder="5">
+                          </div>
+                          <div class="col-sm-4">
+                            <input type="text" class="form-control input-sm" id="instrumentHorizontalOffsetUnits" name="instrumentHorizontalOffsetUnits" value="{{properties.instrumentHorizontalOffsetUnits}}" placeholder="meters">
+                          </div>
                         </div>
 
-                        <div class="col-md-12">
-                          <h3></h3>
+                        <div class="row">
+                          <label for="instrumentOffsetHorizontalOrientation" class="col-sm-4 paddingTop7 control-label">Horizontal Offset Orientation (in compass degrees)</label>
+                          <div class="col-sm-8">
+                            <input type="number" class="form-control input-sm" id="instrumentHorizontalOffsetOrientation" name="instrumentHorizontalOffsetOrientation" value="{{properties.instrumentHorizontalOffsetOrientation}}" placeholder="180 (ie: south of the lat/long)">
+                          </div>
                         </div>
 
-                        <label for="notes" class="col-sm-4 paddingTop7 control-label">Notes</label>
-                        <div class="col-sm-8">
-                          <textarea class="form-control input-sm" id="notes" name="notes" placeholder="optional information...">{{properties.notes}}</textarea>
+                        <div class="row">
+                          <label for="notes" class="col-sm-4 paddingTop7 control-label">Notes</label>
+                          <div class="col-sm-8">
+                            <textarea class="form-control input-sm" id="notes" name="notes" placeholder="optional information...">{{properties.notes}}</textarea>
+                          </div>
                         </div>
 
 
