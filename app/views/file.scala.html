@@ -65,6 +65,7 @@
     <script src="@routes.Assets.at("javascripts/popcorn-complete.min.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/galleria-1.2.9.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
+	<script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/sectionsListProcess.js")" type="text/javascript"></script>
 
 	<script>
@@ -171,12 +172,12 @@
                 <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->                
                     @if(user.get.identityId.userId.equals(file.author.identityId.userId)){                    
                         <span class="align-right">
-				            <button id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" title="Delete">
+				            <button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))','@(routes.Application.index())')" class="btn btn-link" title="Delete">
 						    <span class="glyphicon glyphicon-trash"></span> Delete</button>
 					    </span>
 					} else {
 					    <span class="align-right">
-                            <button disabled id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" title="Delete">
+                            <button disabled id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))','@(routes.Application.index())')" class="btn btn-link" title="Delete">
                             <span class="glyphicon glyphicon-trash"></span> Delete</button>
                         </span>
 					}

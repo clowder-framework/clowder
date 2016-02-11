@@ -3,7 +3,7 @@ package api
 import play.api.mvc.Controller
 import play.api.Play.current
 import play.api.libs.json.Json.toJson
-import services.{AppConfiguration, AppConfigurationService}
+import services.{ElasticsearchPlugin, AppConfiguration}
 import services.mongodb.MongoSalatPlugin
 import play.api.Logger
 
@@ -17,8 +17,10 @@ object Admin extends Controller with ApiController {
   /**
    * DANGER: deletes all data, keep users.
    */
-  def deleteAllData = ServerAdminAction { implicit request =>
-    current.plugin[MongoSalatPlugin].map(_.dropAllData())
+  def deleteAllData(resetAll: Boolean) = ServerAdminAction { implicit request =>
+    current.plugin[MongoSalatPlugin].map(_.dropAllData(resetAll))
+    current.plugin[ElasticsearchPlugin].map(_.deleteAll)
+
     Ok(toJson("done"))
   }
   
@@ -60,6 +62,9 @@ object Admin extends Controller with ApiController {
     }
     (request.body \ "welcomeMessage").asOpt[String] match {
       case Some(welcomeMessage) => AppConfiguration.setWelcomeMessage(welcomeMessage)
+    }
+    (request.body \ "googleAnalytics").asOpt[String] match {
+      case Some(s) => AppConfiguration.setGoogleAnalytics(s)
     }
     Ok(toJson(Map("status" -> "success")))
   }
