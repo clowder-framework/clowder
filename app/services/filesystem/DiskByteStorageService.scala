@@ -71,25 +71,6 @@ class DiskByteStorageService extends ByteStorageService {
   }
 
   /**
-    * Save existing path to bytes on disk, returns (path, sha512, length)
-    */
-  def saveInPlace(filePath: String, inputStream: InputStream): Option[(String, String, Long)] = {
-    Logger.debug("saveInPlace - DBSS")
-    // save actual bytes
-    val md = MessageDigest.getInstance("SHA-512")
-    val cis = new CountingInputStream(inputStream)
-    val dis = new DigestInputStream(cis, md)
-    Logger.debug("Saving existing file at " + filePath)
-    dis.close()
-
-    val sha512 = Hex.encodeHexString(md.digest())
-    val length = cis.getByteCount
-
-    // store metadata to mongo
-    Some((filePath, sha512, length))
-  }
-
-  /**
    * Get the bytes from disk
    */
   def load(path: String, ignored: String): Option[InputStream] = {

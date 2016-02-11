@@ -170,25 +170,6 @@ class MongoDBFileService @Inject() (
   }
 
   /**
-    * Save existing path to bytes on disk, returns (path, sha512, length)
-    */
-  def saveInPlace(filePath: String, inputStream: InputStream): Option[(String, String, Long)] = {
-    Logger.debug("saveInPlace - MDBFS")
-    // save actual bytes
-    val md = MessageDigest.getInstance("SHA-512")
-    val cis = new CountingInputStream(inputStream)
-    val dis = new DigestInputStream(cis, md)
-    Logger.debug("Saving existing file at " + filePath)
-    dis.close()
-
-    val sha512 = Hex.encodeHexString(md.digest())
-    val length = cis.getByteCount
-
-    // store metadata to mongo
-    Some((filePath, sha512, length))
-  }
-
-  /**
    * Get blob.
    */
   def getBytes(id: UUID): Option[(InputStream, String, String, Long)] = {
@@ -242,6 +223,14 @@ class MongoDBFileService @Inject() (
       }
       case None => Logger.error("File not found: " + id)
     }
+  }
+
+  /**
+    * Directly insert a file into the db (even with a local path)
+    */
+  def insert(file: File): Option[String] = {
+    Logger.debug("FILE SERVICE INSERT")
+    FileDAO.insert(file).map(_.toString)
   }
 
   /**

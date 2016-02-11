@@ -504,21 +504,39 @@ class Files @Inject()(
             for ((k,v) <- request.body.dataParts) {
               if (k == "path") {
                 for (path <- v) {
-                  Logger.debug("Checking "+path)
                   play.api.Play.configuration.getStringList("filesystem.sourcepaths") match {
                     case Some(sourcelist) => {
                       breakable {
                         for (validfolder <- sourcelist) {
                           if (path.indexOfSlice(validfolder) == 0) {
                             foundPath = true
-                            Logger.debug(path + " is a valid file; in whitelisted folder " + validfolder)
+
+                            Logger.debug(path + " is a valid file (in whitelisted folder " + validfolder+")")
                             val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
                             Logger.debug("  filename: "+filename)
+
                             val f = new java.io.BufferedInputStream(new FileInputStream(path))
                             val contentType = java.net.URLConnection.guessContentTypeFromStream(f)
                             Logger.debug("  content type: "+contentType)
-                            val sip = files.saveInPlace(path, f)
-                            Logger.debug("  saveInPlace: "+sip.toString)
+
+                            val date: java.util.Calendar = java.util.Calendar.getInstance()
+
+                            val loader = classOf[services.filesystem.DiskByteStorageService].getName
+                            Logger.debug("  loader: "+loader)
+
+                            val jf = new java.io.File(path)
+                            val bytes = jf.length() // get file size in bytes
+                            Logger.debug("  length: "+bytes.toString)
+
+                            val sha512 = ""
+
+                            val newf = new File(UUID(),Some(path),filename,user.asInstanceOf[Identity],
+                              date.getTime(),contentType,bytes,sha512,loader)
+                            Logger.debug(newf.toString)
+                            files.insert(newf)
+
+                            // SUBMIT OTHER REQUESTS, ETC.
+
                             break
                           }
                         }

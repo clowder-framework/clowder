@@ -25,11 +25,6 @@ trait FileService {
   def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File]
 
   /**
-    * Save a file in-place without copying blob. File directory must be included in conf/filesystem.sourcepaths.
-    */
-  def saveInPlace(filePath: String, inputStream: InputStream): Option[(String, String, Long)]
-
-  /**
    * Get the input stream of a file given a file id.
    * Returns input stream, file name, content type, content length.
    */
@@ -92,6 +87,7 @@ trait FileService {
   
   def index(id: UUID)
 
+  def insert(file: File): Option[String]
   /**
    * Return a list of tags and counts found in sections
    */
