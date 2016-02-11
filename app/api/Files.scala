@@ -423,6 +423,7 @@ class Files @Inject()(
                     case Some(sourcelist) => {
                       breakable {
                         for (validfolder <- sourcelist) {
+                          // TODO: something smarter than this - check whether file is in directory properly
                           if (path.indexOfSlice(validfolder) == 0) {
                             Logger.debug(path + " is whitelisted for upload")
                             foundPath = true
