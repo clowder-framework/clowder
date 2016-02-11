@@ -434,8 +434,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           //Decode the datasets so that their free text will display correctly in the view
           val datasetsInside = datasets.listCollection(id.stringify)
+          val datasetIdsToUse = datasetsInside.slice(index*limit, (index+1)*limit)
           val decodedDatasetsInside = ListBuffer.empty[models.Dataset]
-          for (aDataset <- datasetsInside) {
+          for (aDataset <- datasetIdsToUse) {
             val dDataset = Utils.decodeDatasetElements(aDataset)
             decodedDatasetsInside += dDataset
           }

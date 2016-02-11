@@ -81,11 +81,14 @@
                     </a>
                     </span>
                 } else {
-                    <span class="input-group-btn">
-                    <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add collection to Space" onclick="addCollectionToSpace('@resourceId')">
-                        <span class="glyphicon glyphicon-plus"></span> Add
-                    </a>
-                    </span>
+                    @if((currentCollection.get.root_flag == true && currentCollection.get.parent_collection_ids.isEmpty) || currentCollection.get.parent_collection_ids.isEmpty){
+                        <span class="input-group-btn">
+                            <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add collection to Space" onclick="addCollectionToSpace('@resourceId')">
+                                <span class="glyphicon glyphicon-plus"></span> Add
+                            </a>
+                        </span>
+                    }
+
                 }
             </div>
         </div>
