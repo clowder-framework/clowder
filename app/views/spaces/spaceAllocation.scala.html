@@ -72,8 +72,19 @@
     @if(Permission.checkOwner(user, ResourceRef(resourceType, resourceId))) {
         <div class="form-inline">
             <div class="input-group input-group-sm col-md-8">
-                <select id="spaceAddSelect" class="form-control add-resource">
-                </select>
+                @if(resourceType == ResourceRef.collection) {
+                    @if((currentCollection.get.root_flag == true && currentCollection.get.parent_collection_ids.isEmpty) || currentCollection.get.parent_collection_ids.isEmpty) {
+                        <select id="spaceAddSelect" class="form-control add-resource">
+                        </select>
+                    }else {
+                        
+                    }
+
+                } else {
+                    <select id="spaceAddSelect" class="form-control add-resource">
+                    </select>
+                }
+
                 @if(resourceType == ResourceRef.dataset) {
                     <span class="input-group-btn">
                     <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add dataset to Space" onclick="addDatasetToSpace('@resourceId')">
