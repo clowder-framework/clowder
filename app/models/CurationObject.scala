@@ -23,7 +23,8 @@ case class CurationObject (
   files: List[UUID] =  List.empty,  //id of curationFile, different from live object
   repository: Option[String],
   status: String,
-  externalIdentifier: Option[URI] = None
+  externalIdentifier: Option[URI] = None,
+  metadataCount: Long = 0
 )
 
 case class StatusFromRepository(date: String, reporter: String, message: String, stage: String)
@@ -135,7 +136,8 @@ case class CurationFile(
                          thumbnail_id: Option[String] = None,
                          metadataCount: Long = 0,
                          licenseData: LicenseData = new LicenseData(),
-                         notesHTML: Option[String] = None)
+                         notesHTML: Option[String] = None,
+                         sha512: String = "" )
 
 
 object CurationFile {

@@ -91,11 +91,17 @@ class Metadata @Inject()(
       request.user match {
         case Some(user) => {
           val body = request.body
-
           if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
-            val definition = MetadataDefinition(json = body)
-            metadataService.addDefinition(definition)
-            Ok(JsObject(Seq("status" -> JsString("ok"))))
+            val uri = (body \ "uri").as[String]
+            metadataService.getDefinitionByUri(uri) match {
+              case Some(metadata) => BadRequest(toJson("Metadata definition with same uri exists."))
+              case None => {
+                val definition = MetadataDefinition(json = body)
+                metadataService.addDefinition(definition)
+                Ok(JsObject(Seq("status" -> JsString("ok"))))
+              }
+            }
+
           } else {
             BadRequest(toJson("Invalid resource type"))
           }
@@ -103,6 +109,46 @@ class Metadata @Inject()(
         }
         case None => BadRequest(toJson("Invalid user"))
       }
+  }
+
+
+  def editDefinition(id:UUID) = ServerAdminAction (parse.json) {
+    implicit request =>
+      request.user match {
+        case Some(user) => {
+          val body = request.body
+          if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
+            val uri = (body \ "uri").as[String]
+            metadataService.getDefinitionByUri(uri) match {
+              case Some(metadata)  => if( metadata.id != id) {
+                BadRequest(toJson("Metadata definition with same uri exists."))
+              } else {
+                metadataService.editDefinition(id, body)
+                Ok(JsObject(Seq("status" -> JsString("ok"))))
+              }
+              case None => {
+                metadataService.editDefinition(id, body)
+                Ok(JsObject(Seq("status" -> JsString("ok"))))
+              }
+            }
+          } else {
+            BadRequest(toJson("Invalid resource type"))
+          }
+
+        }
+        case None => BadRequest(toJson("Invalid user"))
+      }
+  }
+
+  def deleteDefinition(id: UUID) = ServerAdminAction { implicit request =>
+    metadataService.getDefinition(id) match {
+      case Some(md) => {
+        metadataService.deleteDefinition(id)
+        Ok(JsObject(Seq("status" -> JsString("ok"))))
+      }
+
+      case None => BadRequest(toJson("Invalid metadata definition"))
+    }
   }
 
   def addUserMetadata() = PermissionAction(Permission.AddMetadata)(parse.json) {
@@ -154,7 +200,7 @@ class Metadata @Inject()(
             //add metadata to mongo
             metadataService.addMetadata(metadata)
 
-            Ok(views.html.metadatald.view(List(metadata))(request.user))
+            Ok(views.html.metadatald.view(List(metadata), true)(request.user))
           } else {
             BadRequest(toJson("Invalid resource type"))
           }

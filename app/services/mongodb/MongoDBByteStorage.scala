@@ -15,8 +15,8 @@ class MongoDBByteStorage extends ByteStorageService {
    * Save the bytes to mongo, the prefix is used for the collection and id is
    * ignored.
    */
-  def save(inputStream: InputStream, collection: String, id: UUID): Option[String] = {
-    MongoUtils.writeBlob(inputStream, "unknown", None, Map.empty[String, AnyRef], collection, "nevereverset").map(_.stringify)
+  def save(inputStream: InputStream, collection: String, id: UUID): Option[(String, String, Long)] = {
+    MongoUtils.writeBlob(inputStream, "unknown", None, Map.empty[String, AnyRef], collection, "nevereverset").map(x => (x._1.stringify, x._2, x._3))
   }
 
   /**

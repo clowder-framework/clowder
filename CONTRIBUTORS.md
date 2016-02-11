@@ -1,5 +1,3 @@
-# List of authors
-
 Following is a list of contributors in alphabetical order:
 
 - Ashwini Vaidya
@@ -13,6 +11,7 @@ Following is a list of contributors in alphabetical order:
 - Jong Lee
 - Kenton McHenry
 - Luigi Marini
+- Max Burnette
 - Michal Ondrejcek
 - Mario Felarca
 - Nicholas Tenczar

@@ -1,7 +1,7 @@
 @(datasetsInCollection: List[models.Dataset],
   collection: models.Collection,
   previewers: List[Previewer],
-  collectionSpaces: Option[List[ProjectSpace]])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  collectionSpaces: Option[List[ProjectSpace]], prev: Int, next: Int, limit: Int)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import models.ResourceRef
 @import models.UUID
@@ -17,11 +17,12 @@
 <script type="text/javascript" src="@(url)"></script>
 }
 
-@main("Collection") {
+@main(collection.name) {
 
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/collectionDatasetsList.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
 
 
@@ -57,17 +58,14 @@
 								</dd>
 							</dl>
 					<div class="col-md-12">
-
-
-
 							<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 							@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
-									<button id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')"
-											style="margin-right:15px;" class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
+									<button id="deleteButton" onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name.replace("'","&#39;"))','@(routes.Collections.list(""))')"
+											class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
 									<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							} else {
-									<button disabled id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')"
-											style="margin-right:15px;" class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
+									<button disabled id="deleteButton" onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name.replace("'","&#39;")))','@(routes.Collections.list(""))')"
+											class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
 									<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							}
 							@if(user.isDefined) {
@@ -86,6 +84,10 @@
 									objectType="collection"><span class="glyphicon glyphicon-star-empty"></span> Unfollow
 									</button>
 								}
+							}
+							@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
+								<a id="create_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
+									<span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
 							}
 						</div>
 							<div style="clear: both;"></div>
@@ -166,14 +168,22 @@
 						</div>
 
 					}
-
-				<ul class="pager" id="datasetsPager">
-					<li class="previous" id="datasetsPagerPrev" style="visibility:hidden;"><a class="btn btn-link" href="#!"><span class="glyphicon glyphicon-chevron-left"></span> Previous</a></li>
-					<li class ="next" id="datasetsPagerNext" style="visibility:hidden;"><a class="btn btn-link" href="#!">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
-				</ul>
 			</div>
 		</div>
-		</div>
+			<div class="row">
+				<div class="col-md-12">
+					<ul class="pager">
+							<!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
+						@if(prev >= 0) {
+							<li class="previous"><a id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
+						}
+						@if(next >= 0) {
+							<li class ="next"><a id="nextlink" title="Page forwards" href="#">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
+						}
+					</ul>
+				</div>
+			</div>
+	</div>
 	<!-- right column -->
 	<div class="col-md-4">
 		@spaces.spaceAllocation(collection.id, ResourceRef.collection, collectionSpaces.getOrElse(List.empty))
@@ -191,6 +201,7 @@
 		}
 	</div>
 	</div>
+
 
 <script language="javascript">
 	@if(user.isDefined) {
@@ -338,8 +349,13 @@
                     $('#edit-description').addClass("hiddencomplete");
                  });
 		}
+		updatePage();
 
 	});
+	 function updatePage() {
+		$('#nextlink').attr('href', "@(routes.Collections.collection(collection.id, next, limit))");
+		$('#prevlink').attr('href', "@(routes.Collections.collection(collection.id, prev, limit))");
+	 }
 </script>
     <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>

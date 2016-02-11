@@ -84,7 +84,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
               userFollower match {
                 case Some(uFollower) => {
                   var ufEmail = uFollower.email.getOrElse("")
-                  followers = followers.++(List((uFollower.id, ufEmail, uFollower.getAvatarUrl(), uFollower.fullName)))
+                  followers = followers.++(List((uFollower.id, uFollower.fullName, ufEmail, uFollower.getAvatarUrl())))
                 }
                 case None =>
               }
@@ -100,7 +100,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
                 val followedUser = users.get(tidObject.id)
                 followedUser match {
                   case Some(fuser) => {
-                    followedUsers = followedUsers.++(List((fuser.id, fuser.fullName, fuser.email.get, fuser.getAvatarUrl())))
+                    followedUsers = followedUsers.++(List((fuser.id, fuser.fullName, fuser.email.getOrElse(""), fuser.getAvatarUrl())))
                   }
                   case None =>
                 }
@@ -134,7 +134,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
                   case Some(fspace) => {
                     followedSpaces = followedSpaces.++(List((fspace.id, fspace.name, fspace.description.substring(0, Math.min(maxDescLength, fspace.description.length())))))
                   }
-
+                  case None => {}
                 }
               }
             }
@@ -312,12 +312,15 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.CurationObjects.findMatchmakingRepositories,
         api.routes.javascript.CurationObjects.retractCurationObject,
         api.routes.javascript.CurationObjects.getCurationFiles,
+        api.routes.javascript.CurationObjects.deleteCurationFiles,
         api.routes.javascript.Metadata.addUserMetadata,
         api.routes.javascript.Metadata.searchByKeyValue,
         api.routes.javascript.Metadata.getDefinitions,
         api.routes.javascript.Metadata.getDefinition,
         api.routes.javascript.Metadata.getUrl,
         api.routes.javascript.Metadata.addDefinition,
+        api.routes.javascript.Metadata.editDefinition,
+        api.routes.javascript.Metadata.deleteDefinition,
         api.routes.javascript.Metadata.removeMetadata,
         api.routes.javascript.Events.sendExceptionEmail,
         controllers.routes.javascript.Files.file,

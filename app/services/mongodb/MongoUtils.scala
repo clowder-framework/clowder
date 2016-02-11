@@ -1,10 +1,13 @@
 package services.mongodb
 
 import java.io.InputStream
+import java.security.{DigestInputStream, MessageDigest}
 
 import com.mongodb.gridfs.GridFS
 import com.mongodb.{DBObject, WriteConcern}
 import models.UUID
+import org.apache.commons.codec.binary.Hex
+import org.apache.commons.io.input.CountingInputStream
 import org.bson.types.ObjectId
 import play.Logger
 import play.api.Play._
@@ -27,9 +30,9 @@ object MongoUtils {
   /**
    * Write the inputstream to mongo and ByteStorageService. Any extra values
    * to be written can be stored in extra. The values need to be able to be
-   * converted to DBObject.
+   * converted to DBObject. Returns the (ID, sha512, length).
    */
-  def writeBlob[T](inputStream: InputStream, filename: String, contentType: Option[String], extra: Map[String, AnyRef], collection: String, useMongoProperty: String)(implicit ev: Manifest[T]): Option[UUID] = {
+  def writeBlob[T](inputStream: InputStream, filename: String, contentType: Option[String], extra: Map[String, AnyRef], collection: String, useMongoProperty: String)(implicit ev: Manifest[T]): Option[(UUID, String, Long)] = {
     current.plugin[MongoSalatPlugin] match {
       case None => {
         Logger.error("No MongoSalatPlugin")
@@ -43,15 +46,32 @@ object MongoUtils {
         val usemongo = current.configuration.getBoolean(useMongoProperty).getOrElse(storage.isInstanceOf[MongoDBByteStorage])
         val (mongoFile, id) = if (usemongo) {
           // leverage of the fact that we save in mongo
-          val x = files.createFile(inputStream)
+          val md = MessageDigest.getInstance("SHA-512")
+          val dis = new DigestInputStream(inputStream, md)
+          val x = files.createFile(dis)
           val id = UUID(x.getId.toString)
-          x.put("path", id)
+          x.put("sha512", Hex.encodeHexString(md.digest()))
+          x.put("loader", classOf[MongoDBByteStorage].getName)
+          x.save()
           (x, id)
         } else {
           // write empty array
           val x = files.createFile(Array[Byte]())
+          x.save()
           val id = UUID(x.getId.toString)
-          x.put("path", storage.save(inputStream, collection, id))
+          x.put("loader", storage.getClass.getName)
+          storage.save(inputStream, collection, id) match {
+            case Some((path:String, sha512:String, length:Long)) => {
+              x.put("path", path)
+              x.put("sha512", sha512)
+              x.put("length", length)
+            }
+            case None => {
+              x.put("path", "")
+              x.put("sha512", "")
+              x.put("length", -1)
+            }
+          }
           (x, id)
         }
 
@@ -67,7 +87,7 @@ object MongoUtils {
         mongoFile.put("_typeHint", ev.runtimeClass.getCanonicalName)
         mongoFile.save()
 
-        Some(id)
+        Some((id, mongoFile.get("sha512").toString, mongoFile.getLength))
       }
     }
   }
@@ -89,18 +109,15 @@ object MongoUtils {
           None
         } else {
           // use a special case if the storage is in mongo as well
-          val usemongo = current.configuration.getBoolean(useMongoProperty).getOrElse(storage.isInstanceOf[MongoDBByteStorage])
-          val inputStream = if (usemongo) {
+          val loader = file.get("loader").toString
+          val inputStream = if (loader == classOf[MongoDBByteStorage].getName) {
             file.getInputStream
           } else {
             val path = file.get("path").asInstanceOf[String]
-            if (path == null) {
-              return None
-            } else {
-              storage.load(path, collection) match {
-                case Some(is) => is
-                case None => return None
-              }
+            val bss = Class.forName(loader).newInstance.asInstanceOf[ByteStorageService]
+            bss.load(path, collection) match {
+              case Some(is) => is
+              case None => return None
             }
           }
           val filename = if (file.getFilename == null) "unknown-name" else file.getFilename
@@ -122,16 +139,13 @@ object MongoUtils {
         false
       }
       case Some(x) => {
-        val usemongo = current.configuration.getBoolean(useMongoProperty).getOrElse(storage.isInstanceOf[MongoDBByteStorage])
         val files = new GridFS(x.getDB.underlying, collection)
-        if (!usemongo) {
-          val file = files.find(new ObjectId(id.stringify))
-          if (file != null) {
-            val path = file.get("path").asInstanceOf[String]
-            if (path != null) {
-              storage.delete(path, collection)
-            }
-          }
+        val file = files.find(new ObjectId(id.stringify))
+        val loader = file.get("loader")
+        if (loader != null && loader.toString != classOf[MongoDBByteStorage].getName) {
+          val path = file.get("path").asInstanceOf[String]
+          val bss = Class.forName(loader.toString).newInstance.asInstanceOf[ByteStorageService]
+          bss.delete(path, collection)
         }
         files.remove(new ObjectId(id.stringify))
         true

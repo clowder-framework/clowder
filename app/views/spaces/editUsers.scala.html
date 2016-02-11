@@ -132,7 +132,7 @@
     });
 
 
-    $(".remove-user").click(function(){
+    $(document).on("click",".remove-user", function(){
         $( this ).closest( "LI" ).remove();
         var targetId = this.getAttribute("id");
 

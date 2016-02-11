@@ -104,6 +104,26 @@
                 }
                 addDefinition(data, window.location.href);
             });
+
+             $('.delete-definition').unbind().on('click', function(){
+                        var delete_object = $(this);
+                        var request = jsRoutes.api.Metadata.deleteDefinition(this.id).ajax({
+                            type: 'DELETE'
+                        });
+
+                        request.done(function (response, textStatus, jqXHR) {
+                            console.log("success");
+                            delete_object.closest("TR").remove();
+                        });
+
+                        request.fail(function (jqXHR, textStatus, errorThrown){
+                            console.error("The following error occured: " + textStatus, errorThrown);
+                            var errMsg = "You must be logged in to delete metadata definition";
+                            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                              notify("Metadata definition was not removed due to : " + errorThrown, "error");
+                            }
+                        });
+                     });
         });
 
     </script>
@@ -146,6 +166,7 @@
                                 case "list" => {List}
                                 case "listjquery" => {Queryable List}
                                 case "scientific_variable" => {Scientific Variable}
+                                case "datetime" => {Date and Time}
                                 case "listgeocode" => {Location}
                             }
                         </td>
@@ -155,7 +176,9 @@
                         <td>
                             @((m.json \ "query_parameter").asOpt[String].getOrElse(""))
                         </td>
-                        <td><a href="#addDefinition" onclick="editDefinition('@(m.id)', '@(m.json)', this);">Edit</a></td>
+                        <td><a href="#addDefinition" onclick="editDefinition('@(m.id)', '@(m.json)', this);">Edit</a>
+                            / <a id="@m.id" href="#" title="Delete metadata definition" class="delete-definition">Delete</a>
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -199,6 +222,7 @@
                                     <option value="listjquery">Queryable List</option>
                                     <option value="listgeocode">Location</option>
                                     <option value="scientific_variable">Scientific Variable</option>
+                                    <option value="datetime">Date and Time</option>
                                 </select>
                             </div>
                         </div>
@@ -226,7 +250,7 @@
                         </div>
                         <hr/>
                         <a href="#" class="btn btn-default pull-left" id="cancelButton" onclick="reset(this)" style="display:none;"><span class="glyphicon glyphicon-remove"></span> Cancel</a>
-                        <button type="submit" class="btn btn-primary pull-right"><span class="definitionAction"><span class="glyphicon glyphicon-plus"></span> Add</span></button>
+                        <button type="submit" class="btn btn-primary pull-right"><span class="glyphicon glyphicon-plus"></span><span class="definitionActionButton"> Add</span></button>
 
                     </form>
                 </div>

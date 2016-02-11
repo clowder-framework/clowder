@@ -31,7 +31,7 @@ trait AppConfigurationService {
    * Gets the configuration property with the specified key. If the key is not found
    * it wil return the default value (empty string if not specified).
    */
-  def getProperty[objectType <: AnyRef](key: String, default:objectType): objectType = {
+  def getProperty[objectType <: AnyRef](key: String, default: objectType): objectType = {
     getProperty[objectType](key) match {
       case Some(x) => x
       case None => default
@@ -90,6 +90,15 @@ object AppConfiguration {
 
   // ----------------------------------------------------------------------
 
+  /** Set the google analytics code */
+  def setGoogleAnalytics(gacode: String) = appConfig.setProperty("google.analytics", gacode)
+
+  /** Get the welcome message */
+  def getGoogleAnalytics: String = appConfig.getProperty("google.analytics", "")
+
+
+  // ----------------------------------------------------------------------
+
   /** Set the Sensors title */
   def setSensorsTitle(sensorsTitle: String) = appConfig.setProperty("sensors.title", sensorsTitle)
 
@@ -135,16 +144,15 @@ object AppConfiguration {
   def getAdmins: List[String] = appConfig.getProperty[List[String]]("admins", List.empty[String])
 
   /**
-   * Sets default admins as specified in application.conf. This list is primarily used when a new
+   * Sets default admins as specified in application.conf. This list is used when a new
    * user signs up (requires registerThroughAdmins to be set to true in application.conf) or when
-   * the plugin is enabled to send emails on creating of new datasets, collections and/or files.
+   * the plugin is enabled to send emails on creating of new datasets, collections and/or files,
+   * as well as all server tasks that require admin privileges.
    */
   def setDefaultAdmins() = {
-    if (!appConfig.getProperty[List[String]]("admins").isDefined) {
-      val x = play.Play.application().configuration().getString("initialAdmins")
-      if (x != "") {
-        appConfig.setProperty("admins", x.trim.split("\\s*,\\s*").toList)
-      }
+    val admins = play.Play.application().configuration().getString("initialAdmins")
+    for(x <- admins.trim.split("\\s*,\\s*") if (x != "")) {
+      appConfig.addPropertyValue("admins", x)
     }
   }
 }

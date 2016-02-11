@@ -27,6 +27,7 @@ GET            /assets/*file                                                    
 # ----------------------------------------------------------------------
 # USERS
 # ----------------------------------------------------------------------
+GET            /users                                                                   @controllers.Users.getUsers(when: String ?= "", id: String ?= "", limit: Int ?=24)
 POST           /users/registerThroughAdmins                                             @controllers.Users.handleStartSignUp
 
 # ----------------------------------------------------------------------
@@ -74,11 +75,11 @@ POST           /extraction/upload                                               
 # FILES
 # ----------------------------------------------------------------------
 GET            /files                                                                   @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "")
-GET            /datasets/:datasetId/files                                               @controllers.Files.listByDataset(datasetId: UUID, when: String ?= "", index: Int ?= 0, limit: Int ?= 12, mode: String ?= "")
+GET            /datasets/:datasetId/files                                               @controllers.Files.listByDataset(datasetId: UUID, filepage: Int  ?= 0, limit: Int ?= 12, mode: String ?= "")
 GET            /files/new                                                               @controllers.Files.uploadFile
 GET            /files/metadataSearch                                                    @controllers.Files.metadataSearch
 GET            /files/generalMetadataSearch                                             @controllers.Files.generalMetadataSearch
-GET            /files/following                                                         @controllers.Files.followingFiles(when: String ?= "", index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
+GET            /files/following                                                         @controllers.Files.followingFiles(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
 GET            /files/:id                                                               @controllers.Files.file(id: UUID)
 GET            /files/:id/blob                                                          @controllers.Files.download(id: UUID)
 GET            /files/:id/download/:format                                              @controllers.Files.downloadAsFormat(id: UUID, format: String)
@@ -97,11 +98,11 @@ GET            /file_by_section/:id                                             
 # DATASETS
 # ----------------------------------------------------------------------
 GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
-GET            /datasets/new                                                            @controllers.Datasets.newDataset(space: Option[String])
+GET            /datasets/new                                                            @controllers.Datasets.newDataset(space: Option[String], collection: Option[String])
 GET            /datasets/createStep2                                                    @controllers.Datasets.createStep2(id: UUID)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
-GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(when: String ?= "", index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
+GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
 GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, filepage:Int ?= 0)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
@@ -113,9 +114,9 @@ GET            /datasets/:id/addFiles                                           
 # ----------------------------------------------------------------------
 GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
 GET            /collections/new                                                         @controllers.Collections.newCollection(space: Option[String])
-GET            /collections/following                                                   @controllers.Collections.followingCollections(when: String ?= "", index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
+GET            /collections/following                                                   @controllers.Collections.followingCollections(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
 POST           /collection/submit                                                       @controllers.Collections.submit
-GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID)
+GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID, index: Int ?=0, limit: Int ?= 12)
 GET            /collection/:id/users                                                    @controllers.Collections.users(id: UUID)
 GET            /collections/:collection_id/previews                                     @controllers.Collections.previews(collection_id: UUID)
 
@@ -124,7 +125,7 @@ GET            /collections/:collection_id/previews                             
 # ----------------------------------------------------------------------
 GET            /spaces                                                                  @controllers.Spaces.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "", owner: Option[String] ?= None, showAll: Boolean ?= true)
 GET            /spaces/new                                                              @controllers.Spaces.newSpace
-GET            /spaces/following                                                        @controllers.Spaces.followingSpaces(when: String ?= "", index: Int ?=0, size: Int ?= 12, mode: String ?= "")
+GET            /spaces/following                                                        @controllers.Spaces.followingSpaces(index: Int ?=0, size: Int ?= 12, mode: String ?= "")
 GET            /spaces/:id                                                              @controllers.Spaces.getSpace(id: UUID, size: Int ?= 9, direction: String ?= "desc")
 GET            /spaces/:id/updateSpace                                                  @controllers.Spaces.updateSpace(id:UUID)
 GET            /spaces/:id/addRequest                                                   @controllers.Spaces.addRequest(id:UUID)
@@ -287,8 +288,9 @@ POST           /api/metadata/search                                             
 GET            /api/metadata/definitions                                                @api.Metadata.getDefinitions()
 GET            /api/metadata/definitions/:id                                            @api.Metadata.getDefinition(id: UUID)
 GET            /api/metadata/url/*in_url                                                @api.Metadata.getUrl(in_url: String)
+PUT            /api/metadata/definitions/:id                                            @api.Metadata.editDefinition(id:UUID)
 POST           /api/metadata/definitions                                                @api.Metadata.addDefinition
-
+DELETE         /admin/metadata/definitions/:id                                          @api.Metadata.deleteDefinition(id: UUID)
 
 
 # ----------------------------------------------------------------------
@@ -371,7 +373,7 @@ GET            /api/files/:id                                                   
 # ----------------------------------------------------------------------
 # DANGEROUS ENDPOINTS
 # ----------------------------------------------------------------------
-GET            /api/delete-data                                                         api.Admin.deleteAllData
+DELETE         /api/delete-data                                                         api.Admin.deleteAllData(resetAll: Boolean ?= false)
 POST           /api/remove-admin                                                        api.Admin.removeAdmin
 POST           /api/changeAppearance                                                    api.Admin.submitAppearance
 POST           /api/dumpFilesMd                                                         @api.Files.dumpFilesMetadata
@@ -520,7 +522,7 @@ GET            /api/search/multimediasearch                                     
 # GEOSTREAMS ENDPOINT
 # ----------------------------------------------------------------------
 POST           /api/geostreams/datapoints                                               api.Geostreams.addDatapoint
-DELETE 		   /api/geostreams/datapoints/:id                                           api.Geostreams.deleteDatapoint(id: String)
+DELETE         /api/geostreams/datapoints/:id                                           api.Geostreams.deleteDatapoint(id: String)
 GET            /api/geostreams/datapoints                                               api.Geostreams.searchDatapoints(operator = "", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
 GET            /api/geostreams/datapoints/averages                                      api.Geostreams.searchDatapoints(operator = "averages", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
 GET            /api/geostreams/datapoints/trends                                        api.Geostreams.searchDatapoints(operator = "trends", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
@@ -609,8 +611,8 @@ GET            /api/curations/:curationId/ore                                   
 # ----------------------------------------------------------------------
 # USERS Controller
 # ----------------------------------------------------------------------
-GET            /controllers/users/followers                                             @controllers.Users.getFollowers(index: Int ?= 0, limit: Int ?=12)
-GET            /controllers/users/following                                             @controllers.Users.getFollowing(index: Int ?= 0, limit: Int ?=12)
+GET            /users/followers                                                         @controllers.Users.getFollowers(index: Int ?= 0, limit: Int ?=12)
+GET            /users/following                                                         @controllers.Users.getFollowing(index: Int ?= 0, limit: Int ?=12)
 
 # ----------------------------------------------------------------------
 # MEDICI STATUS API
@@ -630,7 +632,7 @@ GET            /rss/:etype                                                      
 
 GET            /dataset/:id/curations/new                                               @controllers.CurationObjects.newCO(id:UUID, space:String ?= "")
 POST           /dataset/:id/curations/spaces/:spaceId/submit                            @controllers.CurationObjects.submit(id:UUID, spaceId:UUID)
-GET            /spaces/:id/stagingArea                                                  @controllers.Spaces.stagingArea(id: UUID)
+GET            /spaces/:id/stagingArea                                                  @controllers.Spaces.stagingArea(id: UUID, index: Int ?=0, limit: Int ?= 12)
 GET            /spaces/curations/:id                                                    @controllers.CurationObjects.getCurationObject(id: UUID)
 DELETE         /spaces/curations/retract/:id                                            @api.CurationObjects.retractCurationObject(id: UUID)
 GET            /spaces/curations/:id/edit                                               @controllers.CurationObjects.editCuration(id: UUID)
@@ -643,5 +645,7 @@ POST           /spaces/curations/:id/matchmaker                                 
 GET            /spaces/curations/:id/curationFile                                       @api.CurationObjects.getCurationFiles(id: UUID)
 POST           /spaces/curations/:id/status                                             @controllers.CurationObjects.savePublishedObject(id: UUID)
 GET            /spaces/curations/:id/getStatusFromRepository                            @controllers.CurationObjects.getStatusFromRepository(id: UUID)
+DELETE         /spaces/curations/:id/files/:curationFileId                              @api.CurationObjects.deleteCurationFiles(id: UUID, curationFileId: UUID)
 
-GET            /sendEmail                                                               @api.Events.sendExceptionEmail(re:String, ex:String)
+
+POST           /sendEmail                                                               @api.Events.sendExceptionEmail()

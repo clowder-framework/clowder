@@ -41,7 +41,7 @@
                  if($.inArray(el, formats) === -1) formats.push(el);
             });
 
-            $( "#size" ).replaceWith( Math.round(totalSize /1024) );
+            $( "#size" ).replaceWith( Math.round(totalSize /1024) +"KB" );
             $( "#format" ).replaceWith(formats.join(', ') );
 
         }).fail(function( ) {
