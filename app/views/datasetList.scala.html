@@ -95,7 +95,7 @@
 	<div class="col-md-12">
 		<div id="masonry">
 		@datasetsList.map { dataset =>
-		    @datasets.tile(dataset, space, comments, "col-lg-3 col-md-3 col-sm-3", false, false, routes.Datasets.list("a", next, limit, space, "", owner))
+		    @datasets.tile(dataset, space, comments, "col-lg-3 col-md-3 col-sm-3", false, false, routes.Datasets.list(""))
 		}
 		</div>
 	</div>
