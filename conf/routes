@@ -336,7 +336,6 @@ POST           /api/files/:id/license                                           
 GET            /api/files/:id/extracted_metadata                                        @api.Files.extract(id:UUID)
 POST           /api/files/:id/reindex                                                   @api.Files.reindex(id:UUID)
 
-
 # ----------------------------------------------------------------------
 # EXTRACTORS ENDPOINTS
 # ----------------------------------------------------------------------
