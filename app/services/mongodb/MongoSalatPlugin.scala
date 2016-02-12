@@ -178,6 +178,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("extractor.names").drop()
     collection("extractor.inputtypes").drop()
     collection("multimedia.features").drop()
+    collection("multimedia.distances").drop()
     collection("previews.chunks").drop()
     collection("previews.files").drop()
     collection("sections").drop()
