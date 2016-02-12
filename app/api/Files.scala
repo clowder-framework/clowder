@@ -629,7 +629,6 @@ class Files @Inject()(
     // submit file for extraction
     savedFile match {
       case Some(f) => {
-
         processSavedFile(Some(user),f,showPreviews,f.filename,flagsFromPrevious,host,serverIP,clientIP,file.ref.file,originalId,file_md,dataset,index,intermediateUpload)
       }
       case None => {
@@ -683,11 +682,18 @@ class Files @Inject()(
     file_list.map { f =>
       try {
         // Check for metadata using filename as key; if not found, check using file's key (e.g. "File")
-        var metadata = request.body.dataParts.get(f.filename)
-        metadata match {
-          case Some(md) => {}
+        val metadata: Option[Seq[String]] = request.body.dataParts.get(f.filename) match {
+          case Some(md) => Some(md)
           case None => {
-            metadata = request.body.dataParts.get(f.key)
+            if (f.key != "file") {
+              request.body.dataParts.get(f.key) match {
+                case Some(md) => Some(md)
+                case None => None
+              }
+            } else {
+              // TODO: Potentially allow overloading of "file" key and make sure it isn't a local path, but gets complicated
+              None
+            }
           }
         }
         val loadedFile = uploadFile(f, user, host, clientIP, serverIP, metadata, dataset,
@@ -702,53 +708,72 @@ class Files @Inject()(
     }
 
     // Now check whether we have any local file paths to handle
+    //    e.g. "file":{"path":"/home/file.txt","md":{"field1":"val","field2": 100}}
     for ((k,v) <- request.body.dataParts) {
-      if (k == "path") {
-        for (path <- v) {
-          play.api.Play.configuration.getStringList("filesystem.sourcepaths") match {
-            case Some(sourcelist) => {
-              breakable {
-                for (validfolder <- sourcelist) {
-                  // TODO: something smarter than this - check whether file is in directory properly
-                  if (path.indexOfSlice(validfolder) == 0) {
-                    Logger.debug(path + " is whitelisted for upload")
+      if (k == "file") {
+        for (fobj <- v) {
+          // We found a 'file' entry, but does it actually have a path and metadata?
+          Json.parse(fobj) \ "path" match {
+            case p: JsString => {
+              val path = p.toString.replace("\"","")
+              play.api.Play.configuration.getStringList("filesystem.sourcepaths") match {
+                case Some(sourcelist) => {
+                  breakable {
+                    for (validfolder <- sourcelist) {
+                      // TODO: something smarter than this - check whether file is in directory properly
+                      if (path.indexOfSlice(validfolder) == 0) {
+                        Logger.debug(path + " is whitelisted for upload")
 
-                    // Determine properties of local file on disk
-                    val filestream = new java.io.BufferedInputStream(new FileInputStream(path))
-                    val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
-                    val date: java.util.Calendar = java.util.Calendar.getInstance()
-                    val contentType = java.net.URLConnection.guessContentTypeFromStream(filestream)
-                    val loader = classOf[services.filesystem.DiskByteStorageService].getName
-                    val byteSize = new java.io.File(path).length()
-                    // Calculate SHA-512 hash
-                    val md = java.security.MessageDigest.getInstance("SHA-512")
-                    val cis = new com.google.common.io.CountingInputStream(filestream)
-                    val dis = new java.security.DigestInputStream(cis, md)
-                    val sha512 = org.apache.commons.codec.binary.Hex.encodeHexString(md.digest())
-                    dis.close()
+                        // Determine properties of local file on disk
+                        val filestream = new java.io.BufferedInputStream(new FileInputStream(path))
+                        val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
+                        val date: java.util.Calendar = java.util.Calendar.getInstance()
+                        val contentType = java.net.URLConnection.guessContentTypeFromStream(filestream)
+                        val loader = classOf[services.filesystem.DiskByteStorageService].getName
+                        val byteSize = new java.io.File(path).length()
+                        // Calculate SHA-512 hash
+                        val md = java.security.MessageDigest.getInstance("SHA-512")
+                        val cis = new com.google.common.io.CountingInputStream(filestream)
+                        val dis = new java.security.DigestInputStream(cis, md)
+                        val sha512 = org.apache.commons.codec.binary.Hex.encodeHexString(md.digest())
+                        dis.close()
 
-                    // Create models.File object and insert it directly
-                    val newFile = new File(UUID(),Some(path),filename,user.asInstanceOf[Identity],
-                      date.getTime(),contentType,byteSize,sha512,loader)
-                    files.insert(newFile)
+                        // Create models.File object and insert it directly
+                        val newFile = new File(UUID(),Some(path),filename,user.asInstanceOf[Identity],
+                          date.getTime(),contentType,byteSize,sha512,loader)
+                        files.insert(newFile)
 
-                    // Submit file for other requests, etc.
-                    processSavedFile(Some(user),newFile,showPreviews,filename,flagsFromPrevious,
-                      Utils.baseUrl(request),request.host,request.remoteAddress,new java.io.File(path),
-                      "",null,null,true,false)
+                        // Check for metadata to go with local file
+                        var file_md: Option[Seq[String]] = Some(Seq(""))
+                        Json.parse(fobj) \ "md" match {
+                          case mdobj: JsObject => file_md = Some(Seq(Json.stringify(mdobj)))
+                          case mdobj: JsUndefined => {}
+                        }
+                        Json.parse(fobj) \ "metadata" match {
+                          case mdobj: JsObject => file_md = Some(Seq(Json.stringify(mdobj)))
+                          case mdobj: JsUndefined => {}
+                        }
 
-                    uploadedFiles.append(newFile)
-                    break
+                        // Submit file for other requests, etc.
+                        processSavedFile(Some(user),newFile,showPreviews,filename,flagsFromPrevious,
+                          Utils.baseUrl(request),request.host,request.remoteAddress,new java.io.File(path),
+                          "",file_md,null,true,false)
+
+                        uploadedFiles.append(newFile)
+                        break
+                      }
+                    }
                   }
                 }
+                case None => {}
               }
             }
-            case None => {}
+            case p: JsUndefined => {}
           }
         }
       }
     }
-
+    Logger.debug("!!! 3")
     return uploadedFiles.toList
   }
 
