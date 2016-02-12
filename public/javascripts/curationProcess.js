@@ -32,6 +32,7 @@ function retractCuration(curationId) {
         $('#'+curationId).addClass('in-curation');
         $('#'+curationId).html("In Curation");
         $('#ul_'+curationId).remove();
+        notify(response, "success", false, 2000);
     });
 
     request.fail(function(jqXHR, textStatus, errorThrown) {
