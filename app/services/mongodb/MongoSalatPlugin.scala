@@ -671,7 +671,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.affiliation"), multi=true)
         collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.cost"), multi=true)
         collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.license"), multi=true)
-        collection("social.users").update( "repositoryPreferences.Purpose" $exists false, MongoDBObject( "$set" -> (MongoDBObject("repositoryPreferences.Purpose"-> "Testing-Only"))), multi=true)
       }
       appConfig.addPropertyValue("mongodb.updates", "update-user-preference")
     } else {

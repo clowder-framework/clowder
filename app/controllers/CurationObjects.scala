@@ -205,7 +205,7 @@ class CurationObjects @Inject()(
       implicit val user = request.user
           curations.get(curationId) match {
             case Some(c) => {
-              val propertiesMap: Map[String, List[String]] = Map("Purpose" -> List("Testing-Only", "Submission"))
+              val propertiesMap: Map[String, List[String]] = Map("Purpose" -> List("Testing-Only"))
               val mmResp = callMatchmaker(c, user)(request)
               user match {
                 case Some(usr) => {

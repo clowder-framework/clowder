@@ -28,12 +28,11 @@
             @spaces.curation_summary( curationObject, "Matchmaker", false)
             <div class="panel panel-default">
                 <div class="panel-body">
-                    <h5>Publication Preferences</h5>
+                    <h4>Preferences</h4>
                     @for((prop, value) <- properties) {
                         <h5>@prop</h5>
-                        @if(prop != "Purpose") {
                            @for(cur<-value) {
-                                @if(userPreferences.contains(prop.replace(" ", "_").toLowerCase()) && userPreferences(prop.replace(" ", "_").toLowerCase()).contains(cur)) {
+                                @if(userPreferences.contains(prop.replace(" ", "_")) && userPreferences(prop.replace(" ", "_")).contains(cur)) {
                                     <input type="checkbox" name="@prop" value="@cur" checked> @cur <br/>
 
                                 } else {
@@ -41,19 +40,6 @@
                                 }
 
                             }
-                        } else {
-                            @for(cur<-value) {
-
-                                @if(userPreferences.contains(prop.replace(" ", "_")) && userPreferences(prop.replace(" ", "_")).contains(cur)) {
-                                    <input type="radio" name="@prop" value="@cur" checked="checked"> @cur <br/>
-
-                                } else {
-                                    <input type="radio" name="@prop" value="@cur"> @cur <br/>
-                                }
-
-
-                            }
-                        }
                     }
                     <div class="center-margin">
                         <button class="btn btn-sm btn-link" id="updateResults"><span class="glyphicon glyphicon-send"></span> Update Results</button>
@@ -113,9 +99,9 @@
 
         $('#updateResults').on('click', function() {
 
-            var purpose;
-            $("input[name='Purpose']:radio:checked").each(function(i){
-                purpose = $(this).val();
+            var purpose = [];
+            $("input[name='Purpose']:checkbox:checked").each(function(i){
+               purpose[i] = $(this).val();
             });
             var dataMap = { Purpose: purpose.toString()};
 

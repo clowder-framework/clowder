@@ -7,7 +7,7 @@ import securesocial.controllers.Registration._
 import securesocial.core._
 import securesocial.core.providers.UsernamePasswordProvider
 import services.{ UserService, SpaceService}
-import models.{ UUID, User}
+import models.UUID
 import play.api.mvc.{Result, Action,AnyContent}
 import securesocial.core.providers.utils.{Mailer, GravatarHelper, RoutesHelper}
 import securesocial.controllers.{ProviderController, Registration, TemplatesPlugin}
@@ -57,8 +57,6 @@ class Registration @Inject()(spaces: SpaceService, users: UserService) extends S
                 passwordInfo = Some(Registry.hashers.currentHasher.hash(info.password))
               )
               val saved = UserService.save(user)
-              val newuser = users.findByEmail(t.email)
-              users.updateRepositoryPreferences(newuser.getOrElse(User.anonymous).id, Map("Purpose" -> "Testing-Only"))
               UserService.deleteToken(t.uuid)
               if ( UsernamePasswordProvider.sendWelcomeEmail ) {
                 Mailer.sendWelcomeEmail(saved)
