@@ -449,6 +449,7 @@ class Files @Inject()(
           }
         }
       }
+      case null => {}
       case None => {}
     }
 
@@ -474,7 +475,8 @@ class Files @Inject()(
 
           if (index.equals(true)) {
             current.plugin[ElasticsearchPlugin].foreach {
-              _.index("data", "file", f.id, List(("filename", nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
+              //_.index("data", "file", f.id, List(("filename", nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
+              _.index(f)
             }
           }
 
@@ -487,7 +489,8 @@ class Files @Inject()(
         else {
           if (index.equals(true)) {
             current.plugin[ElasticsearchPlugin].foreach {
-              _.index("data", "file", f.id, List(("filename", nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date()))))
+              //_.index("data", "file", f.id, List(("filename", nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date()))))
+              _.index(f)
             }
           }
         }
@@ -500,25 +503,27 @@ class Files @Inject()(
       // Handle adding file to dataset if one is provided
       events.addSourceEvent(user, f.id, f.filename, dataset.id, dataset.name, "add_file_dataset")
       current.plugin[RabbitmqPlugin].foreach {
-        _.extract(ExtractorMessage(new UUID(id), new UUID(id), host, key, extra, f.length.toString, dataset.id, ""))
+        _.extract(ExtractorMessage(new UUID(id.toString), new UUID(id.toString), host, key, extra, f.length.toString, dataset.id, ""))
       }
 
       //for metadata files, associate with dataset
       val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
       if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
         val xmlToJSON = FilesUtils.readXMLgetJSON(fileObj)
-        files.addXMLMetadata(new UUID(id), xmlToJSON)
+        files.addXMLMetadata(new UUID(id.toString), xmlToJSON)
         Logger.debug("xmlmd=" + xmlToJSON)
 
         if (index.equals(true)) {
           current.plugin[ElasticsearchPlugin].foreach {
-            _.index("data", "file", new UUID(id), List(("filename", f.filename), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("datasetId", dataset.id.toString), ("datasetName", dataset.name), ("xmlmetadata", xmlToJSON)))
+            //_.index("data", "file", new UUID(id), List(("filename", f.filename), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("datasetId", dataset.id.toString), ("datasetName", dataset.name), ("xmlmetadata", xmlToJSON)))
+            _.index(f)
           }
         }
       } else {
         if (index.equals(true)) {
           current.plugin[ElasticsearchPlugin].foreach {
-            _.index("data", "file", new UUID(id), List(("filename", f.filename), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("datasetId", dataset.id.toString), ("datasetName", dataset.name)))
+            //_.index("data", "file", new UUID(id), List(("filename", f.filename), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("datasetId", dataset.id.toString), ("datasetName", dataset.name)))
+            _.index(f)
           }
         }
       }
@@ -681,7 +686,9 @@ class Files @Inject()(
         var metadata = request.body.dataParts.get(f.filename)
         metadata match {
           case Some(md) => {}
-          case None => metadata = request.body.dataParts.get(f.key)
+          case None => {
+            metadata = request.body.dataParts.get(f.key)
+          }
         }
         val loadedFile = uploadFile(f, user, host, clientIP, serverIP, metadata, dataset,
                                     index, showPreviews, originalZipFile, flagsFromPrevious)
