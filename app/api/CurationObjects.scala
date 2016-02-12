@@ -254,11 +254,12 @@ class CurationObjects @Inject()(datasets: DatasetService,
           val responseStatus = response.getStatusLine().getStatusCode()
           if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304 ) {
             curations.updateStatus(curationId, "In Curation")
-            Ok(toJson(Map("status"->"success", "message"-> "Submitted successfully")))
+            Ok(toJson(Map("status"->"success", "message"-> "Curation object retracted successfully")))
           } else if (responseStatus == 404 && response.getStatusLine().getReasonPhrase() == s"RO with ID urn:uuid:$curationId does not exist") {
-            BadRequest("Curation Object not found in Repository")
+            BadRequest(toJson(Map("status" -> "error", "message" ->"Curation object not found in external server")))
+          } else {
+            InternalServerError("Unknown error")
           }
-          InternalServerError("Unknown error")
         }
         case None => BadRequest("Curation Object Not found")
       }
