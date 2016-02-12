@@ -757,7 +757,7 @@ class Files @Inject()(
                         // Submit file for other requests, etc.
                         processSavedFile(Some(user),newFile,showPreviews,filename,flagsFromPrevious,
                           Utils.baseUrl(request),request.host,request.remoteAddress,new java.io.File(path),
-                          "",file_md,null,true,false)
+                          "",file_md,dataset,true,false)
 
                         uploadedFiles.append(newFile)
                         break
@@ -773,7 +773,6 @@ class Files @Inject()(
         }
       }
     }
-    Logger.debug("!!! 3")
     return uploadedFiles.toList
   }
 
