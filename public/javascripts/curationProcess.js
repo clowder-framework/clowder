@@ -37,7 +37,7 @@ function retractCuration(curationId) {
 
     request.fail(function(jqXHR, textStatus, errorThrown) {
        console.error("The following error ocurred: " + textStatus, errorThrown);
-        notify("The curation object could not be retracted due to: " + jqXHR.responseText, "error" );
+        notify("The curation object could not be retracted due to: " + jqXHR.responseJSON.message, "error" );
     });
 }
 
