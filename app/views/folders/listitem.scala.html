@@ -9,7 +9,7 @@
             </div>
             <div class="col-md-10 col-sm-10 col-lg-10">
                 <div id="folder-title-@folder.id">
-                    <h2 id ="@folder.id-name" class="inline"><a href="javascript:getUpdatedFilesAndFolders(0, '@folder.id.stringify')">@folder.displayName</a></h2>
+                    <h2 id ="@folder.id-name" class="inline"><a href="javascript:updatePageAndFolder(0, '@folder.id.stringify')">@folder.displayName</a></h2>
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))) {
                         <h3 id="h-edit-@folder.id" class="hiddencomplete">
                             <a id="edit-@folder-id" href="javascript:updateFolderName('@parentDataset', '@folder.id')" title="Click to edit folder name">
