@@ -57,6 +57,9 @@ object Admin extends Controller with ApiController {
   
   
   def submitAppearance = ServerAdminAction(parse.json) { implicit request =>
+    (request.body \ "theme").asOpt[String] match {
+      case Some(theme) => AppConfiguration.setTheme(theme)
+    }
     (request.body \ "displayName").asOpt[String] match {
       case Some(displayName) => AppConfiguration.setDisplayName(displayName)
     }

@@ -220,6 +220,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       collection("social.token").drop()
       collection("social.users").drop()
       collection("roles").drop()
+      removeFiles("logos")
 
       // call global onStart to initialize
       app.global.onStart(app)

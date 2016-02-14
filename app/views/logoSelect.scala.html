@@ -1,0 +1,140 @@
+@(path: String, name: String, default: Option[String], showText: Option[String])
+
+<div class="radio">
+    @if(default.isDefined) {
+        <label><input type="radio" name="@(path)@(name)Opt" id="@(path)@(name)Default" value="default">Default <img height="16px" width="16px" src="@routes.Assets.at(default.get)"></label>
+    } else {
+        <label><input type="radio" name="@(path)@(name)Opt" id="@(path)@(name)Default" value="default">No Logo</label>
+    }
+</div>
+@services.DI.injector.getInstance(classOf[services.LogoService]).get(path, name).map{ logo =>
+    <div class="radio">
+        <label><input type="radio" name="@(path)@(name)Opt" value="current" id="@(path)@(name)Current">Current <img height="16px" src="@api.routes.Logos.downloadPath(path, name)"></label>
+    </div>
+}
+<div class="radio">
+    <label><input type="radio" name="@(path)@(name)Opt" id="@(path)@(name)Upload" value="upload" disabled><input class="form-control" id="@(path)@(name)File" type="file"></label>
+</div>
+@if(showText.isDefined) {
+    @services.DI.injector.getInstance(classOf[services.LogoService]).get(path, name) match {
+        case Some(logo) => {
+            @if(logo.showText) {
+                <input type="checkbox" id="@(path)@(name)Text" checked> @showText>
+            } else {
+                <input type="checkbox" id="@(path)@(name)Text"> @showText>
+            }
+        }
+        case None => {
+            <input type="checkbox" id="@(path)@(name)Text" checked disabled> @showText>
+        }
+    }
+}
+
+<script>
+    $(function() {
+        $("#@(path)@(name)File").on("change", select@(path)@(name)File);
+        $("input[name='@(path)@(name)Opt']").on("change", select@(path)@(name)Button);
+
+        var current = $('#@(path)@(name)Current');
+        if (current.length != 0) {
+            current.prop('checked', true);
+        } else {
+            $('#@(path)@(name)Default').prop('checked', true);
+        }
+    });
+
+    function select@(path)@(name)File() {
+        var upload = $('#@(path)@(name)Upload');
+        var enable = typeof $("#@(path)@(name)File")[0].files[0] !== 'undefined';
+
+        upload.prop('disabled', !enable);
+        upload.prop('checked', enable);
+        if (enable) {
+            $('#@(path)@(name)Text').prop('disabled', false);
+        } else {
+            var current = $('#@(path)@(name)Current')[0];
+            if (current) {
+                current.prop('checked', true);
+                $('#@(path)@(name)Text').prop('disabled', false);
+            } else {
+                $('#@(path)@(name)Default').prop('checked', true);
+                $('#@(path)@(name)Text').prop('disabled', true);
+            }
+        }
+    }
+
+    function select@(path)@(name)Button() {
+        var disable = $('input[name=@(path)@(name)Opt]:checked').val() == "default";
+        $('#@(path)@(name)Text').prop('disabled', disable);
+    }
+
+    function upload@(path)@(name)File(nextFunction) {
+        switch ($('input[name=@(path)@(name)Opt]:checked').val()) {
+            case "default":
+                @services.DI.injector.getInstance(classOf[services.LogoService]).get(path, name) match {
+                    case Some(x) => {
+                        $.ajax({
+                            url:  "@api.routes.Logos.deletePath(path, name).url",
+                            type: "DELETE",
+                        }).done(function() {
+                            nextFunction();
+                        }).fail(function(jqXHR) {
+                            console.error("The following error occured: " + jqXHR.responseText);
+                            notify("The logo for @path/@name was not updated", "error");
+                        });
+                    }
+                    case None => {
+                        nextFunction();
+                    }
+                }
+                break;
+
+            case "current":
+                var text = $("#@(path)@(name)Text")[0];
+                $.ajax({
+                    url:  "@api.routes.Logos.putPath(path, name).url",
+                    data: JSON.stringify({
+                        showText: !text || text.checked
+                    }),
+                    type: "PUT",
+                    contentType: "application/json"
+                }).done(function(response, textStatus, jqXHR) {
+                    nextFunction();
+                }).fail(function(jqXHR) {
+                    console.error("The following error occured: " + jqXHR.responseText);
+                    notify("The logo for @path/@name was not updated", "error");
+                });
+                break;
+
+            case "upload":
+                var file = $("#@(path)@(name)File")[0].files[0];
+                var text = $("#@(path)@(name)Text")[0];
+                if (file) {
+                    var fd = new FormData();
+                    fd.append('image', file);
+                    fd.append('name', '@name');
+                    fd.append('path', '@path');
+                    fd.append('showText', !text || text.checked);
+
+                    $.ajax({
+                        url: "@api.routes.Logos.upload().url",
+                        data: fd,
+                        processData: false,
+                        contentType: false,
+                        type: "POST"
+                    }).done(function() {
+                        nextFunction();
+                    }).fail(function(jqXHR) {
+                        console.error("The following error occured: " + jqXHR.responseText);
+                        notify("The logo for @path/@name was not updated", "error");
+                    });
+                } else {
+                    nextFunction();
+                }
+                break;
+
+            default:
+                nextFunction();
+        }
+    }
+</script>
