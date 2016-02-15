@@ -1,3 +1,4 @@
+
 @(folder: Folder, parentDataset: UUID)(implicit user: Option[models.User])
 
 @import api.Permission
@@ -39,19 +40,6 @@
                     </div>
                     <div class="col-md-6 col-lg-6 col-sm-6">
                         <ul class="list-unstyled">
-                            <li> @user match {
-                                case Some(viewer) => {
-                                    <a id="followButton" type="button" class="btn btn-link" objectType="folder" objectId="@folder.id">
-                                    @if(viewer.followedEntities.filter(x => (x.id == folder.id)).nonEmpty) {
-                                        <span class='glyphicon glyphicon-star-empty'></span>Unfollow
-                                    } else {
-                                        <span class='glyphicon glyphicon-star'></span>Follow
-                                    }
-                                    </a>
-                                }
-                                case None => {}
-                            }
-                            </li>
                         </ul>
                     </div>
                 </div>
