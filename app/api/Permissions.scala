@@ -181,6 +181,7 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.comment, id) => false
       case ResourceRef(ResourceRef.section, id) => false
       case ResourceRef(ResourceRef.preview, id) => false
+      case ResourceRef(ResourceRef.vocabulary,id) => false
       case ResourceRef(resType, id) => {
         Logger.error("Unrecognized resource type " + resType)
         false
@@ -204,7 +205,9 @@ object Permission extends Enumeration {
               checkPermission(user, permission, ResourceRef(ResourceRef.dataset, p.dataset_id.get))
             } else if (p.collection_id.isDefined) {
               checkPermission(user, permission, ResourceRef(ResourceRef.collection, p.collection_id.get))
-            } else {
+            } else if (p.vocabulary_id.isDefined) {
+              checkPermission(user,permission, ResourceRef(ResourceRef.vocabulary, p.vocabulary_id.get))
+            } else  {
               true
             }
           }
