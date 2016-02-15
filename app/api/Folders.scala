@@ -14,7 +14,8 @@ import play.api.libs.json.Json._
 @Singleton
 class Folders @Inject() (
   folders: FolderService,
-  datasets: DatasetService) extends ApiController {
+  datasets: DatasetService,
+  events: EventService) extends ApiController {
 
   def createFolder(parentDatasetId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, parentDatasetId)))(parse.json){ implicit request =>
     Logger.debug("--- API Creating new folder ---- ")
@@ -67,8 +68,7 @@ class Folders @Inject() (
                             case None => InternalServerError(s"Parent folder $parentId not found")
                           }
                         }
-
-                        //TODO: Add Created folder event
+                        events.addObjectEvent(request.user, parentDatasetId, parentDataset.name, "added_folder")
                         Ok(toJson(Map("status" -> "success")))
                       }
                       case None => InternalServerError(s"Parent Dataset $parentDatasetId not found")
@@ -91,7 +91,8 @@ class Folders @Inject() (
       case Some(parentDataset) => {
         folders.get(folderId) match {
           case Some(folder) => {
-            //TODO: Add Deleted folder event? Make everyone unfollow the folder. Add followers field to the model?
+
+            events.addObjectEvent(request.user, parentDatasetId, parentDataset.name, "deleted_folder")
             folders.delete(folderId)
             if(folder.parentType == "dataset") {
               datasets.removeFolder(parentDatasetId, folderId)
@@ -139,7 +140,7 @@ class Folders @Inject() (
               }
 
               folders.updateName(folder.id, name, displayName)
-              //TODO: Add Update event
+              events.addObjectEvent(request.user, parentDatasetId, parentDataset.name, "updated_folder")
               Ok(toJson(Map("status" -> "success", "newname" -> displayName)))
 
             }

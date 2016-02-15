@@ -9,7 +9,7 @@ import javax.inject.Inject
 
 /**
   */
-class Folders @Inject()(datasets: DatasetService, folders: FolderService) extends SecuredController{
+class Folders @Inject()(datasets: DatasetService, folders: FolderService, events: EventService) extends SecuredController{
 
   def addFiles(id: UUID, folderId: String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
@@ -27,7 +27,7 @@ class Folders @Inject()(datasets: DatasetService, folders: FolderService) extend
   }
 
   def createFolder(parentDatasetId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, parentDatasetId)))(parse.json){ implicit request =>
-    Logger.debug("--- API Creating new folder ---- ")
+    Logger.debug("--- Creating new folder ---- ")
     (request.body \ "name").asOpt[String].map {
       name => {
         (request.body \ "parentId").asOpt[String].map {
@@ -77,8 +77,8 @@ class Folders @Inject()(datasets: DatasetService, folders: FolderService) extend
                             case None => InternalServerError(s"Parent folder $parentId not found")
                           }
                         }
-                        val space = (request.body \ "currentSpace").asOpt[String]
-                        //TODO: Add Created folder event
+
+                        events.addObjectEvent(request.user, parentDatasetId, parentDataset.name, "added_folder")
                         Ok(views.html.folders.listitem(folder, parentDataset.id) (request.user))
                       }
                       case None => InternalServerError(s"Parent Dataset $parentDatasetId not found")

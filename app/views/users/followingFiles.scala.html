@@ -99,7 +99,7 @@
     <div class="row hidden" id="list-view">
         <div class="col-md-12">
             @filesList.map { file =>
-                @files.listitem(file, comments, routes.Files.followingFiles(prev+1, limit, ""))
+                @files.listitem(file, comments, routes.Files.followingFiles(prev+1, limit, ""), None)
             }
         </div>
     </div>
