@@ -222,7 +222,7 @@
         var parentId = "@dataset.id";
         var parentType = "dataset";
         var pageIndex = 0;
-
+        var folderId;
         tinymce.init ( { selector : '.notesArea',
             theme : "modern",
             plugins :[
@@ -251,10 +251,26 @@
             $('#h-edit-title').addClass("hiddencomplete");
             $('#h-edit-title').css("display", "none");
         }
-
-        $(document).ready(function(){
+        function parseHash() {
             var hash = location.hash.split('#')[1];
-            getUpdatedFilesAndFolders(hash);
+            if(hash != undefined) {
+                var values = hash.split('&');
+                for (var i = 0; i < values.length; i++){
+                    var temp = values[i].split('=');
+                    if(temp[0] == 'folderId') {
+                        folderId = temp[1];
+                    }
+                    if(temp[0] == 'page'){
+                        pageIndex = temp[1];
+                    }
+                }
+            }
+
+
+        }
+        $(document).ready(function(){
+
+            getUpdatedFilesAndFolders();
 
             if(@dataset.spaces.size < 1 ) {
                 $('#dataset-users').hide();
@@ -400,8 +416,8 @@
 
     $(function() {
             $(window).on('fileDelete hashchange', function() {
-                var hash = location.hash.split('#')[1];
-                getUpdatedFilesAndFolders(hash);
+
+                getUpdatedFilesAndFolders();
             });
 
             $('#createFolder').click(function() {
@@ -425,9 +441,11 @@
                         $('#folder-modal').modal('hide');
                         $('#folderListDiv').prepend(response);
                         notify("Folder created successfully", "success", false, 2000 );
+                        $('#name').val("");
                     });
 
                     request.fail(function (jqXHR, textStatus, errorThrown){
+                        $('#name').val("");
                         console.error("The following error occured: " + textStatus, errorThrown);
                         var errMsg = "You must be logged in to create a new folder.";
                         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
@@ -440,13 +458,18 @@
             });
         });
 
-       function updatePageAndFolder(idx, folderId){
-           pageIndex = idx;
-           location.hash = folderId;
+       function updatePageAndFolder(idx, folderIdd){
+           if(folderIdd != "") {
+               location.hash = "folderId="+folderIdd+"&page="+idx;
+           } else {
+               location.hash="page="+idx;
+               folderId = "";
+           }
            $(window).trigger("hashchange");
        }
 
-       function getUpdatedFilesAndFolders(folderId) {
+       function getUpdatedFilesAndFolders() {
+        parseHash();
         if(folderId == "") {
             folderId = null;
         }
