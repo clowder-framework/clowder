@@ -80,6 +80,12 @@ object Permission extends Enumeration {
     ViewRelation,
     DeleteRelation,
 
+    //vocabularies
+    ViewVocabulary,
+    CreateVocabulary,
+    DeleteVocabulary,
+    EditVocabulary,
+
     // users
     ViewUser,
     EditUser = Value
@@ -98,6 +104,7 @@ object Permission extends Enumeration {
   lazy val curations: services.CurationService = DI.injector.getInstance(classOf[services.CurationService])
   lazy val sections: SectionService = DI.injector.getInstance(classOf[SectionService])
   lazy val metadatas: MetadataService = DI.injector.getInstance(classOf[MetadataService])
+  lazy val vocabularies: VocabularyService = DI.injector.getInstance(classOf[VocabularyService])
 
   /** Returns true if the user is listed as a server admin */
 	def checkServerAdmin(user: Option[Identity]): Boolean = {
@@ -120,6 +127,7 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.curationObject, id) => curations.get(id).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
       case ResourceRef(ResourceRef.curationFile, id) => curations.getCurationFiles(List(id)).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
       case ResourceRef(ResourceRef.metadata, id) => metadatas.getMetadataById(id).exists(_.creator.id == user.id)
+      case ResourceRef(ResourceRef.vocabulary, id) => vocabularies.get(id).exists(x => users.findByIdentity(x.author.get).exists(_.id == user.id))
       case ResourceRef(_, _) => false
     }
   }
@@ -278,6 +286,22 @@ object Permission extends Enumeration {
           }
         }
       }
+      case ResourceRef(ResourceRef.vocabulary, id) => {
+        vocabularies.get(id) match {
+          case None => false
+          case Some(vocab) => {
+            for (clowderUser <- getUserByIdentity(user)) {
+              vocab.spaces.map {
+                vocabId => for (role <- users.getUserRoleInSpace(clowderUser.id, vocabId)) {
+                  if (role.permissions.contains(permission.toString))
+                    return true
+                }
+              }
+            }
+            false
+          }
+        }
+      }
       case ResourceRef(ResourceRef.comment, id) => {
         val comment = comments.get(id)
         if(comment.get.dataset_id.isDefined) {
@@ -330,6 +354,7 @@ object Permission extends Enumeration {
           case None => false
         }
       }
+
 
       case ResourceRef(resType, id) => {
         Logger.error("Resource type not recognized " + resType)

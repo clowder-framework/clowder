@@ -1,14 +1,15 @@
 package services.mongodb
 
-import com.mongodb.casbah.commons.MongoDBObject
-import services.mongodb.MongoContext.context
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import com.mongodb.casbah.Imports._
+import services.mongodb.MongoContext.context
+import com.mongodb.casbah.commons.MongoDBObject
+
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import org.bson.types.ObjectId
 import models._
 import javax.inject.{Singleton, Inject}
 
-import com.mongodb.casbah.Imports._
+
 import com.mongodb.casbah.WriteConcern
 import services.{VocabularyService, UserService}
 import play.api.Play._
