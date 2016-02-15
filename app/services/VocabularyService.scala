@@ -20,4 +20,8 @@ trait VocabularyService {
 
   def list() : List[Vocabulary]
 
+  def addToSpace(vocabId: UUID, spaceId : UUID) : Try[Unit]
+
+  def removeFromSpace(vocabId : UUID, spaceId : UUID) : Try[Unit]
+
 }

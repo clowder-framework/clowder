@@ -47,6 +47,20 @@ class MongoDBVocabularyService @Inject() (userService: UserService) extends Voca
     }
   }
 
+  def addToSpace(vocabId: UUID, spaceId: UUID) = Try{
+    val result = Vocabulary.update(
+      MongoDBObject("_id" -> new ObjectId(vocabId.stringify)),
+      $addToSet("spaces" -> Some(new ObjectId(spaceId.stringify))),
+      false, false)
+  }
+
+  def removeFromSpace(vocabId: UUID, spaceId : UUID) = Try {
+    val result = Vocabulary.update(
+      MongoDBObject("_id" -> new ObjectId(vocabId.stringify)),
+      $pull("spaces" -> Some(new ObjectId(spaceId.stringify))),
+      false, false)
+  }
+
 
 }
 
