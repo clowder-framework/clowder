@@ -1,3 +1,4 @@
+
 @(dataset: models.Dataset,
   comments: List[Comment],
   previewers : List[Previewer],
@@ -434,9 +435,11 @@
                         $('#folder-modal').modal('hide');
                         $('#folderListDiv').prepend(response);
                         notify("Folder created successfully", "success", false, 2000 );
+                        $('#name').val("");
                     });
 
                     request.fail(function (jqXHR, textStatus, errorThrown){
+                        $('#name').val("");
                         console.error("The following error occured: " + textStatus, errorThrown);
                         var errMsg = "You must be logged in to create a new folder.";
                         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
