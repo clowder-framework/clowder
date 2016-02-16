@@ -103,7 +103,10 @@
             $("input[name='Purpose']:checkbox:checked").each(function(i){
                purpose[i] = $(this).val();
             });
-            var dataMap = { Purpose: purpose.toString()};
+
+            var dataMap={};
+            if(purpose !="")
+                dataMap ["Purpose"]= purpose.toString();
 
             var request = jsRoutes.api.CurationObjects.findMatchmakingRepositories('@curationObject.id').ajax({
                 type: 'POST',
@@ -129,7 +132,7 @@
             });
             request.fail(function( jqXHR, textStatus, errorThrown) {
                 console.error("The following error occurred: " + textStatus, errorThrown);
-                notify(jqXHR.responseText, "error");
+                notify("Preferences are not updated due to:"+ jqXHR.responseText, "error");
             });
         });
         $('.selectRepository').on('click', function() {
