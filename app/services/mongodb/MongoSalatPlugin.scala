@@ -674,7 +674,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       }
       appConfig.addPropertyValue("mongodb.updates", "update-user-preference")
     } else {
-      Logger.warn("[MongoDBUpdate : Missing fix to remove fileds in user.repositoryPreferences ")
+      Logger.warn("[MongoDBUpdate : Missing fix to remove fields in user.repositoryPreferences ")
     }
   }
 }
