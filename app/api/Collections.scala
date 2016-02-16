@@ -18,14 +18,14 @@ import controllers.Utils
 
 /**
  * Manipulate collections.
- * 
+ *
  * @author Constantinos Sophocleous
  */
 @Api(value = "/collections", listingPath = "/api-docs.json/collections", description = "Collections are groupings of datasets")
 @Singleton
 class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previews: PreviewService, userService: UserService, events: EventService, spaces:SpaceService) extends ApiController {
 
-    
+
   @ApiOperation(value = "Create a collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
@@ -136,14 +136,14 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     }
     }
   }
-  
+
   @ApiOperation(value = "Remove collection",
       notes = "Does not delete the individual datasets in the collection.",
       responseClass = "None", httpMethod = "POST")
   def removeCollection(collectionId: UUID) = PermissionAction(Permission.DeleteCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     collections.get(collectionId) match {
       case Some(collection) => {
-        events.addObjectEvent(request.user , collection.id, collection.name, "delete_collection") 
+        events.addObjectEvent(request.user , collection.id, collection.name, "delete_collection")
         collections.delete(collectionId)
         current.plugin[AdminsNotifierPlugin].foreach {
           _.sendAdminsNotification(Utils.baseUrl(request),"Collection","removed",collection.id.stringify, collection.name)
