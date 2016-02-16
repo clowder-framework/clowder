@@ -4,7 +4,7 @@ import com.mongodb.casbah.Imports._
 import services.mongodb.MongoContext.context
 import com.mongodb.casbah.commons.MongoDBObject
 
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import com.novus.salat.dao.{SalatMongoCursor, ModelCompanion, SalatDAO}
 import org.bson.types.ObjectId
 import models._
 import javax.inject.{Singleton, Inject}
@@ -35,6 +35,10 @@ class MongoDBVocabularyService @Inject() (userService: UserService) extends Voca
 
   def get(id: UUID) : Option[Vocabulary] = {
     Vocabulary.findOneById(new ObjectId(id.stringify))
+  }
+
+  def getByName(name : String) : List[Vocabulary] = {
+    Vocabulary.dao.find(MongoDBObject("name"->name)).toList
   }
 
   def delete(id : UUID) = Try {

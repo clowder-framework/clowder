@@ -1,6 +1,7 @@
 package services
 
 
+import com.novus.salat.dao.SalatMongoCursor
 import models.{UUID, Vocabulary}
 
 import scala.util.Try
@@ -15,6 +16,8 @@ trait VocabularyService {
   def insert(vocabulary : Vocabulary) : Option[String]
 
   def get(id : UUID) : Option[Vocabulary]
+
+  def getByName(name : String ) : List[Vocabulary]
 
   def delete(id: UUID) : Try[Unit]
 
