@@ -1,6 +1,7 @@
 package services.mongodb
 
 import com.mongodb.casbah.Imports._
+import securesocial.core.Identity
 import services.mongodb.MongoContext.context
 import com.mongodb.casbah.commons.MongoDBObject
 
@@ -39,6 +40,10 @@ class MongoDBVocabularyService @Inject() (userService: UserService) extends Voca
 
   def getByName(name : String) : List[Vocabulary] = {
     Vocabulary.dao.find(MongoDBObject("name"->name)).toList
+  }
+
+  def getByAuthorAndName(author : Identity, name : String) : List[Vocabulary] = {
+    (Vocabulary.dao.find(MongoDBObject("author" -> author)) ++ Vocabulary.dao.find(MongoDBObject("name"->name))).toList
   }
 
   def delete(id : UUID) = Try {
