@@ -63,6 +63,9 @@ object Admin extends Controller with ApiController {
     (request.body \ "welcomeMessage").asOpt[String] match {
       case Some(welcomeMessage) => AppConfiguration.setWelcomeMessage(welcomeMessage)
     }
+    (request.body \ "googleAnalytics").asOpt[String] match {
+      case Some(s) => AppConfiguration.setGoogleAnalytics(s)
+    }
     (request.body \ "userAgreement").asOpt[String] match {
       case Some(userAgreement) => AppConfiguration.setUserAgreement(userAgreement)
     }

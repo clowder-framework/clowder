@@ -29,6 +29,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     Ok(views.html.admin(theme,
       AppConfiguration.getDisplayName,
       AppConfiguration.getWelcomeMessage,
+      AppConfiguration.getGoogleAnalytics,
       AppConfiguration.getUserAgreement))
   }
 

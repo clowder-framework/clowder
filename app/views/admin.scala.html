@@ -1,55 +1,56 @@
-@(theme: String, displayName: String, welcomeMessage: String, userAgreement: String)(implicit user: Option[models.User])
+@(theme: String, displayName: String, welcomeMessage: String, googleAnalytics: String, userAgreement: String)(implicit user: Option[models.User])
 @main("Administration") {
 	<div class="page-header">
 		<h1>Customize</h1>
 	</div>
 
 	<legend>Select a Theme</legend>
-
 	<div class="row">
 		<div class="col-md-2">@themes(theme)</div>
 	</div>
+	
+	<legend>Server Information</legend>
+    <div class="row">
+        <div class="col-md-2">
+            <form role="form-horizontal">
+                <div class="form-group">
+                    <label for="displayNameField">Display name</label>
+                    <input class="form-control" id="displayNameField" name="displayNameField" type="text" value="@(displayName)"></input>
+                    <span id="displayNameField_error" style="display:none ;">Must have a display name</span>
+                    <br/>
+                    <label for="welcomingField">Welcoming message</label>
+                    <textarea class="form-control" name="welcomingField" id="welcomingField" style="width:300% ;">@(welcomeMessage)</textarea>
+                    <br/>
+                    <label for="googleAnalytics">Google Analytics Code</label>
+                    <input class="form-control" id="googleAnalytics" name="googleAnalytics" type="text" value="@(googleAnalytics)"></input>
+					<br/>
+					<label for="userAgreement">User Agreement</label>
+					<textarea class="form-control" name="userAgreement" id="userAgreement" style="width:300%;" placeholder="Plain text or HTML. Or leave blank and it will not be required.">@(userAgreement)</textarea>
+				</div>
+            </form>
+        </div>
+    </div>
 
-	<legend>Select a display name for the application and a welcoming message</legend>
+    <br /><br />
+    <button class="btn btn-primary" onclick="return submitAppearance();"><span class="glyphicon glyphicon-saved"></span>
+        Submit</button>
 
-	<div class="row">
-		<div class="col-md-2">
-			<form role="form-horizontal">
-			  <div class="form-group">
-			    <label for="displayNameField">Display name</label>
-			    <input class="form-control" id="displayNameField" name="displayNameField" type="text" value="@(displayName)"></input>
-			    <span id="displayNameField_error" style="display:none;">Must have a display name</span>
-			    <br /><br />
-			    <label for="welcomingField">Welcoming message</label>
-				<textarea class="form-control" name="welcomingField" id="welcomingField" style="width:300%;">@(welcomeMessage)</textarea>
-				<br /><br />
-                <label for="userAgreement">User Agreement</label>
-                <textarea class="form-control" name="userAgreement" id="userAgreement" style="width:300%;" placeholder="Plain text or HTML. Or leave blank and it will not be required.">@(userAgreement)</textarea>
-                <br /><br />
-			    <button class="btn btn-primary" onclick="return submitAppearance();"><span class="glyphicon glyphicon-saved"></span> Submit</button>
-			  </div>
-			</form>
-		</div>
-	</div>
-	<script language="javascript">
+    <script language="javascript">
 		function submitAppearance(){
 			var displayName = $("#displayNameField").val().trim();
-			var welcomeMessage = $("#welcomingField").val().trim();
-            var userAgreement = $("#userAgreement").val() ? $("#userAgreement").val().trim() : "";
-
+            var welcomeMessage = $("#welcomingField").val().trim();
 			if(displayName == ""){
 				$("#displayNameField_error").css("display","inline");
 				return false;
 			}else{
 				$("#displayNameField_error").css("display","none");
 			}
-
-			console.log("Display name: "+displayName);
-			console.log("Welcoming message: "+welcomeMessage);
+			var googleAnalytics = $("#googleAnalytics").val().trim();
+			var userAgreement = $("#userAgreement").val() ? $("#userAgreement").val().trim() : "";
 
 			var request = $.ajax({
 				url:  "@api.routes.Admin.submitAppearance",
-				data: JSON.stringify({displayName: displayName, welcomeMessage: welcomeMessage, userAgreement: userAgreement }),
+				data: JSON.stringify({ displayName: displayName, welcomeMessage: welcomeMessage, googleAnalytics: googleAnalytics, userAgreement: userAgreement }),
 				type: "POST",
 				contentType: "application/json"
 	     	});

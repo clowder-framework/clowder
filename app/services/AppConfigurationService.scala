@@ -31,7 +31,7 @@ trait AppConfigurationService {
    * Gets the configuration property with the specified key. If the key is not found
    * it wil return the default value (empty string if not specified).
    */
-  def getProperty[objectType <: AnyRef](key: String, default:objectType): objectType = {
+  def getProperty[objectType <: AnyRef](key: String, default: objectType): objectType = {
     getProperty[objectType](key) match {
       case Some(x) => x
       case None => default
@@ -87,6 +87,14 @@ object AppConfiguration {
   /** Get the welcome message */
   def getWelcomeMessage: String = appConfig.getProperty("welcome.message", "Welcome to Clowder, " +
     "a scalable data repository where you can share, organize and analyze data.")
+
+  // ----------------------------------------------------------------------
+
+  /** Set the google analytics code */
+  def setGoogleAnalytics(gacode: String) = appConfig.setProperty("google.analytics", gacode)
+
+  /** Get the welcome message */
+  def getGoogleAnalytics: String = appConfig.getProperty("google.analytics", "")
 
   // ----------------------------------------------------------------------
 
