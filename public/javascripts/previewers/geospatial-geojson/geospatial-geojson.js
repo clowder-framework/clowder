@@ -113,92 +113,94 @@
         return content;
     }
 
+    function get_random_color() {
+        // From http://stackoverflow.com/questions/1484506/random-color-generator-in-javascript
+        function c() {
+            var hex = Math.floor(Math.random()*256).toString(16);
+            return ("0"+String(hex)).substr(-2); // pad with zero
+        }
+        return "#"+c()+c()+c();
+    }
 
 
-    function addXYLayer(coord, layerName, layerURL) {
+    function addXYLayer(latLonList, layerName, layerURL, coordProjection) {
         initializeMap()
 
         if (map != null) {
-            console.log("adding new XY @("+coord[0]+","+coord[1]+") to map - "+layerName);
-
-            /*
-             // update the extent for all the layers
-             if (current_coord.length == 0) {
-             for (var i = 0; i < coord.length; i++) {
-             current_coord[i] = coord[i];
-             }
-             } else {
-             // min x
-             if (coord[0] < current_coord[0]) current_coord[0] = coord[0];
-
-             // min y
-             if (coord[1] < current_coord[1]) current_coord[1] = coord[1];
-
-             // max x
-             if (coord[2] > current_coord[2]) current_coord[2] = coord[2];
-
-             // max y
-             if (coord[3] > current_coord[3]) current_coord[3] = coord[3];
-             }
-
-             console.log("bounding box " + current_coord);
-             */
-
+            var coordProjection = coordProjection || "EPSG:4326"
             var defaultOpacity = 0.5;
 
             // Create new layer and add to map
-            var marker = new ol.Feature({
-                geometry: new ol.geom.Point([coord[0],coord[1]])
-            })
-            console.log(marker)
-            var vectorSource = new ol.source.Vector({
-                features: [marker]
-            })
-            var currExtent = vectorSource.getExtent()
-            var vectorLayer = new ol.layer.Vector({
-                source: vectorSource
-            })
-            map.addLayer(vectorLayer);
-
-            // Populate layer control for each layer
-
-            // create id by using wms layer name
-            var visVar = layerName + '-visible';
-            var opVar = layerName + '-opacity';
-
-            // add checkbox and range input
-            var layerControl = '<div><input id="' + visVar + '" type="checkbox" checked="checked" /> <a href="'+layerURL+'">'+layerName+'</a>' +
-                                '<input id="' + opVar + '" type="range" min="0" max="1" step="0.01" value="' + defaultOpacity + '" style="width:100px;"/></div>';
-
-            // prepend the layer not "append" since the top item means the layer on top
-            $('#layer-control').prepend(layerControl);
-
-            // event handler for layer on/off
-            $("#" + visVar).change(function () {
-                if ($(this).is(':checked')) {
-                    vectorLayer.setVisible(true);
-                } else {
-                    vectorLayer.setVisible(false);
-                }
+            var layer_color = get_random_color()
+            var sty =  new ol.style.Style({
+                image: new ol.style.Circle({
+                    fill: new ol.style.Fill({color:layer_color}),
+                    radius: 5
+                }),
+                fill: new ol.style.Fill({color:layer_color})
             });
 
-            // event handler for layer opacity
+            var layerFeats = []
+            for (c in latLonList) {
+                var latLon = latLonList[c]
+                layerFeats.push(new ol.Feature({
+                    geometry: new ol.geom.Point(
+                        ol.proj.transform([latLon[1],latLon[0]],coordProjection,"EPSG:3857"))
+                }))
+            }
+            var vectorSource = new ol.source.Vector({
+                features: layerFeats
+            });
+            var vectorLayer = new ol.layer.Vector({
+                source: vectorSource,
+                style: sty,
+                extent: vectorSource.getExtent()
+            });
+            map.addLayer(vectorLayer);
+
+
+            // Populate layer control for each layer
+            // create id by using layer name, removing periods from filename if necessary (messes up checkboxes)
+            var layerLabel = layerName.replace(".","")
+            var visVar = layerLabel + '-visible';
+            var opVar = layerLabel + '-opacity';
+            var layerControl = '<div><input id="' + visVar + '" type="checkbox" checked="checked" /> <a style="color:'+layer_color+'" target="_blank" href="'+layerURL+'">'+layerName+'</a>' +
+                                '<input id="' + opVar + '" type="range" min="0" max="1" step="0.01" value="' + defaultOpacity + '" style="width:100px;"/></div>';
+            $('#layer-control').prepend(layerControl);
+
+            // event handlers for layer on/off & opacity
+            $("#" + visVar).change(function () {
+                vectorLayer.setVisible($(this).is(':checked'));
+            });
             $("#" + opVar).change(function () {
                 vectorLayer.setOpacity($(this).val());
             });
 
             // create view object to zoom in
             var view = new ol.View();
-            view.fitExtent(currExtent, map.getSize());
-            map.setView(view);
+            view.fitExtent(vectorSource.getExtent(), map.getSize());
+            map.setView(view)
 
             // fix for MMDB-1617
             // force to redraw the map
             // TODO the dom selector needs to select the current selector instead of this selection
             $('a[href$="#tab-visua"]').on('shown.bs.tab', function (e) {
-                console.log("TAB VISUA")
                 map.updateSize();
-                view.fitExtent(currExtent, map.getSize());
+
+                // Fit map extent to existing layers
+                var extent = ol.extent.createEmpty();
+                map.getLayers().forEach(function(layer) {
+                    var layerEx = layer.getExtent()
+                    if (typeof layerEx !== 'undefined') {
+                        ol.extent.extend(extent, layerEx);
+                    }
+                });
+                map.getView().fitExtent(extent, map.getSize());
+
+                var zm = map.getView().getZoom()
+                if (zm > 16) {
+                    map.getView().setZoom(16)
+                }
             });
         }
     }
@@ -207,74 +209,48 @@
         initializeMap()
 
         if (map != null) {
-            console.log("adding new layer to map - "+layerName);
-
-            /*
-            // update the extent for all the layers
-            if (current_coord.length == 0) {
-                for (var i = 0; i < coord.length; i++) {
-                    current_coord[i] = coord[i];
-                }
-            } else {
-                // min x
-                if (coord[0] < current_coord[0]) current_coord[0] = coord[0];
-
-                // min y
-                if (coord[1] < current_coord[1]) current_coord[1] = coord[1];
-
-                // max x
-                if (coord[2] > current_coord[2]) current_coord[2] = coord[2];
-
-                // max y
-                if (coord[3] > current_coord[3]) current_coord[3] = coord[3];
-            }
-
-            console.log("bounding box " + current_coord);
-            */
-
             var defaultOpacity = 0.5;
 
             // Create new layer and add to map
-            vectorSource = new ol.source.Vector({
+            var layer_color = get_random_color()
+            var sty =  new ol.style.Style({
+                image: new ol.style.Circle({
+                    fill: new ol.style.Fill({color:layer_color}),
+                    radius: 5
+                }),
+                fill: new ol.style.Fill({color:layer_color})
+            });
+            var vectorSource = new ol.source.Vector({
                 features: new ol.format.GeoJSON().readFeatures(geojson, {
-                    featureProjection: 'EPSG:3857'
+                    featureProjection: 'EPSG:4326'
                 })
             })
-
-            console.log(vectorSource)
-
-            geojsonExtent = vectorSource.getExtent()
-            console.log("GeoJSON Extent")
-            console.log(geojsonExtent)
-
             var vectorLayer = new ol.layer.Vector({
-                source: vectorSource
+                source: vectorSource,
+                style: sty,
+                extent: vectorSource.getExtent()
             })
+            console.log("GJ")
+            console.log(geojson)
+            console.log(vectorLayer)
+            console.log(vectorLayer.getProperties())
             map.addLayer(vectorLayer);
 
             // Populate layer control for each layer
 
             // create id by using wms layer name
-            var visVar = layerName + '-visible';
-            var opVar = layerName + '-opacity';
-
-            // add checkbox and range input
+            var layerLabel = layerName.replace(".","")
+            var visVar = layerLabel + '-visible';
+            var opVar = layerLabel + '-opacity';
             var layerControl = '<div><input id="' + visVar + '" type="checkbox" checked="checked" />' +
                 ' <a href="'+layerURL+'">'+layerName+'</a>';
             layerControl += '<input id="' + opVar + '" type="range" min="0" max="1" step="0.01" value="' + defaultOpacity + '" style="width:100px;"/></div>';
-
-            // prepend the layer not "append" since the top item means the layer on top
             $('#layer-control').prepend(layerControl);
 
-            // event handler for layer on/off
+            // event handler for layer on/off & opacity
             $("#" + visVar).change(function () {
-                if ($(this).is(':checked')) {
-                    vectorLayer.setVisible(true);
-                } else {
-                    vectorLayer.setVisible(false);
-                }
+                vectorLayer.setVisible($(this).is(':checked'));
             });
-
             // event handler for layer opacity
             $("#" + opVar).change(function () {
                 vectorLayer.setOpacity($(this).val());
@@ -282,9 +258,7 @@
 
             // create view object to zoom in
             var view = new ol.View();
-            view.fitExtent([0,0,90,90], map.getSize());
-
-            // zoom into the layer extent
+            view.fitExtent(vectorSource.getExtent(), map.getSize());
             map.setView(view);
 
             // fix for MMDB-1617
@@ -292,7 +266,21 @@
             // TODO the dom selector needs to select the current selector instead of this selection
             $('a[href$="#tab-visua"]').on('shown.bs.tab', function (e) {
                 map.updateSize();
-                //view.fitExtent(current_coord, map.getSize());
+
+                // Fit map extent to existing layers
+                var extent = ol.extent.createEmpty();
+                map.getLayers().forEach(function(layer) {
+                    var layerEx = layer.getExtent()
+                    if (typeof layerEx !== 'undefined') {
+                        ol.extent.extend(extent, layerEx);
+                    }
+                });
+                map.getView().fitExtent(extent, map.getSize());
+
+                var zm = map.getView().getZoom()
+                if (zm > 16) {
+                    map.getView().setZoom(16)
+                }
             });
         }
     }
@@ -323,7 +311,8 @@
             // initiating map
             window.map = new ol.Map({
                 target: 'geospatialGeoJSONPreviewerMap',
-                projection: 'EPSG:3857'
+                projection: "EPSG:3857",
+                displayProjection: "EPSG:3857"
             });
 
             // setting up base layer with OSM
@@ -336,31 +325,21 @@
             var defaultOpacity = 0.5;
             var visVar = 'osm-visible';
             var opVar = 'osm-opacity';
-
-            // add checkbox and range input
             var layerControl = '<div><input id="' + visVar + '" type="checkbox" checked="checked" />Basemap:&nbsp;&nbsp';
             layerControl += '<input id="' + opVar + '" type="range" min="0" max="1" step="0.01" value="' + defaultOpacity + '" style="width:100px;"/></div>';
-
-            // prepend the layer not "append" since the top item means the layer on top
             $('#layer-control').prepend(layerControl);
 
-            // event handler for layer on/off
+            // event handler for layer on/off & opacity
             $("#" + visVar).change(function () {
-                if ($(this).is(':checked')) {
-                    baseLayer.setVisible(true);
-                } else {
-                    baseLayer.setVisible(false);
-                }
+                baseLayer.setVisible($(this).is(':checked'));
             });
-
-            // event handler for layer opacity
             $("#" + opVar).change(function () {
                 baseLayer.setOpacity($(this).val());
             });
         }
     }
 
-    console.log("LATLON PREVIEWER")
+
     var dataset_id = Configuration.dataset_id;
 
     // Request list of files in this dataset
@@ -380,38 +359,30 @@
                 var file_md_req = $.ajax({
                     type: "GET",
                     url: jsRoutes.api.Files.getTechnicalMetadataJSON(data[file_details]["id"]).url,
-                    dataType: "json"
+                    dataType: "json",
+                    fileId: data[file_details]["id"],
+                    filename: data[file_details]["filename"]
                 });
 
                 file_md_req.done(function(file_data) {
-                    console.log("GOT METADATA")
-                    console.log(file_data)
-
                     if (file_data.length > 0) {
-                        var file_url = jsRoutes.controllers.Files.file(data[file_details]["id"]).url
+                        var file_url = jsRoutes.controllers.Files.file(this.fileId).url
 
                         // Check for geojson members in the metadata, and add to map
                         var geojson = checkForGeoJSON(file_data, file_url);
-                        console.log("GEOJSON LIST")
-                        console.log(geojson)
-
                         if (geojson.length > 0) {
-                            addGeoJSONLayer(geojson, data[file_details]["filename"], file_url)
+                            addGeoJSONLayer(geojson, this.filename, file_url)
                         }
 
                         // Check for lat/lon members in the metadata, and add to map
                         var coords = checkForLatLng(file_data);
-                        console.log("COORDINATES LIST")
-                        console.log(coords)
-
                         if (coords.length > 0) {
-                            for (var c in coords){
-                                addXYLayer(coords[c],data[file_details]["filename"], file_url)
-                            }
+                            addXYLayer(coords,this.filename, file_url)
                         }
                     }
                 });
             }
         }
+
     });
 }(jQuery, Configuration));
