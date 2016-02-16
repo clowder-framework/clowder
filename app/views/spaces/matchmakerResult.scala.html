@@ -132,7 +132,7 @@
             });
             request.fail(function( jqXHR, textStatus, errorThrown) {
                 console.error("The following error occurred: " + textStatus, errorThrown);
-                notify("Preferences are not updated due to:"+ jqXHR.responseText, "error");
+                notify("Preferences were not updated due to:"+ jqXHR.responseText, "error");
             });
         });
         $('.selectRepository').on('click', function() {
