@@ -42,14 +42,14 @@
     });
 
     var insertSensorForm = function(data) {
-        var sensorTemplate = Handlebars.getTemplate("/assets/templates/sensors/sensor-form");
+        var sensorTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/sensors/sensor-form")");
         $("#sensor-form").append(sensorTemplate(data));
     };
 
     var insertInstrumentForm = function(data) {
-        var parametersTemplate = Handlebars.getTemplate("/assets/templates/sensors/parameters-form");
+        var parametersTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/sensors/parameters-form")");
         Handlebars.registerPartial('parameters', parametersTemplate);
-        var instrumentTemplate = Handlebars.getTemplate("/assets/templates/sensors/stream-form");
+        var instrumentTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/sensors/stream-form")");
         $("#instruments").append(instrumentTemplate(data));
     };
 

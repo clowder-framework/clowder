@@ -89,7 +89,7 @@ $(document).ready(function() {
   });
 
   var insertInstrumentForm = function(data) {
-    var instrumentTemplate = Handlebars.getTemplate("/assets/templates/sensors/stream-form");
+    var instrumentTemplate = Handlebars.getTemplate(jsRoutes.controllers.Assets.at('templates/sensors/stream-form').url);
     $("#instruments").append(instrumentTemplate(data));
   };
 

@@ -63,9 +63,9 @@ $(document).ready(function() {
   sensorTypesUrlElement.attr('href', sensorTypesUrl);
 
   var insertInstrumentForm = function(data) {
-    var parametersTemplate = Handlebars.getTemplate("/assets/templates/sensors/parameters-form");
+    var parametersTemplate = Handlebars.getTemplate(jsRoutes.controllers.Assets.at("templates/sensors/parameters-form").url);
     Handlebars.registerPartial('parameters', parametersTemplate);
-    var instrumentTemplate = Handlebars.getTemplate("/assets/templates/sensors/stream-form");
+    var instrumentTemplate = Handlebars.getTemplate(jsRoutes.controllers.Assets.at("templates/sensors/stream-form").url);
     $("#instruments").append(instrumentTemplate(data));
   };
 
