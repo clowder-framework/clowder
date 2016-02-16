@@ -1901,32 +1901,6 @@ class Files @Inject()(
     }
   }
 
-  def setNotesHTML(id: UUID) = PermissionAction(Permission.CreateNote, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
-	  request.user match {
-	    case Some(identity) => {
-		    request.body.\("notesHTML").asOpt[String] match {
-			    case Some(html) => {
-			        files.setNotesHTML(id, html)
-			        //index(id)
-              files.get(id) match {
-              case Some(file) => {
-                events.addObjectEvent(request.user, file.id, file.filename, "set_note_file")
-                }
-              }
-			        Ok(toJson(Map("status"->"success")))
-			    }
-			    case None => {
-			    	Logger.error("no html specified.")
-			    	BadRequest(toJson("no html specified."))
-			    }
-		    }
-	    }
-	    case None =>
-	      Logger.error(("No user identity found in the request, request body: " + request.body))
-	      BadRequest(toJson("No user identity found in the request, request body: " + request.body))
-	  }
-    }
-
   def dumpFilesMetadata = ServerAdminAction { implicit request =>
 
 	  val unsuccessfulDumps = files.dumpAllFileMetadata
