@@ -91,7 +91,7 @@ object Permission extends Enumeration {
     EditUser = Value
 
   val READONLY = Set[Permission](ViewCollection, ViewComments, ViewDataset, ViewFile, ViewGeoStream, ViewMetadata,
-    ViewSection, ViewSpace, ViewTags, ViewUser)
+    ViewSection, ViewSpace, ViewTags, ViewUser, ViewVocabulary)
 
   lazy val files: FileService = DI.injector.getInstance(classOf[FileService])
   lazy val previews: PreviewService = DI.injector.getInstance(classOf[PreviewService])

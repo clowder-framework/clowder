@@ -58,6 +58,8 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
     val user = request.user
     var formName = request.body.asFormUrlEncoded.getOrElse("name", null)
     var formKeys = request.body.asFormUrlEncoded.getOrElse("keys",null)
+    var formTags = request.body.asFormUrlEncoded.getOrElse("tags",null)
+    var formProject = request.body.asFormUrlEncoded.getOrElse("project",null)
 
     var name : String = ""
     if (formName != null){
@@ -67,17 +69,19 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
         case e : Exception => Logger.debug("no name provided")
       }
     }
-
     var keys = List.empty[String]
-
     if (formKeys != null) {
       keys = formKeys(0).split(',').toList
+    }
+    var tags = List.empty[String]
+    if (formTags != null) {
+      tags = formTags(0).split(',').toList
     }
     var v : Vocabulary = null
 
     user match {
       case Some(identity) => {
-        v = Vocabulary(author = Some(identity), created = new Date(), name = name, keys = keys)
+        v = Vocabulary(author = Some(identity), created = new Date(), name = name, keys = keys, tags = tags)
         vocabularyService.insert(v) match {
           case Some(id) => {
             Ok(toJson(Map("id" -> id)))
