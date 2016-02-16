@@ -120,7 +120,7 @@
 			@if(folders.length > 0) {
 					@folders.map { folder =>
 						<span class="caption break-word">
-							<a href="@routes.Datasets.dataset(folder.parentDatasetId, None, 0, Some(folder.id.stringify))">@folder.displayName</a>
+							<a href="@routes.Datasets.dataset(folder.parentDatasetId)#folderId=@folder.id">@folder.displayName</a>
 						</span>
 					}
 			}
