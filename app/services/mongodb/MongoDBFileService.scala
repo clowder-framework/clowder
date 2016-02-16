@@ -982,7 +982,6 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
   }
 }
 
-
 object VersusDAO extends ModelCompanion[Versus,ObjectId]{
     val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");

@@ -69,4 +69,14 @@ trait FolderService {
    * Count how many folders have the same display name
    */
   def countByDisplayName(name: String, parentType: String, parentId: String): Long
+
+  /**
+    * Get all folders with the same base name
+    */
+  def findByNameInParent(name:String, parentType: String, parentId: String): List[Folder]
+
+  /**
+    * Get all folders with the same display name
+    */
+  def findByDisplayNameInParent(name:String, parentType:String, parentId: String): List[Folder]
 }

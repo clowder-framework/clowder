@@ -9,7 +9,7 @@
             </div>
             <div class="col-md-10 col-sm-10 col-lg-10">
                 <div id="folder-title-@folder.id">
-                    <h2 id ="@folder.id-name" class="inline"><a href="javascript:updatePageAndFolder(0, '@folder.id.stringify')">@folder.displayName</a></h2>
+                    <h3 id ="@folder.id-name" class="inline"><a href="javascript:updatePageAndFolder(0, '@folder.id.stringify')">@folder.displayName</a></h3>
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))) {
                         <h3 id="h-edit-@folder.id" class="hiddencomplete">
                             <a id="edit-@folder-id" href="javascript:updateFolderName('@parentDataset', '@folder.id')" title="Click to edit folder name">
@@ -20,7 +20,7 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-md-6 col-lg-6 col-sm-6">
+                    <div class="col-md-12 col-lg-12 col-sm-12">
                         <ul class="list-unstyled">
                             <li>
                                 <span class="glyphicon glyphicon-folder-close"></span> @folder.folders.length
@@ -35,10 +35,6 @@
                                     }
                                 }
                             </li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6 col-lg-6 col-sm-6">
-                        <ul class="list-unstyled">
                         </ul>
                     </div>
                 </div>

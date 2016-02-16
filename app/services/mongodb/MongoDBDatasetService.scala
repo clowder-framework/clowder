@@ -42,7 +42,8 @@ class MongoDBDatasetService @Inject() (
   comments: CommentService,
   sparql: RdfSPARQLService,
   spaces: SpaceService,
-  userService: UserService) extends DatasetService {
+  userService: UserService,
+  folders: FolderService) extends DatasetService {
 
   object MustBreak extends Exception {}
 
@@ -1023,6 +1024,9 @@ class MongoDBDatasetService @Inject() (
           val notTheDataset = for (currDataset <- findByFileId(f) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
           if (notTheDataset.size == 0)
             files.removeFile(f)
+        }
+        for (folder <- dataset.folders ) {
+          folders.delete(folder)
         }
         for (follower <- dataset.followers) {
           userService.unfollowDataset(follower, id)
