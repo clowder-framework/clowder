@@ -23,23 +23,21 @@
         <div class="col-md-12 col-lg-12 col-sm-12">
             <h1 id="spacenamedisplay">@space.name</h1>
             <p><span id="spacedescdisplay">@space.description</span></p>
-            <div class="col-md-12">
-                <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                @if(user.isDefined && Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
-                    <button id="deleteButton" onclick="confirmDeleteResource('space','@(space.id)','@(space.name.replace("'","&#39;"))','@(routes.Spaces.list(""))')"
+            <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+            @if(user.isDefined && Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
+                <button id="deleteButton" onclick="confirmDeleteResource('space','@(space.id)','@(space.name.replace("'","&#39;"))','@(routes.Spaces.list(""))')"
                     class="btn btn-link btn-sm" title="Delete Space but not Enclosed Resources">
                         <span class="glyphicon glyphicon-trash"></span> Delete</button>
-                } else {
-                    <button disabled id="deleteButton" class="btn btn-link btn-sm" title="Delete Space but not Enclosed Resources">
+            } else {
+                <button disabled id="deleteButton" class="btn btn-link btn-sm" title="Delete Space but not Enclosed Resources">
                         <span class="glyphicon glyphicon-trash"></span> Delete</button>
-                }
-                @if(user.isDefined && Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))){
-                    <a id="create_dataset" href="@routes.Datasets.newDataset(Some(space.id.toString()), None)" class="btn btn-link" title="Create Dataset">
-                        <span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
-                    <a id="create_collection" href="@routes.Collections.newCollection(Some(space.id.toString()))" class="btn btn-link" title="Create Collection">
-                        <span class="glyphicon glyphicon-ok"></span> Create Collection</a>
-                }
-            </div>
+            }
+            @if(user.isDefined && Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))){
+                <a id="create_dataset" href="@routes.Datasets.newDataset(Some(space.id.toString()), None)" class="btn btn-link" title="Create Dataset">
+                    <span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
+                <a id="create_collection" href="@routes.Collections.newCollection(Some(space.id.toString()))" class="btn btn-link" title="Create Collection">
+                    <span class="glyphicon glyphicon-ok"></span> Create Collection</a>
+            }
         </div>
     </div>
 
