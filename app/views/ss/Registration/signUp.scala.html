@@ -49,19 +49,25 @@
                 @helper.inputText(
                     signUpForm("lastName"),
                     '_label -> Messages("securesocial.signup.lastName"),
-                    'class -> "input-xlarge"
+                    'class -> "form-control",
+                    '_help -> "",
+                    '_showErrors -> true
                 )
 
                 @helper.inputPassword(
                     signUpForm("password.password1"),
                     '_label -> Messages("securesocial.signup.password1"),
-                    'class -> "input-xlarge"
+                    'class -> "form-control",
+                    '_help -> "",
+                    '_showErrors -> true
                 )
 
                 @helper.inputPassword(
                     signUpForm("password.password2"),
                     '_label -> Messages("securesocial.signup.password2"),
-                    'class -> "input-xlarge"
+                    'class -> "form-control",
+                    '_help -> "",
+                    '_showErrors -> true
                 )
 
                 @if(AppConfiguration.getUserAgreement) {
@@ -77,11 +83,13 @@
                     @helper.checkbox(
                         signUpForm("agreementAcknowledged"),
                         '_label -> "Check the box to accept the Terms of Use",
-                        'class -> "input-xlarge"
+                        'class -> "form-control",
+                        '_help -> "",
+                        '_showErrors -> true
                     )
                 }
 
-                <div class="form-actions">
+                <div class="form-actions btn-margin-bottom">
                     <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-ok"></span> @Messages("securesocial.signup.createAccount")</button>
                     <a class="btn btn-default" href="@securesocial.core.providers.utils.RoutesHelper.login()"><span class="glyphicon glyphicon-remove"></span> @Messages("securesocial.signup.cancel")</a>
                 </div>
