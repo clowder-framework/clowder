@@ -19,13 +19,13 @@
     @services.DI.injector.getInstance(classOf[services.LogoService]).get(path, name) match {
         case Some(logo) => {
             @if(logo.showText) {
-                <input type="checkbox" id="@(path)@(name)Text" checked> @showText>
+                <input type="checkbox" id="@(path)@(name)Text" checked> @showText
             } else {
-                <input type="checkbox" id="@(path)@(name)Text"> @showText>
+                <input type="checkbox" id="@(path)@(name)Text"> @showText
             }
         }
         case None => {
-            <input type="checkbox" id="@(path)@(name)Text" checked disabled> @showText>
+            <input type="checkbox" id="@(path)@(name)Text" checked disabled> @showText
         }
     }
 }
