@@ -49,9 +49,8 @@
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <h2> My Datasets </h2>
                 </div>
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                    <span class="margin-top-h pull-right">
-                        <a href="@routes.Datasets.list("","",12, None, "", Some(profile.id.stringify))">See More</a></span>
+                <div class="margin-top-h  col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                    <span class="pull-right"> <a href="@routes.Datasets.list("","",12, None, "", Some(profile.id.stringify))">See More</a></span>
                 </div>
 
                 </div>
@@ -59,13 +58,15 @@
                 @datasetsList.map { dataset =>
                     @datasets.tile(dataset, None, dscomments, "col-lg-6 col-md-6 col-sm-6", false, false, routes.Application.index())
                 }
-
-                @if(datasetsList.size < 1) {
-                    <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                      <div>This area will show all datasets you've created.</div>
-                    </div>
-                }
             </div>
+
+            @if(datasetsList.size < 1) {
+                <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                    <div>This area will show all datasets you've created.</div>
+
+                    <div> <a class="btn-link" href="@routes.Datasets.newDataset(None, None)" title="Create a new dataset">Create Dataset</a></div>
+                </div>
+            }
             <div class="row top-padding">
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <h2> My Collections </h2>
@@ -81,12 +82,14 @@
                     @collectionsList.map { collection =>
                        @collections.tile(collection, routes.Application.index(), "col-lg-6 col-md-6 col-sm-6", false)
                     }
-                @if(collectionsList.size < 1) {
-                    <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                        <div>This area will show all collections you've created</div>
-                    </div>
-                }
             </div>
+            @if(collectionsList.size < 1) {
+                <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                    <div>This area will show all collections you've created</div>
+
+                    <div> <a class="btn-link" href="@routes.Collections.newCollection(None)" title="Create a new collection">Create Collection</a></div>
+                </div>
+            }
             <div class="row top-padding">
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <h2> My Spaces </h2>
@@ -102,18 +105,20 @@
                             @spaces.tile(space, "col-lg-6 col-md-6 col-sm-6 col-xs-12", routes.Application.index(), false )
 
                     }
-                @if(spacesList.size < 1) {
-                    <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                        <div>This area will show all spaces you've created. </div>
-                    </div>
-                }
             </div>
+            @if(spacesList.size < 1) {
+                <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                    <div>This area will show all spaces you've created. </div>
+
+                    <div> <a class="btn-link" href="@routes.Spaces.newSpace()" title="Create a new space">Create Space</a></div>
+                </div>
+            }
             <div class="row top-padding">
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <h2> Followers</h2>
                 </div>
-                <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                    <span class=" margin-top-h pull-right"> <a href="@routes.Users.getFollowers()">See More</a></span>
+                <div class="margin-top-h col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                    <span class="pull-right"> <a href="@routes.Users.getFollowers()">See More</a></span>
                 </div>
             </div>
             <div class="row">
