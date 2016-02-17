@@ -31,6 +31,7 @@ case class File(
   @deprecated("will not be used in the future","since the use of jsonld") isIntermediate: Option[Boolean] = None,
   @deprecated("use Metadata","since the use of jsonld") xmlMetadata: Map[String, Any] = Map.empty,
   licenseData: LicenseData = new LicenseData(),
+  notesHTML: Option[String] = None,
   followers: List[UUID] = List.empty )
 
 case class Versus(
