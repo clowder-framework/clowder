@@ -162,6 +162,19 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     }
   }
 
+  /** delete all indices */
+  def deleteAll {
+    connect
+    client match {
+      case Some(x) => {
+        val response = x.admin().indices().prepareDelete("_all").get()
+        if (!response.isAcknowledged())
+          Logger.error("Did not delete all data from elasticsearch.")
+      }
+      case None => Logger.error("Could not call index because we are not connected.")
+    }
+  }
+
   def delete(index: String, docType: String, id: String) {
     connect
     client match {

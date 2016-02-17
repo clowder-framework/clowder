@@ -26,6 +26,11 @@ body {
   }
 }
 
+/* Login and Sign up boxes */
+div.login-nav-box {
+    margin: 10px 0 25px 0
+}
+
 /* Previews */
 .fit-in-space {
     max-width: 100%;
@@ -293,46 +298,10 @@ code {
     font-weight: normal;
 }
 
-fieldset #username_field .controls #username{
-	width:208px;
-	height:30px;
-}
-fieldset #password_field .controls #password{
-	width:208px;
-	height:30px;
-}
-fieldset #email_field .controls #email{
-	width:208px;
-	height:30px;
-}
-#firstName_field .controls #firstName{
-	width:208px;
-	height:30px;
-}
-#lastName_field .controls #lastName{
-	width:208px;
-	height:30px;
-}
-#password_password1_field .controls #password_password1{
-	width:208px;
-	height:30px;
-}
-#password_password2_field .controls #password_password2{
-	width:208px;
-	height:30px;
-}
-
 #adminMailFieldSet .control-group .controls input[type='text']{
 	width:208px;
 	height:30px;
 }
-
-#displayNameField{
-	width:208px;
-	height:30px;
-}
-
-
 
 :-webkit-full-screen x3d {
   width: 100%;
@@ -913,4 +882,8 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 
 .tag-padding {
     padding-right:15px;
+}
+.fixedtable {
+    table-layout:fixed;
+    word-wrap: break-word;
 }

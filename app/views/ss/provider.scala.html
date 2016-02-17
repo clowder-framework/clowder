@@ -30,33 +30,40 @@
                             @helper.inputText(
                                 loginForm.get("username"),
                                 '_label -> Messages("securesocial.signup.username"),
-                                'class -> "input-xlarge",
-                                'autofocus -> "autofocus"
+                                'class -> "form-control",
+                                'autofocus -> "autofocus",
+                                '_help -> "",
+                                '_showErrors -> true
                             )
                         } else {                                                   
                             @helper.inputText(
                                 loginForm.get("username"),
                                 '_label -> Messages("securesocial.signup.email1"),
-                                'class -> "input-xlarge",
-                                'autofocus -> "autofocus"
+                                'class -> "form-control",
+                                'autofocus -> "autofocus",
+                                '_help -> "",
+                                '_showErrors -> true
                             )                                                   
                         }
-                        
+
                         @helper.inputPassword(
                             loginForm.get("password"),
                             '_label -> Messages("securesocial.signup.password1"),
-                            'class -> "input-xlarge"
+                            'class -> "form-control",
+                            '_help -> "",
+                            '_showErrors -> true
                         )
 
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary btn-margins"><span class="glyphicon glyphicon-log-in"></span> @Messages("securesocial.login.title")</button>
                         </div>
                         <div class="clearfix">
-                            <a href="@securesocial.core.providers.utils.RoutesHelper.startResetPassword()"><p>@Messages("securesocial.login.forgotPassword") </a></p>
+                            <a href="@securesocial.core.providers.utils.RoutesHelper.startResetPassword()"><h5>@Messages("Forgot password?") </a></h5>
                         </div>
-                            <div class="clearfix">
-                                <p>@Messages("securesocial.login.signUp") <a href="@securesocial.core.providers.utils.RoutesHelper.startSignUp()">@Messages("securesocial.login.here")</a></p>
-                            </div>
+                        <div><hr></div>
+                        <div class="clearfix">
+                            <div class="h4 text-center login-nav-box">@Messages("Don't have an account?")&nbsp;<a href="@securesocial.core.providers.utils.RoutesHelper.startSignUp()">@Messages("Sign up.")</a></div>
+                        </div>
                     </fieldset>
                 </form>
             }
