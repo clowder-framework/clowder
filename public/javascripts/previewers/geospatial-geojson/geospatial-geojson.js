@@ -141,7 +141,7 @@
             });
 
             var layerFeats = []
-            for (c in latLonList) {
+            for (var c in latLonList) {
                 var latLon = latLonList[c]
                 layerFeats.push(new ol.Feature({
                     geometry: new ol.geom.Point(
@@ -205,10 +205,11 @@
         }
     }
 
-    function addGeoJSONLayer(geojson, layerName, layerURL) {
+    function addGeoJSONLayer(geojson, layerName, layerURL, jsonProjection) {
         initializeMap()
 
         if (map != null) {
+            var jsonProjection = jsonProjection || "EPSG:3857"
             var defaultOpacity = 0.5;
 
             // Create new layer and add to map
@@ -218,22 +219,32 @@
                     fill: new ol.style.Fill({color:layer_color}),
                     radius: 5
                 }),
-                fill: new ol.style.Fill({color:layer_color})
-            });
-            var vectorSource = new ol.source.Vector({
-                features: new ol.format.GeoJSON().readFeatures(geojson, {
-                    featureProjection: 'EPSG:4326'
+                fill: new ol.style.Fill({color:layer_color}),
+                stroke: new ol.style.Stroke({
+                    color: layer_color,
+                    width: 2
                 })
-            })
+
+            });
+
+            var allFeats = new Array()
+            for (var gj in geojson) {
+                var gjFeats = new ol.format.GeoJSON().readFeatures(geojson[gj], {
+                    featureProjection: jsonProjection
+                })
+                allFeats = allFeats.concat(gjFeats)
+            }
+
+            var vectorSource = new ol.source.Vector({
+                format: new ol.format.GeoJSON(),
+                features: allFeats,
+                featureProjection: jsonProjection
+            });
             var vectorLayer = new ol.layer.Vector({
                 source: vectorSource,
                 style: sty,
                 extent: vectorSource.getExtent()
-            })
-            console.log("GJ")
-            console.log(geojson)
-            console.log(vectorLayer)
-            console.log(vectorLayer.getProperties())
+            });
             map.addLayer(vectorLayer);
 
             // Populate layer control for each layer
@@ -243,7 +254,7 @@
             var visVar = layerLabel + '-visible';
             var opVar = layerLabel + '-opacity';
             var layerControl = '<div><input id="' + visVar + '" type="checkbox" checked="checked" />' +
-                ' <a href="'+layerURL+'">'+layerName+'</a>';
+                ' <a style="color:'+layer_color+'" target="_blank" href="'+layerURL+'">'+layerName+'</a>';
             layerControl += '<input id="' + opVar + '" type="range" min="0" max="1" step="0.01" value="' + defaultOpacity + '" style="width:100px;"/></div>';
             $('#layer-control').prepend(layerControl);
 
