@@ -50,9 +50,10 @@ object MongoUtils {
           val dis = new DigestInputStream(inputStream, md)
           val x = files.createFile(dis)
           val id = UUID(x.getId.toString)
+          x.save() // need to save to actually read the inputstream
           x.put("sha512", Hex.encodeHexString(md.digest()))
           x.put("loader", classOf[MongoDBByteStorage].getName)
-          x.save()
+          x.save() // save to add new options
           (x, id)
         } else {
           // write empty array
@@ -141,10 +142,10 @@ object MongoUtils {
       case Some(x) => {
         val files = new GridFS(x.getDB.underlying, collection)
         val file = files.find(new ObjectId(id.stringify))
-        val loader = file.get("loader").toString
-        if (loader != classOf[MongoDBByteStorage].getName) {
+        val loader = file.get("loader")
+        if (loader != null && loader.toString != classOf[MongoDBByteStorage].getName) {
           val path = file.get("path").asInstanceOf[String]
-          val bss = Class.forName(loader).newInstance.asInstanceOf[ByteStorageService]
+          val bss = Class.forName(loader.toString).newInstance.asInstanceOf[ByteStorageService]
           bss.delete(path, collection)
         }
         files.remove(new ObjectId(id.stringify))

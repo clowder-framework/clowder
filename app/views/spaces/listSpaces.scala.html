@@ -5,6 +5,7 @@
         @util.masonry()
 
         <script src="@routes.Assets.at("javascripts/spaceListProcess.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
         <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
         <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
         <div class="row">
@@ -122,11 +123,9 @@
 
             <div class="row hidden" id="list-view">
                 <div  class="col-md-12">
-
                     @spacesList.map { space =>
                         @spaces.listItem(space, (routes.Spaces.list(when, date, limit, "", owner, showAll)) )
                     }
-
                 </div>
             </div>
 

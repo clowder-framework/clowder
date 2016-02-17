@@ -1,10 +1,11 @@
-@(collectionsList: List[models.Collection], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String], title: Option[String], owner:Option[String])(implicit flash: play.api.mvc.Flash,  user: Option[models.User])
+@(collectionsList: List[models.Collection], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String], title: Option[String], owner:Option[String], when: String, date: String)(implicit flash: play.api.mvc.Flash,  user: Option[models.User])
 
 @main("Collections") {
 
 @util.masonry()
     
 <script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
     <div class="row">
@@ -92,7 +93,7 @@
     <div class="col-md-12">
         <div id="masonry">
             @collectionsList.map { collection =>
-                @collections.tile(collection, routes.Collections.list("a", next, limit, space, "", owner),  "col-lg-3 col-md-3 col-sm-3", false)
+                @collections.tile(collection, routes.Collections.list(when, date, limit, space, "", owner),  "col-lg-3 col-md-3 col-sm-3", false)
              }            
         </div>
     </div>
@@ -101,11 +102,9 @@
 
   <div class="row hidden" id="list-view">
 	<div class="col-md-12">
-
         @collectionsList.map { collection =>
-           @collections.listitem(collection, routes.Collections.list(""))
+           @collections.listitem(collection, routes.Collections.list(when, date, limit, space, "", owner))
         }
-
 	</div>
 </div>
 
