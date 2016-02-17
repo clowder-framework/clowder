@@ -883,3 +883,7 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 .tag-padding {
     padding-right:15px;
 }
+.fixedtable {
+    table-layout:fixed;
+    word-wrap: break-word;
+}
