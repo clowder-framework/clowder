@@ -5,9 +5,8 @@ import java.io.InputStream
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
-import models.{Logo, UUID}
+import models.{User, Logo, UUID}
 import play.api.Play.current
-import securesocial.core.Identity
 import services.LogoService
 import services.mongodb.MongoContext.context
 
@@ -17,8 +16,9 @@ class MongoDBLogoService extends LogoService {
    */
   override def list(path: Option[String], name: Option[String]): List[Logo] = {
     val query = (path, name) match {
-      case (Some(p), Some(n)) => MongoDBObject("use" -> p, "filename" -> n)
-      case (Some(p), None) => MongoDBObject("use" -> p)
+      case (Some(p), Some(n)) => MongoDBObject("path" -> p, "name" -> n)
+      case (Some(p), None) => MongoDBObject("path" -> p)
+      case (None, Some(n)) => MongoDBObject("name" -> n)
       case (_, _) => MongoDBObject()
     }
     LogoDAO.find(query).toList
@@ -27,9 +27,12 @@ class MongoDBLogoService extends LogoService {
   /**
    * Save a file from an input stream.
    */
-  override def save(inputStream: InputStream, path: String, name: String, showText: Boolean, contentType: Option[String], author: Identity): Option[Logo] = {
-    val extra = Map("use" -> path, "author" -> SocialUserDAO.toDBObject(author), "showText" -> showText)
-    MongoUtils.writeBlob[Logo](inputStream, name, contentType, extra, LogoDAO.COLLECTION, LogoDAO.FLAG).flatMap(x => get(x._1))
+  override def save(inputStream: InputStream, path: String, name: String, showText: Boolean, contentType: Option[String], author: User): Option[Logo] = {
+    MongoUtils.writeBlob[Logo](inputStream, name, contentType, Map.empty[String, Any], LogoDAO.COLLECTION, LogoDAO.FLAG).map { result =>
+      val logo = Logo(UUID.generate(), result._1, result._3, result._4, result._2, path, name, contentType.getOrElse(play.api.http.ContentTypes.BINARY), author)
+      LogoDAO.save(logo)
+      logo
+    }
   }
 
   override def update(logo: Logo): Unit = {
@@ -40,7 +43,7 @@ class MongoDBLogoService extends LogoService {
    * Return the specified object.
    */
   override def get(path: String, name: String): Option[Logo] = {
-    LogoDAO.findOne(MongoDBObject("use" -> path, "filename" -> name))
+    LogoDAO.findOne(MongoDBObject("path" -> path, "name" -> name))
   }
 
   /**
@@ -55,8 +58,8 @@ class MongoDBLogoService extends LogoService {
    * Returns input stream, file name, content type, content length.
    */
   override def getBytes(path: String, name: String): Option[(InputStream, String, String, Long)] = {
-    LogoDAO.findOne(MongoDBObject("use" -> path, "filename" -> name)).flatMap{logo =>
-      MongoUtils.readBlob(logo.id, LogoDAO.COLLECTION, LogoDAO.FLAG)
+    LogoDAO.findOne(MongoDBObject("path" -> path, "name" -> name)).flatMap{logo =>
+      MongoUtils.readBlob(logo.file_id, LogoDAO.COLLECTION, LogoDAO.FLAG)
     }
   }
 
@@ -65,7 +68,9 @@ class MongoDBLogoService extends LogoService {
    * Returns input stream, file name, content type, content length.
    */
   override def getBytes(id: UUID): Option[(InputStream, String, String, Long)] = {
-    MongoUtils.readBlob(id, LogoDAO.COLLECTION, LogoDAO.FLAG)
+    LogoDAO.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))).flatMap { logo =>
+      MongoUtils.readBlob(logo.file_id, LogoDAO.COLLECTION, LogoDAO.FLAG)
+    }
   }
 
   /**
@@ -73,7 +78,7 @@ class MongoDBLogoService extends LogoService {
    */
   override def delete(path: String, name: String): Unit = {
     LogoDAO.findOne(MongoDBObject("use" -> path, "filename" -> name)).foreach { logo =>
-      MongoUtils.removeBlob(logo.id, LogoDAO.COLLECTION, LogoDAO.FLAG)
+      MongoUtils.removeBlob(logo.file_id, LogoDAO.COLLECTION, LogoDAO.FLAG)
     }
   }
 
@@ -81,15 +86,17 @@ class MongoDBLogoService extends LogoService {
    * Remove the file from mongo
    */
   override def delete(id: UUID): Unit = {
-    MongoUtils.removeBlob(id, LogoDAO.COLLECTION, LogoDAO.FLAG)
+    LogoDAO.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))).foreach { logo =>
+      MongoUtils.removeBlob(logo.file_id, LogoDAO.COLLECTION, LogoDAO.FLAG)
+    }
   }
 
   object LogoDAO extends ModelCompanion[Logo, ObjectId] {
     val COLLECTION = "logos"
-    val FLAG = "medici2.mongodb.storeFiles"
+    val FLAG = "medici2.mongodb.store.logos"
     val dao = current.plugin[MongoSalatPlugin] match {
       case None => throw new RuntimeException("No MongoSalatPlugin");
-      case Some(x) => new SalatDAO[Logo, ObjectId](collection = x.collection(COLLECTION + ".files")) {}
+      case Some(x) => new SalatDAO[Logo, ObjectId](collection = x.collection(COLLECTION)) {}
     }
   }
 

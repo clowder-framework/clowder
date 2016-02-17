@@ -3,31 +3,31 @@ package models
 import java.util.Date
 
 import play.api.libs.json.{Json, JsValue, Writes}
-import securesocial.core.Identity
 
 case class Logo(id: UUID = UUID.generate,
-                use: String = "",
-                showText: Boolean = true,
-                path: Option[String] = None,
-                filename: String,
-                author: Identity,
-                uploadDate: Date,
+                file_id: UUID,
+                sha512: String,
+                length: Long,
+                loader: String,
+                path: String,
+                name: String,
                 contentType: String,
-                length: Long = 0,
-                sha512: String = "",
-                loader: String = "")
+                author: User,
+                uploadDate: Date = new Date(),
+                showText: Boolean = true)
 
 object Logo {
   implicit val logostWrites = new Writes[Logo] {
     def writes(logo: Logo): JsValue = {
       Json.obj("id" -> logo.id.toString,
-        "path" -> logo.use,
-        "name" -> logo.filename,
-        "showText" -> logo.showText,
+        "sha512" -> logo.sha512,
         "length" -> logo.length,
+        "path" -> logo.path,
+        "name" -> logo.name,
         "content-type" -> logo.contentType,
         "created" -> logo.uploadDate.toString,
-        "authorId" -> logo.author.identityId.userId)
+        "author" -> logo.author.id,
+        "showText" -> logo.showText)
     }
   }
 }

@@ -32,7 +32,7 @@ object MongoUtils {
    * to be written can be stored in extra. The values need to be able to be
    * converted to DBObject. Returns the (ID, sha512, length).
    */
-  def writeBlob[T](inputStream: InputStream, filename: String, contentType: Option[String], extra: Map[String, Any], collection: String, useMongoProperty: String)(implicit ev: Manifest[T]): Option[(UUID, String, Long)] = {
+  def writeBlob[T](inputStream: InputStream, filename: String, contentType: Option[String], extra: Map[String, Any], collection: String, useMongoProperty: String)(implicit ev: Manifest[T]): Option[(UUID, String, String, Long)] = {
     current.plugin[MongoSalatPlugin] match {
       case None => {
         Logger.error("No MongoSalatPlugin")
@@ -87,7 +87,7 @@ object MongoUtils {
         mongoFile.put("_typeHint", ev.runtimeClass.getCanonicalName)
         mongoFile.save()
 
-        Some((id, mongoFile.get("sha512").toString, mongoFile.getLength))
+        Some((id, mongoFile.get("loader").toString, mongoFile.get("sha512").toString, mongoFile.getLength))
       }
     }
   }

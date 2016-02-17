@@ -2,8 +2,7 @@ package services
 
 import java.io.InputStream
 
-import models.{Logo, UUID, File}
-import securesocial.core.Identity
+import models.{Logo, UUID, User}
 
 trait LogoService {
   /**
@@ -14,7 +13,7 @@ trait LogoService {
   /**
    * Save a logo from an input stream.
    */
-  def save(inputStream: InputStream, path: String, name: String, showText:Boolean, contentType: Option[String], author: Identity): Option[Logo]
+  def save(inputStream: InputStream, path: String, name: String, showText:Boolean, contentType: Option[String], author: User): Option[Logo]
 
   /**
    * Updates a logo
