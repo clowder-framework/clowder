@@ -26,7 +26,11 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     val theme = AppConfiguration.getTheme
     Logger.debug("Theme id " + theme)
     implicit val user = request.user
-    Ok(views.html.admin(theme, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, AppConfiguration.getGoogleAnalytics))
+    Ok(views.html.admin(theme,
+      AppConfiguration.getDisplayName,
+      AppConfiguration.getWelcomeMessage,
+      AppConfiguration.getGoogleAnalytics,
+      AppConfiguration.getUserAgreement))
   }
 
   def adminIndex = ServerAdminAction { implicit request =>
@@ -48,7 +52,11 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
 
   def sensors = ServerAdminAction { implicit request =>
     implicit val user = request.user
-    Ok(views.html.sensors.admin(AppConfiguration.getSensorsTitle, AppConfiguration.getSensorTitle))
+    Ok(views.html.sensors.admin(AppConfiguration.getSensorsTitle,
+      AppConfiguration.getSensorTitle,
+      AppConfiguration.getParametersTitle,
+      AppConfiguration.getParameterTitle
+    ))
   }
 
   /**

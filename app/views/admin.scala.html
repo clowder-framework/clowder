@@ -1,9 +1,9 @@
-@(theme: String, displayName: String, welcomeMessage: String, googleAnalytics: String)(implicit user: Option[models.User])
+@(theme: String, displayName: String, welcomeMessage: String, googleAnalytics: String, userAgreement: String)(implicit user: Option[models.User])
 @main("Administration") {
 	<div class="page-header">
 		<h1>Customize</h1>
 	</div>
-	
+
 	<legend>Select a Theme</legend>
 	<div class="row">
 		<div class="col-md-2">@themes(theme)</div>
@@ -23,7 +23,10 @@
                     <br/>
                     <label for="googleAnalytics">Google Analytics Code</label>
                     <input class="form-control" id="googleAnalytics" name="googleAnalytics" type="text" value="@(googleAnalytics)"></input>
-                </div>
+					<br/>
+					<label for="userAgreement">User Agreement</label>
+					<textarea class="form-control" name="userAgreement" id="userAgreement" style="width:300%;" placeholder="Plain text or HTML. Or leave blank and it will not be required.">@(userAgreement)</textarea>
+				</div>
             </form>
         </div>
     </div>
@@ -42,22 +45,23 @@
 			}else{
 				$("#displayNameField_error").css("display","none");
 			}
-            var googleAnalytics = $("#googleAnalytics").val().trim();
+			var googleAnalytics = $("#googleAnalytics").val().trim();
+			var userAgreement = $("#userAgreement").val() ? $("#userAgreement").val().trim() : "";
 
 			var request = $.ajax({
 				url:  "@api.routes.Admin.submitAppearance",
-				data: JSON.stringify({ displayName: displayName, welcomeMessage: welcomeMessage, googleAnalytics: googleAnalytics}),
+				data: JSON.stringify({ displayName: displayName, welcomeMessage: welcomeMessage, googleAnalytics: googleAnalytics, userAgreement: userAgreement }),
 				type: "POST",
 				contentType: "application/json"
 	     	});
-			request.done(function (response, textStatus, jqXHR){ 
+			request.done(function (response, textStatus, jqXHR){
 				console.log("Response: " + response);
 				notify("Preferences successfully updated. Please refresh page.", "success", 5000);
 			});
 			request.fail(function (jqXHR, textStatus, errorThrown){
 				console.error("The following error occured: " + textStatus, errorThrown);
 				notify("The application preferences was not updated due to : " + errorThrown, "error");
-			});						
+			});
 			return false;
 		}
 	</script>
