@@ -676,9 +676,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           case e: Exception => Logger.error("Unable to update file :" + id.toString, e)
         }
       }
-      appConfig.addPropertyValue("mongodb.updates", "update-file-length-sha512-path")
-    } else {
-      Logger.warn("[MongoDBUpdate : Missing fix to add file length, sha512 and path")
     }
   }
 
