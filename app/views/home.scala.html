@@ -12,7 +12,7 @@
     <div class="row featurette">
         <div class="col-md-6">
             <h1 class="featurette-heading">@profile.fullName</h1>
-            <a href="@routes.Profile.viewProfileUUID(profile.id)" class="btn btn-link" title="Show profile">Profile</a>
+            <a href="@routes.Profile.viewProfileUUID(profile.id)" class="btn btn-link" title="Show profile"><span class="glyphicon glyphicon-user"></span> Profile</a>
             <a href="@routes.Spaces.newSpace()" class="btn btn-link" title="Create a new space"><span class="glyphicon glyphicon-ok"></span> Create Space</a>
             <a href="@routes.Datasets.newDataset(None, None)" class="btn btn-link" title="Create a new dataset"><span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
             <a href="@routes.Collections.newCollection(None)" class="btn btn-link" title="Create a new collection"><span class="glyphicon glyphicon-ok"></span> Create Collection</a>
