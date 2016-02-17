@@ -44,8 +44,8 @@ class MongoDBVocabularyService @Inject() (userService: UserService) extends Voca
 
   def getByAuthorAndName(author : Identity, name : String) : List[Vocabulary] = {
     val list = Vocabulary.findAll().toList
-    val byAuthor = list.filter(p => p.author.get.identityId == author.identityId )
-    return byAuthor
+    val byAuthorName = list.filter(p => (p.author.get.identityId == author.identityId ) && (p.name == name))
+    return byAuthorName
   }
 
   def delete(id : UUID) = Try {
