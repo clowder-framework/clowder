@@ -243,6 +243,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
     collection(name + ".chunks").drop()
     collection(name + ".files").drop()
+    collection(name).drop()
   }
 
   // ----------------------------------------------------------------------

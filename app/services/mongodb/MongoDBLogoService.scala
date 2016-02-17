@@ -77,8 +77,9 @@ class MongoDBLogoService extends LogoService {
    * Remove the file from mongo
    */
   override def delete(path: String, name: String): Unit = {
-    LogoDAO.findOne(MongoDBObject("use" -> path, "filename" -> name)).foreach { logo =>
+    LogoDAO.findOne(MongoDBObject("path" -> path, "name" -> name)).foreach { logo =>
       MongoUtils.removeBlob(logo.file_id, LogoDAO.COLLECTION, LogoDAO.FLAG)
+      LogoDAO.remove(logo)
     }
   }
 
@@ -88,6 +89,7 @@ class MongoDBLogoService extends LogoService {
   override def delete(id: UUID): Unit = {
     LogoDAO.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))).foreach { logo =>
       MongoUtils.removeBlob(logo.file_id, LogoDAO.COLLECTION, LogoDAO.FLAG)
+      LogoDAO.remove(logo)
     }
   }
 
