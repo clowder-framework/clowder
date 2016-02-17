@@ -303,13 +303,6 @@ code {
 	height:30px;
 }
 
-#displayNameField{
-	width:208px;
-	height:30px;
-}
-
-
-
 :-webkit-full-screen x3d {
   width: 100%;
   height: 100%;
@@ -889,6 +882,11 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 
 .tag-padding {
     padding-right:15px;
+}
+
+.fixedtable {
+    table-layout:fixed;
+    word-wrap: break-word;
 }
 
 .margin-bottom-20 {

@@ -168,10 +168,11 @@
         <div class="col-md-12 button-margins">
           <div class="btn-group" role="group" aria-label="...">
 		  @if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
-			  <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file"> <span class="glyphicon glyphicon-save"></span>
+			  <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-primary" title="Download and enjoy this file."> <span class="glyphicon glyphicon-save"></span>
 				  Download </button>
 		  } else {
-			  <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file" disabled="disabled"> <span class="glyphicon glyphicon-save"></span>
+			  <!-- if 'disabled' title is not visible -->
+			  <button type="button" class="btn btn-primary disabled" title="You don't have permission to download this file."> <span class="glyphicon glyphicon-save"></span>
 				  Download </button>
 		  }
             <!--  If outputFormats list is not empty, display downloadAs drop-down button with the list of available formats -->      

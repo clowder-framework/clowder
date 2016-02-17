@@ -32,11 +32,12 @@ function retractCuration(curationId) {
         $('#'+curationId).addClass('in-curation');
         $('#'+curationId).html("In Curation");
         $('#ul_'+curationId).remove();
+        notify(response.message, "success", false, 2000);
     });
 
     request.fail(function(jqXHR, textStatus, errorThrown) {
        console.error("The following error ocurred: " + textStatus, errorThrown);
-        notify("The curation object could not be retracted due to: " + errorThrown, "Error" );
+        notify("The curation object could not be retracted due to: " + jqXHR.responseJSON.message, "error" );
     });
 }
 

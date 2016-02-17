@@ -205,9 +205,7 @@ class CurationObjects @Inject()(
       implicit val user = request.user
           curations.get(curationId) match {
             case Some(c) => {
-              val propertiesMap: Map[String, List[String]] = Map( "Access" -> List("Open", "Restricted", "Embargo", "Enclave"),
-                "License" -> List("Creative Commons", "GPL") , "Cost" -> List("Free", "$300 Fee"),
-                "Affiliation" -> List("UMich", "IU", "UIUC"), "Purpose" -> List("Testing-Only", "Submission"))
+              val propertiesMap: Map[String, List[String]] = Map("Purpose" -> List("Testing-Only"))
               val mmResp = callMatchmaker(c, user)(request)
               user match {
                 case Some(usr) => {
@@ -225,7 +223,14 @@ class CurationObjects @Inject()(
     val https = controllers.Utils.https(request)
     val hostUrl = api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "#aggregation"
     val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => if(pref._1 != "Purpose") { pref._1-> Json.toJson(pref._2.toString().split(",").toList)} else {pref._1-> Json.toJson(pref._2.toString())})).getOrElse(Map.empty)
-    val userPreferences = userPrefMap + ("Repository" -> Json.toJson(c.repository))
+    var userPreferences = userPrefMap + ("Repository" -> Json.toJson(c.repository))
+    user.map ( usr => usr.profile match {
+      case Some(prof) => prof.institution match {
+        case Some(institution) => userPreferences += ("Affiliations" -> Json.toJson(institution))
+        case None =>
+      }
+      case None =>
+    })
     val files = curations.getCurationFiles(c.files)
     val maxDataset = if (!c.files.isEmpty)  files.map(_.length).max else 0
     val totalSize = if (!c.files.isEmpty) files.map(_.length).sum else 0
@@ -385,7 +390,14 @@ class CurationObjects @Inject()(
           val https = controllers.Utils.https(request)
           val hostUrl = api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "?key=" + key
           val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => if(pref._1 != "Purpose") { pref._1-> Json.toJson(pref._2.toString().split(",").toList)} else {pref._1-> Json.toJson(pref._2.toString())})).getOrElse(Map.empty)
-          val userPreferences = userPrefMap
+          var userPreferences = userPrefMap
+          user.map ( usr => usr.profile match {
+            case Some(prof) => prof.institution match {
+              case Some(institution) => userPreferences += ("Affiliations" -> Json.toJson(institution))
+              case None =>
+            }
+            case None =>
+          })
           val files = curations.getCurationFiles(c.files)
           val maxDataset = if (!c.files.isEmpty)  files.map(_.length).max else 0
           val totalSize = if (!c.files.isEmpty) files.map(_.length).sum else 0
@@ -440,6 +452,7 @@ class CurationObjects @Inject()(
             case None => api.routes.Users.findById(usr.id).absoluteURL(https)
 
           })
+          val license = c.datasets(0).licenseData.m_licenseText
           val valuetoSend = Json.toJson(
             Map(
               "@context" -> Json.toJson(Seq(
@@ -489,7 +502,8 @@ class CurationObjects @Inject()(
                   )),
                 "Rights Holder" -> Json.toJson(rightsholder),
                 "Publication Callback" -> Json.toJson(controllers.routes.CurationObjects.savePublishedObject(c.id).absoluteURL(https) +"?key=" + key),
-                "Environment Key" -> Json.toJson(play.api.Play.configuration.getString("commKey").getOrElse(""))
+                "Environment Key" -> Json.toJson(play.api.Play.configuration.getString("commKey").getOrElse("")),
+                "License" -> Json.toJson(license)
               )
             )
           Logger.debug("Submitting request for publication: " + valuetoSend)

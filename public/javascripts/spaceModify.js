@@ -176,14 +176,25 @@ function updateUsersInSpace(spaceId) {
     return false;
 }
 
-function acceptSpaceRequest(id, user){
-    var role = $("#roleSelect").val();
-    var request = jsRoutes.controllers.Spaces.acceptRequest(id, user, role).ajax({
+function acceptSpaceRequest(spaceId, userId, userName){
+    var role = $("#roleSelect-"+userId).val();
+    var request = jsRoutes.controllers.Spaces.acceptRequest(spaceId, userId, role).ajax({
         type : 'GET',
         contentType : "application/json"
     });
     request.done ( function ( response, textStatus, jqXHR ) {
-        $("#request-tr-"+user).hide();
+        $("#request-tr-"+userId).remove();
+        var sd=$('#request-counter').text();
+        sd=parseInt(sd.split('(')[1]) -1;
+        $('#request-counter').text("Requests ("+ sd +")");
+        var addUser ='<li><a href= "'+jsRoutes.controllers.Profile.viewProfileUUID(userId).url+'" id="'+userId+'">'
+                      + userName + '</a>'
+        + '<a class="remove-user" id="'+ userId +'"><span class="glyphicon glyphicon-remove"></span></a></li>';
+        $('#'+role+'-current').append(addUser);
+        $("option[value='"+userId+"']").each(function() {
+            $(this).remove();
+        });
+        $( ".chosen-select" ).trigger("chosen:updated");
         console.log("Successful accept request");
     });
     request.fail(function(jqXHR, textStatus, errorThrown) {
@@ -199,7 +210,10 @@ function rejectSpaceRequest(id, user){
         contentType : "application/json"
     });
     request.done ( function ( response, textStatus, jqXHR ) {
-        $("#request-tr-"+user).hide();
+        $("#request-tr-"+user).remove();
+        var sd=$('#request-counter').text();
+        sd=parseInt(sd.split('(')[1]) -1;
+        $('#request-counter').text("Requests ("+ sd +")");
         console.log("Successful reject request");
     });
     request.fail(function(jqXHR, textStatus, errorThrown) {

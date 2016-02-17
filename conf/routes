@@ -219,7 +219,7 @@ GET            /not-authorized                                                  
 # ----------------------------------------------------------------------
 # ADMIN PAGES
 # ----------------------------------------------------------------------
-GET            /admin                                                                   @controllers.Admin.main
+GET            /admin/customize                                                         @controllers.Admin.customize
 GET            /admin/indexAdmin                                                        @controllers.Admin.adminIndex
 GET            /admin/test                                                              @controllers.Admin.test
 GET            /admin/secureTest                                                        @controllers.Admin.secureTest
@@ -245,10 +245,8 @@ DELETE         /admin/roles/delete/:id                                          
 GET            /admin/roles/:id/edit                                                    @controllers.Admin.editRole(id: UUID)
 POST           /admin/roles/update                                                      @controllers.Admin.updateRole
 GET            /admin/extractions                                                       @controllers.Extractors.listAllExtractions
-POST           /admin/theme                                                             @controllers.Admin.setTheme
 GET            /admin/dataDumps                                                         @controllers.Admin.viewDumpers
 GET            /admin/sensors                                                           @controllers.Admin.sensors
-POST           /api/sensors/config                                                      api.Admin.sensorsConfig
 
 # ----------------------------------------------------------------------
 # JAVASCRIPT ENDPOINTS
@@ -264,6 +262,14 @@ GET            /api-docs.json/:path                                             
 # ----------------------------------------------------------------------
 # RESTful API
 # ----------------------------------------------------------------------
+
+#----------------------------------------------------------------------
+# ADMIN
+#----------------------------------------------------------------------
+POST           /api/sensors/config                                                      api.Admin.sensorsConfig
+DELETE         /api/delete-data                                                         api.Admin.deleteAllData(resetAll: Boolean ?= false)
+POST           /api/remove-admin                                                        api.Admin.removeAdmin
+POST           /api/changeAppearance                                                    api.Admin.submitAppearance
 
 #----------------------------------------------------------------------
 # JSON-LD METADATA
@@ -289,9 +295,24 @@ POST           /api/metadata/search                                             
 GET            /api/metadata/definitions                                                @api.Metadata.getDefinitions()
 GET            /api/metadata/definitions/:id                                            @api.Metadata.getDefinition(id: UUID)
 GET            /api/metadata/url/*in_url                                                @api.Metadata.getUrl(in_url: String)
+PUT            /api/metadata/definitions/:id                                            @api.Metadata.editDefinition(id:UUID)
 POST           /api/metadata/definitions                                                @api.Metadata.addDefinition
 DELETE         /admin/metadata/definitions/:id                                          @api.Metadata.deleteDefinition(id: UUID)
 
+
+# ----------------------------------------------------------------------
+# LOGOS ENDPOINT
+# ----------------------------------------------------------------------
+GET            /api/logos                                                               @api.Logos.list(path: Option[String] ?= None, name: Option[String] ?= None)
+POST           /api/logos                                                               @api.Logos.upload
+GET            /api/logos/:id                                                           @api.Logos.getId(id: UUID)
+PUT            /api/logos/:id                                                           @api.Logos.putId(id: UUID)
+GET            /api/logos/:id/blob                                                      @api.Logos.downloadId(id: UUID, default: Option[String] ?= None)
+DELETE         /api/logos/:id                                                           @api.Logos.deleteId(id: UUID)
+GET            /api/logos/:path/:name                                                   @api.Logos.getPath(path: String, name: String)
+PUT            /api/logos/:path/:name                                                   @api.Logos.putPath(path: String, name: String)
+GET            /api/logos/:path/:name/blob                                              @api.Logos.downloadPath(path: String, name: String, default: Option[String] ?= None)
+DELETE         /api/logos/:path/:name                                                   @api.Logos.deletePath(path: String, name: String)
 
 # ----------------------------------------------------------------------
 # FILES ENDPOINT
@@ -373,9 +394,6 @@ GET            /api/files/:id                                                   
 # ----------------------------------------------------------------------
 # DANGEROUS ENDPOINTS
 # ----------------------------------------------------------------------
-DELETE         /api/delete-data                                                         api.Admin.deleteAllData(resetAll: Boolean ?= false)
-POST           /api/remove-admin                                                        api.Admin.removeAdmin
-POST           /api/changeAppearance                                                    api.Admin.submitAppearance
 POST           /api/dumpFilesMd                                                         @api.Files.dumpFilesMetadata
 POST           /api/dumpDatasetsMd                                                      @api.Datasets.dumpDatasetsMetadata
 POST           /api/dumpDatasetGroupings                                                @api.Datasets.dumpDatasetGroupings
@@ -552,6 +570,7 @@ GET            /api/geostreams/streams                                          
 DELETE         /api/geostreams/streams/:id                                              api.Geostreams.deleteStream(id: String)
 DELETE         /api/geostreams/dropall                                                  api.Geostreams.deleteAll
 GET            /api/geostreams/counts                                                   api.Geostreams.counts
+GET            /api/geostreams/config                                                   api.Geostreams.getConfig
 
 # ----------------------------------------------------------------------
 # THUMBNAILS ENDPOINT
