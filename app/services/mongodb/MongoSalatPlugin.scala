@@ -282,7 +282,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Fix sha512
     updateMongo("fixing-mongo-sha512", fixSha512)
-    addLengthSha512PathFile
 
     //remove Affiliation and License, access and cost in user.repositoryPreferences
     updateUserPreference
