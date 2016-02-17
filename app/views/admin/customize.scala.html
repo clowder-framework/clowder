@@ -1,4 +1,4 @@
-@(theme: String, displayName: String, welcomeMessage: String, googleAnalytics: String)(implicit user: Option[models.User])
+@(theme: String, displayName: String, welcomeMessage: String, googleAnalytics: String, userAgreement: String)(implicit user: Option[models.User])
 @main("Customize") {
     <div class="page-header">
         <h1>Customize</h1>
@@ -40,6 +40,16 @@
                 <div class="form-group">
                     <label for="welcomingField">Welcoming message</label>
                     <textarea class="form-control" name="welcomingField" id="welcomingField" rows="4" style="resize: none">@(welcomeMessage)</textarea>
+                </div>
+            </div>
+        </div>
+
+        <legend>User Agreement</legend>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="userAgreement">User Agreement</label>
+                    <textarea class="form-control" name="userAgreement" id="userAgreement" rows="4" style="resize: none" placeholder="Plain text or HTML. Or leave blank and it will not be required.">@(userAgreement)</textarea>
                 </div>
             </div>
         </div>
@@ -100,6 +110,7 @@
             var welcomeMessage = $("#welcomingField").val().trim();
             var theme = $("#themeSelect").val().trim();
             var googleAnalytics = $("#googleAnalytics").val().trim();
+            var userAgreement = $("#userAgreement").val().trim();
 
             $.ajax({
                 url:  "@api.routes.Admin.submitAppearance",
@@ -107,7 +118,8 @@
                     displayName: displayName,
                     welcomeMessage: welcomeMessage,
                     theme: theme,
-                    googleAnalytics: googleAnalytics
+                    googleAnalytics: googleAnalytics,
+                    userAgreement: userAgreement
                 }),
                 type: "POST",
                 contentType: "application/json"

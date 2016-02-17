@@ -4,6 +4,7 @@ import javax.inject.{Inject, Singleton}
 import models._
 import org.apache.http.client.methods.HttpDelete
 import org.apache.http.impl.client.DefaultHttpClient
+import org.apache.http.util.EntityUtils
 import services._
 import play.api.libs.json._
 import play.api.libs.json.Json
@@ -239,7 +240,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
     }
 
   }
-  
+
   @ApiOperation(value = "Retract the curation object from the repository", notes = "",
     responseClass = "None", httpMethod = "DELETE")
   def retractCurationObject(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
@@ -247,26 +248,23 @@ class CurationObjects @Inject()(datasets: DatasetService,
       implicit val user = request.user
       curations.get(curationId) match {
         case Some(c) => {
-          var success = false
           val endpoint =play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$","")
           val httpDelete = new HttpDelete(endpoint + "/urn:uuid:" + curationId.toString())
           val client = new DefaultHttpClient
           val response = client.execute(httpDelete)
           val responseStatus = response.getStatusLine().getStatusCode()
-          if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304) {
+
+          if(responseStatus >= 200 && responseStatus < 300 || responseStatus == 304 ) {
             curations.updateStatus(curationId, "In Curation")
-            success = true
-          }
-          if(success) {
-            Ok(toJson("Success"))
+            Ok(toJson(Map("status"->"success", "message"-> "Curation object retracted successfully")))
+          } else if (responseStatus == 404 && EntityUtils.toString(response.getEntity, "UTF-8") == s"RO with ID urn:uuid:$curationId does not exist") {
+            BadRequest(toJson(Map("status" -> "error", "message" ->"Curation object not found in external server")))
           } else {
-            InternalServerError("Could not retract curation Object")
+            InternalServerError("Unknown error")
           }
         }
-        case None => InternalServerError("Curation Object Not found")
+        case None => BadRequest("Curation Object Not found")
       }
-
-
   }
 
   @ApiOperation(value = "Get files in curation", notes = "",

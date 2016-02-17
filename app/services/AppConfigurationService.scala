@@ -96,6 +96,13 @@ object AppConfiguration {
   /** Get the welcome message */
   def getGoogleAnalytics: String = appConfig.getProperty("google.analytics", "")
 
+  // ----------------------------------------------------------------------
+
+  /** Set the user agreement */
+  def setUserAgreement(userAgreement: String) = appConfig.setProperty("userAgreement.message", userAgreement)
+
+  /** Get the user agreement */
+  def getUserAgreement: String = appConfig.getProperty("userAgreement.message", "")
 
   // ----------------------------------------------------------------------
 
@@ -112,6 +119,21 @@ object AppConfiguration {
 
   /** Get the welcome message */
   def getSensorTitle: String = appConfig.getProperty("sensor.title", "Sensor")
+
+  // ----------------------------------------------------------------------
+  /** Set the Parameters title */
+  def setParametersTitle(parametersTitle: String) = appConfig.setProperty("parameters.title", parametersTitle)
+
+  /** Get the welcome message */
+  def getParametersTitle: String = appConfig.getProperty("parameters.title", "Parameters")
+
+  // ----------------------------------------------------------------------
+
+  /** Set the Parameter title */
+  def setParameterTitle(parameterTitle: String) = appConfig.setProperty("parameter.title", parameterTitle)
+
+  /** Get the welcome message */
+  def getParameterTitle: String = appConfig.getProperty("parameter.title", "Parameter")
 
   // ----------------------------------------------------------------------
   /**
