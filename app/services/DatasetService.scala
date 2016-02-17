@@ -248,8 +248,6 @@ trait DatasetService {
    */
   def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String)
 
-  def setNotesHTML(id: UUID, notesHTML: String)
-
   /**
    * Associate a dataset with a space
    */
