@@ -285,7 +285,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("fixing-mongo-sha512", fixSha512)
 
     //remove Affiliation and License, access and cost in user.repositoryPreferences
-    updateUserPreference
+    updateMongo("update-user-preference", updateUserPreference)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -300,13 +300,13 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           appConfig.addPropertyValue("mongodb.updates", updateKey)
         } catch {
           case e:Exception => {
-            Logger.error(s"Could not run mongoupdate for ${updateKey}", e)
+            Logger.error(s"Could not run mongo update for ${updateKey}", e)
           }
         }
         val time = (System.currentTimeMillis() - start) / 1000.0
         Logger.info(s"Took ${time} second to migrate mongo : ${updateKey}")
       } else {
-        Logger.warn(s"Missing mongoupdate ${updateKey}. Application might not be broken.")
+        Logger.warn(s"Missing mongo update ${updateKey}. Application might be broken.")
       }
     }
   }
@@ -680,19 +680,10 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
-  private def updateUserPreference{
-    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
-
-    if (!appConfig.hasPropertyValue("mongodb.updates", "update-user-preference")) {
-      if (System.getProperty("MONGOUPDATE") != null) {
-        collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.access"), multi=true)
-        collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.affiliation"), multi=true)
-        collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.cost"), multi=true)
-        collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.license"), multi=true)
-      }
-      appConfig.addPropertyValue("mongodb.updates", "update-user-preference")
-    } else {
-      Logger.warn("[MongoDBUpdate : Missing fix to remove fields in user.repositoryPreferences ")
-    }
+  private def updateUserPreference() {
+      collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.access"), multi=true)
+      collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.affiliation"), multi=true)
+      collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.cost"), multi=true)
+      collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.license"), multi=true)
   }
 }
