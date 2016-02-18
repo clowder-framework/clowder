@@ -1,8 +1,5 @@
 @(filesList: List[models.File], comments: Map[UUID, Int], prev: Int, next: Int, limit: Int, mode: Option[String])(implicit user: Option[models.User])
 
-@import api.Permission
-@import org.apache.commons.io._
-
 @main("Following Files") {
 
     @util.masonry()
@@ -102,7 +99,7 @@
     <div class="row hidden" id="list-view">
         <div class="col-md-12">
             @filesList.map { file =>
-                @files.listitem(file, comments, routes.Files.followingFiles(prev+1, limit, ""))
+                @files.listitem(file, comments, routes.Files.followingFiles(prev+1, limit, ""), None)
             }
         </div>
     </div>

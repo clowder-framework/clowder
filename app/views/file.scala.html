@@ -1,6 +1,6 @@
 @(file: models.File, id: String, comments: List[Comment],
   previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]],
-  sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset],
+  sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset], folders: List[Folder],
   mds: List[models.Metadata],
   rdfExported: Boolean,
   extractionsStatus: List[Extraction], outputFormats: Option[List[String]])(implicit user: Option[models.User])
@@ -61,31 +61,12 @@
     <script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
     <script src="@routes.Assets.at("javascripts/previews.js")" type="text/javascript"></script>
-    <script src="@routes.Assets.at("javascripts/tinymce/tinymce.min.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/popcorn-complete.min.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/galleria-1.2.9.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
 	<script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/sectionsListProcess.js")" type="text/javascript"></script>
 
-	<script>
-		tinymce.init({selector:'.notesArea',
-	    	theme: "modern",
-	    	plugins: [
-	    	          "advlist autolink lists link image charmap print preview hr anchor pagebreak",
-	    	          "searchreplace wordcount visualblocks visualchars code fullscreen",
-	    	          "insertdatetime media nonbreaking save table contextmenu directionality",
-	    	          "template paste textcolor"
-	    	      ],
-	    	      toolbar1: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image",
-	    	      toolbar2: "print preview media | forecolor backcolor emoticons",
-	    	      image_advtab: true,
-	    	      templates: [
-	    	          {title: 'Test template 1', content: 'Test 1'},
-	    	          {title: 'Test template 2', content: 'Test 2'}
-	    	      ]
-	    });
-	</script>
 	<script>
     	var isPageLoaded = false;
     	var isx3dActive = false;
@@ -107,6 +88,24 @@
 
 	<div class="row">
 		<div class="col-md-8 col-right-border">
+			<h1>@file.filename</h1>
+			<h4>in
+			@if(datasets.length > 0) {
+				@datasets.map {dataset =>
+					<span class="caption break-word">
+						<a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id'>@Html(dataset.name)</a>
+					</span>
+				}
+			}
+
+			@if(folders.length > 0) {
+					@folders.map { folder =>
+						<span class="caption break-word">
+							<a href="@routes.Datasets.dataset(folder.parentDatasetId)#folderId=@folder.id">@folder.displayName</a>
+						</span>
+					}
+			}
+			</h4>
 		@for((f, pvs) <- previews) {
 			<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
 		    	<div class="col-md-12">
@@ -150,10 +149,11 @@
         <div class="col-md-12 button-margins">
           <div class="btn-group" role="group" aria-label="...">
 		  @if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
-			  <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file"> <span class="glyphicon glyphicon-save"></span>
+			  <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-primary" title="Download and enjoy this file."> <span class="glyphicon glyphicon-save"></span>
 				  Download </button>
 		  } else {
-			  <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file" disabled="disabled"> <span class="glyphicon glyphicon-save"></span>
+			  <!-- if 'disabled' title is not visible -->
+			  <button type="button" class="btn btn-primary disabled" title="You don't have permission to download this file."> <span class="glyphicon glyphicon-save"></span>
 				  Download </button>
 		  }
             <!--  If outputFormats list is not empty, display downloadAs drop-down button with the list of available formats -->      
@@ -433,13 +433,6 @@
     			}
     		}
 
-            <div class="row">
-                <div class="col-md-12 border-top col-section">
-                    <h4>Notes</h4>
-                    @notesform(file.id.toString, api.routes.Files.setNotesHTML(file.id).toString, file.notesHTML.getOrElse(""))
-                </div>
-            </div>
-
 			<div class="border-top">
 				<div class="row">
 					<div class="col-md-10">
@@ -495,7 +488,6 @@
 
             <div class="row ds-section-sm file-info">
                 <table class="table table-condensed">
-                    <tr><td><b>Filename:</b></td><td>@file.filename</td></tr>
 					<tr><td><b>Type:</b></td><td>@file.contentType</td></tr>
 					<tr><td><b>File&nbsp;size:</b></td><td title="@file.length bytes">@FileUtils.byteCountToDisplaySize(file.length)</td></tr>
 					@if(Permission.checkServerAdmin(user)) {
@@ -759,10 +751,8 @@
             </div>
 
 
-        <div class="row ds-section-sm border-top">
-            <h4>Datasets containing the file</h4>
-            @datasetsContainingFile(file, datasets)
-        </div>
+
+
 
     </div> @* End of small right hand side column *@
 

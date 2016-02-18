@@ -26,6 +26,7 @@ object ResourceRef {
   val space = 'space
   val dataset = 'dataset
   val file = 'file
+  val folder = 'folder
   val relation = 'relation
   val preview = 'preview
   val thumbnail = 'thumbnail

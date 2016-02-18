@@ -2,12 +2,11 @@ package services
 
 import api.Permission.Permission
 import models.{User, UUID, Dataset, Collection}
+import scala.collection.mutable.ListBuffer
 import scala.util.Try
 
 /**
  * Generic collection service.
- * 
- * @author Constantinos Sophocleous
  *
  */
 trait CollectionService {
@@ -132,12 +131,12 @@ trait CollectionService {
 
 
   def isInDataset(dataset: Dataset, collection: Collection): Boolean
-  
+
   /**
    * Update thumbnail used to represent this collection.
    */
   def updateThumbnail(collectionId: UUID, thumbnailId: UUID)
-  
+
   /**
    * Set new thumbnail.
    */
@@ -162,4 +161,30 @@ trait CollectionService {
    * Remove association between a collection and a space.
    */
   def removeFromSpace(collection: UUID, space: UUID)
+  /**
+    * Add subcollection to collection
+    *
+    */
+  def addSubCollection(collectionId: UUID, subCollectionId: UUID) : Try[Unit]
+
+
+  def getSelfAndAncestors(collectionId :UUID) : List[Collection]
+
+  def removeSubCollection(collectionId: UUID, subCollectionId: UUID, ignoreNotFound: Boolean = true) : Try[Unit]
+
+  def removeSubCollectionId(subCollectionId: UUID, collection: Collection,ignoreNotFound: Boolean = true) : Try[Unit]
+
+  def removeParentCollectionId(parentCollectionId: UUID, collection: Collection, ignoreNotFound: Boolean = true) : Try[Unit]
+
+  def setRootFlag(collectionId: UUID, isRoot: Boolean) : Try[Unit]
+
+  def listChildCollections(parentCollectionId: UUID) : List[Collection]
+
+  def getAllDescendants(parentCollectionId : UUID) : ListBuffer[Collection]
+
+  def getRootCollections(collectionId : UUID) : ListBuffer[Collection]
+
+  def getRootSpaceIds(collectionId : UUID) : ListBuffer[UUID]
+
+
 }
