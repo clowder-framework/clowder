@@ -3,6 +3,7 @@
 @import securesocial.core.IdentityProvider
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(securesocial.views.html.inputFieldConstructor.f) }
+@import services.AppConfiguration
 
 @main(Messages("securesocial.signup.title") ) {
     <div class="col-md-4 col-md-offset-4 col-sm-4 col-sm-offset-4 panel panel-default">
@@ -69,11 +70,52 @@
                     '_showErrors -> true
                 )
 
-                <div class="form-actions login-nav-box">
+                @if(AppConfiguration.getUserAgreement) {
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title">Terms of Use Agreement</h3>
+                        </div>
+                        <div class="panel-body" style="overflow-y: auto; height:400px;">
+                            @Html(Messages(AppConfiguration.getUserAgreement))
+                        </div>
+                    </div>
+
+                    @helper.checkbox(
+                        signUpForm("agreementAcknowledged"),
+                        '_label -> "Check the box to accept the Terms of Use",
+                        'class -> "form-control",
+                        '_help -> "",
+                        '_showErrors -> true
+                    )
+                }
+
+                <div class="form-actions btn-margin-bottom">
                     <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-ok"></span> @Messages("securesocial.signup.createAccount")</button>
                     <a class="btn btn-default" href="@securesocial.core.providers.utils.RoutesHelper.login()"><span class="glyphicon glyphicon-remove"></span> @Messages("securesocial.signup.cancel")</a>
                 </div>
             </fieldset>
-        </form>
+      </form>
+
+      <script type="text/javascript">
+        $(document).ready(function() {
+            var userAgreementElement = $("#agreementAcknowledged");
+            if (userAgreementElement && userAgreementElement.length) {
+                // if there is a value in the Admin -> Customize menu for User Agreement,
+                // this element will present. In that case, disable the submit button until
+                // the user clicks the checkbox to agree to the terms
+                $(":submit").prop('disabled', true);
+
+                // if the user submits the form with the checkbox checked, but there are validation errors
+                // this will uncheck the form on the validation page
+                userAgreementElement.attr('checked', false);
+
+                // toggle whether the button is disabled depending on if the checkbox is checked
+                userAgreementElement.on('click', function() {
+                    $(":submit").prop('disabled', function(i, v) { return !v; });
+                });
+            }
+
+        })
+      </script>
     </div>
 }

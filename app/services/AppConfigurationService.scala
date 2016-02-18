@@ -31,7 +31,7 @@ trait AppConfigurationService {
    * Gets the configuration property with the specified key. If the key is not found
    * it wil return the default value (empty string if not specified).
    */
-  def getProperty[objectType <: AnyRef](key: String, default:objectType): objectType = {
+  def getProperty[objectType <: AnyRef](key: String, default: objectType): objectType = {
     getProperty[objectType](key) match {
       case Some(x) => x
       case None => default
@@ -90,6 +90,22 @@ object AppConfiguration {
 
   // ----------------------------------------------------------------------
 
+  /** Set the google analytics code */
+  def setGoogleAnalytics(gacode: String) = appConfig.setProperty("google.analytics", gacode)
+
+  /** Get the welcome message */
+  def getGoogleAnalytics: String = appConfig.getProperty("google.analytics", "")
+
+  // ----------------------------------------------------------------------
+
+  /** Set the user agreement */
+  def setUserAgreement(userAgreement: String) = appConfig.setProperty("userAgreement.message", userAgreement)
+
+  /** Get the user agreement */
+  def getUserAgreement: String = appConfig.getProperty("userAgreement.message", "")
+
+  // ----------------------------------------------------------------------
+
   /** Set the Sensors title */
   def setSensorsTitle(sensorsTitle: String) = appConfig.setProperty("sensors.title", sensorsTitle)
 
@@ -103,6 +119,21 @@ object AppConfiguration {
 
   /** Get the welcome message */
   def getSensorTitle: String = appConfig.getProperty("sensor.title", "Sensor")
+
+  // ----------------------------------------------------------------------
+  /** Set the Parameters title */
+  def setParametersTitle(parametersTitle: String) = appConfig.setProperty("parameters.title", parametersTitle)
+
+  /** Get the welcome message */
+  def getParametersTitle: String = appConfig.getProperty("parameters.title", "Parameters")
+
+  // ----------------------------------------------------------------------
+
+  /** Set the Parameter title */
+  def setParameterTitle(parameterTitle: String) = appConfig.setProperty("parameter.title", parameterTitle)
+
+  /** Get the welcome message */
+  def getParameterTitle: String = appConfig.getProperty("parameter.title", "Parameter")
 
   // ----------------------------------------------------------------------
   /**

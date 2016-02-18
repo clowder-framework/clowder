@@ -6,11 +6,15 @@
   @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
   @main(curationObject.name) {
-    <div class = "row">
-      <ol class="breadcrumb">
-        <li> <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a></li>
-        <li class= "active"> Submitted Curation</li>
-      </ol>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a> >
+                    <strong> Submitted Curation</strong>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="container row">
@@ -19,7 +23,7 @@
         <h2>@curationObject.name</h2>
         @curationObject.description<br/><br/>
         <b>Creator</b>: @curationObject.author.fullName <br/>
-        <b>Uploaded</b>: @curationObject.created.date.format("yyyy-mm-dd hh:mm") <br/>
+        <b>Created</b>: @curationObject.created.date.format("MMM dd, yyyy") <br/>
         <b>Repository</b>: @curationObject.repository.getOrElse("Not select.") <br/>
         <b>Submmitted</b>: @{curationObject.submittedDate match {
         case Some(d) => d.format("MMM dd, yyyy")
@@ -107,9 +111,11 @@
 
     </div>
     <div class="col-md-6">
-    <b>Submission Status in repository &nbsp</b><button id="status" class ="btn btn-default btn-xs"><span class="glyphicon glyphicon-send"></span> Update</button>
+    <b>Submission Status in repository</b><button id="status" class ="btn btn-link btn-xs"><span class="glyphicon glyphicon-send"></span> Update</button>
     <br/><br/>
     <div id="showStatus"></div>
+    </div>
+    </div>
       <script>
 
       $(document).ready(getStatus('@curationObject.id'));
@@ -174,6 +180,7 @@
           td2.appendChild(text2);
           td3.appendChild(text3);
           td4.appendChild(text4);
+
           tr.appendChild(td1);
           tr.appendChild(td2);
           tr.appendChild(td3);
@@ -181,7 +188,8 @@
 
           tbody.appendChild(tr);
         }
-
+        table.classList.add("fixedtable");
+        table.setAttribute('width','100%');
         table.appendChild(thead);
         table.appendChild(tbody);
         $('#showStatus').replaceWith(table);
@@ -193,7 +201,4 @@
     }
 
     </script>
-  </div>
-</div>
-
   }

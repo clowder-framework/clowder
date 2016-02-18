@@ -16,6 +16,9 @@
     case "space" => {
       space: <a href="@routes.Spaces.getSpace(obj_id.get)">@obj_name.get</a>
     }
+    case "curation" => {
+      space: <a href="@routes.CurationObjects.getCurationObject(obj_id.get)">@obj_name.get</a>
+    }
     case _ => {
       @obj_type: @obj_name.get
     }
@@ -56,6 +59,9 @@
   }
   case "update_collection_information" => {
     updated information for @linkForObject("collection", event.object_id, event.object_name)
+  }
+  case "update_curation_information" => {
+    updated information for @linkForObject("curation", event.object_id, event.object_name)
   }
   case "set_note_file" => {
     set note for @linkForObject("file", event.object_id, event.object_name)

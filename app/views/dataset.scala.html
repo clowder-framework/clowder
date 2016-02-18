@@ -17,9 +17,7 @@
 @import helper._
 @import api.Permission
 
-@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
-
-@main("Dataset") {
+@main(dataset.name) {
 	<div class="row">
 		<!-- left column -->
 		<div class="col-md-8 col-right-border">
@@ -110,7 +108,6 @@
                     <li role="presentation"><a id="metadata-counter" href="#tab-metadata" role="tab" data-toggle="tab">Metadata (@m.length)</a></li>
                     <li role="presentation"><a href="#tab-visua" role="tab" data-toggle="tab">Visualizations</a></li>
                     <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
-                    <li role="presentation"><a href="#tab-notes" role="tab" data-toggle="tab">Notes</a></li>
                 </ul>
                 <div class="tab-content">
                   <div role="tabpanel" class="tab-pane  fade in active" id="tab-files">
@@ -173,12 +170,6 @@
                     <div role="tabpanel" class="tab-pane fade" id="tab-visua">
                     @datasets.previews(dataset, previewers)
                     </div>
-                  <!-- If the user can create a note on this dataset, display this tab. Otherwise, remove it. Is there a better way to do this? -->
-                  @if(Permission.checkPermission(Permission.CreateNote, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                      <div role="tabpanel" class="tab-pane fade" id="tab-notes">
-                      @notesform(dataset.id.toString, api.routes.Datasets.setNotesHTML(dataset.id).toString, dataset.notesHTML.getOrElse(""))
-                      </div>
-                  }
             </div>
         </div>
     </div>
@@ -206,25 +197,9 @@
 
     <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
-    <script src="@routes.Assets.at("javascripts/tinymce/tinymce.min.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
     <script>
-        tinymce.init ( { selector : '.notesArea',
-            theme : "modern",
-            plugins :[
-                "advlist autolink lists link image charmap print preview hr anchor pagebreak",
-                "searchreplace wordcount visualblocks visualchars code fullscreen",
-                "insertdatetime media nonbreaking save table contextmenu directionality",
-                "template paste textcolor"
-            ],
-            toolbar1 : "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | " +
-                        "bullist numlist outdent indent | link image",
-            toolbar2 : "print preview media | forecolor backcolor emoticons",
-            image_advtab : true,
-            templates :[ { title : 'Test template 1', content : 'Test 1' }, { title : 'Test template 2', content : 'Test 2' }
-            ]
-            } ) ;
         var cur_title;
         function updateTitle() {
             cur_title = $('#datasettitle').text();
