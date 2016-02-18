@@ -48,7 +48,7 @@
                 <a class="navbar-brand" href="@routes.Application.index">
                     @services.DI.injector.getInstance(classOf[services.LogoService]).get("GLOBAL", "logo") match {
                         case Some(logo) => {
-                            <img height="20px" width="auto" class="pull-left" src="@api.routes.Logos.downloadPath("GLOBAL", "logo")" alt="LOGO">&nbsp;
+                            <img class="pull-left" style="height: 1em" src="@api.routes.Logos.downloadPath("GLOBAL", "logo")" alt="LOGO">&nbsp;
                             @if(logo.showText) {
                                 @(AppConfiguration.getDisplayName)
                             }
