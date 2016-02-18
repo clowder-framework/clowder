@@ -17,6 +17,8 @@ import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError
 
+import scala.util.Try
+
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
  */
@@ -146,7 +148,12 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
             Forbidden(toJson(s"You are not the owner of the collection"))
           } else {
             spaces.addCollection(collectionId, spaceId)
-            Ok(Json.obj("collectionInSpace" -> (s.collectionCount + 1).toString))
+            spaces.get(spaceId) match {
+              case Some(space) => {
+                Ok(Json.obj("collectionInSpace" -> space.collectionCount.toString))
+              }
+              case None => NotFound
+            }
           }
         }
         case (_, _) => NotFound
@@ -180,9 +187,27 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     (spaces.get(spaceId), collectionService.get(collectionId)) match {
       case (Some(s), Some(c)) => {
         spaces.removeCollection(collectionId, spaceId)
+        updateSubCollections(spaceId, collectionId)
         Ok(toJson("success"))
       }
       case (_, _) => NotFound
+    }
+  }
+
+  def updateSubCollections(spaceId: UUID, collectionId: UUID)  {
+    collectionService.get(collectionId) match {
+      case Some(collection) => {
+        val collectionDescendants = collectionService.getAllDescendants(collectionId)
+        for (descendant <- collectionDescendants){
+          val rootCollectionSpaces = collectionService.getRootSpaceIds(descendant.id)
+          for (space <- descendant.spaces) {
+            if (!rootCollectionSpaces.contains(space)){
+              spaces.removeCollection(descendant.id, space)
+            }
+          }
+        }
+      }
+      case None => Logger.error("no collection found with id " + collectionId)
     }
   }
 
