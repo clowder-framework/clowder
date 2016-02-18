@@ -11,8 +11,7 @@
   toPublish: Boolean,
   curationObjects: List[models.CurationObject],
   currentSpace: Option[String],
-  filepage: Int,
-  next: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  limit: Int)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -53,7 +52,6 @@
 
                             }
                         </div>
-
                         @datasets.editLicense(dataset)
                     </ul>
                 </div>
@@ -68,7 +66,7 @@
                 <div class="col-md-12 box-white-space">
                     <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                        <a href="@(routes.Datasets.addFiles(dataset.id))"
+                        <a id="addFilesLink" href="@(routes.Datasets.addFiles(dataset.id))"
                         class="btn btn-link btn-sm btn-margin-bottom" id="fileUploadBtn" title="Add File to Dataset" role="button">
                             <span class="glyphicon glyphicon-plus"></span> Add Files
                         </a>
@@ -100,40 +98,47 @@
                             }
                         }
                     }
+                    @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        <a data-toggle="modal" data-target="#folder-modal" class="btn btn-link btn-sm btn-margin-bottom">
+                            <span class="glyphicon glyphicon-ok"></span> Create Folder
+                        </a>
+                        <div class="modal fade" id="folder-modal" tabindex="-1" role ="dialog" aria-labelledby="folder-modal-label">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h4 class="modal-title" id="folder-modal-label"> Create new Folder</h4>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="form-group">
+                                            <label id="namelabel" for="name">Name</label>
+                                            <input type="text" class="form-control" id="name" placeholder="A short name">
+                                            <span class="error hiddencomplete" id="nameerror">The name is a required field</span>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-primary start"  id="createFolder" title="Create the Dataset">
+                                            <span class="glyphicon glyphicon-ok"></span> Create Folder
+                                        </button>
+                                        <button class="btn btn-default" title="Cancel creation of folder" data-dismiss="modal">
+                                            <span class="glyphicon glyphicon-remove"></span> Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
-                <ul class="nav nav-tabs">
-                    <li role="presentation" class="active"><a href="#tab-files" role="tab" data-toggle="tab">Files (@dataset.files.size)</a></li>
-                    <li role="presentation"><a id="metadata-counter" href="#tab-metadata" role="tab" data-toggle="tab">Metadata (@m.length)</a></li>
+                <ul class="nav nav-tabs margin-bottom-20" >
+                    <li role="presentation" class="active"><a href="#tab-files" role="tab" data-toggle="tab">Files </a></li>
+                    <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata </a></li>
                     <li role="presentation"><a href="#tab-visua" role="tab" data-toggle="tab">Visualizations</a></li>
                     <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
                 </ul>
                 <div class="tab-content">
                   <div role="tabpanel" class="tab-pane  fade in active" id="tab-files">
 
-                      @if(! (filepage == 0 && !next) ) {
-                          <div class="row">
-                              <div class="col-md-12 box-white-space">
-                                  <a id="allfiles" class="btn btn-link" href="@(routes.Files.listByDataset(dataset.id, 0))">
-                                      <span class="glyphicon glyphicon-th"></span>  All Files</a>
-                              </div>
-                          </div>
-                      }
-                      @files.grid(fileList, dataset.id)
-                      <div class="row">
-                          <div class="col-md-12">
-                              <ul class="pager">
-                                      <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
-                                  @if(filepage > 0) {
-                                      <li class="previous"><a id="prevlink" title="Page backwards" href="@(routes.Datasets.dataset(dataset.id, currentSpace, filepage-1))"><span class="glyphicon glyphicon-chevron-left"></span> Previous</a></li>
-                                  }
-                                  @if(next) {
-                                      <li class ="next"><a id="nextlink" title="Page forwards" href="@(routes.Datasets.dataset(dataset.id, currentSpace, filepage+1))">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
-                                  }
-                              </ul>
-                          </div>
-                      </div>
                   </div>
                   <div role="tabpanel" class="tab-pane fade" id="tab-comments">
                       <!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->
@@ -176,7 +181,7 @@
 
 		<!-- right column -->
 		<div class="col-md-4 col-left-border">
-            @spaces.spaceAllocation(dataset.id, ResourceRef.dataset, datasetSpaces.getOrElse(List.empty))
+            @spaces.spaceAllocation(dataset.id, ResourceRef.dataset, datasetSpaces.getOrElse(List.empty),None)
             @if(user.isDefined) {
                 <br/>
                 @datasets.userLink(dataset)
@@ -198,8 +203,16 @@
     <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
     <script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/folderListProcess.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
-    <script>
+    <script type="text/javascript">
+        var removeIndicator = false;
+        var parentId = "@dataset.id";
+        var parentType = "dataset";
+        var pageIndex = 0;
+        var folderId;
         var cur_title;
         function updateTitle() {
             cur_title = $('#datasettitle').text();
@@ -213,8 +226,35 @@
             $('#h-edit-title').addClass("hiddencomplete");
             $('#h-edit-title').css("display", "none");
         }
-
+        function parseHash() {
+            var hash = location.hash.split('#')[1];
+            var folderSet = false;
+            var pageSet = false;
+            if(hash != undefined) {
+                var values = hash.split('&');
+                for (var i = 0; i < values.length; i++){
+                    var temp = values[i].split('=');
+                    if(temp[0] == 'folderId') {
+                        folderId = temp[1];
+                        folderSet = true
+                    }
+                    if(temp[0] == 'page'){
+                        pageIndex = temp[1];
+                        pageSet = true
+                    }
+                }
+            }
+            if(!folderSet) {
+                folderId ='';
+            }
+            if(!pageSet) {
+                pageIndex = 0;
+            }
+        }
         $(document).ready(function(){
+
+            getUpdatedFilesAndFolders();
+
             if(@dataset.spaces.size < 1 ) {
                 $('#dataset-users').hide();
             }
@@ -235,9 +275,8 @@
                     $('#edit-description').removeClass("inline");
                     $('#edit-description').addClass("hiddencomplete");
                  });
-
-
             }
+
             if(@Permission.checkPermission(Permission.EditLicense, ResourceRef(ResourceRef.dataset, dataset.id))) {
                 $(document).on('mouseenter', '#edit-license', function() {
                     $('#editlicense').removeClass("hiddencomplete");
@@ -247,6 +286,7 @@
                     $('#editlicense').addClass("hiddencomplete");
                 });
             }
+
             var description = $('#ds_description').html().trim();
             $('#ds_description').html(urlify(description));
 
@@ -283,6 +323,7 @@
                 $('#h-edit-title').removeClass("inline");
                 $('#h-edit-title').css("display", "");
                 $('#ds-title').mouseleave();
+                notify("Dataset name updated successfully", "success", false, 2000 );
             });
 
             request.fail(function(jqXHR, textStatus, errorThrown) {
@@ -336,6 +377,7 @@
 			$('#edit-description').removeClass("inline");
             $('#edit-description').css("display", "");
             $('#ds-description').mouseleave();
+            notify("Dataset description updated successfully", "success", false, 2000 );
 		});
 
 		request.fail(function(jqXHR, textStatus, errorThrown) {
@@ -354,6 +396,98 @@
             return '<a href="' + url + '">' + url + '</a>';
         })
     }
+
+    $(function() {
+            $(window).on('fileDelete hashchange', function() {
+
+                getUpdatedFilesAndFolders();
+            });
+
+            $('#createFolder').click(function() {
+                var name=$('#name');
+
+                var error = false;
+                if(!name.val()) {
+                    $('#nameerror').show();
+                    error = true;
+                }
+                if(!error) {
+
+                    var encName  = htmlEncode(name.val());
+                    var jsonData = JSON.stringify({"name": encName, "parentId": parentId, "parentType": parentType, "currentSpace": "@currentSpace"});
+                    var request = jsRoutes.controllers.Folders.createFolder("@dataset.id").ajax({
+                        data:jsonData,
+                        type: 'POST',
+                        contentType: "application/json"
+                    });
+                    request.done(function(response, textStatus, jqXHR){
+                        $('#folder-modal').modal('hide');
+                        $('#folderListDiv').prepend(response);
+                        notify("Folder created successfully", "success", false, 2000 );
+                        $('#name').val("");
+                    });
+
+                    request.fail(function (jqXHR, textStatus, errorThrown){
+                        $('#name').val("");
+                        console.error("The following error occured: " + textStatus, errorThrown);
+                        var errMsg = "You must be logged in to create a new folder.";
+                        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                            notify("Error in creating folder: " + errorThrown, "error");
+                        }
+                    });
+
+                };
+                return false;
+            });
+        });
+
+       function updatePageAndFolder(idx, folderIdd){
+           if(folderIdd != "") {
+               location.hash = "folderId="+folderIdd+"&page="+idx;
+           } else {
+               location.hash="page="+idx;
+           }
+           $(window).trigger("hashchange");
+       }
+
+       function getUpdatedFilesAndFolders() {
+        parseHash();
+        if(folderId == "") {
+            folderId = null;
+        }
+        var currentSpace = null;
+        if(@currentSpace.isDefined){
+           currentSpace = "@currentSpace";
+        }
+         var jsonData = JSON.stringify({"currentSpace": currentSpace, "folderId": folderId});
+         var request = jsRoutes.controllers.Datasets.getUpdatedFilesAndFolders("@dataset.id", @limit, pageIndex).ajax({
+            data: jsonData,
+            type: 'POST',
+            contentType: "application/json"
+         });
+
+         request.done(function(response, textStatus, jsXHR){
+          $('#tab-files').html("");
+          $('#tab-files').html(response);
+          if(folderId != null) {
+            parentType = 'folder';
+            parentId = folderId;
+            $('#addFilesLink').attr("href", jsRoutes.controllers.Folders.addFiles('@dataset.id', folderId).url);
+          } else {
+              parentId = "@dataset.id";
+              parentType = "dataset";
+              $('#addFilesLink').attr("href", jsRoutes.controllers.Datasets.addFiles('@dataset.id').url);
+          }
+         });
+         request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occured: " + textStatus, errorThrown);
+            var errMsg = "You must be logged in to see files and folders.";
+            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                notify("Error in getting more files and folders. : " + errorThrown, "error");
+            }
+         });
+
+       }
 
     </script>
 }

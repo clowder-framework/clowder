@@ -9,8 +9,6 @@ import models.File
 /**
  * Generic dataset service.
  *
- * @author Luigi Marini
- *
  */
 trait DatasetService {
   /**
@@ -146,6 +144,16 @@ trait DatasetService {
    * Remove file from dataset.
    */
   def removeFile(datasetId: UUID, fileId: UUID)
+
+  /**
+   * Add Folder to dataset.
+   */
+  def addFolder(datasetId: UUID, folderId: UUID)
+
+  /**
+   * Remove folder from dataset.
+   */
+  def removeFolder(datasetId: UUID, folderId: UUID)
 
   /**
    * Set new thumbnail.

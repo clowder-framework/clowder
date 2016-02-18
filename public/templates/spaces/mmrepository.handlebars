@@ -1,23 +1,23 @@
 {{#if selected}}
-    <h4><input type="radio" name="repository" value="{{orgidentifier}}" checked> {{repositoryName}}</h4>
-{{else}}
-    <h4><input type="radio" name="repository" value="{{orgidentifier}}" > {{repositoryName}}</h4>
+          <h4><input type="radio" name="repository" value="{{orgidentifier}}" checked> {{repositoryName}}</h4>
+      {{else}}
+          <h4><input type="radio" name="repository" value="{{orgidentifier}}" > {{repositoryName}}</h4>
 
-{{/if}}
-<div class="indent20" id="{{orgidentifier}}">
-    <a role= "button" data-toggle="collapse" href="#rules_{{orgidentifier}}" aria-expanded="false" aria-controls="rules_{{orgidentifier}}">
-    <span class="glyphicon glyphicon-chevron-down" ></span>  Matchmaker Summary </a>
-    <div class="collapse in" id="rules_{{orgidentifier}}">
+      {{/if}}
+      <div class="indent20" id="{{orgidentifier}}">
+          <a role= "button" data-toggle="collapse" href="#rules_{{orgidentifier}}" aria-expanded="false" aria-controls="rules_{{orgidentifier}}">
+          <span class="glyphicon glyphicon-chevron-down" ></span>  Matchmaker Summary </a>
+          <div class="collapse in" id="rules_{{orgidentifier}}">
 
-    <ul class="indent_20 list-unstyled">
-        {{#each per_rule_score}}
-            <li>{{this.rule_name}} </li>
-            {{#lessthan this.score 0}}
-                <li><span class="red">{{this.message}}</span> <a href='{{../../href_metadata}}'> Edit Metadata</a><br/> </li>
-            {{else}}
-                <li><span class="green">All Requirements are satisfied.</span></li>
-        {{/lessthan}}
-        {{/each}}
-    </ul>
-    </div>
-</div>
+          <ul class="indent_20 list-unstyled">
+              {{#each per_rule_score}}
+                  <li>{{this.rule_name}} </li>
+                  {{#lessthan this.score 0}}
+                      <li><span class="red">{{this.message}}</span> <a href='{{../../href_metadata}}'> Edit Metadata</a><br/> </li>
+                  {{else}}
+                      <li><span class="green">All Requirements are satisfied.</span></li>
+              {{/lessthan}}
+              {{/each}}
+          </ul>
+          </div>
+      </div>

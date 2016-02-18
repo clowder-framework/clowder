@@ -185,6 +185,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("extractor.names").drop()
     collection("extractor.servers").drop()
     collection("extractors.info").drop()
+    collection("folders").drop()
     removeFiles("geometries")
     collection("licensedata").drop()
     collection("metadata").drop()

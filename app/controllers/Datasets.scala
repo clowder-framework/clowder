@@ -16,7 +16,6 @@ import util.{Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
 import scala.collection.mutable.ListBuffer
 
-
 /**
  * A dataset is a collection of files and streams.
  */
@@ -34,7 +33,9 @@ class Datasets @Inject()(
   spaceService: SpaceService,
   curationService: CurationService,
   relations: RelationService,
-  metadata: MetadataService) extends SecuredController {
+  folders: FolderService,
+  metadata: MetadataService,
+  events: EventService) extends SecuredController {
 
   object ActivityFound extends Exception {}
 
@@ -93,7 +94,7 @@ class Datasets @Inject()(
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
-        Ok(views.html.datasets.addFiles(dataset))
+        Ok(views.html.datasets.addFiles(dataset, None))
       }
       case None => {
         InternalServerError(s"Dataset $id not found")
@@ -324,7 +325,7 @@ class Datasets @Inject()(
   /**
    * Dataset.
    */
-  def dataset(id: UUID, currentSpace: Option[String], filepage: Int) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def dataset(id: UUID, currentSpace: Option[String], limit: Int) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
 
       implicit val user = request.user
       Previewers.findPreviewers.foreach(p => Logger.debug("Previewer found " + p.id))
@@ -411,11 +412,7 @@ class Datasets @Inject()(
           }
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
-          val limit: Int = 9
-          //in case filepage is less than 0, we start from filepage=0
-          val filepageUpdate = if (filepage <0) 0 else filepage
-          val next = dataset.files.length > limit * (filepageUpdate+1)
-          val limitFileList : List[File]= dataset.files.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => files.get(f)).flatten
+          val fileList : List[File]= dataset.files.reverse.map(f => files.get(f)).flatten
 
           //dataset is in at least one space with editstagingarea permission, or if the user is the owner of dataset.
           val stagingarea = datasetSpaces filter (space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id)))
@@ -426,7 +423,8 @@ class Datasets @Inject()(
           val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
-            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), limitFileList, filesTags, toPublish, curPubObjects, currentSpace, filepageUpdate, next))
+            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), fileList,
+            filesTags, toPublish, curPubObjects, currentSpace, limit))
         }
         case None => {
           Logger.error("Error getting dataset" + id)
@@ -434,6 +432,71 @@ class Datasets @Inject()(
         }
     }
   }
+
+  def getUpdatedFilesAndFolders(datasetId: UUID, limit: Int, pageIndex: Int)  = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) (parse.json) { implicit request =>
+    implicit val user = request.user
+    val filepageUpdate = if (pageIndex < 0) 0 else pageIndex
+    datasets.get(datasetId) match {
+      case Some(dataset) => {
+        val folderId = (request.body \ "folderId").asOpt[String]
+        folderId match {
+          case Some(fId) => {
+            folders.get(UUID(fId)) match {
+              case Some(folder) => {
+
+                val foldersList = folder.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => folders.get(f)).flatten
+                val limitFileList : List[File]= folder.files.reverse.slice(limit * filepageUpdate - folder.folders.length, limit * (filepageUpdate+1) - folder.folders.length).map(f => files.get(f)).flatten
+                var folderHierarchy = new ListBuffer[Folder]()
+                folderHierarchy += folder
+                var f1: Folder = folder
+                while(f1.parentType == "folder") {
+                  folders.get(f1.parentId) match {
+                    case Some(fparent) => {
+                      folderHierarchy += fparent
+                      f1 = fparent
+                    }
+                    case None =>
+                  }
+                }
+                val fileComments = limitFileList.map{file =>
+                  var allComments = comments.findCommentsByFileId(file.id)
+                  sections.findByFileId(file.id).map { section =>
+                    allComments ++= comments.findCommentsBySectionId(section.id)
+                  }
+                  file.id -> allComments.size
+                }.toMap
+                val next = folder.files.length + folder.folders.length > limit * (filepageUpdate+1)
+
+                Ok(views.html.datasets.filesAndFolders(dataset, Some(folder.id.stringify), foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, fileComments)(request.user))
+
+              }
+              case None => InternalServerError(s"No folder with id $fId found")
+            }
+          }
+          case None => {
+
+            val foldersList = dataset.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => folders.get(f)).flatten
+
+            val limitFileList : List[File]= dataset.files.reverse.slice(limit * filepageUpdate - dataset.folders.length, limit * (filepageUpdate+1) - dataset.folders.length).map(f => files.get(f)).flatten
+
+            val fileComments = limitFileList.map{file =>
+              var allComments = comments.findCommentsByFileId(file.id)
+              sections.findByFileId(file.id).map { section =>
+                allComments ++= comments.findCommentsBySectionId(section.id)
+              }
+              file.id -> allComments.size
+            }.toMap
+
+            val folderHierarchy = new ListBuffer[Folder]()
+            val next = dataset.files.length + dataset.folders.length > limit * (filepageUpdate+1)
+            Ok(views.html.datasets.filesAndFolders(dataset, None, foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, fileComments)(request.user))
+          }
+        }
+      }
+      case None => InternalServerError(s"Dataset with id $datasetId not Found")
+    }
+  }
+
 
   /**
    * Dataset by section.
@@ -456,17 +519,17 @@ class Datasets @Inject()(
    * the checks are made here as well. 
    * 
    */
-  def submit() = PermissionAction(Permission.CreateDataset)(parse.multipartFormData) { implicit request =>
+  def submit(folderId: Option[String]) = PermissionAction(Permission.CreateDataset)(parse.multipartFormData) { implicit request =>
     implicit val user = request.user
     Logger.debug("------- in Datasets.submit ---------")
-    var dsName = request.body.asFormUrlEncoded.getOrElse("name", null)
-    var dsDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
-    var dsLevel = request.body.asFormUrlEncoded.getOrElse("datasetLevel", null)
-    var dsId = request.body.asFormUrlEncoded.getOrElse("datasetid", null)
+    val dsName = request.body.asFormUrlEncoded.getOrElse("name", null)
+    val dsDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
+    val dsLevel = request.body.asFormUrlEncoded.getOrElse("datasetLevel", null)
+    val dsId = request.body.asFormUrlEncoded.getOrElse("datasetid", null)
 
     if (dsName == null || dsDesc == null) {
       //Changed to return appropriate data and message to the upload interface
-      var retMap = Map("files" ->
+      val retMap = Map("files" ->
         Seq(
           toJson(
             Map(
@@ -482,7 +545,7 @@ class Datasets @Inject()(
 
     if (dsId == null) {
       //Changed to return appropriate data and message to the upload interface
-      var retMap = Map("files" ->
+      val retMap = Map("files" ->
         Seq(
           toJson(
             Map(
@@ -509,10 +572,10 @@ class Datasets @Inject()(
               var nameOfFile = f.filename
               var flags = ""
               if(nameOfFile.toLowerCase().endsWith(".ptm")){
-                var thirdSeparatorIndex = nameOfFile.indexOf("__")
+                val thirdSeparatorIndex = nameOfFile.indexOf("__")
                 if(thirdSeparatorIndex >= 0){
-                  var firstSeparatorIndex = nameOfFile.indexOf("_")
-                  var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+                  val firstSeparatorIndex = nameOfFile.indexOf("_")
+                  val secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
                   flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
                   nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
                 }
@@ -548,10 +611,10 @@ class Datasets @Inject()(
                         fileType = "multi/files-zipped";
                       }
 
-                      var thirdSeparatorIndex = nameOfFile.indexOf("__")
+                      val thirdSeparatorIndex = nameOfFile.indexOf("__")
                       if(thirdSeparatorIndex >= 0){
-                        var firstSeparatorIndex = nameOfFile.indexOf("_")
-                        var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
+                        val firstSeparatorIndex = nameOfFile.indexOf("_")
+                        val secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex+1)
                         flags = flags + "+numberofIterations_" +  nameOfFile.substring(0,firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex+1,secondSeparatorIndex)+ "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex+1,thirdSeparatorIndex)
                         nameOfFile = nameOfFile.substring(thirdSeparatorIndex+2)
                         files.renameFile(f.id, nameOfFile)
@@ -568,7 +631,27 @@ class Datasets @Inject()(
                   val host = Utils.baseUrl(request)
 
                   //directly add the file to the dataset via the service
-                  datasets.addFile(dataset.id, f)
+                  folderId match {
+                    case Some(fId) =>  {
+                      folders.get(UUID(fId)) match {
+                        case Some(folder) => {
+
+                          events.addObjectEvent(request.user, dataset.id, dataset.name, "add_file_folder")
+                          folders.addFile(folder.id, f.id)
+                        }
+                        case None => {
+                          //TODO: Add the file to dataset or don't do anything?
+                          events.addObjectEvent(request.user, dataset.id, dataset.name, "add_file")
+                          datasets.addFile(dataset.id, f)
+                        }
+                      }
+                    }
+                    case None => {
+                      events.addObjectEvent(request.user, dataset.id, dataset.name, "add_file")
+                      datasets.addFile(dataset.id, f)
+                    }
+                  }
+
 
                   val dsId = dataset.id
                   val dsName = dataset.name
@@ -631,7 +714,7 @@ class Datasets @Inject()(
 
                   //Correctly set the updated URLs and data that is needed for the interface to correctly
                   //update the display after a successful upload.
-                  var retMap = Map("files" ->
+                  val retMap = Map("files" ->
                     Seq(
                       toJson(
                         Map(
@@ -654,7 +737,7 @@ class Datasets @Inject()(
                   current.plugin[AdminsNotifierPlugin].foreach{
                     _.sendAdminsNotification(Utils.baseUrl(request), "Dataset","added",dataset.id.stringify, dataset.name)}
                   //Changed to return appropriate data and message to the upload interface
-                  var retMap = Map("files" ->
+                  val retMap = Map("files" ->
                     Seq(
                       toJson(
                         Map(
@@ -669,7 +752,7 @@ class Datasets @Inject()(
                 }
               }
             }.getOrElse{
-              var retMap = Map("files" ->
+              val retMap = Map("files" ->
                 Seq(
                   toJson(
                     Map(
@@ -684,7 +767,7 @@ class Datasets @Inject()(
             }
           }
           case None => {
-            var retMap = Map("files" ->
+            val retMap = Map("files" ->
               Seq(
                 toJson(
                   Map(

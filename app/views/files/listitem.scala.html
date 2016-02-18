@@ -1,4 +1,4 @@
-@(file: File, comments: Map[UUID, Int], redirect: Call)(implicit user: Option[models.User])
+@(file: File, comments: Map[UUID, Int], redirect: Call, folder: Option[String])(implicit user: Option[models.User])
 @import api.Permission
 <div class="panel panel-default" id="@file.id-listitem">
     <div class="panel-body">
@@ -14,13 +14,18 @@
                             <li>@(if(file.contentType != null) file.contentType else "N/A")</li>
                             <li>@file.uploadDate.format("MMM dd, yyyy")</li>
                             <li>
-                                <span class="glyphicon glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
-                                <span class="glyphicon glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
-                                <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(file.id)) comments"></span> @(comments.get(file.id))
+                                <span class="glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
+                                <span class="glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
+                                <span class="glyphicon glyphicon-comment" title="@(comments.get(file.id)) comments"></span> @(comments.get(file.id))
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                     @if(user.get.identityId.userId.equals(file.author.identityId.userId) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
-                                        <button onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;")),'@redirect')" class="btn btn-link" style="text-align:right" title="Delete">
+                                        <button onclick="
+                                                @folder match {
+                                                    case None => {confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))','@redirect')}
+                                                    case Some(s) => {confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))','@redirect#@s')}
+                                                }
+                                                " class="btn btn-link" style="text-align:right" title="Delete">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     } else {
                                         <button disabled onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))','@redirect')" class="btn btn-link" style="text-align:right" title="Delete">

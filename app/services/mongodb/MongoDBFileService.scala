@@ -52,7 +52,8 @@ class MongoDBFileService @Inject() (
   threeD: ThreeDService,
   sparql: RdfSPARQLService,
   storage: ByteStorageService,
-  userService: UserService) extends FileService {
+  userService: UserService,
+  folders: FolderService) extends FileService {
 
   object MustBreak extends Exception {}
 
@@ -658,6 +659,10 @@ class MongoDBFileService @Inject() (
             }
                      
           }
+          val fileFolders = folders.findByFileId(file.id)
+          for(fileFolder <- fileFolders) {
+            folders.removeFile(fileFolder.id, file.id)
+          }
           for(section <- sections.findByFileId(file.id)){
             sections.removeSection(section)
           }
@@ -972,7 +977,6 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     case Some(x) => new SalatDAO[File, ObjectId](collection = x.collection("uploads.files")) {}
   }
 }
-
 
 object VersusDAO extends ModelCompanion[Versus,ObjectId]{
     val dao = current.plugin[MongoSalatPlugin] match {
