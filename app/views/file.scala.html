@@ -61,31 +61,12 @@
     <script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
     <script src="@routes.Assets.at("javascripts/previews.js")" type="text/javascript"></script>
-    <script src="@routes.Assets.at("javascripts/tinymce/tinymce.min.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/popcorn-complete.min.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/galleria-1.2.9.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
 	<script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/sectionsListProcess.js")" type="text/javascript"></script>
 
-	<script>
-		tinymce.init({selector:'.notesArea',
-	    	theme: "modern",
-	    	plugins: [
-	    	          "advlist autolink lists link image charmap print preview hr anchor pagebreak",
-	    	          "searchreplace wordcount visualblocks visualchars code fullscreen",
-	    	          "insertdatetime media nonbreaking save table contextmenu directionality",
-	    	          "template paste textcolor"
-	    	      ],
-	    	      toolbar1: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image",
-	    	      toolbar2: "print preview media | forecolor backcolor emoticons",
-	    	      image_advtab: true,
-	    	      templates: [
-	    	          {title: 'Test template 1', content: 'Test 1'},
-	    	          {title: 'Test template 2', content: 'Test 2'}
-	    	      ]
-	    });
-	</script>
 	<script>
     	var isPageLoaded = false;
     	var isx3dActive = false;
@@ -150,10 +131,11 @@
         <div class="col-md-12 button-margins">
           <div class="btn-group" role="group" aria-label="...">
 		  @if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
-			  <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file"> <span class="glyphicon glyphicon-save"></span>
+			  <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-primary" title="Download and enjoy this file."> <span class="glyphicon glyphicon-save"></span>
 				  Download </button>
 		  } else {
-			  <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file" disabled="disabled"> <span class="glyphicon glyphicon-save"></span>
+			  <!-- if 'disabled' title is not visible -->
+			  <button type="button" class="btn btn-primary disabled" title="You don't have permission to download this file."> <span class="glyphicon glyphicon-save"></span>
 				  Download </button>
 		  }
             <!--  If outputFormats list is not empty, display downloadAs drop-down button with the list of available formats -->      
@@ -432,13 +414,6 @@
 			    </script>
     			}
     		}
-
-            <div class="row">
-                <div class="col-md-12 border-top col-section">
-                    <h4>Notes</h4>
-                    @notesform(file.id.toString, api.routes.Files.setNotesHTML(file.id).toString, file.notesHTML.getOrElse(""))
-                </div>
-            </div>
 
 			<div class="border-top">
 				<div class="row">

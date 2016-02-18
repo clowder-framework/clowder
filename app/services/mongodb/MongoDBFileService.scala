@@ -887,10 +887,6 @@ class MongoDBFileService @Inject() (
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(fileId.stringify)),
       $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
   }
-  
-  def setNotesHTML(id: UUID, html: String) {
-	    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(html)), false, false, WriteConcern.Safe)    
-  }
 
   def dumpAllFileMetadata(): List[String] = {
 		    Logger.debug("Dumping metadata of all files.")

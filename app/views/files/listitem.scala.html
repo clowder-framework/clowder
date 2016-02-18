@@ -7,7 +7,7 @@
             @if(!file.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)" width="120">}
             </div>
             <div class="col-md-10 col-sm-10 col-lg-10">
-                <h2><a href="@(routes.Files.file(file.id))">@file.filename</a></h2>
+                <h3><a href="@(routes.Files.file(file.id))">@file.filename</a></h3>
                 <div class="row">
                     <div class="col-md-6 col-lg-6 col-sm-6">
                         <ul class="list-unstyled">
@@ -33,7 +33,11 @@
                     <div class="col-md-6 col-lg-6 col-sm-6">
                         <ul class="list-unstyled">
                             @if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
-                                <li><a id="downloadButton" class="btn btn-link" type="button" onclick="window.open(jsRoutes.api.Files.download('@file.id').url, '_blank');" class="btn btn-primary" title="You don't have permission to download this file" > <span class="glyphicon glyphicon-save"></span>
+                                <li><a id="downloadButton" class="btn btn-link" type="button" onclick="window.open(jsRoutes.api.Files.download('@file.id').url, '_blank');" class="btn btn-primary" title="Download and enjoy this file." > <span class="glyphicon glyphicon-save"></span>
+                                    Download </a></li>
+                            } else {
+                                    <!-- if 'disabled' title is not visible -->
+                                <li><a class="btn btn-link disabled" type="button" class="btn btn-primary" title="You don't have permission to download this file." > <span class="glyphicon glyphicon-save"></span>
                                     Download </a></li>
                             }
 

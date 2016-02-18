@@ -20,7 +20,7 @@
 <script type="text/javascript" src="@(url)"></script>
 }
 
-@main("Collection") {
+@main(collection.name) {
 
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/collectionDatasetsList.js")" type="text/javascript"></script>
@@ -89,7 +89,7 @@
 								}
 							}
 							@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
-								<a id="create_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))" style=":15px;" class="btn btn-link btn-sm" title="Create New Dataset">
+								<a id="create_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Create Dataset">
 									<span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
 								<a id="create_childcollection" href="@routes.Collections.newCollectionWithParent(Some(collection.id.toString()))" style=":15px;" class="btn btn-link btn-sm" title="Create Child Collection">
 									<span class="glyphicon glyphicon-ok"></span> Create Child Collection</a>

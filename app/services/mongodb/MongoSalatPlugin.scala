@@ -220,6 +220,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       collection("social.token").drop()
       collection("social.users").drop()
       collection("roles").drop()
+      removeFiles("logos")
 
       // call global onStart to initialize
       app.global.onStart(app)
@@ -242,218 +243,197 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
     collection(name + ".chunks").drop()
     collection(name + ".files").drop()
+    collection(name).drop()
   }
 
   // ----------------------------------------------------------------------
   // CODE TO UPDATE THE DATABASE
   // ----------------------------------------------------------------------
   def updateDatabase() {
-    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
-
     // migrate users to new model
-    updateMongoChangeUserType
+    updateMongo("fixing-typehint-users", updateMongoChangeUserType)
 
     // add a space if none exists
-    updateMongoAddFirstSpace
+    updateMongo("convert-to-spaces", updateMongoAddFirstSpace)
+
+    // fix tag length to 100 chars
+    updateMongo("fixing-taglength", updateTagLength)
 
     // remove datasets from collection
-    updateMongoRemoveDatasetCollection
+    updateMongo("removed-datasets-collection", updateMongoRemoveDatasetCollection)
 
     // replace collection id strings with UUID in datasets
-    updateMongoCollectionsInDatasetStringToUUID
+    updateMongo("replace-dataset-collections-string-uuid", updateMongoCollectionsInDatasetStringToUUID)
 
     // change Files in datasets from List[File] to List[UUID]
-    updateReplaceFilesInDataset
+    updateMongo("replace-dataset-files-with-id", updateReplaceFilesInDataset)
 
     // migrate metadata to jsonld
-    migrateMetadataRepresentationtoJSONLD
+    updateMongo("migrate-metadata-jsonld", migrateMetadataRepresentationtoJSONLD)
 
     // collection now requires author
-    collectionRequiresAuthor
+    updateMongo("collection-author", collectionRequiresAuthor)
 
     // Adds creation date and expiration date to Space Invites assumes they were just created.
-    updateSpaceInvites
+    updateMongo("update-space-invites", updateSpaceInvites)
 
     // Add file length, sha512 to all uploads and fixes path
-    addLengthSha512PathFile
+    updateMongo("update-file-length-sha512-path", addLengthSha512PathFile)
+
+    // Fix sha512
+    updateMongo("fixing-mongo-sha512", fixSha512)
+
+    //remove Affiliation and License, access and cost in user.repositoryPreferences
+    updateUserPreference
   }
 
-  private def updateMongoChangeUserType {
+  private def updateMongo(updateKey: String, block: () => Unit): Unit = {
     val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
-    if (!appConfig.hasPropertyValue("mongodb.updates", "fixing-typehint-users")) {
+    if (!appConfig.hasPropertyValue("mongodb.updates", updateKey)) {
       if (System.getProperty("MONGOUPDATE") != null) {
-        Logger.info("[MongoDBUpdate] : Fixing _typeHint for users.")
-        val q = MongoDBObject("_typeHint" -> "securesocial.core.SocialUser")
-        val o = MongoDBObject("$set" -> MongoDBObject("_typeHint" -> "models.ClowderUser"))
-        collection("social.users").update(q, o, multi=true, concern=WriteConcern.Safe)
-        appConfig.addPropertyValue("mongodb.updates", "fixing-typehint-users")
-      } else {
-        Logger.warn("[MongoDBUpdate] : Missing fix _typeHint for users.")
-      }
-    }
-  }
-
-  private def updateMongoAddFirstSpace {
-    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
-
-    if (!appConfig.hasPropertyValue("mongodb.updates", "convert-to-spaces")) {
-      if (System.getProperty("MONGOUPDATE") != null) {
-        val spaces = ProjectSpaceDAO.count(new MongoDBObject())
-        if (spaces == 0) {
-          val datasets = Dataset.count(new MongoDBObject())
-          val collections = Collection.count(new MongoDBObject())
-          val users = SocialUserDAO.count(new MongoDBObject())
-          if ((datasets != 0) || (collections != 0)) {
-            Logger.info("[MongoDBUpdate] : Found datasets/collections, will add all to default space")
-
-            // create roles (this is called before Global)
-            if (RoleDAO.count() == 0) {
-              RoleDAO.save(Role.Admin)
-              RoleDAO.save(Role.Editor)
-              RoleDAO.save(Role.Viewer)
-            }
-
-            // create the space
-            val spacename = java.net.InetAddress.getLocalHost.getHostName
-            val newspace = new ProjectSpace(name=spacename, description="", created=new Date(), creator=UUID("000000000000000000000000"),
-              homePage=List.empty[URL], logoURL=None, bannerURL=None, metadata=List.empty[Metadata],
-              collectionCount=collections.toInt, datasetCount=datasets.toInt, userCount=users.toInt)
-            ProjectSpaceDAO.save(newspace)
-            val spaceId = new ObjectId(newspace.id.stringify)
-
-            // add space to all datasets/collections
-            val q = MongoDBObject()
-            val o = MongoDBObject("$set" -> MongoDBObject("spaces" -> List[ObjectId](spaceId)))
-            collection("datasets").update(q ,o, multi=true)
-            collection("collections").update(q ,o, multi=true)
-
-            // add all users as admin
-            val adminRole = collection("roles").findOne(MongoDBObject("name" -> "Admin"))
-            val spaceRole = MongoDBObject("_typeHint" -> "models.UserSpaceAndRole", "spaceId" -> spaceId, "role" -> adminRole)
-            collection("social.users").update(MongoDBObject(), $push("spaceandrole" -> spaceRole), multi=true)
-
-          } else {
-            Logger.info("[MongoDBUpdate] : No datasets/collections found, will not create default space")
+        Logger.info(s"About to begin update of mongo : ${updateKey}.")
+        val start = System.currentTimeMillis()
+        try {
+          block()
+          appConfig.addPropertyValue("mongodb.updates", updateKey)
+        } catch {
+          case e:Exception => {
+            Logger.error(s"Could not run mongoupdate for ${updateKey}", e)
           }
-        } else {
-          Logger.info("[MongoDBUpdate] : Found spaces, will not create default space")
         }
-        appConfig.addPropertyValue("mongodb.updates", "convert-to-spaces")
+        val time = (System.currentTimeMillis() - start) / 1000.0
+        Logger.info(s"Took ${time} second to migrate mongo : ${updateKey}")
       } else {
-        Logger.warn("[MongoDBUpdate] : Missing fix to convert to spaces.")
+        Logger.warn(s"Missing mongoupdate ${updateKey}. Application might not be broken.")
       }
     }
+  }
 
-    updateTagLength()
+  private def updateMongoChangeUserType() {
+    val q = MongoDBObject("_typeHint" -> "securesocial.core.SocialUser")
+    val o = MongoDBObject("$set" -> MongoDBObject("_typeHint" -> "models.ClowderUser"))
+    collection("social.users").update(q, o, multi=true, concern=WriteConcern.Safe)
+  }
+
+  private def updateMongoAddFirstSpace() {
+    val spaces = ProjectSpaceDAO.count(new MongoDBObject())
+    if (spaces == 0) {
+      val datasets = Dataset.count(new MongoDBObject())
+      val collections = Collection.count(new MongoDBObject())
+      val users = SocialUserDAO.count(new MongoDBObject())
+      if ((datasets != 0) || (collections != 0)) {
+        Logger.info("[MongoDBUpdate] : Found datasets/collections, will add all to default space")
+
+        // create roles (this is called before Global)
+        if (RoleDAO.count() == 0) {
+          RoleDAO.save(Role.Admin)
+          RoleDAO.save(Role.Editor)
+          RoleDAO.save(Role.Viewer)
+        }
+
+        // create the space
+        val spacename = java.net.InetAddress.getLocalHost.getHostName
+        val newspace = new ProjectSpace(name=spacename, description="", created=new Date(), creator=UUID("000000000000000000000000"),
+          homePage=List.empty[URL], logoURL=None, bannerURL=None, metadata=List.empty[Metadata],
+          collectionCount=collections.toInt, datasetCount=datasets.toInt, userCount=users.toInt)
+        ProjectSpaceDAO.save(newspace)
+        val spaceId = new ObjectId(newspace.id.stringify)
+
+        // add space to all datasets/collections
+        val q = MongoDBObject()
+        val o = MongoDBObject("$set" -> MongoDBObject("spaces" -> List[ObjectId](spaceId)))
+        collection("datasets").update(q ,o, multi=true)
+        collection("collections").update(q ,o, multi=true)
+
+        // add all users as admin
+        val adminRole = collection("roles").findOne(MongoDBObject("name" -> "Admin"))
+        val spaceRole = MongoDBObject("_typeHint" -> "models.UserSpaceAndRole", "spaceId" -> spaceId, "role" -> adminRole)
+        collection("social.users").update(MongoDBObject(), $push("spaceandrole" -> spaceRole), multi=true)
+
+      } else {
+        Logger.info("[MongoDBUpdate] : No datasets/collections found, will not create default space")
+      }
+    } else {
+      Logger.info("[MongoDBUpdate] : Found spaces, will not create default space")
+    }
   }
 
   def updateTagLength() {
-    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
-
-    // migrate users to new model
-    if (!appConfig.hasPropertyValue("mongodb.updates", "fixing-taglength")) {
-      if (System.getProperty("MONGOUPDATE") != null) {
-        Logger.info("[MongoDBUpdate] : Fixing taglength.")
-        val q = MongoDBObject("tags" -> MongoDBObject("$exists" -> true, "$not" -> MongoDBObject("$size" -> 0)))
-        val maxTagLength = play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)
-        Logger.info("[MongoDBUpdate] : fixing " + collection("datasets").count(q) + " datasets")
-        collection("datasets").find(q).foreach { x =>
-          x.getAsOrElse[MongoDBList]("tags", MongoDBList.empty).foreach { case tag:DBObject =>
-            if (tag.getAsOrElse[String]("name", "").length > maxTagLength) {
-              Logger.info(x.get("_id").toString + " : truncating " + tag.getAsOrElse[String]("name", ""))
-              tag.put("name", tag.getAsOrElse[String]("name", "").substring(0, maxTagLength))
-            }
-          }
-          try {
-            collection("datasets").save(x)
-          } catch {
-            case e: BSONException => {
-              Logger.error(x.get("_id").toString + " : bad string\n" + x.toString, e)
-            }
-          }
+    val q = MongoDBObject("tags" -> MongoDBObject("$exists" -> true, "$not" -> MongoDBObject("$size" -> 0)))
+    val maxTagLength = play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)
+    Logger.info("[MongoDBUpdate] : fixing " + collection("datasets").count(q) + " datasets")
+    collection("datasets").find(q).foreach { x =>
+      x.getAsOrElse[MongoDBList]("tags", MongoDBList.empty).foreach { case tag:DBObject =>
+        if (tag.getAsOrElse[String]("name", "").length > maxTagLength) {
+          Logger.info(x.get("_id").toString + " : truncating " + tag.getAsOrElse[String]("name", ""))
+          tag.put("name", tag.getAsOrElse[String]("name", "").substring(0, maxTagLength))
         }
-        Logger.info("[MongoDBUpdate] : fixing " + collection("uploads.files").count(q) + " files")
-        collection("uploads.files").find(q).foreach { x =>
-          x.getAsOrElse[MongoDBList]("tags", MongoDBList.empty).foreach { case tag:DBObject =>
-            if (tag.getAsOrElse[String]("name", "").length > maxTagLength) {
-              Logger.info(x.get("_id").toString + " : truncating " + tag.getAsOrElse[String]("name", ""))
-              tag.put("name", tag.getAsOrElse[String]("name", "").substring(0, maxTagLength))
-            }
-          }
-          try {
-            collection("uploads.files").save(x)
-          } catch {
-            case e: BSONException => {
-              Logger.error(x.get("_id").toString + " : bad string\n" + x.toString, e)
-            }
-          }
+      }
+      try {
+        collection("datasets").save(x)
+      } catch {
+        case e: BSONException => {
+          Logger.error(x.get("_id").toString + " : bad string\n" + x.toString, e)
         }
-        Logger.info("[MongoDBUpdate] : fixing " + collection("sections").count(q) + " files")
-        collection("sections").find(q).foreach { x =>
-          x.getAsOrElse[MongoDBList]("tags", MongoDBList.empty).foreach { case tag:DBObject =>
-            if (tag.getAsOrElse[String]("name", "").length > maxTagLength) {
-              Logger.info(x.get("_id").toString + " : truncating " + tag.getAsOrElse[String]("name", ""))
-              tag.put("name", tag.getAsOrElse[String]("name", "").substring(0, maxTagLength))
-            }
-          }
-          try {
-            collection("sections").save(x)
-          } catch {
-            case e: BSONException => {
-              Logger.error(x.get("_id").toString + " : bad string\n" + x.toString, e)
-            }
-          }
+      }
+    }
+    collection("uploads.files").find(q).foreach { x =>
+      x.getAsOrElse[MongoDBList]("tags", MongoDBList.empty).foreach { case tag:DBObject =>
+        if (tag.getAsOrElse[String]("name", "").length > maxTagLength) {
+          Logger.info(x.get("_id").toString + " : truncating " + tag.getAsOrElse[String]("name", ""))
+          tag.put("name", tag.getAsOrElse[String]("name", "").substring(0, maxTagLength))
         }
-        appConfig.addPropertyValue("mongodb.updates", "fixing-taglength")
-      } else {
-        Logger.warn("[MongoDBUpdate] : Missing fix taglength for tags.")
+      }
+      try {
+        collection("uploads.files").save(x)
+      } catch {
+        case e: BSONException => {
+          Logger.error(x.get("_id").toString + " : bad string\n" + x.toString, e)
+        }
+      }
+    }
+    collection("sections").find(q).foreach { x =>
+      x.getAsOrElse[MongoDBList]("tags", MongoDBList.empty).foreach { case tag:DBObject =>
+        if (tag.getAsOrElse[String]("name", "").length > maxTagLength) {
+          Logger.info(x.get("_id").toString + " : truncating " + tag.getAsOrElse[String]("name", ""))
+          tag.put("name", tag.getAsOrElse[String]("name", "").substring(0, maxTagLength))
+        }
+      }
+      try {
+        collection("sections").save(x)
+      } catch {
+        case e: BSONException => {
+          Logger.error(x.get("_id").toString + " : bad string\n" + x.toString, e)
+        }
       }
     }
   }
 
-  private def updateMongoRemoveDatasetCollection {
-    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+  private def updateMongoRemoveDatasetCollection() {
+    collection("collections").foreach {c =>
+      val datasets = c.getAsOrElse[MongoDBList]("datasets", MongoDBList.empty)
+      c.removeField("datasets")
+      c.put("datasetCount", datasets.length)
+      collection("collections").save(c, WriteConcern.Safe)
 
-    if (!appConfig.hasPropertyValue("mongodb.updates", "removed-datasets-collection")) {
-      if (System.getProperty("MONGOUPDATE") != null) {
-        collection("collections").foreach {c =>
-          val datasets = c.getAsOrElse[MongoDBList]("datasets", MongoDBList.empty)
-          c.removeField("datasets")
-          c.put("datasetCount", datasets.length)
-          collection("collections").save(c, WriteConcern.Safe)
-
-          datasets.foreach {d =>
-            if (c._id.isDefined) {
-              collection("datasets").update(MongoDBObject("_id" -> d.asInstanceOf[DBObject].get("_id")), $addToSet("collections" -> c._id.get.toString))
-            }
-          }
+      datasets.foreach {d =>
+        if (c._id.isDefined) {
+          collection("datasets").update(MongoDBObject("_id" -> d.asInstanceOf[DBObject].get("_id")), $addToSet("collections" -> c._id.get.toString))
         }
-        appConfig.addPropertyValue("mongodb.updates", "removed-datasets-collection")
-      } else {
-        Logger.warn("[MongoDBUpdate] : Missing fix to remove datasets from collection.")
       }
     }
   }
 
-  private def updateMongoCollectionsInDatasetStringToUUID {
-    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
-
-    if (!appConfig.hasPropertyValue("mongodb.updates", "replace-dataset-collections-string-uuid")) {
-      if (System.getProperty("MONGOUPDATE") != null) {
-        collection("datasets").foreach { ds =>
-          val collection_string = ds.getAsOrElse[MongoDBList]("collections", MongoDBList.empty)
-          val collection_uuids = collection_string.map(col => new ObjectId(col.toString)).toList
-          ds.put("collections", collection_uuids)
-          try {
-            collection("datasets").save(ds, WriteConcern.Safe)
-          } catch {
-            case e: BSONException => Logger.error("Failed to refactor collections (String -> UUID) in  dataset with id" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString())
-          }
-        }
-        appConfig.addPropertyValue("mongodb.updates", "replace-dataset-collections-string-uuid")
-      } else {
-        Logger.warn("[MongoDBUpdate : Missing fix to replace the collections in the dataset with UUIDs")
+  private def updateMongoCollectionsInDatasetStringToUUID() {
+    collection("datasets").foreach { ds =>
+      val collection_string = ds.getAsOrElse[MongoDBList]("collections", MongoDBList.empty)
+      val collection_uuids = collection_string.map(col => new ObjectId(col.toString)).toList
+      ds.put("collections", collection_uuids)
+      try {
+        collection("datasets").save(ds, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Failed to refactor collections (String -> UUID) in  dataset with id" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
       }
     }
   }
@@ -461,250 +441,257 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   /**
    * Replaces the files in the datasets from a copy of the files to just the file UUID's.
    */
-  private def updateReplaceFilesInDataset{
-    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
-
-    if (!appConfig.hasPropertyValue("mongodb.updates", "replace-dataset-files-with-id")) {
-      if (System.getProperty("MONGOUPDATE") != null) {
-        collection("datasets").foreach { ds =>
-          val files = ds.getAsOrElse[MongoDBList]("files", MongoDBList.empty)
-          val fileIds = files.map(file => new ObjectId(file.asInstanceOf[BasicDBObject].get("_id").toString)).toList
-          ds.put("files", fileIds)
-          try {
-            collection("datasets").save(ds, WriteConcern.Safe)
-          }
-          catch {
-            case e: BSONException => Logger.error("Unable to update files in dataset:" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString())
-          }
-        }
-        appConfig.addPropertyValue("mongodb.updates", "replace-dataset-files-with-id")
-      } else {
-        Logger.warn("[MongoDBUpdate : Missing fix to replace the files in the dataset with UUIDs")
+  private def updateReplaceFilesInDataset() {
+    collection("datasets").foreach { ds =>
+      val files = ds.getAsOrElse[MongoDBList]("files", MongoDBList.empty)
+      val fileIds = files.map(file => new ObjectId(file.asInstanceOf[BasicDBObject].get("_id").toString)).toList
+      ds.put("files", fileIds)
+      try {
+        collection("datasets").save(ds, WriteConcern.Safe)
+      }
+      catch {
+        case e: BSONException => Logger.error("Unable to update files in dataset:" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
       }
     }
   }
 
 
-  private def migrateMetadataRepresentationtoJSONLD {
-    val updateId = "migrate-metadata-jsonld"
-    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+  private def migrateMetadataRepresentationtoJSONLD() {
     val metadataService: MetadataService = DI.injector.getInstance(classOf[MetadataService])
 
-    if (!appConfig.hasPropertyValue("mongodb.updates", updateId)) {
-      if (System.getProperty("MONGOUPDATE") != null) {
-        // update metadata on datasets
-        collection("datasets").foreach { ds =>
-          ds.getAs[ObjectId]("_id") match {
-            case Some(dsId) => {
-              val createdAt = new Date()
-              val attachedTo = Some(ResourceRef(ResourceRef.dataset, UUID(dsId.toString)))
-              val contextURL: Option[URL] = None
-              val contextID: Option[UUID] = None
-              val version = None
-              // user metadata
-              ds.getAs[DBObject]("userMetadata") match {
-                case Some(umd) => {
-                  if (umd.keySet().size() > 0) {
-                    val userMD = Json.parse(com.mongodb.util.JSON.serialize(umd))
-                    val user = User.anonymous
-                    val userURI = "https://clowder.ncsa.illinois.edu/clowder/api/users/" + user.id
-                    val creatorUser = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
-                    val metadataUser = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorUser, userMD, version)
-                    metadataService.addMetadata(metadataUser)
-                  }
-                }
-                case None => {}
-              }
-              // system metadata
-              ds.getAs[DBObject]("metadata") match {
-                case Some(tmd) => {
-                  if (tmd.keySet().size() > 0) {
-                    val techMD = Json.parse(com.mongodb.util.JSON.serialize(tmd))
-                    val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
-                    val metadataTech = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
-                    metadataService.addMetadata(metadataTech)
-                  }
-                }
-                case None => {}
+    // update metadata on datasets
+    collection("datasets").foreach { ds =>
+      ds.getAs[ObjectId]("_id") match {
+        case Some(dsId) => {
+          val createdAt = new Date()
+          val attachedTo = Some(ResourceRef(ResourceRef.dataset, UUID(dsId.toString)))
+          val contextURL: Option[URL] = None
+          val contextID: Option[UUID] = None
+          val version = None
+          // user metadata
+          ds.getAs[DBObject]("userMetadata") match {
+            case Some(umd) => {
+              if (umd.keySet().size() > 0) {
+                val userMD = Json.parse(com.mongodb.util.JSON.serialize(umd))
+                val user = User.anonymous
+                val userURI = "https://clowder.ncsa.illinois.edu/clowder/api/users/" + user.id
+                val creatorUser = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
+                val metadataUser = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorUser, userMD, version)
+                metadataService.addMetadata(metadataUser)
               }
             }
-            case None => Logger.error(s"[MongoDBUpdate : Missing dataset id")
+            case None => {}
           }
-        }
-        // update metadata on files
-        collection("uploads.files").foreach { ds =>
-          ds.getAs[ObjectId]("_id") match {
-            case Some(fileId) => {
-              val createdAt = new Date()
-              val attachedTo = Some(ResourceRef(ResourceRef.file, UUID(fileId.toString)))
-              val contextURL: Option[URL] = None
-              val contextID: Option[UUID] = None
-              val version = None
-              // user metadata
-              ds.getAs[DBObject]("userMetadata") match {
-                case Some(umd) => {
-                  if (umd.keySet().size() > 0) {
-                    val userMD = Json.parse(com.mongodb.util.JSON.serialize(umd))
-                    val user = User.anonymous
-                    val userURI = "https://clowder.ncsa.illinois.edu/clowder/api/users/" + user.id
-                    val creatorUser = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
-                    val metadataUser = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorUser, userMD, version)
-                    metadataService.addMetadata(metadataUser)
-                  }
-                }
-                case None => {}
-              }
-              // system metadata
-              if(ds.containsField("metadata")) {
-                val tmd = ds.get("metadata")
-                if (tmd.isInstanceOf[BasicDBList]) {
-                  val tmdlist = tmd.asInstanceOf[BasicDBList]
-                  tmdlist.foreach { x =>
-                    val techMD = Json.parse(com.mongodb.util.JSON.serialize(x))
-                    val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
-                    val metadataTech = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
-                    metadataService.addMetadata(metadataTech)
-                  }
-                } else {
-                  val techMD = Json.parse(com.mongodb.util.JSON.serialize(tmd))
-                  val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
-                  val metadataTech = models.Metadata(UUID.generate, attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
-                  metadataService.addMetadata(metadataTech)
-                }
+          // system metadata
+          ds.getAs[DBObject]("metadata") match {
+            case Some(tmd) => {
+              if (tmd.keySet().size() > 0) {
+                val techMD = Json.parse(com.mongodb.util.JSON.serialize(tmd))
+                val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
+                val metadataTech = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
+                metadataService.addMetadata(metadataTech)
               }
             }
-            case None => Logger.error(s"[MongoDBUpdate : Missing file id")
+            case None => {}
           }
         }
-        appConfig.addPropertyValue("mongodb.updates", updateId)
-      } else {
-        Logger.warn("[MongoDBUpdate] : Missing fix to update metadata to JSONLD representation")
+        case None => Logger.error(s"[MongoDBUpdate : Missing dataset id")
+      }
+    }
+    // update metadata on files
+    collection("uploads.files").foreach { ds =>
+      ds.getAs[ObjectId]("_id") match {
+        case Some(fileId) => {
+          val createdAt = new Date()
+          val attachedTo = Some(ResourceRef(ResourceRef.file, UUID(fileId.toString)))
+          val contextURL: Option[URL] = None
+          val contextID: Option[UUID] = None
+          val version = None
+          // user metadata
+          ds.getAs[DBObject]("userMetadata") match {
+            case Some(umd) => {
+              if (umd.keySet().size() > 0) {
+                val userMD = Json.parse(com.mongodb.util.JSON.serialize(umd))
+                val user = User.anonymous
+                val userURI = "https://clowder.ncsa.illinois.edu/clowder/api/users/" + user.id
+                val creatorUser = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
+                val metadataUser = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorUser, userMD, version)
+                metadataService.addMetadata(metadataUser)
+              }
+            }
+            case None => {}
+          }
+          // system metadata
+          if(ds.containsField("metadata")) {
+            val tmd = ds.get("metadata")
+            if (tmd.isInstanceOf[BasicDBList]) {
+              val tmdlist = tmd.asInstanceOf[BasicDBList]
+              tmdlist.foreach { x =>
+                val techMD = Json.parse(com.mongodb.util.JSON.serialize(x))
+                val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
+                val metadataTech = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
+                metadataService.addMetadata(metadataTech)
+              }
+            } else {
+              val techMD = Json.parse(com.mongodb.util.JSON.serialize(tmd))
+              val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
+              val metadataTech = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
+              metadataService.addMetadata(metadataTech)
+            }
+          }
+        }
+        case None => Logger.error(s"[MongoDBUpdate : Missing file id")
       }
     }
   }
 
-  private def collectionRequiresAuthor(): Unit = {
-    val updateId = "collection-author"
-    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
-
-    if (!appConfig.hasPropertyValue("mongodb.updates", updateId)) {
-      if (System.getProperty("MONGOUPDATE") != null) {
-        val q = "author" $exists false
-        val o = MongoDBObject("$set" -> MongoDBObject("author" -> SocialUserDAO.dao.toDBObject(User.anonymous)))
-        collection("collections").update(q, o, multi=true)
-        appConfig.addPropertyValue("mongodb.updates", updateId)
-      } else {
-        Logger.warn("[MongoDBUpdate] : Missing fix to set anonymous author to collection when not set")
-      }
-    }
+  private def collectionRequiresAuthor() {
+      val q = "author" $exists false
+      val o = MongoDBObject("$set" -> MongoDBObject("author" -> SocialUserDAO.dao.toDBObject(User.anonymous)))
+      collection("collections").update(q, o, multi=true)
   }
 
   /**
    * Adds a creation and expiration date to old invites. Considering them as just created when the update script is run.
    */
-  private def updateSpaceInvites{
-    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+  private def updateSpaceInvites() {
+    collection("spaces.invites").foreach { invite =>
 
-    if (!appConfig.hasPropertyValue("mongodb.updates", "update-space-invites")) {
-      if (System.getProperty("MONGOUPDATE") != null) {
-        collection("spaces.invites").foreach { invite =>
-
-          val TokenDurationKey = securesocial.controllers.Registration.TokenDurationKey
-          val DefaultDuration = securesocial.controllers.Registration.DefaultDuration
-          val TokenDuration = Play.current.configuration.getInt(TokenDurationKey).getOrElse(DefaultDuration)
-          invite.put("creationTime", new Date())
-          val ONE_MINUTE_IN_MILLIS = 60000
-          val date: Calendar = Calendar.getInstance()
-          val t = date.getTimeInMillis()
-          val afterAddingMins: Date = new Date(t + (TokenDuration * ONE_MINUTE_IN_MILLIS))
-          invite.put("expirationTime", afterAddingMins)
-          try {
-            collection("spaces.invites").save(invite, WriteConcern.Safe)
-          }
-          catch {
-            case e: BSONException => Logger.error("Unable to update invite:" + invite.getAsOrElse[ObjectId]("_id", new ObjectId()).toString())
-          }
-        }
-        appConfig.addPropertyValue("mongodb.updates", "update-space-invites")
-      } else {
-        Logger.warn("[MongoDBUpdate : Missing fix to add creation and expiration time to invites")
+      val TokenDurationKey = securesocial.controllers.Registration.TokenDurationKey
+      val DefaultDuration = securesocial.controllers.Registration.DefaultDuration
+      val TokenDuration = Play.current.configuration.getInt(TokenDurationKey).getOrElse(DefaultDuration)
+      invite.put("creationTime", new Date())
+      val ONE_MINUTE_IN_MILLIS = 60000
+      val date: Calendar = Calendar.getInstance()
+      val t = date.getTimeInMillis
+      val afterAddingMins: Date = new Date(t + (TokenDuration * ONE_MINUTE_IN_MILLIS))
+      invite.put("expirationTime", afterAddingMins)
+      try {
+        collection("spaces.invites").save(invite, WriteConcern.Safe)
+      }
+      catch {
+        case e: BSONException => Logger.error("Unable to update invite:" + invite.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
       }
     }
   }
 
-  private def addLengthSha512PathFile: Unit = {
-    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
-
-    if (!appConfig.hasPropertyValue("mongodb.updates", "update-file-length-sha512-path")) {
-      if (System.getProperty("MONGOUPDATE") != null) {
-        val dbss = new DiskByteStorageService()
-        lazy val rootPath = Play.current.configuration.getString("medici2.diskStorage.path").getOrElse("")
-        for (prefix <- List[String]("uploads", "previews", "textures", "geometries", "thumbnails", "tiles")) {
-          val files = gridFS(prefix)
-          collection(prefix + ".files").foreach { file =>
-            val relpath = file.getOrElse("path", "").toString
-            val id = file.getAsOrElse[ObjectId]("_id", new ObjectId())
-            var deletepath = false
-            if (relpath.contains("/")) {
-              val fullpath = if (relpath.startsWith("/"))
-                relpath
-              else
-                dbss.makePath(rootPath, prefix, relpath)
-              file.put("path", fullpath)
-              file.put("loader", classOf[DiskByteStorageService].getName)
-              dbss.load(fullpath, prefix) match {
-                case Some(is) => {
-                  val cis = new CountingInputStream(is)
-                  val sha512 = DigestUtils.sha512Hex(cis)
-                  cis.close()
-                  file.put("sha512", sha512)
-                  file.put("length", cis.getByteCount)
-                }
-                case None => {
-                  file.put("sha512", "")
-                  file.put("length", -1)
-                }
-              }
-            } else {
-              if (file.containsField("path"))
-                deletepath = true
-              file.put("loader", classOf[MongoDBByteStorage].getName)
-              files.findOne(id) match {
-                case Some(f) => {
-                  try {
-                    val cis = new CountingInputStream(f.inputStream)
-                    val sha512 = DigestUtils.sha512Hex(cis)
-                    cis.close()
-                    file.put("sha512", sha512)
-                    file.put("length", cis.getByteCount)
-                  } catch {
-                    case _: Throwable => {
-                      file.put("sha512", "")
-                      file.put("length", -1)
-                    }
-                  }
-                }
-                case None => {
+  private def addLengthSha512PathFile() {
+    val dbss = new DiskByteStorageService()
+    lazy val rootPath = Play.current.configuration.getString("medici2.diskStorage.path").getOrElse("")
+    for (prefix <- List[String]("uploads", "previews", "textures", "geometries", "thumbnails", "tiles")) {
+      val files = gridFS(prefix)
+      collection(prefix + ".files").foreach { file =>
+        val relpath = file.getOrElse("path", "").toString
+        val id = file.getAsOrElse[ObjectId]("_id", new ObjectId())
+        var deletepath = false
+        if (relpath.contains("/")) {
+          val fullpath = if (relpath.startsWith("/"))
+            relpath
+          else
+            dbss.makePath(rootPath, prefix, relpath)
+          file.put("path", fullpath)
+          file.put("loader", classOf[DiskByteStorageService].getName)
+          dbss.load(fullpath, prefix) match {
+            case Some(is) => {
+              val cis = new CountingInputStream(is)
+              val sha512 = DigestUtils.sha512Hex(cis)
+              cis.close()
+              file.put("sha512", sha512)
+              file.put("length", cis.getByteCount)
+            }
+            case None => {
+              file.put("sha512", "")
+              file.put("length", -1)
+            }
+          }
+        } else {
+          if (file.containsField("path"))
+            deletepath = true
+          file.put("loader", classOf[MongoDBByteStorage].getName)
+          files.findOne(id) match {
+            case Some(f) => {
+              try {
+                val cis = new CountingInputStream(f.inputStream)
+                val sha512 = DigestUtils.sha512Hex(cis)
+                cis.close()
+                file.put("sha512", sha512)
+                file.put("length", cis.getByteCount)
+              } catch {
+                case _: Throwable => {
                   file.put("sha512", "")
                   file.put("length", -1)
                 }
               }
             }
-            //Logger.info(prefix + " " + id + " " + file.get("filename") + " " + file.get("path") + " " + file.get("sha512") + " " + file.get("length"))
-            try {
-              collection(prefix + ".files").save(file, WriteConcern.Safe)
-              if (deletepath)
-                collection(prefix + ".files").update(MongoDBObject("_id" -> id), $unset("path"))
-            }
-            catch {
-              case e: Exception => Logger.error("Unable to update file :" + id.toString(), e)
+            case None => {
+              file.put("sha512", "")
+              file.put("length", -1)
             }
           }
         }
-        appConfig.addPropertyValue("mongodb.updates", "update-file-length-sha512-path")
-      } else {
-        Logger.warn("[MongoDBUpdate : Missing fix to add file length, sha512 and path")
+        try {
+          collection(prefix + ".files").save(file, WriteConcern.Safe)
+          if (deletepath)
+            collection(prefix + ".files").update(MongoDBObject("_id" -> id), $unset("path"))
+        }
+        catch {
+          case e: Exception => Logger.error("Unable to update file :" + id.toString, e)
+        }
       }
+    }
+
+    // no need to fixSha512
+    DI.injector.getInstance(classOf[AppConfigurationService]).addPropertyValue("mongodb.updates", "fixing-mongo-sha512")
+  }
+
+  private def fixSha512() {
+    for (prefix <- List[String]("uploads", "previews", "textures", "geometries", "thumbnails", "tiles")) {
+      val files = gridFS(prefix)
+      collection(prefix + ".files").find(MongoDBObject("loader" -> classOf[MongoDBByteStorage].getName)).snapshot().foreach { file =>
+        val id = file.getAsOrElse[ObjectId]("_id", new ObjectId())
+        files.findOne(id) match {
+          case Some(f) => {
+            try {
+              val cis = new CountingInputStream(f.inputStream)
+              val sha512 = DigestUtils.sha512Hex(cis)
+              cis.close()
+              file.put("sha512", sha512)
+              file.put("length", cis.getByteCount)
+            } catch {
+              case _: Throwable => {
+                file.put("sha512", "")
+                file.put("length", -1)
+              }
+            }
+          }
+          case None => {
+            file.put("sha512", "")
+            file.put("length", -1)
+          }
+        }
+        try {
+          collection(prefix + ".files").save(file, WriteConcern.Safe)
+        }
+        catch {
+          case e: Exception => Logger.error("Unable to update file :" + id.toString, e)
+        }
+      }
+    }
+  }
+
+  private def updateUserPreference{
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("mongodb.updates", "update-user-preference")) {
+      if (System.getProperty("MONGOUPDATE") != null) {
+        collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.access"), multi=true)
+        collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.affiliation"), multi=true)
+        collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.cost"), multi=true)
+        collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.license"), multi=true)
+      }
+      appConfig.addPropertyValue("mongodb.updates", "update-user-preference")
+    } else {
+      Logger.warn("[MongoDBUpdate : Missing fix to remove fields in user.repositoryPreferences ")
     }
   }
 }

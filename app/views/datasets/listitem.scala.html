@@ -8,7 +8,7 @@
                 @if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
             </div>
             <div class="col-md-10 col-sm-10 col-lg-10">
-                <h2><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></h2>
+                <h3><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></h3>
                 <div class ="row">
                     <div class="col-md-6 col-sm-6 col-lg-6">
                         <ul class="list-unstyled">
