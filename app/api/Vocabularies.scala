@@ -38,13 +38,28 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
     }
   }
 
+  @ApiOperation(value = "Get vocabularies by author",
+    notes = "",
+    responseClass = "None", httpMethod = "GET")
+  def getByAuthor() = PrivateServerAction  {implicit request =>
+
+    val user = request.user
+
+    user match {
+      case Some(identity) => {
+        val result = vocabularyService.getByAuthor(identity)
+        Ok(toJson(result))
+      }
+      case None => BadRequest("No user matches that user")
+    }
+  }
+
   @ApiOperation(value = "Get vocabulary by name author",
     notes = "",
     responseClass = "None", httpMethod = "GET")
   def getByNameAndAuthor(name: String) = PrivateServerAction  {implicit request =>
 
     val user = request.user
-
 
     user match {
       case Some(identity) => {
@@ -53,7 +68,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
       }
       case None => BadRequest("No user matches that user")
     }
-
   }
 
   @ApiOperation(value = "List all vocabularies the user can view",

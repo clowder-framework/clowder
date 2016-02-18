@@ -42,10 +42,12 @@ class MongoDBVocabularyService @Inject() (userService: UserService) extends Voca
     Vocabulary.dao.find(MongoDBObject("name"->name)).toList
   }
 
+  def getByAuthor(author: Identity) : List[Vocabulary] = {
+    Vocabulary.findAll().toList.filter(p => p.author.get.identityId == author.identityId)
+  }
+
   def getByAuthorAndName(author : Identity, name : String) : List[Vocabulary] = {
-    val list = Vocabulary.findAll().toList
-    val byAuthorName = list.filter(p => (p.author.get.identityId == author.identityId ) && (p.name == name))
-    return byAuthorName
+    Vocabulary.findAll().toList.filter(p => (p.author.get.identityId == author.identityId ) && (p.name == name))
   }
 
   def delete(id : UUID) = Try {
