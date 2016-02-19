@@ -22,6 +22,7 @@ import play.api.mvc.AnyContent
 import services._
 import _root_.util.{JSONLD, License}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.collection.mutable.ListBuffer
 
 /**
  * Dataset API.
@@ -42,6 +43,7 @@ class Datasets @Inject()(
   rdfsparql: RdfSPARQLService,
   events: EventService,
   spaces: SpaceService,
+  folders: FolderService,
   userService: UserService) extends ApiController {
 
   @ApiOperation(value = "Get a specific dataset",
@@ -621,19 +623,56 @@ class Datasets @Inject()(
   }
 
   @ApiOperation(value = "List files in dataset",
-      notes = "Datasets and descriptions.",
-      responseClass = "None", httpMethod = "GET")
+    notes = "Datasets and descriptions.",
+    responseClass = "None", httpMethod = "GET")
   def datasetFilesList(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
-      datasets.get(id) match {
-        case Some(dataset) => {
-          val list: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
-            case Some(file) => jsonFile(file)
-            case None => Logger.error(s"Error getting File $fileId")
-          }).asInstanceOf[List[JsValue]]
-          Ok(toJson(list))
-        }
-        case None => Logger.error("Error getting dataset" + id); InternalServerError
+    datasets.get(id) match {
+      case Some(dataset) => {
+        val list: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
+          case Some(file) => jsonFile(file)
+          case None => Logger.error(s"Error getting File $fileId")
+        }).asInstanceOf[List[JsValue]]
+        Ok(toJson(list))
       }
+      case None => Logger.error("Error getting dataset" + id); InternalServerError
+    }
+  }
+
+  @ApiOperation(value = "List files in dataset and within folders",
+    notes = "Datasets and descriptions.",
+    responseClass = "None", httpMethod = "GET")
+  def datasetAllFilesList(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    datasets.get(id) match {
+      case Some(dataset) => {
+        val listFiles: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
+          case Some(file) => jsonFile(file)
+          case None => Logger.error(s"Error getting File $fileId")
+        }).asInstanceOf[List[JsValue]]
+        val list = listFiles ++ getFilesWithinFolders(id)
+        Ok(toJson(list))
+      }
+      case None => Logger.error("Error getting dataset" + id); InternalServerError
+    }
+  }
+
+  private def getFilesWithinFolders(id: UUID): List[JsValue] = {
+    val output = new ListBuffer[JsValue]()
+    datasets.get(id) match {
+      case Some(dataset) => {
+        val childFolders = folders.findByParentDatasetId(id)
+        childFolders.map {
+          folder =>
+            folder.files.map {
+              fileId => files.get(fileId) match {
+                case Some(file) => output += jsonFile(file)
+                case None => Logger.error(s"Error getting file $fileId")
+              }
+            }
+        }
+      }
+      case None => Logger.error(s"Error getting dataset $id")
+    }
+    output.toList.asInstanceOf[List[JsValue]]
   }
 
   def jsonFile(file: models.File): JsValue = {
