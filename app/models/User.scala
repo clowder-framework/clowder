@@ -71,7 +71,7 @@ object User {
     new IdentityId("anonymous", ""),
     "Anonymous", "User", "Anonymous User",
     None,
-    AuthenticationMethod.UserPassword)
+    AuthenticationMethod.UserPassword, active=true)
 }
 
 case class ClowderUser(
