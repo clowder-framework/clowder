@@ -1,14 +1,5 @@
 (function($, Configuration) {
 
-    function get_random_color() {
-        // From http://stackoverflow.com/questions/1484506/random-color-generator-in-javascript
-        function c() {
-            var hex = Math.floor(Math.random()*256).toString(16);
-            return ("0"+String(hex)).substr(-2); // pad with zero
-        }
-        return "#"+c()+c()+c();
-    }
-
     function checkForLatLng(json_obj) {
         /**
          * Iterate through object looking for lat/lon data under several possible fields
