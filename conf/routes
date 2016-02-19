@@ -672,3 +672,9 @@ GET         /t2c2/templates/unsecuredTest                                       
 GET         /t2c2/templates/listExperimentTemplates                                                    @api.Templates.listTemplates()
 GET         /t2c2/templates/getExperimentTemplateById/:id                                              @api.Templates.getTemplateById(id: UUID)
 GET         /t2c2/templates/getExperimentTemplateByName/:name                                          @api.Templates.getTemplateByName(name : String)
+
+#----------------------------------------------------
+# T2C2 endpoints
+#----------------------------------------------------
+
+PUT         /t2c2/files/:id/updateDescription                                                           @api.Files.updateDescriptionT2C2(id: UUID)
