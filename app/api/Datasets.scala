@@ -1689,7 +1689,16 @@ class Datasets @Inject()(
   def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION)
       (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
     implicit val pec = ec.prepare()
-    val inputFiles = dataset.files.flatMap(f=>files.get(f))
+    val initialFiles: List[File] = dataset.files.flatMap(f=>files.get(f))
+    val filesWithinFolders = new ListBuffer[File]()
+
+    folders.findByParentDatasetId(dataset.id).map {
+      folder => folder.files.map(f=> files.get(f) match {
+        case Some(file) => filesWithinFolders += file
+        case None => Logger.error(s"No file with id $f")
+      })
+    }
+    val inputFiles = initialFiles ++ filesWithinFolders.toList
     // which file we are currently processing
     var count = 0
     val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
