@@ -116,10 +116,17 @@
             });
 
             // SET UP SELECTION
+            var select_color = '#FF0000'
+            var select_fill  = '#FF4444'
             var selectStyle = new ol.style.Style({
                 image: new ol.style.Circle({
-                    fill: new ol.style.Fill({color:'#FF0000'}),
-                    radius: 10
+                    fill: new ol.style.Fill({color:select_color}),
+                    radius: 6
+                }),
+                fill: new ol.style.Fill({color:select_fill}),
+                stroke: new ol.style.Stroke({
+                    color: select_color,
+                    width: 2
                 })
             });
             var selector = new ol.interaction.Select({
@@ -128,7 +135,41 @@
                 },
                 style: [selectStyle]
             });
-            map.getInteractions().extend([]);
+            map.getInteractions().extend([selector]);
+
+            // SET SELECTION POPUP
+            var popupDiv = '<div style="fill=rgb(0,0,0)" id="popup-div"></div>'
+            $(Configuration.div).append(popupDiv);
+            var overlay = new ol.Overlay({
+                element: document.getElementById('popup-div'),
+                autoPan: true,
+                autoPanAnimation: {
+                    duration: 250
+                }
+            });
+            map.addOverlay(overlay);
+            map.on('click', function(evt){
+                var coord = ol.proj.transform(evt.coordinate, 'EPSG:3857', 'EPSG:4326')
+                var allLayers = map.getLayers()
+                var foundTarget = false;
+                allLayers.forEach(function(lyr) {
+                    if (lyr instanceof ol.layer.Vector && lyr.getVisible()) {
+                        var hitFeats = lyr.getSource().getFeaturesAtCoordinate(evt.coordinate);
+                        if (hitFeats.length > 0 && !foundTarget) {
+                            foundTarget = true;
+                            var disp = hitFeats[0].get('name');
+                            document.getElementById("popup-div").innerHTML = '<code>'+disp+'</code>';
+                            overlay.setPosition(evt.coordinate);
+                        }
+                    }
+                });
+
+                if (!foundTarget) {
+                    document.getElementById("popup-div").innerHTML = '';
+                    overlay.setPosition(undefined);
+                }
+
+            });
 
             // fix for MMDB-1617
             // SET UP VIEW REFRESH
@@ -168,7 +209,8 @@
                 var latLon = latLonList[c]
                 layerFeats.push(new ol.Feature({
                     geometry: new ol.geom.Point(
-                        ol.proj.transform([latLon[1],latLon[0]],coordProjection,"EPSG:3857"))
+                        ol.proj.transform([latLon[1],latLon[0]],coordProjection,"EPSG:3857")),
+                    name: layerName
                 }))
             }
             var vectorSource = new ol.source.Vector({
@@ -221,9 +263,14 @@
             // CREATE LAYER
             var allFeats = new Array()
             for (var gj in geojson) {
-                allFeats = allFeats.concat(new ol.format.GeoJSON().readFeatures(geojson[gj], {
+                var fts = new ol.format.GeoJSON().readFeatures(geojson[gj], {
                     featureProjection: jsonProjection
-                }));
+                });
+                for (var currft in fts) {
+                    fts[currft].set('name', layerName)
+                }
+
+                allFeats = allFeats.concat(fts);
             }
 
             var vectorSource = new ol.source.Vector({
@@ -241,11 +288,12 @@
                     }),
                     fill: new ol.style.Fill({color:layerColor}),
                     stroke: new ol.style.Stroke({
-                        color: layerColor,
+                        color: '#000000',
                         width: 2
                     })
                 })
             });
+            vectorLayer.set('selectable', true);
             map.addLayer(vectorLayer);
 
             // LAYER CONTROL
