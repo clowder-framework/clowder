@@ -1689,23 +1689,34 @@ class Datasets @Inject()(
   def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION)
       (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
     implicit val pec = ec.prepare()
-    val initialFiles: List[File] = dataset.files.flatMap(f=>files.get(f))
-    val filesWithinFolders = new ListBuffer[File]()
+    var folderNameMap = scala.collection.mutable.Map.empty[UUID, String]
+    var inputFilesBuffer = new ListBuffer[File]()
+    dataset.files.map(f=>files.get(f) match {
+      case Some(file) => {
+        inputFilesBuffer += file
+        folderNameMap(file.id) = file.id.stringify
+      }
+      case None => Logger.error(s"No file with id $f")
+    })
+
 
     folders.findByParentDatasetId(dataset.id).map {
       folder => folder.files.map(f=> files.get(f) match {
-        case Some(file) => filesWithinFolders += file
+        case Some(file) => {
+          inputFilesBuffer += file
+          folderNameMap(file.id) = folder.displayName + "/" + file.id.stringify
+        }
         case None => Logger.error(s"No file with id $f")
       })
     }
-    val inputFiles = initialFiles ++ filesWithinFolders.toList
+    val inputFiles = inputFilesBuffer.toList
     // which file we are currently processing
     var count = 0
     val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
     val zip = new ZipOutputStream((byteArrayOutputStream))
     // zip compression level
     zip.setLevel(compression)
-    var is: Option[InputStream] = addFileToZip(inputFiles(count), zip)
+    var is: Option[InputStream] = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
 
     Enumerator.generateM({
       is match {
@@ -1722,7 +1733,7 @@ class Datasets @Inject()(
               count = count + 1
               // more files available
               if (count < inputFiles.size) {
-                is = addFileToZip(inputFiles(count), zip)
+                is = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
               } else {
                 // close the zip file and exit
                 zip.close()
@@ -1754,10 +1765,10 @@ class Datasets @Inject()(
    * @param zip zip output stream. One stream per dataset.
    * @return input stream for input file
    */
-  private def addFileToZip(file: models.File, zip: ZipOutputStream): Option[InputStream] = {
+  private def addFileToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     files.getBytes(file.id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
-        zip.putNextEntry(new ZipEntry(file.id + "/" + filename))
+        zip.putNextEntry(new ZipEntry(folderName + "/" + filename))
         Some(inputStream)
       }
       case None => None
