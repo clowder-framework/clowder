@@ -1689,7 +1689,7 @@ class Datasets @Inject()(
   def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION)
       (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
     implicit val pec = ec.prepare()
-    var folderNameMap = scala.collection.mutable.Map.empty[UUID, String]
+    val folderNameMap = scala.collection.mutable.Map.empty[UUID, String]
     var inputFilesBuffer = new ListBuffer[File]()
     dataset.files.map(f=>files.get(f) match {
       case Some(file) => {
@@ -1698,7 +1698,6 @@ class Datasets @Inject()(
       }
       case None => Logger.error(s"No file with id $f")
     })
-
 
     folders.findByParentDatasetId(dataset.id).map {
       folder => folder.files.map(f=> files.get(f) match {
