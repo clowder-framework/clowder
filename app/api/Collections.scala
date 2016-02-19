@@ -171,6 +171,20 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.superAdmin)))
   }
 
+
+  @ApiOperation(value = "List all collections the user can edit except itself and its parent collections",
+    notes = "This will check for Permission.AddResourceToCollection and Permission.EditCollection",
+    responseClass = "None", httpMethod = "GET")
+  def listPossibleParents(currentCollectionId : String, title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+    val selfAndAncestors = collections.getSelfAndAncestors(UUID(currentCollectionId))
+    val descendants = collections.getAllDescendants(UUID(currentCollectionId)).toList
+    val allCollections = lisCollections(None, None, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.superAdmin)
+    val possibleNewParents = allCollections.filter((c: Collection) => (!selfAndAncestors.contains(c) && !descendants.contains(c)))
+    Ok(toJson(possibleNewParents))
+  }
+
+
+
   /**
    * Returns list of collections based on parameters and permissions.
    * TODO this needs to be cleaned up when do permissions for adding to a resource
