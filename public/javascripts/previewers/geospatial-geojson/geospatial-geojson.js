@@ -116,29 +116,29 @@
             });
 
             // SET UP SELECTION
-            var select_color = '#FF0000'
-            var select_fill  = '#FF4444'
+            var selectColor = '#00FFFF';
+            var selectFill  = '#00FFFF';
             var selectStyle = new ol.style.Style({
                 image: new ol.style.Circle({
-                    fill: new ol.style.Fill({color:select_color}),
-                    radius: 6
+                    fill: new ol.style.Fill({color:selectColor}),
+                    radius: 4
                 }),
-                fill: new ol.style.Fill({color:select_fill}),
+                fill: new ol.style.Fill({color:selectFill}),
                 stroke: new ol.style.Stroke({
-                    color: select_color,
+                    color: selectColor,
                     width: 2
                 })
             });
             var selector = new ol.interaction.Select({
                 layers: function(layer) {
-                    return layer.get('selectable') == true
+                    return layer.get('selectable') == true;
                 },
                 style: [selectStyle]
             });
             map.getInteractions().extend([selector]);
 
             // SET SELECTION POPUP
-            var popupDiv = '<div style="fill=rgb(0,0,0)" id="popup-div"></div>'
+            var popupDiv = '<div style="background:#FFFFFF;color:#000000;padding:5px;" id="popup-div"></div>'
             $(Configuration.div).append(popupDiv);
             var overlay = new ol.Overlay({
                 element: document.getElementById('popup-div'),
@@ -149,26 +149,17 @@
             });
             map.addOverlay(overlay);
             map.on('click', function(evt){
-                var coord = ol.proj.transform(evt.coordinate, 'EPSG:3857', 'EPSG:4326')
-                var allLayers = map.getLayers()
                 var foundTarget = false;
-                allLayers.forEach(function(lyr) {
-                    if (lyr instanceof ol.layer.Vector && lyr.getVisible()) {
-                        var hitFeats = lyr.getSource().getFeaturesAtCoordinate(evt.coordinate);
-                        if (hitFeats.length > 0 && !foundTarget) {
-                            foundTarget = true;
-                            var disp = hitFeats[0].get('name');
-                            document.getElementById("popup-div").innerHTML = '<code>'+disp+'</code>';
-                            overlay.setPosition(evt.coordinate);
-                        }
-                    }
+                map.forEachFeatureAtPixel(evt.pixel, function(feat, lyr) {
+                    document.getElementById("popup-div").innerHTML = '<a href="'+feat.get('url')+'"><b>'+feat.get('name')+'</b></a>';
+                    overlay.setPosition(evt.coordinate);
+                    foundTarget = true;
                 });
 
                 if (!foundTarget) {
                     document.getElementById("popup-div").innerHTML = '';
                     overlay.setPosition(undefined);
                 }
-
             });
 
             // fix for MMDB-1617
@@ -200,8 +191,8 @@
 
         if (map != null) {
             var coordProjection = coordProjection || "EPSG:4326"
-            var defaultOpacity = 0.5;
-            var layerColor = get_random_color()
+            var layerColor = "#FF0000"
+            var layerFill  = "#FF8888"
 
             // CREATE LAYER
             var layerFeats = []
@@ -210,7 +201,8 @@
                 layerFeats.push(new ol.Feature({
                     geometry: new ol.geom.Point(
                         ol.proj.transform([latLon[1],latLon[0]],coordProjection,"EPSG:3857")),
-                    name: layerName
+                    name: layerName,
+                    url: layerURL
                 }))
             }
             var vectorSource = new ol.source.Vector({
@@ -222,28 +214,17 @@
                 style: new ol.style.Style({
                     image: new ol.style.Circle({
                         fill: new ol.style.Fill({color:layerColor}),
-                        radius: 5
+                        radius: 4
+                    }),
+                    fill: new ol.style.Fill({color:layerFill}),
+                    stroke: new ol.style.Stroke({
+                        color: layerColor,
+                        width: 2
                     })
                 })
             });
             vectorLayer.set('selectable', true);
             map.addLayer(vectorLayer);
-
-            // LAYER CONTROL
-            // create id by using layer name, removing periods from filename if necessary (messes up checkboxes)
-            var layerLabel = layerName.replace(".","")
-            var visVar = layerLabel + '-visible';
-            var opVar = layerLabel + '-opacity';
-            var layerControl = '<div><input id="' + visVar + '" type="checkbox" checked="checked" /> <a style="color:'+layerColor+'" target="_blank" href="'+layerURL+'">'+layerName+'</a>' +
-                                '<input id="' + opVar + '" type="range" min="0" max="1" step="0.01" value="' + defaultOpacity + '" style="width:100px;"/></div>';
-            $('#layer-control').prepend(layerControl);
-            // event handlers for layer on/off & opacity
-            $("#" + visVar).change(function () {
-                vectorLayer.setVisible($(this).is(':checked'));
-            });
-            $("#" + opVar).change(function () {
-                vectorLayer.setOpacity($(this).val());
-            });
 
             // ADJUST VIEW
             var view = new ol.View();
@@ -256,18 +237,19 @@
         initializeMap()
 
         if (map != null) {
-            var jsonProjection = jsonProjection || "EPSG:3857"
-            var defaultOpacity = 0.5;
-            var layerColor = get_random_color()
+            var jsonProjection = jsonProjection || "EPSG:3857";
+            var layerColor = "#FF0000"
+            var layerFill  = "#FF8888"
 
             // CREATE LAYER
-            var allFeats = new Array()
+            var allFeats = new Array();
             for (var gj in geojson) {
                 var fts = new ol.format.GeoJSON().readFeatures(geojson[gj], {
                     featureProjection: jsonProjection
                 });
                 for (var currft in fts) {
-                    fts[currft].set('name', layerName)
+                    fts[currft].set('name', layerName);
+                    fts[currft].set('url', layerURL);
                 }
 
                 allFeats = allFeats.concat(fts);
@@ -284,34 +266,17 @@
                 style: new ol.style.Style({
                     image: new ol.style.Circle({
                         fill: new ol.style.Fill({color:layerColor}),
-                        radius: 5
+                        radius: 4
                     }),
-                    fill: new ol.style.Fill({color:layerColor}),
+                    fill: new ol.style.Fill({color:layerFill}),
                     stroke: new ol.style.Stroke({
-                        color: '#000000',
-                        width: 2
+                        color: layerColor,
+                        width: 1
                     })
                 })
             });
             vectorLayer.set('selectable', true);
             map.addLayer(vectorLayer);
-
-            // LAYER CONTROL
-            // create id by using wms layer name
-            var layerLabel = layerName.replace(".","")
-            var visVar = layerLabel + '-visible';
-            var opVar = layerLabel + '-opacity';
-            var layerControl = '<div><input id="' + visVar + '" type="checkbox" checked="checked" />' +
-                ' <a style="color:'+layerColor+'" target="_blank" href="'+layerURL+'">'+layerName+'</a>';
-            layerControl += '<input id="' + opVar + '" type="range" min="0" max="1" step="0.01" value="' + defaultOpacity + '" style="width:100px;"/></div>';
-            $('#layer-control').prepend(layerControl);
-            // event handler for layer on/off & opacity
-            $("#" + visVar).change(function () {
-                vectorLayer.setVisible($(this).is(':checked'));
-            });
-            $("#" + opVar).change(function () {
-                vectorLayer.setOpacity($(this).val());
-            });
 
             // create view object to zoom in
             var view = new ol.View();
