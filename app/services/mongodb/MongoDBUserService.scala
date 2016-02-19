@@ -3,7 +3,6 @@ package services.mongodb
 import com.mongodb.casbah.WriteConcern
 import java.util.Date
 import com.mongodb.DBObject
-import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import com.mongodb.util.JSON
 import com.novus.salat._
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
@@ -20,7 +19,7 @@ import scala.collection.mutable.ListBuffer
 import play.api.Logger
 import securesocial.core.providers.Token
 import securesocial.core._
-import services.{FileService, DatasetService, CollectionService, SpaceService}
+import services._
 import services.mongodb.MongoContext.context
 import _root_.util.Direction._
 import javax.inject.Inject
@@ -42,17 +41,25 @@ class MongoDBUserService @Inject() (
   // Code to implement the common CRUD services
   // ----------------------------------------------------------------------
 
-  override def update(model: User): Unit = {
-    val query = MongoDBObject("identityId.userId" -> model.identityId.userId, "identityId.providerId" -> model.identityId.providerId)
-    val dbobj = MongoDBObject("$set" -> UserDAO.toDBObject(model))
-    UserDAO.update(query, dbobj, upsert = true, multi = false, WriteConcern.Safe)
-  }
+  override def update(model: User): Unit = insert(model: User)
 
-  override def insert(model: User): Option[String] = {
+  override def insert(model: User): Option[User] = {
     val query = MongoDBObject("identityId.userId" -> model.identityId.userId, "identityId.providerId" -> model.identityId.providerId)
-    val dbobj = MongoDBObject("$set" -> UserDAO.toDBObject(model))
+    val user = UserDAO.toDBObject(model)
+    // If account does not exist, add enabled option
+    if (UserDAO.count(query) == 0) {
+      // enable account. Admins are always enabled.
+      model.email match {
+        case Some(e) if AppConfiguration.checkAdmin(e) => user.put("active", true)
+        case _ => {
+          val register = play.Play.application().configuration().getBoolean("registerThroughAdmins", true)
+          user.put("active", !register)
+        }
+      }
+    }
+    val dbobj = MongoDBObject("$set" -> user)
     UserDAO.update(query, dbobj, upsert = true, multi = false, WriteConcern.Safe)
-    UserDAO.findOne(query).map(_.id.stringify)
+    UserDAO.findOne(query)
   }
 
   override def get(id: UUID): Option[User] = {
@@ -545,26 +552,43 @@ class MongoDBUserService @Inject() (
 }
 
 class MongoDBSecureSocialUserService(application: Application) extends UserServicePlugin(application) {
-  override def find(id: IdentityId): Option[Identity] = {
+  override def find(id: IdentityId): Option[User] = {
     UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> id.userId, "identityId.providerId" -> id.providerId))
   }
 
-  override def findByEmailAndProvider(email: String, providerId: String): Option[Identity] = {
+  override def findByEmailAndProvider(email: String, providerId: String): Option[User] = {
     UserDAO.dao.findOne(MongoDBObject("email" -> email, "identityId.providerId" -> providerId))
   }
 
-  override def save(user: Identity): Identity = {
+  override def save(user: Identity): User = {
     // user is always of type SocialUser when this function is entered
     // first convert the socialuser object to a mongodbobject
     val userobj = com.novus.salat.grater[Identity].asDBObject(user)
+
     // replace _typeHint with the right model type so it will get correctly deserialized
     userobj.put("_typeHint", "models.ClowderUser")
+
     // query to find the user based on identityId
     val query = MongoDBObject("identityId.userId" -> user.identityId.userId, "identityId.providerId" -> user.identityId.providerId)
+
+    // If account does not exist, add enabled option
+    if (UserDAO.count(query) == 0) {
+      // enable account. Admins are always enabled.
+      user.email match {
+        case Some(e) if AppConfiguration.checkAdmin(e) => userobj.put("active", true)
+        case _ => {
+          val register = play.Play.application().configuration().getBoolean("registerThroughAdmins", true)
+          userobj.put("active", !register)
+        }
+      }
+    }
+
     // update all fields from past in user object
     val dbobj = MongoDBObject("$set" -> userobj)
+
     // update, if it does not exist do an insert (upsert = true)
     UserDAO.update(query, dbobj, upsert = true, multi = false, WriteConcern.Safe)
+
     // return the user object
     find(user.identityId).get
   }
@@ -585,7 +609,7 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
     val invites = SpaceInviteDAO.find("expirationTime" $lt new Date)
     for(inv <- invites) {
       ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(inv.space.stringify)),
-        $pull("invitations" -> MongoDBObject( "_id" -> new ObjectId(inv.id.stringify))), false, false, WriteConcern.Safe)
+        $pull("invitations" -> MongoDBObject( "_id" -> new ObjectId(inv.id.stringify))), upsert=false, multi=false, WriteConcern.Safe)
     }
     SpaceInviteDAO.remove("expirationTime" $lt new Date)
   }

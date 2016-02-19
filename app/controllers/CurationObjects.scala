@@ -212,7 +212,7 @@ class CurationObjects @Inject()(
                   val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
                   Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences, mmResp))
                 }
-                case None =>Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
+                case None =>Results.Redirect(routes.Error.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
               }
             }
             case None => InternalServerError("Curation Object not found")
@@ -534,7 +534,7 @@ class CurationObjects @Inject()(
   /**
    * Endpoint for receiving status/ uri from repository.
    */
-  def savePublishedObject(id: UUID) = UserAction (parse.json) {
+  def savePublishedObject(id: UUID) = UserAction(needActive = true) (parse.json) {
     implicit request =>
       Logger.debug("get infomation from repository")
 

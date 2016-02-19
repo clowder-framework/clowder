@@ -10,7 +10,7 @@ import securesocial.core.providers.utils.RoutesHelper
  * or when there are errors with authentication or permissions within the normal controller flow.
  * 
  */
-class RedirectUtility extends SecuredController {
+class Error extends SecuredController {
 
     /**
      * Default method when the failure is due to not being logged in.
@@ -18,7 +18,7 @@ class RedirectUtility extends SecuredController {
      * Requires no args, provides the generic message "You must be logged in to perform that action.".
      * 
      */
-    def authenticationRequired() = UserAction { implicit request =>
+    def authenticationRequired() = UserAction(needActive = false) { implicit request =>
         Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You must be logged in to perform that action.")
     }
     
@@ -32,7 +32,7 @@ class RedirectUtility extends SecuredController {
      *  @param msg A String that will be the specific error message passed to the login panel
      *  @param url The originating window href for the failed authentication
      */
-    def authenticationRequiredMessage(msg: String, url: String) = UserAction { implicit request =>
+    def authenticationRequiredMessage(msg: String, url: String) = UserAction(needActive = false) { implicit request =>
         Logger.trace("The authentication required message is " + msg)
         var errMsg = "You must be logged in to perform that action."
         var origUrlPresent = false
@@ -63,7 +63,7 @@ class RedirectUtility extends SecuredController {
      * 
      * @param msg A String that will be the specific error message passed to the view to display
      */
-    def incorrectPermissions(msg: String) = UserAction { implicit request =>
+    def incorrectPermissions(msg: String) = UserAction(needActive = false) { implicit request =>
         Logger.trace("The incorrectPermissions message is " + msg)
         var errMsg = "You do not have the permissions required to view that location."
         if (msg != null && !msg.trim().equals("")) {
@@ -74,5 +74,22 @@ class RedirectUtility extends SecuredController {
         //not, for appropriate visual cues.
         implicit val user = request.user
         Results.Ok(views.html.noPermissions(errMsg))
+    }
+
+    def notActivated = UserAction(needActive=false) { implicit request =>
+        implicit val user = request.user
+        if (user.exists(_.active)) {
+            Redirect(routes.Application.index())
+        } else {
+            Ok(views.html.error.accountNotActive())
+        }
+    }
+
+    /**
+     * Deny user request to access resource.
+     */
+    def notAuthorized(message: String, id: String, resourceType: String ) = UserAction(needActive = false) { implicit request =>
+        implicit val user = request.user
+        Ok(views.html.notAuthorized(message, id, resourceType))
     }
 }

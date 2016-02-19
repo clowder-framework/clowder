@@ -39,7 +39,7 @@ object AuthenticatorDAO extends ModelCompanion[LocalAuthenticator, ObjectId] {
     val localAuth = LocalAuthenticator(authenticator.id, authenticator.identityId,
       authenticator.creationDate.toDate(), authenticator.lastUsed.toDate(),
       authenticator.expirationDate.toDate())
-    Logger.info("Saving authenticator")
+    Logger.debug("Saving authenticator")
     dao.update(MongoDBObject("authenticatorId" -> authenticator.id), localAuth, true, false, WriteConcern.Normal)
   }
 

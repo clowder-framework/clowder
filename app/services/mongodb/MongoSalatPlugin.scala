@@ -286,6 +286,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //remove Affiliation and License, access and cost in user.repositoryPreferences
     updateUserPreference
+
+    // activate all users
+    updateMongo("activate-users", activateAllUsers)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -694,5 +697,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     } else {
       Logger.warn("[MongoDBUpdate : Missing fix to remove fields in user.repositoryPreferences ")
     }
+  }
+
+  private def activateAllUsers() {
+    val query = MongoDBObject("active" -> MongoDBObject("$exists" -> false))
+    val update = MongoDBObject("$set" -> MongoDBObject("active" -> true))
+    collection("social.users").update(query, update, upsert=false, multi=true)
   }
 }
