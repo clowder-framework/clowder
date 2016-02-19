@@ -677,4 +677,5 @@ GET         /t2c2/templates/getExperimentTemplateByName/:name                   
 # T2C2 endpoints
 #----------------------------------------------------
 
+POST        /t2c2/uploadToDataset/:id                                                                   @api.Files.uploadToDatasetWithDescription(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String ?= "")
 PUT         /t2c2/files/:id/updateDescription                                                           @api.Files.updateDescriptionT2C2(id: UUID)
