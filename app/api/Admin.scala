@@ -65,8 +65,8 @@ class Admin @Inject()(userService: UserService) extends Controller with ApiContr
   }
 
   def mail = UserAction(false)(parse.json) { implicit request =>
-    val body = (request.body \ "body").asOpt[String].getOrElse("no subject")
-    val subj = (request.body \ "subject").asOpt[String].getOrElse("no text")
+    val body = (request.body \ "body").asOpt[String].getOrElse("no text")
+    val subj = (request.body \ "subject").asOpt[String].getOrElse("no subject")
 
     Mail.sendEmailAdmins(subj, request.user, Html(body))
     Ok(toJson(Map("status" -> "success")))
