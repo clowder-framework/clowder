@@ -1703,7 +1703,18 @@ class Datasets @Inject()(
       folder => folder.files.map(f=> files.get(f) match {
         case Some(file) => {
           inputFilesBuffer += file
-          folderNameMap(file.id) = folder.displayName + "/" + file.id.stringify
+          var name = folder.displayName
+          var f1: Folder = folder
+          while(f1.parentType == "folder") {
+            folders.get(f1.parentId) match {
+              case Some(fparent) => {
+                name = fparent.displayName + "/"+ name
+                f1 = fparent
+              }
+              case None =>
+            }
+          }
+          folderNameMap(file.id) = name + "/" + file.id.stringify
         }
         case None => Logger.error(s"No file with id $f")
       })
