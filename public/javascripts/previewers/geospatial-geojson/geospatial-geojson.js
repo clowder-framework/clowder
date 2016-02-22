@@ -60,23 +60,16 @@
         if ($('#geospatialGeoJSONPreviewerMap').length == 0) {
 
             // CREATE MAP DIV
-            $(Configuration.div).append("<h4>GeoJSON & XY Data</h4>");
-            // adding css for ol3
+            $(Configuration.div).append("<h4>Geospatial Metadata Map</h4>");
             var cssLink = $("<link rel='stylesheet' type='text/css' href='" + Configuration.path + "/../../../openlayers/ol.css'>");
             $(Configuration.div).append(cssLink);
-            // adding map div for rendering the map
             var mapDiv = "<div id='geospatialGeoJSONPreviewerMap' style='height:400px;width:100%'></div>"
             $(Configuration.div).append(mapDiv);
 
             // LAYER CONTROL
             var layerControlDiv = "<div id='toolbox' style='position:absolute; top:55px; right:15px; padding:3px; border-radius:4px; color:#fff; background: rgba(255, 255, 255, 0.4); z-index:100;' >";
-            layerControlDiv += "<div id='control-title' style='color:black; cursor:pointer;'><span class='glyphicon glyphicon-tasks'></span>&nbsp;GeoJSON & XY Data</div>";
             layerControlDiv += "<div id='layer-control' style='margin:0; padding:10px; border-radius:4px; background:rgba(0, 60, 136, 0.5);'></div></div>";
             $(Configuration.div).append(layerControlDiv);
-            // adding event handler for collapsible div
-            $('#control-title').click(function () {
-                $('#layer-control').toggle();
-            });
 
             // initiating map
             window.map = new ol.Map({
