@@ -37,6 +37,7 @@ object Permission extends Enumeration {
 
     // files
     AddFile,
+    EditFile,
     DeleteFile,
     ViewFile,
     DownloadFiles,

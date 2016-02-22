@@ -969,6 +969,12 @@ class MongoDBFileService @Inject() (
                     $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 
+  def updateDescription(id: UUID, description: String) {
+    val result = FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $set("description" -> description),
+      false, false, WriteConcern.Safe)
+
+  }
 }
 
 object FileDAO extends ModelCompanion[File, ObjectId] {

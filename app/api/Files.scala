@@ -973,7 +973,7 @@ class Files @Inject()(
   }
 
   def jsonFile(file: File): JsValue = {
-    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "content-type" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString,
+    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "filedescription" -> file.description, "content-type" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString,
     		"authorId" -> file.author.identityId.userId))
   }
 
@@ -1806,6 +1806,32 @@ class Files @Inject()(
         }
         case None => Ok(toJson(Map("status" -> "success")))
       }
+  }
+
+
+  @ApiOperation(value = "Update file description",
+    notes = "Takes one argument, a UUID of the file. Request body takes key-value pair for the description",
+    responseClass = "None", httpMethod = "PUT")
+  def updateDescription(id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file, id))) (parse.json){ implicit request =>
+    files.get(id) match {
+      case Some(file) => {
+        var description: String = null
+        val aResult = (request.body \ "description").validate[String]
+        aResult match {
+          case s: JsSuccess[String] => {
+            description = s.get
+            files.updateDescription(file.id,description)
+            Ok(toJson(Map("status"->"success")))
+          }
+          case e: JsError => {
+            Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+            BadRequest(toJson(s"description data is missing"))
+          }
+        }
+
+      }
+      case None => BadRequest("No file exists with that id")
+    }
   }
 
   /**

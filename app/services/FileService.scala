@@ -191,4 +191,6 @@ trait FileService {
    */
   def updateMetadata(fileId: UUID, metadata: JsValue, extractor_id: String)
 
+  def updateDescription(fileId : UUID, description : String)
+
 }
