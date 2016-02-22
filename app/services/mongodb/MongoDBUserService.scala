@@ -56,9 +56,10 @@ class MongoDBUserService @Inject() (
           user.put("active", !register)
         }
       }
+    } else {
+      user.removeField("_id")
     }
-    val dbobj = MongoDBObject("$set" -> user)
-    UserDAO.update(query, dbobj, upsert = true, multi = false, WriteConcern.Safe)
+    UserDAO.update(query, MongoDBObject("$set" -> user), upsert = true, multi = false, WriteConcern.Safe)
     UserDAO.findOne(query)
   }
 
