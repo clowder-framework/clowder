@@ -113,11 +113,9 @@ class Admin @Inject()(userService: UserService) extends Controller with ApiContr
           case Some(u) => {
             if (u.active && u.email.isDefined && !AppConfiguration.checkAdmin(u.email.get)) {
               AppConfiguration.addAdmin(u.email.get)
-              if (u.email.isDefined) {
-                val subject = s"[${AppConfiguration.getDisplayName}] admin access granted"
-                val body = views.html.emails.userAdmin(u, admin=true)(request)
-                util.Mail.sendEmail(subject, request.user, u.email.get, body)
-              }
+              val subject = s"[${AppConfiguration.getDisplayName}] admin access granted"
+              val body = views.html.emails.userAdmin(u, admin=true)(request)
+              util.Mail.sendEmail(subject, request.user, u.email.get, body)
             }
           }
           case _ => Logger.error(s"Could not find user with id=${id}")
@@ -130,11 +128,9 @@ class Admin @Inject()(userService: UserService) extends Controller with ApiContr
           case Some(u) if u.active && u.email.isDefined && AppConfiguration.checkAdmin(u.email.get) => {
             if (u.active && u.email.isDefined && AppConfiguration.checkAdmin(u.email.get)) {
               AppConfiguration.removeAdmin(u.email.get)
-              if (u.email.isDefined) {
-                val subject = s"[${AppConfiguration.getDisplayName}] admin access revoked"
-                val body = views.html.emails.userAdmin(u, admin=false)(request)
-                util.Mail.sendEmail(subject, request.user, u.email.get, body)
-              }
+              val subject = s"[${AppConfiguration.getDisplayName}] admin access revoked"
+              val body = views.html.emails.userAdmin(u, admin=false)(request)
+              util.Mail.sendEmail(subject, request.user, u.email.get, body)
             }
           }
           case _ => Logger.error(s"Could not find user with id=${id}")
