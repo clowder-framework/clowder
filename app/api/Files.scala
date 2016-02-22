@@ -465,9 +465,9 @@ class Files @Inject()(
                 case Some(x) => {
                   //parse request for agent/creator info
                   //creator can be UserAgent or ExtractorAgent
-                  // TODO: This is not an extractor, how should ID be handled? UserAgent?
-                  val creator = ExtractorAgent(id = UUID.generate(),
-                    extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/deprecatedapi")))
+                  val creator = UserAgent(id = UUID.generate(), user=user.getMiniUser,
+                    userId = Some(new URL("http://" + serverIP + controllers.routes.Profile.viewProfileUUID(user.id).url
+                  )))
                   // check if the context is a URL to external endpoint
                   val contextURL: Option[URL] = None
                   // check if context is a JSON-LD document
