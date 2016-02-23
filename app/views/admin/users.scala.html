@@ -193,19 +193,18 @@
                         type: "POST",
                         contentType: "application/json"
                     }).done(function () {
-                        for(var i = 0; i < users.active.length; i ++) {
-                            $('#active-users').append($('#'+users.active[i]))
-                        }
-                        for(var i = 0; i < users.unadmin.length; i ++) {
-                            $('#active-users').append($('#'+users.unadmin[i]))
-                        }
-                        for(var i = 0; i < users.inactive.length; i ++) {
-                            $('#inactive-users').append($('#'+users.inactive[i]))
-                        }
-                        for(var i = 0; i < users.admin.length; i ++) {
-                            $('#admin-users').append($('#'+users.admin[i]))
-                        }
-
+                        users.active.forEach(function(u) {
+                            $('#active-users').append($('#'+u))
+                        });
+                        users.unadmin.forEach(function(u) {
+                            $('#active-users').append($('#'+u))
+                        });
+                        users.inactive.forEach(function(u) {
+                            $('#inactive-users').append($('#'+u))
+                        });
+                        users.admin.forEach(function(u) {
+                            $('#admin-users').append($('#'+u))
+                        });
                         users = { active: [], inactive: [], admin: [], unadmin: [] };
                         notify("Users successfully updated.", "success", false, 5000);
                     }).fail(function (jqXHR, textStatus, errorThrown){
