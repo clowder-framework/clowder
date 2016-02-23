@@ -2,13 +2,14 @@
 
     function checkForLatLng(json_obj) {
         /**
-         * Iterate through object looking for lat/lon data under several possible fields
+         * Iterate through object looking for lat/lon data under several possible fields.
+         * Returns a list of found coordinates (one possible pair per metadata sub-object)
          */
         var coords_found = [];
         Object.keys(json_obj).forEach(function(key){
             var lat=null, lon=null;
-            var lat_names = ["latitude", "lat", "y"];
-            var lon_names = ["longitude", "lon", "long", "x"];
+            var lat_names = ["latitude", "lat", "y", "LATITUDE", "LAT", "Latitude", "Lat", "Y"];
+            var lon_names = ["longitude", "lon", "long", "x", "LONGITUDE", "LON", "LONG", "Longitude", "Lon", "Long", "X"];
 
             for (var l in lat_names) {
                 if (json_obj[key].hasOwnProperty(lat_names[l])) {
@@ -66,12 +67,12 @@
             var mapDiv = "<div id='geospatialGeoJSONPreviewerMap' style='height:400px;width:100%'></div>"
             $(Configuration.div).append(mapDiv);
 
-            // LAYER CONTROL
+            // LAYER CONTROL BOX
             var layerControlDiv = "<div id='toolbox' style='position:absolute; top:55px; right:15px; padding:3px; border-radius:4px; color:#fff; background: rgba(255, 255, 255, 0.4); z-index:100;' >";
             layerControlDiv += "<div id='layer-control' style='margin:0; padding:10px; border-radius:4px; background:rgba(0, 60, 136, 0.5);'></div></div>";
             $(Configuration.div).append(layerControlDiv);
 
-            // initiating map
+            // Add map to page
             window.map = new ol.Map({
                 target: 'geospatialGeoJSONPreviewerMap',
                 projection: "EPSG:3857",
@@ -99,7 +100,7 @@
                 baseLayer.setOpacity($(this).val());
             });
 
-            // SET UP SELECTION
+            // SET UP SELECTION INTERACTION + COLORS
             var selectColor = '#00FFFF';
             var selectFill  = '#00FFFF';
             var selectStyle = new ol.style.Style({
@@ -121,7 +122,7 @@
             });
             map.getInteractions().extend([selector]);
 
-            // SET SELECTION POPUP
+            // SET SELECTION POPUP WHEN CLICKED
             var popupDiv = '<div style="background:#FFFFFF;color:#000000;padding:5px;" id="popup-div"></div>'
             $(Configuration.div).append(popupDiv);
             var overlay = new ol.Overlay({
@@ -171,6 +172,9 @@
     }
 
     function addXYLayer(latLonList, layerName, layerURL, coordProjection) {
+        /**
+         * Add all XY points in latLonList to a layer, having Name and URL pop up when clicked.
+         */
         initializeMap()
 
         if (map != null) {
@@ -218,6 +222,9 @@
     }
 
     function addGeoJSONLayer(geojson, layerName, layerURL, jsonProjection) {
+        /**
+         * Add all geojson features in latLonList to a layer, having Name and URL pop up when clicked.
+         */
         initializeMap()
 
         if (map != null) {
@@ -342,7 +349,7 @@
             // For each file in the dataset...
             for(var file_details in data){
                 // Request the technical metadata
-                // TODO - replace this with GeoJSON endpoint call
+                // TODO - replace this with JsonLD endpoint call
                 var file_md_req = $.ajax({
                     type: "GET",
                     url: jsRoutes.api.Files.getTechnicalMetadataJSON(data[file_details]["id"]).url,
