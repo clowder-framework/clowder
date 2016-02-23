@@ -468,6 +468,7 @@ class Files @Inject()(
                     userId = Some(new URL("http://" + serverIP + controllers.routes.Profile.viewProfileUUID(user.id).url))
                   )
 
+                  // TODO: Put this block and the similar chunk from addMetadataJsonLD into helper function so not repeated
                   // Extract context from metadata object and remove it so it isn't repeated twice
                   var parseJson = Json.parse(jsonObj)
                   val context: JsValue = (parseJson \ "@context")
