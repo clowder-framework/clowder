@@ -464,21 +464,32 @@ class Files @Inject()(
               files.get(f.id) match {
                 case Some(x) => {
                   //parse request for agent/creator info
-                  //creator can be UserAgent or ExtractorAgent
                   val creator = UserAgent(id = UUID.generate(), user=user.getMiniUser,
-                    userId = Some(new URL("http://" + serverIP + controllers.routes.Profile.viewProfileUUID(user.id).url
-                  )))
+                    userId = Some(new URL("http://" + serverIP + controllers.routes.Profile.viewProfileUUID(user.id).url))
+                  )
+
+                  // Extract context from metadata object and remove it so it isn't repeated twice
+                  var parseJson = Json.parse(jsonObj)
+                  val context: JsValue = (parseJson \ "@context")
+                  parseJson = parseJson.as[JsObject] - "@context"
                   // check if the context is a URL to external endpoint
-                  val contextURL: Option[URL] = None
+                  var contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
                   // check if context is a JSON-LD document
-                  val contextID: Option[UUID] = None
+                  // TODO: check if this actually exists first
+                  var contextID: Option[UUID] =
+                    if (context.isInstanceOf[JsObject]) {
+                      context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
+                    } else if (context.isInstanceOf[JsArray]) {
+                      context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
+                    } else None
+
                   // when the new metadata is added
                   val createdAt = new Date()
                   //parse the rest of the request to create a new models.Metadata object
                   val attachedTo = ResourceRef(ResourceRef.file, f.id)
                   val version = None
                   val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                    Json.parse(jsonObj), version)
+                    parseJson, version)
 
                   //add metadata to mongo
                   metadataService.addMetadata(metadata)
