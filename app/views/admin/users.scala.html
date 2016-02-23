@@ -51,66 +51,92 @@
         <h1>Users</h1>
     </div>
 
-    <div class="row">
-        <div class="col-md-12">
-            <h2>Inactive Users</h2>
+    <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="headingOne">
+                <h4 class="panel-title">
+                    <a role="button" data-toggle="collapse" href="#collapseInactive" aria-expanded="true" aria-controls="collapseInactive">
+                        Inactive Users
+                    </a>
+                </h4>
+            </div>
+            <div id="collapseInactive" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
+                <div class="panel-body">
+                    <table class="table table-condensed">
+                        <thead>
+                            <tr>
+                                <th class="col-md-5">Fullname</th>
+                                <th class="col-md-3">Email</th>
+                                <th class="col-md-2">Provider</th>
+                                <th class="col-md-1">Active</th>
+                                <th class="col-md-1">Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inactive-users">
+                        @users.filter(!_.active).map(printRow)
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-    </div>
-    <table class="table table-condensed">
-        <thead>
-            <tr>
-                <th class="col-md-5">Fullname</th>
-                <th class="col-md-3">Email</th>
-                <th class="col-md-2">Provider</th>
-                <th class="col-md-1">Active</th>
-                <th class="col-md-1">Admin</th>
-            </tr>
-        </thead>
-        <tbody id="inactive-users">
-        @users.filter(!_.active).map(printRow)
-        </tbody>
-    </table>
 
-    <div class="row">
-        <div class="col-md-12">
-            <h2>Admins</h2>
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="headingOne">
+                <h4 class="panel-title">
+                    <a role="button" data-toggle="collapse" href="#collapseAdmins" aria-expanded="false" aria-controls="collapseAdmins">
+                        Admins
+                    </a>
+                </h4>
+            </div>
+            <div id="collapseAdmins" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+                <div class="panel-body">
+                    <table class="table table-condensed">
+                        <thead>
+                            <tr>
+                                <th class="col-md-5">Fullname</th>
+                                <th class="col-md-3">Email</th>
+                                <th class="col-md-2">Provider</th>
+                                <th class="col-md-1">Active</th>
+                                <th class="col-md-1">Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-users">
+                        @users.filter(u => u.active && admins.contains(u.email.getOrElse(""))).map(printRow)
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-    </div>
-    <table class="table table-condensed">
-        <thead>
-            <tr>
-                <th class="col-md-5">Fullname</th>
-                <th class="col-md-3">Email</th>
-                <th class="col-md-2">Provider</th>
-                <th class="col-md-1">Active</th>
-                <th class="col-md-1">Admin</th>
-            </tr>
-        </thead>
-        <tbody id ="admin-users">
-        @users.filter(u => u.active && admins.contains(u.email.getOrElse(""))).map(printRow)
-        </tbody>
-    </table>
 
-
-    <div class="row">
-        <div class="col-md-12">
-            <h2>Active Users</h2>
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="headingOne">
+                <h4 class="panel-title">
+                    <a role="button" data-toggle="collapse" href="#collapseActive" aria-expanded="false" aria-controls="collapseActive">
+                        Active Users
+                    </a>
+                </h4>
+            </div>
+            <div id="collapseActive" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+                <div class="panel-body">
+                    <table class="table table-condensed">
+                        <thead>
+                            <tr>
+                                <th class="col-md-5">Fullname</th>
+                                <th class="col-md-3">Email</th>
+                                <th class="col-md-2">Provider</th>
+                                <th class="col-md-1">Active</th>
+                                <th class="col-md-1">Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="active-users">
+                        @users.filter(u => u.active && !admins.contains(u.email.getOrElse(""))).map(printRow)
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
+
     </div>
-    <table class="table table-condensed">
-        <thead>
-            <tr>
-                <th class="col-md-5">Fullname</th>
-                <th class="col-md-3">Email</th>
-                <th class="col-md-2">Provider</th>
-                <th class="col-md-1">Active</th>
-                <th class="col-md-1">Admin</th>
-            </tr>
-        </thead>
-        <tbody id ="active-users">
-        @users.filter(u => u.active && !admins.contains(u.email.getOrElse(""))).map(printRow)
-        </tbody>
-    </table>
 
     <button class="btn btn-primary" onclick="return submitUsers();"><span class="glyphicon glyphicon-saved"></span> Submit</button>
 
