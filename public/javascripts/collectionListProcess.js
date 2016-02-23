@@ -41,3 +41,25 @@ function removeCollectionAndRedirect(collectionId, url){
         }
 	});	
 }
+
+//method to remove child from parent and redirect to url
+function removeChildCollectionFromParent(parentId, childId, url) {
+	if (url == undefined) reloadPage = "/collections";
+
+	var request = jsRoutes.api.Collections.removeSubCollection(parentId, childId).ajax({
+		type : 'POST'
+	});
+
+	request.done(function (response,textStatus,jqXHR){
+		console.log("Response " + response);
+		window.location.href=url;
+	});
+
+	request.fail(function (jqXHR, textStatus, errorThrown){
+		console.error("The following error occured: " + textStatus, errorThrown);
+		var errMsg = "You must be logged in to remove a subcollection from the system.";
+		if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+			notify("The child collection was not removed from the system due to : " + errorThrown, "error");
+		}
+	});
+}

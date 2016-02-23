@@ -7,7 +7,7 @@
                 @if(!collection.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)" width="120">}
             </div>
             <div class="col-md-10 col-sm-10 col-lg-10">
-                <h2><a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a></h2>
+                <h3><a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a></h3>
                 <div class="row">
                     <div class="col-md-6 col-lg-6 col-sm-6">
                         <ul class="list-unstyled">
@@ -18,10 +18,10 @@
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                     @if( user.get.identityId.userId.equals(collection.author.identityId.userId) || Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
-                                        <button onclick="removeCollectionAndRedirect('@(collection.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
+                                        <button onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name.replace("'","&#39;"))','@redirect')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     } else {
-                                        <button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
+                                        <button disabled onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name.replace("'","&#39;"))','@redirect')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     }
                                 }

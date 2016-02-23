@@ -17,6 +17,7 @@ case class Dataset(
   description: String = "N/A",
   created: Date,
   files: List[UUID] = List.empty,
+  folders: List[UUID] = List.empty,
   streams_id: List[ObjectId] = List.empty,
   tags: List[Tag] = List.empty,
   metadataCount: Long = 0,

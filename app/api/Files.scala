@@ -371,23 +371,37 @@ class Files @Inject()(
     * @return file that was uploaded
     */
   private def uploadFile(file: MultipartFormData.FilePart[Files.TemporaryFile], user: User, host: String,
-                         clientIP: String, serverIP: String, file_md: Option[Seq[String]], dataset: Dataset = null,
+                         clientIP: String="", serverIP: String="", file_md: Option[Seq[String]], dataset: Dataset = null,
                          index: Boolean = true, showPreviews: String = "DatasetLevel",
-                         originalZipFile: String = "", flagsFromPrevious: String = "") : Option[File] = {
+                         originalZipFile: String = "", flagsFromPrevious: String = "",
+                         intermediateUpload: Boolean = false, originalIdAndFlags: String = "") : Option[File] = {
     var nameOfFile = file.filename
     var flags = flagsFromPrevious
-    if (nameOfFile.toLowerCase().endsWith(".ptm")) {
-      var thirdSeparatorIndex = nameOfFile.indexOf("__")
-      if (thirdSeparatorIndex >= 0) {
-        var firstSeparatorIndex = nameOfFile.indexOf("_")
-        var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
-        flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
-        nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
+    var originalId = originalIdAndFlags
+
+    // If intermediate upload, get flags from originalIdAndFlags
+    if (intermediateUpload) {
+      if (originalIdAndFlags.indexOf("+") != -1) {
+        originalId = originalIdAndFlags.substring(0, originalIdAndFlags.indexOf("+"))
+        flags = originalIdAndFlags.substring(originalIdAndFlags.indexOf("+"))
       }
+      Logger.debug("Uploading intermediate file " + file.filename + " associated with original file with id " + originalId)
+    }
+    else {
+      // Parse .ptm filenames into component flags
+      if (nameOfFile.toLowerCase().endsWith(".ptm")) {
+        val thirdSeparatorIndex = nameOfFile.indexOf("__")
+        if (thirdSeparatorIndex >= 0) {
+          var firstSeparatorIndex = nameOfFile.indexOf("_")
+          var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
+          flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
+          nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
+        }
+      }
+      Logger.debug("Uploading file " + nameOfFile)
     }
 
     // store file
-    Logger.debug("Uploading file " + nameOfFile)
     var realUser = user.asInstanceOf[Identity]
     if (!originalZipFile.equals("")) {
       files.get(new UUID(originalZipFile)) match {
@@ -395,8 +409,7 @@ class Files @Inject()(
         case None => {}
       }
     }
-    var realUserName = realUser.fullName
-
+    val realUserName = realUser.fullName
     val savedFile = files.save(new FileInputStream(file.ref.file), nameOfFile, file.contentType, realUser)
     Logger.info("Uploading Completed")
 
@@ -409,6 +422,9 @@ class Files @Inject()(
         } else if (showPreviews.equals("None")) {
           flags = flags + "+nopreviews"
         }
+
+        if (intermediateUpload) files.setIntermediate(f.id)
+
         var fileType = f.contentType
         if (fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")) {
           fileType = FilesUtils.getMainFileTypeOfZipFile(file.ref.file, nameOfFile, "dataset")
@@ -418,15 +434,17 @@ class Files @Inject()(
           }
         }
 
-        current.plugin[FileDumpService].foreach {
-          _.dump(DumpOfFile(file.ref.file, f.id.toString, nameOfFile))
+        if (!intermediateUpload) {
+          current.plugin[FileDumpService].foreach {
+            _.dump(DumpOfFile(file.ref.file, f.id.toString, nameOfFile))
+          }
+
+          // Insert DTS Requests
+          dtsrequests.insertRequest(serverIP, clientIP, f.filename, f.id, fileType, f.length, f.uploadDate)
         }
 
         // TODO RK need to replace unknown with the server name
         val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-
-        // Insert DTS Requests
-        dtsrequests.insertRequest(serverIP, clientIP, f.filename, f.id, fileType, f.length, f.uploadDate)
         val extra = Map("filename" -> f.filename)
 
         if (index.equals(true)) {
@@ -475,43 +493,49 @@ class Files @Inject()(
 
         if (dataset == null) {
           // No dataset is provided, so just upload the file.
-          events.addObjectEvent(Option(user), f.id, f.filename, "upload_file")
+          if (!intermediateUpload) {
+            events.addObjectEvent(Option(user), f.id, f.filename, "upload_file")
+            originalId = f.id.toString
+          }
           // TODO replace null with None
           current.plugin[RabbitmqPlugin].foreach {
-            _.extract(ExtractorMessage(f.id, f.id, host, key, extra, f.length.toString, null, flags))
+            _.extract(ExtractorMessage(UUID(originalId), f.id, host, key, extra, f.length.toString, null, flags))
           }
 
-          //for metadata files
-          val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-          if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-            val xmlToJSON = FilesUtils.readXMLgetJSON(file.ref.file)
-            files.addXMLMetadata(f.id, xmlToJSON)
+          if (!intermediateUpload) {
+            //for metadata files
+            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+            if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
+              val xmlToJSON = FilesUtils.readXMLgetJSON(file.ref.file)
+              files.addXMLMetadata(f.id, xmlToJSON)
 
-            Logger.debug("xmlmd=" + xmlToJSON)
+              Logger.debug("xmlmd=" + xmlToJSON)
 
-            if (index.equals(true)) {
-              current.plugin[ElasticsearchPlugin].foreach {
-                _.index("data", "file", f.id, List(("filename", nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
+              if (index.equals(true)) {
+                current.plugin[ElasticsearchPlugin].foreach {
+                  _.index("data", "file", f.id, List(("filename", nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
+                }
+              }
+
+              //add file to RDF triple store if triple store is used
+              configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+                case "yes" => sqarql.addFileToGraph(f.id)
+                case _ => {}
               }
             }
-
-            //add file to RDF triple store if triple store is used
-            configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-              case "yes" => sqarql.addFileToGraph(f.id)
-              case _ => {}
-            }
-          }
-          else {
-            if (index.equals(true)) {
-              current.plugin[ElasticsearchPlugin].foreach {
-                _.index("data", "file", f.id, List(("filename", nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date()))))
+            else {
+              if (index.equals(true)) {
+                current.plugin[ElasticsearchPlugin].foreach {
+                  _.index("data", "file", f.id, List(("filename", nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date()))))
+                }
               }
             }
+            current.plugin[AdminsNotifierPlugin].foreach {
+              _.sendAdminsNotification(host, "File", "added", f.id.stringify, nameOfFile)
+            }
           }
-          current.plugin[AdminsNotifierPlugin].foreach {
-            _.sendAdminsNotification(host, "File", "added", f.id.stringify, nameOfFile)
-          }
-        } else {
+        }
+        else {
           // Handle adding file to dataset if one is provided
           events.addSourceEvent(Option(user), f.id, f.filename, dataset.id, dataset.name, "add_file_dataset")
           current.plugin[RabbitmqPlugin].foreach {
@@ -772,61 +796,26 @@ class Files @Inject()(
    */
   def uploadIntermediate(originalIdAndFlags: String) =
     PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
+      var savedFile: Option[File] = None
       request.user match {
         case Some(user) => {
           request.body.file("File").map { f =>
             try {
-              var originalId = originalIdAndFlags
-              var flags = ""
-              if (originalIdAndFlags.indexOf("+") != -1) {
-                originalId = originalIdAndFlags.substring(0, originalIdAndFlags.indexOf("+"))
-                flags = originalIdAndFlags.substring(originalIdAndFlags.indexOf("+"))
-              }
-
-              Logger.debug("Uploading intermediate file " + f.filename + " associated with original file with id " + originalId)
-              // store file
-              val file = files.save(new FileInputStream(f.ref.file), f.filename, f.contentType, user)
-              val uploadedFile = f
-              file match {
-                case Some(f) => {
-                  files.setIntermediate(f.id)
-                  var fileType = f.contentType
-                  if (fileType.contains("/zip") || fileType.contains("/x-zip") || f.filename.toLowerCase().endsWith(".zip")) {
-                    fileType = FilesUtils.getMainFileTypeOfZipFile(uploadedFile.ref.file, f.filename, "file")
-                    if (fileType.startsWith("ERROR: ")) {
-                      Logger.error(fileType.substring(7))
-                      InternalServerError(fileType.substring(7))
-                    }
-                  }
-
-                  val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-                  val extra = Map("filename" -> f.filename)
-
-                  val host = Utils.baseUrl(request)
-                  val id = f.id
-                  // index the file using Versus
-                  current.plugin[VersusPlugin].foreach {
-                    _.index(f.id.toString, fileType)
-                  }
-                  // TODO replace null with None
-                  current.plugin[RabbitmqPlugin].foreach {
-                    _.extract(ExtractorMessage(UUID(originalId), id, host, key, extra, f.length.toString, null, flags))
-                  }
-                  Ok(toJson(Map("id" -> id.stringify)))
-                }
-                case None => {
-                  Logger.error("Could not retrieve file that was just saved.")
-                  InternalServerError("Error uploading file")
-                }
-              }
+              savedFile = uploadFile(f, user, Utils.baseUrl(request), file_md=None, intermediateUpload=true, originalIdAndFlags=originalIdAndFlags)
             } finally {
               f.ref.clean()
+            }
+            savedFile match {
+              case Some(f) => Ok(toJson(Map("id" -> f.id.stringify)))
+              case None => {
+                Logger.error("Could not retrieve file that was just saved.")
+                InternalServerError("Error uploading intermediate file")
+              }
             }
           }.getOrElse {
             BadRequest(toJson("File not attached."))
           }
         }
-
         case None => BadRequest(toJson("Not authorized."))
       }
   }
@@ -1911,32 +1900,6 @@ class Files @Inject()(
       case None => Logger.error("File not found: " + id)
     }
   }
-
-  def setNotesHTML(id: UUID) = PermissionAction(Permission.CreateNote, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
-	  request.user match {
-	    case Some(identity) => {
-		    request.body.\("notesHTML").asOpt[String] match {
-			    case Some(html) => {
-			        files.setNotesHTML(id, html)
-			        //index(id)
-              files.get(id) match {
-              case Some(file) => {
-                events.addObjectEvent(request.user, file.id, file.filename, "set_note_file")
-                }
-              }
-			        Ok(toJson(Map("status"->"success")))
-			    }
-			    case None => {
-			    	Logger.error("no html specified.")
-			    	BadRequest(toJson("no html specified."))
-			    }
-		    }
-	    }
-	    case None =>
-	      Logger.error(("No user identity found in the request, request body: " + request.body))
-	      BadRequest(toJson("No user identity found in the request, request body: " + request.body))
-	  }
-    }
 
   def dumpFilesMetadata = ServerAdminAction { implicit request =>
 

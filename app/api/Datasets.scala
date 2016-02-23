@@ -4,7 +4,6 @@ import java.io._
 import java.net.URL
 import java.util.Date
 import api.Permission.Permission
-import java.text.SimpleDateFormat
 import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
 import java.util.zip._
 import javax.inject.{Inject, Singleton}
@@ -26,8 +25,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Dataset API.
- *
- * @author Luigi Marini
  *
  */
 @Api(value = "/datasets", listingPath = "/api-docs.json/datasets", description = "A dataset is a container for files and metadata")
@@ -722,7 +719,7 @@ class Datasets @Inject()(
     if (UUID.isValid(id.stringify)) {
 
       //Set up the vars we are looking for
-      var name: String = null;
+      var name: String = null
 
       val aResult = (request.body \ "name").validate[String]
 
@@ -760,9 +757,9 @@ class Datasets @Inject()(
     if (UUID.isValid(id.stringify)) {
 
       //Set up the vars we are looking for
-      var description: String = null;
+      var description: String = null
 
-      var aResult: JsResult[String] = (request.body \ "description").validate[String]
+      val aResult: JsResult[String] = (request.body \ "description").validate[String]
 
       // Pattern matching
       aResult match {
@@ -1533,28 +1530,6 @@ class Datasets @Inject()(
         InternalServerError
       }      
 
-    }
-  }
-  
-  def setNotesHTML(id: UUID) = PermissionAction(Permission.CreateNote, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
-	  request.user match {
-	    case Some(identity) => {
-		    request.body.\("notesHTML").asOpt[String] match {
-			    case Some(html) => {
-			        datasets.setNotesHTML(id, html)
-			        //index(id)
-			        Ok(toJson(Map("status"->"success")))
-			    }
-			    case None => {
-			    	Logger.error("no html specified.")
-			    	BadRequest(toJson("no html specified."))
-			    }
-		    }
-	    }
-	    case None => {
-	      Logger.error(("No user identity found in the request, request body: " + request.body))
-	      BadRequest(toJson("No user identity found in the request, request body: " + request.body))
-	    }
     }
   }
 
