@@ -1,7 +1,7 @@
 @(admins: List[String], configAdmins: List[String], users: List[User])(implicit user: Option[models.User])
 
 @printRow(u: User) = {
-    <tr>
+    <tr id="@u.id">
         <td>@u.fullName</td>
         <td>@u.email.getOrElse("NO EMAIL")</td>
         <td>@u.identityId.providerId</td>
@@ -66,7 +66,7 @@
                 <th class="col-md-1">Admin</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="inactive-users">
         @users.filter(!_.active).map(printRow)
         </tbody>
     </table>
@@ -86,7 +86,7 @@
                 <th class="col-md-1">Admin</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id ="admin-users">
         @users.filter(u => u.active && admins.contains(u.email.getOrElse(""))).map(printRow)
         </tbody>
     </table>
@@ -107,7 +107,7 @@
                 <th class="col-md-1">Admin</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id ="active-users">
         @users.filter(u => u.active && !admins.contains(u.email.getOrElse(""))).map(printRow)
         </tbody>
     </table>
@@ -123,9 +123,9 @@
                 var parts = input.id.split("-", 2);
                 $("#admin-" + parts[1]).prop('disabled', !input.checked);
             });
-
+            var users = { active: [], inactive: [], admin: [], unadmin: [] };
             function submitUsers() {
-                var users = { active: [], inactive: [], admin: [], unadmin: [] };
+
                 var sendit = false;
 
                 $(".active:not(:checked)").each(function() {
@@ -167,6 +167,20 @@
                         type: "POST",
                         contentType: "application/json"
                     }).done(function () {
+                        for(var i = 0; i < users.active.length; i ++) {
+                            $('#active-users').append($('#'+users.active[i]))
+                        }
+                        for(var i = 0; i < users.unadmin.length; i ++) {
+                            $('#active-users').append($('#'+users.unadmin[i]))
+                        }
+                        for(var i = 0; i < users.inactive.length; i ++) {
+                            $('#inactive-users').append($('#'+users.inactive[i]))
+                        }
+                        for(var i = 0; i < users.admin.length; i ++) {
+                            $('#admin-users').append($('#'+users.admin[i]))
+                        }
+
+                        users = { active: [], inactive: [], admin: [], unadmin: [] };
                         notify("Users successfully updated.", "success", false, 5000);
                     }).fail(function (jqXHR, textStatus, errorThrown){
                         console.error("The following error occured: " + textStatus, errorThrown);
