@@ -286,6 +286,12 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //remove Affiliation and License, access and cost in user.repositoryPreferences
     updateUserPreference
+
+    //Move the current notes in files to description. And delete the notes field
+    updateMongo("migrate-notes-files", migrateNotesInFiles)
+
+    //Append the current notes to the end of the description in datasets. And delete the notes field
+    updateMongo("migrate-notes-datasets", migrateNotesInDatasets)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -695,4 +701,41 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       Logger.warn("[MongoDBUpdate : Missing fix to remove fields in user.repositoryPreferences ")
     }
   }
+
+  private def migrateNotesInFiles() {
+    collection("uploads.files").foreach { file =>
+      val note = file.getAsOrElse[String]("notesHTML", "")
+      if(note != "") {
+        file.put("description", note)
+        file.remove("notesHTML")
+        try {
+          collection("uploads.files").save(file, WriteConcern.Safe)
+        } catch {
+          case e: BSONException => Logger.error("Unable to migrate note to description in file:" + file.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+        }
+      }
+    }
+  }
+
+  private def migrateNotesInDatasets() {
+    collection("datasets").foreach { ds =>
+      val note = ds.getAsOrElse[String]("notesHTML", "")
+      if(note != "") {
+        val description = ds.getAsOrElse[String]("description", "")
+        if(description != "") {
+          ds.put("description", description+ " " +note)
+        } else {
+          ds.put("description", note)
+        }
+        ds.remove("notesHTML")
+        try {
+          collection("datasets").save(ds, WriteConcern.Safe)
+        } catch {
+          case e: BSONException => Logger.error("Unable to migrate note to description in dataset:" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+        }
+      }
+
+    }
+  }
+
 }
