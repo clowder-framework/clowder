@@ -154,10 +154,13 @@ object CurationFile {
   }
 }
 
-case class CurationFolder (
+case class CurationFolder(
                     id: UUID = UUID.generate,
                     folderId: UUID,
                     name: String = "N/A",
                     displayName: String = "N/A",
                     files: List[UUID] = List.empty,
-                    folders: List[UUID] = List.empty)
+                    folders: List[UUID] = List.empty,
+                    parentId: UUID,
+                    parentType: String,
+                    parentCurationObjectId: UUID)

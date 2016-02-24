@@ -85,10 +85,20 @@ trait CurationService {
    */
   def getCurationFolder(curationFolderId: UUID): Option[CurationFolder]
 
+
+  def addCurationFile(parentType: String, parentId: UUID, curationFileId: UUID)
+
+  def removeCurationFile(parentType: String, parentId: UUID, curationFileId: UUID)
+
+  def addCurationFolder(parentType: String, parentId: UUID, subCurationFolderId: UUID)
+
+  def removeCurationFolder(parentType: String, parentId: UUID, subCurationFolderId: UUID)
   /**
    * Delete a curation file from a curation obeject
    */
-  def deleteCurationFiles(curationId: UUID, curationFileId: UUID)
+  def deleteCurationFile(curationFileId: UUID)
+
+  def deleteCurationFolder(id: UUID): Unit
 
   /**
    * Update curation object's name, description, space.

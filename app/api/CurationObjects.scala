@@ -281,14 +281,43 @@ class CurationObjects @Inject()(datasets: DatasetService,
   }
 
   @ApiOperation(value = "Delete a file in curation object", notes = "",
-    responseClass = "None", httpMethod = "POST")
-  def deleteCurationFiles(curationId: UUID, curationFileId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
+    responseClass = "None", httpMethod = "DELETE")
+  def deleteCurationFile(curationId:UUID, parentId: UUID, curationFileId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
-      implicit val user = request.user
       curations.get(curationId) match {
-        case Some(c) => {
-          curations.deleteCurationFiles(curationId, curationFileId)
-          Ok(toJson("Success"))
+        case Some(c) => c.status match {
+          case "In Curation" => {
+            if(curationId == parentId){
+              curations.removeCurationFile("dataset", parentId, curationFileId)
+            } else {
+              curations.removeCurationFile("folder", parentId, curationFileId)
+            }
+            curations.deleteCurationFile( curationFileId)
+            Ok(toJson("Success"))
+          }
+          case _ => InternalServerError("Cannot modify Curation Object ")
+        }
+        case None => InternalServerError("Curation Object Not found")
+      }
+
+  }
+
+  @ApiOperation(value = "Delete a folder in curation object", notes = "",
+    responseClass = "None", httpMethod = "DELETE")
+  def deleteCurationFolder(curationId:UUID, parentId: UUID, curationFolderId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
+    implicit request =>
+      curations.get(curationId) match {
+        case Some(c) => c.status match {
+          case "In Curation" => {
+            if(curationId == parentId){
+              curations.removeCurationFolder("dataset", parentId, curationFolderId)
+            } else {
+              curations.removeCurationFolder("folder", parentId, curationFolderId)
+            }
+            curations.deleteCurationFolder( curationFolderId)
+            Ok(toJson("Success"))
+          }
+          case _ => InternalServerError("Cannot modify Curation Object ")
         }
         case None => InternalServerError("Curation Object Not found")
       }

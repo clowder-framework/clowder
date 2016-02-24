@@ -11,6 +11,7 @@ import play.api.libs.json.JsArray
 import services._
 import _root_.util.RequiredFieldsConfig
 import play.api.Play._
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 import scala.concurrent.Await
 import play.api.mvc.{Request, Action, Results}
@@ -76,18 +77,13 @@ class CurationObjects @Inject()(
         datasets.get(datasetId) match {
           case Some(dataset) => {
             if (spaces.get(spaceId) != None) {
-
-             val newFolders = dataset.folders.map(f => copyFolders(f)).flatten
-
-              //copy file list from FileDAO. and save curation file metadata. metadataCount is 0 since
-              // metadatas.getMetadataByAttachTo will increase metadataCount
               var newFiles: List[UUID]= List.empty
               for ( fileId <- dataset.files) {
                 files.get(fileId) match {
                   case Some(f) => {
                     val cf = CurationFile(fileId = f.id, path= f.path, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
                       contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
-                    thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = f.sha512)
+                      thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = f.sha512)
                     curations.insertFile(cf)
                     newFiles = cf.id :: newFiles
                     metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id))))
@@ -95,7 +91,6 @@ class CurationObjects @Inject()(
                 }
               }
 
-              //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
               val newCuration = CurationObject(
                 name = COName(0),
                 author = identity,
@@ -106,7 +101,7 @@ class CurationObjects @Inject()(
                 space = spaceId,
                 datasets = List(dataset),
                 files = newFiles,
-                folders = newFolders,
+                folders = List.empty,
                 repository = None,
                 status = "In Curation")
 
@@ -118,6 +113,14 @@ class CurationObjects @Inject()(
                 val newm = m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id))
                 metadatas.addMetadata(newm)
               }
+
+              dataset.folders.map(f => copyFolders(f, newCuration.id, "dataset",  newCuration.id))
+
+              //copy file list from FileDAO. and save curation file metadata. metadataCount is 0 since
+              // metadatas.getMetadataByAttachTo will increase metadataCount
+
+
+              //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
 
               Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
             }
@@ -132,33 +135,43 @@ class CurationObjects @Inject()(
     }
   }
 
-  private def copyFolders(id:UUID):Option[UUID] = {
+  private def copyFolders(id:UUID, parentId: UUID, parentType:String, parentCurationObjectId:UUID):Unit = {
     folders.get(id) match {
-      case  Some(f) => {
-        val newfolders = f.folders.map (subf => copyFolders(subf)).flatten
+      case Some(folder) =>{
         var newFiles: List[UUID]= List.empty
-        for ( fileId <- f.files) {
+        for ( fileId <- folder.files) {
           files.get(fileId) match {
             case Some(f) => {
               val cf = CurationFile(fileId = f.id, path= f.path, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
                 contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
-                thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, notesHTML = f.notesHTML, sha512 = f.sha512)
+                thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = f.sha512)
               curations.insertFile(cf)
               newFiles = cf.id :: newFiles
-              metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id))))
+              metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id))
+                .map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id))))
             }
           }
         }
-        val newCurationFolders = CurationFolder(
-          folderId = id,
-          name = f.name,
-          displayName = f.displayName,
+
+        val newCurationFolder = CurationFolder(
+        folderId = id,
+        name =folder.name,
+        displayName = folder.displayName,
           files = newFiles,
-          folders = newfolders)
-        curations.insertFolder(newCurationFolders)
-        Option(newCurationFolders.id)
+          folders = List.empty,
+          parentId = parentId,
+          parentType = parentType.toLowerCase(),
+          parentCurationObjectId = parentCurationObjectId
+        )
+        curations.insertFolder(newCurationFolder)
+        curations.addCurationFolder(parentType, parentId, newCurationFolder.id)
+
+        folder.folders.map(f => copyFolders(f,newCurationFolder.id, "folder", parentCurationObjectId ))
       }
-      case None => None
+      case None => {
+        Logger.error("Curation Object Not found")
+
+      }
     }
   }
 
@@ -215,43 +228,69 @@ class CurationObjects @Inject()(
   }
 
 
-  def getCurationObject(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {    implicit request =>
+  def getCurationObject(curationId: UUID, limit: Int) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {    implicit request =>
     implicit val user = request.user
     curations.get(curationId) match {
       case Some(c) => {
         val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
-        val mCurationFile = c.files.map(f => metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f))).flatten
+//        val mCurationFile = c.files.map(f => metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f))).flatten
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
         val fileByDataset = curations.getCurationFiles(c.files)
         val folderByDataset = curations.getCurationFolders(c.folders)
         if (c.status != "In Curation") {
-          Ok(views.html.spaces.submittedCurationObject(c, fileByDataset, m ++ mCurationFile))
+          Ok(views.html.spaces.submittedCurationObject(c, fileByDataset, m ))
         } else {
-          Ok(views.html.spaces.curationObject(c, m ++ mCurationFile, isRDFExportEnabled, folderByDataset, fileByDataset))
+          Ok(views.html.spaces.curationObject(c, m , isRDFExportEnabled, limit))
         }
       }
       case None => InternalServerError("Curation Object Not found")
     }
   }
 
-  def getCurationFolder(curationId: UUID, curationFolderId:UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {    implicit request =>
+  def getUpdatedFilesAndFolders(curationId: UUID, curationFolderId: String, limit: Int, pageIndex:Int) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) { implicit request =>
     implicit val user = request.user
+    val filepageUpdate = if (pageIndex < 0) 0 else pageIndex
     curations.get(curationId) match {
       case Some(c) => {
-        curations.getCurationFolder(curationFolderId) match{
-          case Some(cf) => {
-            val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
-            val mCurationFile = cf.files.map(f => metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f))).flatten
-            val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
-            val fileByDataset = curations.getCurationFiles(cf.files)
-            val folderByDataset = curations.getCurationFolders(cf.folders)
-            if (c.status != "In Curation") {
-              Ok(views.html.spaces.submittedCurationObject(c, fileByDataset, m ++ mCurationFile))
-            } else {
-              Ok(views.html.spaces.curationObject(c, m ++ mCurationFile, isRDFExportEnabled, folderByDataset, fileByDataset))
+        curationFolderId match{
+          case "None" =>{
+            val foldersList = c.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => curations.getCurationFolder(f)).flatten
+            val limitFileIds : List[UUID] = c.files.reverse.slice(limit * filepageUpdate - c.folders.length, limit * (filepageUpdate+1) - c.folders.length)
+            val limitFileList : List[CurationFile]=  curations.getCurationFiles( limitFileIds)
+            val mCurationFile = c.files.map(f => metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f))).flatten
+
+            val folderHierarchy = new ListBuffer[CurationFolder]()
+            val next = c.files.length + c.folders.length > limit * (filepageUpdate+1)
+            Ok(views.html.curations.filesAndFolders(c, None, foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, mCurationFile))
+          }
+          case _ => {
+            curations.getCurationFolder (UUID(curationFolderId)) match {
+              case Some (cf) => {
+                val foldersList = cf.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => curations.getCurationFolder(f)).flatten
+                val limitFileIds : List[UUID] = cf.files.reverse.slice(limit * filepageUpdate - cf.folders.length, limit * (filepageUpdate+1) - cf.folders.length)
+                val limitFileList : List[CurationFile]= curations.getCurationFiles(limitFileIds)
+                val mCurationFile = limitFileIds.map(f => metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f))).flatten
+                var folderHierarchy = new ListBuffer[CurationFolder]()
+                folderHierarchy += cf
+                var f1: CurationFolder = cf
+                while(f1.parentType == "folder") {
+                  curations.getCurationFolder(f1.parentId) match {
+                    case Some(fparent) => {
+                      folderHierarchy += fparent
+                      f1 = fparent
+                    }
+                    case None =>
+                  }
+                }
+                val next = cf.files.length + cf.folders.length > limit * (filepageUpdate+1)
+
+                Ok(views.html.curations.filesAndFolders(c, Some(cf.id.stringify), foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, mCurationFile))
+
+              }
+              case None => InternalServerError ("Curation Folder Not found")
             }
           }
-          case None => InternalServerError("Curation Folder Not found")
+
         }
 
       }

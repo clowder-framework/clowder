@@ -49,9 +49,12 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
     curation match {
       case Some(c) => {
         metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
-        c.files.map(f => metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f)))
+        c.files.map(f => deleteCurationFile(f))
+        c.folders.map(f => {
+          removeCurationFolder("dataset", id, f)
+          deleteCurationFolder(f)
+        })
         spaces.removeCurationObject(c.space, c.id)
-        c.files.map(f => CurationFileDAO.remove(MongoDBObject("_id" ->new ObjectId(f.stringify))))
         CurationDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
       }
       case None =>
@@ -93,13 +96,67 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
     CurationFolderDAO.findOneById(new ObjectId(curationFolderId.stringify))
   }
 
-  def getCurationByCurationFile(curationFile: UUID): Option[CurationObject] = {
-    CurationDAO.findOne(MongoDBObject("files" ->  new ObjectId(curationFile.stringify)))
+  def getCurationByCurationFile(curationFileId: UUID): Option[CurationObject] = {
+    CurationDAO.findOne(MongoDBObject("files" ->  new ObjectId(curationFileId.stringify)))
   }
 
-  def deleteCurationFiles(curationId: UUID, curationFileId: UUID) = {
+  def addCurationFile(parentType: String, parentId: UUID, curationFileId: UUID) = {
+    if(parentType == "dataset") {
+      CurationDAO.update(MongoDBObject("_id" -> new ObjectId(parentId.stringify)), $addToSet("files" -> new ObjectId(curationFileId.stringify)), false, false, WriteConcern.Safe)
+    } else {
+      CurationFolderDAO.update(MongoDBObject("_id" -> new ObjectId(parentId.stringify)), $addToSet("files" -> new ObjectId(curationFileId.stringify)), false, false, WriteConcern.Safe)
+    }
+  }
+
+  def removeCurationFile(parentType: String, parentId: UUID, curationFileId: UUID) = {
+    if(parentType == "dataset") {
+      CurationDAO.update(MongoDBObject("_id" -> new ObjectId(parentId.stringify)), $pull("files" -> new ObjectId(curationFileId.stringify)), false, false, WriteConcern.Safe)
+    } else {
+      CurationFolderDAO.update(MongoDBObject("_id" -> new ObjectId(parentId.stringify)), $pull("files" -> new ObjectId(curationFileId.stringify)), false, false, WriteConcern.Safe)
+    }
+  }
+
+  def addCurationFolder(parentType: String, parentId: UUID, subCurationFolderId: UUID) = {
+    if (parentType == "dataset") {
+      CurationDAO.update(MongoDBObject("_id" -> new ObjectId(parentId.stringify)), $addToSet("folders" -> new ObjectId(subCurationFolderId.stringify)), false, false, WriteConcern.Safe)
+    } else {
+      CurationFolderDAO.update(MongoDBObject("_id" -> new ObjectId(parentId.stringify)), $addToSet("folders" -> new ObjectId(subCurationFolderId.stringify)), false, false, WriteConcern.Safe)
+      CurationFolderDAO.update(MongoDBObject("_id" -> new ObjectId(subCurationFolderId.stringify)), $set("parentId" -> new ObjectId(parentId.stringify)), false, false, WriteConcern.Safe)
+      CurationFolderDAO.update(MongoDBObject("_id" -> new ObjectId(subCurationFolderId.stringify)), $set("parentType" -> "folder"), false, false, WriteConcern.Safe)
+    }
+  }
+
+  def removeCurationFolder(parentType: String, parentId: UUID, subCurationFolderId: UUID) = {
+    if (parentType == "dataset") {
+      CurationDAO.update(MongoDBObject("_id" -> new ObjectId(parentId.stringify)), $pull("folders" -> new ObjectId(subCurationFolderId.stringify)), false, false, WriteConcern.Safe)
+    } else {
+      CurationFolderDAO.update(MongoDBObject("_id" -> new ObjectId(parentId.stringify)), $pull("folders" -> new ObjectId(subCurationFolderId.stringify)), false, false, WriteConcern.Safe)
+    }
+  }
+
+  def deleteCurationFile(curationFileId: UUID) : Unit = {
+    metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, curationFileId))
     CurationFileDAO.remove(MongoDBObject("_id" ->new ObjectId(curationFileId.stringify)))
-    CurationDAO.update(MongoDBObject("_id" ->new ObjectId(curationId.stringify)), $pull("files" -> new ObjectId(curationFileId.stringify)), false, false, WriteConcern.Safe)
+  }
+
+  def deleteCurationFolder(id: UUID): Unit = {
+    getCurationFolder(id) match {
+      case Some(curationFolder )=> {
+        curationFolder.folders.map { cf => {
+          removeCurationFolder("folders", id, cf)
+          deleteCurationFolder(cf)
+        }
+        }
+        curationFolder.files.map { cf => {
+          removeCurationFile("folders", id, cf)
+          deleteCurationFile(cf)
+        }
+        }
+
+      }
+      case None =>
+    }
+    CurationFolderDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
   }
 
   def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID) = {
