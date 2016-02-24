@@ -480,10 +480,10 @@
           }
          });
          request.fail(function (jqXHR, textStatus, errorThrown){
-            console.error("The following error occured: " + textStatus, errorThrown);
+            console.error("The following error occurred: " + textStatus, errorThrown);
             var errMsg = "You must be logged in to see files and folders.";
             if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                notify("Error in getting more files and folders. : " + errorThrown, "error");
+                notify("Error in getting more files and folders : " + errorThrown, "error");
             }
          });
 

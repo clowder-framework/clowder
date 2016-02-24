@@ -120,10 +120,11 @@ GET            /collections/new                                                 
 GET            /collections/newCollectionWithParent                                     @controllers.Collections.newCollectionWithParent(parentCollectionId: Option[String])
 GET            /collections/following                                                   @controllers.Collections.followingCollections(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
 POST           /collection/submit                                                       @controllers.Collections.submit
-GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID, index: Int ?=0, limit: Int ?= 12)
+GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID, limit: Int ?= 12)
 GET            /collection/:id/users                                                    @controllers.Collections.users(id: UUID)
 GET            /collections/:collection_id/previews                                     @controllers.Collections.previews(collection_id: UUID)
-
+GET            /collection/:id/datasets                                                 @controllers.Collections.getUpdatedDatasets(id:UUID, index: Int?=0, limit: Int?= 12)
+GET            /collection/:id/childCollections                                         @controllers.Collections.getUpdatedChildCollections(id:UUID, index: Int?=0, limit: Int ?=12)
 # ----------------------------------------------------------------------
 # Spaces
 # ----------------------------------------------------------------------
