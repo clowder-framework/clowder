@@ -134,7 +134,7 @@
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
                 <ul class="nav nav-tabs margin-bottom-20" >
                     <li role="presentation" class="active"><a href="#tab-files" role="tab" data-toggle="tab">Files </a></li>
-                    <li role="presentation"><a id="metadata-counter" href="#tab-metadata" role="tab" data-toggle="tab">Metadata </a></li>
+                    <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata </a></li>
                     <li role="presentation"><a href="#tab-visua" role="tab" data-toggle="tab">Visualizations</a></li>
                     <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments </a></li>
                     <li role="presentation"><a href="#tab-notes" role="tab" data-toggle="tab">Notes</a></li>
@@ -222,7 +222,7 @@
         var parentId = "@dataset.id";
         var parentType = "dataset";
         var pageIndex = 0;
-
+        var folderId;
         tinymce.init ( { selector : '.notesArea',
             theme : "modern",
             plugins :[
@@ -251,10 +251,34 @@
             $('#h-edit-title').addClass("hiddencomplete");
             $('#h-edit-title').css("display", "none");
         }
-
-        $(document).ready(function(){
+        function parseHash() {
             var hash = location.hash.split('#')[1];
-            getUpdatedFilesAndFolders(hash);
+            var folderSet = false;
+            var pageSet = false;
+            if(hash != undefined) {
+                var values = hash.split('&');
+                for (var i = 0; i < values.length; i++){
+                    var temp = values[i].split('=');
+                    if(temp[0] == 'folderId') {
+                        folderId = temp[1];
+                        folderSet = true
+                    }
+                    if(temp[0] == 'page'){
+                        pageIndex = temp[1];
+                        pageSet = true
+                    }
+                }
+            }
+            if(!folderSet) {
+                folderId ='';
+            }
+            if(!pageSet) {
+                pageIndex = 0;
+            }
+        }
+        $(document).ready(function(){
+
+            getUpdatedFilesAndFolders();
 
             if(@dataset.spaces.size < 1 ) {
                 $('#dataset-users').hide();
@@ -400,8 +424,8 @@
 
     $(function() {
             $(window).on('fileDelete hashchange', function() {
-                var hash = location.hash.split('#')[1];
-                getUpdatedFilesAndFolders(hash);
+
+                getUpdatedFilesAndFolders();
             });
 
             $('#createFolder').click(function() {
@@ -425,13 +449,15 @@
                         $('#folder-modal').modal('hide');
                         $('#folderListDiv').prepend(response);
                         notify("Folder created successfully", "success", false, 2000 );
+                        $('#name').val("");
                     });
 
                     request.fail(function (jqXHR, textStatus, errorThrown){
+                        $('#name').val("");
                         console.error("The following error occured: " + textStatus, errorThrown);
                         var errMsg = "You must be logged in to create a new folder.";
                         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                            notify("Error in creating folder. : " + errorThrown, "error");
+                            notify("Error in creating folder: " + errorThrown, "error");
                         }
                     });
 
@@ -440,13 +466,17 @@
             });
         });
 
-       function updatePageAndFolder(idx, folderId){
-           pageIndex = idx;
-           location.hash = folderId;
+       function updatePageAndFolder(idx, folderIdd){
+           if(folderIdd != "") {
+               location.hash = "folderId="+folderIdd+"&page="+idx;
+           } else {
+               location.hash="page="+idx;
+           }
            $(window).trigger("hashchange");
        }
 
-       function getUpdatedFilesAndFolders(folderId) {
+       function getUpdatedFilesAndFolders() {
+        parseHash();
         if(folderId == "") {
             folderId = null;
         }

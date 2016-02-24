@@ -21,7 +21,7 @@ class MongoDBFolderService @Inject() (files: FileService, datasets: DatasetServi
    * Get Folder
    */
   def get(id: UUID): Option[Folder] = {
-    Folder.findOneById(new ObjectId(id.stringify))
+    FolderDAO.findOneById(new ObjectId(id.stringify))
   }
 
   /**
@@ -29,11 +29,11 @@ class MongoDBFolderService @Inject() (files: FileService, datasets: DatasetServi
    */
   def insert(folder: Folder): Option[String] = {
 
-    Folder.insert(folder).map(_.toString)
+    FolderDAO.insert(folder).map(_.toString)
   }
 
   def update(folder: Folder) {
-    Folder.save(folder)
+    FolderDAO.save(folder)
   }
 
   /**
@@ -66,60 +66,68 @@ class MongoDBFolderService @Inject() (files: FileService, datasets: DatasetServi
           removeSubFolder(folder.parentId, folder.id)
         }
 
-        Folder.remove(MongoDBObject("_id" -> new ObjectId(folder.id.stringify)))
+        FolderDAO.remove(MongoDBObject("_id" -> new ObjectId(folder.id.stringify)))
       }
       case None =>
     }
 
   }
   def countByName(name: String,  parentType: String, parentId: String): Long = {
-    Folder.count(MongoDBObject("name" -> name, "parentType" -> parentType, "parentId" -> new ObjectId(parentId)))
+    FolderDAO.count(MongoDBObject("name" -> name, "parentType" -> parentType, "parentId" -> new ObjectId(parentId)))
   }
 
    def countByDisplayName(displayName: String,  parentType: String, parentId: String): Long = {
-     Folder.count(MongoDBObject("displayName" -> displayName, "parentType" -> parentType, "parentId" -> new ObjectId(parentId)))
+     FolderDAO.count(MongoDBObject("displayName" -> displayName, "parentType" -> parentType, "parentId" -> new ObjectId(parentId)))
    }
-  
+
   /**
    * Add File to Folder
    */
   def addFile(folderId: UUID, fileId: UUID) {
-    Folder.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $addToSet("files" -> new ObjectId(fileId.stringify)), false, false, WriteConcern.Safe)
+    FolderDAO.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $addToSet("files" -> new ObjectId(fileId.stringify)), false, false, WriteConcern.Safe)
   }
 
   def removeFile(folderId: UUID, fileId: UUID) {
-    Folder.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $pull("files" -> new ObjectId(fileId.stringify)), false, false, WriteConcern.Safe)
+    FolderDAO.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $pull("files" -> new ObjectId(fileId.stringify)), false, false, WriteConcern.Safe)
   }
   /**
    * Add Subfolder to folder
    */
   def addSubFolder(folderId: UUID, subFolderId: UUID) {
-    Folder.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $addToSet("folders" -> new ObjectId(subFolderId.stringify)),false, false, WriteConcern.Safe)
-    Folder.update(MongoDBObject("_id" -> new ObjectId(subFolderId.stringify)), $set("parentId" -> new ObjectId(folderId.stringify)), false, false, WriteConcern.Safe)
-    Folder.update(MongoDBObject("_id" -> new ObjectId(subFolderId.stringify)), $set("parentType" -> "folder"), false, false, WriteConcern.Safe)
+    FolderDAO.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $addToSet("folders" -> new ObjectId(subFolderId.stringify)),false, false, WriteConcern.Safe)
+    FolderDAO.update(MongoDBObject("_id" -> new ObjectId(subFolderId.stringify)), $set("parentId" -> new ObjectId(folderId.stringify)), false, false, WriteConcern.Safe)
+    FolderDAO.update(MongoDBObject("_id" -> new ObjectId(subFolderId.stringify)), $set("parentType" -> "folder"), false, false, WriteConcern.Safe)
   }
 
   def removeSubFolder(folderId: UUID, subFolderId: UUID) {
-    Folder.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $pull("folders" -> new ObjectId(subFolderId.stringify)), false, false, WriteConcern.Safe)
+    FolderDAO.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $pull("folders" -> new ObjectId(subFolderId.stringify)), false, false, WriteConcern.Safe)
   }
 
   def updateParent(folderId: UUID, parent: TypedID) {
-    Folder.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $set("parentId" -> new ObjectId(parent.id.stringify)), false, false, WriteConcern.Safe)
-    Folder.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $set("parentType" -> parent.objectType), false, false, WriteConcern.Safe)
+    FolderDAO.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $set("parentId" -> new ObjectId(parent.id.stringify)), false, false, WriteConcern.Safe)
+    FolderDAO.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)), $set("parentType" -> parent.objectType), false, false, WriteConcern.Safe)
   }
 
   def updateName(folderId: UUID, name: String, displayName: String) {
-    val result = Folder.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)),
+    val result = FolderDAO.update(MongoDBObject("_id" -> new ObjectId(folderId.stringify)),
       $set("name" -> name, "displayName" -> displayName),
       false, false, WriteConcern.Safe)
   }
 
   def findByFileId(file_id:UUID): List[Folder] = {
-    Folder.dao.find(MongoDBObject("files" -> new ObjectId(file_id.stringify))).toList
+    FolderDAO.dao.find(MongoDBObject("files" -> new ObjectId(file_id.stringify))).toList
+  }
+
+  def findByNameInParent(name: String, parentType: String, parentId: String ): List[Folder] = {
+    FolderDAO.find(MongoDBObject("name" -> name, "parentType" -> parentType, "parentId" -> new ObjectId(parentId))).toList
+  }
+
+  def findByDisplayNameInParent(name: String, parentType: String, parentId: String ): List[Folder] = {
+    FolderDAO.find(MongoDBObject("displayName" -> name, "parentType" -> parentType, "parentId" -> new ObjectId(parentId))).toList
   }
 }
 
-object Folder extends ModelCompanion[Folder, ObjectId] {
+object FolderDAO extends ModelCompanion[Folder, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None =>throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[Folder, ObjectId](collection = x.collection("folders")){}

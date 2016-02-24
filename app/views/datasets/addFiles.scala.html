@@ -10,7 +10,7 @@
 
             <a href="
             @folder match {
-                case Some(f) => {@routes.Datasets.dataset(dataset.id)#@f.id}
+                case Some(f) => {@routes.Datasets.dataset(dataset.id)#folderId=@f.id}
                 case None => {@routes.Datasets.dataset(dataset.id)}
             }
             " class="btn btn-link" title="Navigate back to dataset">
@@ -28,7 +28,7 @@
             <ul class="list-unstyled">
                 @folder match {
                     case Some(f) => {
-                        <li> Folder <a href="@routes.Datasets.dataset(dataset.id)#@f.id">@f.name</a></li>
+                        <li> Folder <a href="@routes.Datasets.dataset(dataset.id)#folderId=@f.id">@f.name</a></li>
                         <li>Parent Dataset <a href="@routes.Datasets.dataset(dataset.id)">@dataset.name</a></li>
                     }
 

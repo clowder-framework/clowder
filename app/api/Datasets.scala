@@ -26,8 +26,6 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
  * Dataset API.
  *
- * @author Luigi Marini
- *
  */
 @Api(value = "/datasets", listingPath = "/api-docs.json/datasets", description = "A dataset is a container for files and metadata")
 @Singleton
