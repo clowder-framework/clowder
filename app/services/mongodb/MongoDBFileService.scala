@@ -53,7 +53,8 @@ class MongoDBFileService @Inject() (
   sparql: RdfSPARQLService,
   storage: ByteStorageService,
   userService: UserService,
-  folders: FolderService) extends FileService {
+  folders: FolderService,
+  metadatas:MetadataService) extends FileService {
 
   object MustBreak extends Exception {}
 
@@ -680,6 +681,7 @@ class MongoDBFileService @Inject() (
           }
           if(!file.thumbnail_id.isEmpty)
             thumbnails.remove(UUID(file.thumbnail_id.get))
+          metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
         }
 
         // finally delete the actual file
