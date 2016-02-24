@@ -92,7 +92,7 @@
   </div>
 
   <script>
-    function removeSession(sessionId) {
+    function removeSession(toolType, sessionId) {
       console.log("Eventually remove session "+sessionId)
       // Get current status from ToolManagerPlugin and refresh sidebar table
       var request = new XMLHttpRequest();
@@ -102,7 +102,7 @@
         }
       }
 
-      request.open("GET", jsRoutes.controllers.Datasets.removeSession(sessionId).url, true);
+      request.open("GET", jsRoutes.controllers.Datasets.removeSession(toolType, sessionId).url, true);
       request.send();
     }
   </script>

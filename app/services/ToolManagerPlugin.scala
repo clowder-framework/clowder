@@ -167,7 +167,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
         case _: JsUndefined => {}
         case _ => {
           var matchedSess = sessionMap(newSession.id)
-          matchedSess.attachID(externalID.toString)
+          matchedSess.attachID(externalID.toString.replace("\"",""))
           sessionMap(newSession.id) = matchedSess
         }
       }
