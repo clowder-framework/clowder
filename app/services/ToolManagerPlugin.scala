@@ -30,6 +30,12 @@ class ToolSession () {
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val users: UserService = DI.injector.getInstance(classOf[UserService])
 
+  def attachID(externalid: String): Unit = {
+    // Define the external Tool URL this ToolSession points to
+    externalId = externalid
+    updateTimestamp()
+  }
+
   def attachURL(sessionurl: String): Unit = {
     // Define the external Tool URL this ToolSession points to
     url = sessionurl
@@ -146,12 +152,22 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     statusRequest.map( response => {
       Logger.debug(("TOOL API RESPONSED: "+response.body.toString))
       val externalURL = (Json.parse(response.body) \ "URL")
+      val externalID = (Json.parse(response.body) \ "id")
 
       externalURL match {
         case _: JsUndefined => {}
         case _ => {
           var matchedSess = sessionMap(newSession.id)
           matchedSess.attachURL(externalURL.toString)
+          sessionMap(newSession.id) = matchedSess
+        }
+      }
+
+      externalID match {
+        case _: JsUndefined => {}
+        case _ => {
+          var matchedSess = sessionMap(newSession.id)
+          matchedSess.attachID(externalID.toString)
           sessionMap(newSession.id) = matchedSess
         }
       }
@@ -240,17 +256,22 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     * Terminate a running tool session.
     * @param sessionId ID of Tool Session to stop
     */
-  def removeSession(sessionId: UUID): Unit = {
+  def removeSession(toolType: String, sessionId: UUID): Unit = {
     //val statusRequest: Future[Response] = url("http://141.142.209.108:8080/tools/docker/ipython/<id>").delete()
+
+    val apihost = play.Play.application().configuration().getString("toolmanager.host")
+    var apipath = apihost + ":" + play.Play.application().configuration().getString("toolmanager.port")  + play.Play.application().configuration().getString("toolmanager.paths")
+    // TODO: nasty hacksies, precious - go write this properly in the tool manager branch!
+    if (toolType == "RStudio") {
+      apipath = apipath.replace("ipython","rstudio")
+    }
 
     sessionMap.get(sessionId) match {
       case Some(ts) => {
         val sessApiId = ts.externalId // External identifier on NDS api
+        val statusRequest: Future[Response] = url(apipath+"?id="+sessApiId.toString()).delete()
       }
     }
-    //statusRequest.map( response => {
-    //  Logger.info(response.body.toString)
-    //})
 
     sessionMap = sessionMap - sessionId
   }

@@ -949,12 +949,12 @@ class Datasets @Inject()(
     }
   }
 
-  def removeSession(sessionId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+  def removeSession(toolType: String, sessionId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
-        mgr.removeSession(sessionId)
+        mgr.removeSession(toolType, sessionId)
         Ok(sessionId.toString)
       }
       case None => Ok("")
