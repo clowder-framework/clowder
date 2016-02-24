@@ -7,7 +7,7 @@
                 <li>Size: <div id="size"></div> <li/>
                 <li>File Formats: <div id="format"></div></li>
                 <li>Creator: @curationObject.datasets(0).author.fullName</li>
-                <li>Uploaded: @curationObject.created.format("MMM dd, yyyy")</li>
+                <li>Created: @curationObject.created.format("MMM dd, yyyy")</li>
             </ul>
             @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, curationObject.space))){
                 @if(!editCurationObject){

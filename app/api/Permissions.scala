@@ -43,7 +43,6 @@ object Permission extends Enumeration {
     EditLicense,
     CreatePreview,    // Used by extractors
     MultimediaIndexDocument,
-    CreateNote,
 
     // sections
     CreateSection,
