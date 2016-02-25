@@ -230,6 +230,7 @@ class CurationObjects @Inject()(
     implicit val user = request.user
     curations.get(curationId) match {
       case Some(c) => {
+        // metadata of curation files are getting from getUpdatedFilesAndFolders
         val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
         val fileByDataset = curations.getCurationFiles(curations.getAllCurationFileIds(c.id))
