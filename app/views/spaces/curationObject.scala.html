@@ -56,25 +56,19 @@
 
 
 
-            <script type="text/javascript">
+        <script type="text/javascript">
             var removeIndicator = false;
             var parentId = "@curationObject.id";
             var parentType = "dataset";
             var pageIndex = 0;
             var folderId;
 
-         
-        $(document).ready(function(){
-
-            getUpdatedFilesAndFolders('@curationObject.id', @limit);
-                    });
-                     $(window).on('fileDelete hashchange', function() {
-
+            $(document).ready(function(){
                 getUpdatedFilesAndFolders('@curationObject.id', @limit);
             });
-
-
-
+            $(window).on('fileDelete hashchange', function() {
+                getUpdatedFilesAndFolders('@curationObject.id', @limit);
+            });
                 </script>
 
         </div>

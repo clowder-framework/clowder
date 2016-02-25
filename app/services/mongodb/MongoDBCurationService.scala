@@ -92,6 +92,20 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
     (for (cf <- curationFolderIds) yield CurationFolderDAO.findOneById(new ObjectId(cf.stringify))).flatten
   }
 
+  def getAllCurationFileIds(id:UUID): List[UUID] ={
+    get(id) match {
+      case Some(c) => c.files ++ c.folders.map(subf => getAllCurationFileIdsbyCurationFolder(subf)).flatten
+      case None => List.empty
+    }
+  }
+
+  private def getAllCurationFileIdsbyCurationFolder(id:UUID): List[UUID] ={
+    getCurationFolder(id)  match {
+      case Some(f) => f.files ++ f.folders.map(subf => getAllCurationFileIdsbyCurationFolder(subf)).flatten
+      case None => List.empty
+    }
+  }
+
   def getCurationFolder(curationFolderId: UUID): Option[CurationFolder] = {
     CurationFolderDAO.findOneById(new ObjectId(curationFolderId.stringify))
   }
