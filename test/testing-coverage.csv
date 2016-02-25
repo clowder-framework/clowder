@@ -15,7 +15,6 @@ GET  ,/api/files/:id/technicalmetadatajson       ,Get system-specified metadata,
 GET,/api/files/:id/xmlmetadatajson,,@api.Files.getXMLMetadataJSON(id: UUID),
 GET,/api/files/:id/usermetadatajson,,@api.Files.getUserMetadataJSON(id: UUID),
 POST ,/api/files/:id/comment,Add comment to file,@api.Files.comment(id: UUID),
-POST ,/api/files/:id/setNotesHTML,,@api.Files.setNotesHTML(id: UUID),
 DELETE ,/api/files/:id,,@api.Files.removeFile(id: UUID),Yes
 GET  ,/api/files/:id/tags                        ,List file tags,@api.Files.getTags(id: UUID),Yes
 POST ,/api/files/:id/tags                        ,Add file tags           ,@api.Files.addTags(id: UUID),Yes

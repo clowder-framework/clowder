@@ -107,7 +107,7 @@
 
 <script type="text/javascript">
     var insertInstrumentForm = function(data) {
-        var instrumentTemplate = Handlebars.getTemplate("/assets/templates/sensors/stream-form");
+        var instrumentTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/sensors/stream-form")");
         $("#instruments").append(instrumentTemplate(data));
     };
     $(document).ready(function() {

@@ -5,6 +5,8 @@ package services.mongodb
 
 import api.Permission
 import api.Permission.Permission
+import com.novus.salat.dao.{ModelCompanion, SalatDAO}
+import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
 import models.{User, UUID, Collection, Dataset}
 import com.mongodb.casbah.commons.MongoDBObject
@@ -12,26 +14,25 @@ import java.text.SimpleDateFormat
 import org.bson.types.ObjectId
 import play.api.Logger
 import util.Formatters
+import scala.collection.mutable.ListBuffer
 import scala.util.Try
 import services._
 import javax.inject.{Singleton, Inject}
 import scala.util.Failure
 import scala.Some
 import scala.util.Success
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
-import com.mongodb.casbah.Imports._
 import MongoContext.context
 import play.api.Play._
 
 
 /**
  * Use Mongodb to store collections.
- * 
+ *
  * @author Constantinos Sophocleous
  *
  */
 @Singleton
-class MongoDBCollectionService @Inject() (datasets: DatasetService, userService: UserService)  extends CollectionService {
+class MongoDBCollectionService @Inject() (datasets: DatasetService, userService: UserService, spaceService: SpaceService)  extends CollectionService {
   /**
    * Count all collections
    */
@@ -301,7 +302,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       collectionList
     }
   }
-  
+
   /**
    * List collections for a specific user before a date.
    */
@@ -321,7 +322,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       collectionList
     }
   }
-  
+
   /**
    * Get collection.
    */
@@ -388,8 +389,8 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
               datasets.index(dataset.id)
               index(collection.id)
 
-              if(collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){ 
-                  Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)), 
+              if(collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){
+                  Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)),
                   $set("thumbnail_id" -> dataset.thumbnail_id.get), false, false, WriteConcern.Safe)
               }
 
@@ -413,6 +414,80 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     }
   }
 
+  def listChildCollections(parentCollectionId : UUID): List[Collection] = {
+    val childCollections = List.empty[Collection]
+    get(parentCollectionId) match {
+      case Some(collection) => {
+        val childCollectionIds = collection.child_collection_ids
+        val childList = for (childCollectionId <- childCollectionIds; if (get(childCollectionId).isDefined)) yield (get(childCollectionId)).get
+        return childList
+      }
+      case None => return childCollections
+    }
+  }
+
+  def getRootCollections(collectionId : UUID) : ListBuffer[Collection] = {
+    var rootCollections = ListBuffer.empty[Collection]
+    Collection.findOneById(new ObjectId(collectionId.stringify)) match {
+      case Some(collection) => {
+        var parentCollectionIds = collection.parent_collection_ids
+        for (parentCollectionId <- parentCollectionIds){
+          Collection.findOneById(new ObjectId(parentCollectionId.stringify))  match {
+            case Some(parentCollection) => {
+              if (parentCollection.root_flag == true) {
+                rootCollections += parentCollection
+              } else {
+                rootCollections = rootCollections++( getRootCollections(parentCollectionId))
+              }
+            }
+            case None => Logger.error("no parent collection")
+          }
+        }
+      }
+    }
+    return rootCollections
+  }
+
+  def getRootSpaceIds(collectionId: UUID) : ListBuffer[UUID] = {
+    var rootSpaceIds = ListBuffer.empty[UUID]
+
+    var rootCollectionIds =  getRootCollections(collectionId).toList
+
+    for (rootCollectionId <- rootCollectionIds){
+      Collection.findOneById(new ObjectId(rootCollectionId.id.stringify)) match {
+        case Some(rootCollection) => {
+          var currentRootSpaces = rootCollection.spaces
+          rootSpaceIds = rootSpaceIds ++ currentRootSpaces
+        }
+        case None => Logger.error("no root collection found with id " + rootCollectionId)
+      }
+    }
+
+    return rootSpaceIds
+  }
+
+
+  def getAllDescendants(parentCollectionId : UUID) : ListBuffer[models.Collection] = {
+    var descendants = ListBuffer.empty[models.Collection]
+
+    Collection.findOneById(new ObjectId(parentCollectionId.stringify)) match {
+      case Some(parentCollection) => {
+        val childCollections = listChildCollections(parentCollectionId)
+        for (child <- childCollections){
+          descendants += child
+          val otherDescendants = getAllDescendants(child.id)
+          descendants = descendants ++ otherDescendants
+
+        }
+
+      }
+      case None => Logger.error("no collection found for id " + parentCollectionId)
+    }
+
+    return descendants
+  }
+
+
   def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: Boolean = true) = Try {
     Logger.debug(s"Removing dataset $datasetId from collection $collectionId")
 	  Collection.findOneById(new ObjectId(collectionId.stringify)) match{
@@ -426,11 +501,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
               datasets.removeCollection(dataset.id, collection.id)
               datasets.index(dataset.id)
               index(collection.id)
-              
+
               if(!collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){
 	        	  if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
 	        		  createThumbnail(collection.id)
-	        	  }		                        
+	        	  }
 	          }
 
               Logger.info("Removing dataset from collection completed")
@@ -462,7 +537,12 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
           datasets.removeCollection(dataset.id, collection.id)
           datasets.index(dataset.id)
         }
-        for (follower <- collection.followers) {
+
+        for(space <- collection.spaces){
+          spaceService.removeCollection(collection.id,space)
+        }
+
+        for(follower <- collection.followers) {
           userService.unfollowCollection(follower, collectionId)
         }
         Collection.remove(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)))
@@ -484,12 +564,12 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   def findOneByDatasetId(datasetId: UUID): Option[Collection] = {
     Collection.findOne(MongoDBObject("datasets._id" -> new ObjectId(datasetId.stringify)))
   }
-  
+
   def updateThumbnail(collectionId: UUID, thumbnailId: UUID) {
     Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
       $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
   }
-  
+
   def createThumbnail(collectionId:UUID){
     get(collectionId) match{
 	    case Some(collection) => {
@@ -515,15 +595,15 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   def index(id: UUID) {
     Collection.findOneById(new ObjectId(id.stringify)) match {
       case Some(collection) => {
-        
+
         var dsCollsId = ""
         var dsCollsName = ""
-          
+
         for(dataset <- datasets.listCollection(id.stringify)){
           dsCollsId = dsCollsId + dataset.id.stringify + " %%% "
           dsCollsName = dsCollsName + dataset.name + " %%% "
         }
-	    
+
 	    val formatter = new SimpleDateFormat("dd/MM/yyyy")
 
         current.plugin[ElasticsearchPlugin].foreach {
@@ -574,6 +654,137 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   def removeFollower(id: UUID, userId: UUID) {
     Collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
                       $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
+  }
+
+  def removeSubCollection(collectionId: UUID, subCollectionId: UUID, ignoreNotFound: Boolean = true) = Try {
+    Collection.findOneById(new ObjectId(collectionId.stringify)) match{
+      case Some(collection) => {
+        Collection.findOneById(new ObjectId(subCollectionId.stringify)) match {
+          case Some(sub_collection) => {
+            if(isSubCollectionIdInCollection(subCollectionId,collection)){
+              // remove sub collection from list of child collection
+              Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $pull("child_collection_ids" -> Some(new ObjectId(subCollectionId.stringify))), false, false, WriteConcern.Safe)
+              Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $inc("childCollectionsCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
+              //remove collection from the list of parent collection for sub collection
+              Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)), $pull("parent_collection_ids" -> Some(new ObjectId(collectionId.stringify))), false, false, WriteConcern.Safe)
+              Logger.info("Removing subcollection from collection completed")
+            }
+            else{
+              Logger.info("Subcollection was already out of the collection.")
+            }
+            Success
+          }
+          case None => Success
+        }
+      }
+      case None => {
+        ignoreNotFound match{
+          case true => Success
+          case false =>
+            Logger.error("Error getting collection" + collectionId)
+            Failure
+        }
+      }
+    }
+  }
+
+
+
+  def addSubCollection(collectionId :UUID, subCollectionId: UUID) = Try{
+    Collection.findOneById(new ObjectId(collectionId.stringify)) match {
+      case Some(collection) => {
+        get(subCollectionId) match {
+          case Some(sub_collection) => {
+            if (!isSubCollectionIdInCollection(subCollectionId,collection)){
+              addSubCollectionId(subCollectionId,collection)
+              addParentCollectionId(subCollectionId,collectionId)
+              var parentSpaceIds = collection.spaces
+              for (parentSpaceId <- parentSpaceIds){
+                if (!sub_collection.spaces.contains(parentSpaceId)){
+                  spaceService.get(parentSpaceId) match {
+                    case Some(parentSpace) => {
+                      spaceService.addCollection(subCollectionId,parentSpaceId)
+                    }
+                    case None => Logger.error("No space found for " + parentSpaceId)
+                  }
+                }
+              }
+              index(collection.id)
+              Collection.findOneById(new ObjectId(subCollectionId.stringify)) match {
+                case Some(sub_collection) => {
+                  index(sub_collection.id)
+                } case None =>
+                  Logger.error("Error getting subcollection" + subCollectionId);
+                  Failure
+              }
+            }
+          }
+          case None => Logger.error("Error getting subcollection")
+        }
+      } case None => {
+        Logger.error("Error getting collection" + collectionId);
+        Failure
+      }
+    }
+  }
+
+
+  def addSubCollectionId(subCollectionId: UUID, collection: Collection) = Try {
+    Collection.update(MongoDBObject("_id" -> new ObjectId((collection.id).stringify)), $addToSet("child_collection_ids" -> Some(new ObjectId(subCollectionId.stringify))), false, false, WriteConcern.Safe)
+    Collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)), $inc("childCollectionsCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
+  }
+
+  def removeSubCollectionId(subCollectionId: UUID, collection : Collection,ignoreNotFound: Boolean = true) = Try {
+    Collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)),
+      $pull("child_collection_ids" -> Some(new ObjectId(subCollectionId.stringify))),
+      false, false)
+    Collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)), $inc("childCollectionsCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
+
+  }
+
+  def removeParentCollectionId(parentCollectionId: UUID, collection : Collection,ignoreNotFound: Boolean = true) = Try {
+    Collection.update(MongoDBObject("_id" -> new ObjectId((collection.id).stringify)),
+      $pull("parent_collection_ids" -> Some(new ObjectId(parentCollectionId.stringify))),
+      false, false)
+
+  }
+
+  def addParentCollectionId(subCollectionId: UUID, parentCollectionId: UUID) = Try {
+    Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)), $addToSet("parent_collection_ids" -> Some(new ObjectId(parentCollectionId.stringify))), false, false, WriteConcern.Safe)
+  }
+
+  def setRootFlag(collectionId : UUID, isRoot : Boolean) = Try {
+    Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),$set("root_flag" -> isRoot), false, false, WriteConcern.Safe )
+  }
+
+  def getSelfAndAncestors(collectionId : UUID) : List[Collection] = {
+    var selfAndAncestors : ListBuffer[models.Collection] = ListBuffer.empty[models.Collection]
+    get(collectionId) match {
+      case Some(collection) => {
+        selfAndAncestors += collection
+        for (parentCollectionId <- collection.parent_collection_ids){
+          get(parentCollectionId) match {
+            case Some(parent_collection) => {
+              selfAndAncestors = selfAndAncestors ++ getSelfAndAncestors(parentCollectionId)
+            }
+
+          }
+        }
+      }
+
+    }
+    return selfAndAncestors.toList
+
+
+  }
+
+  private def isSubCollectionIdInCollection(subCollectionId: UUID, collection: Collection) : Boolean = {
+    if (collection.child_collection_ids.contains(subCollectionId)){
+      return true
+    }
+    else{
+      return false
+    }
   }
 }
 

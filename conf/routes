@@ -103,17 +103,21 @@ GET            /datasets/createStep2                                            
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
 GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
-GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, filepage:Int ?= 0)
+GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, limit: Int ?= 5)
+POST           /datasets/:datasetId/updatedFilesAndFolders                              @controllers.Datasets.getUpdatedFilesAndFolders(datasetId: UUID, limit: Int ?= 5, pageIndex: Int ?= 0)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
-POST           /dataset/submit                                                          @controllers.Datasets.submit
+POST           /dataset/submit                                                          @controllers.Datasets.submit(folderId: Option[String] ?= None)
 GET            /datasets/:id/addFiles                                                   @controllers.Datasets.addFiles(id: UUID)
-
+GET            /datasets/:id/:folderId/addFiles                                         @controllers.Folders.addFiles(id: UUID, folderId: String)
+POST           /datasets/:parentDatasetId/newFolder                                     @controllers.Folders.createFolder(parentDatasetId: UUID)
 # ----------------------------------------------------------------------
 # COLLECTIONS
 # ----------------------------------------------------------------------
-GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
+GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None )
+GET            /collections/listChildCollections                                        @controllers.Collections.listChildCollections(parentCollectionId : String, when: String ?= "", date: String ?= "", size: Int ?= 12,  space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
 GET            /collections/new                                                         @controllers.Collections.newCollection(space: Option[String])
+GET            /collections/newCollectionWithParent                                     @controllers.Collections.newCollectionWithParent(parentCollectionId: Option[String])
 GET            /collections/following                                                   @controllers.Collections.followingCollections(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
 POST           /collection/submit                                                       @controllers.Collections.submit
 GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID, index: Int ?=0, limit: Int ?= 12)
@@ -152,7 +156,6 @@ GET            /metadata/search                                                 
 GET            /metadata/:id                                                            @controllers.Metadata.view(id: UUID)
 GET            /files/:file_id/metadata                                                 @controllers.Metadata.file(file_id: UUID)
 GET            /datasets/:dataset_id/metadata                                           @controllers.Metadata.dataset(dataset_id: UUID)
-
 # Tags
 GET            /tags/search                                                             @controllers.Tags.search(tag, start: String ?= "", size: Integer ?= 12, mode: String ?= "")
 GET            /tags/list/ordered                                                       @controllers.Tags.tagListOrdered
@@ -218,7 +221,7 @@ GET            /not-authorized                                                  
 # ----------------------------------------------------------------------
 # ADMIN PAGES
 # ----------------------------------------------------------------------
-GET            /admin                                                                   @controllers.Admin.main
+GET            /admin/customize                                                         @controllers.Admin.customize
 GET            /admin/indexAdmin                                                        @controllers.Admin.adminIndex
 GET            /admin/test                                                              @controllers.Admin.test
 GET            /admin/secureTest                                                        @controllers.Admin.secureTest
@@ -244,10 +247,8 @@ DELETE         /admin/roles/delete/:id                                          
 GET            /admin/roles/:id/edit                                                    @controllers.Admin.editRole(id: UUID)
 POST           /admin/roles/update                                                      @controllers.Admin.updateRole
 GET            /admin/extractions                                                       @controllers.Extractors.listAllExtractions
-POST           /admin/theme                                                             @controllers.Admin.setTheme
 GET            /admin/dataDumps                                                         @controllers.Admin.viewDumpers
 GET            /admin/sensors                                                           @controllers.Admin.sensors
-POST           /api/sensors/config                                                      api.Admin.sensorsConfig
 
 # ----------------------------------------------------------------------
 # JAVASCRIPT ENDPOINTS
@@ -263,6 +264,14 @@ GET            /api-docs.json/:path                                             
 # ----------------------------------------------------------------------
 # RESTful API
 # ----------------------------------------------------------------------
+
+#----------------------------------------------------------------------
+# ADMIN
+#----------------------------------------------------------------------
+POST           /api/sensors/config                                                      api.Admin.sensorsConfig
+DELETE         /api/delete-data                                                         api.Admin.deleteAllData(resetAll: Boolean ?= false)
+POST           /api/remove-admin                                                        api.Admin.removeAdmin
+POST           /api/changeAppearance                                                    api.Admin.submitAppearance
 
 #----------------------------------------------------------------------
 # JSON-LD METADATA
@@ -292,6 +301,20 @@ PUT            /api/metadata/definitions/:id                                    
 POST           /api/metadata/definitions                                                @api.Metadata.addDefinition
 DELETE         /admin/metadata/definitions/:id                                          @api.Metadata.deleteDefinition(id: UUID)
 
+
+# ----------------------------------------------------------------------
+# LOGOS ENDPOINT
+# ----------------------------------------------------------------------
+GET            /api/logos                                                               @api.Logos.list(path: Option[String] ?= None, name: Option[String] ?= None)
+POST           /api/logos                                                               @api.Logos.upload
+GET            /api/logos/:id                                                           @api.Logos.getId(id: UUID)
+PUT            /api/logos/:id                                                           @api.Logos.putId(id: UUID)
+GET            /api/logos/:id/blob                                                      @api.Logos.downloadId(id: UUID, default: Option[String] ?= None)
+DELETE         /api/logos/:id                                                           @api.Logos.deleteId(id: UUID)
+GET            /api/logos/:path/:name                                                   @api.Logos.getPath(path: String, name: String)
+PUT            /api/logos/:path/:name                                                   @api.Logos.putPath(path: String, name: String)
+GET            /api/logos/:path/:name/blob                                              @api.Logos.downloadPath(path: String, name: String, default: Option[String] ?= None)
+DELETE         /api/logos/:path/:name                                                   @api.Logos.deletePath(path: String, name: String)
 
 # ----------------------------------------------------------------------
 # FILES ENDPOINT
@@ -325,7 +348,6 @@ GET            /api/files/:id/xmlmetadatajson                                   
 POST           /api/files/:id/follow                                                    @api.Files.follow(id: UUID, name: String)
 POST           /api/files/:id/unfollow                                                  @api.Files.unfollow(id: UUID, name: String)
 POST           /api/files/:id/comment                                                   @api.Files.comment(id: UUID)
-POST           /api/files/:id/setNotesHTML                                              @api.Files.setNotesHTML(id: UUID)
 DELETE         /api/files/:id                                                           @api.Files.removeFile(id: UUID)
 GET            /api/files/:id/tags                                                      @api.Files.getTags(id: UUID)
 POST           /api/files/:id/tags                                                      @api.Files.addTags(id: UUID)
@@ -373,9 +395,6 @@ GET            /api/files/:id                                                   
 # ----------------------------------------------------------------------
 # DANGEROUS ENDPOINTS
 # ----------------------------------------------------------------------
-DELETE         /api/delete-data                                                         api.Admin.deleteAllData(resetAll: Boolean ?= false)
-POST           /api/remove-admin                                                        api.Admin.removeAdmin
-POST           /api/changeAppearance                                                    api.Admin.submitAppearance
 POST           /api/dumpFilesMd                                                         @api.Files.dumpFilesMetadata
 POST           /api/dumpDatasetsMd                                                      @api.Datasets.dumpDatasetsMetadata
 POST           /api/dumpDatasetGroupings                                                @api.Datasets.dumpDatasetGroupings
@@ -413,7 +432,12 @@ POST           /api/changeAppearance                                            
 # ----------------------------------------------------------------------
 GET            /api/collections                                                         @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 GET            /api/collections/canEdit                                                 @api.Collections.listCanEdit(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
+GET            /api/collections/possibleParents                                         @api.Collections.listPossibleParents(currentCollectionId: String, title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 POST           /api/collections                                                         @api.Collections.createCollection()
+GET            /api/collections/rootCollections                                         @api.Collections.getRootCollections
+GET            /api/collections/topLevelCollections                                     @api.Collections.getTopLevelCollections
+GET            /api/collections/allCollections                                          @api.Collections.getAllCollections()
+
 # deprecrated
 GET            /api/collections/list                                                    @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 POST           /api/collections/:id/follow                                              @api.Collections.follow(id: UUID, name: String)
@@ -434,6 +458,16 @@ GET            /api/collections/:coll_id                                        
 PUT            /api/collections/:coll_id/title                                          @api.Collections.updateCollectionName(coll_id: UUID)
 PUT            /api/collections/:coll_id/description                                    @api.Collections.updateCollectionDescription(coll_id: UUID)
 
+POST           /api/collections/:coll_id/removeSubCollection/:sub_coll_id               @api.Collections.removeSubCollection(coll_id: UUID,sub_coll_id:UUID, ignoreNotFound?="True")
+POST           /api/collections/:coll_id/rootFlag/:isRoot                               @api.Collections.setRootFlag(coll_id: UUID, isRoot: Boolean )
+POST           /api/collections/newCollectionWithParent                                 @api.Collections.createCollectionWithParent
+GET            /api/collections/:coll_id/getChildCollectionIds                          @api.Collections.getChildCollectionIds(coll_id: UUID)
+GET            /api/collections/:coll_id/getChildCollections                            @api.Collections.getChildCollections(coll_id: UUID)
+GET            /api/collections/:coll_id/getParentCollectionIds                         @api.Collections.getParentCollectionIds(coll_id: UUID)
+GET            /api/collections/:coll_id/getParentCollections                           @api.Collections.getParentCollections(coll_id: UUID)
+POST           /api/collections/:coll_id/addSubCollection/:sub_coll_id                  @api.Collections.attachSubCollection(coll_id: UUID, sub_coll_id: UUID)
+
+
 # ----------------------------------------------------------------------
 # DATASETS ENDPOINT
 # ----------------------------------------------------------------------
@@ -446,6 +480,8 @@ POST           /api/datasets/searchusermetadata                                 
 POST           /api/datasets/searchmetadata                                             @api.Datasets.searchDatasetsGeneralMetadata
 GET            /api/datasets/listOutsideCollection/:coll_id                             @api.Datasets.listOutsideCollection(coll_id: UUID)
 POST           /api/datasets/:ds_id/filesRemove/:file_id/:ignoreNotFound                @api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound)
+DELETE         /api/datasets/:parentDatasetId/deleteFolder/:folderId                    @api.Folders.deleteFolder(parentDatasetId: UUID, folderId: UUID)
+PUT            /api/datasets/:parentDatasetId/updateName/:folderId                      @api.Folders.updateFolderName(parentDatasetId: UUID, folderId: UUID)
 DELETE         /api/datasets/:ds_id/:file_id                                            @api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound ?= "True")
 GET            /api/datasets/getRDFURLsForDataset/:id                                   @api.Datasets.getRDFURLsForDataset(id: UUID)
 GET            /api/datasets/rdfUserMetadata/:id                                        @api.Datasets.getRDFUserMetadata(id: UUID, mappingNum: String ?= "1")
@@ -458,7 +494,6 @@ GET            /api/datasets/:id/usermetadatajson                               
 GET            /api/datasets/:id/listFiles                                              @api.Datasets.datasetFilesList(id: UUID)
 GET            /api/datasets/:id/download                                               @api.Datasets.download(id: UUID, compression: Int ?= -1)
 POST           /api/datasets/:id/comment                                                @api.Datasets.comment(id: UUID)
-POST           /api/datasets/:id/setNotesHTML                                           @api.Datasets.setNotesHTML(id: UUID)
 POST           /api/datasets/:id/reindex                                                @api.Datasets.reindex(id:UUID, recursive: Boolean ?= true)
 POST           /api/datasets/:id/follow                                                 @api.Datasets.follow(id: UUID, name: String)
 POST           /api/datasets/:id/unfollow                                               @api.Datasets.unfollow(id: UUID, name: String)
@@ -478,6 +513,7 @@ POST           /api/datasets/:ds_id/files/:file_id                              
 GET            /api/datasets/:id                                                        @api.Datasets.get(id: UUID)
 DELETE         /api/datasets/:id                                                        @api.Datasets.deleteDataset(id: UUID)
 POST           /api/datasets/:id/detachdelete                                           @api.Datasets.detachAndDeleteDataset(id: UUID)
+POST           /api/datasets/:parentDatasetId/newFolder                                 @api.Folders.createFolder(parentDatasetId: UUID)
 
 # ----------------------------------------------------------------------
 # PREVIEWS ENDPOINT
@@ -549,6 +585,7 @@ GET            /api/geostreams/streams                                          
 DELETE         /api/geostreams/streams/:id                                              api.Geostreams.deleteStream(id: String)
 DELETE         /api/geostreams/dropall                                                  api.Geostreams.deleteAll
 GET            /api/geostreams/counts                                                   api.Geostreams.counts
+GET            /api/geostreams/config                                                   api.Geostreams.getConfig
 
 # ----------------------------------------------------------------------
 # THUMBNAILS ENDPOINT
