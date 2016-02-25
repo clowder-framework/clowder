@@ -77,6 +77,9 @@ class CurationObjects @Inject()(
         datasets.get(datasetId) match {
           case Some(dataset) => {
             if (spaces.get(spaceId) != None) {
+
+              //copy file list from FileDAO. and save curation file metadata. metadataCount is 0 since
+              // metadatas.getMetadataByAttachTo will increase metadataCount
               var newFiles: List[UUID]= List.empty
               for ( fileId <- dataset.files) {
                 files.get(fileId) match {
@@ -91,6 +94,7 @@ class CurationObjects @Inject()(
                 }
               }
 
+              //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
               val newCuration = CurationObject(
                 name = COName(0),
                 author = identity,
@@ -115,12 +119,6 @@ class CurationObjects @Inject()(
               }
 
               dataset.folders.map(f => copyFolders(f, newCuration.id, "dataset",  newCuration.id))
-
-              //copy file list from FileDAO. and save curation file metadata. metadataCount is 0 since
-              // metadatas.getMetadataByAttachTo will increase metadataCount
-
-
-              //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
 
               Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
             }
@@ -233,11 +231,10 @@ class CurationObjects @Inject()(
     curations.get(curationId) match {
       case Some(c) => {
         val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
-//        val mCurationFile = c.files.map(f => metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f))).flatten
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
-        val fileByDataset = curations.getCurationFiles(c.files)
-        val folderByDataset = curations.getCurationFolders(c.folders)
+        val fileByDataset = curations.getCurationFiles(curations.getAllCurationFileIds(c.id))
         if (c.status != "In Curation") {
+
           Ok(views.html.spaces.submittedCurationObject(c, fileByDataset, m ))
         } else {
           Ok(views.html.spaces.curationObject(c, m , isRDFExportEnabled, limit))
@@ -329,9 +326,10 @@ class CurationObjects @Inject()(
       }
       case None =>
     })
-    val files = curations.getCurationFiles(c.files)
-    val maxDataset = if (!c.files.isEmpty)  files.map(_.length).max else 0
-    val totalSize = if (!c.files.isEmpty) files.map(_.length).sum else 0
+    val fileIds = curations.getAllCurationFileIds(c.id)
+    val files = curations.getCurationFiles(fileIds)
+    val maxDataset = if (!fileIds.isEmpty)  files.map(_.length).max else 0
+    val totalSize = if (!fileIds.isEmpty) files.map(_.length).sum else 0
     var metadataList = scala.collection.mutable.ListBuffer.empty[MetadataPair]
     var metadataKeys = Set.empty[String]
     metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).filter(_.creator.typeOfAgent == "cat:user").map {
@@ -432,7 +430,7 @@ class CurationObjects @Inject()(
           "Max Collection Depth" -> Json.toJson("0"),
           "Max Dataset Size" -> Json.toJson(maxDataset.toString),
           "Total Size" -> Json.toJson(totalSize.toString),
-          "Number of Datasets" -> Json.toJson(c.files.length),
+          "Number of Datasets" -> Json.toJson(fileIds.length),
           "Number of Collections" -> Json.toJson(c.datasets.length)
         )
     )
@@ -496,9 +494,10 @@ class CurationObjects @Inject()(
             }
             case None =>
           })
-          val files = curations.getCurationFiles(c.files)
-          val maxDataset = if (!c.files.isEmpty)  files.map(_.length).max else 0
-          val totalSize = if (!c.files.isEmpty) files.map(_.length).sum else 0
+          val fileIds = curations.getAllCurationFileIds(c.id)
+          val files = curations.getCurationFiles(fileIds)
+          val maxDataset = if (!files.isEmpty)  files.map(_.length).max else 0
+          val totalSize = if (!files.isEmpty) files.map(_.length).sum else 0
           var metadataList = scala.collection.mutable.ListBuffer.empty[MetadataPair]
           var metadataKeys = Set.empty[String]
           metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).filter(_.creator.typeOfAgent == "cat:user").map {
@@ -595,7 +594,7 @@ class CurationObjects @Inject()(
                     "Data Mimetypes" -> Json.toJson(files.map(_.contentType).toSet),
                     "Max Dataset Size" -> Json.toJson(maxDataset.toString),
                     "Total Size" -> Json.toJson(totalSize.toString),
-                    "Number of Datasets" -> Json.toJson(c.files.length),
+                    "Number of Datasets" -> Json.toJson(fileIds.length),
                     "Number of Collections" -> Json.toJson(c.datasets.length)
                   )),
                 "Rights Holder" -> Json.toJson(rightsholder),
@@ -766,6 +765,5 @@ class CurationObjects @Inject()(
 
     out.toMap
   }
-
 }
 
