@@ -174,6 +174,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("comments").drop()
     collection("contextld").drop()
     collection("curationFiles").drop()
+    collection("curationFolders").drop()
     collection("curationObjects").drop()
     collection("datasets").drop()
     collection("datasetxmlmetadata").drop()

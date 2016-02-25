@@ -670,7 +670,7 @@ GET            /rss/:etype                                                      
 GET            /dataset/:id/curations/new                                               @controllers.CurationObjects.newCO(id:UUID, space:String ?= "")
 POST           /dataset/:id/curations/spaces/:spaceId/submit                            @controllers.CurationObjects.submit(id:UUID, spaceId:UUID)
 GET            /spaces/:id/stagingArea                                                  @controllers.Spaces.stagingArea(id: UUID, index: Int ?=0, limit: Int ?= 12)
-GET            /spaces/curations/:id                                                    @controllers.CurationObjects.getCurationObject(id: UUID)
+GET            /spaces/curations/:id                                                    @controllers.CurationObjects.getCurationObject(id: UUID, limit: Int ?=5)
 DELETE         /spaces/curations/retract/:id                                            @api.CurationObjects.retractCurationObject(id: UUID)
 GET            /spaces/curations/:id/edit                                               @controllers.CurationObjects.editCuration(id: UUID)
 POST           /spaces/curations/:id/spaces/:spaceId/update                             @controllers.CurationObjects.updateCuration(id: UUID, spaceId:UUID)
@@ -682,7 +682,9 @@ POST           /spaces/curations/:id/matchmaker                                 
 GET            /spaces/curations/:id/curationFile                                       @api.CurationObjects.getCurationFiles(id: UUID)
 POST           /spaces/curations/:id/status                                             @controllers.CurationObjects.savePublishedObject(id: UUID)
 GET            /spaces/curations/:id/getStatusFromRepository                            @controllers.CurationObjects.getStatusFromRepository(id: UUID)
-DELETE         /spaces/curations/:id/files/:curationFileId                              @api.CurationObjects.deleteCurationFiles(id: UUID, curationFileId: UUID)
+DELETE         /spaces/curations/:id/files/:curationFileId                              @api.CurationObjects.deleteCurationFile(id:UUID, parentId: UUID, curationFileId: UUID)
+DELETE         /spaces/curations/:id/folders/:curationFolderId                          @api.CurationObjects.deleteCurationFolder(id:UUID, parentId: UUID, curationFolderId: UUID)
+GET            /spaces/curations/:id/updatedFilesAndFolders                             @controllers.CurationObjects.getUpdatedFilesAndFolders(id: UUID, curationFolderId: String, limit: Int, pageIndex:Int)
 
 
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()
