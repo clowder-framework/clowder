@@ -1,4 +1,4 @@
-function removeFolder(parentDataset, folderId) {
+function removeFolder(folderId, parentDataset) {
     var request = jsRoutes.api.Folders.deleteFolder(parentDataset, folderId).ajax({
         type: 'DELETE'
     });

@@ -16,10 +16,17 @@ function confirmDeleteResource(resourceType, resourceId, resourceName, isreload,
             removeCollection(resourceId, isreload, url);
         } else if (resourceType == "space") {
             removeSpace(resourceId, isreload, url);
-        }
-        else if(resourceType == "curationObject" ) {
+        } else if(resourceType == "folder" ) {
+            removeFolder(resourceId, isreload );
+        } else if(resourceType == "curation object" ) {
             removeCuration(resourceId, isreload, url);
+        } else if(resourceType == "curation file" ) {
+            removeCurationFile(resourceId, isreload, url);
+        } else if(resourceType == "curation folder" ) {
+            removeCurationFolder(resourceId, isreload, url);
         }
+
+
     });
 
     var confirmModal = $(modalHTML);

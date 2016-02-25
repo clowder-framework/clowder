@@ -1,7 +1,7 @@
 //Method to remove the CO and redirect back to staging area on completion
 function removeCuration(id, isreload, url){
 
-    var request = jsRoutes.controllers.CurationObjects.deleteCuration(curationId).ajax({
+    var request = jsRoutes.controllers.CurationObjects.deleteCuration(id).ajax({
         type: 'DELETE'
     });
 
@@ -40,6 +40,47 @@ function retractCuration(curationId) {
     request.fail(function(jqXHR, textStatus, errorThrown) {
        console.error("The following error ocurred: " + textStatus, errorThrown);
         notify("The curation object could not be retracted due to: " + jqXHR.responseJSON.message, "error" );
+    });
+}
+
+function removeCurationFile(id, currentFolder, curationid){
+    var delete_file = $(this);
+
+        var request = jsRoutes.api.CurationObjects.deleteCurationFile(curationid, currentFolder, id).ajax({
+            type: 'DELETE'
+        });
+
+    request.done(function (response, textStatus, jqXHR) {
+        console.log("success");
+        delete_file.closest("LI").remove();
+    });
+
+    request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error("The following error occured: " + textStatus, errorThrown);
+        var errMsg = "You must be logged in to delete curation file";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("Curation file was not removed due to : " + jqXHR.textResponse, "error");
+        }
+    });
+}
+
+function removeCurationFolder(id, parentCuratonObject, parentId){
+    var folder = $(this);
+    var request = jsRoutes.api.CurationObjects.deleteCurationFolder(parentCuratonObject, parentId, id).ajax({
+        type: 'DELETE'
+    });
+
+    request.done(function (response, textStatus, jqXHR) {
+        console.log("success");
+        folder.closest(".panel-default").remove();
+    });
+
+    request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error("The following error occured: " + textStatus, errorThrown);
+        var errMsg = "You must be logged in to delete curation file";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("Curation folder was not removed due to : " + errorThrown, "error");
+        }
     });
 }
 

@@ -20,10 +20,11 @@
                 <span class="glyphicon glyphicon-file"></span> @folder.files.length
                 @if(user.isDefined && inCuration) {
                   @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, parentCuratonObject))){
-                    <button id="folder-@folder.id" class="btn btn-link delete-folder" style="text-align:right" title="Delete">
+                    <button id="folder-@folder.id" class="btn btn-link delete-folder" style="text-align:right" title="Delete"
+                    onclick="confirmDeleteResource('curation folder','@(folder.id)','@(folder.displayName.replace("'","&#39;"))', '@parentCuratonObject', '@parentId')">
                       <span class="glyphicon glyphicon-trash"></span></button>
                   } else {
-                    <button disabled onclick="" class="btn btn-link" style="text-align:right" title="Delete">
+                    <button disabled class="btn btn-link" style="text-align:right" title="Delete">
                       <span class="glyphicon glyphicon-trash"></span></button>
                   }
                 }
@@ -35,26 +36,3 @@
     </div>
   </div>
 </div>
-
-<script language="javascript">
-  $('.delete-folder').unbind().on('click', function(){
-  var folder = $(this);
-  console.log(this.id.split("-")[1]);
-  var request = jsRoutes.api.CurationObjects.deleteCurationFolder('@parentCuratonObject', '@parentId',  this.id.split("-")[1]).ajax({
-    type: 'DELETE'
-  });
-
-  request.done(function (response, textStatus, jqXHR) {
-    console.log("success");
-    folder.closest(".panel-default").remove();
-  });
-
-  request.fail(function (jqXHR, textStatus, errorThrown){
-    console.error("The following error occured: " + textStatus, errorThrown);
-    var errMsg = "You must be logged in to delete curation file";
-    if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-      notify("Curation folder was not removed due to : " + errorThrown, "error");
-    }
-    });
-  });
-  </script>
