@@ -13,7 +13,7 @@
             <div id="masonry">
                 @curationObjects.map { curObject =>
                     <div class="post-box col-lg-3 col-md-3 coml-sm-3 col-xs-12">
-                        <div class = "panel panel-default">
+                        <div class = "panel panel-default" id="@curObject.id-tile">
                             @if(curObject.status == "Submitted") {
                                 <div id="@curObject.id" class="panel-heading text-center submitted">
                             } else {
@@ -40,7 +40,7 @@
                                 <li class="list-group-item">
                                     <span class="glyphicon glyphicon-file" title="@curObject.datasets.size datasets"></span> @curObject.datasets.size
                                     <span class="glyphicon glyphicon-th-large" title="@curObject.collections.size collections"></span> @curObject.collections.size
-                                    <button onclick="removeCuration('@(space.id)','@(curObject.id)')"  type="button" class="btn btn-link">
+                                    <button onclick="confirmDeleteResource('curationObject','@(curObject.id)','@(curObject.name.replace("'","&#39;"))',false, '/')"  type="button" class="btn btn-link">
                                         <span class="glyphicon glyphicon-trash" title="@curObject.collections.size collections"></span></button>
                                 </li>
                             </ul>

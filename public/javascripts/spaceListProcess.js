@@ -1,16 +1,19 @@
 //@author: Jong Lee (jonglee)
 
 //Method to remove the space and redirect back to a specific URL on completion
-function removeSpaceAndRedirect(spaceId, url){
-	if(url === undefined) url = "/spaces";
+function removeSpace(spaceId, isreload, url){
 	
 	var request = jsRoutes.api.Spaces.removeSpace(spaceId).ajax({
 		type: 'DELETE'
 	});
 
 	request.done(function (response, textStatus, jqXHR){
-		console.log("Response " + response);		
-		window.location.href=url;
+		if(isreload == true)
+			window.location.href=url;
+		else {
+			$('#'+ spaceId+'-tile').remove();
+			$('#'+ spaceId+'-listitem').remove();
+		}
 	});
 	
 	request.fail(function (jqXHR, textStatus, errorThrown){

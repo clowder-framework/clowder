@@ -1,14 +1,16 @@
 //Method to remove the CO and redirect back to staging area on completion
-function removeCuration(spaceId, curationId){
-    console.log(spaceId);
+function removeCuration(id, isreload, url){
 
     var request = jsRoutes.controllers.CurationObjects.deleteCuration(curationId).ajax({
         type: 'DELETE'
     });
 
     request.done(function (response, textStatus, jqXHR){
-        window.location.href= "/spaces/"+ spaceId +"/stagingArea";
-        console.log(response);
+        if(isreload == true)
+            window.location.href=url;
+        else {
+            $('#'+ id+'-tile').remove();
+        }
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){

@@ -1,7 +1,7 @@
 // Functions to Confirm deleting resources.
 //
 //Created by mo on 2/2/16.
-function confirmDeleteResource(resourceType, resourceId, resourceName, url) {
+function confirmDeleteResource(resourceType, resourceId, resourceName, isreload, url) {
     var msg = "Are you sure you want to delete the " + resourceType + " '" + resourceName + "'?";
 
     var modalHTML = confirmDeleteTemplate(msg);
@@ -9,13 +9,16 @@ function confirmDeleteResource(resourceType, resourceId, resourceName, url) {
     $(document).on("click", "#OKModalButton", function(event) {
         confirmModal.modal("hide");
         if (resourceType == "file") {
-            removeFileAndRedirect(resourceId, url);
+            removeFile(resourceId,isreload, url);
         } else if (resourceType == "dataset") {
-            removeDatasetAndRedirect(resourceId, url);
+            removeDataset(resourceId, isreload, url);
         } else if (resourceType == "collection") {
-            removeCollectionAndRedirect(resourceId, url);
+            removeCollection(resourceId, isreload, url);
         } else if (resourceType == "space") {
-            removeSpaceAndRedirect(resourceId, url);
+            removeSpace(resourceId, isreload, url);
+        }
+        else if(resourceType == "curationObject" ) {
+            removeCuration(resourceId, isreload, url);
         }
     });
 

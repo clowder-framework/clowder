@@ -1,15 +1,16 @@
-function removeFile(fileId,event, reloadPage){
-	if(reloadPage === undefined) reloadPage = false;
+function removeFile(fileId, isreload, url){
 
 	var request = jsRoutes.api.Files.removeFile(fileId).ajax({
 		type: 'DELETE'
 	});
 
 	request.done(function (response, textStatus, jqXHR){
-		$(event.target.parentNode.parentNode).remove();
-
-		if(reloadPage == true)
-			location.reload(true);
+		if(isreload == true)
+			window.location.href=url;
+		else {
+			$('#'+ fileId+'-tile').remove();
+			$('#'+ fileId+'-listitem').remove();
+		}
 	});
 	
 	request.fail(function (jqXHR, textStatus, errorThrown){
