@@ -110,6 +110,10 @@ class CurationObjects @Inject()(datasets: DatasetService,
           for(md <- metadatas.getDefinitions()) {
             metadataDefsMap((md.json\ "label").asOpt[String].getOrElse("").toString()) = Json.toJson((md.json \ "uri").asOpt[String].getOrElse(""))
           }
+          val publicationDate = c.publishedDate match {
+            case None => ""
+            case Some(p) => format.format(c.created)
+          }
           var parsedValue =
             Map(
               "@context" -> Json.toJson(Seq(
@@ -172,8 +176,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "Title" -> Json.toJson(c.name),
                   "Dataset Description" -> Json.toJson(c.description),
                   "Uploaded By" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + api.routes.Users.findById(usr.id).absoluteURL(https)))),
-
-                  "Publication Date" -> Json.toJson(format.format(c.created)),
+                  "Publication Date" -> Json.toJson(publicationDate),
                   "Published In" -> Json.toJson(""),
                   "External Identifier" -> Json.toJson(""),
                   "Proposed for publication" -> Json.toJson("true"),
