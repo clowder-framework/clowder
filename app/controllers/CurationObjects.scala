@@ -167,7 +167,7 @@ class CurationObjects @Inject()(
         folder.folders.map(f => copyFolders(f,newCurationFolder.id, "folder", parentCurationObjectId ))
       }
       case None => {
-        Logger.error("Curation Object Not found")
+        Logger.error("Curation Folder Not found")
 
       }
     }
@@ -235,7 +235,7 @@ class CurationObjects @Inject()(
         val fileByDataset = curations.getCurationFiles(curations.getAllCurationFileIds(c.id))
         if (c.status != "In Curation") {
 
-          Ok(views.html.spaces.submittedCurationObject(c, fileByDataset, m ))
+          Ok(views.html.spaces.submittedCurationObject(c, fileByDataset, m, limit ))
         } else {
           Ok(views.html.spaces.curationObject(c, m , isRDFExportEnabled, limit))
         }
@@ -250,6 +250,7 @@ class CurationObjects @Inject()(
     curations.get(curationId) match {
       case Some(c) => {
         curationFolderId match{
+        // curationFolderId is set to "None" if it is currently on curation page
           case "None" =>{
             val foldersList = c.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => curations.getCurationFolder(f)).flatten
             val limitFileIds : List[UUID] = c.files.reverse.slice(limit * filepageUpdate - c.folders.length, limit * (filepageUpdate+1) - c.folders.length)
@@ -260,6 +261,7 @@ class CurationObjects @Inject()(
             val next = c.files.length + c.folders.length > limit * (filepageUpdate+1)
             Ok(views.html.curations.filesAndFolders(c, None, foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, mCurationFile))
           }
+          // Otherwise it is on a curation folder's page
           case _ => {
             curations.getCurationFolder (UUID(curationFolderId)) match {
               case Some (cf) => {
@@ -280,9 +282,7 @@ class CurationObjects @Inject()(
                   }
                 }
                 val next = cf.files.length + cf.folders.length > limit * (filepageUpdate+1)
-
                 Ok(views.html.curations.filesAndFolders(c, Some(cf.id.stringify), foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, mCurationFile))
-
               }
               case None => InternalServerError ("Curation Folder Not found")
             }

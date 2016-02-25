@@ -122,23 +122,23 @@ object MatchMakerResponse{
 
 
 case class CurationFile(
-                         id: UUID = UUID.generate,
-                         fileId: UUID,
-                         path: Option[String] = None,
-                         filename: String,
-                         author: Identity,
-                         uploadDate: Date,
-                         contentType: String,
-                         length: Long = 0,
-                         showPreviews: String = "DatasetLevel",
-                         sections: List[Section] = List.empty,
-                         previews: List[Preview] = List.empty,
-                         tags: List[Tag] = List.empty,
-                         thumbnail_id: Option[String] = None,
-                         metadataCount: Long = 0,
-                         licenseData: LicenseData = new LicenseData(),
-                         notesHTML: Option[String] = None,
-                         sha512: String = "" )
+  id: UUID = UUID.generate,
+  fileId: UUID,
+  path: Option[String] = None,
+  filename: String,
+  author: Identity,
+  uploadDate: Date,
+  contentType: String,
+  length: Long = 0,
+  showPreviews: String = "DatasetLevel",
+  sections: List[Section] = List.empty,
+  previews: List[Preview] = List.empty,
+  tags: List[Tag] = List.empty,
+  thumbnail_id: Option[String] = None,
+  metadataCount: Long = 0,
+  licenseData: LicenseData = new LicenseData(),
+  notesHTML: Option[String] = None,
+  sha512: String = "" )
 
 
 object CurationFile {
@@ -155,12 +155,12 @@ object CurationFile {
 }
 
 case class CurationFolder(
-                    id: UUID = UUID.generate,
-                    folderId: UUID,
-                    name: String = "N/A",
-                    displayName: String = "N/A",
-                    files: List[UUID] = List.empty,
-                    folders: List[UUID] = List.empty,
-                    parentId: UUID,
-                    parentType: String,
-                    parentCurationObjectId: UUID)
+  id: UUID = UUID.generate,
+  folderId: UUID,
+  name: String = "N/A",
+  displayName: String = "N/A",
+  files: List[UUID] = List.empty,
+  folders: List[UUID] = List.empty,
+  parentId: UUID,
+  parentType: String,
+  parentCurationObjectId: UUID)

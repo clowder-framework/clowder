@@ -1,4 +1,4 @@
-@(curationObject: models.CurationObject, files :List[CurationFile], m: List[models.Metadata])(implicit user: Option[models.User])
+@(curationObject: models.CurationObject, files :List[CurationFile], m: List[models.Metadata], limit:Int)(implicit user: Option[models.User])
 
   @import helper._
   @import collection.JavaConverters._
@@ -88,10 +88,10 @@
             var folderId;
 
             $(document).ready(function(){
-                getUpdatedFilesAndFolders('@curationObject.id', 1000);
+                getUpdatedFilesAndFolders('@curationObject.id', @limit);
             });
             $(window).on('fileDelete hashchange', function() {
-                getUpdatedFilesAndFolders('@curationObject.id', 1000);
+                getUpdatedFilesAndFolders('@curationObject.id', @limit);
             });
       $(document).ready(getStatus('@curationObject.id'));
 
