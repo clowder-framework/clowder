@@ -34,7 +34,7 @@ object StatusFromRepository {
     "date" -> JsString(s.date),
     "reporter" ->JsString(s.reporter),
     "message" -> JsString(s.message),
-  "stage" ->JsString(s.stage)
+    "stage" ->JsString(s.stage)
   ))
 }
 
