@@ -66,6 +66,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2015/File")),
               "Is Version Of" -> Json.toJson(controllers.routes.Files.file(file.fileId).absoluteURL(https) + "?key=" + key),
               "similarTo" -> Json.toJson(api.routes.Files.download(file.fileId).absoluteURL(https)  + "?key=" + key)
+
             )
             if(file.tags.size > 0 ) {
               tempMap = tempMap ++ Map("Keyword" -> Json.toJson(file.tags.map(_.name)))
@@ -108,6 +109,10 @@ class CurationObjects @Inject()(datasets: DatasetService,
           val metadataDefsMap = scala.collection.mutable.Map.empty[String, JsValue]
           for(md <- metadatas.getDefinitions()) {
             metadataDefsMap((md.json\ "label").asOpt[String].getOrElse("").toString()) = Json.toJson((md.json \ "uri").asOpt[String].getOrElse(""))
+          }
+          val publicationDate = c.publishedDate match {
+            case None => ""
+            case Some(p) => format.format(c.created)
           }
           var parsedValue =
             Map(
@@ -156,7 +161,8 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     "Size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length"),
                     "Mimetype" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
                     "SHA512 Hash" -> Json.toJson("http://sead-data.net/terms/hasSHA512Digest"),
-                    "Dataset Description" -> Json.toJson("http://sead-data.net/terms/datasetdescription")
+                    "Dataset Description" -> Json.toJson("http://sead-data.net/terms/datasetdescription"),
+                    "Publishing Project" -> Json.toJson("http://sead-data.net/terms/publishingProject")
                   )
                 )
 
@@ -170,8 +176,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "Title" -> Json.toJson(c.name),
                   "Dataset Description" -> Json.toJson(c.description),
                   "Uploaded By" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + api.routes.Users.findById(usr.id).absoluteURL(https)))),
-
-                  "Publication Date" -> Json.toJson(format.format(c.created)),
+                  "Publication Date" -> Json.toJson(publicationDate),
                   "Published In" -> Json.toJson(""),
                   "External Identifier" -> Json.toJson(""),
                   "Proposed for publication" -> Json.toJson("true"),
@@ -181,8 +186,8 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "Is Version Of" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https)),
                   "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https)),
                   "aggregates" -> Json.toJson(filesJson),
-                  "Has Part" -> Json.toJson(hasPart)
-
+                  "Has Part" -> Json.toJson(hasPart),
+                  "Publishing Project"-> Json.toJson(controllers.routes.Spaces.getSpace(c.space).absoluteURL(https))
                 )),
               "Creation Date" -> Json.toJson(format.format(c.created)),
               "Uploaded By" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https)))),
