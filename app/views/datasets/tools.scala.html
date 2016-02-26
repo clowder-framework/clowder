@@ -94,10 +94,10 @@
       },
       processResults: function(data, page) {
         var results = {
-          results: data.map(function(x) {
+          results: Object.keys(data).map(function(key) {
             return {
-              text: x,
-              id: x
+              text: data[key]["name"],
+              id: key
             }
           })};
         return results

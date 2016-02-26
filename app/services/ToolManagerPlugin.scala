@@ -88,27 +88,39 @@ class ToolManagerPlugin(application: Application) extends Plugin {
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
 
   var toolsList: List[String] = List[String]()
+  var toolsList2: Set[String] = Set[String]()
+  var toolList: JsObject = JsObject(Seq[(String, JsValue)]()) // ToolAPIEndpoint -> {"name": <>, "description": <>}
   var sessionMap: Map[UUID, ToolSession] = Map() // ToolManager SessionId -> ToolSession instance
 
   override def onStart() {
     Logger.debug("Initializing ToolManagerPlugin")
+    refreshLaunchableTools()
   }
 
   /**
     * Call external API to get list of valid endpoints for tool selection.
     * @return list of tools that can be selected for launch
     */
-  def getLaunchableTools(): List[String] = {
-    toolsList = List("Jupyter", "RStudio")
+  def getLaunchableTools(): JsObject = {
+    return toolList
+  }
 
-    //val request: Future[Response] = url("http://141.142.209.108:8080/tools").get()
+  def refreshLaunchableTools(): Unit = {
+    val apipath = play.Play.application().configuration().getString("toolmanager.host") + ":" +
+                  play.Play.application().configuration().getString("toolmanager.port")
+    val statusRequest: Future[Response] = url(apipath+"/tools").get()
 
-    //request.map( response => {
-    //  Logger.info(response.body.toString)
-    //  // toolsList = response.body.list
-    //})
+    statusRequest.map( response => {
+      Logger.debug(("TOOL API RESPONSED: "+response.body.toString))
+      val jsonObj = Json.parse(response.body)
 
-    return toolsList
+      jsonObj match {
+        case _: JsUndefined => {}
+        case j: JsObject => {
+          toolList = j
+        }
+      }
+    })
   }
 
   /**
@@ -135,18 +147,12 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     var dsURL = controllers.routes.Datasets.dataset(datasetId).url
     dsURL = hostURL + dsURL
 
-    val apihost = play.Play.application().configuration().getString("toolmanager.host")
-    var apipath = apihost + ":" + play.Play.application().configuration().getString("toolmanager.port")  + play.Play.application().configuration().getString("toolmanager.paths")
-    // TODO: nasty hacksies, precious - go write this properly in the tool manager branch!
-    if (toolType == "RStudio") {
-      apipath = apipath.replace("ipython","rstudio")
-    }
+    val apipath = play.Play.application().configuration().getString("toolmanager.host") + ":" +
+                  play.Play.application().configuration().getString("toolmanager.port") + "/tools/" + toolType
+
     val statusRequest: Future[Response] = url(apipath).post(Json.obj(
       "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
-      "key" -> play.Play.application().configuration().getString("commKey"),
-      "user" -> "mburnet2@illinois.edu",
-      "pw" -> "tSzx7dINA8RxFEKp7sX8",
-      "host" -> apihost
+      "key" -> play.Play.application().configuration().getString("commKey")
     ))
 
     statusRequest.map( response => {

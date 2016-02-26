@@ -919,9 +919,9 @@ class Datasets @Inject()(
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
         val tools = mgr.getLaunchableTools()
-        Ok(toJson(tools))
+        Ok(tools)
       }
-      case None => Ok("[]")
+      case None => Ok("{}")
     }
   }
 
