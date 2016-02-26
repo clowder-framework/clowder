@@ -45,19 +45,23 @@
                   <span class="glyphicon-bar"></span>
                   <span class="glyphicon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="@routes.Application.index">
-                    @services.DI.injector.getInstance(classOf[services.LogoService]).get("GLOBAL", "logo") match {
-                        case Some(logo) => {
-                            <img class="pull-left" style="height: 1em" src="@api.routes.Logos.downloadPath("GLOBAL", "logo")" alt="LOGO">&nbsp;
-                            @if(logo.showText) {
+                @services.DI.injector.getInstance(classOf[services.LogoService]).get("GLOBAL", "logo") match {
+                    case Some(logo) => {
+                        <a class="navbar-brand" style="padding-top: 5px; padding-bottom: 5px" href="@routes.Application.index">
+                            <img class="pull-left" style="height: 100%" src="@api.routes.Logos.downloadPath("GLOBAL", "logo")" alt="LOGO">
+                        </a>
+                        @if(logo.showText) {
+                            <a class="navbar-brand" href="@routes.Application.index">
                                 @(AppConfiguration.getDisplayName)
-                            }
-                        }
-                        case None => {
-                            @(AppConfiguration.getDisplayName)
+                            </a>
                         }
                     }
-                </a>
+                    case None => {
+                        <a class="navbar-brand" href="@routes.Application.index">
+                            @(AppConfiguration.getDisplayName)
+                        </a>
+                    }
+                }
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
