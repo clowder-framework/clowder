@@ -28,7 +28,7 @@
 <ul style = "list-style-type: none">
   @for(file<- files) {
 
-    <li>
+    <li id="@file.id-listitem">
       <h4><a href=@routes.Files.file(file.fileId)>@file.filename</a>
         @if(curation.status =="In Curation" && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id))) {
             @if(currentFolder.isDefined){

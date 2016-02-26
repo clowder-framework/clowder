@@ -17,12 +17,15 @@ function confirmDeleteResource(resourceType, resourceId, resourceName, isreload,
         } else if (resourceType == "space") {
             removeSpace(resourceId, isreload, url);
         } else if(resourceType == "folder" ) {
+            //no redirect provided
             removeFolder(resourceId, isreload );
         } else if(resourceType == "curation object" ) {
             removeCuration(resourceId, isreload, url);
         } else if(resourceType == "curation file" ) {
+            //no redirect provided
             removeCurationFile(resourceId, isreload, url);
         } else if(resourceType == "curation folder" ) {
+            //no redirect provided
             removeCurationFolder(resourceId, isreload, url);
         }
 

@@ -11,7 +11,11 @@ function removeSpace(spaceId, isreload, url){
 		if(isreload == true)
 			window.location.href=url;
 		else {
-			$('#'+ spaceId+'-tile').remove();
+			var obj = $('#'+ spaceId+'-tile');
+			$('#masonry').masonry( 'remove', obj );
+			$('#masonry').masonry( 'layout' );
+			$('#masonry-spaces').masonry( 'remove', obj );
+			$('#masonry-spaces').masonry( 'layout' );
 			$('#'+ spaceId+'-listitem').remove();
 		}
 	});

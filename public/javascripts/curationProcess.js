@@ -9,7 +9,9 @@ function removeCuration(id, isreload, url){
         if(isreload == true)
             window.location.href=url;
         else {
-            $('#'+ id+'-tile').remove();
+            var obj = $('#'+ id+'-tile').parent();
+            $('#masonry').masonry( 'remove', obj );
+            $('#masonry').masonry( 'layout' );
         }
     });
 
@@ -44,15 +46,13 @@ function retractCuration(curationId) {
 }
 
 function removeCurationFile(id, currentFolder, curationid){
-    var delete_file = $(this);
-
         var request = jsRoutes.api.CurationObjects.deleteCurationFile(curationid, currentFolder, id).ajax({
             type: 'DELETE'
         });
 
     request.done(function (response, textStatus, jqXHR) {
-        console.log("success");
-        delete_file.closest("LI").remove();
+        $('#'+ id+'-listitem').remove();
+        getFiles(curationid);
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
@@ -65,14 +65,13 @@ function removeCurationFile(id, currentFolder, curationid){
 }
 
 function removeCurationFolder(id, parentCuratonObject, parentId){
-    var folder = $(this);
     var request = jsRoutes.api.CurationObjects.deleteCurationFolder(parentCuratonObject, parentId, id).ajax({
         type: 'DELETE'
     });
 
     request.done(function (response, textStatus, jqXHR) {
-        console.log("success");
-        folder.closest(".panel-default").remove();
+        $('#'+ id+'-listitem').remove();
+        getFiles(parentCuratonObject);
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
@@ -141,4 +140,31 @@ function parseHash() {
     if(!pageSet) {
         pageIndex = 0;
     }
+}
+
+function getFiles(id) {
+    var request = jsRoutes.api.CurationObjects.getCurationFiles(id).ajax({
+        type: "GET",
+        contentType : "application/json"
+    }).done(function( response, textStatus, jqXHR ) {
+        var totalSize = 0;
+        $.each(response.cf, function (i, el) {
+            totalSize += this.length;
+        });
+
+        var formatAll = response.cf.map(f => f.contentType.valueOf());
+        var formats = [];
+        $.each(formatAll, function(i, el){
+            if($.inArray(el, formats) === -1) formats.push(el);
+        });
+
+        $( "#size" ).replaceWith( '<div id="size">Size: '+Math.round(totalSize /1024) +"KB</div>" );
+        $( "#format" ).replaceWith('<div id="format">File Formats: '+formats.join(', ')+'</div>' );
+
+    }).fail(function( ) {
+        $( "#size" ).replaceWith("Unknown");
+        $( "#format" ).replaceWith("Unknown");
+
+    });
+
 }

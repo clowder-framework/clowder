@@ -8,7 +8,9 @@ function removeFile(fileId, isreload, url){
 		if(isreload == true)
 			window.location.href=url;
 		else {
-			$('#'+ fileId+'-tile').remove();
+			var obj = $('#'+ fileId+'-tile');
+			$('#masonry').masonry( 'remove', obj );
+			$('#masonry').masonry( 'layout' );
 			$('#'+ fileId+'-listitem').remove();
 		}
 	});

@@ -38,8 +38,9 @@
                             </div>
                             <ul class="list-group">
                                 <li class="list-group-item">
-                                    <span class="glyphicon glyphicon-file" title="@curObject.datasets.size datasets"></span> @curObject.datasets.size
-                                    <span class="glyphicon glyphicon-th-large" title="@curObject.collections.size collections"></span> @curObject.collections.size
+                                    <span class="glyphicon glyphicon-folder-close" title="@curObject.folders.size folders"></span> @curObject.folders.size
+                                    <span class="glyphicon glyphicon-file" title="@curObject.files.size files"></span> @curObject.files.size
+                                    <span class="glyphicon glyphicon-list" title="@(curObject.metadataCount) metadata fields"></span> @(curObject.metadataCount)
                                     <button onclick="confirmDeleteResource('curation object','@(curObject.id)','@(curObject.name.replace("'","&#39;"))',false, '/')"  type="button" class="btn btn-link">
                                         <span class="glyphicon glyphicon-trash" title="@curObject.collections.size collections"></span></button>
                                 </li>

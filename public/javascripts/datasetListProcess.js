@@ -7,7 +7,11 @@ function removeDataset(datasetId, isreload, url){
         if(isreload == true)
 			window.location.href=url;
 		else {
-			$('#'+ datasetId+'-tile').remove();
+			var obj = $('#'+ datasetId+'-tile');
+			$('#masonry').masonry( 'remove', obj );
+			$('#masonry').masonry( 'layout' );
+			$('#masonry-datasets').masonry( 'remove', obj );
+			$('#masonry-datasets').masonry( 'layout' );
 			$('#'+ datasetId+'-listitem').remove();
 
 		}
