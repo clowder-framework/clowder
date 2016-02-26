@@ -73,7 +73,7 @@
                     <div class="col-md-6 col-sm-6 col-lg-6">
                       <ul class="list-unstyled">
                           <li>
-                            <a id='download-dataset-url' href="#" onclick="removeSession('@sessId')" class="btn btn-link"role="button">
+                            <a id='download-dataset-url' href="#" onclick="removeSession('@ts.toolType','@sessId')" class="btn btn-link"role="button">
                               <span class="glyphicon glyphicon-stop"></span>
                               Stop Session
                             </a>
@@ -92,7 +92,7 @@
   </div>
 
   <script>
-    function removeSession(sessionId) {
+    function removeSession(toolType, sessionId) {
       console.log("Eventually remove session "+sessionId)
       // Get current status from ToolManagerPlugin and refresh sidebar table
       var request = new XMLHttpRequest();
@@ -102,7 +102,7 @@
         }
       }
 
-      request.open("GET", jsRoutes.controllers.Datasets.removeSession(sessionId).url, true);
+      request.open("GET", jsRoutes.controllers.Datasets.removeSession(toolType, sessionId).url, true);
       request.send();
     }
   </script>
