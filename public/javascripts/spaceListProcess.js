@@ -8,7 +8,7 @@ function removeSpace(spaceId, isreload, url){
 	});
 
 	request.done(function (response, textStatus, jqXHR){
-		if(isreload == true)
+		if(isreload === true)
 			window.location.href=url;
 		else {
 			var obj = $('#'+ spaceId+'-tile');
