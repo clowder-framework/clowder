@@ -6,7 +6,7 @@ function removeCuration(id, isreload, url){
     });
 
     request.done(function (response, textStatus, jqXHR){
-        if(isreload == true)
+        if(isreload === true)
             window.location.href=url;
         else {
             var obj = $('#'+ id+'-tile').parent();
@@ -94,7 +94,7 @@ function updatePageAndFolder(idx, folderId){
 
 function getUpdatedFilesAndFolders(curationObject, limit) {
     parseHash();
-    if(folderId == "") {
+    if(folderId === "") {
         folderId = "None";
     }
 

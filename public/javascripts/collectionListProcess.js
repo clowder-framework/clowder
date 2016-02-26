@@ -3,7 +3,7 @@ function removeCollection(id, isreload, url){
 		type: 'DELETE'
 	});
 	request.done(function (response, textStatus, jqXHR){
-		if(isreload == true)
+		if(isreload === true)
 			window.location.href=url;
 		else {
 			$('#'+ id+'-listitem').remove();
