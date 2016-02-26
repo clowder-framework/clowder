@@ -10,23 +10,16 @@ import play.api.libs.json.JsValue
 import play.api.libs.json._
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
-import services.{VocabularyService, UserService}
+import services.{SpaceService, VocabularyService, UserService}
 
 import scala.collection.immutable.List
+import scala.util.Success
 
 /**
   * Created by todd_n on 2/9/16.
   */
 @Singleton
-class Vocabularies @Inject() (vocabularyService: VocabularyService, userService : UserService) extends ApiController {
-
-
-  @ApiOperation(value = "Get vocabulary",
-    notes = "This will check for Permission.ViewVocabulary",
-    responseClass = "None", httpMethod = "GET")
-  def test() = PrivateServerAction { implicit request =>
-    Ok(toJson("this is a test"))
-  }
+class Vocabularies @Inject() (vocabularyService: VocabularyService, userService : UserService, spaces: SpaceService) extends ApiController {
 
   @ApiOperation(value = "Get vocabulary",
     notes = "This will check for Permission.ViewVocabulary",
@@ -54,7 +47,23 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
     }
   }
 
-  @ApiOperation(value = "Get vocabulary by name author",
+  @ApiOperation(value = "Get vocabulary by name and author",
+    notes = "",
+    responseClass = "None", httpMethod = "GET")
+  def getByName(name: String) = PrivateServerAction  {implicit request =>
+
+    val user = request.user
+
+    user match {
+      case Some(identity) => {
+        val result = vocabularyService.getByName(name)
+        Ok(toJson(result))
+      }
+      case None => BadRequest("No user matches that user")
+    }
+  }
+
+  @ApiOperation(value = "Get vocabulary by name and author",
     notes = "",
     responseClass = "None", httpMethod = "GET")
   def getByNameAndAuthor(name: String) = PrivateServerAction  {implicit request =>
@@ -145,15 +154,45 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
     notes = "",
     responseClass = "None", httpMethod = "POST")
   def addToSpace(vocabId: UUID, spaceId : UUID) = PermissionAction(Permission.EditVocabulary, Some(ResourceRef(ResourceRef.vocabulary, vocabId))){ implicit request =>
-    Ok(toJson("not implemented"))
+    vocabularyService.get(vocabId) match {
+      case Some(vocab) => {
+        spaces.get(spaceId) match {
+          case Some(space) => {
+            vocabularyService.addToSpace(vocabId,spaceId)
+            vocabularyService.get(vocabId) match {
+              case Some(vocab) => Ok(jsonVocabulary(vocab))
+              case None => BadRequest("could not add " + vocabId + " to space " + spaceId )
+            }
+          }
+          case None => BadRequest("no space matches" + spaceId)
+        }
+      }
+      case None => BadRequest("no vocabulary matches  " + vocabId)
+    }
   }
 
+  /*
   @ApiOperation(value = "Remove vocabulary from space",
     notes = "Does not delete the vocabulary.",
     responseClass = "None", httpMethod = "POST")
-  def removeFromSpace(vocabId: UUID, spaceId: UUID) = PermissionAction(Permission.EditVocabulary, Some(ResourceRef(ResourceRef.vocabulary, vocabId))) {
-    Ok(toJson("not implemented"))
+  def removeFromSpace(vocabId: UUID, spaceId: UUID) = PermissionAction(Permission.EditVocabulary, Some(ResourceRef(ResourceRef.vocabulary, vocabId))){
+    vocabularyService.get(vocabId) match {
+      case Some(vocab) => {
+        spaces.get(spaceId) match {
+          case Some(space) => {
+            vocabularyService.removeFromSpace(vocabId,spaceId)
+            vocabularyService.get(vocabId) match {
+              case Some(vocab) => jsonVocabulary(vocab)
+              case None => BadRequest("unable to remove " + vocabId + " from space " + spaceId)
+            }
+          }
+          case None => BadRequest("no space matches" + spaceId)
+        }
+      }
+      case None => BadRequest("no vocabulary matches  " + vocabId)
+    }
   }
+  */
 
   def jsonVocabulary(vocabulary : Vocabulary): JsValue = {
     toJson(Map("id" -> vocabulary.id.toString, "name" -> vocabulary.name.toString, "keys" -> vocabulary.keys.toString))
