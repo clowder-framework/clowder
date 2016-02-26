@@ -176,8 +176,6 @@ trait FileService {
    */
   def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String)
 
-  def setNotesHTML(id: UUID, notesHTML: String)
-
   /**
    * Add follower to a file.
    */

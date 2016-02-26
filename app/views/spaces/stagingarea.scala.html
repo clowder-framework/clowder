@@ -1,4 +1,4 @@
-@(space: models.ProjectSpace, curationObjects: List[models.CurationObject])(implicit user: Option[models.User])
+@(space: models.ProjectSpace, curationObjects: List[models.CurationObject], prev: Int, next: Int, limit: Int)(implicit user: Option[models.User])
 
 @main("Staging Area") {
     <div class="row">
@@ -32,6 +32,7 @@
                                     <h4> <a href="@routes.CurationObjects.getCurationObject( curObject.id)">@curObject.name</a></h4>
 
                                     Author: @curObject.author.fullName
+                                    <p>Created: @curObject.created.format("MMM dd, yyyy")</p>
                                     <p>@curObject.description</p>
                                 </div>
                             </div>
@@ -54,5 +55,27 @@
             </div>
         </div>
     </div>
+    <div class="row">
+        <div class="col-md-12">
+            <ul class="pager">
+                    <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
+                @if(prev >= 0) {
+                    <li class="previous"><a id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
+                }
+                @if(next >= 0) {
+                    <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next<span class="glyphicon glyphicon-chevron-right"></span></a></li>
+                }
+            </ul>
+        </div>
+    </div>
     <script src="@routes.Assets.at("javascripts/curationProcess.js")" type="text/javascript"></script>
+    <script>
+        $(document).ready(function(){
+            updatePage();
+        });
+        function updatePage() {
+            $('#nextlink').attr('href', "@(routes.Spaces.stagingArea(space.id, next, limit))");
+            $('#prevlink').attr('href', "@(routes.Spaces.stagingArea(space.id, prev, limit))");
+        }
+    </script>
 }

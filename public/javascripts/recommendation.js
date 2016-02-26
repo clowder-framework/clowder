@@ -21,6 +21,9 @@ var getAjaxObj = function(jsRoutes, type) {
         case 'space':
             ajaxObj = jsRoutes.api.Spaces;
             break;
+        case '\'space':
+            ajaxObj = jsRoutes.api.Spaces;
+            break;
         default:
             ajaxObj = undefined;
     }
@@ -43,6 +46,9 @@ var getUrl = function (jsRoutes, id, type) {
             break;
         case 'collection':
             route = jsRoutes.controllers.Collections.collection(id);
+            break;
+        case '\'space':
+            route = jsRoutes.controllers.Spaces.getSpace(id);
             break;
     }
 

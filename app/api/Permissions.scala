@@ -44,7 +44,6 @@ object Permission extends Enumeration {
     EditLicense,
     CreatePreview,    // Used by extractors
     MultimediaIndexDocument,
-    CreateNote,
 
     // sections
     CreateSection,
@@ -94,6 +93,7 @@ object Permission extends Enumeration {
   lazy val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
   lazy val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   lazy val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
+  lazy val folders: FolderService = DI.injector.getInstance(classOf[FolderService])
   lazy val users: services.UserService = DI.injector.getInstance(classOf[services.UserService])
   lazy val comments: services.CommentService = DI.injector.getInstance(classOf[services.CommentService])
   lazy val curations: services.CurationService = DI.injector.getInstance(classOf[services.CurationService])
@@ -229,6 +229,16 @@ object Permission extends Enumeration {
               spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
                 if(role.permissions.contains(permission.toString))
                   return true
+              }
+            }
+          }
+          folders.findByFileId(id).foreach { folder =>
+            datasets.get(folder.parentDatasetId).foreach { dataset =>
+              dataset.spaces.map {
+                spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
+                  if(role.permissions.contains(permission.toString))
+                    return true
+                }
               }
             }
           }

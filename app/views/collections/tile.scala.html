@@ -21,13 +21,14 @@
         <ul class="list-group">
             <li class="list-group-item">
                 <span class="glyphicon glyphicon glyphicon-file" title="@collection.datasetCount datasets"></span> @collection.datasetCount
+                <span class="glyphicon glyphicon glyphicon-th-large" title="@collection.childCollectionsCount child collections"></span> @collection.childCollectionsCount
                 @if(user.isDefined) {
                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                     @if( user.get.identityId.userId.equals(collection.author.identityId.userId) || Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
-                        <button onclick="removeCollectionAndRedirect('@(collection.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
+                        <button onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name.replace("'","&#39;"))','@redirect')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
                             <span class="glyphicon glyphicon-trash"></span></button>
                     } else {
-                        <button disabled onclick="removeCollectionAndRedirect('@(collection.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
+                        <button disabled onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name.replace("'","&#39;"))','@redirect')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
                             <span class="glyphicon glyphicon-trash"></span></button>
                     }
                 }

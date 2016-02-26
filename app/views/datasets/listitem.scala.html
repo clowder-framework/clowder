@@ -8,7 +8,7 @@
                 @if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
             </div>
             <div class="col-md-10 col-sm-10 col-lg-10">
-                <h2><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></h2>
+                <h3><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></h3>
                 <div class ="row">
                     <div class="col-md-6 col-sm-6 col-lg-6">
                         <ul class="list-unstyled">
@@ -17,17 +17,18 @@
                             <li>@dataset.created.format("MMM dd, yyyy")</li>
 
                             <li>
-                                <span class="glyphicon glyphicon glyphicon-file" title="@dataset.files.size files"></span> @dataset.files.size
-                                <span class="glyphicon glyphicon glyphicon-tags" title="@dataset.tags.size tags"></span> @dataset.tags.size
-                                <span class="glyphicon glyphicon glyphicon-list" title="@(dataset.metadataCount) metadata fields"></span> @(dataset.metadataCount)
-                                <span class="glyphicon glyphicon glyphicon-comment" title="@(comments.get(dataset.id)) comments"></span> @(comments.get(dataset.id))
+                                <span class="glyphicon glyphicon-folder-close" title="@dataset.folders.size folders"></span> @dataset.folders.size
+                                <span class="glyphicon glyphicon-file" title="@dataset.files.size files"></span> @dataset.files.size
+                                <span class="glyphicon glyphicon-tags" title="@dataset.tags.size tags"></span> @dataset.tags.size
+                                <span class="glyphicon glyphicon-list" title="@(dataset.metadataCount) metadata fields"></span> @(dataset.metadataCount)
+                                <span class="glyphicon glyphicon-comment" title="@(comments.get(dataset.id)) comments"></span> @(comments.get(dataset.id))
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                     @if(user.get.identityId.userId.equals(dataset.author.identityId.userId) || Permission.checkPermission(Permission.DeleteDataset, ResourceRef(ResourceRef.dataset, dataset.id))){
-                                        <button onclick="removeDatasetAndRedirect('@(dataset.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
+                                        <button onclick="confirmDeleteResource('dataset','@(dataset.id)','@(dataset.name.replace("'","&#39;"))','@redirect')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     } else {
-                                        <button disabled onclick="removeDatasetAndRedirect('@(dataset.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
+                                        <button disabled onclick="confirmDeleteResource('dataset','@(dataset.id)','@(dataset.name.replace("'","&#39;"))','@redirect')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     }
                                 }

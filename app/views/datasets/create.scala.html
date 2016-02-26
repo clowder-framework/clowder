@@ -60,12 +60,12 @@
         </div>
     </div>
 
-    <script src=@routes.Assets.at("/javascripts/chosen.jquery.js") type="text/javascript"></script>
-    <link rel="stylesheet" href=@routes.Assets.at("/stylesheets/chosen.css")>
+    <script src=@routes.Assets.at("javascripts/chosen.jquery.js") type="text/javascript"></script>
+    <link rel="stylesheet" href=@routes.Assets.at("stylesheets/chosen.css")>
 
     <script language = "javascript">
         $(".chosen-select").chosen({
-            width: "90%",
+            width: "100%",
             placeholder_text_multiple: "Spaces that will have access to the dataset (optional)"
         })
     </script>
@@ -92,6 +92,7 @@
             @for(space <- spaces) {
                 idNameObj["@space.name"] = "@space.id";
             }
+             $(".chosen-choices").addClass("form-control");
         });
 
         $(".chosen-select").chosen().change(function(event, params) {

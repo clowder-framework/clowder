@@ -1,4 +1,4 @@
-@(datasetsList: List[models.Dataset], comments: Map[UUID, Int], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String], title: Option[String], owner:Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(datasetsList: List[models.Dataset], comments: Map[UUID, Int], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String], title: Option[String], owner:Option[String], when: String, date: String)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 
 @main("Datasets") {
@@ -6,6 +6,7 @@
 @util.masonry()
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
 
@@ -94,7 +95,7 @@
 	<div class="col-md-12">
 		<div id="masonry">
 		@datasetsList.map { dataset =>
-		    @datasets.tile(dataset, space, comments, "col-lg-3 col-md-3 col-sm-3", false, false, routes.Datasets.list("a", next, limit, space, "", owner))
+		    @datasets.tile(dataset, space, comments, "col-lg-3 col-md-3 col-sm-3", false, false, routes.Datasets.list(when, date, limit, space, "", owner))
 		}
 		</div>
 	</div>
@@ -102,12 +103,9 @@
 
   <div class="row hidden" id="list-view">
 	<div class="col-md-12">
-
         @datasetsList.map { dataset =>
-          @datasets.listitem(dataset,comments, routes.Datasets.list(""))
-
+          @datasets.listitem(dataset,comments, routes.Datasets.list(when, date, limit, space, "", owner))
         }
-
 	</div>
 </div>
 
