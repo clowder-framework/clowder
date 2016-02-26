@@ -99,7 +99,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     * @return list of tools that can be selected for launch
     */
   def getLaunchableTools(): List[String] = {
-    toolsList = List("Jupyter")
+    toolsList = List("Jupyter", "RStudio")
 
     //val request: Future[Response] = url("http://141.142.209.108:8080/tools").get()
 
@@ -136,7 +136,11 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     dsURL = hostURL + dsURL
 
     val apihost = play.Play.application().configuration().getString("toolmanager.host")
-    val apipath = apihost + ":" + play.Play.application().configuration().getString("toolmanager.port")  + play.Play.application().configuration().getString("toolmanager.paths")
+    var apipath = apihost + ":" + play.Play.application().configuration().getString("toolmanager.port")  + play.Play.application().configuration().getString("toolmanager.paths")
+    // TODO: nasty hacksies, precious - go write this properly in the tool manager branch!
+    if (toolType == "RStudio") {
+      apipath = apipath.replace("ipython","rstudio")
+    }
     val statusRequest: Future[Response] = url(apipath).post(Json.obj(
       "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
       "key" -> play.Play.application().configuration().getString("commKey"),
