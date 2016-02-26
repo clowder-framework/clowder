@@ -680,19 +680,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
-<<<<<<< HEAD
-  private def updateUserPreference() {
-      collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.access"), multi=true)
-      collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.affiliation"), multi=true)
-      collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.cost"), multi=true)
-      collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.license"), multi=true)
-=======
   private def updateUserPreference(){
       collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.access"), multi=true)
       collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.organizational_affiliation"), multi=true)
       collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.cost"), multi=true)
       collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.license"), multi=true)
       collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences"), multi=true)
->>>>>>> c14af9cbe56ee64fd7f395a838d7e2cc195cbf42
   }
 }
