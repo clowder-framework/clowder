@@ -137,7 +137,7 @@ class Files @Inject()(
 		                }
 		              }
 		              case None => {
-                    val userAgent = request.headers("user-agent")
+                    val userAgent = request.headers.get("user-agent").getOrElse("")
                     val filenameStar = if (userAgent.indexOf("MSIE") > -1) {
                       URLEncoder.encode(filename, "UTF-8")
                     } else {
