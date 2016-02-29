@@ -106,8 +106,8 @@ GET            /datasets/following                                              
 GET            /datasets/toolManager                                                    @controllers.Datasets.toolManager
 GET            /datasets/refreshToolList                                                @controllers.Datasets.refreshToolSidebar(datasetid: UUID)
 GET            /datasets/launchableTools                                                @controllers.Datasets.getLaunchableTools
-GET            /datasets/unattachedSessions                                             @controllers.Datasets.getUnattachedSessions(datasetid: UUID)
-GET            /datasets/removeToolSession                                              @controllers.Datasets.removeSession(toolType: String, sessionid: UUID)
+GET            /datasets/getInstances                                                   @controllers.Datasets.getInstances
+GET            /datasets/removeInstance                                                 @controllers.Datasets.removeInstance(toolType: String, instanceID: UUID)
 GET            /datasets/launchTool                                                     @controllers.Datasets.launchTool(sessionName: String, ttype: String, datasetId: UUID)
 GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, limit: Int ?= 5)
 POST           /datasets/:datasetId/updatedFilesAndFolders                              @controllers.Datasets.getUpdatedFilesAndFolders(datasetId: UUID, limit: Int ?= 5, pageIndex: Int ?= 0)

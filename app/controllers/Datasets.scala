@@ -848,23 +848,23 @@ class Datasets @Inject()(
   }
 
 
-
+  // TOOL MANAGER METHODS ----------------------------------------------------------------
   /**
     * With permission, prepare Tool Manager page with list of currently running tool instances.
     */
   def toolManager() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
-    var sessionMap = MutableMap[UUID, ToolSession]()
-    // Get mapping of session IDs to URLs API has returned
+    var instanceMap = MutableMap[UUID, ToolInstance]()
+    // Get mapping of instanceIDs to URLs API has returned
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
-        sessionMap = mgr.sessionMap
+        instanceMap = mgr.instanceMap
       }
       case None => {}
     }
 
-    Ok(views.html.datasets.toolManager(sessionMap.keys.toList, sessionMap))
+    Ok(views.html.datasets.toolManager(instanceMap.keys.toList, instanceMap))
   }
 
   /**
@@ -875,22 +875,22 @@ class Datasets @Inject()(
   def refreshToolSidebar(datasetId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
-    // Get mapping of session IDs to URLs API has returned
-    var sessionMap = MutableMap[UUID, ToolSession]()
+    // Get mapping of instanceIDs to returned URLs
+    var instanceMap = MutableMap[UUID, ToolInstance]()
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
-        // Get mapping of SessionId -> ToolSession instances, only if dataset is attached
-        sessionMap = mgr.getAttachedSessions(datasetId)
+        // Get mapping of instanceID -> ToolInstance if datasetID is in uploadHistory
+        instanceMap = mgr.getInstancesWithDataset(datasetId)
       }
       case None => {}
     }
-    Ok(views.html.datasets.tools(sessionMap.keys.toList, sessionMap, datasetId))
+    Ok(views.html.datasets.tools(instanceMap.keys.toList, instanceMap, datasetId))
   }
 
   /**
-    * With permission, send request to ToolManagerPlugin to launch a tool with dataset ID if provided.
+    * Send request to ToolManagerPlugin to launch a new tool instance and upload datasetID.
     */
-  def launchTool(sessionName: String, ttype: String, datasetId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+  def launchTool(instanceName: String, ttype: String, datasetId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
     val hostURL = request.headers.get("Host") match {
@@ -904,8 +904,8 @@ class Datasets @Inject()(
     }
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
-        val sessionId = mgr.launchTool(hostURL, sessionName, ttype, datasetId, userId)
-        Ok(sessionId.toString)
+        val instanceID = mgr.launchTool(hostURL, instanceName, ttype, datasetId, userId)
+        Ok(instanceID.toString)
       }
       case None => {
         Ok("No ToolManagerPlugin found.")
@@ -925,39 +925,39 @@ class Datasets @Inject()(
     }
   }
 
-  def getUnattachedSessions(datasetId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+  def getInstances() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
-        val sessions = mgr.getUnattachedSessions(datasetId)
-        Ok(toJson(sessions.toMap))
+        val instances = mgr.getInstances()
+        Ok(toJson(instances.toMap))
       }
       case None => Ok("{}")
     }
   }
 
-  def requestSessionURL(sessionId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+  def getInstanceURL(instanceID: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    val url = current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => mgr.checkForInstanceURL(instanceID)
+      case None => ""
+    }
+
+    Ok(url)
+  }
+
+  def removeInstance(toolType: String, instanceID: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
-        val status = mgr.checkForSessionUrl(sessionId)
-        Ok(status)
+        mgr.removeInstance(toolType, instanceID)
+        Ok(instanceID.toString)
       }
       case None => Ok("")
     }
   }
-
-  def removeSession(toolType: String, sessionId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
-    implicit val user = request.user
-
-    current.plugin[ToolManagerPlugin] match {
-      case Some(mgr) => {
-        mgr.removeSession(toolType, sessionId)
-        Ok(sessionId.toString)
-      }
-      case None => Ok("")
-    }
-  }
+  // END TOOL MANAGER METHODS ---------------------------------------------------------------
 }

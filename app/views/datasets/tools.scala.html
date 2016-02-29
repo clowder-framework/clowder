@@ -1,10 +1,10 @@
-@(sessions: List[UUID], sessionMap: scala.collection.mutable.Map[UUID, services.ToolSession], datasetId: UUID)(implicit user: Option[models.User])
+@(sessions: List[UUID], sessionMap: scala.collection.mutable.Map[UUID, services.ToolInstance], datasetId: UUID)(implicit user: Option[models.User])
 
 @import api.Permission
 
 <div class="row border-top bottom-padding">
   <div class="col-md-12">
-    <h4>Tool sessions containing the dataset</h4>
+    <h4>Analysis Environments</h4>
   </div>
 </div>
 
@@ -26,8 +26,8 @@
                     else htmlStr += "<a href="+ts.url+" target='_blank'>"+ts.name+"</a>"
 
                     htmlStr += "</br>" //"<div>"
-                    if (ts.attachedDatasets.keys.toList.length == 1) htmlStr += "1 dataset"
-                    else htmlStr += ts.attachedDatasets.keys.toList.length.toString + " datasets"
+                    if (ts.uploadHistory.keys.toList.length == 1) htmlStr += "1 dataset"
+                    else htmlStr += ts.uploadHistory.keys.toList.length.toString + " datasets"
 
                   }
                   case None => {}
@@ -44,23 +44,14 @@
 
 <div class="row bottom-padding">
   <div class="col-md-12">
-    <a class="btn btn-link" onclick="refreshToolSidebar()">
-      <span class="glyphicon glyphicon-log-in"></span>&nbsp;Refresh List
-    </a>
-    <a class="btn btn-link" href="toolManager">
-      <span class="glyphicon glyphicon-log-in"></span>&nbsp;Tool Manager
-    </a>
-  </div>
-
-  <div class="col-md-12">
-    <h4>Launch new tool session</h4>
+    <h4>Launch new instance</h4>
     <div class="form-inline">
       <div class="input-group input-group-sm col-md-8">
         <input type="text" id="newToolNameField" class="form-control add-resource" placeholder="Enter session name">
         <select id="launchNewToolSession" class="form-control add-resource"></select>
         <span class="input-group-btn">
-          <a href="#" onclick="launchToolRequest()" class="btn btn-default btn-large" id="launchtoolBtn" title="Launch New Tool Session">
-            <span class="glyphicon glyphicon-plus"></span> New
+          <a href="#" onclick="launchToolRequest()" class="btn btn-default btn-large" id="launchtoolBtn" title="Launch New Environment">
+            <span class="glyphicon glyphicon-plus"></span> Launch
           </a>
         </span>
       </div>
@@ -68,25 +59,34 @@
   </div>
 
   <div class="col-md-12">
-    <h4>Other tool sessions</h4>
+    <h4>Upload to existing instance</h4>
     <div class="form-inline">
       <div class="input-group input-group-sm col-md-8">
         <select id="addToExistingToolSession" class="form-control add-resource">
         </select>
         <span class="input-group-btn">
-          <a href="#" class="btn btn-default btn-large" id="addToolSessionBtn" title="Attach Dataset to Tool Session">
-            <span class="glyphicon glyphicon-plus"></span> Add
+          <a href="#" class="btn btn-default btn-large" id="addToolSessionBtn" title="Upload Dataset to Environment">
+            <span class="glyphicon glyphicon-plus"></span> Upload
           </a>
         </span>
       </div>
     </div>
+  </div>
+
+  <div class="col-md-12">
+    <a class="btn btn-link" onclick="refreshToolSidebar()">
+      <span class="glyphicon glyphicon-log-in"></span>&nbsp;Refresh List
+    </a>
+    <a class="btn btn-link" href="toolManager">
+      <span class="glyphicon glyphicon-log-in"></span>&nbsp;Environment Manager
+    </a>
   </div>
 </div>
 
 <script language="javascript">
   $("#launchNewToolSession").select2({
     theme: "bootstrap",
-    placeholder: "Select a new tool to launch",
+    placeholder: "Select a new environment to launch",
     allowClear: true,
     ajax: {
       url: function() {
@@ -107,17 +107,16 @@
 
   $("#addToExistingToolSession").select2({
     theme: "bootstrap",
-    placeholder: "Select a tool session",
+    placeholder: "Select an instance",
     allowClear: true,
     ajax: {
-      url: function(datasetId) {
-        // GET LIST AND REMOVE ANY THE DATASET IS ALREADY ATTACHED TO
-        return jsRoutes.controllers.Datasets.getUnattachedSessions("@datasetId").url;
+      url: function() {
+        return jsRoutes.controllers.Datasets.getInstances().url;
       },
       processResults: function(data, page) {
         var outlist = []
-        for (var sessId in data) {
-          outlist.push({text: data[sessId], id: sessId.toString()})
+        for (var instanceID in data) {
+          outlist.push({text: data[instanceID], id: instanceID.toString()})
         }
         return {results: outlist}
       }
