@@ -1,0 +1,221 @@
+@(admins: List[String], configAdmins: List[String], users: List[User])(implicit user: Option[models.User])
+
+@printRow(u: User) = {
+    <tr id="@u.id">
+        <td>@u.fullName</td>
+        <td>@u.email.getOrElse("NO EMAIL")</td>
+        <td>@u.identityId.providerId</td>
+        @if(user.fold("")(_.id.stringify) == u.id.stringify) {
+            @if(u.active) {
+                <td><input class="active" type="checkbox" id="active-@u.id" data-original=true disabled checked title="Can not change yourself"></td>
+            } else {
+                <td><input class="active" type="checkbox" id="active-@u.id" data-original=false disabled ></td>
+            }
+        } else {
+            @if(u.active) {
+                <td><input class="active" type="checkbox" id="active-@u.id" data-original=true checked></td>
+            } else {
+                <td><input class="active" type="checkbox" id="active-@u.id" data-original=false></td>
+            }
+        }
+        @if(u.email.isEmpty) {
+
+        } else {
+            @if(user.fold("")(_.id.stringify) == u.id.stringify) {
+                <td><input type="checkbox" id="admin-@u.id" data-original=true checked disabled title="Can not change yourself"></td>
+            } else {
+                @if(configAdmins.contains(u.email.getOrElse(""))) {
+                    <td><input type="checkbox" id="admin-@u.id" data-original=true checked disabled title="Specified in custom.conf"></td>
+                } else {
+                    @if(u.active) {
+                        @if(admins.contains(u.email.getOrElse(""))) {
+                            <td><input type="checkbox" id="admin-@u.id" data-original=true checked></td>
+                        } else {
+                            <td><input type="checkbox" id="admin-@u.id" data-original=false></td>
+                        }
+                    } else {
+                        @if(admins.contains(u.email.getOrElse(""))) {
+                            <td><input type="checkbox" id="admin-@u.id" data-original=true checked disabled></td>
+                        } else {
+                            <td><input type="checkbox" id="admin-@u.id" data-original=false disabled></td>
+                        }
+                    }
+                }
+            }
+        }
+    </tr>
+}
+
+@main("Users") {
+    <div class="page-header" xmlns="http://www.w3.org/1999/html">
+        <h1>Users</h1>
+    </div>
+
+    <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="headingOne">
+                <h4 class="panel-title">
+                    <a role="button" data-toggle="collapse" href="#collapseInactive" aria-expanded="true" aria-controls="collapseInactive">
+                        Inactive Users
+                    </a>
+                </h4>
+            </div>
+            <div id="collapseInactive" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
+                <div class="panel-body">
+                    <table class="table table-condensed">
+                        <thead>
+                            <tr>
+                                <th class="col-md-5">Fullname</th>
+                                <th class="col-md-3">Email</th>
+                                <th class="col-md-2">Provider</th>
+                                <th class="col-md-1">Active</th>
+                                <th class="col-md-1">Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inactive-users">
+                        @users.filter(!_.active).map(printRow)
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="headingOne">
+                <h4 class="panel-title">
+                    <a role="button" data-toggle="collapse" href="#collapseAdmins" aria-expanded="false" aria-controls="collapseAdmins">
+                        Admins
+                    </a>
+                </h4>
+            </div>
+            <div id="collapseAdmins" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+                <div class="panel-body">
+                    <table class="table table-condensed">
+                        <thead>
+                            <tr>
+                                <th class="col-md-5">Fullname</th>
+                                <th class="col-md-3">Email</th>
+                                <th class="col-md-2">Provider</th>
+                                <th class="col-md-1">Active</th>
+                                <th class="col-md-1">Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-users">
+                        @users.filter(u => u.active && admins.contains(u.email.getOrElse(""))).map(printRow)
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="headingOne">
+                <h4 class="panel-title">
+                    <a role="button" data-toggle="collapse" href="#collapseActive" aria-expanded="false" aria-controls="collapseActive">
+                        Active Users
+                    </a>
+                </h4>
+            </div>
+            <div id="collapseActive" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+                <div class="panel-body">
+                    <table class="table table-condensed">
+                        <thead>
+                            <tr>
+                                <th class="col-md-5">Fullname</th>
+                                <th class="col-md-3">Email</th>
+                                <th class="col-md-2">Provider</th>
+                                <th class="col-md-1">Active</th>
+                                <th class="col-md-1">Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="active-users">
+                        @users.filter(u => u.active && !admins.contains(u.email.getOrElse(""))).map(printRow)
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <button class="btn btn-primary" onclick="return submitUsers();"><span class="glyphicon glyphicon-saved"></span> Submit</button>
+
+    <br/>
+    <br/>
+
+    <script>
+            $(".active").click(function() {
+                var input = $(this)[0];
+                var parts = input.id.split("-", 2);
+                $("#admin-" + parts[1]).prop('disabled', !input.checked);
+            });
+            var users = { active: [], inactive: [], admin: [], unadmin: [] };
+            function submitUsers() {
+
+                var sendit = false;
+
+                $(".active:not(:checked)").each(function() {
+                    var input = $(this)[0];
+                    var parts = input.id.split("-", 2);
+                    var admin = $("#admin-" + parts[1]);
+                    admin.prop('checked', false);
+                    admin.prop('disabled', true);
+                });
+
+                $("input[type=checkbox]").each(function() {
+                    var input = $(this)[0];
+                    if (input.getAttribute("data-original") != input.checked.toString()) {
+                        sendit = true;
+                        var parts = input.id.split("-", 2);
+                        if (parts[0] == "admin") {
+                            if (input.checked) {
+                                users.admin.push(parts[1]);
+                            } else {
+                                users.unadmin.push(parts[1]);
+                            }
+                        } else if (parts[0] == "active") {
+                            if (input.checked) {
+                                users.active.push(parts[1]);
+                            } else {
+                                users.inactive.push(parts[1]);
+                            }
+                        } else {
+                            logger.error("Not sure what to do with " + parts[0]);
+                        }
+                        input.setAttribute("data-original", input.checked.toString());
+                    }
+                });
+
+                if (sendit) {
+                    $.ajax({
+                        url:  "@api.routes.Admin.users().url",
+                        data: JSON.stringify(users),
+                        type: "POST",
+                        contentType: "application/json"
+                    }).done(function () {
+                        users.active.forEach(function(u) {
+                            $('#active-users').append($('#'+u))
+                        });
+                        users.unadmin.forEach(function(u) {
+                            $('#active-users').append($('#'+u))
+                        });
+                        users.inactive.forEach(function(u) {
+                            $('#inactive-users').append($('#'+u))
+                        });
+                        users.admin.forEach(function(u) {
+                            $('#admin-users').append($('#'+u))
+                        });
+                        users = { active: [], inactive: [], admin: [], unadmin: [] };
+                        notify("Users successfully updated.", "success", false, 5000);
+                    }).fail(function (jqXHR, textStatus, errorThrown){
+                        console.error("The following error occured: " + textStatus, errorThrown);
+                        notify("Could not update users : " + errorThrown, "error");
+                    });
+                } else {
+                    notify("No changes made.", "success", 5000);
+                }
+
+                return false;
+            }
+    </script>
+}

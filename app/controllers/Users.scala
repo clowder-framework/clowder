@@ -2,6 +2,7 @@ package controllers
 
 import java.util.UUID
 import com.typesafe.plugin._
+import models.User
 import org.joda.time.DateTime
 import play.api.Play.current
 import play.api.data.Form
@@ -48,37 +49,7 @@ class Users @Inject() (users: UserService) extends SecuredController {
       }
     })
   )
-  
-  def handleStartSignUp = Action { implicit request =>
-    if (registrationEnabled) {
-      startForm.bindFromRequest.fold (
-        errors => {
-          implicit val form = errors
-          BadRequest(use[TemplatesPlugin].getStartSignUpPage)
-        },
-        email => {
-          // check if there is already an account for this email address
-          securesocial.core.UserService.findByEmailAndProvider(email, UsernamePasswordProvider.UsernamePassword) match {
-            case Some(user) => {
-              // user signed up already, send an email offering to login/recover password
-              Mailer.sendAlreadyRegisteredEmail(user)
-            }
-            case None => {
-              val token = createToken(email, isSignUp = true)
-              val theHTML = views.html.signUpEmailThroughAdmin(token._1, email)
-              val admins = AppConfiguration.getAdmins
-              for(admin <- admins) {
-            	  Mail.sendEmail(Messages(SignUpEmailSubject), admin, theHTML)
-              }
-            }
-          }
-          Redirect(onHandleStartSignUpGoTo).flashing(Success -> play.Play.application().configuration().getString("messageOnStartRegistrationWithAdmin") , Email -> email)
-        }
-      )
-    }
-    else NotFound(views.html.defaultpages.notFound.render(request, None))
-  }
-  
+
   private def createToken(email: String, isSignUp: Boolean): (String, Token) = {
     val uuid = UUID.randomUUID().toString
     val now = DateTime.now
@@ -131,7 +102,6 @@ class Users @Inject() (users: UserService) extends SecuredController {
     implicit val user = request.user
     user match {
       case Some(clowderUser) => {
-        var usersList: List[(models.UUID, String, String, String)] = List.empty
         var nextPage = (when == "a")
         val dbusers: List[models.User] = if(id != "") {
           users.list(Some(id), nextPage, limit)
@@ -139,9 +109,7 @@ class Users @Inject() (users: UserService) extends SecuredController {
           users.list(None, nextPage, limit)
         }
 
-        for(usr <- dbusers) {
-          usersList = usersList.++(List((usr.id, usr.fullName, usr.email.getOrElse(""), usr.getAvatarUrl())))
-        }
+        val usersList = dbusers.map(usr => (usr.id, usr.fullName, usr.email.getOrElse(""), usr.getAvatarUrl()))
 
         //Check if there is a prev page
         val prev = if(dbusers.nonEmpty && id != "") {

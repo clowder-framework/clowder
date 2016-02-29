@@ -25,7 +25,7 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
   @ApiOperation(value = "Get logo",
     notes = "Return logo information",
     responseClass = "None", httpMethod = "GET")
-  def getId(id: UUID) = UserAction { implicit request =>
+  def getId(id: UUID) = UserAction(needActive = false) { implicit request =>
     logos.get(id) match {
       case Some(logo) => Ok(toJson(logo))
       case None => NotFound(s"Did not find logo with ${id.stringify}")
@@ -35,7 +35,7 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
   @ApiOperation(value = "Get logo",
     notes = "Return logo information",
     responseClass = "None", httpMethod = "GET")
-  def getPath(path: String, name: String) = UserAction { implicit request =>
+  def getPath(path: String, name: String) = UserAction(needActive = false) { implicit request =>
     logos.get(path, name) match {
       case Some(logo) => Ok(toJson(logo))
       case None => NotFound(s"Did not find logo with ${path}/${name}")
@@ -45,7 +45,7 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
   @ApiOperation(value = "Get logo",
     notes = "Return logo information",
     responseClass = "None", httpMethod = "GET")
-  def putId(id: UUID) = UserAction(parse.json) { implicit request =>
+  def putId(id: UUID) = AuthenticatedAction(parse.json) { implicit request =>
     logos.get(id) match {
       case Some(logo) => {
         // show text
@@ -63,7 +63,7 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
   @ApiOperation(value = "Get logo",
     notes = "Return logo information",
     responseClass = "None", httpMethod = "GET")
-  def putPath(path: String, name: String) = UserAction(parse.json) { implicit request =>
+  def putPath(path: String, name: String) = AuthenticatedAction(parse.json) { implicit request =>
     logos.get(path, name) match {
       case Some(logo) => {
         // show text
@@ -140,7 +140,7 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
   @ApiOperation(value = "Download file",
     notes = "Download a static file, or the alternate file",
     responseClass = "None", httpMethod = "GET")
-  def downloadId(id: UUID, file: Option[String]) = UserAction.async { implicit request =>
+  def downloadId(id: UUID, file: Option[String]) = UserAction(needActive=false).async { implicit request =>
     logos.getBytes(id) match {
       case Some((inputStream, filename, contentType, contentLength)) =>
         Future(Ok.chunked(Enumerator.fromStream(inputStream))
@@ -157,7 +157,7 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
   @ApiOperation(value = "Download file",
     notes = "Download a static file, or the alternate file",
     responseClass = "None", httpMethod = "GET")
-  def downloadPath(path: String, name: String, file: Option[String]) = UserAction.async { implicit request =>
+  def downloadPath(path: String, name: String, file: Option[String]) = UserAction(needActive=false).async { implicit request =>
     logos.get(path, name) match {
       case Some(logo) => downloadId(logo.id, file)(request)
       case None => {
@@ -172,7 +172,7 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
   @ApiOperation(value = "Delete file",
     notes = "Delete a static file",
     responseClass = "None", httpMethod = "DELETE")
-  def deletePath(path: String, name: String) = UserAction { implicit request =>
+  def deletePath(path: String, name: String) = AuthenticatedAction { implicit request =>
     logos.delete(path, name)
     NoContent
   }
@@ -181,7 +181,7 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
   @ApiOperation(value = "Delete file",
     notes = "Delete a static file",
     responseClass = "None", httpMethod = "DELETE")
-  def deleteId(id: UUID) = UserAction { implicit request =>
+  def deleteId(id: UUID) = AuthenticatedAction { implicit request =>
     logos.delete(id)
     NoContent
   }

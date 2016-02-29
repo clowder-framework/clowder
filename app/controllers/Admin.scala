@@ -42,14 +42,6 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     Ok("Reindexing")
   }
 
-  def test = UserAction { implicit request =>
-    Ok("""{"message":"test"}""").as(JSON)
-  }
-
-  def secureTest = ServerAdminAction { implicit request =>
-    Ok("""{"message":"secure test"}""").as(JSON)
-  }
-
   def sensors = ServerAdminAction { implicit request =>
     implicit val user = request.user
     Ok(views.html.sensors.admin(AppConfiguration.getSensorsTitle,
@@ -296,44 +288,6 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
         }
   }
 
-  val adminForm = Form(
-  single(
-    "email" -> email
-  )verifying("Admin already exists.", fields => fields match {
-     		case adminMail => !AppConfiguration.checkAdmin(adminMail)
-     	})
-)
-
-  def newAdmin()  = ServerAdminAction { implicit request =>
-    implicit val user = request.user
-  	Ok(views.html.newAdmin(adminForm))
-  }
-
-  def submitNew() = ServerAdminAction { implicit request =>
-    implicit val user = request.user
-    user match {
-      case Some(x) => {
-        if (x.email.nonEmpty && AppConfiguration.checkAdmin(x.email.get)) {
-          adminForm.bindFromRequest.fold(
-            errors => BadRequest(views.html.newAdmin(errors)),
-            newAdmin => {
-              AppConfiguration.addAdmin(newAdmin)
-              Redirect(routes.Admin.listAdmins())
-            }
-          )
-        } else {
-          Unauthorized("Not authorized")
-        }
-      }
-    }
-  }
-
-  def listAdmins() = ServerAdminAction { implicit request =>
-    implicit val user = request.user
-    val admins = AppConfiguration.getAdmins
-    Ok(views.html.listAdmins(admins))
-  }
-
   def getPermissionsMap(): scala.collection.immutable.Map[String, Boolean] = {
     var permissionMap = SortedMap.empty[String, Boolean]
     Permission.values.map {
@@ -470,6 +424,14 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
         })
   }
 
+  def users() = ServerAdminAction { implicit request =>
+    implicit val user = request.user
+
+    val admins = AppConfiguration.getAdmins
+    val configAdmins = play.Play.application().configuration().getString("initialAdmins").trim.split("\\s*,\\s*").filter(_ != "").toList
+    val users = userService.list.sortWith(_.lastName.toLowerCase() < _.lastName.toLowerCase())
+    Ok(views.html.admin.users(admins, configAdmins, users))
+  }
 }
 
 case class roleFormData(id: Option[UUID], name: String, description: String, permissions: List[String])

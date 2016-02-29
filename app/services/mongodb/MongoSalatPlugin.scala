@@ -287,6 +287,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     //remove Affiliation and License, access and cost in user.repositoryPreferences
     updateMongo("update-user-preferences", updateUserPreference)
 
+    // activate all users
+    updateMongo("activate-users", activateAllUsers)
+
     //Move the current notes in files to description. And delete the notes field
     updateMongo("migrate-notes-files", migrateNotesInFiles)
 
@@ -306,13 +309,13 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           appConfig.addPropertyValue("mongodb.updates", updateKey)
         } catch {
           case e:Exception => {
-            Logger.error(s"Could not run mongoupdate for ${updateKey}", e)
+            Logger.error(s"Could not run mongo update for ${updateKey}", e)
           }
         }
         val time = (System.currentTimeMillis() - start) / 1000.0
         Logger.info(s"Took ${time} second to migrate mongo : ${updateKey}")
       } else {
-        Logger.warn(s"Missing mongoupdate ${updateKey}. Application might not be broken.")
+        Logger.warn(s"Missing mongo update ${updateKey}. Application might be broken.")
       }
     }
   }
@@ -692,6 +695,12 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.cost"), multi=true)
       collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.license"), multi=true)
       collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences"), multi=true)
+  }
+
+  private def activateAllUsers() {
+    val query = MongoDBObject("active" -> MongoDBObject("$exists" -> false))
+    val update = MongoDBObject("$set" -> MongoDBObject("active" -> true))
+    collection("social.users").update(query, update, upsert=false, multi=true)
   }
 
   private def migrateNotesInFiles() {

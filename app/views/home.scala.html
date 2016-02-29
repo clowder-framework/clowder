@@ -52,9 +52,8 @@
                 <div class="margin-top-h  col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <span class="pull-right"> <a href="@routes.Datasets.list("","",12, None, "", Some(profile.id.stringify))">See More</a></span>
                 </div>
-
-                </div>
-                <div class="row" id="masonry-datasets">
+            </div>
+            <div class="row" id="masonry-datasets">
                 @datasetsList.map { dataset =>
                     @datasets.tile(dataset, None, dscomments, "col-lg-6 col-md-6 col-sm-6", false, false, routes.Application.index())
                 }
@@ -492,7 +491,7 @@
             activateOne("masonry-spaces");
         }
         $(document).ready(function() {
-            activate();
+
             /*
             * Clamped-width.
             * Usage:
@@ -524,6 +523,7 @@
                 $(this ).css("width", width);
                 $(this ).css("height", width);
             });
+            activate();
         });
 
 

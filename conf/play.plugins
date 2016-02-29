@@ -17,6 +17,7 @@
 #10007:securesocial.core.providers.XingProvider
 #10008:securesocial.core.providers.VkProvider
 #10009:securesocial.core.providers.InstagramProvider
+10020:services.SecureSocialEventListener
 #10050:services.CrowdProvider
 #10051:services.CILogonProvider
 #10090:services.MailerPlugin
