@@ -39,7 +39,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
 
           val https = controllers.Utils.https(request)
           val key = play.api.Play.configuration.getString("commKey").getOrElse("")
-          val filesJson = curations.getCurationFiles(c.files).map { file =>
+          val filesJson = curations.getCurationFiles(curations.getAllCurationFileIds(c.id)).map { file =>
 
             var fileMetadata = scala.collection.mutable.Map.empty[String, JsValue]
             metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, file.id)).filter(_.creator.typeOfAgent == "cat:user").map {
@@ -75,9 +75,9 @@ class CurationObjects @Inject()(datasets: DatasetService,
             tempMap ++ fileMetadata
 
           }
-          val hasPart = c.files.map(file => "urn:uuid:"+file)
+          val hasPart = curations.getAllCurationFileIds(c.id).map(file => "urn:uuid:"+file)
           var commentsByDataset = comments.findCommentsByDatasetId(c.datasets(0).id)
-          curations.getCurationFiles(c.files).map {
+          curations.getCurationFiles(curations.getAllCurationFileIds(c.id)).map {
             file =>
               commentsByDataset ++= comments.findCommentsByFileId(file.fileId)
               sections.findByFileId(UUID(file.fileId.toString)).map { section =>
@@ -279,21 +279,50 @@ class CurationObjects @Inject()(datasets: DatasetService,
       implicit val user = request.user
       curations.get(curationId) match {
         case Some(c) => {
-          Ok(toJson(Map("cf" -> curations.getCurationFiles(c.files))))
+          Ok(toJson(Map("cf" -> curations.getCurationFiles(curations.getAllCurationFileIds(c.id)))))
         }
         case None => InternalServerError("Curation Object Not found")
       }
   }
 
   @ApiOperation(value = "Delete a file in curation object", notes = "",
-    responseClass = "None", httpMethod = "POST")
-  def deleteCurationFiles(curationId: UUID, curationFileId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
+    responseClass = "None", httpMethod = "DELETE")
+  def deleteCurationFile(curationId:UUID, parentId: UUID, curationFileId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
-      implicit val user = request.user
       curations.get(curationId) match {
-        case Some(c) => {
-          curations.deleteCurationFiles(curationId, curationFileId)
-          Ok(toJson("Success"))
+        case Some(c) => c.status match {
+          case "In Curation" => {
+            if(curationId == parentId){
+              curations.removeCurationFile("dataset", parentId, curationFileId)
+            } else {
+              curations.removeCurationFile("folder", parentId, curationFileId)
+            }
+            curations.deleteCurationFile( curationFileId)
+            Ok(toJson("Success"))
+          }
+          case _ => InternalServerError("Cannot modify Curation Object ")
+        }
+        case None => InternalServerError("Curation Object Not found")
+      }
+
+  }
+
+  @ApiOperation(value = "Delete a folder in curation object", notes = "",
+    responseClass = "None", httpMethod = "DELETE")
+  def deleteCurationFolder(curationId:UUID, parentId: UUID, curationFolderId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
+    implicit request =>
+      curations.get(curationId) match {
+        case Some(c) => c.status match {
+          case "In Curation" => {
+            if(curationId == parentId){
+              curations.removeCurationFolder("dataset", parentId, curationFolderId)
+            } else {
+              curations.removeCurationFolder("folder", parentId, curationFolderId)
+            }
+            curations.deleteCurationFolder( curationFolderId)
+            Ok(toJson("Success"))
+          }
+          case _ => InternalServerError("Cannot modify Curation Object ")
         }
         case None => InternalServerError("Curation Object Not found")
       }

@@ -1,0 +1,121 @@
+@(curation: CurationObject, currentFolder: Option[String], foldersList: List[CurationFolder], folderHierarchy: List[CurationFolder], filepage: Int, next: Boolean, files:List[CurationFile], m: List[models.Metadata])(implicit user: Option[models.User])
+@import api.Permission
+
+@if(files.size > 0 ||folderHierarchy.length > 0 || foldersList.size>0){
+    <h2> Files</h2>
+}
+
+@if(folderHierarchy.length > 0 ) {
+  <h2> <a href="javascript:updatePageAndFolder(0, '')"><span class="glyphicon glyphicon-home"></span></a>
+    @folderHierarchy.map { cFolder =>
+    > <a href="javascript:updatePageAndFolder(0, '@cFolder.id.stringify')"> @cFolder.displayName</a>
+    }
+  </h2>
+}
+
+<div id="folderListDiv">
+@foldersList.map { folder =>
+        @if(currentFolder.isDefined) {
+            @curations.listFolder(folder, UUID(currentFolder.getOrElse("")), curation.id, curation.status =="In Curation")
+        } else {
+            @curations.listFolder(folder, curation.id, curation.id, curation.status =="In Curation")
+        }
+}
+</div>
+
+
+<div>
+<ul style = "list-style-type: none">
+  @for(file<- files) {
+
+    <li>
+      <h4><a href=@routes.Files.file(file.fileId)>@file.filename</a>
+        @if(curation.status =="In Curation" && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id))) {
+          <a id="file-@file.id" title="Delete curation file" class="btn btn-link delete-file">
+            <span class="glyphicon glyphicon-trash"></span>
+          </a>
+        }
+      </h4>
+      <div id ='allMetadata_@(file.id)'>
+        <button class="btn btn-link" type="button">Show File metadata</button>
+        <div style="display:none;">
+          <div class="row border-top">
+            <div class="col-md-12">
+              @if(curation.status =="In Curation" && Permission.checkPermission(Permission.AddMetadata, ResourceRef(ResourceRef.curationObject, curation.id))) {
+                <div class="row">
+                  <div class="col-md-12">
+                  @metadatald.addMetadata("curationFile", file.id.toString, "metadata-content-"+file.id.stringify)
+                  </div>
+                </div>
+              }
+            <div class="row">
+              <div class="col-md-12" id="metadata-content-@file.id.stringify">
+                @if(curation.status =="In Curation") {
+                    @metadatald.view(m.filter(_.attachedTo.id == file.id), true)
+                } else {
+                    @metadatald.view(m.filter(_.attachedTo.id == file.id), false)
+                }
+              </div>
+            </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </li>
+
+    <script>
+                    $("#allMetadata_@(file.id.toString) > button").on('click', function(){
+                        if($("#allMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
+                            $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
+                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file metadata";
+                        }
+                        else{
+                            $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
+                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file metadata";
+                        }
+                    });
+
+                   $('.delete-file').unbind().on('click', function(){
+                        var delete_file = $(this);
+                        @if(currentFolder.isDefined){
+                               var request = jsRoutes.api.CurationObjects.deleteCurationFiles('@curation.id', '@currentFolder', this.id.split("-")[1]).ajax({
+                            type: 'DELETE'
+                        });
+                        } else {
+                        var request = jsRoutes.api.CurationObjects.deleteCurationFiles('@curation.id', '@curation.id',  this.id.split("-")[1]).ajax({
+                            type: 'DELETE'
+                        });
+                        }
+                        request.done(function (response, textStatus, jqXHR) {
+                            console.log("success");
+                            delete_file.closest("LI").remove();
+                        });
+
+                        request.fail(function (jqXHR, textStatus, errorThrown){
+                            console.error("The following error occured: " + textStatus, errorThrown);
+                            var errMsg = "You must be logged in to delete curation file";
+                            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                              notify("Curation file was not removed due to : " + errorThrown, "error");
+                            }
+                        });
+                     });
+                </script>
+  }
+</ul>
+  </div>
+
+
+<div class="row">
+  <div class="col-md-12">
+    <ul class="pager">
+        <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
+      @if(filepage > 0) {
+        <li class="previous"><a id="prevlink" title="Page backwards" href="javascript:updatePageAndFolder(@(filepage-1), '@currentFolder')"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
+      }
+      @if(next) {
+        <li class ="next"><a id="nextlink" title="Page forwards"  href="javascript:updatePageAndFolder(@(filepage+1),'@currentFolder')">Next<span class="glyphicon glyphicon-chevron-right"></span></a></li>
+      }
+    </ul>
+  </div>
+</div>
