@@ -82,14 +82,14 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   @ApiOperation(value = "List spaces the user can view",
     notes = "Retrieves information about spaces",
     responseClass = "None", httpMethod = "GET")
-  def list(title: Option[String], date: Option[String], limit: Int) = UserAction { implicit request =>
+  def list(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true) { implicit request =>
     Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.ViewSpace), false, request.user, request.superAdmin).map(spaceToJson)))
   }
 
   @ApiOperation(value = "List spaces the user can add to",
     notes = "Retrieves a list of spaces that the user has permission to add to",
     responseClass = "None", httpMethod = "GET")
-  def listCanEdit(title: Option[String], date: Option[String], limit: Int) = UserAction { implicit request =>
+  def listCanEdit(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true) { implicit request =>
     Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.superAdmin).map(spaceToJson)))
   }
 
@@ -404,7 +404,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
                           events.addRequestEvent(user, userService.get(UUID(aUserId)).get, spaceId, spaces.get(spaceId).get.name, "add_user_to_space")
                           val newmember = userService.get(UUID(aUserId))
                           val theHtml = views.html.spaces.inviteNotificationEmail(spaceId.stringify, space.name, user.get.getMiniUser, newmember.get.getMiniUser.fullName, aRole.name)
-                          Mail.sendEmail("Added to Space", newmember.get.getMiniUser.email.get ,theHtml)
+                          Mail.sendEmail("Added to Space", request.user, newmember.get.getMiniUser.email.get ,theHtml)
                         }
                       }
                       else {

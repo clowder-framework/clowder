@@ -4,11 +4,8 @@ import java.io.InputStream
 import play.Logger
 import play.api.Play.current
 import org.bson.types.ObjectId
-import com.mongodb.casbah.commons.MongoDBObject
-import com.mongodb.casbah.gridfs.GridFS
-import models.{UUID, File}
+import models.{User, UUID, File}
 import com.mongodb.casbah.WriteConcern
-import securesocial.core.Identity
 
 /**
  * Use GridFS to store blobs.
@@ -21,7 +18,7 @@ trait GridFSDB {
   /**
    * Save blob.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File] = {
+  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: User, showPreviews: String = "DatasetLevel"): Option[File] = {
     val files = current.plugin[MongoSalatPlugin] match {
       case None    => throw new RuntimeException("No MongoSalatPlugin");
       case Some(x) =>  x.gridFS("uploads")

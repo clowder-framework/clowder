@@ -32,7 +32,6 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import com.mongodb.casbah.Imports._
-import securesocial.core.Identity
 
 
 /**
@@ -159,7 +158,7 @@ class MongoDBFileService @Inject() (
   /**
    * Save blob.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File] = {
+  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: User, showPreviews: String = "DatasetLevel"): Option[File] = {
     val extra = Map("showPreviews" -> showPreviews,
                     "author" -> SocialUserDAO.toDBObject(author),
                     "licenseData" -> grater[LicenseData].asDBObject(License.fromAppConfig()))
@@ -969,6 +968,12 @@ class MongoDBFileService @Inject() (
                     $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 
+  def updateDescription(id: UUID, description: String) {
+    val result = FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $set("description" -> description),
+      false, false, WriteConcern.Safe)
+
+  }
 }
 
 object FileDAO extends ModelCompanion[File, ObjectId] {

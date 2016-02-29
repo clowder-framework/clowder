@@ -162,6 +162,7 @@ object AppConfiguration {
    * Get list of all admins. This list is primarily used when a new user signs up (requires
    * registerThroughAdmins to be set to true in application.conf) or when the plugin is enabled
    * to send emails on creating of new datasets, collections and/or files.
+   * This will return a list of email addresses!
    */
   def getAdmins: List[String] = appConfig.getProperty[List[String]]("admins", List.empty[String])
 

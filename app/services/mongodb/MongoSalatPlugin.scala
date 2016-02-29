@@ -285,7 +285,16 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("fixing-mongo-sha512", fixSha512)
 
     //remove Affiliation and License, access and cost in user.repositoryPreferences
-    updateUserPreference
+    updateMongo("update-user-preferences", updateUserPreference)
+
+    // activate all users
+    updateMongo("activate-users", activateAllUsers)
+
+    //Move the current notes in files to description. And delete the notes field
+    updateMongo("migrate-notes-files", migrateNotesInFiles)
+
+    //Append the current notes to the end of the description in datasets. And delete the notes field
+    updateMongo("migrate-notes-datasets", migrateNotesInDatasets)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -300,13 +309,13 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           appConfig.addPropertyValue("mongodb.updates", updateKey)
         } catch {
           case e:Exception => {
-            Logger.error(s"Could not run mongoupdate for ${updateKey}", e)
+            Logger.error(s"Could not run mongo update for ${updateKey}", e)
           }
         }
         val time = (System.currentTimeMillis() - start) / 1000.0
         Logger.info(s"Took ${time} second to migrate mongo : ${updateKey}")
       } else {
-        Logger.warn(s"Missing mongoupdate ${updateKey}. Application might not be broken.")
+        Logger.warn(s"Missing mongo update ${updateKey}. Application might be broken.")
       }
     }
   }
@@ -680,19 +689,54 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
-  private def updateUserPreference{
-    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+  private def updateUserPreference(){
+      collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.access"), multi=true)
+      collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.organizational_affiliation"), multi=true)
+      collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.cost"), multi=true)
+      collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.license"), multi=true)
+      collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences"), multi=true)
+  }
 
-    if (!appConfig.hasPropertyValue("mongodb.updates", "update-user-preference")) {
-      if (System.getProperty("MONGOUPDATE") != null) {
-        collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.access"), multi=true)
-        collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.affiliation"), multi=true)
-        collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.cost"), multi=true)
-        collection("social.users").update(MongoDBObject(), $unset("repositoryPreferences.license"), multi=true)
+  private def activateAllUsers() {
+    val query = MongoDBObject("active" -> MongoDBObject("$exists" -> false))
+    val update = MongoDBObject("$set" -> MongoDBObject("active" -> true))
+    collection("social.users").update(query, update, upsert=false, multi=true)
+  }
+
+  private def migrateNotesInFiles() {
+    collection("uploads.files").foreach { file =>
+      val note = file.getAsOrElse[String]("notesHTML", "")
+      if(note != "") {
+        file.put("description", note)
+        file.remove("notesHTML")
+        try {
+          collection("uploads.files").save(file, WriteConcern.Safe)
+        } catch {
+          case e: BSONException => Logger.error("Unable to migrate note to description in file:" + file.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+        }
       }
-      appConfig.addPropertyValue("mongodb.updates", "update-user-preference")
-    } else {
-      Logger.warn("[MongoDBUpdate : Missing fix to remove fields in user.repositoryPreferences ")
     }
   }
+
+  private def migrateNotesInDatasets() {
+    collection("datasets").foreach { ds =>
+      val note = ds.getAsOrElse[String]("notesHTML", "")
+      if(note != "") {
+        val description = ds.getAsOrElse[String]("description", "")
+        if(description != "") {
+          ds.put("description", description+ " " +note)
+        } else {
+          ds.put("description", note)
+        }
+        ds.remove("notesHTML")
+        try {
+          collection("datasets").save(ds, WriteConcern.Safe)
+        } catch {
+          case e: BSONException => Logger.error("Unable to migrate note to description in dataset:" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+        }
+      }
+
+    }
+  }
+
 }

@@ -15,6 +15,7 @@ GET            /*path/                                                          
 
 GET            /                                                                        @controllers.Application.index
 GET            /about                                                                   @controllers.Application.about
+GET            /email                                                                   @controllers.Application.email(subject: String ?= "")
 
 # ----------------------------------------------------------------------
 # Map static resources from the /public folder to the /assets URL path
@@ -28,7 +29,6 @@ GET            /assets/*file                                                    
 # USERS
 # ----------------------------------------------------------------------
 GET            /users                                                                   @controllers.Users.getUsers(when: String ?= "", id: String ?= "", limit: Int ?=24)
-POST           /users/registerThroughAdmins                                             @controllers.Users.handleStartSignUp
 
 # ----------------------------------------------------------------------
 # PROFILE
@@ -42,11 +42,13 @@ GET            /profile/submitChanges                                           
 GET            /profile/:uuid                                                           @controllers.Profile.viewProfileUUID(uuid: UUID)
 
 # ----------------------------------------------------------------------
-# UTILITIES
+# ERRORS
 # ----------------------------------------------------------------------
-GET            /utils/authenticationRequired                                            @controllers.RedirectUtility.authenticationRequired
-GET            /utils/authenticationRequiredMessage/:msg/:url                           @controllers.RedirectUtility.authenticationRequiredMessage(msg, url)
-GET            /utils/noPermissions                                                     @controllers.RedirectUtility.incorrectPermissions(msg ?= null)
+GET            /error/authenticationRequired                                            @controllers.Error.authenticationRequired
+GET            /error/authenticationRequiredMessage/:msg/:url                           @controllers.Error.authenticationRequiredMessage(msg, url)
+GET            /error/noPermissions                                                     @controllers.Error.incorrectPermissions(msg ?= null)
+GET            /error/notActivated                                                      @controllers.Error.notActivated
+GET            /error/notAuthorized                                                     @controllers.Error.notAuthorized(msg:String,  id:String, resourceType:String )
 
 # ----------------------------------------------------------------------
 # DTS INFORMATION
@@ -163,13 +165,6 @@ GET            /tags/list/ordered                                               
 GET            /tags/list/weighted                                                      @controllers.Tags.tagListWeighted
 
 # ----------------------------------------------------------------------
-# AUTHENTICATION
-# ----------------------------------------------------------------------
-GET            /loginTest                                                               controllers.Authentication.login
-POST           /loginTest                                                               controllers.Authentication.loginSubmit
-GET            /notAuthorized                                                           controllers.Authentication.notAuthorized(msg:String,  id:String, resourceType:String )
-
-# ----------------------------------------------------------------------
 #
 # ----------------------------------------------------------------------
 GET            /search                                                                  @controllers.Search.search(query: String ?= "")
@@ -223,9 +218,8 @@ GET            /not-authorized                                                  
 # ADMIN PAGES
 # ----------------------------------------------------------------------
 GET            /admin/customize                                                         @controllers.Admin.customize
+GET            /admin/users                                                             @controllers.Admin.users
 GET            /admin/indexAdmin                                                        @controllers.Admin.adminIndex
-GET            /admin/test                                                              @controllers.Admin.test
-GET            /admin/secureTest                                                        @controllers.Admin.secureTest
 GET            /admin/reindexFiles                                                      @controllers.Admin.reindexFiles
 GET            /admin/adapters                                                          @controllers.Admin.getAdapters
 GET            /admin/extractors                                                        @controllers.Admin.getExtractors
@@ -234,9 +228,6 @@ GET            /admin/indexers                                                  
 GET            /admin/indexes                                                           @controllers.Admin.getIndexes
 GET            /admin/sections                                                          @controllers.Admin.getSections
 GET            /admin/metadata/definitions                                              @controllers.Admin.getMetadataDefinitions
-GET            /admin/addAdmin                                                          @controllers.Admin.newAdmin
-GET            /admin/listAdmins                                                        @controllers.Admin.listAdmins
-POST           /admin/submitNew                                                         @controllers.Admin.submitNew
 POST           /admin/createIndex                                                       @controllers.Admin.createIndex
 POST           /admin/index/:id/build                                                   @controllers.Admin.buildIndex(id:String)
 DELETE         /admin/index/:id                                                         @controllers.Admin.deleteIndex(id:String)
@@ -250,6 +241,7 @@ POST           /admin/roles/update                                              
 GET            /admin/extractions                                                       @controllers.Extractors.listAllExtractions
 GET            /admin/dataDumps                                                         @controllers.Admin.viewDumpers
 GET            /admin/sensors                                                           @controllers.Admin.sensors
+POST           /api/sensors/config                                                      @api.Admin.sensorsConfig
 
 # ----------------------------------------------------------------------
 # JAVASCRIPT ENDPOINTS
@@ -269,10 +261,11 @@ GET            /api-docs.json/:path                                             
 #----------------------------------------------------------------------
 # ADMIN
 #----------------------------------------------------------------------
-POST           /api/sensors/config                                                      api.Admin.sensorsConfig
-DELETE         /api/delete-data                                                         api.Admin.deleteAllData(resetAll: Boolean ?= false)
-POST           /api/remove-admin                                                        api.Admin.removeAdmin
-POST           /api/changeAppearance                                                    api.Admin.submitAppearance
+POST           /api/admin/mail                                                          @api.Admin.mail
+POST           /api/admin/users                                                         @api.Admin.users
+POST           /api/sensors/config                                                      @api.Admin.sensorsConfig
+DELETE         /api/delete-data                                                         @api.Admin.deleteAllData(resetAll: Boolean ?= false)
+POST           /api/changeAppearance                                                    @api.Admin.submitAppearance
 
 #----------------------------------------------------------------------
 # JSON-LD METADATA
@@ -331,6 +324,7 @@ POST           /api/files/searchusermetadata                                    
 POST           /api/files/searchmetadata                                                @api.Files.searchFilesGeneralMetadata
 POST           /api/uploadToDataset/withFlags/:id/:flags                                @api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String)
 POST           /api/uploadToDataset/:id                                                 @api.Files.uploadToDataset(id: UUID, showPreviews: String ?= "DatasetLevel", originalZipFile: String ?= "", flags: String ?= "")
+PUT            /api/files/:id/updateDescription                                         @api.Files.updateDescription(id: UUID)
 POST           /api/files/uploadIntermediate/:idAndFlags                                @api.Files.uploadIntermediate(idAndFlags)
 POST           /api/files/sendJob/:fileId/:fileType                                     @api.Files.sendJob(fileId: UUID,fileType)
 GET            /api/files/getRDFURLsForFile/:id                                         @api.Files.getRDFURLsForFile(id: UUID)
@@ -424,9 +418,6 @@ POST           /api/spaces/:spaceId/addDatasetToSpace/:datasetId                
 POST           /api/spaces/:spaceId/addCollectionToSpace/:collectionId                  @api.Spaces.addCollectionToSpace(spaceId: UUID, collectionId: UUID)
 POST           /api/spaces/:id/follow                                                   @api.Spaces.follow(id: UUID, name: String)
 POST           /api/spaces/:id/unfollow                                                 @api.Spaces.unfollow(id: UUID, name: String)
-
-POST           /api/remove-admin                                                        api.Admin.removeAdmin
-POST           /api/changeAppearance                                                    api.Admin.submitAppearance
 
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT
