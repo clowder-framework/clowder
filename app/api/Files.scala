@@ -2,15 +2,10 @@ package api
 
 import java.io.{BufferedWriter, FileInputStream, FileWriter}
 import java.net.{URL, URLEncoder}
-import java.text.SimpleDateFormat
-import java.util.Date
 import javax.inject.Inject
 import javax.mail.internet.MimeUtility
 
 import _root_.util.{Parsers, JSONLD}
-import securesocial.core.Identity
-
-import org.bson.types.ObjectId
 
 import com.mongodb.casbah.Imports._
 import com.wordnik.swagger.annotations.{Api, ApiOperation}
@@ -34,14 +29,9 @@ import scala.collection.mutable.{ListBuffer, ArrayBuffer}
 import scala.util.parsing.json.JSONArray
 
 
-import javax.imageio.ImageIO
-
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import scala.concurrent.Future
- 
-import scala.util.control._
 import controllers.Utils
 
 /**
@@ -137,7 +127,7 @@ class Files @Inject()(
 		                }
 		              }
 		              case None => {
-                    val userAgent = request.headers("user-agent")
+                    val userAgent = request.headers.get("user-agent").getOrElse("")
                     val filenameStar = if (userAgent.indexOf("MSIE") > -1) {
                       URLEncoder.encode(filename, "UTF-8")
                     } else {
@@ -402,10 +392,10 @@ class Files @Inject()(
     }
 
     // store file
-    var realUser = user.asInstanceOf[Identity]
+    var realUser = user
     if (!originalZipFile.equals("")) {
       files.get(new UUID(originalZipFile)) match {
-        case Some(originalFile) => realUser = originalFile.author
+        case Some(originalFile) => realUser = userService.findByIdentity(originalFile.author).getOrElse(user)
         case None => {}
       }
     }

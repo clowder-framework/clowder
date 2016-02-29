@@ -4,9 +4,9 @@ import javax.inject.Inject
 
 import com.wordnik.swagger.annotations.ApiOperation
 import play.api.Logger
+import models.User
 import play.api.Play._
 import play.api.libs.json.{JsValue, Json}
-import securesocial.core.Identity
 import services._
 import services.mongodb.MongoSalatPlugin
 
@@ -28,14 +28,14 @@ class Status @Inject()(spaces: SpaceService,
   @ApiOperation(value = "version",
     notes = "returns the version information",
     responseClass = "None", httpMethod = "GET")
-  def version = UserAction { implicit request =>
+  def version = UserAction(needActive=false) { implicit request =>
     Ok(Json.obj("version" -> getVersionInfo))
   }
 
   @ApiOperation(value = "status",
     notes = "returns the status information",
     responseClass = "None", httpMethod = "GET")
-  def status = UserAction { implicit request =>
+  def status = UserAction(needActive=false) { implicit request =>
 
     Ok(Json.obj("version" -> getVersionInfo,
       "counts" -> getCounts,
@@ -43,7 +43,7 @@ class Status @Inject()(spaces: SpaceService,
       "extractors" -> Json.toJson(extractors.getExtractorNames())))
   }
 
-  def getPlugins(user: Option[Identity]): JsValue = {
+  def getPlugins(user: Option[User]): JsValue = {
     val result = new mutable.HashMap[String, JsValue]()
 
     current.plugins foreach {
