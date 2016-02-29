@@ -283,7 +283,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                       val usr = users.findByEmail(email)
                       spaces.addUser(usr.get.id, role, id)
                       val theHtml = views.html.spaces.inviteNotificationEmail(id.stringify, s.name, user.get.getMiniUser, usr.get.fullName, role.name)
-                      Mail.sendEmail("Added to space", email, theHtml)
+                      Mail.sendEmail("Added to space", request.user, email, theHtml)
                     }
                     case None => {
                       val uuid = UUID.generate()
@@ -297,21 +297,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                       val t= date.getTimeInMillis()
                       val afterAddingMins: Date=new Date(t + (TokenDuration * ONE_MINUTE_IN_MILLIS))
                       val invite = SpaceInvite(uuid, uuid.toString(), email, s.id, role.id.stringify, new Date(), afterAddingMins)
-                      if(play.api.Play.current.configuration.getBoolean("registerThroughAdmins").get)
-                      {
-                        val theHtml = views.html.inviteEmailThroughAdmin(uuid.stringify, email, s.name, user.get.getMiniUser.fullName, formData.message)
-                        val admins = AppConfiguration.getAdmins
-                        for(admin <- admins) {
-                          Mail.sendEmail(Messages("mails.sendSignUpEmail.subject"), admin, theHtml)
-                        }
-                        spaces.addInvitationToSpace(invite)
-                      }
-                      if(!play.api.Play.current.configuration.getBoolean("registerThroughAdmins").get)
-                      {
-                        val theHtml = views.html.inviteThroughEmail(uuid.stringify, s.name, user.get.getMiniUser.fullName, formData.message)
-                        Mail.sendEmail(Messages("mails.sendSignUpEmail.subject"), email, theHtml)
-                        spaces.addInvitationToSpace(invite)
-                      }
+                      val theHtml = views.html.inviteThroughEmail(uuid.stringify, s.name, user.get.getMiniUser.fullName, formData.message)
+                      Mail.sendEmail(Messages("mails.sendSignUpEmail.subject"), request.user, email, theHtml)
+                      spaces.addInvitationToSpace(invite)
                     }
                   }
                 }
@@ -331,7 +319,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   /**
    * Each user with EditSpace permission will see the request on index and receive an email.
    */
-   def addRequest(id: UUID) = UserAction { implicit request =>
+   def addRequest(id: UUID) = UserAction(needActive = true) { implicit request =>
       implicit val requestuser = request.user
 
     requestuser match{
@@ -354,7 +342,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
                     //sending emails to the space's Admin && Editor
                     val recipient: String = requestReceiver.email.get.toString
-                    Mail.sendEmail(subject, recipient, body)
+                    Mail.sendEmail(subject, request.user, recipient, body)
                   }
                 }
               }
@@ -391,7 +379,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
             val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Accepted"
             val recipient: String = requestUser.email.get.toString
             val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "accepted your request and assigned you as " + role + " to")
-            Mail.sendEmail(subject, recipient, body)
+            Mail.sendEmail(subject, request.user, recipient, body)
             Ok(Json.obj("status" -> "success"))
           }
           case None => InternalServerError("Request user not found")
@@ -413,7 +401,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
             val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Rejected"
             val recipient: String = requestUser.email.get.toString
             val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "rejected your request to")
-            Mail.sendEmail(subject, recipient, body)
+            Mail.sendEmail(subject, request.user, recipient, body)
             Ok(Json.obj("status" -> "success"))
           }
           case None => InternalServerError("Request user not found")

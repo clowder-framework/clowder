@@ -110,6 +110,9 @@
                         <ul class="dropdown-menu" role="menu">
                             <li><a href="https://clowder.ncsa.illinois.edu/" target="_blank">About Clowder</a></li>
                             <li><a href="@routes.Application.about">About this instance</a></li>
+                            @if(user.isDefined) {
+                                <li><a href="@routes.Application.email("")">Contact server admins</a></li>
+                            }
                             <li><a href="@routes.Assets.at("docs/api/index.html")" target="_blank">API</a></li>
                         </ul>
                     </li>
@@ -122,8 +125,7 @@
                                         <span class="glyphicon glyphicon-cog"></span><b class="caret"></b></a>
                                     <ul class="dropdown-menu" role="menu">
                                         <li><a href="@routes.Admin.customize">Customize</a></li>
-                                        <li><a href="@routes.Admin.listAdmins">List adminstrators</a></li>
-                                        <li><a href="@routes.Admin.newAdmin">Add administrator</a></li>
+                                        <li><a href="@routes.Admin.users">Users</a></li>
                                         <li><a href="@routes.Admin.listRoles">List Roles</a></li>
                                         <li><a href="@routes.Admin.createRole">Add Role</a></li>
                                         <li><a href="@routes.Extractors.listAllExtractions">Extractions</a></li>

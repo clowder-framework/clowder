@@ -14,6 +14,7 @@ import securesocial.core._
  */
 trait User extends Identity {
   def id: UUID
+  def active: Boolean
   def profile: Option[Profile]
   def friends: Option[List[String]]
   def followedEntities: List[TypedID]
@@ -70,7 +71,7 @@ object User {
     new IdentityId("anonymous", ""),
     "Anonymous", "User", "Anonymous User",
     None,
-    AuthenticationMethod.UserPassword)
+    AuthenticationMethod.UserPassword, active=true)
 }
 
 case class ClowderUser(
@@ -88,6 +89,9 @@ case class ClowderUser(
   oAuth2Info: Option[OAuth2Info] = None,
   passwordInfo: Option[PasswordInfo] = None,
 
+  //should user be active
+  active: Boolean = false,
+
   // profile
   profile: Option[Profile] = None,
 
@@ -101,6 +105,7 @@ case class ClowderUser(
 
   // spaces
   spaceandrole: List[UserSpaceAndRole] = List.empty,
+
   //staging area
   repositoryPreferences: Map[String,Any] = Map.empty
 
