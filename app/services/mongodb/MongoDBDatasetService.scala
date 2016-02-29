@@ -43,7 +43,8 @@ class MongoDBDatasetService @Inject() (
   sparql: RdfSPARQLService,
   spaces: SpaceService,
   userService: UserService,
-  folders: FolderService) extends DatasetService {
+  folders: FolderService,
+  metadatas:MetadataService) extends DatasetService {
 
   object MustBreak extends Exception {}
 
@@ -1031,6 +1032,7 @@ class MongoDBDatasetService @Inject() (
         for (follower <- dataset.followers) {
           userService.unfollowDataset(follower, id)
         }
+        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
         Dataset.remove(MongoDBObject("_id" -> new ObjectId(dataset.id.stringify)))
       }
       case None =>
