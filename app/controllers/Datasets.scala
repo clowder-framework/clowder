@@ -10,6 +10,7 @@ import fileutils.FilesUtils
 import models._
 import play.api.Logger
 import play.api.Play.current
+import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json._
 import services._
 import util.{Formatters, RequiredFieldsConfig}
@@ -856,21 +857,22 @@ class Datasets @Inject()(
     implicit val user = request.user
 
     var instanceMap = MutableMap[UUID, ToolInstance]()
+    var toolList: JsObject = JsObject(Seq[(String, JsValue)]())
     // Get mapping of instanceIDs to URLs API has returned
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
+        toolList = mgr.toolList
         instanceMap = mgr.instanceMap
       }
       case None => {}
     }
 
-    Ok(views.html.datasets.toolManager(instanceMap.keys.toList, instanceMap))
+    Ok(views.html.datasets.toolManager(toolList, instanceMap.keys.toList, instanceMap))
   }
 
   /**
     * Construct the sidebar listing active tools relevant to the given datasetId
     * @param datasetId UUID of dataset that is currently displayed
-    * @return
     */
   def refreshToolSidebar(datasetId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
@@ -913,6 +915,9 @@ class Datasets @Inject()(
     }
   }
 
+  /**
+    * Fetch list of launchable tools from Plugin.
+    */
   def getLaunchableTools() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
@@ -925,6 +930,29 @@ class Datasets @Inject()(
     }
   }
 
+  /**
+    * Upload a dataset to an existing tool instance. Does not check for or prevent against duplication.
+    */
+  def uploadDatasetToTool(instanceID: UUID, datasetID: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    val hostURL = request.headers.get("Host") match {
+      case Some(h) => h
+      case None => ""
+    }
+
+    current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        mgr.uploadDatasetToInstance(hostURL, instanceID, datasetID)
+        Ok("request sent")
+      }
+      case None => Ok("{}")
+    }
+  }
+
+  /**
+    * Get full list of running instances from Plugin.
+    */
   def getInstances() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
@@ -937,6 +965,9 @@ class Datasets @Inject()(
     }
   }
 
+  /**
+    * Get remote URL of running instance, if available.
+    */
   def getInstanceURL(instanceID: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
@@ -948,6 +979,9 @@ class Datasets @Inject()(
     Ok(url)
   }
 
+  /**
+    * Send request to server to destroy instance, and remove from Plugin.
+    */
   def removeInstance(toolType: String, instanceID: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 

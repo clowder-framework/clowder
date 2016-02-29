@@ -106,6 +106,7 @@ GET            /datasets/following                                              
 GET            /datasets/toolManager                                                    @controllers.Datasets.toolManager
 GET            /datasets/refreshToolList                                                @controllers.Datasets.refreshToolSidebar(datasetid: UUID)
 GET            /datasets/launchableTools                                                @controllers.Datasets.getLaunchableTools
+GET            /datasets/uploadToTool                                                   @controllers.Datasets.uploadDatasetToTool(instanceID: UUID, datasetID: UUID)
 GET            /datasets/getInstances                                                   @controllers.Datasets.getInstances
 GET            /datasets/removeInstance                                                 @controllers.Datasets.removeInstance(toolType: String, instanceID: UUID)
 GET            /datasets/launchTool                                                     @controllers.Datasets.launchTool(sessionName: String, ttype: String, datasetId: UUID)

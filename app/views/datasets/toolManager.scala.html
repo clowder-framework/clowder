@@ -1,4 +1,4 @@
-@(instances: List[UUID], instanceMap: scala.collection.mutable.Map[UUID, services.ToolInstance])(implicit user: Option[models.User])
+@(toolList: play.api.libs.json.JsObject, instances: List[UUID], instanceMap: scala.collection.mutable.Map[UUID, services.ToolInstance])(implicit user: Option[models.User])
 
 @import helper._
 @import play.api.Play.current
@@ -12,7 +12,35 @@
 
   <div class="row">
     <div class="col-md-12">
-      <h1>Active Analysis Environments</h1>
+      <h2>Available analysis environments</h2>
+    </div>
+  </div>
+
+  <div>
+    <a class="btn btn-link" data-toggle="collapse" aria-expanded="false" aria-controls="collapseExample" href="#tools-list">
+      <span class="glyphicon glyphicon-collapse-down" title="Expand tools list"></span> Expand list
+    </a>
+    <div class="collapse" id="tools-list" aria-hidden="true">
+      <ul>
+        @for(apiPath <- toolList.keys) {
+          <li>
+            <b>@{
+                var x = (toolList \ apiPath \ "name")
+                x.toString.replace("\"","")
+            }</b></br>&nbsp;&nbsp;&nbsp;&nbsp;
+            @{
+              var x = (toolList \ apiPath \ "description")
+              x.toString.replace("\"","")
+            }
+          </li>
+        }
+      </ul>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-12">
+      <h2>Active instances</h2>
     </div>
   </div>
 
@@ -43,7 +71,7 @@
                           case None => {}
                         }
 
-                        <li>Environment: @Html(inst.toolType)</li>
+                        <li>Environment: <b>@Html(inst.toolName)</b></li>
                         <li>Created @inst.created.format("MMM dd, yyyy")</li>
                         <li>Updated @inst.updated.format("MMM dd, yyyy")</li>
 
@@ -55,10 +83,10 @@
                             <div class="well"> @{
                               var dsList = ""
                               instanceMap.get(instanceID) match {
-                                case Some(ts) => {
-                                  for ((dsId, dsName) <- ts.uploadHistory) {
+                                case Some(instance) => {
+                                  for ((dsId, (dsName, upTime)) <- instance.uploadHistory) {
                                     val dsURL = controllers.routes.Datasets.dataset(dsId).url
-                                    dsList += "<a href="+dsURL+">"+dsName+"</a></br>"
+                                    dsList += "<b>"+upTime+"</b>: <a href="+dsURL+">"+dsName+"</a></br>"
                                   }
                                 }
                                 case None => {}

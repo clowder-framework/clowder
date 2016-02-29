@@ -1,6 +1,7 @@
 package services
 
-import java.util.Calendar
+import java.util.{Calendar, Date}
+import java.text.SimpleDateFormat
 import scala.collection.mutable.Map
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,8 +22,9 @@ class ToolInstance() {
   var name = "" // Human-readable name for easier management of lists
   var url: String = ""
   var externalId: String = "" // For tracking token used by external API
-  var toolType: String = ""
-  var uploadHistory: Map[UUID, String] = Map()
+  var toolType: String = "" // API endpoint that was used to launch this instance, e.g. "rstudio"
+  var toolName: String = ""
+  var uploadHistory: Map[UUID, (String, String)] = Map()
   var owner = None: Option[models.User]
   var created = Calendar.getInstance.getTime
   var updated = created
@@ -30,26 +32,26 @@ class ToolInstance() {
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val users: UserService = DI.injector.getInstance(classOf[UserService])
 
+  // Add a new dataset upload event to the uploadHistory
+  def updateHistory(datasetId: UUID): Unit = {
+    datasets.get(datasetId) match {
+      case Some(ds) => {
+        val dt: SimpleDateFormat = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss")
+        val upTime = dt.format(Calendar.getInstance.getTime)
+        uploadHistory(datasetId) = (ds.name, upTime)
+      }
+      case None => {}
+    }
+    updateTimestamp()
+  }
+
   def setID(externalid: String): Unit = {
-    // Define the external Tool URL this ToolInstance points to
     externalId = externalid
     updateTimestamp()
   }
 
   def setURL(sessionurl: String): Unit = {
-    // Define the external Tool URL this ToolInstance points to
     url = sessionurl
-    updateTimestamp()
-  }
-
-  def updateHistory(datasetId: UUID): Unit = {
-    // Register a new Dataset to this ToolInstance (does not send request to API)
-    datasets.get(datasetId) match {
-      case Some(ds) => {
-        uploadHistory(datasetId) = ds.name
-      }
-      case None => {}
-    }
     updateTimestamp()
   }
 
@@ -66,8 +68,9 @@ class ToolInstance() {
     updateTimestamp()
   }
 
-  def setToolType(tooltype: String): Unit = {
+  def setToolInfo(tooltype: String, toolname: String): Unit = {
     toolType = tooltype
+    toolName = toolname
     updateTimestamp()
   }
 
@@ -82,13 +85,13 @@ class ToolInstance() {
   * from Clowder. Supports launching, stopping, getting info of analysis environment sessions.
   */
 class ToolManagerPlugin(application: Application) extends Plugin {
+  var toolList: JsObject = JsObject(Seq[(String, JsValue)]()) // ToolAPIEndpoint -> {"name": <>, "description": <>}
+  var instanceMap: Map[UUID, ToolInstance] = Map() // ToolManager SessionId -> ToolInstance instance
+
   val comments: CommentService = DI.injector.getInstance(classOf[CommentService])
   val files: FileService = DI.injector.getInstance(classOf[FileService])
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
-
-  var toolList: JsObject = JsObject(Seq[(String, JsValue)]()) // ToolAPIEndpoint -> {"name": <>, "description": <>}
-  var instanceMap: Map[UUID, ToolInstance] = Map() // ToolManager SessionId -> ToolInstance instance
 
   override def onStart() {
     Logger.debug("Initializing ToolManagerPlugin")
@@ -137,7 +140,11 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     // Generate a new session & add to instanceMap
     val instance = new ToolInstance()
     instance.setName(instanceName)
-    instance.setToolType(toolType)
+    val toolName = (toolList \ toolType \ "name") match {
+      case j: JsUndefined => "Unknown"
+      case j: JsString => j.toString.replace("\"","")
+    }
+    instance.setToolInfo(toolType, toolName)
     ownerId match {
       case Some(o) => instance.setOwner(o)
       case None => {}
@@ -227,28 +234,32 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     for ((instanceID, instance) <- instanceMap) {
       instances(instanceID.toString)  = instance.name
     }
-
     return instances
   }
 
   /**
     * Upload dataset files to an existing instance.
-    * @param instanceID ID of instance to attach dataset to
-    * @param datasetID clowder ID of dataset to attach
     */
-  def uploadDataset(instanceID: String, datasetID: String): Boolean = {
-    val apihost = play.Play.application().configuration().getString("toolmanager.host")
-    val statusRequest: Future[Response] = url(apihost+":8080/attachDataset").post(Json.obj(
-      "key" -> play.Play.application().configuration().getString("commKey"),
-      "session" -> instanceID,
-      "host" -> apihost
-    ))
+  def uploadDatasetToInstance(hostURL: String, instanceID: UUID, datasetID: UUID): Unit = {
+    val dsURL = hostURL+controllers.routes.Datasets.dataset(datasetID).url
 
-    statusRequest.map( response => {
-      Logger.info(response.body.toString)
-    })
+    instanceMap.get(instanceID) match {
+      case Some(instance) => {
+        instance.updateHistory(datasetID)
 
-    return true
+        val apipath = play.Play.application().configuration().getString("toolmanager.host") + ":" +
+          play.Play.application().configuration().getString("toolmanager.port") + "/tools/" + instance.toolType
+
+        val statusRequest: Future[Response] = url(apipath).put(Json.obj(
+          "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
+          "key" -> play.Play.application().configuration().getString("commKey"),
+          "id" -> instance.externalId.toString
+        ))
+        statusRequest.map( response => {
+          Logger.info(response.body.toString)
+        })
+      }
+    }
   }
 
   /**
