@@ -861,6 +861,7 @@ class Datasets @Inject()(
     // Get mapping of instanceIDs to URLs API has returned
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
+        mgr.refreshActiveInstanceListFromServer()
         toolList = mgr.toolList
         instanceMap = mgr.instanceMap
       }

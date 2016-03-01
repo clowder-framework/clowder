@@ -62,10 +62,7 @@
         <input type="text" id="newToolNameField" class="form-control add-resource" placeholder="Enter instance name" value="@{
             user match {
               case Some(u) => u.fullName + "'s instance"
-              case None => "My instance"
-            }
-          }
-        ">
+              case None => "My instance"}}">
         <select id="launchNewToolInstance" class="form-control add-resource"></select>
         <span class="input-group-btn">
           <a href="#" onclick="launchToolRequest()" class="btn btn-default btn-large" id="launchtoolBtn" title="Launch New Environment">

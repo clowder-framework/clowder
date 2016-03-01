@@ -76,25 +76,28 @@
                         <li>Updated @inst.updated.format("MMM dd, yyyy")</li>
 
                         <li>
-                          <a class="btn btn-link" data-toggle="collapse" aria-expanded="false" aria-controls="collapseExample" href="#datasets-@inst.id">
-                            <span class="glyphicon glyphicon-collapse-down" title="@inst.uploadHistory.keys.size datasets"></span> Expand upload history (@inst.uploadHistory.keys.size uploads)
-                          </a>
-                          <div class="collapse" id="datasets-@inst.id" aria-hidden="true">
-                            <div class="well"> @{
-                              var dsList = ""
-                              instanceMap.get(instanceID) match {
-                                case Some(instance) => {
-                                  for ((dsId, (dsName, upTime)) <- instance.uploadHistory) {
-                                    val dsURL = controllers.routes.Datasets.dataset(dsId).url
-                                    dsList += "<b>"+upTime+"</b>: <a href="+dsURL+">"+dsName+"</a></br>"
+                          @if(inst.uploadHistory.keys.size > 0) {
+                            <a class="btn btn-link" data-toggle="collapse" aria-expanded="false" aria-controls="collapseExample" href="#datasets-@inst.id">
+                              <span class="glyphicon glyphicon-collapse-down" title="@inst.uploadHistory.keys.size datasets"></span>
+                              Expand upload history (@inst.uploadHistory.keys.size uploads)
+                            </a>
+                            <div class="collapse" id="datasets-@inst.id" aria-hidden="true">
+                              <div class="well"> @{
+                                var dsList = ""
+                                instanceMap.get(instanceID) match {
+                                  case Some(instance) => {
+                                    for((dsId, (dsName, upTime)) <- instance.uploadHistory) {
+                                      val dsURL = controllers.routes.Datasets.dataset(dsId).url
+                                      dsList += "<b>" + upTime + "</b>: <a href=" + dsURL + ">" + dsName + "</a></br>"
+                                    }
                                   }
+                                  case None => {}
                                 }
-                                case None => {}
+                                Html(dsList)
                               }
-                              Html(dsList)
-                            }
+                              </div>
                             </div>
-                          </div>
+                          }
                         </li>
                       </ul>
                     </div>

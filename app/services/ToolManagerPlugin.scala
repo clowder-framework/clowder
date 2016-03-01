@@ -25,8 +25,8 @@ class ToolInstance() {
   var toolType: String = "" // API endpoint that was used to launch this instance, e.g. "rstudio"
   var toolName: String = ""
   var uploadHistory: Map[UUID, (String, String)] = Map()
-  var owner = None: Option[models.User]
-  var created = Calendar.getInstance.getTime
+  var owner: Option[models.User] = None
+  var created = (new SimpleDateFormat("yyyy-mm-dd hh:mm:ss")).format(Calendar.getInstance.getTime)
   var updated = created
 
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
@@ -36,8 +36,7 @@ class ToolInstance() {
   def updateHistory(datasetId: UUID): Unit = {
     datasets.get(datasetId) match {
       case Some(ds) => {
-        val dt: SimpleDateFormat = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss")
-        val upTime = dt.format(Calendar.getInstance.getTime)
+        val upTime = (new SimpleDateFormat("yyyy-mm-dd hh:mm:ss")).format(Calendar.getInstance.getTime)
         uploadHistory(datasetId) = (ds.name, upTime)
       }
       case None => {}
@@ -68,6 +67,11 @@ class ToolInstance() {
     updateTimestamp()
   }
 
+  def setTimes(createTime: String, updateTime: String): Unit = {
+    created = createTime
+    updated = updateTime
+  }
+
   def setToolInfo(tooltype: String, toolname: String): Unit = {
     toolType = tooltype
     toolName = toolname
@@ -75,7 +79,7 @@ class ToolInstance() {
   }
 
   def updateTimestamp(): Unit = {
-    updated = Calendar.getInstance.getTime
+    updated = (new SimpleDateFormat("yyyy-mm-dd hh:mm:ss")).format(Calendar.getInstance.getTime)
   }
 }
 
@@ -96,6 +100,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
   override def onStart() {
     Logger.debug("Initializing ToolManagerPlugin")
     refreshLaunchableToolsFromServer()
+    refreshActiveInstanceListFromServer()
   }
 
   /**
@@ -123,6 +128,52 @@ class ToolManagerPlugin(application: Application) extends Plugin {
         case _: JsUndefined => {}
         case j: JsObject => {
           toolList = j
+        }
+      }
+    })
+  }
+
+  /**
+    * Update instanceMap with server-side list, in case Plugin has been stopped
+    */
+  def refreshActiveInstanceListFromServer(): Unit = {
+    val apipath = play.Play.application().configuration().getString("toolmanager.host") + ":" +
+      play.Play.application().configuration().getString("toolmanager.port")
+    val statusRequest: Future[Response] = url(apipath+"/instances").get()
+
+    statusRequest.map( response => {
+      val jsonObj = Json.parse(response.body)
+
+      jsonObj match {
+        case _: JsUndefined => {}
+        case j: JsObject => {
+          Logger.debug("Refreshing from server")
+          for (externalID <- j.keys) {
+            Logger.debug("...checking "+externalID)
+            // check to make sure this externalID isn't already present in instanceMap
+            var alreadyPresent = false
+            for (existingUUID <- instanceMap.keys) {
+              Logger.debug("......vs "+instanceMap(existingUUID).externalId)
+              if (instanceMap(existingUUID).externalId == externalID) {
+                Logger.debug("......found match")
+                alreadyPresent = true
+              }
+            }
+            // if not, create it - for now we're missing owner and uploadHistory
+            if (!alreadyPresent) {
+              Logger.debug("...no match found. adding instance entry")
+              var instance = new ToolInstance()
+              instance.externalId = externalID
+              instance.setName((j \ externalID \ "name").toString.replace("\"",""))
+              instance.setURL((j \ externalID \ "url").toString.replace("\"",""))
+              instance.setToolInfo(
+                (j \ externalID \ "toolType").toString.replace("\"",""),
+                (j \ externalID \ "toolName").toString.replace("\"",""))
+              val t = (j \ externalID \ "created").toString.replace("\"","")
+              instance.setTimes(t, t)
+              instanceMap(instance.id) = instance
+            }
+          }
         }
       }
     })
@@ -160,7 +211,8 @@ class ToolManagerPlugin(application: Application) extends Plugin {
                   play.Play.application().configuration().getString("toolmanager.port") + "/tools/" + toolType
     val statusRequest: Future[Response] = url(apipath).post(Json.obj(
       "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
-      "key" -> play.Play.application().configuration().getString("commKey")
+      "key" -> play.Play.application().configuration().getString("commKey"),
+      "name" -> instanceName
     ))
 
     statusRequest.map( response => {
@@ -226,11 +278,12 @@ class ToolManagerPlugin(application: Application) extends Plugin {
   }
 
   /**
-    * Get a map of instanceID to instanceName
+    * Get a simple map of instanceID to instanceName
     */
   def getInstances(): Map[String, String] = {
-    val instances = Map[String, String]()
+    refreshActiveInstanceListFromServer()
 
+    val instances = Map[String, String]()
     for ((instanceID, instance) <- instanceMap) {
       instances(instanceID.toString)  = instance.name
     }
