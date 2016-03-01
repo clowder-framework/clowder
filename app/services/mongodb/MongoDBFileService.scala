@@ -1,9 +1,5 @@
 package services.mongodb
 
-import java.security.{DigestInputStream, MessageDigest}
-
-import org.apache.commons.codec.binary.Hex
-import org.apache.commons.io.input.CountingInputStream
 import play.api.mvc.Request
 import services._
 import models._

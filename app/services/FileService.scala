@@ -85,7 +85,11 @@ trait FileService {
   
   def index(id: UUID)
 
+  /**
+   * Directly insert file into database, for example if the file path is local.
+   */
   def insert(file: File): Option[String]
+
   /**
    * Return a list of tags and counts found in sections
    */
