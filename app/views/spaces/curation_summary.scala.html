@@ -7,9 +7,11 @@
                 <li>Size: <div id="size"></div> <li/>
                 <li>File Formats: <div id="format"></div></li>
                 <li>Creator: @curationObject.datasets(0).author.fullName</li>
-                <li>Uploaded: @curationObject.created.format("MMM dd, yyyy")</li>
+                <li>Created: @curationObject.created.format("MMM dd, yyyy")</li>
             </ul>
             @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, curationObject.space))){
+                <a class="btn btn-sm btn-link" href="@routes.Spaces.stagingArea(curationObject.space)">
+                    <span class="glyphicon glyphicon-briefcase"></span> Staging Area</a>
                 @if(!editCurationObject){
                     <a class="btn btn-sm btn-link" href ="@routes.CurationObjects.getCurationObject(curationObject.id)">
                         <span class="glyphicon glyphicon-chevron-left"></span> Go to Edit Metadata</a>

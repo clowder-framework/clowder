@@ -17,6 +17,8 @@ import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError
 
+import scala.util.Try
+
 /**
  * Spaces allow users to partition the data into realms only accessible to users with the right permissions.
  */
@@ -80,14 +82,14 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   @ApiOperation(value = "List spaces the user can view",
     notes = "Retrieves information about spaces",
     responseClass = "None", httpMethod = "GET")
-  def list(title: Option[String], date: Option[String], limit: Int) = UserAction { implicit request =>
+  def list(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true) { implicit request =>
     Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.ViewSpace), false, request.user, request.superAdmin).map(spaceToJson)))
   }
 
   @ApiOperation(value = "List spaces the user can add to",
     notes = "Retrieves a list of spaces that the user has permission to add to",
     responseClass = "None", httpMethod = "GET")
-  def listCanEdit(title: Option[String], date: Option[String], limit: Int) = UserAction { implicit request =>
+  def listCanEdit(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true) { implicit request =>
     Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.superAdmin).map(spaceToJson)))
   }
 
@@ -146,7 +148,12 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
             Forbidden(toJson(s"You are not the owner of the collection"))
           } else {
             spaces.addCollection(collectionId, spaceId)
-            Ok(Json.obj("collectionInSpace" -> (s.collectionCount + 1).toString))
+            spaces.get(spaceId) match {
+              case Some(space) => {
+                Ok(Json.obj("collectionInSpace" -> space.collectionCount.toString))
+              }
+              case None => NotFound
+            }
           }
         }
         case (_, _) => NotFound
@@ -180,9 +187,27 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     (spaces.get(spaceId), collectionService.get(collectionId)) match {
       case (Some(s), Some(c)) => {
         spaces.removeCollection(collectionId, spaceId)
+        updateSubCollections(spaceId, collectionId)
         Ok(toJson("success"))
       }
       case (_, _) => NotFound
+    }
+  }
+
+  def updateSubCollections(spaceId: UUID, collectionId: UUID)  {
+    collectionService.get(collectionId) match {
+      case Some(collection) => {
+        val collectionDescendants = collectionService.getAllDescendants(collectionId)
+        for (descendant <- collectionDescendants){
+          val rootCollectionSpaces = collectionService.getRootSpaceIds(descendant.id)
+          for (space <- descendant.spaces) {
+            if (!rootCollectionSpaces.contains(space)){
+              spaces.removeCollection(descendant.id, space)
+            }
+          }
+        }
+      }
+      case None => Logger.error("no collection found with id " + collectionId)
     }
   }
 
@@ -379,7 +404,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
                           events.addRequestEvent(user, userService.get(UUID(aUserId)).get, spaceId, spaces.get(spaceId).get.name, "add_user_to_space")
                           val newmember = userService.get(UUID(aUserId))
                           val theHtml = views.html.spaces.inviteNotificationEmail(spaceId.stringify, space.name, user.get.getMiniUser, newmember.get.getMiniUser.fullName, aRole.name)
-                          Mail.sendEmail("Added to Space", newmember.get.getMiniUser.email.get ,theHtml)
+                          Mail.sendEmail("Added to Space", request.user, newmember.get.getMiniUser.email.get ,theHtml)
                         }
                       }
                       else {

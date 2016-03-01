@@ -93,7 +93,8 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
   }
 
   def removeMetadataByAttachTo(resourceRef: ResourceRef) = {
-    MetadataDAO.remove(MongoDBObject("attachTo" -> resourceRef), WriteConcern.Safe)
+    MetadataDAO.remove(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
+      "attachedTo._id" -> new ObjectId(resourceRef.id.stringify)), WriteConcern.Safe)
     //not providing metaData count modification here since we assume this is to delete the metadata's host
   }
 

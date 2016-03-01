@@ -1,0 +1,20 @@
+@(user: User, admin: Boolean, ssl: Boolean = true)(implicit request: RequestHeader)
+
+@import services.AppConfiguration
+
+<html>
+    <body>
+        <p></p>@user.fullName,</p>
+        <p>
+            Your account on <a href="@routes.Application.index().absoluteURL(ssl)" style="text-decoration: none">@AppConfiguration.getDisplayName</a>
+            now @if(!admin) { no longer } has admin privileges.
+        </p>
+        <p>
+            <small>
+                This message was sent by <a style="text-decoration:none;" href="http://clowder.ncsa.illinois.edu/">
+                Clowder</a> @sys.props.getOrElse("build.version", default = "0.0.0")#@sys.props.getOrElse("build.bamboo", default = "development")<br/>
+                If you have any questions about this email please contact <a href="@routes.Application.email().absoluteURL(ssl)">the server admins.</a>
+            </small>
+        </p>
+    </body>
+</html>

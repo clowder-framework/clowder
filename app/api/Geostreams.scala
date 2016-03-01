@@ -25,6 +25,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
 import com.wordnik.swagger.annotations.ApiOperation
+import services.AppConfiguration
 
 /**
  * Geostreaming endpoints. A geostream is a time and geospatial referenced
@@ -1784,4 +1785,20 @@ object Geostreams extends ApiController {
    * Class to hold a json key, and any subkeys
    */
   case class Header(key: String, value: Either[String, ListBuffer[Header]])
+
+  def getConfig = PermissionAction(Permission.ViewGeoStream) { implicit request =>
+    Logger.debug("Getting config")
+    current.plugin[PostgresPlugin] match {
+      case Some(plugin) => {
+        Ok(Json.obj(
+          "userAgreement" -> Json.toJson(AppConfiguration.getUserAgreement),
+          "sensorsTitle" -> Json.toJson(AppConfiguration.getSensorsTitle),
+          "sensorTitle" -> Json.toJson(AppConfiguration.getSensorTitle),
+          "parametersTitle" -> Json.toJson(AppConfiguration.getParametersTitle),
+          "parameterTitle" -> Json.toJson(AppConfiguration.getParameterTitle)
+        ))
+      }
+      case None => pluginNotEnabled
+    }
+  }
 }

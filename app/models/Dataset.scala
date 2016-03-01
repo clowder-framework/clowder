@@ -17,6 +17,7 @@ case class Dataset(
   description: String = "N/A",
   created: Date,
   files: List[UUID] = List.empty,
+  folders: List[UUID] = List.empty,
   streams_id: List[ObjectId] = List.empty,
   tags: List[Tag] = List.empty,
   metadataCount: Long = 0,
@@ -28,7 +29,6 @@ case class Dataset(
   @deprecated("use Metadata","since the use of jsonld") datasetXmlMetadata: List[DatasetXMLMetadata] = List.empty,
   @deprecated("use Metadata","since the use of jsonld") userMetadataWasModified: Option[Boolean] = None,
   licenseData: LicenseData = new LicenseData(),
-  notesHTML: Option[String] = None,
   spaces: List[UUID] = List.empty,
   lastModifiedDate: Date = new Date(),
   followers: List[UUID] = List.empty)

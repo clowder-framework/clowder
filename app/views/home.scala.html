@@ -11,7 +11,11 @@
     <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
     <div class="row featurette">
         <div class="col-md-6">
-            <h1 class="featurette-heading">@profile.fullName</h1> <a href="@routes.Profile.viewProfileUUID(profile.id)">Profile</a>
+            <h1 class="featurette-heading">@profile.fullName</h1>
+            <a href="@routes.Profile.viewProfileUUID(profile.id)" class="btn btn-link" title="Show profile"><span class="glyphicon glyphicon-user"></span> Profile</a>
+            <a href="@routes.Spaces.newSpace()" class="btn btn-link" title="Create a new space"><span class="glyphicon glyphicon-ok"></span> Create Space</a>
+            <a href="@routes.Datasets.newDataset(None, None)" class="btn btn-link" title="Create a new dataset"><span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
+            <a href="@routes.Collections.newCollection(None)" class="btn btn-link" title="Create a new collection"><span class="glyphicon glyphicon-ok"></span> Create Collection</a>
             <h2> My Events </h2>
             @for(event <- newsfeed) {
                 <div class="panel panel-default">
@@ -45,30 +49,31 @@
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <h2> My Datasets </h2>
                 </div>
-                <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                    <span class=" margin-top-h pull-right"> <a href="@routes.Datasets.list("","",12, None, "", Some(profile.id.stringify))">See More</a></span>
+                <div class="margin-top-h  col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                    <span class="pull-right"> <a href="@routes.Datasets.list("","",12, None, "", Some(profile.id.stringify))">See More</a></span>
                 </div>
-
-                </div>
-                <div class="row" id="masonry-datasets">
+            </div>
+            <div class="row" id="masonry-datasets">
                 @datasetsList.map { dataset =>
                     @datasets.tile(dataset, None, dscomments, "col-lg-6 col-md-6 col-sm-6", false, false, routes.Application.index())
                 }
+                </div>
 
-                @if(datasetsList.size < 1) {
-                    <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                      <div>This area will show all datasets you've created.</div>
+            @if(datasetsList.size < 1) {
+                <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                    <div>This area will show all datasets you've created.</div>
 
-                         <div> <a class="btn-link" href="@routes.Datasets.newDataset(None, None)" title="Create a new dataset">Create Dataset</a></div>
-                    </div>
-                }
-            </div>
+                    <div> <a class="btn-link" href="@routes.Datasets.newDataset(None, None)" title="Create a new dataset">Create Dataset</a></div>
+                </div>
+            }
             <div class="row top-padding">
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <h2> My Collections </h2>
                 </div>
                 <div class="margin-top-h col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                    <span class="pull-right"> <a href="@routes.Collections.list("","",12, None, "", Some(profile.id.stringify))">See More</a></span>
+                    <span class="pull-right">
+                        <a href="@routes.Collections.list("","",12, None, "", Some(profile.id.stringify))">See More</a>
+                    </span>
                 </div>
 
             </div>
@@ -76,20 +81,22 @@
                     @collectionsList.map { collection =>
                        @collections.tile(collection, routes.Application.index(), "col-lg-6 col-md-6 col-sm-6", false)
                     }
-                @if(collectionsList.size < 1) {
-                    <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                        <div>This area will show all collections you've created</div>
-
-                        <div> <a class="btn-link" href="@routes.Collections.newCollection(None)" title="Create a new collection">Create Collection</a></div>
-                    </div>
-                }
             </div>
+            @if(collectionsList.size < 1) {
+                <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                    <div>This area will show all collections you've created</div>
+
+                    <div> <a class="btn-link" href="@routes.Collections.newCollection(None)" title="Create a new collection">Create Collection</a></div>
+                </div>
+            }
             <div class="row top-padding">
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <h2> My Spaces </h2>
                 </div>
                 <div class="margin-top-h col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                    <span class="pull-right"> <a href="@routes.Spaces.list("","",12, "", Some(profile.id.stringify))">See More</a></span>
+                    <span class="pull-right">
+                        <a href="@routes.Spaces.list("","",12, "", Some(profile.id.stringify))">See More</a>
+                    </span>
                 </div>
             </div>
             <div class="row" id="masonry-spaces">
@@ -97,20 +104,20 @@
                             @spaces.tile(space, "col-lg-6 col-md-6 col-sm-6 col-xs-12", routes.Application.index(), false )
 
                     }
-                @if(spacesList.size < 1) {
-                    <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                        <div>This area will show all spaces you've created. </div>
-
-                        <div> <a class="btn-link" href="@routes.Spaces.newSpace()" title="Create a new space">Create Space</a></div>
-                    </div>
-                }
             </div>
+            @if(spacesList.size < 1) {
+                <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                    <div>This area will show all spaces you've created. </div>
+
+                    <div> <a class="btn-link" href="@routes.Spaces.newSpace()" title="Create a new space">Create Space</a></div>
+                </div>
+            }
             <div class="row top-padding">
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <h2> Followers</h2>
                 </div>
-                <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                    <span class=" margin-top-h pull-right"> <a href="@routes.Users.getFollowers()">See More</a></span>
+                <div class="margin-top-h col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                    <span class="pull-right"> <a href="@routes.Users.getFollowers()">See More</a></span>
                 </div>
             </div>
             <div class="row">
@@ -484,7 +491,7 @@
             activateOne("masonry-spaces");
         }
         $(document).ready(function() {
-            activate();
+
             /*
             * Clamped-width.
             * Usage:
@@ -516,6 +523,7 @@
                 $(this ).css("width", width);
                 $(this ).css("height", width);
             });
+            activate();
         });
 
 

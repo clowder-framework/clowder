@@ -34,8 +34,6 @@ import scala.util.parsing.json.JSONArray
 /**
  * Use Mongodb to store datasets.
  *
- * @author Luigi Marini
- *
  */
 @Singleton
 class MongoDBDatasetService @Inject() (
@@ -44,7 +42,9 @@ class MongoDBDatasetService @Inject() (
   comments: CommentService,
   sparql: RdfSPARQLService,
   spaces: SpaceService,
-  userService: UserService) extends DatasetService {
+  userService: UserService,
+  folders: FolderService,
+  metadatas:MetadataService) extends DatasetService {
 
   object MustBreak extends Exception {}
 
@@ -967,6 +967,11 @@ class MongoDBDatasetService @Inject() (
     Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $addToSet("files" -> new ObjectId(file.id.stringify)), false, false, WriteConcern.Safe)
   }
 
+  def addFolder(datasetId: UUID, folderId: UUID) {
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $addToSet("folders" -> new ObjectId(folderId.stringify)), false, false, WriteConcern.Safe)
+  }
+
+
   def addCollection(datasetId: UUID, collectionId: UUID) {
     Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $addToSet("collections" -> new ObjectId(collectionId.stringify)), false, false, WriteConcern.Safe)
   }
@@ -978,6 +983,10 @@ class MongoDBDatasetService @Inject() (
   def removeFile(datasetId: UUID, fileId: UUID) {
     Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("files" -> new ObjectId(fileId.stringify)), false, false, WriteConcern.Safe)
     removeXMLMetadata(datasetId, fileId)
+  }
+
+  def removeFolder(datasetId: UUID, folderId: UUID) {
+    Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)), $pull("folders" -> new ObjectId(folderId.stringify)), false, false, WriteConcern.Safe)
   }
 
   def newThumbnail(datasetId: UUID) {
@@ -1013,13 +1022,17 @@ class MongoDBDatasetService @Inject() (
           comments.removeComment(comment)
         }
         for (f <- dataset.files) {
-          var notTheDataset = for (currDataset <- findByFileId(f) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
+          val notTheDataset = for (currDataset <- findByFileId(f) if !dataset.id.toString.equals(currDataset.id.toString)) yield currDataset
           if (notTheDataset.size == 0)
             files.removeFile(f)
+        }
+        for (folder <- dataset.folders ) {
+          folders.delete(folder)
         }
         for (follower <- dataset.followers) {
           userService.unfollowDataset(follower, id)
         }
+        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
         Dataset.remove(MongoDBObject("_id" -> new ObjectId(dataset.id.stringify)))
       }
       case None =>
@@ -1084,10 +1097,6 @@ class MongoDBDatasetService @Inject() (
       }
       case None => Logger.error("Dataset not found: " + id)
     }
-  }
-
-  def setNotesHTML(id: UUID, notesHTML: String){
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(notesHTML)), false, false, WriteConcern.Safe)
   }
 
   def addToSpace(datasetId: UUID, spaceId: UUID): Unit = {

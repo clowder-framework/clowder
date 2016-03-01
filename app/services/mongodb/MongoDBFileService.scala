@@ -36,7 +36,6 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import com.mongodb.casbah.Imports._
-import securesocial.core.Identity
 
 
 /**
@@ -56,7 +55,9 @@ class MongoDBFileService @Inject() (
   threeD: ThreeDService,
   sparql: RdfSPARQLService,
   storage: ByteStorageService,
-  userService: UserService) extends FileService {
+  userService: UserService,
+  folders: FolderService,
+  metadatas:MetadataService) extends FileService {
 
   object MustBreak extends Exception {}
 
@@ -162,7 +163,7 @@ class MongoDBFileService @Inject() (
   /**
    * Save blob.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File] = {
+  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: User, showPreviews: String = "DatasetLevel"): Option[File] = {
     val extra = Map("showPreviews" -> showPreviews,
                     "author" -> SocialUserDAO.toDBObject(author),
                     "licenseData" -> grater[LicenseData].asDBObject(License.fromAppConfig()))
@@ -669,6 +670,10 @@ class MongoDBFileService @Inject() (
             }
                      
           }
+          val fileFolders = folders.findByFileId(file.id)
+          for(fileFolder <- fileFolders) {
+            folders.removeFile(fileFolder.id, file.id)
+          }
           for(section <- sections.findByFileId(file.id)){
             sections.removeSection(section)
           }
@@ -686,6 +691,7 @@ class MongoDBFileService @Inject() (
           }
           if(!file.thumbnail_id.isEmpty)
             thumbnails.remove(UUID(file.thumbnail_id.get))
+          metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
         }
 
         // finally delete the actual file
@@ -898,10 +904,6 @@ class MongoDBFileService @Inject() (
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(fileId.stringify)),
       $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
   }
-  
-  def setNotesHTML(id: UUID, html: String) {
-	    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(html)), false, false, WriteConcern.Safe)    
-  }
 
   def dumpAllFileMetadata(): List[String] = {
 		    Logger.debug("Dumping metadata of all files.")
@@ -979,6 +981,12 @@ class MongoDBFileService @Inject() (
                     $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 
+  def updateDescription(id: UUID, description: String) {
+    val result = FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $set("description" -> description),
+      false, false, WriteConcern.Safe)
+
+  }
 }
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
@@ -987,7 +995,6 @@ object FileDAO extends ModelCompanion[File, ObjectId] {
     case Some(x) => new SalatDAO[File, ObjectId](collection = x.collection("uploads.files")) {}
   }
 }
-
 
 object VersusDAO extends ModelCompanion[Versus,ObjectId]{
     val dao = current.plugin[MongoSalatPlugin] match {

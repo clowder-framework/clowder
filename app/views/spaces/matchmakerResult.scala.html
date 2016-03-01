@@ -4,7 +4,6 @@
         <div class="col-md-12">
             <div class="panel panel-default">
                 <div class="panel-body">
-                    <a href="@routes.Spaces.stagingArea(curationObject.space)">Staging Area</a> >
                     <a  href ="@routes.CurationObjects.getCurationObject(curationObject.id)">Edit Metadata</a> >
                     <u><strong>Select Repository</strong></u> >
                     Submit to Repository
@@ -28,12 +27,11 @@
             @spaces.curation_summary( curationObject, "Matchmaker", false)
             <div class="panel panel-default">
                 <div class="panel-body">
-                    <h5>Publication Preferences</h5>
+                    <h4>Preferences</h4>
                     @for((prop, value) <- properties) {
                         <h5>@prop</h5>
-                        @if(prop != "Purpose") {
                            @for(cur<-value) {
-                                @if(userPreferences.contains(prop.replace(" ", "_").toLowerCase()) && userPreferences(prop.replace(" ", "_").toLowerCase()).contains(cur)) {
+                                @if(userPreferences.contains(prop.replace(" ", "_")) && userPreferences(prop.replace(" ", "_")).contains(cur)) {
                                     <input type="checkbox" name="@prop" value="@cur" checked> @cur <br/>
 
                                 } else {
@@ -41,19 +39,6 @@
                                 }
 
                             }
-                        } else {
-                            @for(cur<-value) {
-
-                                @if(userPreferences.contains(prop.replace(" ", "_")) && userPreferences(prop.replace(" ", "_")).contains(cur)) {
-                                    <input type="radio" name="@prop" value="@cur" checked="checked"> @cur <br/>
-
-                                } else {
-                                    <input type="radio" name="@prop" value="@cur"> @cur <br/>
-                                }
-
-
-                            }
-                        }
                     }
                     <div class="center-margin">
                         <button class="btn btn-sm btn-link" id="updateResults"><span class="glyphicon glyphicon-send"></span> Update Results</button>
@@ -112,27 +97,15 @@
 
 
         $('#updateResults').on('click', function() {
-            var access = [];
-            $("input[name='Access']:checkbox:checked").each(function(i){
-                access[i] = $(this).val();
+
+            var purpose = [];
+            $("input[name='Purpose']:checkbox:checked").each(function(i){
+               purpose[i] = $(this).val();
             });
-           var license = [];
-            $("input[name='License']:checkbox:checked").each(function(i){
-                license[i] = $(this).val();
-            });
-            var cost = [];
-            $("input[name='Cost']:checkbox:checked").each(function(i){
-                cost[i] = $(this).val();
-            });
-            var affiliation = [];
-            $("input[name='Affiliation']:checkbox:checked").each(function(i){
-                affiliation[i] = $(this).val();
-            });
-            var purpose;
-            $("input[name='Purpose']:radio:checked").each(function(i){
-                purpose = $(this).val();
-            });
-            var dataMap = {access: access.toString(), license: license.toString(), cost: cost.toString(), affiliation: affiliation.toString(), Purpose: purpose.toString() };
+
+            var dataMap={};
+            if(purpose !="")
+                dataMap ["Purpose"]= purpose.toString();
 
             var request = jsRoutes.api.CurationObjects.findMatchmakingRepositories('@curationObject.id').ajax({
                 type: 'POST',
@@ -158,7 +131,7 @@
             });
             request.fail(function( jqXHR, textStatus, errorThrown) {
                 console.error("The following error occurred: " + textStatus, errorThrown);
-                notify(jqXHR.responseText, "error");
+                notify("Preferences were not updated due to:"+ jqXHR.responseText, "error");
             });
         });
         $('.selectRepository').on('click', function() {

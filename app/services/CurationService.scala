@@ -45,6 +45,11 @@ trait CurationService {
   def insertFile(curationFile : CurationFile)
 
   /**
+   * insert a new curation object folder.
+   */
+  def insertFolder(curationFolder : CurationFolder)
+
+  /**
    * Update the repository selected
    */
   def updateRepository(curationId: UUID, repository: String)
@@ -59,21 +64,60 @@ trait CurationService {
    */
   def getCurationObjectByDatasetId(datasetId: UUID): List[CurationObject]
 
-
   /**
    * List curation files of a curation obeject
    */
   def getCurationFiles(curationFileIds:List[UUID]): List[CurationFile]
 
   /**
-   * get the curation contains this curation file
+   * List curation folders of a curation obeject
    */
-  def getCurationByCurationFile(curationFile: UUID): Option[CurationObject]
+  def getCurationFolders(curationFolderIds:List[UUID]): List[CurationFolder]
 
   /**
-   * Delete a curation file from a curation obeject
+   * List curation file ids of a curation obeject and its folders
    */
-  def deleteCurationFiles(curationId: UUID, curationFileId: UUID)
+  def getAllCurationFileIds(id:UUID): List[UUID]
+
+  /**
+   * get the curation contains this curation file
+   */
+  def getCurationByCurationFile(curationFileId: UUID): Option[CurationObject]
+
+  /**
+   * get the curation folder
+   */
+  def getCurationFolder(curationFolderId: UUID): Option[CurationFolder]
+
+  /**
+   * add a curation file to curationObject or curation folder.
+   */
+  def addCurationFile(parentType: String, parentId: UUID, curationFileId: UUID)
+
+  /**
+   * remove a curation folder from curationObject or curation folder.
+   */
+  def removeCurationFile(parentType: String, parentId: UUID, curationFileId: UUID)
+
+  /**
+   * add a curation folder to curationObject or curation folder.
+   */
+  def addCurationFolder(parentType: String, parentId: UUID, subCurationFolderId: UUID)
+
+  /**
+   * remove a curation folder to curationObject or curation folder.
+   */
+  def removeCurationFolder(parentType: String, parentId: UUID, subCurationFolderId: UUID)
+
+  /**
+   * Delete a curation file, and remove its metadata.
+   */
+  def deleteCurationFile(curationFileId: UUID)
+
+  /**
+   * Delete a curation folder and all its subfolders and files.
+   */
+  def deleteCurationFolder(id: UUID): Unit
 
   /**
    * Update curation object's name, description, space.

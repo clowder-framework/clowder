@@ -2,15 +2,10 @@ package api
 
 import java.io.{BufferedWriter, FileInputStream, FileWriter}
 import java.net.{URL, URLEncoder}
-import java.text.SimpleDateFormat
-import java.util.Date
 import javax.inject.Inject
 import javax.mail.internet.MimeUtility
 
 import _root_.util.{Parsers, JSONLD}
-import securesocial.core.Identity
-
-import org.bson.types.ObjectId
 
 import com.mongodb.casbah.Imports._
 import com.wordnik.swagger.annotations.{Api, ApiOperation}
@@ -35,14 +30,9 @@ import scala.util.control.Breaks._
 import scala.util.parsing.json.JSONArray
 import scala.collection.JavaConversions._
 
-import javax.imageio.ImageIO
-
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import scala.concurrent.Future
- 
-import scala.util.control._
 import controllers.Utils
 
 /**
@@ -138,7 +128,7 @@ class Files @Inject()(
 		                }
 		              }
 		              case None => {
-                    val userAgent = request.headers("user-agent")
+                    val userAgent = request.headers.get("user-agent").getOrElse("")
                     val filenameStar = if (userAgent.indexOf("MSIE") > -1) {
                       URLEncoder.encode(filename, "UTF-8")
                     } else {
@@ -615,10 +605,10 @@ class Files @Inject()(
     }
 
     // store file
-    var realUser = user.asInstanceOf[Identity]
+    var realUser = user
     if (!originalZipFile.equals("")) {
       files.get(new UUID(originalZipFile)) match {
-        case Some(originalFile) => realUser = originalFile.author
+        case Some(originalFile) => realUser = userService.findByIdentity(originalFile.author).getOrElse(user)
         case None => {}
       }
     }
@@ -1080,7 +1070,7 @@ class Files @Inject()(
   }
 
   def jsonFile(file: File): JsValue = {
-    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "content-type" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString,
+    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "filedescription" -> file.description, "content-type" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString,
     		"authorId" -> file.author.identityId.userId))
   }
 
@@ -1915,6 +1905,32 @@ class Files @Inject()(
       }
   }
 
+
+  @ApiOperation(value = "Update file description",
+    notes = "Takes one argument, a UUID of the file. Request body takes key-value pair for the description",
+    responseClass = "None", httpMethod = "PUT")
+  def updateDescription(id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file, id))) (parse.json){ implicit request =>
+    files.get(id) match {
+      case Some(file) => {
+        var description: String = null
+        val aResult = (request.body \ "description").validate[String]
+        aResult match {
+          case s: JsSuccess[String] => {
+            description = s.get
+            files.updateDescription(file.id,description)
+            Ok(toJson(Map("status"->"success")))
+          }
+          case e: JsError => {
+            Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+            BadRequest(toJson(s"description data is missing"))
+          }
+        }
+
+      }
+      case None => BadRequest("No file exists with that id")
+    }
+  }
+
   /**
    * List datasets satisfying a user metadata search tree.
    */
@@ -2007,32 +2023,6 @@ class Files @Inject()(
       case None => Logger.error("File not found: " + id)
     }
   }
-
-  def setNotesHTML(id: UUID) = PermissionAction(Permission.CreateNote, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
-	  request.user match {
-	    case Some(identity) => {
-		    request.body.\("notesHTML").asOpt[String] match {
-			    case Some(html) => {
-			        files.setNotesHTML(id, html)
-			        //index(id)
-              files.get(id) match {
-              case Some(file) => {
-                events.addObjectEvent(request.user, file.id, file.filename, "set_note_file")
-                }
-              }
-			        Ok(toJson(Map("status"->"success")))
-			    }
-			    case None => {
-			    	Logger.error("no html specified.")
-			    	BadRequest(toJson("no html specified."))
-			    }
-		    }
-	    }
-	    case None =>
-	      Logger.error(("No user identity found in the request, request body: " + request.body))
-	      BadRequest(toJson("No user identity found in the request, request body: " + request.body))
-	  }
-    }
 
   def dumpFilesMetadata = ServerAdminAction { implicit request =>
 
