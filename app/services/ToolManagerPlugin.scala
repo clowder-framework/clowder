@@ -147,23 +147,19 @@ class ToolManagerPlugin(application: Application) extends Plugin {
       jsonObj match {
         case _: JsUndefined => {}
         case j: JsObject => {
-          Logger.debug("Refreshing from server")
           for (externalID <- j.keys) {
-            Logger.debug("...checking "+externalID)
             // check to make sure this externalID isn't already present in instanceMap
             var alreadyPresent = false
             for (existingUUID <- instanceMap.keys) {
-              Logger.debug("......vs "+instanceMap(existingUUID).externalId)
               if (instanceMap(existingUUID).externalId == externalID) {
-                Logger.debug("......found match")
                 alreadyPresent = true
               }
             }
             // if not, create it - for now we're missing owner and uploadHistory
             if (!alreadyPresent) {
-              Logger.debug("...no match found. adding instance entry")
               var instance = new ToolInstance()
               instance.externalId = externalID
+              // TODO: how to get JsValue without the wrapping quotes?
               instance.setName((j \ externalID \ "name").toString.replace("\"",""))
               instance.setURL((j \ externalID \ "url").toString.replace("\"",""))
               instance.setToolInfo(
@@ -196,10 +192,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
       case j: JsString => j.toString.replace("\"","")
     }
     instance.setToolInfo(toolType, toolName)
-    ownerId match {
-      case Some(o) => instance.setOwner(o)
-      case None => {}
-    }
+    ownerId.map(instance.setOwner)
     instanceMap(instance.id) = instance
 
     // Send request to API to launch Tool
@@ -268,8 +261,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     val uploaded = Map[UUID,ToolInstance]()
     for (instanceID <- historyIDs) {
       instanceMap.get(instanceID) match {
-        case Some(ts) =>
-          uploaded(instanceID) = ts
+        case Some(ts) => uploaded(instanceID) = ts
         case None => {}
       }
     }

@@ -859,14 +859,11 @@ class Datasets @Inject()(
     var instanceMap = MutableMap[UUID, ToolInstance]()
     var toolList: JsObject = JsObject(Seq[(String, JsValue)]())
     // Get mapping of instanceIDs to URLs API has returned
-    current.plugin[ToolManagerPlugin] match {
-      case Some(mgr) => {
-        mgr.refreshActiveInstanceListFromServer()
-        toolList = mgr.toolList
-        instanceMap = mgr.instanceMap
-      }
-      case None => {}
-    }
+    current.plugin[ToolManagerPlugin].map( mgr => {
+      mgr.refreshActiveInstanceListFromServer()
+      toolList = mgr.toolList
+      instanceMap = mgr.instanceMap
+    })
 
     Ok(views.html.datasets.toolManager(toolList, instanceMap.keys.toList, instanceMap))
   }
@@ -880,13 +877,8 @@ class Datasets @Inject()(
 
     // Get mapping of instanceIDs to returned URLs
     var instanceMap = MutableMap[UUID, ToolInstance]()
-    current.plugin[ToolManagerPlugin] match {
-      case Some(mgr) => {
-        // Get mapping of instanceID -> ToolInstance if datasetID is in uploadHistory
-        instanceMap = mgr.getInstancesWithDataset(datasetId)
-      }
-      case None => {}
-    }
+    // Get mapping of instanceID -> ToolInstance if datasetID is in uploadHistory
+    current.plugin[ToolManagerPlugin].map( mgr => instanceMap = mgr.getInstancesWithDataset(datasetId))
     Ok(views.html.datasets.tools(instanceMap.keys.toList, instanceMap, datasetId))
   }
 
@@ -896,10 +888,7 @@ class Datasets @Inject()(
   def launchTool(instanceName: String, ttype: String, datasetId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
-    val hostURL = request.headers.get("Host") match {
-      case Some(h) => h
-      case None => ""
-    }
+    val hostURL = request.headers.get("Host").getOrElse("")
 
     val userId: Option[UUID] = user match {
       case Some(u) => Some(u.id)
