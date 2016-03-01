@@ -74,6 +74,13 @@ class MongoDBVocabularyService @Inject() (userService: UserService) extends Voca
       false, false)
   }
 
+  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) = Try {
+
+  }
+
+  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) = Try {
+
+  }
 
 }
 

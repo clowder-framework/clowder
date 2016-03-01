@@ -122,7 +122,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
 
     user match {
       case Some(identity) => {
-        v = Vocabulary(author = Some(identity), created = new Date(), name = name, keys = keys, tags = tags)
+        v = Vocabulary(author = Some(identity), created = new Date(), name = name, keys = keys)
         vocabularyService.insert(v) match {
           case Some(id) => {
             Ok(toJson(Map("id" -> id)))
@@ -171,19 +171,19 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
     }
   }
 
-  /*
-  @ApiOperation(value = "Remove vocabulary from space",
-    notes = "Does not delete the vocabulary.",
+
+  @ApiOperation(value = "Add vocabulary to space",
+    notes = "",
     responseClass = "None", httpMethod = "POST")
-  def removeFromSpace(vocabId: UUID, spaceId: UUID) = PermissionAction(Permission.EditVocabulary, Some(ResourceRef(ResourceRef.vocabulary, vocabId))){
+  def removeFromSpace(vocabId: UUID, spaceId : UUID) = PermissionAction(Permission.EditVocabulary, Some(ResourceRef(ResourceRef.vocabulary, vocabId))){ implicit request =>
     vocabularyService.get(vocabId) match {
       case Some(vocab) => {
         spaces.get(spaceId) match {
           case Some(space) => {
             vocabularyService.removeFromSpace(vocabId,spaceId)
             vocabularyService.get(vocabId) match {
-              case Some(vocab) => jsonVocabulary(vocab)
-              case None => BadRequest("unable to remove " + vocabId + " from space " + spaceId)
+              case Some(vocab) => Ok(jsonVocabulary(vocab))
+              case None => BadRequest("could not remove " + vocabId + " from space " + spaceId )
             }
           }
           case None => BadRequest("no space matches" + spaceId)
@@ -192,7 +192,25 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
       case None => BadRequest("no vocabulary matches  " + vocabId)
     }
   }
-  */
+
+  @ApiOperation(value = "Gets tags of a file", notes = "Returns a list of strings, List[String].", responseClass = "None", httpMethod = "GET")
+  def getTags(id: UUID) = PermissionAction(Permission.ViewVocabulary, Some(ResourceRef(ResourceRef.vocabulary, id))) { implicit request =>
+    Logger.info("Getting tags for vocabulary with id " + id)
+    if (UUID.isValid(id.stringify)) {
+      vocabularyService.get(id) match {
+        case Some(vocab) => Ok(Json.obj("id" -> vocab.id.toString, "name" -> vocab.name,
+          "tags" -> Json.toJson(vocab.tags.toString)))
+        case None => {
+          Logger.error("The vocabulary with id " + id + " is not found.")
+          NotFound(toJson("The vocabulary with id " + id + " is not found."))
+        }
+      }
+    } else {
+      Logger.error("The given id " + id + " is not a valid ObjectId.")
+      BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
+    }
+  }
+
 
   def jsonVocabulary(vocabulary : Vocabulary): JsValue = {
     toJson(Map("id" -> vocabulary.id.toString, "name" -> vocabulary.name.toString, "keys" -> vocabulary.keys.toString))

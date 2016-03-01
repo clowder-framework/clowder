@@ -15,7 +15,7 @@ case class Vocabulary (
   name : String = "",
   lastModified : Date = new Date(),
   keys : List[String] = List.empty,
-  tags : List[String] = List.empty,
+  tags : List[Tag] = List.empty,
   spaces : List[UUID] = List.empty)
 
 
