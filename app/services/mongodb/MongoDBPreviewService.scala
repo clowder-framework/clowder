@@ -257,7 +257,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
     PreviewDAO.dao.collection.update(
           MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
           $set("title" -> title),
-          false, false, WriteConcern.Safe)
+          upsert=false, multi=false, WriteConcern.Safe)
   }
   
   /**
