@@ -125,6 +125,10 @@ class MongoDBFolderService @Inject() (files: FileService, datasets: DatasetServi
   def findByDisplayNameInParent(name: String, parentType: String, parentId: String ): List[Folder] = {
     FolderDAO.find(MongoDBObject("displayName" -> name, "parentType" -> parentType, "parentId" -> new ObjectId(parentId))).toList
   }
+
+  def findByParentDatasetId(parentId: UUID): List[Folder] = {
+    FolderDAO.find(MongoDBObject("parentDatasetId" -> new ObjectId(parentId.stringify))).toList
+  }
 }
 
 object FolderDAO extends ModelCompanion[Folder, ObjectId] {
