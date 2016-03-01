@@ -1,0 +1,15 @@
+@()(implicit user: Option[models.User])
+@main("Account not active") {
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Account not active</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12 col-md-12 col-lg-12">
+            Your account has not been enabled. If you feel this in error please use the
+            <a href="@routes.Application.email(s"Account for ${user.fold("??")(_.fullName)}")">contact admin</a>
+            form to ask the server admins about your account.
+        </div>
+    </div>
+}
