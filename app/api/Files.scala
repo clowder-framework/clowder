@@ -687,6 +687,7 @@ class Files @Inject()(
             request.body.dataParts.get(f.key) match {
               case Some(md) => {
                 // If we find "@context" field we assume this is json metadata and not a file path
+                // TODO: Revisit this, can we also check for a "path" field and improve?
                 var foundMd: Option[Seq[String]] = None
                 for (fobj <- md) {
                   Json.parse(fobj) \ "@context" match {
