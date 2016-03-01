@@ -347,7 +347,7 @@ class Files @Inject()(
   /**
     * Submit saved file for indexing, DTS requests, metadata extraction, etc.
     */
-  def processSavedFile(user: Option[User], f: File, showPreviews: String, filename: String, flagsFromPrevious: String,
+  def processSavedFile(user: User, f: File, creator_url: String, showPreviews: String, filename: String, flagsFromPrevious: String,
                        host: String, serverIP: String, clientIP: String, fileObj: java.io.File, originalIdAndFlags: String,
                        file_md: Option[Seq[String]], dataset: Dataset, index: Boolean, intermediateUpload: Boolean) = {
     val id = f.id
@@ -414,14 +414,24 @@ class Files @Inject()(
           files.get(f.id) match {
             case Some(x) => {
               //parse request for agent/creator info
-              //creator can be UserAgent or ExtractorAgent
-              // TODO: This is not an extractor, how should ID be handled? UserAgent?
-              val creator = ExtractorAgent(id = UUID.generate(),
-                extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/deprecatedapi")))
+              val creator = UserAgent(id = UUID.generate(), user=user.getMiniUser, userId = Some(new URL(creator_url)))
+
+              // TODO: Put this block and the similar chunk from addMetadataJsonLD into helper function so not repeated
+              // Extract context from metadata object and remove it so it isn't repeated twice
+              var parseJson = Json.parse(jsonObj)
+              val context: JsValue = (parseJson \ "@context")
+              parseJson = parseJson.as[JsObject] - "@context"
               // check if the context is a URL to external endpoint
-              val contextURL: Option[URL] = None
+              var contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
               // check if context is a JSON-LD document
-              val contextID: Option[UUID] = None
+              // TODO: check if this actually exists first
+              var contextID: Option[UUID] =
+                if (context.isInstanceOf[JsObject]) {
+                  context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
+                } else if (context.isInstanceOf[JsArray]) {
+                  context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
+                } else None
+
               // when the new metadata is added
               val createdAt = new Date()
               //parse the rest of the request to create a new models.Metadata object
@@ -445,7 +455,7 @@ class Files @Inject()(
     if (dataset == null) {
       // No dataset is provided, so just upload the file.
       if (!intermediateUpload) {
-        events.addObjectEvent(user, f.id, f.filename, "upload_file")
+        events.addObjectEvent(Some(user), f.id, f.filename, "upload_file")
         originalId = f.id.toString
       }
       // TODO replace null with None
@@ -490,7 +500,7 @@ class Files @Inject()(
     }
     else {
       // Handle adding file to dataset if one is provided
-      events.addSourceEvent(user, f.id, f.filename, dataset.id, dataset.name, "add_file_dataset")
+      events.addSourceEvent(Some(user), f.id, f.filename, dataset.id, dataset.name, "add_file_dataset")
       current.plugin[RabbitmqPlugin].foreach {
         _.extract(ExtractorMessage(new UUID(id.toString), new UUID(id.toString), host, key, extra, f.length.toString, dataset.id, ""))
       }
@@ -573,8 +583,8 @@ class Files @Inject()(
     * @return file that was uploaded
     */
   private def uploadFile(file: MultipartFormData.FilePart[Files.TemporaryFile], user: User, host: String,
-                         clientIP: String="", serverIP: String="", file_md: Option[Seq[String]], dataset: Dataset = null,
-                         index: Boolean = true, showPreviews: String = "DatasetLevel",
+                         clientIP: String="", serverIP: String="", file_md: Option[Seq[String]], creator_url: String,
+                         dataset: Dataset = null, index: Boolean = true, showPreviews: String = "DatasetLevel",
                          originalZipFile: String = "", flagsFromPrevious: String = "",
                          intermediateUpload: Boolean = false, originalIdAndFlags: String = "") : Option[File] = {
     var nameOfFile = file.filename
@@ -618,7 +628,7 @@ class Files @Inject()(
     // submit file for extraction
     savedFile match {
       case Some(f) => {
-        processSavedFile(Some(user),f,showPreviews,f.filename,flagsFromPrevious,host,serverIP,clientIP,file.ref.file,originalId,file_md,dataset,index,intermediateUpload)
+        processSavedFile(user,f,creator_url,showPreviews,f.filename,flagsFromPrevious,host,serverIP,clientIP,file.ref.file,originalId,file_md,dataset,index,intermediateUpload)
       }
       case None => {
         Logger.error("Could not retrieve file that was just saved.")
@@ -642,8 +652,8 @@ class Files @Inject()(
    * @param flagsFromPrevious
    * @return a list of files that were uploaded
    */
-  private def uploadFiles(request: Request[MultipartFormData[Files.TemporaryFile]], user: User, dataset: Dataset = null,
-                 key: String = "Files", index: Boolean = true, showPreviews: String = "DatasetLevel",
+  private def uploadFiles(request: Request[MultipartFormData[Files.TemporaryFile]], user: User, creator_url: String,
+                          dataset: Dataset = null, key: String = "Files", index: Boolean = true, showPreviews: String = "DatasetLevel",
                  originalZipFile: String = "", flagsFromPrevious: String = "") : List[File] = {
     val file_list = if (key == "Files") {
       // No specific key provided, so attempt to upload every file
@@ -691,8 +701,7 @@ class Files @Inject()(
             }
           }
         }
-
-        val loadedFile = uploadFile(f, user, host, clientIP, serverIP, metadata, dataset,
+        val loadedFile = uploadFile(f, user, host, clientIP, serverIP, metadata, creator_url, dataset,
                                     index, showPreviews, originalZipFile, flagsFromPrevious)
         loadedFile match {
           case Some(lf) => uploadedFiles.append(lf)
@@ -751,7 +760,7 @@ class Files @Inject()(
                 }
 
                 // Submit file for other requests, etc.
-                processSavedFile(Some(user),newFile,showPreviews,filename,flagsFromPrevious,
+                processSavedFile(user,newFile,creator_url,showPreviews,filename,flagsFromPrevious,
                   Utils.baseUrl(request),request.host,request.remoteAddress,new java.io.File(path),
                   "",file_md,dataset,true,false)
 
@@ -778,17 +787,18 @@ class Files @Inject()(
       responseClass = "None", httpMethod = "POST")
   @deprecated
   def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
-    request.user match {
-      case Some(user) => {
-        val uploaded_files = uploadFiles(request, user, showPreviews=showPreviews, originalZipFile=originalZipFile, flagsFromPrevious=flagsFromPrevious)
-        if (uploaded_files.length == 1) {
-          // Only one file was uploaded so return its ID only
-          Ok(toJson(Map("id" -> uploaded_files(0).id)))
-        } else {
-          // If multiple files, return the full list of IDs with their filenames
-          Ok(toJson(Map("ids" -> uploaded_files.toList)))
+      request.user match {
+        case Some(user) => {
+          val creator_url = controllers.routes.Profile.viewProfileUUID(user.id).absoluteURL()
+          val uploaded_files = uploadFiles(request, user, creator_url, showPreviews=showPreviews, originalZipFile=originalZipFile, flagsFromPrevious=flagsFromPrevious)
+          if (uploaded_files.length == 1) {
+            // Only one file was uploaded so return its ID only
+            Ok(toJson(Map("id" -> uploaded_files(0).id)))
+          } else {
+            // If multiple files, return the full list of IDs with their filenames
+            Ok(toJson(Map("ids" -> uploaded_files.toList)))
+          }
         }
-      }
       case None => BadRequest(toJson("Not authorized."))
     }
   }
@@ -873,7 +883,8 @@ class Files @Inject()(
      case Some(user) => {
        datasets.get(dataset_id) match {
          case Some(dataset) => {
-           val uploaded_files = uploadFiles(request, user, dataset, showPreviews=showPreviews, originalZipFile=originalZipFile, flagsFromPrevious=flagsFromPrevious)
+           val creator_url = controllers.routes.Profile.viewProfileUUID(user.id).absoluteURL()
+           val uploaded_files = uploadFiles(request, user, creator_url, dataset, showPreviews=showPreviews, originalZipFile=originalZipFile, flagsFromPrevious=flagsFromPrevious)
            if (uploaded_files.length == 1) {
              // Only one file was uploaded so return its ID only
              Ok(toJson(Map("id" -> uploaded_files(0).id)))
@@ -902,7 +913,8 @@ class Files @Inject()(
         case Some(user) => {
           request.body.file("File").map { f =>
             try {
-              savedFile = uploadFile(f, user, Utils.baseUrl(request), file_md=None, intermediateUpload=true, originalIdAndFlags=originalIdAndFlags)
+              val creator_url = controllers.routes.Profile.viewProfileUUID(user.id).absoluteURL()
+              savedFile = uploadFile(f, user, Utils.baseUrl(request), file_md=None, creator_url=creator_url, intermediateUpload=true, originalIdAndFlags=originalIdAndFlags)
             } finally {
               f.ref.clean()
             }
