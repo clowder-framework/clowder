@@ -361,8 +361,8 @@ class Files @Inject()(
     * @return file that was uploaded
     */
   private def uploadFile(file: MultipartFormData.FilePart[Files.TemporaryFile], user: User, host: String,
-                         clientIP: String="", serverIP: String="", file_md: Option[Seq[String]], dataset: Dataset = null,
-                         index: Boolean = true, showPreviews: String = "DatasetLevel",
+                         clientIP: String="", serverIP: String="", file_md: Option[Seq[String]], creator_url: String,
+                         dataset: Dataset = null, index: Boolean = true, showPreviews: String = "DatasetLevel",
                          originalZipFile: String = "", flagsFromPrevious: String = "",
                          intermediateUpload: Boolean = false, originalIdAndFlags: String = "") : Option[File] = {
     var nameOfFile = file.filename
@@ -454,21 +454,31 @@ class Files @Inject()(
               files.get(f.id) match {
                 case Some(x) => {
                   //parse request for agent/creator info
-                  //creator can be UserAgent or ExtractorAgent
-                  // TODO: This is not an extractor, how should ID be handled? UserAgent?
-                  val creator = ExtractorAgent(id = UUID.generate(),
-                    extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/deprecatedapi")))
+                  val creator = UserAgent(id = UUID.generate(), user=user.getMiniUser, userId = Some(new URL(creator_url)))
+
+                  // TODO: Put this block and the similar chunk from addMetadataJsonLD into helper function so not repeated
+                  // Extract context from metadata object and remove it so it isn't repeated twice
+                  var parseJson = Json.parse(jsonObj)
+                  val context: JsValue = (parseJson \ "@context")
+                  parseJson = parseJson.as[JsObject] - "@context"
                   // check if the context is a URL to external endpoint
-                  val contextURL: Option[URL] = None
+                  var contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
                   // check if context is a JSON-LD document
-                  val contextID: Option[UUID] = None
+                  // TODO: check if this actually exists first
+                  var contextID: Option[UUID] =
+                    if (context.isInstanceOf[JsObject]) {
+                      context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
+                    } else if (context.isInstanceOf[JsArray]) {
+                      context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
+                    } else None
+
                   // when the new metadata is added
                   val createdAt = new Date()
                   //parse the rest of the request to create a new models.Metadata object
                   val attachedTo = ResourceRef(ResourceRef.file, f.id)
                   val version = None
                   val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                    Json.parse(jsonObj), version)
+                    parseJson, version)
 
                   //add metadata to mongo
                   metadataService.addMetadata(metadata)
@@ -612,8 +622,8 @@ class Files @Inject()(
    * @param flagsFromPrevious
    * @return a list of files that were uploaded
    */
-  private def uploadFiles(request: Request[MultipartFormData[Files.TemporaryFile]], user: User, dataset: Dataset = null,
-                 key: String = "Files", index: Boolean = true, showPreviews: String = "DatasetLevel",
+  private def uploadFiles(request: Request[MultipartFormData[Files.TemporaryFile]], user: User, creator_url: String,
+                          dataset: Dataset = null, key: String = "Files", index: Boolean = true, showPreviews: String = "DatasetLevel",
                  originalZipFile: String = "", flagsFromPrevious: String = "") : List[File] = {
     val file_list = if (key == "Files") {
       // No specific key provided, so attempt to upload every file
@@ -646,7 +656,7 @@ class Files @Inject()(
           case Some(md) => {}
           case None => metadata = request.body.dataParts.get(f.key)
         }
-        val loadedFile = uploadFile(f, user, host, clientIP, serverIP, metadata, dataset,
+        val loadedFile = uploadFile(f, user, host, clientIP, serverIP, metadata, creator_url, dataset,
                                     index, showPreviews, originalZipFile, flagsFromPrevious)
         loadedFile match {
           case Some(lf) => uploadedFiles.append(lf)
@@ -669,7 +679,8 @@ class Files @Inject()(
   def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
       request.user match {
         case Some(user) => {
-          val uploaded_files = uploadFiles(request, user, showPreviews=showPreviews, originalZipFile=originalZipFile, flagsFromPrevious=flagsFromPrevious)
+          val creator_url = controllers.routes.Profile.viewProfileUUID(user.id).absoluteURL()
+          val uploaded_files = uploadFiles(request, user, creator_url, showPreviews=showPreviews, originalZipFile=originalZipFile, flagsFromPrevious=flagsFromPrevious)
           if (uploaded_files.length == 1) {
             // Only one file was uploaded so return its ID only
             Ok(toJson(Map("id" -> uploaded_files(0).id)))
@@ -762,7 +773,8 @@ class Files @Inject()(
      case Some(user) => {
        datasets.get(dataset_id) match {
          case Some(dataset) => {
-           val uploaded_files = uploadFiles(request, user, dataset, showPreviews=showPreviews, originalZipFile=originalZipFile, flagsFromPrevious=flagsFromPrevious)
+           val creator_url = controllers.routes.Profile.viewProfileUUID(user.id).absoluteURL()
+           val uploaded_files = uploadFiles(request, user, creator_url, dataset, showPreviews=showPreviews, originalZipFile=originalZipFile, flagsFromPrevious=flagsFromPrevious)
            if (uploaded_files.length == 1) {
              // Only one file was uploaded so return its ID only
              Ok(toJson(Map("id" -> uploaded_files(0).id)))
@@ -791,7 +803,8 @@ class Files @Inject()(
         case Some(user) => {
           request.body.file("File").map { f =>
             try {
-              savedFile = uploadFile(f, user, Utils.baseUrl(request), file_md=None, intermediateUpload=true, originalIdAndFlags=originalIdAndFlags)
+              val creator_url = controllers.routes.Profile.viewProfileUUID(user.id).absoluteURL()
+              savedFile = uploadFile(f, user, Utils.baseUrl(request), file_md=None, creator_url=creator_url, intermediateUpload=true, originalIdAndFlags=originalIdAndFlags)
             } finally {
               f.ref.clean()
             }
