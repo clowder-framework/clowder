@@ -889,7 +889,6 @@ class Datasets @Inject()(
     implicit val user = request.user
 
     val hostURL = request.headers.get("Host").getOrElse("")
-
     val userId: Option[UUID] = user match {
       case Some(u) => Some(u.id)
       case None => None
@@ -926,10 +925,14 @@ class Datasets @Inject()(
     implicit val user = request.user
 
     val hostURL = request.headers.get("Host").getOrElse("")
+    val userId: Option[UUID] = user match {
+      case Some(u) => Some(u.id)
+      case None => None
+    }
 
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
-        mgr.uploadDatasetToInstance(hostURL, instanceID, datasetID)
+        mgr.uploadDatasetToInstance(hostURL, instanceID, datasetID, userId)
         Ok("request sent")
       }
       case None => BadRequest("No ToolManagerPlugin found.")
@@ -967,12 +970,12 @@ class Datasets @Inject()(
   /**
     * Send request to server to destroy instance, and remove from Plugin.
     */
-  def removeInstance(toolType: String, instanceID: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+  def removeInstance(toolPath: String, instanceID: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
-        mgr.removeInstance(toolType, instanceID)
+        mgr.removeInstance(toolPath, instanceID)
         Ok(instanceID.toString)
       }
       case None => BadRequest("No ToolManagerPlugin found.")

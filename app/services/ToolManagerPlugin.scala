@@ -22,9 +22,10 @@ class ToolInstance() {
   var name = "" // Human-readable name for easier management of lists
   var url: String = ""
   var externalId: String = "" // For tracking token used by external API
-  var toolType: String = "" // API endpoint that was used to launch this instance, e.g. "rstudio"
+  var toolPath: String = "" // API endpoint that was used to launch this instance, e.g. "rstudio"
   var toolName: String = ""
   var uploadHistory: Map[UUID, (String, String)] = Map()
+  var serverUploadHistory: String = "" // TODO: Server tracks full URL, not UUID - think of better solution
   var owner: Option[models.User] = None
   var created = (new SimpleDateFormat("yyyy-mm-dd hh:mm:ss")).format(Calendar.getInstance.getTime)
   var updated = created
@@ -61,8 +62,8 @@ class ToolInstance() {
     }
     updateTimestamp()
   }
-  def setToolInfo(tooltype: String, toolname: String): Unit = {
-    toolType = tooltype
+  def setToolInfo(toolpath: String, toolname: String): Unit = {
+    toolPath = toolpath
     toolName = toolname
     updateTimestamp()
   }
@@ -150,18 +151,23 @@ class ToolManagerPlugin(application: Application) extends Plugin {
               }
             }
 
-            // if not, create it - for now we're missing owner and uploadHistory
+            // if not, create it
             if (!alreadyPresent) {
               val instance = new ToolInstance()
               instance.externalId = externalID
+
               // TODO: how to get JsValue without the wrapping quotes?
               instance.setName((j \ externalID \ "name").toString.replace("\"",""))
               instance.setURL((j \ externalID \ "url").toString.replace("\"",""))
+              instance.setOwner(new UUID((j \ externalID \ "ownerId").toString.replace("\"","")))
               instance.setToolInfo(
-                (j \ externalID \ "toolType").toString.replace("\"",""),
+                (j \ externalID \ "toolPath").toString.replace("\"",""),
                 (j \ externalID \ "toolName").toString.replace("\"",""))
               val t = (j \ externalID \ "created").toString.replace("\"","")
               instance.setTimes(t, t)
+
+              instance.serverUploadHistory = (j \ externalID \ "uploadHistory").toString
+
               instanceMap(instance.id) = instance
             }
           }
@@ -175,30 +181,35 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     * @param hostURL is url of API server
     * @param instanceName user-provided name of Session to display
     * @param datasetId clowder ID of dataset to attach
-    * @param toolType name of environment type that is being launched
+    * @param toolPath name of environment type that is being launched
     * @return ID of session that was launched
     */
-  def launchTool(hostURL: String, instanceName: String, toolType: String, datasetId: UUID, ownerId: Option[UUID]): UUID = {
+  def launchTool(hostURL: String, instanceName: String, toolPath: String, datasetId: UUID, ownerId: Option[UUID]): UUID = {
     // Generate a new session & add to instanceMap
     val instance = new ToolInstance()
     instance.setName(instanceName)
-    val toolName = (toolList \ toolType \ "name") match {
+    val toolName = (toolList \ toolPath \ "name") match {
       case j: JsUndefined => "Unknown"
       case j: JsString => j.toString.replace("\"","")
     }
-    instance.setToolInfo(toolType, toolName)
-    ownerId.map(instance.setOwner)
+    instance.setToolInfo(toolPath, toolName)
+    var oId = ""
+    ownerId.map( i => {
+      instance.setOwner(i)
+      oId = i.toString
+    })
     instanceMap(instance.id) = instance
 
     // Send request to API to launch Tool
     // TODO: Figure out something better than the key here
     val dsURL = hostURL+controllers.routes.Datasets.dataset(datasetId).url
     val apipath = play.Play.application().configuration().getString("toolmanager.host") + ":" +
-                  play.Play.application().configuration().getString("toolmanager.port") + "/tools/" + toolType
+                  play.Play.application().configuration().getString("toolmanager.port") + "/instances/" + toolPath
     val statusRequest: Future[Response] = url(apipath).post(Json.obj(
       "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
       "key" -> play.Play.application().configuration().getString("commKey"),
-      "name" -> instanceName
+      "name" -> instanceName,
+      "ownerId" -> oId
     ))
     instance.updateHistory(datasetId)
 
@@ -278,19 +289,22 @@ class ToolManagerPlugin(application: Application) extends Plugin {
   /**
     * Upload dataset files to an existing instance.
     */
-  def uploadDatasetToInstance(hostURL: String, instanceID: UUID, datasetID: UUID): Unit = {
+  def uploadDatasetToInstance(hostURL: String, instanceID: UUID, datasetID: UUID, userId: Option[UUID]): Unit = {
     val dsURL = hostURL+controllers.routes.Datasets.dataset(datasetID).url
+    var oId = ""
+    userId.map(i => oId = i.toString)
 
     instanceMap.get(instanceID).map(instance => {
       instance.updateHistory(datasetID)
 
       val apipath = play.Play.application().configuration().getString("toolmanager.host") + ":" +
-        play.Play.application().configuration().getString("toolmanager.port") + "/tools/" + instance.toolType
+        play.Play.application().configuration().getString("toolmanager.port") + "/instances/" + instance.toolPath
 
       val statusRequest: Future[Response] = url(apipath).put(Json.obj(
         "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
         "key" -> play.Play.application().configuration().getString("commKey"),
-        "id" -> instance.externalId.toString
+        "id" -> instance.externalId.toString,
+        "uploaderId" -> oId
       ))
       statusRequest.map( response => {
         Logger.info(response.body.toString)
@@ -300,12 +314,12 @@ class ToolManagerPlugin(application: Application) extends Plugin {
 
   /**
     * Terminate a running tool instance.
-    * @param toolType is the endpoint to issue DELETE request to
+    * @param toolPath is the endpoint to issue DELETE request to
     * @param instanceID ID of ToolInstance to stop
     */
-  def removeInstance(toolType: String, instanceID: UUID): Unit = {
+  def removeInstance(toolPath: String, instanceID: UUID): Unit = {
     val apipath = play.Play.application().configuration().getString("toolmanager.host") + ":" +
-                  play.Play.application().configuration().getString("toolmanager.port") + "/tools/" + toolType
+                  play.Play.application().configuration().getString("toolmanager.port") + "/instances/" + toolPath
 
     instanceMap.get(instanceID).map( ts => {
       val instanceApiID = ts.externalId // External identifier on NDS api

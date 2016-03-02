@@ -5,6 +5,7 @@
 @import services.ToolManagerPlugin
 @import scala.io.Source
 @import scala.xml.parsing.XhtmlParser
+@import play.api.libs.json._
 
 
 @main("Tool Manager") {
@@ -76,20 +77,34 @@
                         <li>Updated @inst.updated.format("MMM dd, yyyy")</li>
 
                         <li>
-                          @if(inst.uploadHistory.keys.size > 0) {
+                          @if(inst.uploadHistory.keys.size > 0 || inst.serverUploadHistory != "") {
                             <a class="btn btn-link" data-toggle="collapse" aria-expanded="false" aria-controls="collapseExample" href="#datasets-@inst.id">
                               <span class="glyphicon glyphicon-collapse-down" title="@inst.uploadHistory.keys.size datasets"></span>
-                              Expand upload history (@inst.uploadHistory.keys.size uploads)
+                              Expand upload history
                             </a>
                             <div class="collapse" id="datasets-@inst.id" aria-hidden="true">
                               <div class="well"> @{
                                 var dsList = ""
                                 instanceMap.get(instanceID) match {
                                   case Some(instance) => {
-                                    for((dsId, (dsName, upTime)) <- instance.uploadHistory) {
-                                      val dsURL = controllers.routes.Datasets.dataset(dsId).url
-                                      dsList += "<b>" + upTime + "</b>: <a href=" + dsURL + ">" + dsName + "</a></br>"
+                                    if (instance.uploadHistory.keys.size > 0) {
+                                      for((dsId, (dsName, upTime)) <- instance.uploadHistory) {
+                                        val dsURL = controllers.routes.Datasets.dataset(dsId).url
+
+                                        dsList += "<b>" + upTime + "</b>: <a href=" + dsURL + ">" + dsName + "</a></br>"
+                                      }
+                                    } else {
+                                      val serverHist = Json.parse(instance.serverUploadHistory).as[List[JsObject]]
+                                      dsList += "<i>History not found in client logs. Downloaded from server.</i></br>"
+                                      for (histEntry <- serverHist) {
+                                        val entryTime = (histEntry \ "time").toString.replace("\"","")
+                                        val entryUrl = (histEntry \ "url").toString.replace("\"","")
+                                        val entryOwner = (histEntry \ "uploaderId").toString.replace("\"","")
+                                        dsList += "<b>"+entryTime+"</b>:</br>&nbsp;&nbsp;<a href='http://"+entryUrl+"' target='_blank'>"+entryUrl+"</a></br>"
+                                      }
+
                                     }
+
                                   }
                                   case None => {}
                                 }
@@ -104,7 +119,7 @@
                     <div class="col-md-6 col-sm-6 col-lg-6">
                       <ul class="list-unstyled">
                           <li>
-                            <a id='download-dataset-url' href="#" onclick="removeInstance('@inst.toolType','@instanceID')" class="btn btn-link"role="button">
+                            <a id='download-dataset-url' href="#" onclick="removeInstance('@inst.toolPath','@instanceID')" class="btn btn-link"role="button">
                               <span class="glyphicon glyphicon-stop"></span>
                               Stop Instance
                             </a>
@@ -123,7 +138,7 @@
   </div>
 
   <script>
-    function removeInstance(toolType, instanceID) {
+    function removeInstance(toolPath, instanceID) {
       // Get current status from ToolManagerPlugin and refresh sidebar table
       var request = new XMLHttpRequest();
       request.onreadystatechange = function() {
@@ -132,7 +147,7 @@
         }
       }
 
-      request.open("GET", jsRoutes.controllers.Datasets.removeInstance(toolType, instanceID).url, true);
+      request.open("GET", jsRoutes.controllers.Datasets.removeInstance(toolPath, instanceID).url, true);
       request.send();
     }
   </script>
