@@ -885,7 +885,7 @@ class Datasets @Inject()(
   /**
     * Send request to ToolManagerPlugin to launch a new tool instance and upload datasetID.
     */
-  def launchTool(instanceName: String, ttype: String, datasetId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+  def launchTool(instanceName: String, tooltype: String, datasetId: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
     val hostURL = request.headers.get("Host").getOrElse("")
@@ -894,14 +894,13 @@ class Datasets @Inject()(
       case Some(u) => Some(u.id)
       case None => None
     }
+
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
-        val instanceID = mgr.launchTool(hostURL, instanceName, ttype, datasetId, userId)
+        val instanceID = mgr.launchTool(hostURL, instanceName, tooltype, datasetId, userId)
         Ok(instanceID.toString)
       }
-      case None => {
-        Ok("No ToolManagerPlugin found.")
-      }
+      case None => BadRequest("No ToolManagerPlugin found.")
     }
   }
 
@@ -916,7 +915,7 @@ class Datasets @Inject()(
         val tools = mgr.getLaunchableTools()
         Ok(tools)
       }
-      case None => Ok("{}")
+      case None => BadRequest("No ToolManagerPlugin found.")
     }
   }
 
@@ -926,17 +925,14 @@ class Datasets @Inject()(
   def uploadDatasetToTool(instanceID: UUID, datasetID: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
     implicit val user = request.user
 
-    val hostURL = request.headers.get("Host") match {
-      case Some(h) => h
-      case None => ""
-    }
+    val hostURL = request.headers.get("Host").getOrElse("")
 
     current.plugin[ToolManagerPlugin] match {
       case Some(mgr) => {
         mgr.uploadDatasetToInstance(hostURL, instanceID, datasetID)
         Ok("request sent")
       }
-      case None => Ok("{}")
+      case None => BadRequest("No ToolManagerPlugin found.")
     }
   }
 
@@ -951,7 +947,7 @@ class Datasets @Inject()(
         val instances = mgr.getInstances()
         Ok(toJson(instances.toMap))
       }
-      case None => Ok("{}")
+      case None => BadRequest("No ToolManagerPlugin found.")
     }
   }
 
@@ -965,7 +961,6 @@ class Datasets @Inject()(
       case Some(mgr) => mgr.checkForInstanceURL(instanceID)
       case None => ""
     }
-
     Ok(url)
   }
 
@@ -980,7 +975,7 @@ class Datasets @Inject()(
         mgr.removeInstance(toolType, instanceID)
         Ok(instanceID.toString)
       }
-      case None => Ok("")
+      case None => BadRequest("No ToolManagerPlugin found.")
     }
   }
   // END TOOL MANAGER METHODS ---------------------------------------------------------------
