@@ -1,183 +1,315 @@
 @(profile: User, ownProfile: Option[Boolean])(implicit user: Option[models.User] = None)
 @main("Profile") {
-<div class="row">
+    <script src="@routes.Application.javascriptRoutes" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/recommendation.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" type="text/javascript"></script>
 
-      <div class="col-md-3 col-lg-3 col-sm-5">
-        <img src=@profile.getAvatarUrl(256) class="profilePicture">
-        <div align="center">
-            <h4>
-            Followed by
-            <span id="followerSize">@profile.followers.size</span>
-            people
-          </h4>
-          @user match {
-            case Some(viewer) => {
-              @ownProfile match {
-                case Some(sameProfile) =>{
-                <h4>
-                  <a href="@routes.Profile.editProfile">Edit Profile</a>
-                </h4>
-                }
-                case None => {
-                  <h4>
-                    <button
-                      id="userFollowButton"
-                      type="button"
-                      class="followButton
-                        @if(profile.followers.contains(viewer.id)) {
-                          btn btn-link
-                        }else {
-                          btn btn-link
+    <div class="row">
+        <div class="col-md-3 col-lg-3 col-sm-5">
+            <img src=@profile.getAvatarUrl(256) class="profilePicture">
+            <div align="center">
+                <h4>Followed by <span id="followerSize">@profile.followers.size</span> people</h4>
+                @user match {
+                    case Some(viewer) => {
+                        @ownProfile match {
+                            case Some(sameProfile) => {
+                                <h4><a href="@routes.Profile.editProfile">Edit Profile</a></h4>
+                            }
+                            case None => {
+                                <h4>
+                                    <button id="userFollowButton" type="button" class="followButton btn btn-link" data-toggle="button"
+                                        aria-pressed="
+                                            @if(profile.followers.contains(viewer.id)) {
+                                                true
+                                            }else {
+                                                false
+                                            }"
+                                        autocomplete="off" objectId="@profile.id.stringify" objectName="@profile.fullName" objectType="user">
+                                        @if(profile.followers.contains(viewer.id)) {
+                                            <span class="glyphicon glyphicon-star-empty"></span> Unfollow
+                                        } else {
+                                            <span class="glyphicon glyphicon-star"></span> Follow
+                                        }
+                                    </button>
+                                </h4>
+                                <div id="recommendPanel" class="panel panel-default" style="display:none;">
+                                    <div class="panel-heading">
+                                        <h4 class="panel-title">
+                                            <a data-parent="#accordion" href="#collapseThree" aria-expanded="true" style="float:left;">
+                                                Also follow these?
+                                            </a>
+                                            <a style="float:right;" href="javascript:$('#recommendPanel').slideToggle('slow');">x</a>
+                                            <div style="clear:both;"></div>
+                                        </h4>
+                                    </div>
+                                    <div id="collapseThree" class="panel-collapse collapse in" aria-expanded="true">
+                                        <div id="recommendDiv" class="panel-body"></div>
+                                    </div>
+                                </div>
+                                <!-- Is it the only way to store a scala variable as a global for re-use in Javascript? -->
+                                <script>
+                                    var viewerId = @viewer.id;
+                                </script>
+                            }
                         }
-                      "
-                      data-toggle="button"
-                      aria-pressed="
-                        @if(profile.followers.contains(viewer.id)) {
-                          true
-                        }else {
-                          false
-                        }
-                      "
-                      autocomplete="off"
-                      objectId="@profile.id.stringify"
-                      objectName="@profile.fullName"
-                      objectType="user"
-                    >
-                      <!-- Is there a way to store a scala variable somewhere?... -->
-                      @if(profile.followers.contains(viewer.id)) {
-                           <span class="glyphicon glyphicon-star-empty"></span> Unfollow
-                       } else {
-                           <span class="glyphicon glyphicon-star"></span> Follow
-                      }
-                    </button>
-                  </h4>
-                  <div id="recommendPanel" class="panel panel-default" style="display : none;">
-                    <div class="panel-heading">
-                      <h4 class="panel-title">
-                        <a data-parent="#accordion"
-                            href="#collapseThree"
-                            aria-expanded="true"
-                            style="float:left;">
-                          Also follow these?
-                        </a>
-                        <a style="float:right;" href="javascript:$('#recommendPanel').slideToggle('slow');">x</a>
-                        <div style="clear : both;"></div>
-                      </h4>
-                    </div>
-                    <div id="collapseThree" class="panel-collapse collapse in" aria-expanded="true">
-                      <div id="recommendDiv" class="panel-body">
-                      </div>
-                    </div>
-                  </div>
-
-                  <script type="text/javascript" src="@routes.Application.javascriptRoutes"></script>
-                  <script src="@routes.Assets.at("javascripts/recommendation.js")" type="text/javascript"></script>
-                  <script>
-                    function followCallback(data) {
-                        var $followerSize = $('#followerSize');
-                        var followerSize = parseInt($followerSize.text());
-                        $followerSize.text(followerSize + 1);
-
-                        var newRowHtml = '<tr><td>@viewer.id</td></tr>';
-                        $('#followersTable tr:last').after(newRowHtml);
-                        recommendationHandler(jsRoutes, $('#recommendPanel'), $('#recommendDiv'),
-                                              data['recommendations']);
-                    }
-
-                    function unfollowCallback() {
-                        var $followerSize = $('#followerSize');
-                        var followerSize = parseInt($followerSize.text());
-                        $followerSize.text(followerSize - 1);
-
-                        $('#followersTable').find('td').filter(function () {
-                            return $(this).text().trim() == '@viewer.id';
-                        }).first().remove();
-                    }
-
-                    $(document).ready(function() {
-                      $(document).on('click', '.followButton', function() {
-                        var id = $(this).attr('objectId');
-                        var name = $(this).attr('objectName');
-                        var type = $(this).attr('objectType');
-                        if ($(this).attr('id') == undefined || $(this).attr('id') === '') {
-                          followHandler.call(this, jsRoutes, id, name, type, undefined, undefined);
-                        } else {
-                          followHandler.call(this, jsRoutes, id, name, type, followCallback, unfollowCallback);
-                        }
-                      });
-                    });
-                  </script>
-                }
-              }
-            }
-            case None => {}
-          }
-        </div>
-      </div>
-      <div clas="col-md-9 col-lg-9 col-sm-7">
-	      <div style="margin-left: 45px;">
-	          <h1>@profile.fullName</h1>
-          </div>
-          @if(profile.identityId.providerId != "userpass") {
-              <div style="margin-left: 45px;">
-                  <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
-                  @profile.identityId.providerId match {
-                      case "google" => {
-                          <a href="https://plus.google.com/@profile.identityId.userId">Google+ profile</a>
-                      }
-                      case "twitter" => {
-                          <a href="https://twitter.com/intent/user?user_id=@profile.identityId.userId">Twitter profile</a>
-                      }
-                      case "facebook" => {
-                          <a href="https://www.facebook.com/app_scoped_user_id/@profile.identityId.userId">facebook profile</a>
-                      }
-                      case _ => {
-                          @profile.identityId.userId
-                      }
-                  }
-              </div>
-          }
-          @if(profile.email.isDefined) {
-              <div style="margin-left : 45px;">
-                      @profile.email.get
-              </div>
-          }
-          <div style="margin-left: 45px;">
-                  &nbsp;
-          </div>
-	      <div style="margin-left: 45px;">
-
-              @if(profile.profile.isDefined) {
-                  <h5>
-                    @profile.profile.get.getPositionAtInstitution
-                  </h5>
-
-                  @profile.profile.get.orcidID match{
-                    case Some(info) => {
-                      <h4>Orcid ID</h4>
-                      <a href="http://orcid.org/@info" target="_blank"> <p>@info</p> </a>
                     }
                     case None => {}
-                  }
-                  @if(profile.profile.get.biography.nonEmpty) {
-                    <h4>Biography</h4>
-                    <p>@profile.profile.get.biography</p>
-                  }
-                  @if(profile.profile.get.currentprojects.nonEmpty) {
-                    <h4>Current Projects</h4>
-                    <p>@profile.profile.get.currentprojects.mkString(", ")</p>
-                  }
-                  @if(profile.profile.get.pastprojects.nonEmpty) {
-                    <h4>Past Projects</h4>
-                    <p>@profile.profile.get.pastprojects.mkString(", ")</p>
-                  }
-              }
+                }
+            </div>
+        </div>
+        <div class="col-md-9 col-lg-9 col-sm-7">
+            @if(profile.identityId.providerId != "userpass") {
+                <div>
+                    <h1>@profile.fullName</h1>
+                </div>
+                <div style="margin-left: 45px;">
+                    <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
+                    @profile.identityId.providerId match {
+                        case "google" => {
+                            <a href="https://plus.google.com/@profile.identityId.userId">Google+ profile</a>
+                        }
+                        case "twitter" => {
+                            <a href="https://twitter.com/intent/user?user_id=@profile.identityId.userId">Twitter profile</a>
+                        }
+                        case "facebook" => {
+                            <a href="https://www.facebook.com/app_scoped_user_id/@profile.identityId.userId">facebook profile</a>
+                        }
+                        case _ => {
+                            @profile.identityId.userId
+                        }
+                    }
+                </div>
+            } else {
+                <div id="prf-first-name" class="text-left inline">
+                    <h1 id="first-name-title" class="inline">@Html(profile.firstName)</h1>
+                    <div id="h-edit-first" class="hiddencomplete">
+                        <a id ="edit-first" href="javascript:updateFirstName()" title="Click to edit user's first name.">
+                            <span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
+                        </a>
+                    </div>
+                </div>
+                <div id="prf-last-name" class="text-left inline edit-tab">
+                    <h1 id="last-name-title" class="inline">@Html(profile.lastName)</h1>
+                    <div id="h-edit-last" class="hiddencomplete">
+                        <a id ="edit-last" href="javascript:updateLastName()" title="Click to edit user's last name.">
+                            <span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
+                        </a>
+                    </div>
+                </div>
+            }
+            @if(profile.email.isDefined) {
+                <div>@profile.email.get</div>
+            }
+            <div>&nbsp;</div>
+            @if(profile.profile.isDefined) {
+                <div>
+                    <h5>@profile.profile.get.getPositionAtInstitution</h5>
 
-			</div>
+                    @profile.profile.get.orcidID match{
+                        case Some(info) => {
+                            <h4>Orcid ID</h4>
+                            <a href="http://orcid.org/@info" target="_blank"> <p>@info</p> </a>
+                        }
+                        case None => {}
+                    }
+                    @if(profile.profile.get.biography.nonEmpty) {
+                        <h4>Biography</h4>
+                        <p>@profile.profile.get.biography</p>
+                    }
+                    @if(profile.profile.get.currentprojects.nonEmpty) {
+                        <h4>Current Projects</h4>
+                        <p>@profile.profile.get.currentprojects.mkString(", ")</p>
+                    }
+                    @if(profile.profile.get.pastprojects.nonEmpty) {
+                        <h4>Past Projects</h4>
+                        <p>@profile.profile.get.pastprojects.mkString(", ")</p>
+                    }
+                </div>
+            }
+        </div>
 
-	  </div>
+    </div>
 
-</div>
+    <script language="javascript">
+        var profileMail = "@profile.email.get";
+        var profileId = "@profile.id.stringify";
+        var firstName = $('#first-name-title').text();
+        var lastName = $('#last-name-title').text();
+        function updateFirstName() {
+            firstName = $('#first-name-title').text();
+            $('<div class="inline first_name_div h3"> </div>').insertAfter($('#prf-first-name'));
+            $('.first_name_div').append('<input type="text" id="first_name_input" style="width:150px" class="text-left" />');
+            $('.first_name_div').append('<button class="btn btn-sm btn-primary edit-tab" onclick="saveFirstName()"> <span class="glyphicon glyphicon-send"></span> Save</button>');
+            $('.first_name_div').append('<button class="btn btn-sm btn-link" onclick="cancelFirstName()"> <span class="glyphicon glyphicon-remove"></span> Cancel</button>');
+            $('.first_name_div').append('<div class="hiddencomplete" id="first-name-error"> <span class="small">First name is required.</span></div>');
 
+            $('#first_name_input').val(firstName);
+            $('#first-name-title').text("");
+            $('#h-edit-first').css("display", "none");
+        }
+        function updateLastName() {
+            lastName = $('#last-name-title').text();
+            $('<div class="inline last_name_div h3"></div>').insertAfter($('#prf-last-name'));
+            $('.last_name_div').append('<input type="text" id="last_name_input" class="text-left" />');
+            $('.last_name_div').append('<button class="btn btn-sm btn-primary edit-tab" onclick="saveLastName()"> <span class="glyphicon glyphicon-send"></span> Save</button>');
+            $('.last_name_div').append('<button class="btn btn-sm btn-link" onclick="cancelLastName()"> <span class="glyphicon glyphicon-remove"></span> Cancel</button>');
+            $('.last_name_div').append('<div class="hiddencomplete" id="last-name-error"> <span class="error">Last name is required.</span></div>');
 
+            $('#last_name_input').val(lastName);
+            $('#last-name-title').text("");
+            $('#h-edit-last').css("display", "none");
+        }
+
+        function saveFirstName() {
+            if($('#first_name_input').val().length < 1) {
+                $('#first-name-error').show();
+                return false;
+            } else {
+                $('#first-name-error').hide();
+            }
+            var name = $('#first_name_input').val();
+            console.log(profileId, profileMail, profileMail);
+
+            var request = jsRoutes.api.Users.updateUserField(profileMail,"firstName",name).ajax({
+                type: 'POST'
+            });
+            request.done(function(response, textStatus, jqXHR) {
+                console.log("Success");
+                $('.first_name_div').remove();
+                $('#first-name-title').text(htmlEncode(name).replace(/\n/g, "<br>"));
+                $('#first-name-div').mouseleave();
+                $('#h-edit-first').css("display", "");
+                // update the full name as well
+                saveFullName();
+            });
+            request.fail(function(jqXHR, textStatus, errorThrown) {
+                console.error("The following error occurred: " + textStatus, errorThrown);
+                var errMsg = "Yoy must be logged in to update the name.";
+                if(!checkErrorAndRedirect(jqXHR, errMsg)) {
+                    notify("The name was not updated due to: "+ errorThrown, "error");
+                }
+            });
+        }
+
+        function saveLastName() {
+            if($('#last_name_input').val().length < 1) {
+                $('#last-name-error').show();
+                return false;
+            } else {
+                $('#last-name-error').hide();
+            }
+            var name = $('#last_name_input').val();
+            var encName = htmlEncode(name);
+            jsonData = JSON.stringify({"name": encName});
+
+            console.log(profileId, profileMail, profileMail);
+
+            var request = jsRoutes.api.Users.updateUserField(profileMail,"lastName",name).ajax({
+                data: jsonData,
+                type: 'POST',
+                contentType: "application/json"
+            });
+            request.done(function(response, textStatus, jqXHR) {
+                console.log("Success");
+                $('.last_name_div').remove();
+                $('#last-name-title').text(encName.replace(/\n/g, "<br>"));
+                $('#last-name-div').mouseleave();
+                $('#h-edit-last').css("display", "");
+                // update the full name as well
+                saveFullName();
+            });
+            request.fail(function(jqXHR, textStatus, errorThrown) {
+                console.error("The following error occurred: " + textStatus, errorThrown);
+                var errMsg = "Yoy must be logged in to update the name.";
+                if(!checkErrorAndRedirect(jqXHR, errMsg)) {
+                    notify("The name was not updated due to: "+ errorThrown, "error");
+                }
+            });
+        }
+
+        function saveFullName() {
+            var fullName = firstName + " " + lastName;
+            var requestFull = jsRoutes.api.Users.updateUserField(profileMail,"fullName",fullName).ajax({
+                type: 'POST'
+            });
+            requestFull.done(function(response, textStatus, jqXHR) {
+                console.log("Success Full");
+            });
+            requestFull.fail(function(jqXHR, textStatus, errorThrown) {
+                console.error("The following error occurred: " + textStatus, errorThrown);
+                var errMsg = "Yoy must be logged in to update the full name.";
+                if(!checkErrorAndRedirect(jqXHR, errMsg)) {
+                    notify("The full name was not updated due to: "+ errorThrown, "error");
+                }
+            });
+        }
+
+        function cancelFirstName() {
+            $('#first-name-title').html(firstName);
+            $('.first_name_div').remove();
+            $('#prf-first-name').css("display", "inline");
+            $('#h-edit-first').css("display", "");
+            //$('#h-edit-first').removeClass("inline");
+            //$('#h-edit-first').addClass("hiddencomplete");
+            $('#prf-first-name').mouseleave();
+        }
+        function cancelLastName() {
+            $('#last-name-title').html(lastName);
+            $('.last_name_div').remove();
+            $('#last-name-title').css("display", "inline");
+            $('#h-edit-last').css("display", "");
+            $('#prf-last-name').mouseleave();
+        }
+
+        $(document).ready(function(){
+            $(document).on('mouseenter', '#prf-first-name', function() {
+                $('#h-edit-first').removeClass("hiddencomplete");
+                $('#h-edit-first').addClass("inline");
+            }).on('mouseleave', '#prf-first-name', function() {
+                $('#h-edit-first').removeClass("inline");
+                $('#h-edit-first').addClass("hiddencomplete");
+            });
+
+            $(document).on('mouseenter', '#prf-last-name', function() {
+                $('#h-edit-last').removeClass("hiddencomplete");
+                $('#h-edit-last').addClass("inline");
+            }).on('mouseleave', '#prf-last-name', function() {
+                $('#h-edit-last').removeClass("inline");
+                $('#h-edit-last').addClass("hiddencomplete");
+            });
+
+            function followCallback(data) {
+                var $followerSize = $('#followerSize');
+                var followerSize = parseInt($followerSize.text());
+                $followerSize.text(followerSize + 1);
+
+                var newRowHtml = '<tr><td>viewerId</td></tr>';
+                $('#followersTable tr:last').after(newRowHtml);
+                recommendationHandler(jsRoutes, $('#recommendPanel'), $('#recommendDiv'),
+                        data['recommendations']);
+            }
+
+            function unfollowCallback() {
+                var $followerSize = $('#followerSize');
+                var followerSize = parseInt($followerSize.text());
+                $followerSize.text(followerSize - 1);
+
+                $('#followersTable').find('td').filter(function () {
+                    return $(this).text().trim() == viewerId;
+                }).first().remove();
+            }
+
+            $(document).on('click', '.followButton', function() {
+                var id = $(this).attr('objectId');
+                var name = $(this).attr('objectName');
+                var type = $(this).attr('objectType');
+                if ($(this).attr('id') == undefined || $(this).attr('id') === '') {
+                    followHandler.call(this, jsRoutes, id, name, type, undefined, undefined);
+                } else {
+                    followHandler.call(this, jsRoutes, id, name, type, followCallback, unfollowCallback);
+                }
+            });
+        });
+    </script>
 }
