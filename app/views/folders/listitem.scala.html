@@ -8,7 +8,7 @@
                 <h1 class="text-center"><span class="glyphicon glyphicon-folder-close"></span></h1>
             </div>
             <div class="col-md-10 col-sm-10 col-lg-10">
-                <div id="folder-title-@folder.id">
+                <div id="folder-title-@folder.id" class="folder-name">
                     <h3 id ="@folder.id-name" class="inline"><a href="javascript:updatePageAndFolder(0, '@folder.id.stringify')">@folder.displayName</a></h3>
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))) {
                         <h3 id="h-edit-@folder.id" class="hiddencomplete">
@@ -48,12 +48,14 @@
 
             @if(user.isDefined) {
                 if(@Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))) {
-                     $(document).on('mouseenter', '#folder-title-@folder.id', function() {
-                        $('#h-edit-@folder.id').removeClass("hiddencomplete");
-                        $('#h-edit-@folder.id').addClass("inline");
-                     }).on('mouseleave', '#folder-title-@folder.id', function() {
-                        $('#h-edit-@folder.id').removeClass("inline");
-                        $('#h-edit-@folder.id').addClass("hiddencomplete");
+                     $(document).on('mouseenter', '.folder-name', function() {
+                        var id = $(this).attr("id").replace('folder-title-','h-edit-');
+                        $('#'+id).removeClass("hiddencomplete");
+                        $('#'+id).addClass("inline");
+                     }).on('mouseleave', '.folder-name', function() {
+                        var id = $(this).attr("id").replace('folder-title-','h-edit-');
+                        $('#'+id).removeClass("inline");
+                        $('#'+id).addClass("hiddencomplete");
                      });
                 }
             }

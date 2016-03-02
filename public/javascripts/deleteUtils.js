@@ -2,41 +2,16 @@
 //
 //Created by mo on 2/2/16.
 function confirmDeleteResource(resourceType, resourceId, resourceName, isreload, url) {
+
+
     var msg = "Are you sure you want to delete the " + resourceType + " '" + resourceName + "'?";
 
-    var modalHTML = confirmDeleteTemplate(msg);
-
-    $(document).on("click", "#OKModalButton", function(event) {
-        confirmModal.modal("hide");
-        if (resourceType == "file") {
-            removeFile(resourceId,isreload, url);
-        } else if (resourceType == "dataset") {
-            removeDataset(resourceId, isreload, url);
-        } else if (resourceType == "collection") {
-            removeCollection(resourceId, isreload, url);
-        } else if (resourceType == "space") {
-            removeSpace(resourceId, isreload, url);
-        } else if(resourceType == "folder" ) {
-            //no redirect provided
-            removeFolder(resourceId, isreload );
-        } else if(resourceType == "curation object" ) {
-            removeCuration(resourceId, isreload, url);
-        } else if(resourceType == "curation file" ) {
-            //no redirect provided
-            removeCurationFile(resourceId, isreload, url);
-        } else if(resourceType == "curation folder" ) {
-            //no redirect provided
-            removeCurationFolder(resourceId, isreload, url);
-        }
-
-
-    });
-
+    var modalHTML = confirmDeleteTemplate(msg, resourceType, resourceId, isreload, url);
     var confirmModal = $(modalHTML);
     confirmModal.modal("show");
 }
 
-function confirmDeleteTemplate(message) {
+function confirmDeleteTemplate(message, resourceType, resourceId, isreload, url) {
     var modalHTML = '<div id="confirm-delete" class="modal fade" role="dialog">';
     modalHTML += '<div class="modal-dialog">';
     modalHTML += '<div class="modal-content">';
@@ -49,11 +24,36 @@ function confirmDeleteTemplate(message) {
     modalHTML += '</div>';
     modalHTML += '<div class="modal-footer">';
     modalHTML += '<button type="button" class="btn btn-link" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> Cancel</button>';
-    modalHTML += '<button type="button" class="btn btn-primary" id="OKModalButton"><span class="glyphicon glyphicon-ok"></span> OK</button>';
+    modalHTML += '<a type="button" class="btn btn-primary" id="OKModalButton" href="javascript:DeleteTemplate(\''+resourceType+'\',\''+ resourceId+'\',\''+ isreload+'\',\''+ url+'\')"><span class="glyphicon glyphicon-ok"></span> OK</a>';
     modalHTML += '</div>';
     modalHTML += '</div>';
     modalHTML += '</div>';
     modalHTML += '</div>';
 
     return modalHTML;
+}
+
+
+function DeleteTemplate(resourceType, resourceId, isreload, url) {
+    $('#confirm-delete').remove();
+    if (resourceType == "file") {
+        removeFile(resourceId,isreload, url);
+    } else if (resourceType == "dataset") {
+        removeDataset(resourceId, isreload, url);
+    } else if (resourceType == "collection") {
+        removeCollection(resourceId, isreload, url);
+    } else if (resourceType == "space") {
+        removeSpace(resourceId, isreload, url);
+    } else if(resourceType == "folder" ) {
+        //no redirect provided
+        removeFolder(resourceId, isreload );
+    } else if(resourceType == "curation object" ) {
+        removeCuration(resourceId, isreload, url);
+    } else if(resourceType == "curation file" ) {
+        //no redirect provided
+        removeCurationFile(resourceId, isreload, url);
+    } else if(resourceType == "curation folder" ) {
+        //no redirect provided
+        removeCurationFolder(resourceId, isreload, url);
+    }
 }
