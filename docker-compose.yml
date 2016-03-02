@@ -1,0 +1,51 @@
+# clowder server
+clowder:
+  image: ncsa/clowder:develop
+  # environment:
+  #   SMTP_HOST: smtp.ncsa.illinois.edu
+  ports:
+    - "9000"
+  links:
+    - mongo
+    - rabbitmq
+
+# extractors
+audio-preview:
+  image: ncsa/clowder-extractors-audio-preview
+  links:
+    - rabbitmq
+
+image-preview:
+  image: ncsa/clowder-extractors-image-preview
+  links:
+    - rabbitmq
+
+image-metadata:
+  image: ncsa/clowder-extractors-image-metadata
+  links:
+    - rabbitmq
+
+pdf-preview:
+  image: ncsa/clowder-extractors-pdf-preview
+  links:
+    - rabbitmq
+
+video-preview:
+  image: ncsa/clowder-extractors-video-preview
+  links:
+    - rabbitmq
+
+# mongo database used to store metadata/data
+mongo:
+  image: mongo:latest
+  # volumes:
+  #   - clowder/mongo:/data/db
+
+# rabbitmq to connect to extractors
+rabbitmq:
+  image: rabbitmq:management
+  ports:
+    # - "5672"
+    - "15672"
+  # volumes:
+  #   - clowder/rabbitmq:/var/lib/rabbitmq
