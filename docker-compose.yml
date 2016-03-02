@@ -4,10 +4,11 @@ clowder:
   # environment:
   #   SMTP_HOST: smtp.ncsa.illinois.edu
   ports:
-    - "9000"
+    - "9000:9000"
   links:
     - mongo
     - rabbitmq
+    - elasticsearch
 
 # extractors
 audio-preview:
@@ -38,6 +39,8 @@ video-preview:
 # mongo database used to store metadata/data
 mongo:
   image: mongo:latest
+  ports:
+    - "27017:27017"
   # volumes:
   #   - clowder/mongo:/data/db
 
@@ -45,7 +48,17 @@ mongo:
 rabbitmq:
   image: rabbitmq:management
   ports:
-    # - "5672"
-    - "15672"
+    - "5672:5672"
+    - "15672:15672"
   # volumes:
   #   - clowder/rabbitmq:/var/lib/rabbitmq
+
+# elasticsearch to allow indexing
+elasticsearch:
+    image: elasticsearch:1.3
+    command: elasticsearch -Des.cluster.name="clowder"
+    ports:
+        - "9200:9200"
+        - "9300:9300"
+    # volumes:
+    #     - ${PWD}/esdata:/usr/share/elasticsearch/data

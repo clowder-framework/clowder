@@ -12,9 +12,9 @@ ENV CLOWDER_CONTEXT="/" \
     RABBITMQ_VHOST="%2F" \
     RABBITMQ_URI="" \
     RABBITMQ_MGMT_PORT="" \
-    ELASTICSEARCH_CLUSTERNAME="clowder" \
-    ELASTICSEARCH_SERVER="" \
-    ELASTICSEARCH_PORT=""
+    ELASTICSEARCH_SERVICE_CLUSTERNAME="clowder" \
+    ELASTICSEARCH_SERVICE_SERVER="" \
+    ELASTICSEARCH_SERVICE_PORT=""
 
 # copy the build file, this requires sbt dist to be run
 COPY files entrypoint.sh /home/clowder/

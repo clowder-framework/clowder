@@ -23,14 +23,14 @@ if [ "$MONGO_URI" == "" ]; then
 fi
 
 # elasticsearch
-if [ "$ELASTICSEARCH_SERVER" == "" ]; then
+if [ "$ELASTICSEARCH_SERVICE_SERVER" == "" ]; then
     if [ -n "$ELASTICSEARCH_PORT_9300_TCP_ADDR" ]; then
-        ELASTICSEARCH_SERVER="$ELASTICSEARCH_PORT_9300_TCP_ADDR"
+        ELASTICSEARCH_SERVICE_SERVER="$ELASTICSEARCH_PORT_9300_TCP_ADDR"
     fi
 fi
-if [ "$ELASTICSEARCH_PORT" == "" ]; then
+if [ "$ELASTICSEARCH_SERVICE_PORT" == "" ]; then
     if [ -n "$ELASTICSEARCH_PORT_9300_TCP_PORT" ]; then
-        ELASTICSEARCH_PORT="$ELASTICSEARCH_PORT_9300_TCP_PORT"
+        ELASTICSEARCH_SERVICE_PORT="$ELASTICSEARCH_PORT_9300_TCP_PORT"
     fi
 fi
 
@@ -108,10 +108,10 @@ if [ "$1" = 'server' ]; then
     fi
 
     # elasticsearch
-    fix_plugin "$ELASTICSEARCH_SERVER" "10700" "services.ElasticsearchPlugin"
-    fix_conf   "elasticsearchSettings.clusterName" "$ELASTICSEARCH_CLUSTERNAME"
-    fix_conf   "elasticsearchSettings.serverAddress" "$ELASTICSEARCH_SERVER"
-    fix_conf   "elasticsearchSettings.serverPort" "$ELASTICSEARCH_PORT"
+    fix_plugin "$ELASTICSEARCH_SERVICE_SERVER" "10700" "services.ElasticsearchPlugin"
+    fix_conf   "elasticsearchSettings.clusterName" "$ELASTICSEARCH_SERVICE_CLUSTERNAME"
+    fix_conf   "elasticsearchSettings.serverAddress" "$ELASTICSEARCH_SERVICE_SERVER"
+    fix_conf   "elasticsearchSettings.serverPort" "$ELASTICSEARCH_SERVICE_PORT"
 
     # start clowder
     /bin/rm -f /home/clowder/clowder/RUNNING_PID
