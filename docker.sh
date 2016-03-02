@@ -36,17 +36,17 @@ ${DEBUG} unzip -q -d docker ${ZIPFILE}
 ${DEBUG} mv docker/$( basename ${ZIPFILE} .zip ) docker/files/clowder
 ${DEBUG} mkdir docker/files/clowder/custom
 
-# find out the version of clowder
-VERSION="$( grep '\-Dbuild.version' docker/files/clowder/bin/clowder | sed 's/.*=\(.*\)"$/\1/' )"
-
-# add some extra tweaks and find out if we should push
+# find version if we are develop/latest/release and if should be pushed
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 if [ "$BRANCH" = "master" ]; then
   PUSH=${PUSH:-"push"}
-  VERSION="${VERSION} latest"
+  VERSION=${VERSION:-"latest"}
 elif [ "$BRANCH" = "develop" ]; then
   PUSH=${PUSH:-"push"}
-  VERSION="${VERSION}-dev develop"  
+  VERSION=${VERSION:-"develop"}
+elif [ "$( echo $BRANCH | sed -e 's#^release/.*$#release#')" = "release" ]; then
+  PUSH=${PUSH:-"push"}
+  VERSION=${VERSION:-$( echo $BRANCH | sed -e 's#^release/\(.*\)$#\1#')}
 else
   PUSH=${PUSH:-""}
 fi
