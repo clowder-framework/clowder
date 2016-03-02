@@ -116,10 +116,10 @@
                                         </div>
                                     </div>
                                     <div class="modal-footer">
-                                        <button type="submit" class="btn btn-primary start"  id="createFolder" title="Create the Dataset">
+                                        <button type="submit" class="btn btn-primary start"  id="createFolder" title="Create the folder">
                                             <span class="glyphicon glyphicon-ok"></span> Create Folder
                                         </button>
-                                        <button class="btn btn-default" title="Cancel creation of folder" data-dismiss="modal">
+                                        <button class="btn btn-default" title="Cancel creation of folder" data-dismiss="modal" onclick="$('.error').hide();">
                                             <span class="glyphicon glyphicon-remove"></span> Cancel
                                         </button>
                                     </div>
@@ -410,6 +410,8 @@
                 if(!name.val()) {
                     $('#nameerror').show();
                     error = true;
+                } else{
+                    $('#nameerror').hide();
                 }
                 if(!error) {
 
