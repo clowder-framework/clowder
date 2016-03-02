@@ -22,7 +22,6 @@ trait VocabularyService {
 
   def getByAuthor(author: Identity) : List[Vocabulary]
 
-
   def getByAuthorAndName(author : Identity, name : String) : List[Vocabulary]
 
   def delete(id: UUID) : Try[Unit]
