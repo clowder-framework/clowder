@@ -1238,9 +1238,50 @@ class Files @Inject()(
           case None => Logger.error("Texture file not found"); InternalServerError
         }
     }
-  
-  
-   //Update License code 
+
+  //Update Filename
+  /**
+    * REST endpoint: PUT: update or change the filename
+    * args
+    *   id: the UUID associated with this file
+    * data
+    *   name: String
+    */
+  @ApiOperation(value = "Update a file name",
+    notes= "Takes one argument, a UUID of the collection. Request body takes a key-value pair for the name",
+    responseClass = "None", httpMethod = "PUT")
+  def updateFileName(id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file, id)))(parse.json) {
+    implicit request =>
+      implicit val user = request.user
+      if (UUID.isValid(id.stringify)) {
+        var name: String = null
+        val aResult = (request.body \ "name").validate[String]
+        aResult match {
+          case s: JsSuccess[String] => {
+            name = s.get
+          }
+          case e: JsError => {
+            Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+            BadRequest(toJson(s"name data is missing"))
+          }
+        }
+        Logger.debug(s"Update title for file with id $id. New name: $name")
+        files.renameFile(id, name)
+        files.get(id) match {
+          case Some(file) => {
+            events.addObjectEvent(user, id, file.filename, "update_file_information")
+          }
+
+        }
+        Ok(Json.obj("status" -> "success"))
+      }
+      else {
+        Logger.error(s"The given id $id is not a valid ObjectId.")
+        BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
+      }
+  }
+
+  //Update License code
   /**
    * REST endpoint: POST: update the license data associated with a specific File
    * 

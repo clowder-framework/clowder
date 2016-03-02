@@ -356,6 +356,7 @@ POST           /api/files/:id/tags/remove_all                                   
 DELETE         /api/files/:id/tags                                                      @api.Files.removeTags(id: UUID)
 POST           /api/files/:id/license                                                   @api.Files.updateLicense(id: UUID)
 GET            /api/files/:id/extracted_metadata                                        @api.Files.extract(id:UUID)
+PUT            /api/files/:id/filename                                                  @api.Files.updateFileName(id: UUID)
 POST           /api/files/:id/reindex                                                   @api.Files.reindex(id:UUID)
 
 # ----------------------------------------------------------------------

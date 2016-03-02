@@ -40,6 +40,7 @@ object Permission extends Enumeration {
     DeleteFile,
     ViewFile,
     DownloadFiles,
+    EditFile,
     EditLicense,
     CreatePreview,    // Used by extractors
     MultimediaIndexDocument,
