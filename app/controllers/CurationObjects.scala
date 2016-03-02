@@ -11,6 +11,7 @@ import play.api.libs.json.JsArray
 import services._
 import _root_.util.RequiredFieldsConfig
 import play.api.Play._
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 import scala.concurrent.Await
 import play.api.mvc.{Request, Action, Results}
@@ -28,6 +29,7 @@ class CurationObjects @Inject()(
   collections: CollectionService,
   spaces: SpaceService,
   files: FileService,
+  folders: FolderService,
   comments: CommentService,
   sections: SectionService,
   events: EventService,
@@ -84,7 +86,7 @@ class CurationObjects @Inject()(
                   case Some(f) => {
                     val cf = CurationFile(fileId = f.id, path= f.path, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
                       contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
-                    thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = f.sha512)
+                      thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = f.sha512)
                     curations.insertFile(cf)
                     newFiles = cf.id :: newFiles
                     metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id))))
@@ -103,6 +105,7 @@ class CurationObjects @Inject()(
                 space = spaceId,
                 datasets = List(dataset),
                 files = newFiles,
+                folders = List.empty,
                 repository = None,
                 status = "In Curation")
 
@@ -115,6 +118,8 @@ class CurationObjects @Inject()(
                 metadatas.addMetadata(newm)
               }
 
+              dataset.folders.map(f => copyFolders(f, newCuration.id, "dataset",  newCuration.id))
+
               Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
             }
             else {
@@ -125,6 +130,46 @@ class CurationObjects @Inject()(
         }
       }
       case None => InternalServerError("User Not found")
+    }
+  }
+
+  private def copyFolders(id:UUID, parentId: UUID, parentType:String, parentCurationObjectId:UUID):Unit = {
+    folders.get(id) match {
+      case Some(folder) =>{
+        var newFiles: List[UUID]= List.empty
+        for ( fileId <- folder.files) {
+          files.get(fileId) match {
+            case Some(f) => {
+              val cf = CurationFile(fileId = f.id, path= f.path, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
+                contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
+                thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = f.sha512)
+              curations.insertFile(cf)
+              newFiles = cf.id :: newFiles
+              metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id))
+                .map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id))))
+            }
+          }
+        }
+
+        val newCurationFolder = CurationFolder(
+        folderId = id,
+        name =folder.name,
+        displayName = folder.displayName,
+          files = newFiles,
+          folders = List.empty,
+          parentId = parentId,
+          parentType = parentType.toLowerCase(),
+          parentCurationObjectId = parentCurationObjectId
+        )
+        curations.insertFolder(newCurationFolder)
+        curations.addCurationFolder(parentType, parentId, newCurationFolder.id)
+
+        folder.folders.map(f => copyFolders(f,newCurationFolder.id, "folder", parentCurationObjectId ))
+      }
+      case None => {
+        Logger.error("Curation Folder Not found")
+
+      }
     }
   }
 
@@ -182,19 +227,71 @@ class CurationObjects @Inject()(
 
 
 
-  def getCurationObject(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {    implicit request =>
+  def getCurationObject(curationId: UUID, limit: Int) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {    implicit request =>
     implicit val user = request.user
     curations.get(curationId) match {
       case Some(c) => {
+        // metadata of curation files are getting from getUpdatedFilesAndFolders
         val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
-        val mCurationFile = c.files.map(f => metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f))).flatten
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
-        val fileByDataset = curations.getCurationFiles(c.files)
+        val fileByDataset = curations.getCurationFiles(curations.getAllCurationFileIds(c.id))
         if (c.status != "In Curation") {
-          Ok(views.html.spaces.submittedCurationObject(c, fileByDataset, m ++ mCurationFile))
+
+          Ok(views.html.spaces.submittedCurationObject(c, fileByDataset, m, limit ))
         } else {
-          Ok(views.html.spaces.curationObject(c, m ++ mCurationFile, isRDFExportEnabled, fileByDataset))
+          Ok(views.html.spaces.curationObject(c, m , isRDFExportEnabled, limit))
         }
+      }
+      case None => InternalServerError("Curation Object Not found")
+    }
+  }
+
+  def getUpdatedFilesAndFolders(curationId: UUID, curationFolderId: String, limit: Int, pageIndex:Int) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) { implicit request =>
+    implicit val user = request.user
+    val filepageUpdate = if (pageIndex < 0) 0 else pageIndex
+    curations.get(curationId) match {
+      case Some(c) => {
+        curationFolderId match{
+        // curationFolderId is set to "None" if it is currently on curation page
+          case "None" =>{
+            val foldersList = c.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => curations.getCurationFolder(f)).flatten
+            val limitFileIds : List[UUID] = c.files.reverse.slice(limit * filepageUpdate - c.folders.length, limit * (filepageUpdate+1) - c.folders.length)
+            val limitFileList : List[CurationFile]=  curations.getCurationFiles( limitFileIds)
+            val mCurationFile = c.files.map(f => metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f))).flatten
+
+            val folderHierarchy = new ListBuffer[CurationFolder]()
+            val next = c.files.length + c.folders.length > limit * (filepageUpdate+1)
+            Ok(views.html.curations.filesAndFolders(c, None, foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, mCurationFile))
+          }
+          // Otherwise it is on a curation folder's page
+          case _ => {
+            curations.getCurationFolder (UUID(curationFolderId)) match {
+              case Some (cf) => {
+                val foldersList = cf.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => curations.getCurationFolder(f)).flatten
+                val limitFileIds : List[UUID] = cf.files.reverse.slice(limit * filepageUpdate - cf.folders.length, limit * (filepageUpdate+1) - cf.folders.length)
+                val limitFileList : List[CurationFile]= curations.getCurationFiles(limitFileIds)
+                val mCurationFile = limitFileIds.map(f => metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f))).flatten
+                var folderHierarchy = new ListBuffer[CurationFolder]()
+                folderHierarchy += cf
+                var f1: CurationFolder = cf
+                while(f1.parentType == "folder") {
+                  curations.getCurationFolder(f1.parentId) match {
+                    case Some(fparent) => {
+                      folderHierarchy += fparent
+                      f1 = fparent
+                    }
+                    case None =>
+                  }
+                }
+                val next = cf.files.length + cf.folders.length > limit * (filepageUpdate+1)
+                Ok(views.html.curations.filesAndFolders(c, Some(cf.id.stringify), foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, mCurationFile))
+              }
+              case None => InternalServerError ("Curation Folder Not found")
+            }
+          }
+
+        }
+
       }
       case None => InternalServerError("Curation Object Not found")
     }
@@ -212,7 +309,7 @@ class CurationObjects @Inject()(
                   val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
                   Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences, mmResp))
                 }
-                case None =>Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
+                case None =>Results.Redirect(routes.Error.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
               }
             }
             case None => InternalServerError("Curation Object not found")
@@ -231,9 +328,10 @@ class CurationObjects @Inject()(
       }
       case None =>
     })
-    val files = curations.getCurationFiles(c.files)
-    val maxDataset = if (!c.files.isEmpty)  files.map(_.length).max else 0
-    val totalSize = if (!c.files.isEmpty) files.map(_.length).sum else 0
+    val fileIds = curations.getAllCurationFileIds(c.id)
+    val files = curations.getCurationFiles(fileIds)
+    val maxDataset = if (!fileIds.isEmpty)  files.map(_.length).max else 0
+    val totalSize = if (!fileIds.isEmpty) files.map(_.length).sum else 0
     var metadataList = scala.collection.mutable.ListBuffer.empty[MetadataPair]
     var metadataKeys = Set.empty[String]
     metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).filter(_.creator.typeOfAgent == "cat:user").map {
@@ -268,13 +366,15 @@ class CurationObjects @Inject()(
       case None => api.routes.Users.findById(usr.id).absoluteURL(https)
 
     })
-
+    val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
     var aggregation = metadataJson.toMap ++ Map(
       "Identifier" -> Json.toJson(controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(https)),
       "@id" -> Json.toJson(hostUrl),
       "Title" -> Json.toJson(c.name),
       "Uploaded By" -> Json.toJson(creator),
-      "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https))
+      "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https)),
+      "Publishing Project"-> Json.toJson(controllers.routes.Spaces.getSpace(c.space).absoluteURL(https)),
+      "Creation Date" -> Json.toJson(format.format(c.created))
       )
     if(!metadataJson.contains("Creator")) {
       aggregation = aggregation ++ Map("Creator" -> Json.toJson(creator))
@@ -314,6 +414,8 @@ class CurationObjects @Inject()(
           "Abstract" -> Json.toJson("http://purl.org/dc/terms/abstract"),
           "Bibliographic citation" -> Json.toJson("http://purl.org/dc/terms/bibliographicCitation"),
           "Purpose" -> Json.toJson("http://sead-data.net/vocab/publishing#Purpose"),
+          "Publishing Project" -> Json.toJson("http://sead-data.net/terms/publishingProject"),
+          "Creation Date" -> Json.toJson("http://purl.org/dc/terms/created"),
           "Spatial Reference" ->
             Json.toJson(
               Map(
@@ -334,7 +436,7 @@ class CurationObjects @Inject()(
           "Max Collection Depth" -> Json.toJson("0"),
           "Max Dataset Size" -> Json.toJson(maxDataset.toString),
           "Total Size" -> Json.toJson(totalSize.toString),
-          "Number of Datasets" -> Json.toJson(c.files.length),
+          "Number of Datasets" -> Json.toJson(fileIds.length),
           "Number of Collections" -> Json.toJson(c.datasets.length)
         )
     )
@@ -398,9 +500,10 @@ class CurationObjects @Inject()(
             }
             case None =>
           })
-          val files = curations.getCurationFiles(c.files)
-          val maxDataset = if (!c.files.isEmpty)  files.map(_.length).max else 0
-          val totalSize = if (!c.files.isEmpty) files.map(_.length).sum else 0
+          val fileIds = curations.getAllCurationFileIds(c.id)
+          val files = curations.getCurationFiles(fileIds)
+          val maxDataset = if (!files.isEmpty)  files.map(_.length).max else 0
+          val totalSize = if (!files.isEmpty) files.map(_.length).sum else 0
           var metadataList = scala.collection.mutable.ListBuffer.empty[MetadataPair]
           var metadataKeys = Set.empty[String]
           metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).filter(_.creator.typeOfAgent == "cat:user").map {
@@ -430,13 +533,16 @@ class CurationObjects @Inject()(
           for(md <- metadatas.getDefinitions()) {
             metadataDefsMap((md.json\ "label").asOpt[String].getOrElse("").toString()) = Json.toJson((md.json \ "uri").asOpt[String].getOrElse(""))
           }
+          val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
           var aggregation = metadataToAdd ++
             Map(
               "Identifier" -> Json.toJson("urn:uuid:"+curationId),
               "@id" -> Json.toJson(hostUrl),
               "@type" -> Json.toJson("Aggregation"),
               "Title" -> Json.toJson(c.name),
-              "Uploaded By" -> Json.toJson(creator)
+              "Uploaded By" -> Json.toJson(creator),
+              "Publishing Project"-> Json.toJson(controllers.routes.Spaces.getSpace(c.space).absoluteURL(https)),
+              "Creation Date" -> Json.toJson(format.format(c.created))
             )
           if(!metadataToAdd.contains("Creator")) {
             aggregation = aggregation ++ Map("Creator" -> Json.toJson(creator))
@@ -482,8 +588,9 @@ class CurationObjects @Inject()(
                     "Rights Holder" -> Json.toJson("http://purl.org/dc/terms/rightsHolder"),
                     "Cost" -> Json.toJson("http://sead-data.net/terms/cost"),
                     "Dataset Description" -> Json.toJson("http://sead-data.net/terms/datasetdescription"),
-                    "Purpose" -> Json.toJson("http://sead-data.net/vocab/publishing#Purpose")
-
+                    "Purpose" -> Json.toJson("http://sead-data.net/vocab/publishing#Purpose"),
+                    "Publishing Project" -> Json.toJson("http://sead-data.net/terms/publishingProject"),
+                    "Creation Date" -> Json.toJson("http://purl.org/dc/terms/created")
                 )
               ))),
                 "Repository" -> Json.toJson(repository.toLowerCase()),
@@ -497,7 +604,7 @@ class CurationObjects @Inject()(
                     "Data Mimetypes" -> Json.toJson(files.map(_.contentType).toSet),
                     "Max Dataset Size" -> Json.toJson(maxDataset.toString),
                     "Total Size" -> Json.toJson(totalSize.toString),
-                    "Number of Datasets" -> Json.toJson(c.files.length),
+                    "Number of Datasets" -> Json.toJson(fileIds.length),
                     "Number of Collections" -> Json.toJson(c.datasets.length)
                   )),
                 "Rights Holder" -> Json.toJson(rightsholder),
@@ -534,7 +641,7 @@ class CurationObjects @Inject()(
   /**
    * Endpoint for receiving status/ uri from repository.
    */
-  def savePublishedObject(id: UUID) = UserAction (parse.json) {
+  def savePublishedObject(id: UUID) = UserAction(needActive = true) (parse.json) {
     implicit request =>
       Logger.debug("get infomation from repository")
 
@@ -668,6 +775,5 @@ class CurationObjects @Inject()(
 
     out.toMap
   }
-
 }
 
