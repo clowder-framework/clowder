@@ -2,12 +2,13 @@ package api
 
 import javax.inject.Inject
 
+import com.wordnik.swagger.annotations.ApiOperation
 import models.{ClowderUser, UUID}
 import play.api.mvc.Controller
 import play.api.Play.current
 import play.api.libs.json.Json.toJson
 import play.api.templates.Html
-import services.{UserService, ElasticsearchPlugin, AppConfiguration}
+import services._
 import services.mongodb.MongoSalatPlugin
 import play.api.Logger
 import util.Mail
@@ -17,7 +18,10 @@ import util.Mail
  *
  * @author Luigi Marini
  */
-class Admin @Inject()(userService: UserService) extends Controller with ApiController {
+class Admin @Inject()(userService: UserService,
+                      datasets:DatasetService,
+                      collections:CollectionService,
+                      files:FileService) extends Controller with ApiController {
 
   /**
    * DANGER: deletes all data, keep users.
@@ -143,5 +147,18 @@ class Admin @Inject()(userService: UserService) extends Controller with ApiContr
       )
     )
     Ok(toJson(Map("status" -> "success")))
+  }
+
+
+  @ApiOperation(value = "Create a collection",
+    notes = "",
+    responseClass = "None", httpMethod = "POST")
+  def reindexElasticsearch = ServerAdminAction { implicit request =>
+    current.plugin[ElasticsearchPlugin].map { _.deleteAll }
+    collections.listCollections() map { c => current.plugin[ElasticsearchPlugin].map { _.index(c, false) }}
+    datasets.listDatasets() map { d => current.plugin[ElasticsearchPlugin].map { _.index(d, false) }}
+    files.listFiles() map { f => current.plugin[ElasticsearchPlugin].map { _.index(f) }}
+
+    Ok(toJson(Map("status" -> "Success")))
   }
 }

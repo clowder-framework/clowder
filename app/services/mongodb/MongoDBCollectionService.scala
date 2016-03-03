@@ -786,6 +786,10 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       return false
     }
   }
+
+  def listCollections(): List[Collection] ={
+    Collection.dao.find(MongoDBObject()).toList
+  }
 }
 
 object Collection extends ModelCompanion[Collection, ObjectId] {
