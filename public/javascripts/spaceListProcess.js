@@ -11,12 +11,16 @@ function removeSpace(spaceId, isreload, url){
 		if(isreload === true)
 			window.location.href=url;
 		else {
-			var obj = $('#'+ spaceId+'-tile');
-			$('#masonry').masonry( 'remove', obj );
-			$('#masonry').masonry( 'layout' );
-			$('#masonry-spaces').masonry( 'remove', obj );
-			$('#masonry-spaces').masonry( 'layout' );
 			$('#'+ spaceId+'-listitem').remove();
+			var obj = $('#'+ spaceId+'-tile');
+			if($('#masonry').length > 0) {
+				$('#masonry').masonry('remove', obj);
+				$('#masonry').masonry('layout');
+			}
+			if($('#masonry-spaces').length > 0) {
+				$('#masonry-spaces').masonry('remove', obj);
+				$('#masonry-spaces').masonry('layout');
+			}
 		}
 	});
 	

@@ -8,10 +8,14 @@ function removeCollection(id, isreload, url){
 		else {
 			$('#'+ id+'-listitem').remove();
 			var obj = $('#'+ id+'-tile');
-			$('#masonry').masonry( 'remove', obj );
-			$('#masonry').masonry( 'layout' );
-			$('#masonry-collections').masonry( 'remove', obj );
-			$('#masonry-collections').masonry( 'layout' );
+			if($('#masonry').length > 0) {
+				$('#masonry').masonry('remove', obj);
+				$('#masonry').masonry('layout');
+			}
+			if($('#masonry-collections').length > 0) {
+				$('#masonry-collections').masonry('remove', obj);
+				$('#masonry-collections').masonry('layout');
+			}
 		}
     });
 	request.fail(function (jqXHR, textStatus, errorThrown){

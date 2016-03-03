@@ -1,22 +1,25 @@
 function removeDataset(datasetId, isreload, url){
-
 	var request = jsRoutes.api.Datasets.deleteDataset(datasetId).ajax({
 		type: 'DELETE'
 	});
 	request.done(function (response, textStatus, jqXHR){
-        if(isreload === true)
-			window.location.href=url;
-		else {
-			var obj = $('#'+ datasetId+'-tile');
-			$('#masonry').masonry( 'remove', obj );
-			$('#masonry').masonry( 'layout' );
-			$('#masonry-datasets').masonry( 'remove', obj );
-			$('#masonry-datasets').masonry( 'layout' );
-			$('#'+ datasetId+'-listitem').remove();
-
-		}
+		console.log(datasetId, isreload, url);
+        ////if(isreload === true)
+		////	window.location.href=url;
+		////else {
+		//	//$('#'+ datasetId+'-listitem').remove();
+		//	var obj = $('#'+ datasetId+'-tile');
+		//	if($('#masonry').length > 0) {
+		//		$('#masonry').masonry('remove', obj);
+		//		$('#masonry').masonry('layout');
+		//	}
+		//	if($('#masonry-datasets').length > 0) {
+		//		//$('#masonry-datasets').masonry('remove', obj);
+		//		//$('#masonry-datasets').masonry('layout');
+		//	}
+		////}
     });
-	request.fail(function (jqXHR, textStatus, errorThrown){
+	request.fail(function (jqXHR, textStatus, errorThrown) {
 		console.error("The following error occured: "+textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a dataset from the system.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {

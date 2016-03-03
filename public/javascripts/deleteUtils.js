@@ -3,17 +3,16 @@
 //Created by mo on 2/2/16.
 function confirmDeleteResource(resourceType, resourceId, resourceName, isreload, url) {
 
-
     var msg = "Are you sure you want to delete the " + resourceType + " '" + resourceName + "'?";
-
     var modalHTML = confirmDeleteTemplate(msg, resourceType, resourceId, isreload, url);
     var confirmModal = $(modalHTML);
+    confirmModal.modal();
     confirmModal.modal("show");
 }
 
 function confirmDeleteTemplate(message, resourceType, resourceId, isreload, url) {
     var modalHTML = '<div id="confirm-delete" class="modal fade" role="dialog">';
-    modalHTML += '<div class="modal-dialog">';
+    modalHTML += '<div class="modal-dialog" role="document">';
     modalHTML += '<div class="modal-content">';
     modalHTML += '<div class="modal-header">';
     modalHTML += '<button type="button" class="close" data-dismiss="modal">&times;</button>';
@@ -39,6 +38,7 @@ function DeleteTemplate(resourceType, resourceId, isreload, url) {
     if (resourceType == "file") {
         removeFile(resourceId,isreload, url);
     } else if (resourceType == "dataset") {
+        console.log(resourceId, isreload, url);
         removeDataset(resourceId, isreload, url);
     } else if (resourceType == "collection") {
         removeCollection(resourceId, isreload, url);
