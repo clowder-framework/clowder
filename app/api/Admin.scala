@@ -158,7 +158,6 @@ class Admin @Inject()(userService: UserService,
     collections.listCollections() map { c => current.plugin[ElasticsearchPlugin].map { _.index(c, false) }}
     datasets.listDatasets() map { d => current.plugin[ElasticsearchPlugin].map { _.index(d, false) }}
     files.listFiles() map { f => current.plugin[ElasticsearchPlugin].map { _.index(f) }}
-
     Ok(toJson(Map("status" -> "Success")))
   }
 }

@@ -432,7 +432,6 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     val users = userService.list.sortWith(_.lastName.toLowerCase() < _.lastName.toLowerCase())
     Ok(views.html.admin.users(admins, configAdmins, users))
   }
-
 }
 
 case class roleFormData(id: Option[UUID], name: String, description: String, permissions: List[String])
