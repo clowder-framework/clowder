@@ -413,7 +413,7 @@
             }
         }
 
-        request.open("GET", jsRoutes.controllers.Datasets.refreshToolSidebar("@dataset.id").url, true);
+        request.open("GET", jsRoutes.controllers.Datasets.refreshToolSidebar("@dataset.id", "@dataset.name").url, true);
         request.send();
     }
 

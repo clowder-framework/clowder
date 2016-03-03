@@ -1,4 +1,4 @@
-@(instances: List[UUID], instanceMap: scala.collection.mutable.Map[UUID, services.ToolInstance], datasetID: UUID)(implicit user: Option[models.User])
+@(instances: List[UUID], instanceMap: scala.collection.mutable.Map[UUID, services.ToolInstance], datasetID: UUID, datasetName: String)(implicit user: Option[models.User])
 
 @import api.Permission
 
@@ -17,7 +17,6 @@
             <div>
               @{
                 // Create entry for each ToolInstance that this dataset has been uploaded to
-                // TODO: This dataset uploaded on 00:00
                 var htmlStr = ""
                 instanceMap.get(instanceID) match {
                   case Some(inst) => {
@@ -160,7 +159,7 @@
           console.log("launchToolRequest came back with "+request.status.toString());
       }
 
-      request.open("GET", jsRoutes.controllers.Datasets.launchTool(instanceName, toolType, "@datasetID").url, true);
+      request.open("GET", jsRoutes.controllers.Datasets.launchTool(instanceName, toolType, "@datasetID", "@datasetName").url, true);
       request.send();
     }
   }
@@ -182,7 +181,7 @@
           console.log("launchUploadRequest came back with "+request.status.toString());
       }
 
-      request.open("GET", jsRoutes.controllers.Datasets.uploadDatasetToTool(instanceID, "@datasetID").url, true);
+      request.open("GET", jsRoutes.controllers.Datasets.uploadDatasetToTool(instanceID, "@datasetID", "@datasetName").url, true);
       request.send();
     }
   }

@@ -77,7 +77,7 @@
                         <li>Updated @inst.updated.format("MMM dd, yyyy")</li>
 
                         <li>
-                          @if(inst.uploadHistory.keys.size > 0 || inst.serverUploadHistory != "") {
+                          @if(inst.uploadHistory.keys.size > 0) {
                             <a class="btn btn-link" data-toggle="collapse" aria-expanded="false" aria-controls="collapseExample" href="#datasets-@inst.id">
                               <span class="glyphicon glyphicon-collapse-down" title="@inst.uploadHistory.keys.size datasets"></span>
                               Expand upload history
@@ -87,24 +87,11 @@
                                 var dsList = ""
                                 instanceMap.get(instanceID) match {
                                   case Some(instance) => {
-                                    if (instance.uploadHistory.keys.size > 0) {
-                                      for((dsId, (dsName, upTime)) <- instance.uploadHistory) {
-                                        val dsURL = controllers.routes.Datasets.dataset(dsId).url
+                                    for((dsId, (dsName, upTime, uploaderId)) <- instance.uploadHistory) {
+                                      val dsURL = controllers.routes.Datasets.dataset(dsId).url
 
-                                        dsList += "<b>" + upTime + "</b>: <a href=" + dsURL + ">" + dsName + "</a></br>"
-                                      }
-                                    } else {
-                                      val serverHist = Json.parse(instance.serverUploadHistory).as[List[JsObject]]
-                                      dsList += "<i>History not found in client logs. Downloaded from server.</i></br>"
-                                      for (histEntry <- serverHist) {
-                                        val entryTime = (histEntry \ "time").toString.replace("\"","")
-                                        val entryUrl = (histEntry \ "url").toString.replace("\"","")
-                                        val entryOwner = (histEntry \ "uploaderId").toString.replace("\"","")
-                                        dsList += "<b>"+entryTime+"</b>:</br>&nbsp;&nbsp;<a href='http://"+entryUrl+"' target='_blank'>"+entryUrl+"</a></br>"
-                                      }
-
+                                      dsList += "<b>" + upTime + "</b>: <a href=" + dsURL + ">" + dsName + "</a></br>"
                                     }
-
                                   }
                                   case None => {}
                                 }

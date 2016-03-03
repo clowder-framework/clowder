@@ -24,8 +24,7 @@ class ToolInstance() {
   var externalId: String = "" // For tracking token used by external API
   var toolPath: String = "" // API endpoint that was used to launch this instance, e.g. "rstudio"
   var toolName: String = ""
-  var uploadHistory: Map[UUID, (String, String)] = Map()
-  var serverUploadHistory: String = "" // TODO: Server tracks full URL, not UUID - think of better solution
+  var uploadHistory: Map[UUID, (String, String, String)] = Map() // datasetId -> (dsName, uploadtime, uploaderId)
   var owner: Option[models.User] = None
   var created = (new SimpleDateFormat("yyyy-mm-dd hh:mm:ss")).format(Calendar.getInstance.getTime)
   var updated = created
@@ -34,10 +33,10 @@ class ToolInstance() {
   val users: UserService = DI.injector.getInstance(classOf[UserService])
 
   // Add a new dataset upload event to the uploadHistory
-  def updateHistory(datasetId: UUID): Unit = {
+  def updateHistory(datasetId: UUID, uploaderId: String): Unit = {
     datasets.get(datasetId).map( ds => {
       val upTime = (new SimpleDateFormat("yyyy-mm-dd hh:mm:ss")).format(Calendar.getInstance.getTime)
-      uploadHistory(datasetId) = (ds.name, upTime)
+      uploadHistory(datasetId) = (ds.name, upTime, uploaderId)
     })
     updateTimestamp()
   }
@@ -166,7 +165,15 @@ class ToolManagerPlugin(application: Application) extends Plugin {
               val t = (j \ externalID \ "created").toString.replace("\"","")
               instance.setTimes(t, t)
 
-              instance.serverUploadHistory = (j \ externalID \ "uploadHistory").toString
+              val histList = (j \ externalID \ "uploadHistory").as[List[JsObject]]
+              for (histEntry <- histList) {
+                val entryTime = (histEntry \ "time").toString.replace("\"","")
+                val entryUrl = (histEntry \ "url").toString.replace("\"","")
+                val entryOwner = (histEntry \ "uploaderId").toString.replace("\"","")
+                val entryId = (histEntry \ "datasetId").toString.replace("\"","")
+                val entryName = (histEntry \ "datasetName").toString.replace("\"","")
+                instance.uploadHistory(new UUID(entryId)) = (entryName, entryTime, entryOwner)
+              }
 
               instanceMap(instance.id) = instance
             }
@@ -184,7 +191,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     * @param toolPath name of environment type that is being launched
     * @return ID of session that was launched
     */
-  def launchTool(hostURL: String, instanceName: String, toolPath: String, datasetId: UUID, ownerId: Option[UUID]): UUID = {
+  def launchTool(hostURL: String, instanceName: String, toolPath: String, datasetId: UUID, datasetName: String, ownerId: Option[UUID]): UUID = {
     // Generate a new session & add to instanceMap
     val instance = new ToolInstance()
     instance.setName(instanceName)
@@ -209,9 +216,11 @@ class ToolManagerPlugin(application: Application) extends Plugin {
       "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
       "key" -> play.Play.application().configuration().getString("commKey"),
       "name" -> instanceName,
-      "ownerId" -> oId
+      "ownerId" -> oId,
+      "datasetId" -> datasetId,
+      "datasetName" -> datasetName
     ))
-    instance.updateHistory(datasetId)
+    instance.updateHistory(datasetId, oId)
 
     statusRequest.map( response => {
       val externalURL = (Json.parse(response.body) \ "URL")
@@ -289,13 +298,13 @@ class ToolManagerPlugin(application: Application) extends Plugin {
   /**
     * Upload dataset files to an existing instance.
     */
-  def uploadDatasetToInstance(hostURL: String, instanceID: UUID, datasetID: UUID, userId: Option[UUID]): Unit = {
-    val dsURL = hostURL+controllers.routes.Datasets.dataset(datasetID).url
+  def uploadDatasetToInstance(hostURL: String, instanceID: UUID, datasetId: UUID, datasetName: String, userId: Option[UUID]): Unit = {
+    val dsURL = hostURL+controllers.routes.Datasets.dataset(datasetId).url
     var oId = ""
     userId.map(i => oId = i.toString)
 
     instanceMap.get(instanceID).map(instance => {
-      instance.updateHistory(datasetID)
+      instance.updateHistory(datasetId, oId)
 
       val apipath = play.Play.application().configuration().getString("toolmanager.host") + ":" +
         play.Play.application().configuration().getString("toolmanager.port") + "/instances/" + instance.toolPath
@@ -304,7 +313,9 @@ class ToolManagerPlugin(application: Application) extends Plugin {
         "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
         "key" -> play.Play.application().configuration().getString("commKey"),
         "id" -> instance.externalId.toString,
-        "uploaderId" -> oId
+        "uploaderId" -> oId,
+        "datasetId" -> datasetId,
+        "datasetName" -> datasetName
       ))
       statusRequest.map( response => {
         Logger.info(response.body.toString)
