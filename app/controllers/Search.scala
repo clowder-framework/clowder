@@ -53,7 +53,7 @@ class Search @Inject() (
             }
           } else
             current.plugin[ElasticsearchPlugin].map { _.search("data", query.replaceAll("([+:/\\\\])", "\\\\$1")) }
-          Logger.debug(result.toString + "   result")
+
           result match {
             case Some(searchResponse) => {
               for (hit <- searchResponse.getHits().getHits()) {
