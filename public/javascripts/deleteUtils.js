@@ -12,7 +12,7 @@ function confirmDeleteResource(resourceType, resourceId, resourceName, isreload,
 
 function confirmDeleteTemplate(message, resourceType, resourceId, isreload, url) {
     var modalHTML = '<div id="confirm-delete" class="modal fade" role="dialog">';
-    modalHTML += '<div class="modal-dialog" role="document">';
+    modalHTML += '<div class="modal-dialog">';
     modalHTML += '<div class="modal-content">';
     modalHTML += '<div class="modal-header">';
     modalHTML += '<button type="button" class="close" data-dismiss="modal">&times;</button>';
@@ -34,11 +34,10 @@ function confirmDeleteTemplate(message, resourceType, resourceId, isreload, url)
 
 
 function DeleteTemplate(resourceType, resourceId, isreload, url) {
-    $('#confirm-delete').remove();
+    $('.modal').modal('hide');
     if (resourceType == "file") {
         removeFile(resourceId,isreload, url);
     } else if (resourceType == "dataset") {
-        console.log(resourceId, isreload, url);
         removeDataset(resourceId, isreload, url);
     } else if (resourceType == "collection") {
         removeCollection(resourceId, isreload, url);

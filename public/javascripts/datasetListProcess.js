@@ -3,21 +3,20 @@ function removeDataset(datasetId, isreload, url){
 		type: 'DELETE'
 	});
 	request.done(function (response, textStatus, jqXHR){
-		console.log(datasetId, isreload, url);
-        ////if(isreload === true)
-		////	window.location.href=url;
-		////else {
-		//	//$('#'+ datasetId+'-listitem').remove();
-		//	var obj = $('#'+ datasetId+'-tile');
-		//	if($('#masonry').length > 0) {
-		//		$('#masonry').masonry('remove', obj);
-		//		$('#masonry').masonry('layout');
-		//	}
-		//	if($('#masonry-datasets').length > 0) {
-		//		//$('#masonry-datasets').masonry('remove', obj);
-		//		//$('#masonry-datasets').masonry('layout');
-		//	}
-		////}
+        if(isreload === true)
+			window.location.href=url;
+		else {
+			$('#'+ datasetId+'-listitem').remove();
+			var obj = $('#'+ datasetId+'-tile');
+			if($('#masonry').length > 0) {
+				$('#masonry').masonry('remove', obj);
+				$('#masonry').masonry('layout');
+			}
+			if($('#masonry-datasets').length > 0) {
+				$('#masonry-datasets').masonry('remove', obj);
+				$('#masonry-datasets').masonry('layout');
+			}
+		}
     });
 	request.fail(function (jqXHR, textStatus, errorThrown) {
 		console.error("The following error occured: "+textStatus, errorThrown);
