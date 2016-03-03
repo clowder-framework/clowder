@@ -38,15 +38,20 @@ ${DEBUG} mkdir docker/files/clowder/custom
 
 # find version if we are develop/latest/release and if should be pushed
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-if [ "$BRANCH" = "master" ]; then
-  PUSH=${PUSH:-"push"}
-  VERSION=${VERSION:-"latest"}
-elif [ "$BRANCH" = "develop" ]; then
-  PUSH=${PUSH:-"push"}
-  VERSION=${VERSION:-"develop"}
-elif [ "$( echo $BRANCH | sed -e 's#^release/.*$#release#')" = "release" ]; then
-  PUSH=${PUSH:-"push"}
-  VERSION=${VERSION:-$( echo $BRANCH | sed -e 's#^release/\(.*\)$#\1#')}
+VERSION=${VERSION:-""}
+if [ "$VERSION" = "" ]; then
+  if [ "$BRANCH" = "master" ]; then
+    PUSH=${PUSH:-"push"}
+    VERSION="latest"
+  elif [ "$BRANCH" = "develop" ]; then
+    PUSH=${PUSH:-"push"}
+    VERSION="develop"
+  elif [ "$( echo $BRANCH | sed -e 's#^release/.*$#release#')" = "release" ]; then
+    PUSH=${PUSH:-"push"}
+    VERSION="$( echo $BRANCH | sed -e 's#^release/\(.*\)$#\1#' )"
+  else
+    PUSH=${PUSH:-""}
+  fi
 else
   PUSH=${PUSH:-""}
 fi
