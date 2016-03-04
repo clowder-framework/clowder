@@ -3,6 +3,7 @@ package api
 import javax.inject.Inject
 
 import models.{ClowderUser, UUID}
+import org.apache.commons.lang3.StringEscapeUtils
 import play.api.mvc.Controller
 import play.api.Play.current
 import play.api.libs.json.Json.toJson
@@ -65,10 +66,12 @@ class Admin @Inject()(userService: UserService) extends Controller with ApiContr
   }
 
   def mail = UserAction(false)(parse.json) { implicit request =>
-    val body = (request.body \ "body").asOpt[String].getOrElse("no text")
+    val body = StringEscapeUtils.escapeHtml4((request.body \ "body").asOpt[String].getOrElse("no text"))
     val subj = (request.body \ "subject").asOpt[String].getOrElse("no subject")
 
-    Mail.sendEmailAdmins(subj, request.user, Html(body))
+    val htmlbody = "<html><body><p>" + body + "</p>" + views.html.emails.footer() + "</body></html>"
+
+    Mail.sendEmailAdmins(subj, request.user, Html(htmlbody))
     Ok(toJson(Map("status" -> "success")))
   }
 
