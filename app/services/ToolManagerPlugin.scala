@@ -26,7 +26,7 @@ class ToolInstance() {
   var toolName: String = ""
   var uploadHistory: Map[UUID, (String, String, String)] = Map() // datasetId -> (dsName, uploadtime, uploaderId)
   var owner: Option[models.User] = None
-  var created = (new SimpleDateFormat("yyyy-mm-dd hh:mm:ss")).format(Calendar.getInstance.getTime)
+  var created = (new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime)
   var updated = created
 
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
@@ -35,7 +35,7 @@ class ToolInstance() {
   // Add a new dataset upload event to the uploadHistory
   def updateHistory(datasetId: UUID, uploaderId: String): Unit = {
     datasets.get(datasetId).map( ds => {
-      val upTime = (new SimpleDateFormat("yyyy-mm-dd hh:mm:ss")).format(Calendar.getInstance.getTime)
+      val upTime = (new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime)
       uploadHistory(datasetId) = (ds.name, upTime, uploaderId)
     })
     updateTimestamp()
@@ -73,7 +73,7 @@ class ToolInstance() {
   }
 
   def updateTimestamp(): Unit = {
-    updated = (new SimpleDateFormat("yyyy-mm-dd hh:mm:ss")).format(Calendar.getInstance.getTime)
+    updated = (new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime)
   }
 }
 
