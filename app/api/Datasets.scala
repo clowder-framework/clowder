@@ -520,39 +520,50 @@ class Datasets @Inject()(
         datasets.get(id) match {
           case Some(x) => {
             val json = request.body
-            //parse request for agent/creator info
-            //creator can be UserAgent or ExtractorAgent
-            var creator: models.Agent = null
-            json.validate[Agent] match {
-              case s: JsSuccess[Agent] => {
-                creator = s.get
-
-                // check if the context is a URL to external endpoint
-                val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
-
-                // check if context is a JSON-LD document
-                val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
-                  .map(contextService.addContext(new JsString("context name"), _))
-
-                // when the new metadata is added
-                val createdAt = new Date()
-
-                //parse the rest of the request to create a new models.Metadata object
-                val attachedTo = ResourceRef(ResourceRef.dataset, id)
-                val content = (json \ "content")
-                val version = None
-                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                  content, version)
-
-                //add metadata to mongo
-                metadataService.addMetadata(metadata)
-                datasets.index(id)
-                Ok(toJson("Metadata successfully added to db"))
-
-              }
+            // parse request for JSON-LD model
+            var model: RDFModel = null
+            json.validate[RDFModel] match {
               case e: JsError => {
-                Logger.error("Error getting creator");
-                BadRequest(toJson(s"Creator data is missing or incorrect."))
+                Logger.error("Errors: " + JsError.toFlatForm(e))
+                BadRequest(JsError.toFlatJson(e))
+              }
+              case s: JsSuccess[RDFModel] => { 
+                model = s.get 
+                //parse request for agent/creator info
+                //creator can be UserAgent or ExtractorAgent
+                var creator: models.Agent = null
+                json.validate[Agent] match {
+                  case s: JsSuccess[Agent] => {
+                    creator = s.get
+    
+                    // check if the context is a URL to external endpoint
+                    val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
+    
+                    // check if context is a JSON-LD document
+                    val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
+                      .map(contextService.addContext(new JsString("context name"), _))
+    
+                    // when the new metadata is added
+                    val createdAt = new Date()
+    
+                    //parse the rest of the request to create a new models.Metadata object
+                    val attachedTo = ResourceRef(ResourceRef.dataset, id)
+                    val content = (json \ "content")
+                    val version = None
+                    val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+                      content, version)
+    
+                    //add metadata to mongo
+                    metadataService.addMetadata(metadata)
+                    datasets.index(id)
+                    Ok(toJson("Metadata successfully added to db"))
+    
+                  }
+                  case e: JsError => {
+                    Logger.error("Error getting creator");
+                    BadRequest(toJson(s"Creator data is missing or incorrect."))
+                  }
+                }
               }
             }
 
