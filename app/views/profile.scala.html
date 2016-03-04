@@ -133,7 +133,7 @@
 
     <script language="javascript">
         var profileMail = "@profile.email.get";
-        var profileId = "@profile.id.stringify";
+        //var profileId = "@profile.id.stringify";
         var firstName = $('#first-name-title').text();
         var lastName = $('#last-name-title').text();
         function updateFirstName() {
@@ -169,15 +169,15 @@
                 $('#first-name-error').hide();
             }
             var name = $('#first_name_input').val();
-            console.log(profileId, profileMail, profileMail);
+            firstName = name;
 
-            var request = jsRoutes.api.Users.updateUserField(profileMail,"firstName",name).ajax({
+            var request = jsRoutes.api.Users.updateUserField(profileMail,"firstName",htmlEncode(name)).ajax({
                 type: 'POST'
             });
             request.done(function(response, textStatus, jqXHR) {
                 console.log("Success");
                 $('.first_name_div').remove();
-                $('#first-name-title').text(htmlEncode(name).replace(/\n/g, "<br>"));
+                $('#first-name-title').html(htmlEncode(name));
                 $('#first-name-div').mouseleave();
                 $('#h-edit-first').css("display", "");
                 // update the full name as well
@@ -199,21 +199,17 @@
             } else {
                 $('#last-name-error').hide();
             }
+
             var name = $('#last_name_input').val();
-            var encName = htmlEncode(name);
-            jsonData = JSON.stringify({"name": encName});
+            lastName = name;
 
-            console.log(profileId, profileMail, profileMail);
-
-            var request = jsRoutes.api.Users.updateUserField(profileMail,"lastName",name).ajax({
-                data: jsonData,
-                type: 'POST',
-                contentType: "application/json"
+            var request = jsRoutes.api.Users.updateUserField(profileMail,"lastName",htmlEncode(name)).ajax({
+                type: 'POST'
             });
             request.done(function(response, textStatus, jqXHR) {
                 console.log("Success");
                 $('.last_name_div').remove();
-                $('#last-name-title').text(encName.replace(/\n/g, "<br>"));
+                $('#last-name-title').html(htmlEncode(name));
                 $('#last-name-div').mouseleave();
                 $('#h-edit-last').css("display", "");
                 // update the full name as well
@@ -234,7 +230,8 @@
                 type: 'POST'
             });
             requestFull.done(function(response, textStatus, jqXHR) {
-                console.log("Success Full");
+                //console.log("Success Full");
+                window.location.reload();
             });
             requestFull.fail(function(jqXHR, textStatus, errorThrown) {
                 console.error("The following error occurred: " + textStatus, errorThrown);
@@ -250,8 +247,6 @@
             $('.first_name_div').remove();
             $('#prf-first-name').css("display", "inline");
             $('#h-edit-first').css("display", "");
-            //$('#h-edit-first').removeClass("inline");
-            //$('#h-edit-first').addClass("hiddencomplete");
             $('#prf-first-name').mouseleave();
         }
         function cancelLastName() {
