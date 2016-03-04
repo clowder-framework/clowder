@@ -164,8 +164,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   }
 
   def email(subject: String) = UserAction(needActive=false) { implicit request =>
-    implicit val user = request.user
-    Ok(views.html.emailAdmin(subject))
+    if (request.user.isEmpty) {
+      Redirect(routes.Application.index())
+    } else {
+      implicit val user = request.user
+      Ok(views.html.emailAdmin(subject))
+    }
   }
 
   def options(path:String) = UserAction(needActive = false) { implicit request =>
