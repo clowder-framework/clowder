@@ -180,7 +180,7 @@ class Files @Inject() (
       case None => {
         val error_str = s"The file with id ${id} is not found."
         Logger.error(error_str)
-        BadRequest(views.html.notFound("File not Found"))
+        Future(BadRequest(views.html.notFound("File not Found")))
         }
     }
   }

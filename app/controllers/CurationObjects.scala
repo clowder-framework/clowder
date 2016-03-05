@@ -242,7 +242,7 @@ class CurationObjects @Inject()(
           Ok(views.html.spaces.curationObject(c, m , isRDFExportEnabled, limit))
         }
       }
-      case None => BadRequest(views.html.notFound("Curation Object Not found")
+      case None => BadRequest(views.html.notFound("Curation Object Not found"))
     }
   }
 

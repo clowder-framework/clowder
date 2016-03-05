@@ -182,7 +182,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
 	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, userRoleMap))
       }
-      case None => BadRequest(views.html.notFound(("Space not found"))
+      case None => BadRequest(views.html.notFound("Space not found"))
     }
   }
 
