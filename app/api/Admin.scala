@@ -155,9 +155,9 @@ class Admin @Inject()(userService: UserService,
     responseClass = "None", httpMethod = "POST")
   def reindexElasticsearch = ServerAdminAction { implicit request =>
     current.plugin[ElasticsearchPlugin].map { _.deleteAll }
-//    collections.index(None)
+    collections.index(None)
     datasets.index(None)
-//    files.index(None)
+    files.index(None)
     Ok(toJson(Map("status" -> "Success")))
   }
 }
