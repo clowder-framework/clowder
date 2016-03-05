@@ -488,7 +488,11 @@ var listBtn=document.getElementById('list');
 var reindex=document.getElementById('reindexElasticsearch');
 reindex.onclick=function(evt){
 	var request= jsRoutes.api.Admin.reindexElasticsearch().ajax({
-		type:'POST'});
+		type:'POST',
+		beforeSend: function( xhr ) {
+			$('#reindexmsg').text( "In Progress");
+		}
+	});
 
 	request.done(function (response, textStatus, jqXHR){
 		//display info msg for delete all indexes

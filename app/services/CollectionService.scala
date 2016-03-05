@@ -81,11 +81,6 @@ trait CollectionService {
   def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[Collection]
 
   /**
-    * Return a list of collections.
-    */
-  def listCollections(): List[Collection]
-
-  /**
    * Get collection.
    */
   def get(id: UUID): Option[Collection]
@@ -191,5 +186,6 @@ trait CollectionService {
 
   def getRootSpaceIds(collectionId : UUID) : ListBuffer[UUID]
 
+  def index(id: Option[UUID])
 
 }

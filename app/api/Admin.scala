@@ -150,14 +150,14 @@ class Admin @Inject()(userService: UserService,
   }
 
 
-  @ApiOperation(value = "Create a collection",
+  @ApiOperation(value = "reindex all resources in elasticsearch",
     notes = "",
     responseClass = "None", httpMethod = "POST")
   def reindexElasticsearch = ServerAdminAction { implicit request =>
     current.plugin[ElasticsearchPlugin].map { _.deleteAll }
-    collections.listCollections() map { c => current.plugin[ElasticsearchPlugin].map { _.index(c, false) }}
-    datasets.listDatasets() map { d => current.plugin[ElasticsearchPlugin].map { _.index(d, false) }}
-    files.listFiles() map { f => current.plugin[ElasticsearchPlugin].map { _.index(f) }}
+//    collections.index(None)
+    datasets.index(None)
+//    files.index(None)
     Ok(toJson(Map("status" -> "Success")))
   }
 }

@@ -265,7 +265,7 @@ POST           /api/admin/users                                                 
 POST           /api/sensors/config                                                      @api.Admin.sensorsConfig
 DELETE         /api/delete-data                                                         @api.Admin.deleteAllData(resetAll: Boolean ?= false)
 POST           /api/changeAppearance                                                    @api.Admin.submitAppearance
-POST           /api/reindexElasticsearch                                                @api.Admin.reindexElasticsearch
+POST           /api/reindex                                                             @api.Admin.reindexElasticsearch
 
 #----------------------------------------------------------------------
 # JSON-LD METADATA
