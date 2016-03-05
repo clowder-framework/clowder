@@ -504,7 +504,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
         }
         case None => {
-          Logger.error("Error getting collection " + id); BadRequest("Collection not found")
+          Logger.error("Error getting collection " + id); BadRequest(views.html.notFound("Collection not found"))
         }
       }
   }
