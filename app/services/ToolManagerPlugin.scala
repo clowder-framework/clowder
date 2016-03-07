@@ -113,8 +113,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     * Update toolList from server to get list of eligible API endpoints to launch tools from.
     */
   def refreshLaunchableToolsFromServer(): Unit = {
-    val apipath = play.Play.application().configuration().getString("toolmanager.host") + ":" +
-                  play.Play.application().configuration().getString("toolmanager.port")
+    val apipath = play.Play.application().configuration().getString("toolmanagerURI")
     val statusRequest: Future[Response] = url(apipath+"/tools").get()
 
     statusRequest.map( response => {
@@ -133,8 +132,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     * Update instanceMap with server-side list, in case Plugin has been stopped
     */
   def refreshActiveInstanceListFromServer(): Unit = {
-    val apipath = play.Play.application().configuration().getString("toolmanager.host") + ":" +
-      play.Play.application().configuration().getString("toolmanager.port")
+    val apipath = play.Play.application().configuration().getString("toolmanagerURI")
     val statusRequest: Future[Response] = url(apipath+"/instances").get()
 
     statusRequest.map( response => {
@@ -214,8 +212,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     // Send request to API to launch Tool
     // TODO: Figure out something better than the key here
     val dsURL = hostURL+controllers.routes.Datasets.dataset(datasetId).url
-    val apipath = play.Play.application().configuration().getString("toolmanager.host") + ":" +
-                  play.Play.application().configuration().getString("toolmanager.port") + "/instances/" + toolPath
+    val apipath = play.Play.application().configuration().getString("toolmanagerURI") + "/instances/" + toolPath
     val statusRequest: Future[Response] = url(apipath).post(Json.obj(
       "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
       "key" -> play.Play.application().configuration().getString("commKey"),
@@ -310,8 +307,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     instanceMap.get(instanceID).map(instance => {
       instance.updateHistory(datasetId, oId)
 
-      val apipath = play.Play.application().configuration().getString("toolmanager.host") + ":" +
-        play.Play.application().configuration().getString("toolmanager.port") + "/instances/" + instance.toolPath
+      val apipath = play.Play.application().configuration().getString("toolmanagerURI") + "/instances/" + instance.toolPath
 
       val statusRequest: Future[Response] = url(apipath).put(Json.obj(
         "dataset" -> (dsURL.replace("/datasets", "/api/datasets")+"/download"),
@@ -333,8 +329,7 @@ class ToolManagerPlugin(application: Application) extends Plugin {
     * @param instanceID ID of ToolInstance to stop
     */
   def removeInstance(toolPath: String, instanceID: UUID): Unit = {
-    val apipath = play.Play.application().configuration().getString("toolmanager.host") + ":" +
-                  play.Play.application().configuration().getString("toolmanager.port") + "/instances/" + toolPath
+    val apipath = play.Play.application().configuration().getString("toolmanagerURI") + "/instances/" + toolPath
 
     instanceMap.get(instanceID).map( ts => {
       val instanceApiID = ts.externalId // External identifier on NDS api
