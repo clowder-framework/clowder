@@ -1,0 +1,13 @@
+#!/bin/bash
+
+echo $*
+
+# $1 dataset download URL
+# $2 clowder access key
+# $3 destination directory path
+
+echo curl --connect-timeout 10 -o $3/data/dataset.zip $1?key=$2
+curl --connect-timeout 10 -o $3/data/dataset.zip $1?key=$2 > $3/data/xfer-out 2>&1
+chown -R 1000:100 $3
+unzip -o $3/data/dataset.zip -d $3/data
+rm $3/data/dataset.zip

@@ -1,0 +1,275 @@
+#!/usr/bin/python
+
+import os, json
+import arrow
+from flask import Flask, request
+from flask.ext import restful
+from flask_restful import reqparse, abort, Api, Resource
+
+app = Flask(__name__) 
+api = restful.Api(app)
+
+id_parser = reqparse.RequestParser()
+id_parser.add_argument('id')
+
+post_parser = reqparse.RequestParser()
+post_parser.add_argument('name') # human-readable name to refer to instance for displaying running list
+post_parser.add_argument('dataset') # Clowder download path e.g. "http://0.0.0.0:9000/clowder/api/datasets/<ds_id>/download"
+post_parser.add_argument('datasetId') # Clowder dataset Id separate from full path, for generating upload history
+post_parser.add_argument('datasetName') # Clowder dataset name for generating upload history
+post_parser.add_argument('key') # Clowder key
+post_parser.add_argument('ownerId') # UUID of user in Clowder who is creating this instance
+
+put_parser = reqparse.RequestParser()
+put_parser.add_argument('id') # tool containerID to upload dataset into
+put_parser.add_argument('dataset') # Clowder download path e.g. "http://0.0.0.0:9000/clowder/api/datasets/<ds_id>/download"
+put_parser.add_argument('datasetId') # Clowder dataset Id separate from full path, for generating upload history
+put_parser.add_argument('datasetName') # Clowder dataset name for generating upload history
+put_parser.add_argument('key') # Clowder key
+put_parser.add_argument('uploaderId') # UUID of user in Clowder who is uploading this dataset
+
+# TODO: Move these parameters somewhere else?
+PORTNUM = "8080"
+configPath = "/usr/local/data/toolconfig.json"
+instancesPath = "/usr/local/data/instances.json"
+
+
+
+"""Allow remote user to get contents of toolserver logs"""
+class DockerLog(restful.Resource):
+
+    def get(self):
+        cmd = '/usr/bin/docker logs toolserver'
+        logtext = os.popen(cmd).read().rstrip()
+        return logtext, 200
+
+"""Main class for instances of tools"""
+class ToolInstance(restful.Resource):
+
+    def get(self, toolPath):
+        """ Get details of running instance """
+        args = id_parser.parse_args()
+        cfg = config[toolPath]
+        containerID = str(args['id'])
+
+        if containerID in instanceAttrs:
+            return {
+                "toolPath": toolPath,
+                "name": instanceAttrs[containerID]["name"],
+                "url": instanceAttrs[containerID]["url"],
+                "created": instanceAttrs[containerID]["created"],
+                "ownerId": instanceAttrs[containerID]["ownerId"],
+                "uploadHistory": instanceAttrs[containerID]["uploadHistory"],
+                "toolName": cfg["toolName"],
+                "description": cfg["description"]
+            }, 200
+        else:
+            return "Container not found", 404
+
+    def delete(self, toolPath):
+        """ Delete a tool instance """
+        args = id_parser.parse_args()
+        containerID = str(args['id'])
+
+        # Remove container
+        cmd = 'docker rm -f -v '+containerID
+        os.popen(cmd).read().rstrip()
+        # Remove from list
+        del instanceAttrs[containerID]
+
+        writeInstanceAttrsToFile()
+
+        return containerID+" removed", 200
+
+    def post(self, toolPath):
+        """ Create a new instance of requested tool container """
+        args = post_parser.parse_args()
+        cfg = config[toolPath]
+        host = request.url_root[:request.url_root.find(":"+PORTNUM)]
+
+        # Create the tool container
+        toolCmd = "/usr/bin/docker create -P -v "+cfg['dataPath']+"/data "+cfg['dockerSrc']
+        containerID = os.popen(toolCmd).read().rstrip()
+        print "CONTAINER ID: ", containerID
+
+        # Do data transfer container in another container
+        xferCmd = '/usr/bin/docker run --rm -i --volumes-from '+containerID+' maxzilla2/toolserver:latest /usr/local/bin/clowder-xfer '+str(args['dataset'])+' '+str(args['key'])+' '+cfg['dataPath']
+        os.popen(xferCmd).read().rstrip()
+
+        # Start the tool
+        startCmd = '/usr/bin/docker start '+containerID
+        os.popen(startCmd).read().rstrip()
+
+        # Get and remap port for tool
+        portCmd = "/usr/bin/docker inspect --format '{{(index (index .NetworkSettings.Ports \""+cfg['mappedPort']+"\") 0).HostPort}}' "+containerID
+        port = os.popen(portCmd).read().rstrip()
+
+        # Make a record of this container's URL for later reference
+        currTime = arrow.now().isoformat()
+        instanceAttrs[containerID] = {
+            "toolPath": toolPath,
+            "name": str(args['name']),
+            "url": host+":"+port,
+            "created": currTime,
+            "ownerId": str(args['ownerId']),
+            "uploadHistory": [{
+                "url":str(args['dataset']),
+                "time": currTime,
+                "uploaderId": str(args['ownerId']),
+                "datasetName": str(args['datasetName']),
+                "datasetId": str(args['datasetId'])
+            }]
+        }
+
+        writeInstanceAttrsToFile()
+
+        # TODO: initial notebook has code or script or help file to assist in transfer of files back to clowder
+
+        return {
+           'id': containerID,
+           'URL': host+":"+port
+        }, 201
+
+    def put(self, toolPath):
+        """ Download another dataset into container """
+        args = put_parser.parse_args()
+        containerID = str(args['id'])
+
+        # Do data transfer container in another container
+        xferCmd = '/usr/bin/docker run --rm -i --volumes-from '+str(args['id'])+' maxzilla2/toolserver:latest /usr/local/bin/clowder-xfer '+str(args['dataset'])+' '+str(args['key'])+' '+config[toolPath]['dataPath']
+        os.popen(xferCmd).read().rstrip()
+
+
+        instanceAttrs[containerID]["uploadHistory"].append({
+            "url": str(args["dataset"]),
+            "time": arrow.now().isoformat(),
+            "uploaderId": str(args['uploaderId']),
+            "datasetName": str(args['datasetName']),
+            "datasetId": str(args['datasetId'])
+        })
+
+        writeInstanceAttrsToFile()
+
+        return 204
+
+"""Main class for tool definitions, pulling necessary config vars from toolconfig.json"""
+class Toolbox(restful.Resource):
+
+    def get(self):
+        """ Get a list of eligible tool endpoints that can be called. If toolPath given, return details of specific tool """
+
+        tools = {}
+        for toolPath in config.keys():
+            tools[toolPath] = {
+                "name": config[toolPath]["toolName"],
+                "description": config[toolPath]["description"]
+            }
+
+        return tools, 200
+
+    def delete(self):
+        """ Delete tool endpoint from config file """
+
+        return 200
+
+    def post(self):
+        """ Add new tool endpoint to config file """
+
+        return 201
+
+    def put(self):
+        """ Update existing tool endpoint in config file """
+
+        return 200
+
+"""Used to fetch entire set of running instances for populating manager list"""
+class Instances(restful.Resource):
+
+    def get(self):
+        """ Return attributes of all running tool instances """
+        instances = {}
+        for containerID in instanceAttrs:
+            instances[containerID] = instanceAttrs[containerID]
+
+            # Add some additional tool info from the config data before returning
+            cfg = config[instances[containerID]["toolPath"]]
+            instances[containerID]["toolName"] = cfg["toolName"]
+            instances[containerID]["description"] = cfg["description"]
+
+        return instances, 200
+
+
+
+"""Get configured tools from json file"""
+def getConfig(path=configPath):
+    """config file should be a set of definition objects like so:
+        {"toolPath": {
+                "toolName"      Human-readable name of the tool, e.g. to display in selection menus.
+                "description"   Brief description of tool for users.
+                "dockerSrc"     Container source on dockerhub.
+                "dataPath"      Path where uploaded datasets will be downloaded.
+                "mappedPort"    This is used to map ports for containers of this type using docker inspect.
+            },
+            {...},
+            {...}}
+    """
+    confFile = open(path)
+    config = json.load(confFile)
+    confFile.close()
+    return config
+
+"""Get previously written instance attributes from json file, creating file if it doesn't exist"""
+def getInstanceAttrsFromFile(path=instancesPath):
+    """instances file stores attributes of running instances so metadata is available after service restart:
+        {"containerID": {
+                "toolPath"      Reference to which type of tool this instance is (i.e. key in config)
+                "name"          Human-readable name to be displayed in Clowder user interface
+                "url"           URL for reaching instance from outside
+                "created"       Timestamp when container was created
+                "ownerId"       UUID of owner in Clowder,
+                "uploadHistory" List of objects tracking {url, time, uploaderId, datasetName, datasetId} for each file uploaded to instance
+            },
+            {...},
+            {...}}
+    """
+    if not os.path.exists(path):
+        # Create an empty file if it doesn't exist already
+        instFile = open(path, 'w')
+        instFile.write("{}")
+        instFile.close()
+
+    # TODO: remove entries from this object if there are no matching docker containers
+    instFile = open(path)
+    attrs = json.load(instFile)
+    instFile.close()
+    return attrs
+
+"""Write current instanceAttrs object to file"""
+def writeInstanceAttrsToFile(path=instancesPath):
+    # We don't care what the current contents are; they should either already be loaded or are outdated. Overwrite 'em.
+    instFile = open(path, 'w')
+    instFile.write(json.dumps(instanceAttrs))
+    instFile.close()
+
+
+
+# Initialize tool configuration and load any instance data from previous runs
+config = getConfig()
+instanceAttrs = getInstanceAttrsFromFile()
+
+# ENDPOINTS ----------------
+# /tools will fetch summary of available tools that can be launched
+api.add_resource(Toolbox, '/tools') # TODO: Allo /tools/<toolPath> to get more details about specific tool
+
+# /instances will fetch the list of instances that are running on the server
+api.add_resource(Instances, '/instances')
+
+# /instances/toolPath fetches details of a particular instance, including URL, owner, history, etc.
+api.add_resource(ToolInstance, '/instances/<string:toolPath>')
+
+# /logs should return docker logs for the requested toolPath TODO: remove?
+api.add_resource(DockerLog, '/logs')
+# ----------------------------
+
+if __name__ == '__main__':
+    app.run(host="0.0.0.0", port=int(PORTNUM), debug=True)
