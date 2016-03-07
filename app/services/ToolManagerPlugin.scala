@@ -91,6 +91,8 @@ class ToolManagerPlugin(application: Application) extends Plugin {
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
 
+  //TODO: decide on terminology. API has "tools" and "instances" - should we have Instance Manager? consistent naming!
+
   override def onStart() {
     Logger.debug("Initializing ToolManagerPlugin")
     refreshLaunchableToolsFromServer()
@@ -162,6 +164,8 @@ class ToolManagerPlugin(application: Application) extends Plugin {
               instance.setToolInfo(
                 (j \ externalID \ "toolPath").toString.replace("\"",""),
                 (j \ externalID \ "toolName").toString.replace("\"",""))
+
+              // TODO: normalize time zone - server time is currently shown as-received
               val t = (j \ externalID \ "created").toString.replace("\"","")
               instance.setTimes(t, t)
 
