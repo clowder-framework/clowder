@@ -292,7 +292,7 @@ class Datasets @Inject()(
     Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title, owner, when, date))
   }
 
-  def addViewer(id: UUID, user: Option[securesocial.core.Identity]) = {
+  def addViewer(id: UUID, user: Option[User]) = {
       user match{
             case Some(viewer) => {
               implicit val email = viewer.email

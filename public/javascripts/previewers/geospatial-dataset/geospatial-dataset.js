@@ -9,7 +9,7 @@
 		// setting up ajax call to get file from the dataset
 		var file_req = $.ajax({
 			type: "GET",
-			url: jsRoutes.api.Datasets.datasetFilesList(dataset_id).url,
+			url: jsRoutes.api.Datasets.datasetAllFilesList(dataset_id).url,
 			dataType: "json"
 		});
 
