@@ -12,7 +12,7 @@ import securesocial.core.Identity
 case class CurationObject (
   id: UUID = UUID.generate,
   name: String = "",
-  author: Identity,
+  author: MiniUser,
   description: String = "",
   created: Date,
   submittedDate: Option[Date],

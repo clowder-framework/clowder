@@ -175,7 +175,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "Label" -> Json.toJson(c.name),
                   "Title" -> Json.toJson(c.name),
                   "Dataset Description" -> Json.toJson(c.description),
-                  "Uploaded By" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " + api.routes.Users.findById(usr.id).absoluteURL(https)))),
+                  "Uploaded By" -> Json.toJson(userService.findById(c.author.id).map ( usr => Json.toJson(usr.fullName + ": " + api.routes.Users.findById(usr.id).absoluteURL(https)))),
                   "Publication Date" -> Json.toJson(publicationDate),
                   "Published In" -> Json.toJson(""),
                   "External Identifier" -> Json.toJson(""),
@@ -190,7 +190,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "Publishing Project"-> Json.toJson(controllers.routes.Spaces.getSpace(c.space).absoluteURL(https))
                 )),
               "Creation Date" -> Json.toJson(format.format(c.created)),
-              "Uploaded By" -> Json.toJson(userService.findByIdentity(c.author).map ( usr => Json.toJson(usr.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https)))),
+              "Uploaded By" -> Json.toJson(userService.findById(c.author.id).map ( usr => Json.toJson(usr.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https)))),
               "@type" -> Json.toJson("ResourceMap"),
               "@id" -> Json.toJson(api.routes.CurationObjects.getCurationObjectOre(curationId).absoluteURL(https))
             )
