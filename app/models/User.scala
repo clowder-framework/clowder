@@ -10,7 +10,6 @@ import securesocial.core._
 /**
  * Simple class to capture basic User Information. This is similar to Identity in securesocial
  *
- * @author Rob Kooper
  */
 trait User extends Identity {
   def id: UUID

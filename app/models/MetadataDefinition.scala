@@ -1,10 +1,8 @@
 package models
 
-import java.net.URL
-
 import play.api.Logger
 import play.api.libs.json._
-import services.{MetadataService, DI, UserService}
+import services.{MetadataService, DI}
 
 /**
  * Definition of metadata fields to present to the user a list of options.

@@ -3,7 +3,6 @@ package models
 /**
  * Contains information about an authorization request
  *
- * @author Yan Zhao
  */
 
 case class RequestResource(

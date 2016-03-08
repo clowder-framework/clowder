@@ -7,8 +7,6 @@ import play.api.libs.json.JsString
 
 /**
  * Model for Context in Json-ld
- * @author Smruti Padhy
- * @author Rob Kooper
  */
 
 case class ContextLD(
