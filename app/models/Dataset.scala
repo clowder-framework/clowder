@@ -4,6 +4,8 @@ import com.mongodb.casbah.Imports._
 import java.util.Date
 import play.api.libs.json.{Writes, Json}
 import play.api.libs.json._
+import securesocial.core.Identity
+
 /**
  * A dataset is a collection of files, and streams.
  */

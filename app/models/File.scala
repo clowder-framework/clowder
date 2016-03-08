@@ -1,7 +1,7 @@
 package models
 
 import java.util.Date
-
+import securesocial.core.Identity
 import play.api.libs.json.{JsObject, Json, Writes}
 
 /**

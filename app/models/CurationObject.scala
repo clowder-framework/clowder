@@ -1,9 +1,10 @@
 package models
 
-import java.net.{URL, URI}
+import java.net.URI
 import java.util.Date
 import play.api.libs.json.Json._
 import play.api.libs.json._
+import securesocial.core.Identity
 
 /**
  * A Curation Object assists researchers and curators to identify sets of resources for publication.
