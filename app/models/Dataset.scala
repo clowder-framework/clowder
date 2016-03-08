@@ -13,7 +13,7 @@ import play.api.libs.functional.syntax._
 case class Dataset(
   id: UUID = UUID.generate,
   name: String = "N/A",
-  author: Identity,
+  author: MiniUser,
   description: String = "N/A",
   created: Date,
   files: List[UUID] = List.empty,
@@ -42,7 +42,7 @@ object Dataset {
         dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)
       }
       Json.obj("id" -> dataset.id.toString, "name" -> dataset.name, "description" -> dataset.description,
-        "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail, "authorId" -> dataset.author.identityId.userId)
+        "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail, "authorId" -> dataset.author.id)
     }
   }
 }

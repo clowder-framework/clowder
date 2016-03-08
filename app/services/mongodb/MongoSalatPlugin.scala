@@ -21,6 +21,7 @@ import com.mongodb.casbah.gridfs.GridFS
 import org.bson.types.ObjectId
 import services.filesystem.DiskByteStorageService
 import services.{MetadataService, DI, AppConfigurationService}
+import scala.collection.mutable.ListBuffer
 
 /**
  * Mongo Salat service.
@@ -296,6 +297,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //Append the current notes to the end of the description in datasets. And delete the notes field
     updateMongo("migrate-notes-datasets", migrateNotesInDatasets)
+
+    // Change creator in dataset from Identity to MiniUser.
+    updateMongo("update-author-datasets", updateCreatorInDatasets)
+
+    updateMongo("update-author-datasets-curations", updateCreatorInCurationObjectDatasets)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -739,5 +745,51 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     }
   }
+
+  private def updateCreatorInDatasets() {
+    collection("datasets").foreach { ds =>
+      val author = ds.getAsOrElse[BasicDBObject]("author", new BasicDBObject())
+      val id = author.getAsOrElse[ObjectId]("_id", new ObjectId())
+      val fullName = author.getAsOrElse[String]("fullName", "")
+      val avatarUrl = author.getAsOrElse[String]("avatarUrl", "")
+      val email = author.getAsOrElse[String]("email", "")
+      val miniUser = Map("_id" -> id, "fullName" -> fullName, "avatarURL" -> avatarUrl, "email" -> email)
+      ds.remove("author")
+      ds.put("author", miniUser)
+      try{
+        collection("datasets").save(ds, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update the user in dataset from IdentityId to MiniUser")
+      }
+    }
+  }
+
+  private def updateCreatorInCurationObjectDatasets() {
+    collection("curationObjects").foreach { co =>
+      val datasets: MongoDBList = co.getAsOrElse[MongoDBList]("datasets", new MongoDBList())
+      datasets.foreach{ ds =>
+        ds match {
+          case dataset: DBObject => {
+            val author = dataset.getAsOrElse[BasicDBObject]("author", new BasicDBObject())
+            val id = author.getAsOrElse[ObjectId]("_id", new ObjectId())
+            val fullName = author.getAsOrElse[String]("fullName", "")
+            val avatarUrl = author.getAsOrElse[String]("avatarUrl", "")
+            val email = author.getAsOrElse[String]("email", "")
+            val miniUser = Map("_id" -> id, "fullName" -> fullName, "avatarURL" -> avatarUrl, "email" -> email)
+            dataset.remove("author")
+            dataset.put("author", miniUser)
+          }
+          case None => Logger.error("Can not parse the datasets within the curation Object with id: " + co.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+        }
+      }
+      co.put("datasets", datasets)
+      try{
+        collection("curationObjects").save(co, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update the user in dataset from IdentityId to MiniUser")
+      }
+    }
+  }
+
 
 }

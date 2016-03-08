@@ -30,7 +30,7 @@ import scala.collection.mutable.ListBuffer
  */
 @Api(value = "/datasets", listingPath = "/api-docs.json/datasets", description = "A dataset is a container for files and metadata")
 @Singleton
-class Datasets @Inject()(
+class  Datasets @Inject()(
   datasets: DatasetService,
   files: FileService,
   collections: CollectionService,
@@ -123,10 +123,10 @@ class Datasets @Inject()(
       user match {
         case Some(identity) => {
           (request.body \ "space").asOpt[String] match {
-            case None | Some("default") => d = Dataset(name=name,description=description, created=new Date(), author=identity, licenseData = License.fromAppConfig())
+            case None | Some("default") => d = Dataset(name=name,description=description, created=new Date(), author=identity.getMiniUser, licenseData = License.fromAppConfig())
             case Some(spaceId) =>
               spaces.get(UUID(spaceId)) match {
-                case Some(s) => d = Dataset(name=name,description=description, created=new Date(), author=identity, licenseData = License.fromAppConfig(), spaces = List(UUID(spaceId)))
+                case Some(s) => d = Dataset(name=name,description=description, created=new Date(), author=identity.getMiniUser, licenseData = License.fromAppConfig(), spaces = List(UUID(spaceId)))
                 case None => BadRequest(toJson("Bad space = " + spaceId))
               }
           }
@@ -194,7 +194,7 @@ class Datasets @Inject()(
         case Some(identity) => {
           (request.body \ "space").asOpt[List[String]] match {
             case None | Some(List("default"))=>
-              d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig())
+              d = Dataset(name = name, description = description, created = new Date(), author = identity.getMiniUser, licenseData = License.fromAppConfig())
             case Some(space) =>
               var spaceList: List[UUID] = List.empty;
               space.map {
@@ -204,7 +204,7 @@ class Datasets @Inject()(
                   BadRequest(toJson("Bad space = " + aSpace))
                 }
               }
-              d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig(), spaces = spaceList)
+              d = Dataset(name = name, description = description, created = new Date(), author = identity.getMiniUser, licenseData = License.fromAppConfig(), spaces = spaceList)
            }
         }
         case None => InternalServerError("User Not found")
