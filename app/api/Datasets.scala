@@ -1242,7 +1242,7 @@ class  Datasets @Inject()(
         case Some(identity) => {
           request.body.\("text").asOpt[String] match {
             case Some(text) => {
-              val comment = new Comment(identity, text, dataset_id = Some(id))
+              val comment = new Comment(identity.getMiniUser, text, dataset_id = Some(id))
               comments.insert(comment)
               datasets.index(id)
               datasets.get(id) match {

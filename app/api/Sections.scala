@@ -161,7 +161,7 @@ class Sections @Inject()(
         case Some(identity) => {
           (request.body \ "text").asOpt[String] match {
             case Some(text) => {
-              val comment = new Comment(identity, text, section_id = Some(id))
+              val comment = new Comment(identity.getMiniUser, text, section_id = Some(id))
               comments.insert(comment)
               Ok(comment.id.toString())
             }

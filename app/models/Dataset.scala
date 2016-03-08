@@ -2,10 +2,8 @@ package models
 
 import com.mongodb.casbah.Imports._
 import java.util.Date
-import play.api.libs.json.{JsObject, Writes, Json}
-import securesocial.core.Identity
+import play.api.libs.json.{Writes, Json}
 import play.api.libs.json._
-import play.api.libs.functional.syntax._
 
 /**
  * A dataset is a collection of files, and streams.

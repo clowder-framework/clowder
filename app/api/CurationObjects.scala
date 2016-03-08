@@ -90,7 +90,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "comment_body" -> Json.toJson(comm.text),
               "comment_date" -> Json.toJson(format.format(comm.posted)),
               "Identifier" -> Json.toJson("urn:uuid:"+comm.id),
-              "comment_author" -> Json.toJson(userService.findByIdentity(comm.author).map ( usr => Json.toJson(usr.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https))))
+              "comment_author" -> Json.toJson(userService.findById(comm.author.id).map ( usr => Json.toJson(usr.fullName + ": " +  api.routes.Users.findById(usr.id).absoluteURL(https))))
             ))
           }
           var metadataList = scala.collection.mutable.ListBuffer.empty[MetadataPair]

@@ -2,7 +2,6 @@ package models
 
 import java.util.Date
 import play.api.libs.json.{Json, JsValue, Writes}
-import securesocial.core.Identity
 
 case class Collection(
   id: UUID = UUID.generate,

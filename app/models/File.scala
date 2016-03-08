@@ -3,8 +3,6 @@ package models
 import java.util.Date
 
 import play.api.libs.json.{JsObject, Json, Writes}
-import securesocial.core.Identity
-
 
 /**
  * Uploaded files.
