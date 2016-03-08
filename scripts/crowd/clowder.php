@@ -92,7 +92,7 @@ function crowd_cookie_check($cookie) {
   $user['lastName'] = (string)$data->{'last-name'};
   $user['fullName'] = (string)$data->{'display-name'};
   $user['email'] =  (string)$data->{'email'};
-  //$user['avatarUrl'] = (string)$data->{'avatar'};
+  $user['avatarURL'] = (string)$data->{'avatar'};
   return $user;
 }
 

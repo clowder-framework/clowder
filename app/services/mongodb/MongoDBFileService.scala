@@ -159,9 +159,9 @@ class MongoDBFileService @Inject() (
   /**
    * Save blob.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: User, showPreviews: String = "DatasetLevel"): Option[File] = {
+  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File] = {
     val extra = Map("showPreviews" -> showPreviews,
-                    "author" -> SocialUserDAO.toDBObject(author),
+                    "author" -> MiniUserDAO.toDBObject(author),
                     "licenseData" -> grater[LicenseData].asDBObject(License.fromAppConfig()))
     MongoUtils.writeBlob[File](inputStream, filename, contentType, extra, "uploads", "medici2.mongodb.storeFiles").flatMap(x => get(x._1))
   }

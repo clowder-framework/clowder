@@ -775,7 +775,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       try{
         collection("collections").save(c, WriteConcern.Safe)
       } catch {
-        case e: BSONException => Logger.error("Unable to update the user in dataset from IdentityId to MiniUser")
+        case e: BSONException => Logger.error("Unable to update the user in collection from Identity to MiniUser with id: " + c.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
       }
     }
   }
@@ -793,7 +793,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       try{
         collection("uploads.files").save(file, WriteConcern.Safe)
       } catch {
-        case e: BSONException => Logger.error("Unable to update the user in dataset from IdentityId to MiniUser")
+        case e: BSONException => Logger.error("Unable to update the user in file from Identity to MiniUser with Id: " + file.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
       }
     }
   }
@@ -811,7 +811,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       try{
         collection("datasets").save(ds, WriteConcern.Safe)
       } catch {
-        case e: BSONException => Logger.error("Unable to update the user in dataset from IdentityId to MiniUser")
+        case e: BSONException => Logger.error("Unable to update the user in dataset from Identity to MiniUser with Id: " + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
       }
     }
   }
@@ -838,7 +838,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       try{
         collection("curationObjects").save(co, WriteConcern.Safe)
       } catch {
-        case e: BSONException => Logger.error("Unable to update the user in dataset from IdentityId to MiniUser")
+        case e: BSONException => Logger.error("Unable to update the user in dataset within curation object with Id: " + co.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
       }
     }
   }
@@ -856,7 +856,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       try{
         collection("curationObjects").save(co, WriteConcern.Safe)
       } catch {
-        case e: BSONException => Logger.error("Unable to update the user in dataset from IdentityId to MiniUser")
+        case e: BSONException => Logger.error("Unable to update the user in curation object from Identity to MiniUser with id: " + co.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
       }
     }
   }
@@ -874,7 +874,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       try{
         collection("curationFiles").save(cf, WriteConcern.Safe)
       } catch {
-        case e: BSONException => Logger.error("Unable to update the user in dataset from IdentityId to MiniUser")
+        case e: BSONException => Logger.error("Unable to update the user in curation file from Identity to MiniUser with id " + cf.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
       }
     }
   }
@@ -892,7 +892,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       try{
         collection("comments").save(c, WriteConcern.Safe)
       } catch {
-        case e: BSONException => Logger.error("Unable to update the user in dataset from IdentityId to MiniUser")
+        case e: BSONException => Logger.error("Unable to update the user in comment from Identity to MiniUser with id: " + c.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
       }
     }
   }

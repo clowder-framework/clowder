@@ -64,7 +64,7 @@ class Extractions @Inject()(
 
               Logger.debug("Uploading file " + nameOfFile)
               // store file
-              val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, user, showPreviews)
+              val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, user.getMiniUser, showPreviews)
               val uploadedFile = f
               file match {
                 case Some(f) => {
@@ -188,7 +188,7 @@ class Extractions @Inject()(
               source = url.openConnection().getInputStream()
               val contentType = MimeTypes.forFileName(filename.toLowerCase()).getOrElse(ContentTypes.BINARY)
               Logger.debug("ContentType of the file: " + contentType)
-              val file = files.save(source, filename, Some(contentType), user, null)
+              val file = files.save(source, filename, Some(contentType), user.getMiniUser, null)
               file match {
                 case Some(f) => {
                   var fileType = f.contentType
@@ -252,7 +252,7 @@ class Extractions @Inject()(
             val fid = for {response <- futureResponse} yield {
               if (response.status == 200) {
                 val inputStream: InputStream = response.ahcResponse.getResponseBodyAsStream()
-                val file = files.save(inputStream, filename, response.header("Content-Type"), user, null)
+                val file = files.save(inputStream, filename, response.header("Content-Type"), user.getMiniUser, null)
                 file match {
                   case Some(f) => {
                     var fileType = f.contentType

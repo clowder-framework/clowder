@@ -400,7 +400,7 @@ class Files @Inject()(
       }
     }
     val realUserName = realUser.fullName
-    val savedFile = files.save(new FileInputStream(file.ref.file), nameOfFile, file.contentType, realUser)
+    val savedFile = files.save(new FileInputStream(file.ref.file), nameOfFile, file.contentType, realUser.getMiniUser)
     Logger.info("Uploading Completed")
 
     // submit file for extraction
