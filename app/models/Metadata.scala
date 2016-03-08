@@ -37,8 +37,6 @@ trait Agent {
   def typeOfAgent_= (s: String): Unit
 }
 
-trait RDFModel
-
 case class RDFModel(model: org.apache.jena.rdf.model.Model)
 
 // User through the GUI
