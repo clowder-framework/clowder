@@ -93,7 +93,7 @@ class ToolInstance(restful.Resource):
         print "CONTAINER ID: ", containerID
 
         # Do data transfer container in another container
-        xferCmd = '/usr/bin/docker run --rm -i --volumes-from '+containerID+' maxzilla2/toolserver:latest /usr/local/bin/clowder-xfer '+str(args['dataset'])+' '+str(args['key'])+' '+cfg['dataPath']
+        xferCmd = '/usr/bin/docker run --rm -i --volumes-from '+containerID+' maxzilla2/toolserver:latest /usr/local/bin/clowder-xfer '+str(args['dataset'])+' '+str(args['datasetId'])+' '+str(args['key'])+' '+cfg['dataPath']
         os.popen(xferCmd).read().rstrip()
 
         # Start the tool

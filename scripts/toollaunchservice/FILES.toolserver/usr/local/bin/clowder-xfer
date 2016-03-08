@@ -3,11 +3,13 @@
 echo $*
 
 # $1 dataset download URL
-# $2 clowder access key
-# $3 destination directory path
+# $2 dataset ID
+# $3 clowder access key
+# $4 destination directory path
 
-echo curl --connect-timeout 10 -o $3/data/dataset.zip $1?key=$2
-curl --connect-timeout 10 -o $3/data/dataset.zip $1?key=$2 > $3/data/xfer-out 2>&1
-chown -R 1000:100 $3
-unzip -o $3/data/dataset.zip -d $3/data
-rm $3/data/dataset.zip
+echo curl --connect-timeout 10 -o $4/data/dataset.zip $1?key=$3
+curl --connect-timeout 10 -o $4/data/dataset.zip $1?key=$3 > $4/data/xfer-out 2>&1
+chmod -R 777 $4
+mkdir $4/data/$2
+unzip -o $4/data/dataset.zip -d $4/data/$2
+rm $4/data/dataset.zip
