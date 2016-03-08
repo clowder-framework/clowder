@@ -27,7 +27,7 @@
                 <span class="glyphicon glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
                 <span class="glyphicon glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
                 @if(user.isDefined) {
-                    @if(user.get.identityId.userId.equals(file.author.identityId.userId) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
+                    @if(user.get.identityId.userId.equals(file.author.id) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
                         <button onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))','@redirect')" class="btn btn-link" style="text-align:right" title="Delete">
                         <span class="glyphicon glyphicon-trash"></span></button>
                     }

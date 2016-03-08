@@ -19,7 +19,7 @@
                                 <span class="glyphicon glyphicon-comment" title="@(comments.get(file.id)) comments"></span> @(comments.get(file.id))
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                                    @if(user.get.identityId.userId.equals(file.author.identityId.userId) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
+                                    @if(user.get.identityId.userId.equals(file.author.id) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
                                         <button onclick="
                                                 @folder match {
                                                     case None => {confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))','@redirect')}

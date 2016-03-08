@@ -126,7 +126,7 @@ case class CurationFile(
   fileId: UUID,
   path: Option[String] = None,
   filename: String,
-  author: Identity,
+  author: MiniUser,
   uploadDate: Date,
   contentType: String,
   length: Long = 0,

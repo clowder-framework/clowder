@@ -309,6 +309,12 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //Change creator in curation object from Identity to MiniUser.
     updateMongo("update-author-curation-object", updateCreatorInCurationObjects)
+
+    //Change creator in files from Identity to MiniUser
+    updateMongo("update-author-files", updateCreatorInFiles)
+
+    //Change creatior in curation files from Identity to MiniUser
+    updateMongo("update-mongo-curation-files", updateCreatorInCurationFiles )
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -753,6 +759,42 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
+  private def updateCreatorInCollections() {
+    collection("collections").foreach { c =>
+      val author = c.getAsOrElse[BasicDBObject]("author", new BasicDBObject())
+      val id = author.getAsOrElse[ObjectId]("_id", new ObjectId())
+      val fullName = author.getAsOrElse[String]("fullName", "")
+      val avatarUrl = author.getAsOrElse[String]("avatarUrl", "")
+      val email = author.getAsOrElse[String]("email", "")
+      val miniUser = Map("_id" -> id, "fullName" -> fullName, "avatarURL" -> avatarUrl, "email" -> email)
+      c.remove("author")
+      c.put("author", miniUser)
+      try{
+        collection("collections").save(c, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update the user in dataset from IdentityId to MiniUser")
+      }
+    }
+  }
+
+  private def updateCreatorInFiles() {
+    collection("uploads.files").foreach { file =>
+      val author = file.getAsOrElse[BasicDBObject]("author", new BasicDBObject())
+      val id = author.getAsOrElse[ObjectId]("_id", new ObjectId())
+      val fullName = author.getAsOrElse[String]("fullName", "")
+      val avatarUrl = author.getAsOrElse[String]("avatarUrl", "")
+      val email = author.getAsOrElse[String]("email", "")
+      val miniUser = Map("_id" -> id, "fullName" -> fullName, "avatarURL" -> avatarUrl, "email" -> email)
+      file.remove("author")
+      file.put("author", miniUser)
+      try{
+        collection("uploads.files").save(file, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update the user in dataset from IdentityId to MiniUser")
+      }
+    }
+  }
+
   private def updateCreatorInDatasets() {
     collection("datasets").foreach { ds =>
       val author = ds.getAsOrElse[BasicDBObject]("author", new BasicDBObject())
@@ -798,25 +840,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
-  private def updateCreatorInCollections() {
-    collection("collections").foreach { c =>
-      val author = c.getAsOrElse[BasicDBObject]("author", new BasicDBObject())
-      val id = author.getAsOrElse[ObjectId]("_id", new ObjectId())
-      val fullName = author.getAsOrElse[String]("fullName", "")
-      val avatarUrl = author.getAsOrElse[String]("avatarUrl", "")
-      val email = author.getAsOrElse[String]("email", "")
-      val miniUser = Map("_id" -> id, "fullName" -> fullName, "avatarURL" -> avatarUrl, "email" -> email)
-      c.remove("author")
-      c.put("author", miniUser)
-      try{
-        collection("collections").save(c, WriteConcern.Safe)
-      } catch {
-        case e: BSONException => Logger.error("Unable to update the user in dataset from IdentityId to MiniUser")
-      }
-    }
-  }
-
-
   private def updateCreatorInCurationObjects() {
     collection("curationObjects").foreach { co =>
       val author = co.getAsOrElse[BasicDBObject]("author", new BasicDBObject())
@@ -835,5 +858,22 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
+  private def updateCreatorInCurationFiles() {
+    collection("curationFiles").foreach { cf =>
+      val author = cf.getAsOrElse[BasicDBObject]("author", new BasicDBObject())
+      val id = author.getAsOrElse[ObjectId]("_id", new ObjectId())
+      val fullName = author.getAsOrElse[String]("fullName", "")
+      val avatarUrl = author.getAsOrElse[String]("avatarUrl", "")
+      val email = author.getAsOrElse[String]("email", "")
+      val miniUser = Map("_id" -> id, "fullName" -> fullName, "avatarURL" -> avatarUrl, "email" -> email)
+      cf.remove("author")
+      cf.put("author", miniUser)
+      try{
+        collection("curationFiles").save(cf, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update the user in dataset from IdentityId to MiniUser")
+      }
+    }
+  }
 
 }
