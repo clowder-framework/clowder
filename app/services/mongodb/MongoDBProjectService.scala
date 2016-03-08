@@ -10,7 +10,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
 
 /**
- * @author Will Hennessy
+ *
  */
 class MongoDBProjectService extends ProjectService {
 

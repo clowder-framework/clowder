@@ -12,7 +12,7 @@ import com.mongodb.casbah.Imports._
 import com.novus.salat.dao.SalatMongoCursor
 
 /**
- * @author Varun Kethineedi
+ *
  */
 class MongoDBSchedulerService extends SchedulerService {
 

@@ -13,7 +13,7 @@ import com.mongodb.casbah.Imports._
 import com.novus.salat.dao.SalatMongoCursor
 
 /**
- * @author Varun Kethineedi
+  *
  */
 class MongoDBEventService extends EventService {
 
