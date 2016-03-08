@@ -113,7 +113,7 @@ object Permission extends Enumeration {
   def checkOwner(user: User, resourceRef: ResourceRef): Boolean = {
     resourceRef match {
       case ResourceRef(ResourceRef.file, id) => files.get(id).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
-      case ResourceRef(ResourceRef.collection, id) => collections.get(id).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
+      case ResourceRef(ResourceRef.collection, id) => collections.get(id).exists(x => users.findById(x.author.id).exists(_.id == user.id))
       case ResourceRef(ResourceRef.dataset, id) => datasets.get(id).exists(x => users.findById(x.author.id).exists(_.id == user.id))
       case ResourceRef(ResourceRef.space, id) => spaces.get(id).exists(_.creator == user.id)
       case ResourceRef(ResourceRef.comment, id) => comments.get(id).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))

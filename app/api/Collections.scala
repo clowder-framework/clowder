@@ -42,9 +42,10 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         case Some(identity) => {
           val description = (request.body \ "description").asOpt[String].getOrElse("")
           (request.body \ "space").asOpt[String] match {
-            case None | Some("default") => c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity)
+            case None | Some("default") => c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity.getMiniUser)
             case Some(space) =>  if (spaces.get(UUID(space)).isDefined) {
-              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)))
+
+              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity.getMiniUser, spaces = List(UUID(space)))
             } else {
               BadRequest(toJson("Bad space = " + space))
             }
@@ -457,9 +458,9 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         case Some(identity) => {
           val description = (request.body \ "description").asOpt[String].getOrElse("")
           (request.body \ "space").asOpt[String] match {
-            case None | Some("default") =>  c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, childCollectionsCount = 0, author = identity)
+            case None | Some("default") =>  c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, childCollectionsCount = 0, author = identity.getMiniUser)
             case Some(space) => if (spaces.get(UUID(space)).isDefined) {
-              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)))
+              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity.getMiniUser, spaces = List(UUID(space)))
             } else {
               BadRequest(toJson("Bad space = " + space))
             }

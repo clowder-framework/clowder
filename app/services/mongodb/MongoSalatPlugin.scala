@@ -301,7 +301,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     // Change creator in dataset from Identity to MiniUser.
     updateMongo("update-author-datasets", updateCreatorInDatasets)
 
+    // Change creator in the datasets within curation objects from Identity to MiniUser
     updateMongo("update-author-datasets-curations", updateCreatorInCurationObjectDatasets)
+
+    // Change creator in collections from Identity to MiniUser.
+    updateMongo("update-author-collections", updateCreatorInCollections)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -785,6 +789,24 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       co.put("datasets", datasets)
       try{
         collection("curationObjects").save(co, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update the user in dataset from IdentityId to MiniUser")
+      }
+    }
+  }
+
+  private def updateCreatorInCollections() {
+    collection("collections").foreach { coll =>
+      val author = coll.getAsOrElse[BasicDBObject]("author", new BasicDBObject())
+      val id = author.getAsOrElse[ObjectId]("_id", new ObjectId())
+      val fullName = author.getAsOrElse[String]("fullName", "")
+      val avatarUrl = author.getAsOrElse[String]("avatarUrl", "")
+      val email = author.getAsOrElse[String]("email", "")
+      val miniUser = Map("_id" -> id, "fullName" -> fullName, "avatarURL" -> avatarUrl, "email" -> email)
+      coll.remove("author")
+      coll.put("author", miniUser)
+      try{
+        collection("collections").save(coll, WriteConcern.Safe)
       } catch {
         case e: BSONException => Logger.error("Unable to update the user in dataset from IdentityId to MiniUser")
       }

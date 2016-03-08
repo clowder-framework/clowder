@@ -186,7 +186,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       }
     }
     val filterOwner = owner match {
-      case Some(o) => MongoDBObject("author.identityId.userId" -> o.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> o.identityId.providerId)
+      case Some(o) => MongoDBObject("author._id" -> new ObjectId(o.id.stringify))
       case None => MongoDBObject()
     }
     val filterSpace = space match {
