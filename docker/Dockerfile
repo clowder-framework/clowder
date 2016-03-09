@@ -16,13 +16,15 @@ ENV CLOWDER_CONTEXT="/" \
     ELASTICSEARCH_SERVICE_SERVER="" \
     ELASTICSEARCH_SERVICE_PORT=""
 
+# create the user
+RUN useradd -s /bin/bash clowder
+USER clowder
+
 # copy the build file, this requires sbt dist to be run
 COPY files entrypoint.sh /home/clowder/
 
-# create user
-RUN useradd -s /bin/bash clowder && \
-    chown -R clowder /home/clowder/clowder
-USER clowder
+# fix permissions on all files/folders
+RUN chown -R clowder /home/clowder/clowder
 
 # command to run when starting docker
 ENTRYPOINT ["/home/clowder/entrypoint.sh"]
