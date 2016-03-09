@@ -212,7 +212,7 @@
 
 <script language="javascript">
 	@if(user.isDefined) {
-		@if(!(user.get.identityId.userId.equals(collection.author.id))) {
+		@if(!(user.get.id.equals(collection.author.id))) {
 			$(".requiresLogin:not(.requiresLoginCommunity)").css("display","none");
 		}
 	}
