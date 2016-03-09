@@ -18,7 +18,6 @@ ENV CLOWDER_CONTEXT="/" \
 
 # create the user
 RUN useradd -s /bin/bash clowder
-USER clowder
 
 # copy the build file, this requires sbt dist to be run
 COPY files entrypoint.sh /home/clowder/
@@ -29,3 +28,6 @@ RUN chown -R clowder /home/clowder/clowder
 # command to run when starting docker
 ENTRYPOINT ["/home/clowder/entrypoint.sh"]
 CMD ["server"]
+
+# change to user clowder
+USER clowder
