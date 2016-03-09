@@ -100,6 +100,9 @@ object MetadataDefinition {
             "type":"string"}""")
       )
     // Add the default definitions, do not update if they already exist.
-    default.map(d => metadataService.addDefinition(MetadataDefinition(json = d), update=false))
+    if(metadataService.getDefinitions().size == 0) {
+      Logger.debug("Add default metadata definition.")
+      default.map(d => metadataService.addDefinition(MetadataDefinition(json = d), update = false))
+    }
   }
 }
