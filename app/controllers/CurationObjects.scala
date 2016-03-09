@@ -3,6 +3,7 @@ package controllers
 import java.util.Date
 import javax.inject.Inject
 import api.Permission
+import com.fasterxml.jackson.annotation.JsonValue
 import models._
 import play.api.Logger
 import play.api.libs.json._
@@ -461,20 +462,45 @@ class CurationObjects @Inject()(
     jsonResponse.as[List[MatchMakerResponse]]
   }
 
+  def submitRepositorySelection(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) (parse.multipartFormData)   {
+    implicit request =>
+      implicit val user = request.user
+      user match {
+        case Some(usr) => {
+          curations.get(curationId) match {
+            case Some(c) => {
+              val repository = request.body.asFormUrlEncoded.getOrElse("repository", null)
+              val purpose = request.body.asFormUrlEncoded.getOrElse("purpose", null)
+              curations.updateRepository(c.id, repository(0))
+              val mmResp = callMatchmaker(c, user).filter(_.orgidentifier == repository(0))
+              if(purpose != null) {
+                val userPreferences:Map[String, String] = Map("Purpose" -> purpose(0))
+                userService.updateRepositoryPreferences(usr.id, userPreferences)
+              }
+              Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository(0)))
+            }
+            case None => InternalServerError("Space not found")
+          }
+        }
+        case None => InternalServerError("User Not Found")
+      }
+  }
+
   def compareToRepository(curationId: UUID, repository: String) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       implicit val user = request.user
 
-       curations.get(curationId) match {
-         case Some(c) => {
-           curations.updateRepository(c.id, repository)
-           val mmResp = callMatchmaker(c, user).filter(_.orgidentifier == repository)
+      curations.get(curationId) match {
+        case Some(c) => {
+          curations.updateRepository(c.id, repository)
+          val mmResp = callMatchmaker(c, user).filter(_.orgidentifier == repository)
 
-           Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository))
+          Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository))
         }
         case None => InternalServerError("Space not found")
       }
   }
+
 
   def sendToRepository(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
