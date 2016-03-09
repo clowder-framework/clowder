@@ -669,5 +669,30 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     }
   }
 
+  def removeFromSpaceAllowed(collectionId: UUID , spaceId : UUID) = PrivateServerAction { implicit request =>
+    val user = request.user
+    user match {
+      case Some(identity) => {
+        collections.get(collectionId) match {
+          case Some(collection) => {
+            spaces.get(spaceId) match {
+              case Some(space) => {
+                if (collection.author.identityId == identity.identityId){
+                  Ok(toJson(!collections.hasParentInSpace(collectionId, spaceId)))
+                }
+                else {
+                  Ok(toJson(true))
+                }
+              }
+              case None => BadRequest(toJson("space not found"))
+            }
+          }
+          case None => BadRequest(toJson("collection not found"))
+        }
+      }
+      case None => Ok(toJson(false))
+    }
+  }
+
 }
 
