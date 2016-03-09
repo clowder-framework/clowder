@@ -678,10 +678,11 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             spaces.get(spaceId) match {
               case Some(space) => {
                 if (collection.author.identityId == identity.identityId){
-                  Ok(toJson(!collections.hasParentInSpace(collectionId, spaceId)))
+                  val hasParentInSpace = collections.hasParentInSpace(collectionId, spaceId)
+                  Ok(toJson(!(hasParentInSpace)))
                 }
                 else {
-                  Ok(toJson(true))
+                  Ok(toJson(false))
                 }
               }
               case None => BadRequest(toJson("space not found"))
