@@ -1261,9 +1261,6 @@ class MongoDBDatasetService @Inject() (
                     $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 
-  def listDatasets(): List[Dataset] = {
-    Dataset.dao.find(MongoDBObject()).toList
-  }
 }
 
 object Dataset extends ModelCompanion[Dataset, ObjectId] {

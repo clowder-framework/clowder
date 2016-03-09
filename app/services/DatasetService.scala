@@ -92,11 +92,6 @@ trait DatasetService {
   def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Dataset]
 
   /**
-    * Return a list of datasets.
-    */
-  def listDatasets() :List[Dataset]
-
-  /**
    * Get dataset.
    */
   def get(id: UUID): Option[Dataset]
