@@ -6,7 +6,9 @@ package models
  * @author Constantinos Sophocleous
  */
 case class ThreeDTexture(
-  id: UUID = UUID.generate,
+  id: UUID = UUID.generate(),
+  loader_id: String = "",
+  loader: String = "",
   file_id: Option[String] = None,
   filename: Option[String] = None,
   contentType: String,

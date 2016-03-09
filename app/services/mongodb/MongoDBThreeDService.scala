@@ -1,6 +1,6 @@
 package services.mongodb
 
-import services.ThreeDService
+import services.{ByteStorageService, ThreeDService}
 import models._
 import com.mongodb.casbah.Imports._
 import com.mongodb.WriteConcern
@@ -13,10 +13,8 @@ import java.io.InputStream
 import com.mongodb.casbah.commons.MongoDBObject
 import models.ThreeDGeometry
 import models.ThreeDTexture
+import util.FileUtils
 
-/**
- * Created by lmarini on 2/26/14.
- */
 class MongoDBThreeDService extends ThreeDService {
 
   def getTexture(textureId: UUID): Option[ThreeDTexture] ={
@@ -52,14 +50,23 @@ class MongoDBThreeDService extends ThreeDService {
    * Save blob.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
-    MongoUtils.writeBlob[ThreeDTexture](inputStream, filename, contentType, Map.empty[String, AnyRef], "textures", "nevereverused").fold("")(_._1.stringify)
+    ByteStorageService.save(inputStream, ThreeDTextureDAO.COLLECTION) match {
+      case Some(x) => {
+        val text = ThreeDTexture(UUID.generate(), x._1, x._2, None, Some(filename), FileUtils.getContentType(filename, contentType), x._4)
+        ThreeDTextureDAO.save(text)
+        text.id.stringify
+      }
+      case None => ""
+    }
   }
 
   /**
    * Get blob.
    */
   def getBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
-    MongoUtils.readBlob(id, "textures", "nevereverused")
+    getTexture(id).flatMap { x =>
+      ByteStorageService.load(x.loader, x.loader_id, ThreeDTextureDAO.COLLECTION).map((_, x.filename.getOrElse(""), x.contentType, x.length))
+    }
   }
 
   def findGeometry(fileId: UUID, filename: String): Option[ThreeDGeometry] = {
@@ -75,7 +82,14 @@ class MongoDBThreeDService extends ThreeDService {
    * Save blob.
    */
   def saveGeometry(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
-    MongoUtils.writeBlob[Geometry](inputStream, filename, contentType, Map.empty[String, AnyRef], "geometries", "nevereverused").fold("")(_._1.stringify)
+    ByteStorageService.save(inputStream, GeometryDAO.COLLECTION) match {
+      case Some(x) => {
+        val geom = ThreeDGeometry(UUID.generate(), x._1, x._2, None, Some(filename), FileUtils.getContentType(filename, contentType), None, x._4)
+        GeometryDAO.save(geom)
+        geom.id.stringify
+      }
+      case None => ""
+    }
   }
 
   def getGeometry(id: UUID): Option[ThreeDGeometry] = {
@@ -86,28 +100,36 @@ class MongoDBThreeDService extends ThreeDService {
    * Get blob.
    */
   def getGeometryBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
-    MongoUtils.readBlob(id, "geometries", "nevereverused")
+    getGeometry(id).flatMap { x =>
+      ByteStorageService.load(x.loader, x.loader_id, GeometryDAO.COLLECTION).map((_, x.filename.getOrElse(""), x.contentType, x.length))
+    }
   }
 
 }
 
 object ThreeDTextureDAO extends ModelCompanion[ThreeDTexture, ObjectId] {
+  val COLLECTION = "textures"
+
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[ThreeDTexture, ObjectId](collection = x.collection("textures.files")) {}
+    case Some(x) => new SalatDAO[ThreeDTexture, ObjectId](collection = x.collection(COLLECTION)) {}
   }
 }
 
 object GeometryDAO extends ModelCompanion[ThreeDGeometry, ObjectId] {
+  val COLLECTION = "geometries"
+
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[ThreeDGeometry, ObjectId](collection = x.collection("geometries.files")) {}
+    case Some(x) => new SalatDAO[ThreeDGeometry, ObjectId](collection = x.collection(COLLECTION)) {}
   }
 }
 
 object ThreeDAnnotation extends ModelCompanion[ThreeDAnnotation, ObjectId] {
+  val COLLECTION = "previews.files.annotations"
+
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[ThreeDAnnotation, ObjectId](collection = x.collection("previews.files.annotations")) {}
+    case Some(x) => new SalatDAO[ThreeDAnnotation, ObjectId](collection = x.collection(COLLECTION)) {}
   }
 }

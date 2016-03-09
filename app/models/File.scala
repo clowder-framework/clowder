@@ -14,7 +14,7 @@ import securesocial.core.Identity
  */
 case class File(
   id: UUID = UUID.generate,
-  path: Option[String] = None,
+  loader_id: String = "",
   filename: String,
   author: Identity,
   uploadDate: Date,

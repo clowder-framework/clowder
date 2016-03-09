@@ -564,16 +564,16 @@
 							<td>mongo</td>
 						}
 						@if(file.loader == "services.filesystem.DiskByteStorageService") {
-							@if(file.path.isEmpty) {
+							@if(file.loader_id.isEmpty) {
 								<td>missing</td>
 							} else {
 								<td>
-								@if(file.path.get.length>10) {
-									<span title="@file.path.get">...@file.path.get.substring(file.path.get.length-10, file.path.get.length)</span>
+								@if(file.loader_id.length>10) {
+									<span title="@file.loader_id">...@file.loader_id.substring(file.loader_id.length-10, file.loader_id.length)</span>
 								} else {
-									@file.path.get
+									@file.loader_id
 								}
-								<a class="btn btn-link btn-sm clipboard" data-copy="@file.path.get" title="Copy path to clipboard"><span class="glyphicon glyphicon-edit"></span> copy</a></td>
+								<a class="btn btn-link btn-sm clipboard" data-copy="@file.loader_id" title="Copy path to clipboard"><span class="glyphicon glyphicon-edit"></span> copy</a></td>
 							}
 						}
 						</tr>

@@ -15,6 +15,7 @@ import play.api.Play.current
 import play.api.libs.json.JsObject
 import services.MultimediaQueryService
 import services.mongodb.MongoContext.context
+import util.FileUtils
 
 class MongoDBMultimediaQueryService extends MultimediaQueryService {
 
@@ -40,11 +41,7 @@ class MongoDBMultimediaQueryService extends MultimediaQueryService {
     val mongoFile = files.createFile(inputStream)
     Logger.debug("MongoDBMultimediaQueryService.save Uploading file " + filename)
     mongoFile.filename = filename
-    var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)
-    if (ct == play.api.http.ContentTypes.BINARY) {
-      ct = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
-    }
-    mongoFile.contentType = ct
+    mongoFile.contentType = FileUtils.getContentType(filename, contentType)
     mongoFile.save
     val oid = mongoFile.getAs[ObjectId]("_id").get
     Some(TempFile(UUID(oid.toString), None, mongoFile.filename.get, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
@@ -94,10 +91,7 @@ def getFile(id: UUID): Option[TempFile] = {
     
     val mongoFile = files.createFile(Array[Byte]())
     mongoFile.filename = filename
-    var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)
-    if (ct == play.api.http.ContentTypes.BINARY) {
-      ct = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
-    }
+    var ct = FileUtils.getContentType(filename, contentType)
     mongoFile.contentType = ct
     mongoFile.put("path", id)
     mongoFile.save

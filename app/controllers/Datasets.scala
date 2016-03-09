@@ -333,9 +333,9 @@ class Datasets @Inject()(
         case Some(dataset) => {
 
           // get files info sorted by date
-          val filesInDataset = dataset.files.map(f => files.get(f) match {
-            case Some(file) => file
-            case None => Logger.debug(s"Unable to find file $f")
+          val filesInDataset = dataset.files.flatMap(f => files.get(f) match {
+            case Some(file) => Some(file)
+            case None => Logger.debug(s"Unable to find file $f"); None
           }).asInstanceOf[List[File]].sortBy(_.uploadDate)
 
           var datasetWithFiles = dataset.copy(files = filesInDataset.map(_.id))

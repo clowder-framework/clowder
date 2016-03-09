@@ -84,7 +84,7 @@ class CurationObjects @Inject()(
               for ( fileId <- dataset.files) {
                 files.get(fileId) match {
                   case Some(f) => {
-                    val cf = CurationFile(fileId = f.id, path= f.path, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
+                    val cf = CurationFile(fileId = f.id, loader_id= f.loader_id, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
                       contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
                       thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = f.sha512)
                     curations.insertFile(cf)
@@ -140,7 +140,7 @@ class CurationObjects @Inject()(
         for ( fileId <- folder.files) {
           files.get(fileId) match {
             case Some(f) => {
-              val cf = CurationFile(fileId = f.id, path= f.path, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
+              val cf = CurationFile(fileId = f.id, loader_id= f.loader_id, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
                 contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
                 thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = f.sha512)
               curations.insertFile(cf)

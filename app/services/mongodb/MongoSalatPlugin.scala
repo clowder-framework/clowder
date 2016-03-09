@@ -6,6 +6,7 @@ import java.util.{Calendar, Date}
 import com.mongodb.CommandFailureException
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.gridfs.GridFSFile
 import models._
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.input.CountingInputStream
@@ -20,7 +21,8 @@ import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.gridfs.GridFS
 import org.bson.types.ObjectId
 import services.filesystem.DiskByteStorageService
-import services.{MetadataService, DI, AppConfigurationService}
+import services.{ByteStorageService, MetadataService, DI, AppConfigurationService}
+import scala.collection.JavaConverters._
 
 /**
  * Mongo Salat service.
@@ -237,10 +239,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   private def removeFiles(name: String): Unit = {
     // delete blobs
     collection(name + ".files").find(new BasicDBObject("loader", new BasicDBObject("$ne", classOf[MongoDBByteStorage].getName))).foreach { x =>
-      Logger.info(x.getOrElse("_id", "?") + " " + x.getOrElse("path", "?"))
-      x.getAs[ObjectId]("_id") match {
-        case Some(id) => MongoUtils.removeBlob(UUID(id.toString), name, "nevereverused")
-        case None =>
+      (x.getAs[String]("path"), x.getAs[String]("loader")) match {
+        case (Some(p), Some(l)) => ByteStorageService.delete(l, p, name)
+        case _ =>
       }
     }
     collection(name + ".chunks").drop()
@@ -296,6 +297,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //Append the current notes to the end of the description in datasets. And delete the notes field
     updateMongo("migrate-notes-datasets", migrateNotesInDatasets)
+
+    //don't use gridfs for metadata
+    updateMongo("split-gridfs", splitGridFSMetadata)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -740,4 +744,65 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
+  private def splitGridFSMetadata() {
+    val ignoreCopyKeys = List[String]("_id", "path", "metadata", "chunkSize", "aliases", "md5")
+    val ignoreRemoveKeys = List[String]("_id", "filename", "contentType", "length", "chunkSize", "uploadDate", "metadata", "aliases", "md5")
+
+    // fix logos
+    collection("logos").find().snapshot().foreach { x =>
+      val id = MongoDBObject("_id" -> new ObjectId(x.get("file_id").toString))
+      if (x.getAsOrElse[String]("loader", "") == classOf[MongoDBByteStorage].getName) {
+        x.put("loader_id", x.get("file_id").toString)
+        collection("logos.files").find(id).foreach { y =>
+          val r = new MongoDBObject()
+          y.keySet().asScala.toList.foreach{ k =>
+            if (!ignoreRemoveKeys.contains(k)) {
+              y.remove(k)
+            }
+          }
+          collection("logos.files").save(y, WriteConcern.Safe)
+        }
+      } else {
+        collection("logos.files").find(id).foreach { y =>
+          x.put("loader_id", y.getAsOrElse[String]("path", ""))
+        }
+        collection("logos.files").remove(id)
+      }
+      x.remove("file_id")
+      try {
+        collection("logos").save(x, WriteConcern.Safe)
+      }
+    }
+
+    for (prefix <- List[String]("uploads", "previews", "textures", "geometries", "thumbnails", "tiles")) {
+      val oldCollection = collection(prefix + ".files")
+      val newCollection = collection(prefix)
+      oldCollection.find().snapshot().foreach { x =>
+        val id = x.get("_id")
+
+        val c = new MongoDBObject()
+        val r = new MongoDBObject()
+        c.put("_id", id)
+
+        if (x.getAsOrElse[String]("loader", "") == classOf[MongoDBByteStorage].getName) {
+          c.put("loader_id", id.toString)
+        } else {
+          c.put("loader_id", x.get("path"))
+        }
+
+        x.keySet.asScala.toList.foreach{ k =>
+          if (!ignoreCopyKeys.contains(k)) {
+            c.put(k, x.get(k))
+          }
+          if (!ignoreRemoveKeys.contains(k)) {
+            r.put(k, "")
+          }
+        }
+
+        val u = newCollection.insert(c, WriteConcern.Safe)
+        val v = oldCollection.update(MongoDBObject("_id" -> id), MongoDBObject("$unset" -> r))
+      }
+    }
+
+  }
 }

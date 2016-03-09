@@ -1,5 +1,7 @@
 package services.mongodb
 
+import java.util.Date
+
 import services.{ByteStorageService, TileService, FileService, PreviewService}
 import com.mongodb.casbah.commons.MongoDBObject
 import java.io.{InputStreamReader, BufferedReader, InputStream}
@@ -21,11 +23,9 @@ import models.Preview
 import play.api.libs.json.JsObject
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
+import util.FileUtils
 import collection.JavaConverters._
 
-/**
- * Created by lmarini on 2/17/14.
- */
 @Singleton
 class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, storage: ByteStorageService) extends PreviewService {
 
@@ -72,14 +72,23 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
    * Save blob.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
-    MongoUtils.writeBlob[Preview](inputStream, filename, contentType, Map.empty[String, AnyRef], "previews", "medici2.mongodb.storePreviews").fold("")(_._1.stringify)
+    ByteStorageService.save(inputStream, PreviewDAO.COLLECTION) match {
+      case Some(x) => {
+        val preview = Preview(UUID.generate(), x._1, x._2, None, None, None, None, Some(filename), FileUtils.getContentType(filename, contentType), None, List.empty, x._4)
+        PreviewDAO.save(preview)
+        preview.id.stringify
+      }
+      case None => ""
+    }
   }
 
   /**
    * Get blob.
    */
   def getBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
-    MongoUtils.readBlob(id, "previews", "medici2.mongodb.storePreviews")
+    get(id).flatMap { x =>
+      ByteStorageService.load(x.loader, x.loader_id, PreviewDAO.COLLECTION).map((_, x.filename.getOrElse(""), x.contentType, x.length))
+    }
   }
 
   /**
@@ -129,7 +138,10 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
   }
 
   def remove(id: UUID): Unit = {
-    MongoUtils.removeBlob(id, "previews", "medici2.mongodb.storeThumbnails")
+    get(id).foreach{ x=>
+      ByteStorageService.delete(x.loader, x.loader_id, PreviewDAO.COLLECTION)
+      PreviewDAO.remove(x)
+    }
   }
 
 
@@ -185,7 +197,8 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
       }
 
     // finally delete the actual file
-    MongoUtils.removeBlob(p.id, "previews", "medici2.mongodb.storePreviews")
+    ByteStorageService.delete(p.loader, p.loader_id, PreviewDAO.COLLECTION)
+    PreviewDAO.remove(p)
   }
 
   def attachToFile(previewId: UUID, fileId: UUID, extractorId: Option[String], json: JsValue) {
@@ -275,9 +288,11 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
 }
 
 object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
+  val COLLECTION = "previews"
+
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Preview, ObjectId](collection = x.collection("previews.files")) {}
+    case Some(x) => new SalatDAO[Preview, ObjectId](collection = x.collection(COLLECTION)) {}
   }
 }
 

@@ -6,7 +6,6 @@ import java.security.{MessageDigest, DigestInputStream}
 
 import models.UUID
 import org.apache.commons.codec.binary.Hex
-import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.input.CountingInputStream
 import play.Logger
 import play.api.Play
@@ -21,13 +20,13 @@ class DiskByteStorageService extends ByteStorageService {
   /**
    * Save the bytes to disk, returns (path, sha512, length)
    */
-  def save(inputStream: InputStream, prefix: String, id: UUID): Option[(String, String, Long)] = {
+  def save(inputStream: InputStream, prefix: String): Option[(String, String, Long)] = {
     Play.current.configuration.getString("medici2.diskStorage.path") match {
       case Some(root) => {
         var depth = Play.current.configuration.getInt("medici2.diskStorage.depth").getOrElse(3)
 
         var relativePath = ""
-        var idstr = id.stringify
+        var idstr = UUID.generate().stringify
         // id seems to be same at the start but more variable at the end
         while (depth > 0 && idstr.length > 4) {
           depth -= 1
@@ -40,7 +39,7 @@ class DiskByteStorageService extends ByteStorageService {
         }
 
         // need to use whole id again, to make sure it is unique
-        relativePath += java.io.File.separatorChar + id.stringify
+        relativePath += java.io.File.separatorChar + idstr
 
         // combine all pieces
         val filePath = makePath(root, prefix, relativePath)

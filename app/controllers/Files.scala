@@ -1308,7 +1308,7 @@ def uploadExtract() =
   ////            val filename = f.ref.file.getName()
   ////            Logger.debug("Uploading file " + filename)
   ////            mongoFile.filename = filename
-  ////            mongoFile.contentType = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
+  ////            mongoFile.contentType = FileUtils.getContentType(filename, contentType)
   ////            mongoFile.save
   ////            val id = mongoFile.getAs[ObjectId]("_id").get.toString
   ////            Ok(views.html.file(mongoFile.asDBObject, id))
