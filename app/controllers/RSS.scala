@@ -8,9 +8,6 @@ import models.UUID
 import play.Logger
 import play.mvc.Call
 
-/**
- * Created by maxyuan on 4/27/15.
- */
 class RSS @Inject() (events: EventService) extends SecuredController {
   val defaultNumberOfItems = 10
   val acceptableTypes = List("file", "dataset", "collection", "user")

@@ -10,7 +10,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
 
 /**
- *
+ * Use MongoDB to store Projects.
  */
 class MongoDBProjectService extends ProjectService {
 

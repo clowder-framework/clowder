@@ -10,7 +10,7 @@ import play.api.Logger
 import scala.collection.JavaConversions
 
 /**
- *
+ * List resources.
  */
 object ResourceLister {
   /**

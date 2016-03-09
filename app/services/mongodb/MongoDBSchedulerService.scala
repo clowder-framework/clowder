@@ -12,7 +12,7 @@ import com.mongodb.casbah.Imports._
 import com.novus.salat.dao.SalatMongoCursor
 
 /**
- *
+ * Use MongoDB to store schedules
  */
 class MongoDBSchedulerService extends SchedulerService {
 

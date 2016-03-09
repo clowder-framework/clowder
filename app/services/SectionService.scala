@@ -4,7 +4,7 @@ import models.{UUID, Section, Comment}
 import play.api.libs.json.JsValue
 
 /**
- * Created by lmarini on 2/17/14.
+ * Service to manipulate sections
  */
 trait SectionService {
 

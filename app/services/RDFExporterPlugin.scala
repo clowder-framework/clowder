@@ -7,7 +7,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.Play.current
 
 /**
- * Created by lmarini on 2/18/14.
+ * Plugin for RDF Exporter
  */
 class RDFExporterPlugin(application: Application) extends Plugin {
 

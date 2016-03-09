@@ -3,7 +3,7 @@ package services
 import models.{UUID, Comment}
 
 /**
- * Created by lmarini on 2/17/14.
+ * Service to manipulate comments in datasets and files.
  */
 trait CommentService {
 
