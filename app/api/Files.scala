@@ -737,7 +737,7 @@ class Files @Inject()(
                 val filestream = new java.io.BufferedInputStream(new FileInputStream(path))
                 val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
                 val date: java.util.Calendar = java.util.Calendar.getInstance()
-                val contentType = java.net.URLConnection.guessContentTypeFromStream(filestream)
+                var contentType = java.net.URLConnection.guessContentTypeFromStream(filestream)
                 val loader = classOf[services.filesystem.DiskByteStorageService].getName
                 val byteSize = new java.io.File(path).length()
                 // Calculate SHA-512 hash
@@ -746,6 +746,10 @@ class Files @Inject()(
                 val dis = new java.security.DigestInputStream(cis, md)
                 val sha512 = org.apache.commons.codec.binary.Hex.encodeHexString(md.digest())
                 dis.close()
+
+                if (contentType == null) {
+                  contentType = play.api.http.ContentTypes.BINARY
+                }
 
                 // Create models.File object and insert it directly
                 val newFile = new File(UUID(),Some(path),filename, user,
