@@ -6,6 +6,7 @@ import play.api.Logger
 import play.api.libs.json.Json._
 import services._
 import javax.inject.Inject
+import java.util.Date
 
 /**
   * * Folders are ways of organizing files within datasets. They can contain files and folders
@@ -93,11 +94,11 @@ class Folders @Inject()(datasets: DatasetService, folders: FolderService, events
                         }
 
                         if(UUID(parentId) == parentDatasetId) {
-                          folder = Folder(name = trimname, displayName = displayName.trim(), files = List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType.toLowerCase(), parentDatasetId = parentDatasetId)
+                          folder = Folder(author= identity.getMiniUser, created = new Date(), name = trimname, displayName = displayName.trim(), files = List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType.toLowerCase(), parentDatasetId = parentDatasetId)
                         }  else if(parentType == "folder") {
                           folders.get(UUID(parentId)) match {
                             case Some(pfolder) => {
-                              folder = Folder(name = trimname, displayName = displayName.trim(), files=List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType.toLowerCase(), parentDatasetId = parentDatasetId)
+                              folder = Folder(author= identity.getMiniUser, created = new Date(), name = trimname, displayName = displayName.trim(), files=List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType.toLowerCase(), parentDatasetId = parentDatasetId)
                             }
                             case None => InternalServerError(s"parent folder $parentId not found")
                           }
