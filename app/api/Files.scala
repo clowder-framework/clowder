@@ -361,6 +361,9 @@ class Files @Inject()(
     else if (showPreviews.equals("None"))
       flags = flags + "+nopreviews"
     var fileType = f.contentType
+    if (fileType == null) {
+      fileType = play.api.http.ContentTypes.BINARY
+    }
     var nameOfFile = filename
     if (fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")) {
       fileType = FilesUtils.getMainFileTypeOfZipFile(fileObj, nameOfFile, "file")
@@ -750,15 +753,15 @@ class Files @Inject()(
                 files.insert(newFile)
 
                 // Check for metadata to go with local file
-                var file_md: Option[Seq[String]] = Some(Seq(""))
-                Json.parse(fobj) \ "md" match {
-                  case mdobj: JsObject => file_md = Some(Seq(Json.stringify(mdobj)))
-                  case mdobj: JsUndefined => {}
-                }
-                Json.parse(fobj) \ "metadata" match {
-                  case mdobj: JsObject => file_md = Some(Seq(Json.stringify(mdobj)))
-                  case mdobj: JsUndefined => {}
-                }
+                val file_md = Json.parse(fobj) \ "md" match {
+                    case mdobj: JsObject => Some(Seq(Json.stringify(mdobj)))
+                    case mdobj: JsUndefined => {
+                      Json.parse(fobj) \ "metadata" match {
+                        case mdobj: JsObject => Some(Seq(Json.stringify(mdobj)))
+                        case mdobj: JsUndefined => None
+                      }
+                    }
+                  }
 
                 // Submit file for other requests, etc.
                 processSavedFile(user,newFile,creator_url,showPreviews,filename,flagsFromPrevious,
