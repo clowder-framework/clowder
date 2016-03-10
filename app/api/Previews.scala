@@ -136,6 +136,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
 
             // Check whether a title for the preview was sent
             request.body.dataParts.get("title") match {
+              case Some(t: List[String]) => previews.updateTitle(id, t.head)
               case None => {}
             }
 
@@ -152,7 +153,6 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    * Upload preview metadata.
    *
    */
-
   def uploadMetadata(id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.preview, id)))(parse.json) { implicit request =>
         Logger.debug(request.body.toString)
         request.body match {
@@ -178,10 +178,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
   def getMetadata(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.preview, id))) { implicit request =>
         previews.get(id) match {
           case Some(preview) => {
-            val title = preview.title match {
-              case Some(t) => t
-              case None => null
-            }
+            val title = preview.title.orNull
             Ok(toJson(Map("id" -> preview.id.toString, "contentType" -> preview.contentType, "title" -> title)))
           }
           case None => Logger.error("Preview metadata not found " + id); InternalServerError
@@ -330,8 +327,15 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
     request.body match {
       case JsObject(fields) => {
         previews.get(preview_id) match {
+          case Some(preview) => {
+            (request.body \ "title").asOpt[String] match {
+              case Some(t) => {
+                previews.updateTitle(preview_id, t.replace("\"",""))
+                Ok(toJson(Map("status" -> "success")))
               }
+              case None => BadRequest(toJson("Preview not found"))
             }
+          }
         }
       }
       case _ => Logger.error("Expected a JSObject"); BadRequest(toJson("Expected a JSObject"))
