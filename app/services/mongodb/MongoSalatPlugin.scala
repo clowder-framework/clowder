@@ -3,7 +3,7 @@ package services.mongodb
 import java.net.URL
 import java.util.{Calendar, Date}
 
-import com.mongodb.CommandFailureException
+import com.mongodb.{BasicDBObject, CommandFailureException}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import models._
@@ -296,6 +296,12 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //Append the current notes to the end of the description in datasets. And delete the notes field
     updateMongo("migrate-notes-datasets", migrateNotesInDatasets)
+
+    //Add author and creation date to folders
+    updateMongo("add-creator-to-folders", addAuthorAndDateToFolders)
+
+    //Add author and creation date to curation folders.
+    updateMongo("add-creator-to-curation-folders", addAuthorAndDateToCurationFolders)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -734,6 +740,55 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           collection("datasets").save(ds, WriteConcern.Safe)
         } catch {
           case e: BSONException => Logger.error("Unable to migrate note to description in dataset:" + ds.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+        }
+      }
+
+    }
+  }
+
+  private def addAuthorAndDateToFolders() {
+    collection("folders").foreach{ folder =>
+      val datasetId = folder.getAsOrElse[ObjectId]("parentDatasetId", new ObjectId())
+      if(datasetId != "") {
+        collection("datasets").findOne(MongoDBObject("_id" -> datasetId)).foreach { dataset =>
+          val author = dataset.getAsOrElse[BasicDBObject]("author", new BasicDBObject())
+          val id = author.getAsOrElse[ObjectId]("_id", new ObjectId())
+          val fullName = author.getAsOrElse[String]("fullName", "")
+          val avatarUrl = author.getAsOrElse[String]("avatarUrl", "")
+          val email = author.getAsOrElse[String]("email", "")
+          val miniUser = Map("_id" -> id, "fullName" -> fullName, "avatarURL" -> avatarUrl, "email" -> email)
+          val createdAt = new Date()
+          folder.put("author", miniUser)
+          folder.put("created", createdAt)
+          try {
+            collection("folders").save(folder, WriteConcern.Safe)
+          } catch {
+            case e: BSONException => Logger.error("Unable to add author and created to Folder: " + folder.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+          }
+        }
+      }
+    }
+  }
+
+  private def addAuthorAndDateToCurationFolders() {
+    collection("curationFolders").foreach{ cFolder =>
+      val coId = cFolder.getAsOrElse[ObjectId]("parentCurationObjectId", new ObjectId())
+      if(coId != "") {
+        collection("curationObjects").findOne(MongoDBObject("_id" -> coId)).foreach { curationObject =>
+          val author = curationObject.getAsOrElse[BasicDBObject]("author", new BasicDBObject())
+          val id = author.getAsOrElse[ObjectId]("_id", new ObjectId())
+          val fullName = author.getAsOrElse[String]("fullName", "")
+          val avatarUrl = author.getAsOrElse[String]("avatarUrl", "")
+          val email = author.getAsOrElse[String]("email", "")
+          val miniUser = Map("_id" -> id, "fullName" -> fullName, "avatarURL" -> avatarUrl, "email" -> email)
+          val createdAt = new Date()
+          cFolder.put("author", miniUser)
+          cFolder.put("created", createdAt)
+          try{
+            collection("curationFolders").save(cFolder, WriteConcern.Safe)
+          } catch {
+            case e: BSONException => Logger.error("Unable to add author and created to curation Folder: " + cFolder.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+          }
         }
       }
 

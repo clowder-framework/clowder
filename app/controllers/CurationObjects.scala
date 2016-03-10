@@ -152,9 +152,11 @@ class CurationObjects @Inject()(
         }
 
         val newCurationFolder = CurationFolder(
-        folderId = id,
-        name =folder.name,
-        displayName = folder.displayName,
+          folderId = id,
+          author = folder.author,
+          created = folder.created,
+          name =folder.name,
+          displayName = folder.displayName,
           files = newFiles,
           folders = List.empty,
           parentId = parentId,
