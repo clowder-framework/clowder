@@ -157,6 +157,8 @@ object CurationFile {
 case class CurationFolder(
   id: UUID = UUID.generate,
   folderId: UUID,
+  author: MiniUser,
+  created: Date,
   name: String = "N/A",
   displayName: String = "N/A",
   files: List[UUID] = List.empty,
