@@ -226,6 +226,7 @@ class CurationObjects @Inject()(
   }
 
 
+
   def getCurationObject(curationId: UUID, limit: Int) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {    implicit request =>
     implicit val user = request.user
     curations.get(curationId) match {
@@ -308,7 +309,7 @@ class CurationObjects @Inject()(
                   val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
                   Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences, mmResp))
                 }
-                case None =>Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
+                case None =>Results.Redirect(routes.Error.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
               }
             }
             case None => InternalServerError("Curation Object not found")
@@ -365,13 +366,15 @@ class CurationObjects @Inject()(
       case None => api.routes.Users.findById(usr.id).absoluteURL(https)
 
     })
-
+    val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
     var aggregation = metadataJson.toMap ++ Map(
       "Identifier" -> Json.toJson(controllers.routes.CurationObjects.getCurationObject(c.id).absoluteURL(https)),
       "@id" -> Json.toJson(hostUrl),
       "Title" -> Json.toJson(c.name),
       "Uploaded By" -> Json.toJson(creator),
-      "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https))
+      "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https)),
+      "Publishing Project"-> Json.toJson(controllers.routes.Spaces.getSpace(c.space).absoluteURL(https)),
+      "Creation Date" -> Json.toJson(format.format(c.created))
       )
     if(!metadataJson.contains("Creator")) {
       aggregation = aggregation ++ Map("Creator" -> Json.toJson(creator))
@@ -411,6 +414,8 @@ class CurationObjects @Inject()(
           "Abstract" -> Json.toJson("http://purl.org/dc/terms/abstract"),
           "Bibliographic citation" -> Json.toJson("http://purl.org/dc/terms/bibliographicCitation"),
           "Purpose" -> Json.toJson("http://sead-data.net/vocab/publishing#Purpose"),
+          "Publishing Project" -> Json.toJson("http://sead-data.net/terms/publishingProject"),
+          "Creation Date" -> Json.toJson("http://purl.org/dc/terms/created"),
           "Spatial Reference" ->
             Json.toJson(
               Map(
@@ -528,13 +533,16 @@ class CurationObjects @Inject()(
           for(md <- metadatas.getDefinitions()) {
             metadataDefsMap((md.json\ "label").asOpt[String].getOrElse("").toString()) = Json.toJson((md.json \ "uri").asOpt[String].getOrElse(""))
           }
+          val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
           var aggregation = metadataToAdd ++
             Map(
               "Identifier" -> Json.toJson("urn:uuid:"+curationId),
               "@id" -> Json.toJson(hostUrl),
               "@type" -> Json.toJson("Aggregation"),
               "Title" -> Json.toJson(c.name),
-              "Uploaded By" -> Json.toJson(creator)
+              "Uploaded By" -> Json.toJson(creator),
+              "Publishing Project"-> Json.toJson(controllers.routes.Spaces.getSpace(c.space).absoluteURL(https)),
+              "Creation Date" -> Json.toJson(format.format(c.created))
             )
           if(!metadataToAdd.contains("Creator")) {
             aggregation = aggregation ++ Map("Creator" -> Json.toJson(creator))
@@ -580,8 +588,9 @@ class CurationObjects @Inject()(
                     "Rights Holder" -> Json.toJson("http://purl.org/dc/terms/rightsHolder"),
                     "Cost" -> Json.toJson("http://sead-data.net/terms/cost"),
                     "Dataset Description" -> Json.toJson("http://sead-data.net/terms/datasetdescription"),
-                    "Purpose" -> Json.toJson("http://sead-data.net/vocab/publishing#Purpose")
-
+                    "Purpose" -> Json.toJson("http://sead-data.net/vocab/publishing#Purpose"),
+                    "Publishing Project" -> Json.toJson("http://sead-data.net/terms/publishingProject"),
+                    "Creation Date" -> Json.toJson("http://purl.org/dc/terms/created")
                 )
               ))),
                 "Repository" -> Json.toJson(repository.toLowerCase()),
@@ -632,7 +641,7 @@ class CurationObjects @Inject()(
   /**
    * Endpoint for receiving status/ uri from repository.
    */
-  def savePublishedObject(id: UUID) = UserAction (parse.json) {
+  def savePublishedObject(id: UUID) = UserAction(needActive = true) (parse.json) {
     implicit request =>
       Logger.debug("get infomation from repository")
 

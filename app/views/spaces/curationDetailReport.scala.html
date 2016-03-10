@@ -4,7 +4,6 @@
         <div class="col-md-12">
             <div class="panel panel-default">
                 <div class="panel-body">
-                    <a href="@routes.Spaces.stagingArea(curationObject.space)"> Staging Area</a> >
                     <a  href ="@routes.CurationObjects.getCurationObject(curationObject.id)"> Edit Metadata</a> >
                     <a  href="@routes.CurationObjects.findMatchingRepositories(curationObject.id)">Select Repository</a> >
                     <u><strong>Submit to Repository</strong></u>
@@ -42,15 +41,6 @@
                     }
                 </ul>
             </div>
-            <h4>Acknowledgments</h4>
-            <ul class="list-unstyled">
-                <li><h5>Confidentiality</h5><li/>
-                <li><input type="checkbox" id="confidential_agreement"> Dataset contains confidential info</li>
-            <li><h5>Copyrighted material</h5><li/>
-                <li><input type="checkbox" checked id="copyright_agreement"> Dataset contains copyrighted material</li>
-            <li><h5>Depositor Agreement</h5><li/>
-                <li><input type="checkbox" checked id="depositor_agreement"> I agree to @mmResponse.repositoryName deposit agreement</li>
-            </ul>
         </div>
     </div>
     <div class="row bottom-padding">

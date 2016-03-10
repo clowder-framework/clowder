@@ -10,6 +10,8 @@
                 <li>Created: @curationObject.created.format("MMM dd, yyyy")</li>
             </ul>
             @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, curationObject.space))){
+                <a class="btn btn-sm btn-link" href="@routes.Spaces.stagingArea(curationObject.space)">
+                    <span class="glyphicon glyphicon-briefcase"></span> Staging Area</a>
                 @if(!editCurationObject){
                     <a class="btn btn-sm btn-link" href ="@routes.CurationObjects.getCurationObject(curationObject.id)">
                         <span class="glyphicon glyphicon-chevron-left"></span> Go to Edit Metadata</a>

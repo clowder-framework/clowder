@@ -1,0 +1,66 @@
+@(subject: String)(implicit user: Option[models.User])
+@main("Email Admins") {
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Email admins</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12 col-md-12 col-lg-12">
+            This form will allow you to send an email to admins of this server.
+        </div>
+    </div>
+
+    <br/>
+
+    <form class="form-horizontal">
+        <div class="form-group">
+            <label for="subject" class="col-xs-12">Subject</label>
+            <div class="col-xs-12">
+                <input type="text" class="form-control" id="subject" value="@subject" required paceholder="Subject of the email message">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="subject" class="col-xs-12">Body</label>
+            <div class="col-xs-12">
+                <textarea rows=4 id="body" style="resize: none;" class="form-control" placeholder="Body of the email message" required></textarea>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-xs-12">
+                <button type="submit" class="btn btn-default" onclick="return sendEmail();">Send</button>
+            </div>
+        </div>
+    </form>
+
+    <script>
+            function sendEmail() {
+                var subject = $("#subject").val().trim();
+                if(subject == "") {
+                    notify("Please fill out subjct of email.", "error", false, 3000);
+                    return false;
+                }
+
+                var body = $("#body").val().trim();
+                if(body == "") {
+                    notify("Please fill out body of email.", "error", false, 3000);
+                    return false;
+                }
+
+                $.ajax({
+                    url: "@api.routes.Admin.mail().url",
+                    data: JSON.stringify({ subject: subject, body: body}),
+                    type: "POST",
+                    contentType: "application/json"
+                }).done(function() {
+                    notify("Email send to admins.", "success", false, 5000);
+                }).fail(function (jqXHR, textStatus, errorThrown) {
+                    console.error("The following error occured: " + textStatus, errorThrown);
+                    notify("The application preferences was not updated due to : " + errorThrown, "error", false);
+                });
+                return false;
+            }
+    </script>
+}

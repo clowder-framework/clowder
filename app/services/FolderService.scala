@@ -79,4 +79,9 @@ trait FolderService {
     * Get all folders with the same display name
     */
   def findByDisplayNameInParent(name:String, parentType:String, parentId: String): List[Folder]
+
+  /**
+    * Get all folders that are part of a dataset (doesn't matter the level)
+    */
+  def findByParentDatasetId(parentId: UUID): List[Folder]
 }
