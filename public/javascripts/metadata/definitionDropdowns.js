@@ -92,7 +92,7 @@ var registerMDAutocomplete = function(inputElement, definitionData, selectElemen
 
   this.datetime = function(inputElement, definitionData, selectElement) {
     // calling getScript makes sure that $.datepicker is available
-    $.getScript("/assets/javascripts/jquery-ui-timepicker-addon.js", function(e) {
+    $.getScript(jsRoutes.controllers.Assets.at('javascripts/jquery-ui-timepicker-addon.js').url, function(e) {
 
       // register an event listener to stop showing the datepicker if a different
       // metadata definition is later selected
