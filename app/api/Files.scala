@@ -1242,7 +1242,6 @@ class Files @Inject()(
         }
     }
 
-  //Update Filename
   /**
     * REST endpoint: PUT: update or change the filename
     * args
@@ -1251,7 +1250,7 @@ class Files @Inject()(
     *   name: String
     */
   @ApiOperation(value = "Update a file name",
-    notes= "Takes one argument, a UUID of the collection. Request body takes a key-value pair for the name",
+    notes= "Takes one argument, a UUID of the file. Request body takes a key-value pair for the name",
     responseClass = "None", httpMethod = "PUT")
   def updateFileName(id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file, id)))(parse.json) {
     implicit request =>

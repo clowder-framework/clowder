@@ -150,13 +150,15 @@
 	<div class="row">
 		<div class="col-md-8 col-right-border">
 			<div id="prf-file-name" class="text-left inline">
-				<h1 id="file-name-title" class="inline">@Html(file.filename)</h1>
 				@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
+					<h1 id="file-name-title" class="inline" style="cursor:pointer" title="Click to edit file name.">@Html(file.filename)</h1>
 					<div id="h-edit-file" class="hiddencomplete">
 						<a id ="edit-file" href="javascript:updateFileName()" title="Click to edit file name.">
 							<span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
 						</a>
 					</div>
+				} else {
+					<h1 id="file-name-title" class="inline">@Html(file.filename)</h1>
 				}
 			</div>
 			<h4>in
@@ -560,14 +562,17 @@
 
 			<script language="javascript">
 					var fileName = $('#file-name-title').text();
+					$('#file-name-title').click(function(){
+						updateFileName();
+					});
 
 					function updateFileName() {
 						fileName = $('#file-name-title').text();
 						$('<div class="inline file_name_div h3"> </div>').insertAfter($('#prf-file-name'));
-						$('.file_name_div').append('<input type="text" id="file_name_input" style="width:350px" class="text-left" />');
+						$('.file_name_div').append('<input type="text" id="file_name_input" style="width:350px" class="text-left form-inline" />');
 						$('.file_name_div').append('<button class="btn btn-sm btn-primary edit-tab" onclick="saveFileName()"> <span class="glyphicon glyphicon-send"></span> Save</button>');
 						$('.file_name_div').append('<button class="btn btn-sm btn-link" onclick="cancelFileName()"> <span class="glyphicon glyphicon-remove"></span> Cancel</button>');
-						$('.file_name_div').append('<div class="hiddencomplete" id="file-name-error"> <span class="small">First name is required.</span></div>');
+						$('.file_name_div').append('<div class="hiddencomplete" id="file-name-error"> <span class="small error">File name is required.</span></div>');
 
 						$('#file_name_input').val(fileName);
 						$('#file-name-title').text("");
@@ -583,7 +588,6 @@
 						}
 						var name = $('#file_name_input').val();
 						jsonData = JSON.stringify({"name": htmlEncode(name)});
-						//console.log(name, encName, '@file.id');
 
 						var request = jsRoutes.api.Files.updateFileName('@file.id').ajax({
 							data: jsonData,
@@ -595,7 +599,6 @@
 							$('#file-name-title').text(htmlEncode(name).replace(/\n/g, "<br />"));
 							$('#file_name_div').mouseleave();
 							$('#h-edit-file').css("display", "");
-							// update the full name as well
 						});
 						request.fail(function(jqXHR, textStatus, errorThrown) {
 							console.error("The following error occurred: " + textStatus, errorThrown);
