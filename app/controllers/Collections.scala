@@ -499,6 +499,12 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           val decodedSpaces: List[ProjectSpace] = collectionSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
+          var decodedSpacesAndRemove : Map[ProjectSpace, Boolean] = Map.empty
+          for (collectionSpace <- collectionSpaces){
+            var decodedSpace = Utils.decodeSpaceElements(collectionSpace)
+            var removeFromSpace = removeFromSpaceAllowed(dCollection.id,collectionSpace.id)
+            decodedSpacesAndRemove = decodedSpacesAndRemove + (decodedSpace -> removeFromSpace)
+          }
 
           Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList, Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap, Some(decodedSpaces), prev,next,limit))
 
@@ -710,6 +716,18 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   }
 
 
+  private def removeFromSpaceAllowed(collectionId : UUID, spaceId : UUID) : Boolean = {
+    collections.get(collectionId) match {
+      case Some(collection) => {
+        spaceService.get(spaceId) match {
+          case Some(space) => {
+            return !(collections.hasParentInSpace(collection.id, space.id))
+          }
+        }
+      }
+    }
+    return false
+  }
 
 }
 

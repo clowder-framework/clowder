@@ -93,6 +93,10 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.superAdmin).map(spaceToJson)))
   }
 
+  def listCanEditNotAlreadyIn(collectionId : UUID, title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true ){ implicit request =>
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.superAdmin).map(spaceToJson)))
+  }
+
   /**
    * Returns list of collections based on parameters and permissions.
    * TODO this needs to be cleaned up when do permissions for adding to a resource
