@@ -49,7 +49,8 @@ class Files @Inject() (
   events: EventService,
   thumbnails: ThumbnailService,
   metadata: MetadataService,
-  contextLDService: ContextLDService) extends SecuredController {
+  contextLDService: ContextLDService,
+  folders: FolderService) extends SecuredController {
 
   /**
    * Upload form.
@@ -143,7 +144,7 @@ class Files @Inject() (
         	val dDataset = Utils.decodeDatasetElements(aDataset)
         	decodedDatasetsContaining += dDataset
         }
-
+        val foldersContainingFile = folders.findByFileId(file.id).sortBy(_.name)
           val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
           val extractionsByFile = extractions.findByFileId(id)
@@ -164,14 +165,14 @@ class Files @Inject() (
               //get output formats from Polyglot plugin and pass as the last parameter to view
               plugin.getOutputFormats(contentTypeEnding).map(outputFormats =>
                 Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
-                  extractorsActive, decodedDatasetsContaining.toList,
+                  extractorsActive, decodedDatasetsContaining.toList,foldersContainingFile,
                   mds, isRDFExportEnabled, extractionsByFile, outputFormats)))
             }
             case None =>
               Logger.debug("Polyglot plugin not found")
               //passing None as the last parameter (list of output formats)
               Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
-                extractorsActive, decodedDatasetsContaining.toList,
+                extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
                 mds, isRDFExportEnabled, extractionsByFile, None)))
           }              
       }
@@ -683,7 +684,7 @@ def uploadExtract() =
                           }
                           }
                           case None => {
-                            val userAgent = request.headers("user-agent")
+                            val userAgent = request.headers.get("user-agent").getOrElse("")
                             val filenameStar = if (userAgent.indexOf("MSIE") > -1) {
                               URLEncoder.encode(filename, "UTF-8")
                             } else {

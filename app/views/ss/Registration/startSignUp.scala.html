@@ -19,18 +19,10 @@
             <p>@Messages("Please provide your email for further instructions")</p>
         </div>
 
-        @if(!play.Play.application().configuration().getBoolean("registerThroughAdmins")){
-            <form action="@securesocial.core.providers.utils.RoutesHelper.handleStartSignUp().absoluteURL(IdentityProvider.sslEnabled)"
-                  class="form-horizontal"
-                  autocomplete="off" method="post"
-            >
-        }
-        @if(play.Play.application().configuration().getBoolean("registerThroughAdmins")){
-            <form action="@routes.Users.handleStartSignUp().absoluteURL(IdentityProvider.sslEnabled)"
-                  class="form-horizontal"
-                  autocomplete="off" method="post"
-            >
-        }
+        <form action="@securesocial.core.providers.utils.RoutesHelper.handleStartSignUp().absoluteURL(IdentityProvider.sslEnabled)"
+              class="form-horizontal"
+              autocomplete="off" method="post"
+        >
             <fieldset>
                 @helper.inputText(
                     startForm("email"),

@@ -41,7 +41,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
         Ok(views.html.editProfile(newbioForm, allInstitutionOptions, allProjectOptions, emailtimes))
       }
       case None => {
-        Redirect(routes.RedirectUtility.authenticationRequired())
+        Redirect(routes.Error.authenticationRequired())
       }
     }
   }
@@ -110,7 +110,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
           }
         )
       }
-      case None => Redirect(routes.RedirectUtility.authenticationRequired())
+      case None => Redirect(routes.Error.authenticationRequired())
     }
   }
 }

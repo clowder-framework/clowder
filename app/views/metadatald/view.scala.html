@@ -1,4 +1,5 @@
 @(metadata: List[models.Metadata], toDelete: Boolean)(implicit user: Option[models.User])
+    @import java.net.URL
     @import play.api.libs.json.JsString
     @import play.api.libs.json.JsObject
     @import play.api.libs.json.JsValue
@@ -56,7 +57,7 @@
         }
     }
 
-    @printHeader(agent: Agent, date: java.util.Date, contextId: Option[UUID]) = {
+    @printHeader(agent: Agent, date: java.util.Date, contextId: Option[UUID], contextURL: Option[URL]) = {
         @agent.operation by
         @if(agent.url.isDefined) {
            <a href="@agent.url">@agent.displayName</a>
@@ -66,6 +67,13 @@
         on @dateFormatter(date)
         @if(contextId.isDefined) {
             <a href="@api.routes.ContextLD.getContextById(contextId.get)" class="pull-right">context</a>
+        } else {
+            @contextURL match {
+                case Some(u) => {
+                    <a href="@u.toString" target="_blank" class="pull-right">context</a>
+                }
+                case None => {}
+            }
         }
     }
 
@@ -79,7 +87,7 @@
                     <span class="panel-icon glyphicon glyphicon-minus"></span>
                 </a>
                 <span>
-                    @printHeader(m.creator, m.createdAt, m.contextId)
+                    @printHeader(m.creator, m.createdAt, m.contextId, m.contextURL)
                 </span>
                 @if(toDelete && Permission.checkPermission(Permission.DeleteMetadata, ResourceRef(ResourceRef.metadata, m.id))) {
                         <a id="@m.id" title="Delete metadata entry" class="btn btn-link delete-icon">
@@ -134,10 +142,6 @@
                 request.done(function (response, textStatus, jqXHR) {
                     console.log("success");
                     delete_icon.closest(".panel").remove();
-                    var sd=$('#metadata-counter').text();
-                    console.log(sd);
-                    sd=parseInt(sd.split('(')[1]) -1;
-                    $('#metadata-counter').text("Metadata ("+ sd +")");
                 });
 
                 request.fail(function (jqXHR, textStatus, errorThrown){
