@@ -129,6 +129,14 @@ trait SecuredController extends Controller {
             }
           }
 
+          case Some(ResourceRef(ResourceRef.section, id)) =>{
+            val sections: SectionService = DI.injector.getInstance(classOf[SectionService])
+            sections.get(id) match {
+              case None => ("Section \"" + id.toString() + "\" does not exist.", "", "section")
+              case Some(section) => (messageNoPermission + " section \"" + section.id + "\"", id.toString() ,"section")
+            }
+          }
+
           case Some(ResourceRef(resType, id)) => {
             ("error resource", id.toString(), resType.toString())
           }
