@@ -41,7 +41,10 @@
                 <div class="col-sm-8">
                   <input type="text" class="form-control input-sm" id="sensorDataSource" name="sensorDataSource" value="{{properties.type.id}}" required>
                 </div>
-                <label for="sensorType" class="col-sm-4 paddingTop7 control-label"><a href='https://opensource.ncsa.illinois.edu/confluence/display/IMLCZO/Data+Types' target="_blank">Location Type</a> <span class="glyphicon glyphicon-new-window" style="font-size: 10px; color: #C0C0C0" aria-hidden="true"></span></label>
+                <label for="sensorType" class="col-sm-4 paddingTop7 control-label">
+                  <a href='https://opensource.ncsa.illinois.edu/confluence/display/IMLCZO/Data+Types' target="_blank">Location Type</a>
+                  <span class="glyphicon glyphicon-new-window" style="font-size: 10px; color: #C0C0C0" aria-hidden="true"></span>
+                </label>
                 <div class="col-sm-8">
                   <select class="form-control input-sm" id="sensorType" name="sensorType">
                     {{#each sensorTypes}}
