@@ -4,10 +4,8 @@ import api.Permission.Permission
 import models.ResourceRef
 import org.apache.commons.codec.binary.Base64
 import org.mindrot.jbcrypt.BCrypt
-import play.api.Logger
 import play.api.mvc._
-import models.{User, UUID}
-import securesocial.core.{Authorization, SecureSocial, UserService, Authenticator}
+import models.User
 import securesocial.core.providers.UsernamePasswordProvider
 import securesocial.core.{Authenticator, SecureSocial, UserService}
 import services.DI
@@ -27,10 +25,14 @@ import scala.concurrent.Future
  */
 trait ApiController extends Controller {
   /** get user if logged in */
-  def UserAction = new ActionBuilder[UserRequest] {
+  def UserAction(needActive: Boolean) = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      block(userRequest)
+      if (needActive && userRequest.user.exists(!_.active)) {
+        Future.successful(Unauthorized("Account is not activated"))
+      } else {
+        block(userRequest)
+      }
     }
   }
 
@@ -40,7 +42,9 @@ trait ApiController extends Controller {
   def PrivateServerAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      if (Permission.checkPrivateServer(userRequest.user) || userRequest.superAdmin) {
+      if (userRequest.user.exists(!_.active)) {
+        Future.successful(Unauthorized("Account is not activated"))
+      } else if (Permission.checkPrivateServer(userRequest.user) || userRequest.superAdmin) {
         block(userRequest)
       } else {
         Future.successful(Unauthorized("Not authorized"))
@@ -52,7 +56,9 @@ trait ApiController extends Controller {
   def AuthenticatedAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      if (userRequest.user.isDefined || userRequest.superAdmin) {
+      if (userRequest.user.exists(!_.active)) {
+        Future.successful(Unauthorized("Account is not activated"))
+      } else if (userRequest.user.isDefined || userRequest.superAdmin) {
         block(userRequest)
       } else {
         Future.successful(Unauthorized("Not authorized"))
@@ -64,7 +70,9 @@ trait ApiController extends Controller {
   def ServerAdminAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      if (Permission.checkServerAdmin(userRequest.user) || userRequest.superAdmin) {
+      if (userRequest.user.exists(!_.active)) {
+        Future.successful(Unauthorized("Account is not activated"))
+      } else if (Permission.checkServerAdmin(userRequest.user) || userRequest.superAdmin) {
         block(userRequest)
       } else {
         Future.successful(Unauthorized("Not authorized"))
@@ -76,7 +84,9 @@ trait ApiController extends Controller {
   def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None) = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      if (Permission.checkPermission(userRequest.user, permission, resourceRef) || userRequest.superAdmin) {
+      if (userRequest.user.exists(!_.active)) {
+        Future.successful(Unauthorized("Account is not activated"))
+      } else if (Permission.checkPermission(userRequest.user, permission, resourceRef) || userRequest.superAdmin) {
         block(userRequest)
       } else {
         Future.successful(Unauthorized("Not authorized"))

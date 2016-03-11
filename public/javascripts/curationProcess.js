@@ -41,3 +41,61 @@ function retractCuration(curationId) {
     });
 }
 
+function updatePageAndFolder(idx, folderId){
+    if(folderId != "") {
+        location.hash = "folderId="+folderId+"&page="+idx;
+    } else {
+        location.hash="page="+idx;
+    }
+    $(window).trigger("hashchange");
+}
+
+function getUpdatedFilesAndFolders(curationObject, limit) {
+    parseHash();
+    if(folderId == "") {
+        folderId = "None";
+    }
+
+    var request = jsRoutes.controllers.CurationObjects.getUpdatedFilesAndFolders(curationObject, folderId, limit, pageIndex).ajax({
+        type: 'GET'
+    });
+
+    request.done(function(response, textStatus, jsXHR){
+        $('#files').html("");
+        $('#files').html(response);
+    });
+    request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error("The following error occured: " + textStatus, errorThrown);
+        var errMsg = "You must be logged in to see files and folders.";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("Error in getting more files and folders. : " + errorThrown, "error");
+        }
+    });
+
+}
+
+function parseHash() {
+    var hash = location.hash.split('#')[1];
+    var folderSet = false;
+    var pageSet = false;
+    if(hash != undefined) {
+        var values = hash.split('&');
+        for (var i = 0; i < values.length; i++){
+            var temp = values[i].split('=');
+            if(temp[0] == 'folderId') {
+                folderId = temp[1];
+                folderSet = true
+            }
+            if(temp[0] == 'page'){
+                pageIndex = temp[1];
+                pageSet = true
+            }
+        }
+    }
+    if(!folderSet) {
+        folderId ='';
+    }
+    if(!pageSet) {
+        pageIndex = 0;
+    }
+}

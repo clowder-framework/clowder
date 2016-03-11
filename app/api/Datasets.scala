@@ -22,6 +22,7 @@ import play.api.mvc.AnyContent
 import services._
 import _root_.util.{JSONLD, License}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.collection.mutable.ListBuffer
 
 /**
  * Dataset API.
@@ -42,6 +43,7 @@ class Datasets @Inject()(
   rdfsparql: RdfSPARQLService,
   events: EventService,
   spaces: SpaceService,
+  folders: FolderService,
   userService: UserService) extends ApiController {
 
   @ApiOperation(value = "Get a specific dataset",
@@ -621,19 +623,56 @@ class Datasets @Inject()(
   }
 
   @ApiOperation(value = "List files in dataset",
-      notes = "Datasets and descriptions.",
-      responseClass = "None", httpMethod = "GET")
+    notes = "Datasets and descriptions.",
+    responseClass = "None", httpMethod = "GET")
   def datasetFilesList(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
-      datasets.get(id) match {
-        case Some(dataset) => {
-          val list: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
-            case Some(file) => jsonFile(file)
-            case None => Logger.error(s"Error getting File $fileId")
-          }).asInstanceOf[List[JsValue]]
-          Ok(toJson(list))
-        }
-        case None => Logger.error("Error getting dataset" + id); InternalServerError
+    datasets.get(id) match {
+      case Some(dataset) => {
+        val list: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
+          case Some(file) => jsonFile(file)
+          case None => Logger.error(s"Error getting File $fileId")
+        }).asInstanceOf[List[JsValue]]
+        Ok(toJson(list))
       }
+      case None => Logger.error("Error getting dataset" + id); InternalServerError
+    }
+  }
+
+  @ApiOperation(value = "List files in dataset and within folders",
+    notes = "Datasets and descriptions.",
+    responseClass = "None", httpMethod = "GET")
+  def datasetAllFilesList(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    datasets.get(id) match {
+      case Some(dataset) => {
+        val listFiles: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
+          case Some(file) => jsonFile(file)
+          case None => Logger.error(s"Error getting File $fileId")
+        }).asInstanceOf[List[JsValue]]
+        val list = listFiles ++ getFilesWithinFolders(id)
+        Ok(toJson(list))
+      }
+      case None => Logger.error("Error getting dataset" + id); InternalServerError
+    }
+  }
+
+  private def getFilesWithinFolders(id: UUID): List[JsValue] = {
+    val output = new ListBuffer[JsValue]()
+    datasets.get(id) match {
+      case Some(dataset) => {
+        val childFolders = folders.findByParentDatasetId(id)
+        childFolders.map {
+          folder =>
+            folder.files.map {
+              fileId => files.get(fileId) match {
+                case Some(file) => output += jsonFile(file)
+                case None => Logger.error(s"Error getting file $fileId")
+              }
+            }
+        }
+      }
+      case None => Logger.error(s"Error getting dataset $id")
+    }
+    output.toList.asInstanceOf[List[JsValue]]
   }
 
   def jsonFile(file: models.File): JsValue = {
@@ -1650,14 +1689,44 @@ class Datasets @Inject()(
   def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION)
       (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
     implicit val pec = ec.prepare()
-    val inputFiles = dataset.files.flatMap(f=>files.get(f))
+    val folderNameMap = scala.collection.mutable.Map.empty[UUID, String]
+    var inputFilesBuffer = new ListBuffer[File]()
+    dataset.files.map(f=>files.get(f) match {
+      case Some(file) => {
+        inputFilesBuffer += file
+        folderNameMap(file.id) = file.id.stringify
+      }
+      case None => Logger.error(s"No file with id $f")
+    })
+
+    folders.findByParentDatasetId(dataset.id).map {
+      folder => folder.files.map(f=> files.get(f) match {
+        case Some(file) => {
+          inputFilesBuffer += file
+          var name = folder.displayName
+          var f1: Folder = folder
+          while(f1.parentType == "folder") {
+            folders.get(f1.parentId) match {
+              case Some(fparent) => {
+                name = fparent.displayName + "/"+ name
+                f1 = fparent
+              }
+              case None =>
+            }
+          }
+          folderNameMap(file.id) = name + "/" + file.id.stringify
+        }
+        case None => Logger.error(s"No file with id $f")
+      })
+    }
+    val inputFiles = inputFilesBuffer.toList
     // which file we are currently processing
     var count = 0
     val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
     val zip = new ZipOutputStream((byteArrayOutputStream))
     // zip compression level
     zip.setLevel(compression)
-    var is: Option[InputStream] = addFileToZip(inputFiles(count), zip)
+    var is: Option[InputStream] = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
 
     Enumerator.generateM({
       is match {
@@ -1674,7 +1743,7 @@ class Datasets @Inject()(
               count = count + 1
               // more files available
               if (count < inputFiles.size) {
-                is = addFileToZip(inputFiles(count), zip)
+                is = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
               } else {
                 // close the zip file and exit
                 zip.close()
@@ -1706,10 +1775,10 @@ class Datasets @Inject()(
    * @param zip zip output stream. One stream per dataset.
    * @return input stream for input file
    */
-  private def addFileToZip(file: models.File, zip: ZipOutputStream): Option[InputStream] = {
+  private def addFileToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     files.getBytes(file.id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
-        zip.putNextEntry(new ZipEntry(file.id + "/" + filename))
+        zip.putNextEntry(new ZipEntry(folderName + "/" + filename))
         Some(inputStream)
       }
       case None => None

@@ -1,0 +1,34 @@
+@(user: User, ssl: Boolean = true)(implicit request: RequestHeader)
+
+@import services.AppConfiguration
+
+<html>
+    <body>
+        <table style="border: 1px solid black; padding: 10px;">
+            <tr>
+                <td>
+                    <img src="@user.getAvatarUrl()" border="0" height="48" width="48">
+                </td>
+                <td>
+                    A new user joined <a href="@routes.Application.index().absoluteURL(ssl)" style="text-decoration: none">@AppConfiguration.getDisplayName</a><br/>
+                    <a href="@routes.Profile.viewProfileUUID(user.id).absoluteURL(ssl)" style="text-decoration: none">
+                        <h2 style="margin: 0">@user.fullName</h2>
+                    </a>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    Login provider: <b>@user.identityId.providerId</b><br/>
+                    Login userID: <b>@user.identityId.userId</b>
+                </td>
+            </tr>
+        </table>
+        <p>
+            <small>
+                This message was sent by <a style="text-decoration:none;" href="http://clowder.ncsa.illinois.edu/">
+                Clowder</a> @sys.props.getOrElse("build.version", default = "0.0.0")#@sys.props.getOrElse("build.bamboo", default = "development")<br/>
+                If you have any questions about this email please contact <a href="@routes.Application.email().absoluteURL(ssl)">the server admins.</a>
+            </small>
+        </p>
+    </body>
+</html>
