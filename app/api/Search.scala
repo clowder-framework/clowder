@@ -14,8 +14,7 @@ import play.api.libs.json.Json.toJson
 import javax.inject.{Inject, Singleton}
 import play.api.Play.current
 import play.api.Play.configuration
-import models.UUID
-import models.MultimediaDistance
+import models.{ResourceRef, UUID, MultimediaDistance}
 import com.wordnik.swagger.annotations.{ApiOperation, Api}
 
 @Singleton
@@ -132,7 +131,8 @@ class Search @Inject() (files: FileService, datasets: DatasetService, collection
    @ApiOperation(value = "Search multimedia index for similar sections",
        notes = "",
        responseClass = "None", httpMethod = "GET")
-  def searchMultimediaIndex(section_id: UUID) = PermissionAction(Permission.ViewDataset) {
+  def searchMultimediaIndex(section_id: UUID) = PermissionAction(Permission.ViewSection,
+    Some(ResourceRef(ResourceRef.section, section_id))) {
     implicit request =>
 
     // Finding IDs of spaces that the user has access to
