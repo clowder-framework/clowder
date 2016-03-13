@@ -506,7 +506,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             decodedSpacesAndRemove = decodedSpacesAndRemove + (decodedSpace -> removeFromSpace)
           }
 
-          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList, Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap, Some(decodedSpaces), prev,next,limit))
+          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList, Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap, Some(decodedSpaces), decodedSpacesAndRemove,prev,next,limit))
 
         }
         case None => {
