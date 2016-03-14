@@ -195,27 +195,27 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     (title, date) match {
       case (Some(t), Some(d)) => {
         if (mine)
-          collections.listUser(d, true, limit, t, user, superAdmin, user.get)
+          collections.listUser(d, true, limit, t, user, superAdmin, user.get, false)
         else
-          collections.listAccess(d, true, limit, t, permission, user, superAdmin)
+          collections.listAccess(d, true, limit, t, permission, user, superAdmin, true)
       }
       case (Some(t), None) => {
         if (mine)
-          collections.listUser(limit, t, user, superAdmin, user.get)
+          collections.listUser(limit, t, user, superAdmin, user.get, false)
         else
-          collections.listAccess(limit, t, permission, user, superAdmin)
+          collections.listAccess(limit, t, permission, user, superAdmin, true)
       }
       case (None, Some(d)) => {
         if (mine)
-          collections.listUser(d, true, limit, user, superAdmin, user.get)
+          collections.listUser(d, true, limit, user, superAdmin, user.get, false)
         else
-          collections.listAccess(d, true, limit, permission, user, superAdmin)
+          collections.listAccess(d, true, limit, permission, user, superAdmin, true)
       }
       case (None, None) => {
         if (mine)
-          collections.listUser(limit, user, superAdmin, user.get)
+          collections.listUser(limit, user, superAdmin, user.get, false)
         else
-          collections.listAccess(limit, permission, user, superAdmin)
+          collections.listAccess(limit, permission, user, superAdmin, true)
       }
     }
   }
@@ -562,7 +562,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     notes = "",
     responseClass = "None", httpMethod = "GET")
   def getRootCollections() = PermissionAction(Permission.ViewCollection) { implicit request =>
-    val root_collections_list = for (collection <- collections.listAccess(100,Set[Permission](Permission.ViewCollection),request.user,true); if collection.root_flag == true)
+    val root_collections_list = for (collection <- collections.listAccess(100,Set[Permission](Permission.ViewCollection),request.user,true, true); if collection.root_flag == true)
       yield jsonCollection(collection)
 
     Ok(toJson(root_collections_list))
@@ -573,9 +573,9 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     responseClass = "None", httpMethod = "GET")
   def getAllCollections() = PermissionAction(Permission.ViewCollection) { implicit request =>
     implicit val user = request.user
-    var count : Long  = collections.countAccess(Set[Permission](Permission.ViewCollection),user,true);
-    var limit = count.toInt
-    val all_collections_list = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection),request.user,true))
+    val count : Long  = collections.countAccess(Set[Permission](Permission.ViewCollection),user,true, false);
+    val limit = count.toInt
+    val all_collections_list = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection),request.user,true, false))
       yield jsonCollection(collection)
     Ok(toJson(all_collections_list))
   }
@@ -587,9 +587,9 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     responseClass = "None", httpMethod = "GET")
   def getTopLevelCollections() = PermissionAction(Permission.ViewCollection){ implicit request =>
     implicit val user = request.user
-    var count = collections.countAccess(Set[Permission](Permission.ViewCollection),user,true);
-    var limit = count.toInt
-    val top_level_collections = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection),request.user,true); if (collection.root_flag == true || collection.parent_collection_ids.isEmpty))
+    val count = collections.countAccess(Set[Permission](Permission.ViewCollection),user,true, false);
+    val limit = count.toInt
+    val top_level_collections = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection),request.user,true, false); if (collection.root_flag == true || collection.parent_collection_ids.isEmpty))
       yield jsonCollection(collection)
 
     Ok(toJson(top_level_collections))
@@ -600,7 +600,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   def getChildCollectionIds(collectionId: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection,collectionId))){implicit request =>
     collections.get(collectionId) match {
       case Some(collection) => {
-        var childCollectionIds = collection.child_collection_ids
+        val childCollectionIds = collection.child_collection_ids
         Ok(toJson(childCollectionIds))
       }
       case None => BadRequest(toJson("collection not found"))
@@ -627,7 +627,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     collections.get(collectionId) match {
       case Some(collection) => {
         val childCollections = ListBuffer.empty[JsValue]
-        var childCollectionIds = collection.child_collection_ids
+        val childCollectionIds = collection.child_collection_ids
         for (childCollectionId <- childCollectionIds) {
           collections.get(childCollectionId) match {
             case Some(child_collection) => {
@@ -651,7 +651,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     collections.get(collectionId) match {
       case Some(collection) => {
         val parentCollections = ListBuffer.empty[JsValue]
-        var parentCollectionIds = collection.parent_collection_ids
+        val parentCollectionIds = collection.parent_collection_ids
         for (parentCollectionId <- parentCollectionIds) {
           collections.get(parentCollectionId) match {
             case Some(parent_collection) => {

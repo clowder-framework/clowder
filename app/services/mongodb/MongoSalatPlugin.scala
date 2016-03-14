@@ -302,6 +302,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //Add author and creation date to curation folders.
     updateMongo("add-creator-to-curation-folders", addAuthorAndDateToCurationFolders)
+
+    //Whenever a root flag is not set, mark it as true.
+    updateMongo("add-collection-root-flag", addRootFlagToCollections)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -795,4 +798,16 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
+  private def addRootFlagToCollections() {
+    collection("collections").foreach{ c =>
+      val root_flag = c.getAsOrElse[Boolean]("root_flag", true)
+      c.put("root_flag", root_flag)
+      try {
+        collection("collections").save(c, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to set root flag for collection with id: " + c.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+      }
+
+    }
+  }
 }

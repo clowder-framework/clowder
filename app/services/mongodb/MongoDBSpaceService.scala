@@ -261,9 +261,10 @@ class MongoDBSpaceService @Inject() (
     log.debug(s"Adding $collection to $space")
 
     collections.addToSpace(collection, space)
-
+    var isRoot = false
     collections.get(collection) match {
       case Some(current_collection) => {
+        if(current_collection.root_flag) {isRoot = true}
         val childCollectionIds = current_collection.child_collection_ids
         for (childCollectionId <- childCollectionIds){
           collections.get(childCollectionId) match {
@@ -271,7 +272,7 @@ class MongoDBSpaceService @Inject() (
               addCollection(childCollectionId, space)
             }
             case None => {
-              log.error("no collection found for " + childCollectionId)
+              log.error("No collection found for " + childCollectionId)
             }
           }
         }
@@ -279,7 +280,9 @@ class MongoDBSpaceService @Inject() (
         log.error("No collection found for " + collection)
       }
     }
-    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("collectionCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
+    if(isRoot) {
+      ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("collectionCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
+    }
   }
 
   def removeCollection(collection:UUID, space:UUID): Unit = {

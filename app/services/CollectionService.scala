@@ -33,52 +33,52 @@ trait CollectionService {
   /**
    * Return the count of collections the user has access to.
    */
-  def countAccess(permisions: Set[Permission], user: Option[User], showAll: Boolean): Long
+  def countAccess(permisions: Set[Permission], user: Option[User], showAll: Boolean, root: Boolean): Long
 
   /**
    * Return a list of collections the user has access to.
    */
-  def listAccess(limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection]
+  def listAccess(limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean, root: Boolean): List[Collection]
 
   /**
    * Return a list of collections the user has access to.
    */
-  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection]
+  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean, root: Boolean): List[Collection]
 
   /**
    * Return a list of collections the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean, root: Boolean): List[Collection]
 
   /**
    * Return a list of collections the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean, root: Boolean): List[Collection]
 
   /**
    * Return the count of collections the user has created.
    */
-  def countUser(user: Option[User], showAll: Boolean, owner: User): Long
+  def countUser(user: Option[User], showAll: Boolean, owner: User, root: Boolean): Long
 
   /**
    * Return a list of collections the user has created.
    */
-  def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Collection]
+  def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User, root: Boolean): List[Collection]
 
   /**
    * Return a list of collections the user has created with matching title.
    */
-  def listUser(limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[Collection]
+  def listUser(limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User, root: Boolean): List[Collection]
 
   /**
    * Return a list of collections the user has created starting at a specific date.
    */
-  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Collection]
+  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User, root: Boolean): List[Collection]
 
   /**
    * Return a list of collections the user has access to starting at a specific date with matching title.
    */
-  def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[Collection]
+  def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User, root: Boolean): List[Collection]
 
   /**
    * Get collection.

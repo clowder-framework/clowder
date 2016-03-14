@@ -38,7 +38,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.superAdmin)
     val filesCount = files.count()
     val collectionsCount = collections.count()
-    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.superAdmin)
+    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.superAdmin, true)
     val spacesCount = spaces.count()
     val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.superAdmin)
     val usersCount = users.count()
@@ -62,8 +62,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
           }
           dataset.id -> allComments.size
         }.toMap
-        val collectionList = collections.listUser(4, Some(clowderUser), request.superAdmin, clowderUser)
-        var collectionsWithThumbnails = collectionList.map {c =>
+        val collectionList = collections.listUser(4, Some(clowderUser), request.superAdmin, clowderUser, false)
+        val collectionsWithThumbnails = collectionList.map {c =>
           if (c.thumbnail_id.isDefined) {
             c
           } else {
@@ -154,7 +154,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.superAdmin)
     val filesCount = files.count()
     val collectionsCount = collections.count()
-    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.superAdmin)
+    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.superAdmin, true)
     val spacesCount = spaces.count()
     val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.superAdmin)
     val usersCount = users.count()

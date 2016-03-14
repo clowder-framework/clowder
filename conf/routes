@@ -678,5 +678,4 @@ DELETE         /spaces/curations/:id/files/:curationFileId                      
 DELETE         /spaces/curations/:id/folders/:curationFolderId                          @api.CurationObjects.deleteCurationFolder(id:UUID, parentId: UUID, curationFolderId: UUID)
 GET            /spaces/curations/:id/updatedFilesAndFolders                             @controllers.CurationObjects.getUpdatedFilesAndFolders(id: UUID, curationFolderId: String, limit: Int, pageIndex:Int)
 
-
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()
