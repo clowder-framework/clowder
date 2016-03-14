@@ -412,6 +412,11 @@ class Datasets @Inject()(
           }
           val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
+          var decodedSpaces_canRemove : Map[ProjectSpace, Boolean] = Map.empty;
+          for (aSpace <- decodedSpaces){
+            decodedSpaces_canRemove = decodedSpaces_canRemove + (aSpace -> true)
+          }
+
           val fileList : List[File]= dataset.files.reverse.map(f => files.get(f)).flatten
 
           //dataset is in at least one space with editstagingarea permission, or if the user is the owner of dataset.
@@ -423,7 +428,7 @@ class Datasets @Inject()(
           val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
-            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), fileList,
+            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), Some(decodedSpaces_canRemove),fileList,
             filesTags, toPublish, curPubObjects, currentSpace, limit))
         }
         case None => {

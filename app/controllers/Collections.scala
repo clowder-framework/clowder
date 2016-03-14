@@ -499,14 +499,14 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           val decodedSpaces: List[ProjectSpace] = collectionSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
-          var decodedSpacesAndRemove : Map[ProjectSpace, Boolean] = Map.empty
+          var decodedSpaces_canRemove : Map[ProjectSpace, Boolean] = Map.empty
           for (collectionSpace <- collectionSpaces){
             var decodedSpace = Utils.decodeSpaceElements(collectionSpace)
             var removeFromSpace = removeFromSpaceAllowed(dCollection.id,collectionSpace.id)
-            decodedSpacesAndRemove = decodedSpacesAndRemove + (decodedSpace -> removeFromSpace)
+            decodedSpaces_canRemove = decodedSpaces_canRemove + (decodedSpace -> removeFromSpace)
           }
 
-          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList, Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap, Some(decodedSpaces), decodedSpacesAndRemove,prev,next,limit))
+          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList, Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap, Some(decodedSpaces), decodedSpaces_canRemove,prev,next,limit))
 
         }
         case None => {

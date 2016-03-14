@@ -6,6 +6,7 @@
   rdfExported: Boolean,
   relatedSensors: List[(String,String,String)],
   datasetSpaces: Option[List[ProjectSpace]],
+  datasetSpaces_canRemove : Option[Map[ProjectSpace,Boolean]],
   fileList: List[File],
   filesTags: scala.collection.immutable.TreeSet[String],
   toPublish: Boolean,
