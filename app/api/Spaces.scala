@@ -205,7 +205,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         for (descendant <- collectionDescendants){
           val rootCollectionSpaces = collectionService.getRootSpaceIds(descendant.id)
           for (space <- descendant.spaces) {
-            if (!rootCollectionSpaces.contains(space)){
+            if (space == spaceId){
               spaces.removeCollection(descendant.id, space)
             }
           }

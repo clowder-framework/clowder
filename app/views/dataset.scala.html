@@ -182,7 +182,7 @@
 
 		<!-- right column -->
 		<div class="col-md-4 col-left-border">
-            @spaces.spaceAllocation(dataset.id, ResourceRef.dataset, datasetSpaces.getOrElse(List.empty),None)
+            @spaces.spaceAllocation(dataset.id, ResourceRef.dataset, datasetSpaces.getOrElse(List.empty),None,None)
             @if(user.isDefined) {
                 <br/>
                 @datasets.userLink(dataset)
