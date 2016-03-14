@@ -428,7 +428,7 @@ class Datasets @Inject()(
           val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
-            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), Some(decodedSpaces_canRemove),fileList,
+            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove),fileList,
             filesTags, toPublish, curPubObjects, currentSpace, limit))
         }
         case None => {

@@ -1,4 +1,4 @@
-@(resourceId: UUID, resourceType: Symbol, resourceSpaces: List[ProjectSpace], resourceSpaces_canRemove : Map[ProjectSpace,Boolean], currentCollection: Option[Collection])(implicit user: Option[models.User])
+@(resourceId: UUID, resourceType: Symbol, resourceSpaces_canRemove : Map[ProjectSpace,Boolean], currentCollection: Option[Collection])(implicit user: Option[models.User])
 @import api.Permission
 @import play.api.libs.json.Json
     <div class="row bottom-padding">
@@ -48,7 +48,7 @@
                             }
                             @**
                                 a collection can be removed from a space as long as it is the highest level collection in that space;
-                                meaning it has no parent in the space. 
+                                meaning it has no parent in the space.
                             **@
                             @if(v == true){
                                 @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
