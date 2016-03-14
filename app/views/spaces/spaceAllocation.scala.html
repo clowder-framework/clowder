@@ -1,4 +1,4 @@
-@(resourceId: UUID, resourceType: Symbol, resourceSpaces: List[ProjectSpace], currentCollection: Option[Collection])(implicit user: Option[models.User])
+@(resourceId: UUID, resourceType: Symbol, resourceSpaces: List[ProjectSpace], resourceSpaces_canRemove : Option[Map[ProjectSpace,Boolean]], currentCollection: Option[Collection])(implicit user: Option[models.User])
 @import api.Permission
 @import play.api.libs.json.Json
     <div class="row bottom-padding">
@@ -13,7 +13,7 @@
 
     <div class="row">
         <div id="spacesList" class="col-md-12">
-        @resourceSpaces.map {s =>
+        @resourceSpaces_canRemove.get.map {case (s, v) =>
             <div id="col_@s.id" class="row bottom-padding">
                 <div class="col-md-2">
                     @if(s.logoURL.isDefined) {
@@ -47,10 +47,9 @@
                                 @s.collectionCount collections
                             }
                             @**
-                                a collection can be removed from a space if it does not have a parent collection in that space
-                                a collection can be added to a space if it is not already in that space
+                                if the collection is a child collection, only the root can be removed or added to space
                             **@
-                            @if(api.routes.Collections.removeFromSpaceAllowed(resourceId, s.id) == true){
+                            @if(v == true){
                                 @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
                                     | <a href="#" class="btn btn-link btn-xs" onclick="removeCollectionFromSpace('@(s.id)', '@resourceId', event)" title="Remove from space">
                                         <span class="glyphicon glyphicon-remove"></span>  Remove</a>
