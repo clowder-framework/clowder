@@ -15,7 +15,7 @@ case class Vocabulary (
   name : String = "",
   lastModified : Date = new Date(),
   keys : List[String] = List.empty,
-  tags : List[Tag] = List.empty,
+  description : List[String] = List.empty,
   spaces : List[UUID] = List.empty)
 
 
@@ -23,7 +23,8 @@ object Vocabulary{
   implicit val vocabularyWrites = new Writes[Vocabulary] {
     def writes(vocabulary : Vocabulary) : JsValue = {
       val vocabularyAuthor = vocabulary.author.get.identityId.userId
-      Json.obj("id" -> vocabulary.id.toString,"author" -> vocabularyAuthor, "keys" -> vocabulary.keys.toList)
+      Json.obj("id" -> vocabulary.id.toString,"author" -> vocabularyAuthor, "name" -> vocabulary.name,
+        "keys" -> vocabulary.keys.toList, "description" -> vocabulary.description.toList)
     }
   }
 }

@@ -368,7 +368,6 @@ object Permission extends Enumeration {
         }
       }
 
-
       case ResourceRef(resType, id) => {
         Logger.error("Resource type not recognized " + resType)
         false

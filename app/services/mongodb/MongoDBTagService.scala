@@ -15,7 +15,7 @@ import services.mongodb.MongoContext.context
 /**
  * Created by lmarini on 1/17/14.
  */
-class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, queries: MultimediaQueryService, sections: SectionService, vocabularies : VocabularyService) extends TagService {
+class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, queries: MultimediaQueryService, sections: SectionService) extends TagService {
 
   val USERID_ANONYMOUS = "anonymous"
 
@@ -73,7 +73,6 @@ class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, 
         case TagCheck_File => not_found = files.get(id).isEmpty
         case TagCheck_Dataset => not_found = datasets.get(id).isEmpty
         case TagCheck_Section => not_found = SectionDAO.findOneById(new ObjectId(id.stringify)).isEmpty
-        case TagCheck_Vocabulary => not_found = vocabularies.get(id).isEmpty
         case _ => error_str = "Only file/dataset/section is supported in checkErrorsForTag()."
       }
       if (not_found) {
@@ -134,8 +133,6 @@ class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, 
           datasets.index(id)
         }
         case TagCheck_Section => sections.addTags(id, userOpt, extractorOpt, tagsCleaned)
-        case TagCheck_Vocabulary => vocabularies.addTags(id, userOpt, extractorOpt, tagsCleaned)
-
       }
     }
     (not_found, error_str)
@@ -158,7 +155,6 @@ class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, 
         case TagCheck_File => files.removeTags(id, userOpt, extractorOpt, tagsCleaned)
         case TagCheck_Dataset => datasets.removeTags(id, userOpt, extractorOpt, tagsCleaned)
         case TagCheck_Section => sections.removeTags(id, userOpt, extractorOpt, tagsCleaned)
-        case TagCheck_Vocabulary => vocabularies.removeTags(id,userOpt,extractorOpt,tagsCleaned)
       }
     }
     (not_found, error_str)

@@ -17,4 +17,3 @@ abstract class TagCheckObjType
 case object TagCheck_File extends TagCheckObjType
 case object TagCheck_Dataset extends TagCheckObjType
 case object TagCheck_Section extends TagCheckObjType
-case object TagCheck_Vocabulary extends TagCheckObjType

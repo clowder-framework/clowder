@@ -99,7 +99,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
     val user = request.user
     var formName = request.body.asFormUrlEncoded.getOrElse("name", null)
     var formKeys = request.body.asFormUrlEncoded.getOrElse("keys",null)
-    var formTags = request.body.asFormUrlEncoded.getOrElse("tags",null)
+    var formDescription = request.body.asFormUrlEncoded.getOrElse("description",null)
     var formProject = request.body.asFormUrlEncoded.getOrElse("project",null)
 
     var name : String = ""
@@ -114,15 +114,15 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
     if (formKeys != null) {
       keys = formKeys(0).split(',').toList
     }
-    var tags = List.empty[String]
-    if (formTags != null) {
-      tags = formTags(0).split(',').toList
+    var description = List.empty[String]
+    if (formDescription != null) {
+      description = formDescription(0).split(',').toList
     }
     var v : Vocabulary = null
 
     user match {
       case Some(identity) => {
-        v = Vocabulary(author = Some(identity), created = new Date(), name = name, keys = keys)
+        v = Vocabulary(author = Some(identity), created = new Date(), name = name, keys = keys, description = description)
         vocabularyService.insert(v) match {
           case Some(id) => {
             Ok(toJson(Map("id" -> id)))
@@ -194,12 +194,12 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
   }
 
   @ApiOperation(value = "Gets tags of a file", notes = "Returns a list of strings, List[String].", responseClass = "None", httpMethod = "GET")
-  def getTags(id: UUID) = PermissionAction(Permission.ViewVocabulary, Some(ResourceRef(ResourceRef.vocabulary, id))) { implicit request =>
+  def getDescription(id: UUID) = PermissionAction(Permission.ViewVocabulary, Some(ResourceRef(ResourceRef.vocabulary, id))) { implicit request =>
     Logger.info("Getting tags for vocabulary with id " + id)
     if (UUID.isValid(id.stringify)) {
       vocabularyService.get(id) match {
         case Some(vocab) => Ok(Json.obj("id" -> vocab.id.toString, "name" -> vocab.name,
-          "tags" -> Json.toJson(vocab.tags.toString)))
+          "description" -> Json.toJson(vocab.description.toString)))
         case None => {
           Logger.error("The vocabulary with id " + id + " is not found.")
           NotFound(toJson("The vocabulary with id " + id + " is not found."))
@@ -213,7 +213,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
 
 
   def jsonVocabulary(vocabulary : Vocabulary): JsValue = {
-    toJson(Map("id" -> vocabulary.id.toString, "name" -> vocabulary.name.toString, "keys" -> vocabulary.keys.toString))
+    toJson(Map("id" -> vocabulary.id.toString, "name" -> vocabulary.name.toString, "keys" -> vocabulary.keys.toString, "description" -> vocabulary.description.toString))
   }
 
 }

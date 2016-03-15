@@ -32,8 +32,5 @@ trait VocabularyService {
 
   def removeFromSpace(vocabId : UUID, spaceId : UUID) : Try[Unit]
 
-  def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
-
-  def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String])
 
 }
