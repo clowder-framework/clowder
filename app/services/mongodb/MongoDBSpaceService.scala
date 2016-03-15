@@ -268,7 +268,10 @@ class MongoDBSpaceService @Inject() (
         for (childCollectionId <- childCollectionIds){
           collections.get(childCollectionId) match {
             case Some(child_collection) => {
-              addCollection(childCollectionId, space)
+              if (!child_collection.spaces.contains(space)){
+                addCollection(childCollectionId, space)
+              }
+
             }
             case None => {
               log.error("no collection found for " + childCollectionId)
