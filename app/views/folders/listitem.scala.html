@@ -27,7 +27,7 @@
                                 <span class="glyphicon glyphicon-file"></span> @folder.files.length
                                 @if(user.isDefined) {
                                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))){
-                                        <button "confirmDeleteResource('folder','@(folder.id)','@(folder.displayName.replace("'","&#39;"))', '@parentDataset', '/')" class="btn btn-link" style="text-align:right" title="Delete">
+                                        <button onclick="confirmDeleteResource('folder','@(folder.id)','@(folder.displayName.replace("'","&#39;"))', '@parentDataset', '/')" class="btn btn-link" style="text-align:right" title="Delete">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     } else {
                                         <button disabled onclick="" class="btn btn-link" style="text-align:right" title="Delete">
