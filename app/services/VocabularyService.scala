@@ -32,6 +32,6 @@ trait VocabularyService {
 
   def removeFromSpace(vocabId : UUID, spaceId : UUID) : Try[Unit]
 
-  def findByDescription(desc : String) : List[Vocabulary]
+  def findByDescription(desc : List[String]) : List[Vocabulary]
 
 }

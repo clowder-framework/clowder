@@ -689,6 +689,7 @@ POST           /sendEmail                                                       
 GET         /api/vocabularies/list                                                      @api.Vocabularies.list()
 POST        /api/vocabularies/createVocabulary                                          @api.Vocabularies.createVocabularyFromForm()
 GET         /api/vocabularies/getByAuthor                                               @api.Vocabularies.getByAuthor()
+POST         /api/vocabularies/findByDescription                                         @api.Vocabularies.findByDescription()
 
 GET         /api/vocabularies/:vocab_id                                                 @api.Vocabularies.get(vocab_id : UUID)
 GET         /api/vocabularies/:name                                                     @api.Vocabularies.getByName(name : String)

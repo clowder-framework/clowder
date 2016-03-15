@@ -209,7 +209,10 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
     }
   }
 
-  def findByDescription() = PrivateServerAction(parse.multipartFormData){implicit request=>
+  @ApiOperation(value = "List all vocabularies the user can view with description",
+    notes = "This will check for Permission.ViewVocabulary",
+    responseClass = "None", httpMethod = "POST")
+  def findByDescription() = PrivateServerAction (parse.multipartFormData) {implicit request=>
     val user = request.user
     val formDescription = request.body.asFormUrlEncoded.getOrElse("description",null)
 
@@ -223,8 +226,11 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
         if (!description.isEmpty){
           Ok(toJson(vocabularyService.findByDescription(description)))
         }
+        else {
+          Ok(toJson("no description provided"))
+        }
       }
-      case None => BadRequest()
+      case None => BadRequest(toJson("not found"))
     }
   }
 
