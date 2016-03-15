@@ -279,6 +279,7 @@ class MongoDBSpaceService @Inject() (
         log.error("No collection found for " + collection)
       }
     }
+    //set the collectionCount, do not increment it
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("collectionCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
   }
 
