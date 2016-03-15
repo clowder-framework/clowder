@@ -138,7 +138,7 @@ trait SecuredController extends Controller {
             case Some(ResourceRef(ResourceRef.curationObject, id)) =>{
               val curations: CurationService = DI.injector.getInstance(classOf[CurationService])
               curations.get(id) match {
-                case None => ("Curation \"" + id.toString() + "\" does not exist.", "", "curation")
+                case None =>  Future.successful(BadRequest(views.html.notFound("Curation Object Not found")))
                 case Some(curation) => (messageNoPermission + "curation object \"" + curation.name + "\"", id.toString() ," curation")
               }
             }
