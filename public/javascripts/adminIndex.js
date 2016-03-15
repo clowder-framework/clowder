@@ -495,7 +495,7 @@ reindex.onclick=function(evt){
 	});
 
 	request.done(function (response, textStatus, jqXHR){
-		//display info msg for delete all indexes
+		//display info msg for reindex
 		$('#reindexmsg').text(response.status);
 	});
 	request.fail(function (jqXHR, textStatus, errorThrown){
