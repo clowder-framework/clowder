@@ -305,6 +305,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //Whenever a root flag is not set, mark it as true.
     updateMongo("add-collection-root-flag", addRootFlagToCollections)
+
+    updateMongo("update-collection-counter-in-space", fixCollectionCounterInSpaces)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -806,6 +808,21 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         collection("collections").save(c, WriteConcern.Safe)
       } catch {
         case e: BSONException => Logger.error("Unable to set root flag for collection with id: " + c.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+      }
+
+    }
+  }
+
+  private def fixCollectionCounterInSpaces() {
+    collection("spaces.projects").foreach{ space =>
+      val spaceId = space.getAsOrElse[ObjectId]("_id", new ObjectId())
+      val q = MongoDBObject("spaces" -> MongoDBObject("$in" -> MongoDBList(spaceId)), "root_flag" -> true)
+      val collections = collection("collections").find(q)
+      space.put("collectionCount", collections.length)
+      try{
+        collection("spaces.projects").save(space, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update the collection count for space with id: " + spaceId.toString)
       }
 
     }

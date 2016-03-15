@@ -161,14 +161,14 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     notes = "This will check for Permission.ViewCollection",
     responseClass = "None", multiValueResponse=true, httpMethod = "GET")
   def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.ViewCollection), false, request.user, request.superAdmin)))
+    Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.ViewCollection), false, request.user, request.superAdmin, false)))
   }
 
   @ApiOperation(value = "List all collections the user can edit",
     notes = "This will check for Permission.AddResourceToCollection and Permission.EditCollection",
     responseClass = "None", httpMethod = "GET")
   def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.superAdmin)))
+    Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.superAdmin, false)))
   }
 
 
@@ -178,7 +178,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   def listPossibleParents(currentCollectionId : String, title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
     val selfAndAncestors = collections.getSelfAndAncestors(UUID(currentCollectionId))
     val descendants = collections.getAllDescendants(UUID(currentCollectionId)).toList
-    val allCollections = lisCollections(None, None, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.superAdmin)
+    val allCollections = lisCollections(None, None, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.superAdmin, false)
     val possibleNewParents = allCollections.filter((c: Collection) => (!selfAndAncestors.contains(c) && !descendants.contains(c)))
     Ok(toJson(possibleNewParents))
   }
@@ -189,7 +189,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
    * Returns list of collections based on parameters and permissions.
    * TODO this needs to be cleaned up when do permissions for adding to a resource
    */
-  private def lisCollections(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], mine: Boolean, user: Option[User], superAdmin: Boolean) : List[Collection] = {
+  private def lisCollections(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], mine: Boolean, user: Option[User], superAdmin: Boolean, root: Boolean) : List[Collection] = {
     if (mine && user.isEmpty) return List.empty[Collection]
 
     (title, date) match {
@@ -197,25 +197,25 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         if (mine)
           collections.listUser(d, true, limit, t, user, superAdmin, user.get, false)
         else
-          collections.listAccess(d, true, limit, t, permission, user, superAdmin, true)
+          collections.listAccess(d, true, limit, t, permission, user, superAdmin, root)
       }
       case (Some(t), None) => {
         if (mine)
           collections.listUser(limit, t, user, superAdmin, user.get, false)
         else
-          collections.listAccess(limit, t, permission, user, superAdmin, true)
+          collections.listAccess(limit, t, permission, user, superAdmin, root)
       }
       case (None, Some(d)) => {
         if (mine)
           collections.listUser(d, true, limit, user, superAdmin, user.get, false)
         else
-          collections.listAccess(d, true, limit, permission, user, superAdmin, true)
+          collections.listAccess(d, true, limit, permission, user, superAdmin, root)
       }
       case (None, None) => {
         if (mine)
           collections.listUser(limit, user, superAdmin, user.get, false)
         else
-          collections.listAccess(limit, permission, user, superAdmin, true)
+          collections.listAccess(limit, permission, user, superAdmin, root)
       }
     }
   }
