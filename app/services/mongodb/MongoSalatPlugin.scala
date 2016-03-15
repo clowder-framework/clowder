@@ -802,7 +802,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
   private def addRootFlagToCollections() {
     collection("collections").foreach{ c =>
-      val root_flag = c.getAsOrElse[Boolean]("root_flag", true)
+      var root_flag = c.getAsOrElse[Boolean]("root_flag", true)
+      val parents = c.getAsOrElse[MongoDBList]("parent_collection_ids", MongoDBList.empty)
+      if(parents.length == 0 & !root_flag){
+        root_flag = true
+      }
       c.put("root_flag", root_flag)
       try {
         collection("collections").save(c, WriteConcern.Safe)
