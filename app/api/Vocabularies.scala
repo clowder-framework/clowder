@@ -10,6 +10,7 @@ import play.api.libs.json.JsValue
 import play.api.libs.json._
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
+import play.api.mvc.BodyParsers.parse
 import services.{SpaceService, VocabularyService, UserService}
 
 import scala.collection.immutable.List
@@ -35,7 +36,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
     notes = "",
     responseClass = "None", httpMethod = "GET")
   def getByAuthor() = PrivateServerAction  {implicit request =>
-
     val user = request.user
 
     user match {
@@ -47,11 +47,10 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
     }
   }
 
-  @ApiOperation(value = "Get vocabulary by name and author",
+  @ApiOperation(value = "Get vocabulary by name",
     notes = "",
     responseClass = "None", httpMethod = "GET")
   def getByName(name: String) = PrivateServerAction  {implicit request =>
-
     val user = request.user
 
     user match {
@@ -67,7 +66,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
     notes = "",
     responseClass = "None", httpMethod = "GET")
   def getByNameAndAuthor(name: String) = PrivateServerAction  {implicit request =>
-
     val user = request.user
 
     user match {
@@ -208,6 +206,25 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
     } else {
       Logger.error("The given id " + id + " is not a valid ObjectId.")
       BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
+    }
+  }
+
+  def findByDescription() = PrivateServerAction(parse.multipartFormData){implicit request=>
+    val user = request.user
+    val formDescription = request.body.asFormUrlEncoded.getOrElse("description",null)
+
+    var description = List.empty[String]
+    if (formDescription != null) {
+      description = formDescription(0).split(',').toList
+    }
+
+    user match {
+      case Some(identity) => {
+        if (!description.isEmpty){
+          Ok(toJson(vocabularyService.findByDescription(description)))
+        }
+      }
+      case None => BadRequest()
     }
   }
 
