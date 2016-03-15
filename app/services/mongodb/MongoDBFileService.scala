@@ -223,6 +223,13 @@ class MongoDBFileService @Inject() (
   }
 
   /**
+    * Directly insert a file into the db (even with a local path)
+    */
+  def insert(file: File): Option[String] = {
+    FileDAO.insert(file).map(_.toString)
+  }
+
+  /**
    * Return a list of tags and counts found in sections
    */
   def getTags(): Map[String, Long] = {

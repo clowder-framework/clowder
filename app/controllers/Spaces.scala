@@ -329,7 +329,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
           // already inserted
           if(s.requests.contains(RequestResource(user.id))) {
             Ok(views.html.authorizationMessage("Your prior request is active, and pending"))
-          }else{
+          }else if (spaces.getRoleForUserInSpace(s.id, user.id) != None) {
+            Ok(views.html.authorizationMessage("You are already part of the space"))
+          } else{
             Logger.debug("Request submitted in controller.Space.addRequest  ")
             val subject: String = "Request for access from " + AppConfiguration.getDisplayName
             val body = views.html.spaces.requestemail(user, id.toString, s.name)
