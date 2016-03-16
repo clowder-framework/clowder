@@ -1,6 +1,5 @@
 package services
 
-import play.Logger
 import util.ResourceLister
 
 /**
@@ -8,8 +7,6 @@ import util.ResourceLister
  * and can be used to store application configuration options. See also AppConfiguration
  * for specific configuration options.
  *
- * @author Luigi Marini
- * @author Rob Kooper
  */
 trait AppConfigurationService {
   /** Adds an additional value to the property with the specified key. */

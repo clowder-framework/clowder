@@ -7,8 +7,7 @@
  * 
  * Searching through files (born as still images) and video previews
  * (first shot of each frame of the video)
- * 
- * @author Inna Zharnitsky
+ *
  *
  */
 

@@ -28,12 +28,20 @@
 <ul style = "list-style-type: none">
   @for(file<- files) {
 
-    <li>
+    <li id="@file.id-listitem">
       <h4><a href=@routes.Files.file(file.fileId)>@file.filename</a>
         @if(curation.status =="In Curation" && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id))) {
-          <a id="file-@file.id" title="Delete curation file" class="btn btn-link delete-file">
-            <span class="glyphicon glyphicon-trash"></span>
-          </a>
+            @if(currentFolder.isDefined){
+              <a id="file-@file.id" title="Delete curation file" class="btn btn-link delete-file"
+              onclick="confirmDeleteResource('curation file','@(file.id)','@(file.filename.replace("'","&#39;"))', '@currentFolder.get', '@curation.id')">
+                <span class="glyphicon glyphicon-trash"></span>
+              </a>
+            } else {
+                <a id="file-@file.id" title="Delete curation file" class="btn btn-link delete-file"
+                onclick="confirmDeleteResource('curation file','@(file.id)','@(file.filename.replace("'","&#39;"))', '@curation.id', '@curation.id')">
+                    <span class="glyphicon glyphicon-trash"></span>
+                </a>
+            }
         }
       </h4>
       <div id ='allMetadata_@(file.id)'>
@@ -76,31 +84,7 @@
                         }
                     });
 
-                   $('.delete-file').unbind().on('click', function(){
-                        var delete_file = $(this);
-                        @if(currentFolder.isDefined){
-                               var request = jsRoutes.api.CurationObjects.deleteCurationFiles('@curation.id', '@currentFolder', this.id.split("-")[1]).ajax({
-                            type: 'DELETE'
-                        });
-                        } else {
-                        var request = jsRoutes.api.CurationObjects.deleteCurationFiles('@curation.id', '@curation.id',  this.id.split("-")[1]).ajax({
-                            type: 'DELETE'
-                        });
-                        }
-                        request.done(function (response, textStatus, jqXHR) {
-                            console.log("success");
-                            delete_file.closest("LI").remove();
-                        });
-
-                        request.fail(function (jqXHR, textStatus, errorThrown){
-                            console.error("The following error occured: " + textStatus, errorThrown);
-                            var errMsg = "You must be logged in to delete curation file";
-                            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                              notify("Curation file was not removed due to : " + errorThrown, "error");
-                            }
-                        });
-                     });
-                </script>
+    </script>
   }
 </ul>
   </div>

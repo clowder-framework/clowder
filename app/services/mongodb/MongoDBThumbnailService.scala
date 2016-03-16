@@ -10,11 +10,8 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 
-
-
-
 /**
- * Created by lmarini on 2/27/14.
+ * Use Mongodb to store thumbnails.
  */
 class MongoDBThumbnailService @Inject()(storage: ByteStorageService) extends ThumbnailService {
 

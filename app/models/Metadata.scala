@@ -12,6 +12,7 @@ import org.apache.jena.riot.ReaderRIOT
 import org.apache.jena.rdf.model.{Model, ModelFactory}
 import org.apache.jena.riot.system._
 
+
 /**
  * A piece of metadata for a section/file/dataset/collection/space
  **/

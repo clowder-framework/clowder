@@ -149,7 +149,18 @@
 
 	<div class="row">
 		<div class="col-md-8 col-right-border">
-			<h1>@file.filename</h1>
+			<div id="prf-file-name" class="text-left inline">
+				@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
+					<h1 id="file-name-title" class="inline" style="cursor:pointer" title="Click to edit file name.">@Html(file.filename)</h1>
+					<div id="h-edit-file" class="hiddencomplete">
+						<a id ="edit-file" href="javascript:updateFileName()" title="Click to edit file name.">
+							<span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
+						</a>
+					</div>
+				} else {
+					<h1 id="file-name-title" class="inline">@Html(file.filename)</h1>
+				}
+			</div>
 			<h4>in
 			@if(datasets.length > 0) {
 				@datasets.map {dataset =>
@@ -240,12 +251,18 @@
                 <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->                
                     @if(user.get.identityId.userId.equals(file.author.identityId.userId)){                    
                         <span class="align-right">
-				            <button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))','@(routes.Application.index())')" class="btn btn-link" title="Delete">
+							@if(datasets.length > 0) {
+				            <button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(datasets.head.id))')" class="btn btn-link" title="Delete">
 						    <span class="glyphicon glyphicon-trash"></span> Delete</button>
+							} else {
+								<button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(folders.head.parentDatasetId))#folderId=@folders.head.id')" class="btn btn-link" title="Delete">
+									<span class="glyphicon glyphicon-trash"></span> Delete</button>
+							}
+
 					    </span>
 					} else {
 					    <span class="align-right">
-                            <button disabled id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))','@(routes.Application.index())')" class="btn btn-link" title="Delete">
+                            <button disabled id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Application.index())')" class="btn btn-link" title="Delete">
                             <span class="glyphicon glyphicon-trash"></span> Delete</button>
                         </span>
 					}
@@ -549,7 +566,73 @@
                 </div>
             </div>
 
+			<script language="javascript">
+					var fileName = $('#file-name-title').text();
+					$('#file-name-title').click(function(){
+						updateFileName();
+					});
 
+					function updateFileName() {
+						fileName = $('#file-name-title').text();
+						$('<div class="inline file_name_div h3"> </div>').insertAfter($('#prf-file-name'));
+						$('.file_name_div').append('<input type="text" id="file_name_input" class="form-control" />');
+						$('.file_name_div').append('<button class="btn btn-sm btn-primary edit-tab" onclick="saveFileName()"> <span class="glyphicon glyphicon-send"></span> Save</button>');
+						$('.file_name_div').append('<button class="btn btn-sm btn-link" onclick="cancelFileName()"> <span class="glyphicon glyphicon-remove"></span> Cancel</button>');
+						$('.file_name_div').append('<div class="hiddencomplete" id="file-name-error"> <span class="small error">File name is required.</span></div>');
+
+						$('#file_name_input').val(fileName);
+						$('#file-name-title').text("");
+						$('#h-edit-file').css("display", "none");
+					}
+
+					function saveFileName() {
+						if($('#file_name_input').val().length < 1) {
+							$('#file-name-error').show();
+							return false;
+						} else {
+							$('#file-name-error').hide();
+						}
+						var name = $('#file_name_input').val();
+						jsonData = JSON.stringify({"name": htmlEncode(name)});
+
+						var request = jsRoutes.api.Files.updateFileName('@file.id').ajax({
+							data: jsonData,
+							type: 'PUT',
+							contentType: "application/json"
+						});
+						request.done(function(response, textStatus, jqXHR) {
+							$('.file_name_div').remove();
+							$('#file-name-title').text(htmlEncode(name).replace(/\n/g, "<br />"));
+							$('#prf-file-name').mouseleave();
+							$('#h-edit-file').css("display", "");
+						});
+						request.fail(function(jqXHR, textStatus, errorThrown) {
+							console.error("The following error occurred: " + textStatus, errorThrown);
+							var errMsg = "Yoy must be logged in to update the file name.";
+							if(!checkErrorAndRedirect(jqXHR, errMsg)) {
+								notify("The file name was not updated due to: "+ errorThrown, "error");
+							}
+						});
+					}
+
+					function cancelFileName() {
+						$('#file-name-title').html(fileName);
+						$('.file_name_div').remove();
+						$('#prf-file-name').css("display", "inline");
+						$('#h-edit-file').css("display", "");
+						$('#prf-file-name').mouseleave();
+					}
+
+					$(document).ready(function(){
+						$(document).on('mouseenter', '#prf-file-name', function() {
+							$('#h-edit-file').removeClass("hiddencomplete");
+							$('#h-edit-file').addClass("inline");
+						}).on('mouseleave', '#prf-file-name', function() {
+							$('#h-edit-file').removeClass("inline");
+							$('#h-edit-file').addClass("hiddencomplete");
+						});
+					});
+			</script>
 		</div>
 
         <div class="col-md-4">

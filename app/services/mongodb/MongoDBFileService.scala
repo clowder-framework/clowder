@@ -36,8 +36,7 @@ import com.mongodb.casbah.Imports._
 
 /**
  * Use mongo for both metadata and blobs.
- * 
- * @author Luigi Marini
+ *
  *
  */
 @Singleton
@@ -220,6 +219,13 @@ class MongoDBFileService @Inject() (
       }
       case None => Logger.error("File not found: " + id)
     }
+  }
+
+  /**
+    * Directly insert a file into the db (even with a local path)
+    */
+  def insert(file: File): Option[String] = {
+    FileDAO.insert(file).map(_.toString)
   }
 
   /**

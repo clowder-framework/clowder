@@ -1,4 +1,5 @@
-function removeFolder(parentDataset, folderId) {
+function removeFolder(folderId, parentDataset) {
+
     var request = jsRoutes.api.Folders.deleteFolder(parentDataset, folderId).ajax({
         type: 'DELETE'
     });
@@ -12,7 +13,6 @@ function removeFolder(parentDataset, folderId) {
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The folder was not removed due to : " + errorThrown, "error");
         }
-
     });
 }
 

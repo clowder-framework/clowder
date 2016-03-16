@@ -75,9 +75,14 @@ trait CurationService {
   def getCurationFolders(curationFolderIds:List[UUID]): List[CurationFolder]
 
   /**
-   * List curation file ids of a curation obeject and its folders
+   * List curation file ids of a curation object and its folders
    */
   def getAllCurationFileIds(id:UUID): List[UUID]
+
+  /**
+    * List curation folder ids of a curation object and its folders
+    */
+  def getAllCurationFolderIds(id:UUID): List[UUID]
 
   /**
    * get the curation contains this curation file

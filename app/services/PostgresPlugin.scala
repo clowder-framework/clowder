@@ -16,7 +16,6 @@ import play.api.libs.json._
 /**
  * Postgres connection and simple geoindex methods.
  *
- * @author Luigi Marini
  *
  */
 class PostgresPlugin(application: Application) extends Plugin {

@@ -7,7 +7,7 @@ import play.api.libs.json.JsString
 
 /**
  * Context service for add, query and delete Json-ld contexts
- * @author Smruti Padhy
+ *
  */
 
 trait ContextLDService {
