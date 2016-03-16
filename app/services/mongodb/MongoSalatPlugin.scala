@@ -809,7 +809,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       if (x.getAsOrElse[String]("loader", "") == classOf[MongoDBByteStorage].getName) {
         x.put("loader_id", x.get("file_id").toString)
         collection("logos.files").find(id).foreach { y =>
-          val r = new MongoDBObject()
           y.keySet().asScala.toList.foreach{ k =>
             if (!ignoreRemoveKeys.contains(k)) {
               y.remove(k)
@@ -826,6 +825,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       x.remove("file_id")
       try {
         collection("logos").save(x, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to write cleaned up logo: " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
       }
     }
 
@@ -854,8 +855,16 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           }
         }
 
-        val u = newCollection.insert(c, WriteConcern.Safe)
-        val v = oldCollection.update(MongoDBObject("_id" -> id), MongoDBObject("$unset" -> r))
+        try {
+          newCollection.insert(c, WriteConcern.Safe)
+        } catch {
+          case e: BSONException => Logger.error(s"Unable to write new ${prefix} : " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+        }
+        try {
+          oldCollection.update(MongoDBObject("_id" -> id), MongoDBObject("$unset" -> r))
+        } catch {
+          case e: BSONException => Logger.error(s"Unable to write cleaned up ${prefix}.files : " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+        }
       }
     }
   }
