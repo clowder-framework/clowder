@@ -91,7 +91,7 @@
     </div>
 </div>
 
-  <div class="row hidden" id="tile-view">
+<div class="row hidden" id="tile-view">
 	<div class="col-md-12">
 		<div id="masonry">
 		@datasetsList.map { dataset =>
@@ -101,7 +101,7 @@
 	</div>
 </div>
 
-  <div class="row hidden" id="list-view">
+<div class="row hidden" id="list-view">
 	<div class="col-md-12">
         @datasetsList.map { dataset =>
           @datasets.listitem(dataset,comments, routes.Datasets.list(when, date, limit, space, "", owner))
