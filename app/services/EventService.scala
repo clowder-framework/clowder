@@ -78,6 +78,10 @@ trait EventService {
 	 */
 	def getRequestEvents( targetuser: Option[User], limit: Option[Integer]): List[Event]
 
+	/**
+		* Get the events by creator
+		*/
+	def getEventsByUser( user: User, limit: Option[Integer]): List[Event]
 }
 
 
