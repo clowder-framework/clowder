@@ -170,7 +170,6 @@ class MongoDBEventService extends EventService {
       case Some(x) => eventList.take(x)
       case None => eventList
     }
-
   }
 
 }
