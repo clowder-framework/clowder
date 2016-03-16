@@ -717,16 +717,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
 
   private def removeFromSpaceAllowed(collectionId : UUID, spaceId : UUID) : Boolean = {
-    collections.get(collectionId) match {
-      case Some(collection) => {
-        spaceService.get(spaceId) match {
-          case Some(space) => {
-            return !(collections.hasParentInSpace(collection.id, space.id))
-          }
-        }
-      }
-    }
-    return false
+    return !(collections.hasParentInSpace(collectionId, spaceId))
   }
 
 }
