@@ -402,19 +402,17 @@ class Datasets @Inject()(
           }
 
           var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
-          dataset.spaces.map{
-                  sp => spaceService.get(sp) match {
-                    case Some(s) => {
-                      datasetSpaces = s :: datasetSpaces
-                    }
-                    case None => Logger.error(s"space with id $sp on dataset $id doesn't exist.")
-                  }
-          }
-          val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
           var decodedSpaces_canRemove : Map[ProjectSpace, Boolean] = Map.empty;
-          for (aSpace <- decodedSpaces){
-            decodedSpaces_canRemove = decodedSpaces_canRemove + (aSpace -> true)
+
+          dataset.spaces.map{
+            sp => spaceService.get(sp) match {
+              case Some(s) => {
+                decodedSpaces_canRemove = decodedSpaces_canRemove + (Utils.decodeSpaceElements(s) -> true)
+                datasetSpaces = s :: datasetSpaces
+              }
+              case None => Logger.error(s"space with id $sp on dataset $id doesn't exist.")
+            }
           }
 
           val fileList : List[File]= dataset.files.reverse.map(f => files.get(f)).flatten
