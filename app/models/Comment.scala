@@ -9,7 +9,6 @@ import com.novus.salat.annotations.raw.Ignore
  *
  * Based on http://docs.mongodb.org/manual/use-cases/storing-comments/
  *
- * @author Rob Kooper
  *
  */
 case class Comment(

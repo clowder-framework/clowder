@@ -6,7 +6,7 @@ import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
 
 /**
- * Created by lmarini on 2/18/14.
+ * Plugin for TempFiles.
  */
 class TempFilesPlugin(application: Application) extends Plugin {
 

@@ -36,8 +36,7 @@ import com.mongodb.casbah.Imports._
 
 /**
  * Use mongo for both metadata and blobs.
- * 
- * @author Luigi Marini
+ *
  *
  */
 @Singleton
