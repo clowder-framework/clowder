@@ -10,7 +10,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
 
 /**
- * Created by lmarini on 2/17/14.
+ * Use MongoDB to store Comments
  */
 class MongoDBCommentService extends CommentService {
 

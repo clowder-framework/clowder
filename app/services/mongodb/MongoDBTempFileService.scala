@@ -12,6 +12,9 @@ import MongoContext.context
 import play.api.Play.current
 
 
+/**
+ * Use Mongodb to store tempfiles.
+ */
 @Singleton
 class MongoDBTempFileService extends TempFileService {
 

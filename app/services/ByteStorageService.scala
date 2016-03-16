@@ -8,7 +8,6 @@ import models.UUID
  * Interface to store bytes. This is used by other services that store the metadata
  * about the bytes.
  *
- * @author Rob Kooper
  */
 trait ByteStorageService {
   /**

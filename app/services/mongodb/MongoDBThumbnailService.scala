@@ -12,6 +12,9 @@ import MongoContext.context
 import play.api.Play.current
 import util.FileUtils
 
+/**
+ * Use Mongodb to store thumbnails.
+ */
 class MongoDBThumbnailService @Inject()(storage: ByteStorageService) extends ThumbnailService {
 
   object MustBreak extends Exception {}

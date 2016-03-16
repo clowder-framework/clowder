@@ -13,9 +13,11 @@ import play.api.libs.json.{JsValue, JsObject}
 import com.mongodb.casbah.Imports._
 import play.api.Logger
 import javax.inject.{Inject, Singleton}
-
 import util.FileUtils
 
+/**
+ * Use mongodb to mange tiles.
+ */
 @Singleton
 class MongoDBTileService @Inject() (previews: PreviewService, storage: ByteStorageService) extends TileService {
 

@@ -8,7 +8,6 @@ import play.api.libs.json.{JsObject, JsArray, JsValue}
 /**
  * Generic file service to store blobs of files and metadata about them.
  *
- * @author Luigi Marini
  *
  */
 trait FileService {

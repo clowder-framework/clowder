@@ -15,9 +15,6 @@ import services.ByteStorageService
 /**
  * Helper to store data on disk.
  *
- * @author Chris Navarro <cmnavarr@illinois.edu>
- * @author Michal Ondrejcek <ondrejce@illinois.edu>
- * @author Rob Kooper
  */
 class IRODSByteStorageService extends ByteStorageService {
   /**

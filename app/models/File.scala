@@ -1,15 +1,12 @@
 package models
 
 import java.util.Date
-
-import play.api.libs.json.{JsObject, Json, Writes}
 import securesocial.core.Identity
-
+import play.api.libs.json.{JsObject, Json, Writes}
 
 /**
  * Uploaded files.
  *
- * @author Luigi Marini
  *
  */
 case class File(

@@ -14,7 +14,6 @@ import services.ByteStorageService
 /**
  * Store the bytes in a mongo gridFS.
  *
- * @author Rob Kooper
  */
 class MongoDBByteStorage extends ByteStorageService {
   /**

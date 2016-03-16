@@ -15,6 +15,9 @@ import models.ThreeDGeometry
 import models.ThreeDTexture
 import util.FileUtils
 
+/**
+ * Use MongoDB to store 3-d's
+ */
 class MongoDBThreeDService extends ThreeDService {
 
   def getTexture(textureId: UUID): Option[ThreeDTexture] ={
