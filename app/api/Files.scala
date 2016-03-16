@@ -264,7 +264,7 @@ class Files @Inject()(
           var model: RDFModel = null
           json.validate[RDFModel] match {
             case e: JsError => {
-              Logger.error("Errors: " + JsError.toFlatForm(e))
+              Logger.error("Errors: " + JsError.toFlatJson(e))
               BadRequest(JsError.toFlatJson(e))
             }
             case s: JsSuccess[RDFModel] => { 

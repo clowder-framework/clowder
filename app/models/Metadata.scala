@@ -2,6 +2,7 @@ package models
 
 import java.net.URL
 import java.util.Date
+import play.api.Logger
 import play.api.libs.json._
 import play.api.data.validation.ValidationError
 import services.{UserService, DI, FileService}
@@ -157,7 +158,7 @@ object RDFModel {
       var error: String = null
       try {
         m.read(in, "http://example/base", "JSON-LD")
-        if(m.size() > 0) model = Some(RDFModel(m))
+        if(!m.isEmpty) model = Some(RDFModel(m))
       } catch {
         case e: Exception => error = e.getLocalizedMessage
       }
@@ -165,7 +166,7 @@ object RDFModel {
       else
         model match {
           case Some(c) => JsSuccess(c)
-          case None => JsError(ValidationError("could not parse JSON-LD RDF model"))
+          case None => JsError(ValidationError("Parse succeeded, but JSON-LD RDF model was empty. Try setting a default @vocab in your @context node."))
         }
     }
     
