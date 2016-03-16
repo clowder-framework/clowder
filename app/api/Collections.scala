@@ -665,6 +665,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
         Ok(toJson(parentCollections))
       }
+        
       case None => BadRequest(toJson("collection not found"))
     }
   }
