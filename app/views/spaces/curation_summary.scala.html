@@ -18,7 +18,7 @@
                 }
                 <a class="btn btn-sm btn-link"  href ="@(routes.CurationObjects.editCuration(curationObject.id))"  >
                     <span class="glyphicon glyphicon-edit"></span> Edit Curation Object</a>
-                <a class="btn btn-sm btn-link" onclick="confirmDeleteResource('curation object','@(curationObject.id)','@(curationObject.name.replace("'","&#39;"))',true, (routes.Spaces.stagingArea(@curationObject.space, 0, 12)))"  >
+                <a class="btn btn-sm btn-link" onclick="confirmDeleteResource('curation object','@(curationObject.id)','@(curationObject.name.replace("'","&#39;"))',true, '@routes.Spaces.stagingArea(curationObject.space)')"  >
                     <span class="glyphicon glyphicon-trash"></span> Delete Curation Object</a>
             }
         </div>

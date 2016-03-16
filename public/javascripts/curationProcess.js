@@ -64,8 +64,8 @@ function removeCurationFile(id, currentFolder, curationid){
     });
 }
 
-function removeCurationFolder(id, parentCuratonObject, parentId){
-    var request = jsRoutes.api.CurationObjects.deleteCurationFolder(parentCuratonObject, parentId, id).ajax({
+function removeCurationFolder(id, parentCurationObject, parentId){
+    var request = jsRoutes.api.CurationObjects.deleteCurationFolder(parentCurationObject, parentId, id).ajax({
         type: 'DELETE'
     });
 
