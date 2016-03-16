@@ -752,7 +752,7 @@ class Files @Inject()(
                 }
 
                 // Create models.File object and insert it directly
-                val newFile = new File(UUID(),Some(path),filename, user,
+                val newFile = new File(UUID(),Some(path),filename, user.getMiniUser,
                   date.getTime(),contentType,byteSize,sha512,loader)
                 files.insert(newFile)
 
