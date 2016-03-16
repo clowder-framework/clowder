@@ -1,6 +1,5 @@
 package api
 
-import org.bson.types.ObjectId
 import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.Logger
@@ -9,14 +8,13 @@ import play.api.Play.current
 import javax.inject.Inject
 import models._
 import services._
-import com.wordnik.swagger.annotations.{ApiOperation, Api}
+import com.wordnik.swagger.annotations.ApiOperation
 
 
 
 /**
  * Comments on datasets.
  *
- * @author Rob Kooper
  */
 class Comments @Inject()(datasets: DatasetService, comments: CommentService, events: EventService) extends ApiController {
 

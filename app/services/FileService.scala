@@ -8,7 +8,6 @@ import play.api.libs.json.{JsObject, JsArray, JsValue}
 /**
  * Generic file service to store blobs of files and metadata about them.
  *
- * @author Luigi Marini
  *
  */
 trait FileService {
@@ -84,6 +83,11 @@ trait FileService {
   def first(): Option[File]
   
   def index(id: UUID)
+
+  /**
+   * Directly insert file into database, for example if the file path is local.
+   */
+  def insert(file: File): Option[String]
 
   /**
    * Return a list of tags and counts found in sections

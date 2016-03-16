@@ -2,6 +2,7 @@ package models
 
 /**
  * Class to contain a subset of User data for fast loading.
+ *
  */
 
  case class MiniUser(

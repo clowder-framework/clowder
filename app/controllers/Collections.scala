@@ -406,7 +406,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * Collection.
    */
-  def collection(id: UUID, index: Int, limit: Int) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, id))) {
+  def collection(id: UUID, limit: Int) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, id))) {
     implicit request =>
       Logger.debug(s"Showing collection $id")
       implicit val user = request.user
@@ -434,7 +434,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           //Decode the datasets so that their free text will display correctly in the view
           val datasetsInside = datasets.listCollection(id.stringify)
-          val datasetIdsToUse = datasetsInside.slice(index*limit, (index+1)*limit)
+          val datasetIdsToUse = datasetsInside.slice(0, limit)
           val decodedDatasetsInside = ListBuffer.empty[models.Dataset]
           for (aDataset <- datasetIdsToUse) {
             val dDataset = Utils.decodeDatasetElements(aDataset)
@@ -452,7 +452,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             dataset.id -> allComments.size
           }.toMap
 
-          val child_collections_ids = dCollection.child_collection_ids
+          val child_collections_ids = dCollection.child_collection_ids.slice(0, limit)
           val decodedChildCollections = ListBuffer.empty[models.Collection]
           for (child_collection_id <- child_collections_ids) {
             collections.get(child_collection_id) match {
@@ -490,23 +490,94 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             }
           }
 
-          val prev = index-1
-          val next = if(datasetsInside.length > (index+1) * limit) {
-            index + 1
+          val prevd = -1
+          val nextd = if(datasetsInside.length > limit) {
+            1
+          } else {
+            -1
+          }
+          val prevcc = -1
+          val nextcc = if(dCollection.child_collection_ids.length > limit) {
+            1
           } else {
             -1
           }
 
           val decodedSpaces: List[ProjectSpace] = collectionSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
-
-          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList, Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap, Some(decodedSpaces), prev,next,limit))
+          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList, Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap, Some(decodedSpaces), prevd,nextd, prevcc, nextcc, limit))
 
         }
         case None => {
           Logger.error("Error getting collection " + id); BadRequest("Collection not found")
         }
       }
+  }
+
+  def getUpdatedDatasets(id: UUID, index: Int, limit: Int) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, id))) { implicit request =>
+      implicit val user = request.user
+    collections.get(id) match {
+      case Some(collection) => {
+
+        val datasetsInside = datasets.listCollection(id.stringify)
+        val datasetIdsToUse = datasetsInside.slice(index*limit, (index+1)*limit)
+        val decodedDatasetsInside = ListBuffer.empty[models.Dataset]
+        for (aDataset <- datasetIdsToUse) {
+          val dDataset = Utils.decodeDatasetElements(aDataset)
+          decodedDatasetsInside += dDataset
+        }
+
+        val commentMap = datasetsInside.map { dataset =>
+          var allComments = comments.findCommentsByDatasetId(dataset.id)
+          dataset.files.map { file =>
+            allComments ++= comments.findCommentsByFileId(file)
+            sections.findByFileId(file).map { section =>
+              allComments ++= comments.findCommentsBySectionId(section.id)
+            }
+          }
+          dataset.id -> allComments.size
+        }.toMap
+        val prev = index-1
+        val next = if(datasetsInside.length > (index+1) * limit) {
+          index + 1
+        } else {
+          -1
+        }
+        Ok(views.html.collections.datasetsInCollection(decodedDatasetsInside.toList, commentMap, id, prev, next))
+      }
+      case None => Logger.error("Error getting collection " + id); BadRequest("Collection not found")
+    }
+  }
+
+  def getUpdatedChildCollections(id: UUID, index: Int, limit: Int) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, id))) { implicit request =>
+    implicit val user = request.user
+    collections.get(id) match {
+      case Some(collection) => {
+        val dCollection = Utils.decodeCollectionElements(collection)
+        val child_collections_ids = dCollection.child_collection_ids.slice(index*limit, (index+1)*limit)
+        val decodedChildCollections = ListBuffer.empty[models.Collection]
+        for (child_collection_id <- child_collections_ids) {
+          collections.get(child_collection_id) match {
+            case Some(child_collection) => {
+              val decodedChild = Utils.decodeCollectionElements(child_collection)
+              decodedChildCollections += decodedChild
+            } case None => {
+              Logger.debug("No child collection found for " + child_collection_id)
+            }
+
+          }
+        }
+        val prev = index-1
+        val next = if(dCollection.child_collection_ids.length > (index+1) * limit) {
+          index + 1
+        } else {
+          -1
+        }
+
+        Ok(views.html.collections.childCollections(decodedChildCollections.toList, collection, prev, next))
+      }
+      case None => Logger.error("Error getting collection " + id); BadRequest("Collection not found")
+    }
   }
 
   /**

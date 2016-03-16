@@ -9,8 +9,7 @@ import com.mongodb.casbah.WriteConcern
 
 /**
  * Use GridFS to store blobs.
- * 
- * @author Luigi Marini
+ *
  *
  */
 trait GridFSDB {

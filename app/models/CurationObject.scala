@@ -1,6 +1,6 @@
 package models
 
-import java.net.{URI}
+import java.net.URI
 import java.util.Date
 import play.api.libs.json.Json._
 import play.api.libs.json._

@@ -14,7 +14,7 @@ import com.mongodb.casbah.Imports._
 import play.api.libs.json.{JsValue, Json}
 
 /**
- * Created by lmarini on 2/17/14.
+ * USe MongoDB to store sections
  */
 @Singleton
 class MongoDBSectionService @Inject() (comments: CommentService, previews: PreviewService) extends SectionService {

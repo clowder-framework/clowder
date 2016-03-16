@@ -1,13 +1,13 @@
 package models
 
 import java.util.Date
-import securesocial.core.Identity
 import com.novus.salat.annotations.raw.Ignore
 
 /**
  * Comment
  *
  * Based on http://docs.mongodb.org/manual/use-cases/storing-comments/
+ *
  *
  */
 case class Comment(
