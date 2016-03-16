@@ -408,7 +408,7 @@ class Datasets @Inject()(
           dataset.spaces.map{
             sp => spaceService.get(sp) match {
               case Some(s) => {
-                decodedSpaces_canRemove = decodedSpaces_canRemove + (Utils.decodeSpaceElements(s) -> true)
+                decodedSpaces_canRemove +=  (Utils.decodeSpaceElements(s) -> true)
                 datasetSpaces = s :: datasetSpaces
               }
               case None => Logger.error(s"space with id $sp on dataset $id doesn't exist.")
