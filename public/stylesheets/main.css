@@ -892,3 +892,11 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 .margin-bottom-20 {
     margin-bottom: 20px !important;
 }
+
+/* custom class for noty notification, position of a close x */
+.close-notify {
+    font-weight:bold;
+    position:absolute;
+    top:2px;
+    right:5px;
+}
