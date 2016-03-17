@@ -5,9 +5,8 @@ import com.google.inject.Guice
 import com.google.inject.AbstractModule
 
 /**
- * Guice module configuration.
+ * Guide module configuration.
  *
- * @author Luigi Marini
  *
  */
 object DI {

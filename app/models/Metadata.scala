@@ -4,7 +4,7 @@ import java.net.URL
 import java.util.Date
 import play.api.libs.json._
 import play.api.data.validation.ValidationError
-import services.{UserService, DI, FileService}
+import services.{UserService, DI}
 
 /**
  * A piece of metadata for a section/file/dataset/collection/space
