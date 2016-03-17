@@ -428,7 +428,7 @@ class Datasets @Inject()(
         }
         case None => {
           Logger.error("Error getting dataset" + id)
-          BadRequest(views.html.notFound("Dataset Not Found"))
+          BadRequest(views.html.notFound("Dataset does not exist."))
         }
     }
   }

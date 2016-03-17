@@ -94,42 +94,46 @@ trait SecuredController extends Controller {
         } else if (Permission.checkPrivateServer(userRequest.user)) {
           val messageNoPermission = "You are not authorized to access "
 
-          val (message: String, requestid: String, requestType: String) = resourceRef match {
-            case None => ("Unknown resource", "Unknown id", "no resource")
+          resourceRef match {
+            case None => Future.successful(Results.Redirect(routes.Error.notAuthorized("Unknown resource", "Unknown id", "no resource")))
 
             case Some(ResourceRef(ResourceRef.file, id)) => {
               val files: FileService = DI.injector.getInstance(classOf[FileService])
               files.get(id) match {
-                case None => ("File \"" + id.toString() + "\" does not exist.", "", "file")
-                case Some(file) => (messageNoPermission + "file \"" + file.filename + "\"", id.toString, "file")
+                case None => Future.successful(BadRequest(views.html.notFound("File does not exist.")))
+                case Some(file) => Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission + "file \"" + file.filename + "\"", id.toString, "file")))
               }
             }
 
             case Some(ResourceRef(ResourceRef.dataset, id)) => {
               val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
               datasets.get(id) match {
-                case None => ("Dataset \"" + id.toString() + "\" does not exist.", "", "dataset")
-                case Some(dataset) => (messageNoPermission + "dataset \"" + dataset.name + "\"", id.toString, "dataset")
+                case None => Future.successful(BadRequest(views.html.notFound("Dataset does not exist.")))
+                case Some(dataset) => Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission
+                  + "dataset \"" + dataset.name + "\"", id.toString, "dataset")))
               }
             }
 
             case Some(ResourceRef(ResourceRef.collection, id)) => {
               val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
               collections.get(id) match {
-                case None => ("Collection \"" + id.toString() + "\" does not exist.", "", "collection")
-                case Some(collection) => (messageNoPermission + "collection \"" + collection.name + "\"", id.toString, "collection")
+                case None => Future.successful(BadRequest(views.html.notFound("Collection does not exist.")))
+                case Some(collection) => Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission
+                  + "collection \"" + collection.name + "\"", id.toString, "collection")))
               }
             }
 
             case Some(ResourceRef(ResourceRef.space, id)) => {
               val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
               spaces.get(id) match {
-                case None => ("Space \"" + id.toString() + "\" does not exist.", "", "space")
+                case None => Future.successful(BadRequest(views.html.notFound("Space does not exist.")))
                 case Some(space) => {
                   if (userRequest.user.isDefined && space.requests.contains(RequestResource(userRequest.user.get.id))) {
-                    (messageNoPermission + "space \"" + space.name + "\". \nAuthorization request is pending", "", "space")
+                    Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission + "space \""
+                      + space.name + "\". \nAuthorization request is pending", "", "space")))
                   } else {
-                    (messageNoPermission + "space \"" + space.name + "\"", id.toString, "space")
+                    Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission + "space \""
+                      + space.name + "\"", id.toString, "space")))
                   }
                 }
               }
@@ -138,17 +142,17 @@ trait SecuredController extends Controller {
             case Some(ResourceRef(ResourceRef.curationObject, id)) =>{
               val curations: CurationService = DI.injector.getInstance(classOf[CurationService])
               curations.get(id) match {
-                case None =>  Future.successful(BadRequest(views.html.notFound("Curation Object Not found")))
-                case Some(curation) => (messageNoPermission + "curation object \"" + curation.name + "\"", id.toString() ," curation")
+                case None =>  Future.successful(BadRequest(views.html.notFound("Curation Object does not exist.")))
+                case Some(curation) => Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission
+                  + "curation object \"" + curation.name + "\"", id.toString() ," curation")))
               }
             }
 
             case Some(ResourceRef(resType, id)) => {
-              ("error resource", id.toString(), resType.toString())
+              Future.successful(Results.Redirect(routes.Error.notAuthorized("error resource", id.toString(), resType.toString())))
             }
           }
 
-          Future.successful(Results.Redirect(routes.Error.notAuthorized(message, requestid, requestType)))
         } else {
           Future.successful(Results.Redirect(routes.Error.authenticationRequiredMessage("You must be logged in to perform that action.", userRequest.uri )))
         }
