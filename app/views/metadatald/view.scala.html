@@ -48,7 +48,7 @@
             }
             case s: JsString => {
                 @if(s.value.startsWith("http")) {
-                    <a href="@s.value">@s.value</a>
+                    <a target="_blank" href="@s.value">@s.value</a>
                 } else {
                     @s.value
                 }

@@ -436,7 +436,7 @@ class MongoDBFileService @Inject() (
   def listOutsideDataset(dataset_id: UUID): List[File] = {
     datasets.get(dataset_id) match{
       case Some(dataset) => {
-        val list = for (file <- FileDAO.findAll(); if(!isInDataset(file,dataset) && !file.isIntermediate.getOrElse(false))) yield file
+        val list = for (file <- FileDAO.findAll(); if(!isInDataset(file,dataset) && !file.isIntermediate)) yield file
         return list.toList
       }
       case None =>{
@@ -647,7 +647,7 @@ class MongoDBFileService @Inject() (
   def removeFile(id: UUID){
     get(id) match{
       case Some(file) => {
-        if(file.isIntermediate.isEmpty){
+        if(!file.isIntermediate){
           val fileDatasets = datasets.findByFileId(file.id)
           for(fileDataset <- fileDatasets){
             datasets.removeFile(fileDataset.id, id)

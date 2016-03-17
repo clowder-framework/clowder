@@ -32,7 +32,7 @@ trait ByteStorageService {
 object ByteStorageService {
   lazy val storage: ByteStorageService = DI.injector.getInstance(classOf[ByteStorageService])
 
-  /** returns (loader_id, loader, sha1512, length) */
+  /** returns (loader_id, loader, sha512, length) */
   def save(inputStream: InputStream, prefix: String) = {
     storage.save(inputStream, prefix).map(x => (x._1, storage.getClass.getName, x._2, x._3))
   }

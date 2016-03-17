@@ -20,7 +20,7 @@ import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.mvc.AnyContent
 import services._
-import _root_.util.{JSONLD, License}
+import _root_.util.{FileUtils, JSONLD, License}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.mutable.ListBuffer
 
@@ -654,6 +654,45 @@ class Datasets @Inject()(
       case None => Logger.error("Error getting dataset" + id); InternalServerError
     }
   }
+
+  @ApiOperation(value = "Upload files and attach to given dataset",
+    notes = "This will take a list of url or path objects that point to files that will be ingested and added to this dataset.",
+    responseClass = "None", httpMethod = "POST")
+  def uploadToDatasetFile(dataset_id: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
+    datasets.get(dataset_id) match {
+      case Some(dataset) => {
+        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset))
+        uploadedFiles.length match {
+          case 0 => BadRequest("No files uploaded")
+          case 1 => Ok(toJson(Map("id" -> uploadedFiles.head.id)))
+          case _ => Ok(toJson(Map("ids" -> uploadedFiles.toList)))
+        }
+      }
+      case None => {
+        BadRequest(s"Dataset with id=${dataset_id} does not exist")
+      }
+    }
+  }
+
+  @ApiOperation(value = "Upload files and attach to given dataset",
+    notes = "This will take a form of file objects that are added to this dataset. This can also add metadata at the same time.",
+    responseClass = "None", httpMethod = "POST")
+  def uploadToDatasetJSON(dataset_id: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.json) { implicit request =>
+    datasets.get(dataset_id) match {
+      case Some(dataset) => {
+        val uploadedFiles = FileUtils.uploadFilesJSON(request, Some(dataset))
+        uploadedFiles.length match {
+          case 0 => BadRequest("No files uploaded")
+          case 1 => Ok(toJson(Map("id" -> uploadedFiles.head.id)))
+          case _ => Ok(toJson(Map("ids" -> uploadedFiles.toList)))
+        }
+      }
+      case None => {
+        BadRequest(s"Dataset with id=${dataset_id} does not exist")
+      }
+    }
+  }
+
 
   private def getFilesWithinFolders(id: UUID): List[JsValue] = {
     val output = new ListBuffer[JsValue]()
