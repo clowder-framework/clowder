@@ -205,7 +205,7 @@
 }
 
 @if(user.isDefined) {
-    @if(!user.get.identityId.userId.equals(dataset.author.id.stringify)){
+    @if(!user.get.id.equals(dataset.author.id.stringify)){
         <script language="javascript">
             $(".requiresLogin:not(.requiresLoginCommunity)").css("display","none");
         </script>
