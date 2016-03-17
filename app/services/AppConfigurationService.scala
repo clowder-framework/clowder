@@ -57,10 +57,20 @@ object AppConfiguration {
   // ----------------------------------------------------------------------
 
   /** Set the default theme */
-  def setTheme(theme: String) = appConfig.setProperty("theme", theme)
+  def setTheme(theme: String) = {
+    if (themes.contains(theme))
+      appConfig.setProperty("theme", theme)
+  }
 
   /** Get the default theme */
-  def getTheme: String = appConfig.getProperty[String]("theme", "simplex.min.css")
+  def getTheme: String = {
+    val theme = appConfig.getProperty[String]("theme", "simplex.min.css")
+    if (themes.contains(theme)) {
+      theme
+    } else {
+      "simplex.min.css"
+    }
+  }
 
   /** Get list of available themes */
   def themes: List[String] = {
