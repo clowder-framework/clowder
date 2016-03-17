@@ -27,7 +27,7 @@ class Comments @Inject()(datasets: DatasetService, comments: CommentService, eve
               request.body.\("text").asOpt[String] match {
                 case Some(text) => {
                   val comment = Comment(comment_id = Some(id),
-                                        author = identity.getMiniUser,
+                                        author = identity,
                                         text = text,
                                         posted = new Date(),
                                         dataset_id = parent.dataset_id,

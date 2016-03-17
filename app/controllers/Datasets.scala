@@ -586,7 +586,7 @@ class Datasets @Inject()(
               // store file
               Logger.info("Adding file" + identity)
               val showPreviews = "DatasetLevel"
-              val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity.getMiniUser, showPreviews)
+              val file = files.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType, identity, showPreviews)
               Logger.debug("Uploaded file id is " + file.get.id)
               Logger.debug("Uploaded file type is " + f.contentType)
 

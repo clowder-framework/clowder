@@ -98,7 +98,7 @@ class CurationObjects @Inject()(
               //the model of CO have multiple datasets and collections, here we insert a list containing one dataset
               val newCuration = CurationObject(
                 name = COName(0),
-                author = identity.getMiniUser,
+                author = identity,
                 description = CODesc(0),
                 created = new Date,
                 submittedDate = None,

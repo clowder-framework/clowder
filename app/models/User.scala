@@ -71,6 +71,7 @@ object User {
     "Anonymous", "User", "Anonymous User",
     None,
     AuthenticationMethod.UserPassword, active=true)
+  implicit def userToMiniUser(x: User): MiniUser = x.getMiniUser
 }
 
 case class ClowderUser(

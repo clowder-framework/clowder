@@ -4,14 +4,11 @@ import api.Permission.Permission
 import play.api.Logger
 import play.api.Play.current
 import models._
-import play.api.http.Writeable
-import play.api.libs.json
 import services._
 import play.api.libs.json._
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
-import javax.inject.{ Singleton, Inject }
-import scala.collection.immutable.HashSet
+import javax.inject.{ Singleton, Inject}
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
 import scala.util.{Try, Success, Failure}
@@ -28,7 +25,6 @@ import controllers.Utils
 @Singleton
 class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previews: PreviewService, userService: UserService, events: EventService, spaces:SpaceService) extends ApiController {
 
-
   @ApiOperation(value = "Create a collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
@@ -42,10 +38,10 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         case Some(identity) => {
           val description = (request.body \ "description").asOpt[String].getOrElse("")
           (request.body \ "space").asOpt[String] match {
-            case None | Some("default") => c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity.getMiniUser)
+            case None | Some("default") => c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity)
             case Some(space) =>  if (spaces.get(UUID(space)).isDefined) {
 
-              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity.getMiniUser, spaces = List(UUID(space)))
+              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)))
             } else {
               BadRequest(toJson("Bad space = " + space))
             }
@@ -458,9 +454,9 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         case Some(identity) => {
           val description = (request.body \ "description").asOpt[String].getOrElse("")
           (request.body \ "space").asOpt[String] match {
-            case None | Some("default") =>  c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, childCollectionsCount = 0, author = identity.getMiniUser)
+            case None | Some("default") =>  c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, childCollectionsCount = 0, author = identity)
             case Some(space) => if (spaces.get(UUID(space)).isDefined) {
-              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity.getMiniUser, spaces = List(UUID(space)))
+              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)))
             } else {
               BadRequest(toJson("Bad space = " + space))
             }

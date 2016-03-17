@@ -417,7 +417,7 @@ class Files @Inject()(
           files.get(f.id) match {
             case Some(x) => {
               //parse request for agent/creator info
-              val creator = UserAgent(id = UUID.generate(), user=user.getMiniUser, userId = Some(new URL(creator_url)))
+              val creator = UserAgent(id = UUID.generate(), user=user, userId = Some(new URL(creator_url)))
 
               // TODO: Put this block and the similar chunk from addMetadataJsonLD into helper function so not repeated
               // Extract context from metadata object and remove it so it isn't repeated twice
@@ -425,10 +425,10 @@ class Files @Inject()(
               val context: JsValue = (parseJson \ "@context")
               parseJson = parseJson.as[JsObject] - "@context"
               // check if the context is a URL to external endpoint
-              var contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
+              val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
               // check if context is a JSON-LD document
               // TODO: check if this actually exists first
-              var contextID: Option[UUID] =
+              val contextID: Option[UUID] =
                 if (context.isInstanceOf[JsObject]) {
                   context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
                 } else if (context.isInstanceOf[JsArray]) {
@@ -607,8 +607,8 @@ class Files @Inject()(
       if (nameOfFile.toLowerCase().endsWith(".ptm")) {
         val thirdSeparatorIndex = nameOfFile.indexOf("__")
         if (thirdSeparatorIndex >= 0) {
-          var firstSeparatorIndex = nameOfFile.indexOf("_")
-          var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
+          val firstSeparatorIndex = nameOfFile.indexOf("_")
+          val secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
           flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
           nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
         }
@@ -625,7 +625,7 @@ class Files @Inject()(
       }
     }
     val realUserName = realUser.fullName
-    val savedFile = files.save(new FileInputStream(file.ref.file), nameOfFile, file.contentType, realUser.getMiniUser)
+    val savedFile = files.save(new FileInputStream(file.ref.file), nameOfFile, file.contentType, realUser)
     Logger.info("Uploading Completed")
 
     // submit file for extraction
@@ -752,7 +752,7 @@ class Files @Inject()(
                 }
 
                 // Create models.File object and insert it directly
-                val newFile = new File(UUID(),Some(path),filename, user.getMiniUser,
+                val newFile = new File(UUID(),Some(path),filename, user,
                   date.getTime(),contentType,byteSize,sha512,loader)
                 files.insert(newFile)
 
@@ -1729,7 +1729,7 @@ class Files @Inject()(
         case Some(identity) => {
           (request.body \ "text").asOpt[String] match {
             case Some(text) => {
-              val comment = new Comment(identity.getMiniUser, text, file_id = Some(id))
+              val comment = new Comment(identity, text, file_id = Some(id))
               comments.insert(comment)
               files.get(id) match {
               case Some(file) =>{

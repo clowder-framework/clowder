@@ -39,7 +39,7 @@ trait GridFSDB {
     mongoFile.save
     val oid = mongoFile.getAs[ObjectId]("_id").get
 
-    Some(File(UUID(oid.toString), None, mongoFile.filename.get, author.getMiniUser, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length, showPreviews))
+    Some(File(UUID(oid.toString), None, mongoFile.filename.get, author, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length, showPreviews))
   }
 
   /**
