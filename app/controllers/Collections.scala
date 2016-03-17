@@ -322,17 +322,6 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             BadRequest(views.html.newCollection("Name, Description, or Space was missing during collection creation.", decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
           }
 
-
-
-          var parentCollectionIds = List.empty[String]
-          try {
-            parentCollectionIds = colParentCollection(0).split(",").toList
-          }  catch {
-            case e : Exception => Logger.debug("error cannot split ")
-          }
-
-
-
           var collection : Collection = null
           if (colSpace.isEmpty || colSpace(0) == "default" || colSpace(0) == "") {
               collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, root_flag = rootFlag)
@@ -354,24 +343,6 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             }
           }
 
-          if (parentCollectionIds.length > 0) {
-            for (parentCollectionId <- parentCollectionIds) {
-              try {
-                collections.get(UUID(parentCollectionId)) match {
-                  case Some(parentCollection) => {
-                    collections.addSubCollection(UUID(parentCollectionId), collection.id)
-                  }
-                  case None => {
-                    Logger.error("Unable to add collection to parent collection with id " + parentCollectionId)
-                  }
-                }
-              } catch {
-                case e : Exception => Logger.debug("error cannot convert to UUID")
-              }
-            }
-          }
-
-
           //index collection
             val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
             current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
@@ -392,7 +363,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
                 }
                 case None => {
                   Logger.error("Unable to add collection to parent ")
-
+                  BadRequest(views.html.notFound("Parent collection does not exist."))
                 }
               }
 
