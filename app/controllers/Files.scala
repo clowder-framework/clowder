@@ -176,7 +176,7 @@ class Files @Inject() (
       case None => {
         val error_str = s"The file with id ${id} is not found."
         Logger.error(error_str)
-        Future(NotFound(toJson(error_str)))  
+        Future(BadRequest(views.html.notFound("File does not exist.")))
         }
     }
   }
