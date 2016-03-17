@@ -3,7 +3,6 @@ package models
 /**
  * A portion of a file.
  *
- * @author Luigi Marini
  *
  */
 case class Section(

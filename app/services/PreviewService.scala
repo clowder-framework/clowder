@@ -1,15 +1,13 @@
 package services
 
-import com.mongodb.casbah.commons.MongoDBObject
-import models.{Thumbnail, UUID, ThreeDAnnotation, Preview}
+import models.{UUID, ThreeDAnnotation, Preview}
 import java.io.InputStream
 import play.api.libs.json.JsValue
 
 /**
- * Created by lmarini on 2/17/14.
+ * Service to manipulate previews in files and datasets.
  */
 trait PreviewService {
-
 
   /**
    * Count all preview files

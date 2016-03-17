@@ -18,7 +18,7 @@ function addToCollection(datasetId) {
         $("#collectionsList").append('<div id="col_'+selectedId+'" class="row bottom-padding">' +
         '<div class="col-md-2"></div>' +
         '<div class="col-md-10"><div><a href="'+jsRoutes.controllers.Collections.collection(selectedId).url+'" id='+selectedId+' class ="collection">'+selectedName+'</a></div><div>' +
-            o.datasetsInCollection+' dataset(s) | <a href="#" class="btn btn-link btn-xs" onclick="removeCollection(\''+selectedId+'\', \''+datasetId+'\', event)" title="Remove from collection">' +
+            o.datasetsInCollection+' dataset(s) | <a href="#" class="btn btn-link btn-xs" onclick="removeFromCollection(\''+selectedId+'\', \''+datasetId+'\', event)" title="Remove from collection">' +
         '<span class="glyphicon glyphicon-remove"></span> Remove</a></div></div></div>');
         $("#collectionAddSelect").select2("val", "");
     });
@@ -35,7 +35,7 @@ function addToCollection(datasetId) {
 }
 
 
-function removeCollection(collectionId, datasetId, event){
+function removeFromCollection(collectionId, datasetId, event){
 
     var request = jsRoutes.api.Collections.removeDataset(collectionId, datasetId, "True").ajax({
         type: 'POST'

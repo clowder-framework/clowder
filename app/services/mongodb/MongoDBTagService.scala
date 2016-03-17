@@ -13,7 +13,7 @@ import services._
 import services.mongodb.MongoContext.context
 
 /**
- * Created by lmarini on 1/17/14.
+ * Use Mongodb to store tags
  */
 class MongoDBTagService @Inject()(files: FileService, datasets: DatasetService, queries: MultimediaQueryService, sections: SectionService) extends TagService {
 

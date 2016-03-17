@@ -4,8 +4,7 @@ import play.api.Play._
 
 /**
  * Utility to load default values for required fields from the application configuration file.
- * 
- * @author mfelarca
+ *
  */
 object RequiredFieldsConfig {
     

@@ -3,7 +3,6 @@ package models
 /**
  * Feature vectors used for multimedia indexing.
  *
- * @author Luigi Marini
  */
 case class MultimediaFeatures(
   id: UUID = UUID.generate,

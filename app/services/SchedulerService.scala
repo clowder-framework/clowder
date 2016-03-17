@@ -7,7 +7,6 @@ import com.novus.salat.dao.SalatMongoCursor
 /**
  * Service to add a job to scheduler
  *
- * @author Varun Kethineedi
  */
  
 trait SchedulerService {

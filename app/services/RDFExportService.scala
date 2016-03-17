@@ -19,7 +19,6 @@ import models.UUID
 /**
  * Service allowing exporting of community-generated and XML-uploaded metadata of files and datasets as RDF.
  *
- * @author Constantinos Sophocleous
  *
  */
 class RDFExportService (application: Application) extends Plugin {

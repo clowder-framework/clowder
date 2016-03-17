@@ -8,8 +8,7 @@ import scala.util.Try
  * 
  * Helper to store information about Census INdexes. Census index should be indexed separately and searched separately.
  * Census Index's id will be stored in CensusIndex db table.
- * 
- * @author Inna Zharnitsky May 28, 2014
+ *
  *
  */
 trait SectionIndexInfoService {

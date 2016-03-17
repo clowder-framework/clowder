@@ -1,28 +1,29 @@
-function removeDataset(datasetId,event, reloadPage){
-	if(reloadPage === undefined) reloadPage = false;
-	
+function removeDataset(datasetId, isreload, url){
 	var request = jsRoutes.api.Datasets.deleteDataset(datasetId).ajax({
 		type: 'DELETE'
 	});
 	request.done(function (response, textStatus, jqXHR){
-        if($(event.target).is("span")){
-        	$(event.target.parentNode.parentNode.parentNode).remove();
-        }
-        else{
-        	$(event.target.parentNode.parentNode).remove();
-        }
-        
-        
-        if(reloadPage == true)
-        	location.reload(true);
+        if(isreload === "true")
+			window.location.href=url;
+		else {
+			$('#'+ datasetId+'-listitem').remove();
+			var obj = $('#'+ datasetId+'-tile');
+			if($('#masonry').length > 0) {
+				$('#masonry').masonry('remove', obj);
+				$('#masonry').masonry('layout');
+			}
+			if($('#masonry-datasets').length > 0) {
+				$('#masonry-datasets').masonry('remove', obj);
+				$('#masonry-datasets').masonry('layout');
+			}
+		}
     });
-	request.fail(function (jqXHR, textStatus, errorThrown){
+	request.fail(function (jqXHR, textStatus, errorThrown) {
 		console.error("The following error occured: "+textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a dataset from the system.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The dataset was not removed due to : " + errorThrown, "error");
         }
-		
 	});	
 }
 
