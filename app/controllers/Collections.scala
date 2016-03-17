@@ -371,20 +371,6 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             }
           }
 
-          if (colParentColId != null && colParentColId.size>0) {
-            try {
-              collections.get(UUID(colParentColId(0))) match {
-                case Some(parentCollection) => {
-                  collections.addSubCollection(UUID(colParentColId(0)), collection.id)
-                }
-                case None => {
-                  Logger.error("Unable to add collection to parent ")
-                }
-              }
-            } catch {
-              case e : Exception => Logger.debug("error with parent collection id " +colParentColId)
-            }
-          }
 
           //index collection
             val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
@@ -397,7 +383,27 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           // redirect to collection page
           current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}
-          Redirect(routes.Collections.collection(collection.id))
+          if (colParentColId != null && colParentColId.size>0) {
+            try {
+              collections.get(UUID(colParentColId(0))) match {
+                case Some(parentCollection) => {
+                  collections.addSubCollection(UUID(colParentColId(0)), collection.id)
+                  Redirect(routes.Collections.collection(UUID(colParentColId(0))))
+                }
+                case None => {
+                  Logger.error("Unable to add collection to parent ")
+
+                }
+              }
+
+            } catch {
+              case e : Exception => {
+                InternalServerError("error with parent collection id " + colParentColId)
+              }
+            }
+          } else {
+            Redirect(routes.Collections.collection(collection.id))
+          }
 	      }
 	      case None => Redirect(routes.Collections.list()).flashing("error" -> "You are not authorized to create new collections.")
       }
