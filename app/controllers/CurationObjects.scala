@@ -18,7 +18,7 @@ import play.api.mvc.{Request, Action, Results}
 import play.api.libs.ws._
 import scala.concurrent.duration._
 import play.api.libs.json.Reads._
-import java.net.URI
+import java.net.{URL, URI}
 
 /**
  * Methods for interacting with the curation objects in the staging area.
@@ -57,7 +57,7 @@ class CurationObjects @Inject()(
     }
 
     Ok(views.html.curations.newCuration(datasetId, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired, true))
+      true, true))
   }
 
   /**
@@ -117,7 +117,17 @@ class CurationObjects @Inject()(
                 val newm = m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id))
                 metadatas.addMetadata(newm)
               }
+              //add description as abstract
+              val userURI = controllers.routes.Application.index().absoluteURL() + "api/users/" + identity.id
+              val context = Json.obj("Abstract" -> "http://purl.org/dc/terms/abstract")
 
+              val newabstract = Metadata(attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id),
+                contextId = context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _)),
+                createdAt = new Date(),
+                creator =  UserAgent(identity.id, "cat:user", MiniUser(identity.id, identity.fullName, identity.avatarUrl.getOrElse(""), identity.email), Some(new URL(userURI))),
+                content = Json.obj("Abstract" -> CODesc(0))
+              )
+              metadatas.addMetadata(newabstract)
               dataset.folders.map(f => copyFolders(f, newCuration.id, "dataset",  newCuration.id))
 
               Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
