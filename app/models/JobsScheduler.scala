@@ -1,39 +1,11 @@
 package models
 
-import org.joda.time.DateTime
-
-import play.api.Play.current
-import scala.concurrent.duration
-
-import java.util.Date;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import play.api.Play.current
-import java.util.ArrayList
-import play.api.libs.concurrent
-import services.RabbitmqPlugin
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.json.JsObject
-import play.api.Logger
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import javax.inject.Inject
-
+import java.text.SimpleDateFormat
+import java.util.Calendar
 import services.SchedulerService
-import services.UserService
-import services.EventService
 import services.DI
 
-import scala.concurrent.Future
-import services.ExtractionRequestsService
-import java.net.InetAddress
-import play.api.libs.ws.Response
-import securesocial.core.providers.utils.Mailer
-import com.typesafe.plugin._
-import play.api.libs.concurrent.Akka
 /**
- * @author Varun Kethineedi 
- * 
  *  Schedules Jobs 
  * 
  */

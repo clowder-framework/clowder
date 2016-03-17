@@ -5,7 +5,7 @@ import play.api.libs.json.JsValue
 import models.UUID
 
 /**
- * Created by lmarini on 1/17/14.
+ * Service to manipulate tags
  */
 abstract class TagService {
   def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): (Boolean, String)

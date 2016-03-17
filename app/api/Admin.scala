@@ -15,7 +15,6 @@ import util.Mail
 /**
  * Admin endpoints for JSON API.
  *
- * @author Luigi Marini
  */
 class Admin @Inject()(userService: UserService) extends Controller with ApiController {
 

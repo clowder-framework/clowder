@@ -13,7 +13,7 @@ import com.mongodb.casbah.Imports._
 import com.novus.salat.dao.SalatMongoCursor
 
 /**
- * @author Varun Kethineedi
+  * Use MongoDB for storing events.
  */
 class MongoDBEventService extends EventService {
 

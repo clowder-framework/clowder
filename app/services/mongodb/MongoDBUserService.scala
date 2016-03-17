@@ -30,7 +30,7 @@ import javax.inject.Inject
  * right now. Eventually this should become a wrapper for
  * securesocial and we use User everywhere.
  *
- * @author Rob Kooper
+ *
  */
 class MongoDBUserService @Inject() (
   files: FileService,
