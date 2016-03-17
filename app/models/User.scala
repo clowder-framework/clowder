@@ -74,6 +74,13 @@ object User {
   implicit def userToMiniUser(x: User): MiniUser = x.getMiniUser
 }
 
+
+case class MiniUser(
+   id: UUID,
+   fullName: String,
+   avatarURL: String,
+   email: Option[String])
+
 case class ClowderUser(
   id: UUID = UUID.generate(),
 
