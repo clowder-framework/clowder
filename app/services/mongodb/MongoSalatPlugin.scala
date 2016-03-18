@@ -801,7 +801,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
   private def splitGridFSMetadata() {
     val ignoreCopyKeys = List[String]("_id", "path", "metadata", "chunkSize", "aliases", "md5")
-    val ignoreRemoveKeys = List[String]("_id", "filename", "contentType", "length", "chunkSize", "uploadDate", "metadata", "aliases", "md5")
+    val ignoreRemoveKeys = List[String]("_id", "filename", "contentType", "length", "chunkSize", "uploadDate", "aliases", "md5")
 
     // fix logos
     collection("logos").find().snapshot().foreach { x =>
@@ -814,13 +814,21 @@ class MongoSalatPlugin(app: Application) extends Plugin {
               y.remove(k)
             }
           }
-          collection("logos.files").save(y, WriteConcern.Safe)
+          try {
+            collection("logos.files").save(y, WriteConcern.Safe)
+          } catch {
+            case e: BSONException => Logger.error("Unable to save logos.files: " + y.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+          }
         }
       } else {
         collection("logos.files").find(id).foreach { y =>
           x.put("loader_id", y.getAsOrElse[String]("path", ""))
         }
-        collection("logos.files").remove(id)
+        try {
+          collection("logos.files").remove(id)
+        } catch {
+          case e: BSONException => Logger.error("Unable to remove logos.files: " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+        }
       }
       x.remove("file_id")
       try {
@@ -860,10 +868,19 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         } catch {
           case e: BSONException => Logger.error(s"Unable to write new ${prefix} : " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
         }
-        try {
-          oldCollection.update(MongoDBObject("_id" -> id), MongoDBObject("$unset" -> r))
-        } catch {
-          case e: BSONException => Logger.error(s"Unable to write cleaned up ${prefix}.files : " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+        if (x.getAsOrElse[String]("loader", "") == classOf[MongoDBByteStorage].getName) {
+          try {
+            oldCollection.update(MongoDBObject("_id" -> id), MongoDBObject("$unset" -> r))
+          } catch {
+            case e: BSONException => Logger.error(s"Unable to write cleaned up ${prefix}.files : " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+          }
+        } else {
+          Logger.info("Removing " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+          try {
+            oldCollection.remove(MongoDBObject("_id" -> id))
+          } catch {
+            case e: BSONException => Logger.error(s"Unable to remove ${prefix}.files : " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+          }
         }
       }
     }
