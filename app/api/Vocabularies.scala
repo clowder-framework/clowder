@@ -89,7 +89,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
     notes = "",
     responseClass = "None", httpMethod = "POST")
   def createVocabulary() = PermissionAction(Permission.CreateVocabulary){ implicit request =>
-    Ok(toJson("not implemented")))
+    Ok(toJson("not implemented"))
   }
 
 
