@@ -7,5 +7,6 @@ RUN apt-get -y update \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     ;
 COPY FILES.toolserver /
+ENV TOOLSERVER_PORT 8082
 CMD /usr/local/bin/usage
 
