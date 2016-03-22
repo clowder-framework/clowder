@@ -207,7 +207,6 @@ object Permission extends Enumeration {
         sections.get(id) match {
           case Some(s) => {
             checkPermission(user, permission, ResourceRef(ResourceRef.file, s.file_id))
-            //getUserByIdentity(user).fold(checkPermission(user, permission, ResourceRef(ResourceRef.file, s.file_id)))(_.id == s.author)
           }
           case None => false
         }
