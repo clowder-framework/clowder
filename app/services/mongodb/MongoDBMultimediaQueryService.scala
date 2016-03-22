@@ -13,10 +13,11 @@ import models.{MultimediaDistance, MultimediaFeatures, TempFile, UUID}
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.JsObject
-import services.MultimediaQueryService
+import services.{MultimediaQueryService, SectionService, SpaceService}
 import services.mongodb.MongoContext.context
+import javax.inject.Inject
 
-class MongoDBMultimediaQueryService extends MultimediaQueryService {
+class MongoDBMultimediaQueryService @Inject() (sections: SectionService, spaces: SpaceService) extends MultimediaQueryService {
 
    /**
    * Update thumbnail used to represent this query.
@@ -145,9 +146,20 @@ def getFile(id: UUID): Option[TempFile] = {
     MultimediaDistanceDAO.save(d)
   }
 
-  def searchMultimediaDistances(querySectionId: String, representation: String, limit: Int): List[MultimediaDistance] = {
-    MultimediaDistanceDAO.find(MongoDBObject("source_section"->new ObjectId(querySectionId),"representation"->representation))
-      .sort(MongoDBObject("distance" -> 1)).limit(limit).toList
+  def searchMultimediaDistances(querySectionId: String, representation: String, limit: Int, userSpaceIDs: List[UUID]): List[MultimediaDistance] = {
+
+    // Converting UUIDs to Object IDs
+    val userSpaceObjectIDs = new MongoDBList()
+    userSpaceIDs.foreach(spaceId => {
+      userSpaceObjectIDs.+=:(new ObjectId(spaceId.toString()))
+    })
+
+    // MongoDB query
+    MultimediaDistanceDAO.find(MongoDBObject("source_section"->new ObjectId(querySectionId),
+      "representation"->representation, "target_spaces" -> MongoDBObject("$in" -> userSpaceObjectIDs)))
+      .sort(MongoDBObject("distance" -> 1))
+      .limit(limit)
+      .toList
   }
 
   def recomputeAllDistances(): Unit = {
@@ -173,12 +185,16 @@ def getFile(id: UUID): Option[TempFile] = {
   def computeDistances(source: MultimediaFeatures): Unit = {
     Logger.debug("Computing feature distances for section " + source.section_id.get)
     val inner = listAll()
+    val sourceSpaces = sections.getParentSpaces(source.section_id.get) // Get spaces that the source section is belonging to
     // don't let the cursor time out
     inner.underlying.addOption(com.mongodb.Bytes.QUERYOPTION_NOTIMEOUT)
     while (inner.hasNext) {
       val target = inner.next
       Logger.trace("Target section = " + target.section_id.get)
       source.features.foreach { fs =>
+
+        val targetSpaces  = sections.getParentSpaces(target.section_id.get) // Get spaces that the target section is belonging to
+
         if (source.section_id != target.section_id) {
           target.features.find(_.representation == fs.representation) match {
             case Some(ft) => {
@@ -190,9 +206,9 @@ def getFile(id: UUID): Option[TempFile] = {
                   Logger.debug(s"Skipping ${fs.representation} distance ${source.section_id.get} -> ${target.section_id.get} = $distance")
                 } else {
                   addMultimediaDistance(
-                    MultimediaDistance(source.section_id.get, target.section_id.get, fs.representation, distance))
+                    MultimediaDistance(source.section_id.get, target.section_id.get, fs.representation, distance, targetSpaces.toList))
                   addMultimediaDistance(
-                    MultimediaDistance(target.section_id.get, source.section_id.get, fs.representation, distance)) // Adding reverse distance to complete the matrix
+                    MultimediaDistance(target.section_id.get, source.section_id.get, fs.representation, distance, sourceSpaces.toList)) // Adding reverse distance to complete the matrix
                   Logger.trace(s"Distance ${source.section_id.get} -> ${target.section_id.get} = $distance")
                 }
               } else {
