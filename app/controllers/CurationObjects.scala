@@ -204,7 +204,7 @@ class CurationObjects @Inject()(
 
           Redirect(routes.CurationObjects.getCurationObject(id))
         }
-        case None => InternalServerError("Curation Object Not found")
+        case None => BadRequest(views.html.notFound("Curation Object does not exist."))
       }
   }
 
@@ -245,7 +245,7 @@ class CurationObjects @Inject()(
           Ok(views.html.spaces.curationObject(c, m , isRDFExportEnabled, limit))
         }
       }
-      case None => InternalServerError("Curation Object Not found")
+      case None => BadRequest(views.html.notFound("Curation Object does not exist."))
     }
   }
 
@@ -289,14 +289,14 @@ class CurationObjects @Inject()(
                 val next = cf.files.length + cf.folders.length > limit * (filepageUpdate+1)
                 Ok(views.html.curations.filesAndFolders(c, Some(cf.id.stringify), foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, mCurationFile))
               }
-              case None => InternalServerError ("Curation Folder Not found")
+              case None => BadRequest(views.html.notFound("Curation Folder does not exist."))
             }
           }
 
         }
 
       }
-      case None => InternalServerError("Curation Object Not found")
+      case None => BadRequest(views.html.notFound("Curation Object does not exist."))
     }
   }
 
@@ -315,7 +315,7 @@ class CurationObjects @Inject()(
                 case None =>Results.Redirect(routes.Error.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
               }
             }
-            case None => InternalServerError("Curation Object not found")
+            case None => BadRequest(views.html.notFound("Curation Object does not exist."))
           }
   }
 
