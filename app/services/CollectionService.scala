@@ -186,6 +186,8 @@ trait CollectionService {
 
   def getRootSpaceIds(collectionId : UUID) : ListBuffer[UUID]
 
+  def hasParentInSpace(collectionId : UUID, spaceId: UUID) : Boolean
+
   def index(id: Option[UUID])
 
 }

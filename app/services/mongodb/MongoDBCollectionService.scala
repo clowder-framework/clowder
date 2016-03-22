@@ -794,6 +794,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
                     return true
                   }
                 }
+                case None => return false
               }
             }
           }
