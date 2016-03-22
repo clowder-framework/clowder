@@ -774,7 +774,27 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     }
     return selfAndAncestors.toList
 
+  }
 
+  def hasParentInSpace(collectionId : UUID, spaceId: UUID) : Boolean = {
+    get(collectionId) match {
+      case Some(collection) => {
+        spaceService.get(spaceId) match {
+          case Some(space) => {
+            for (parentId <- collection.parent_collection_ids) {
+              get(parentId) match {
+                case Some(parentCollection) => {
+                  if (parentCollection.spaces.contains(spaceId)) {
+                    return true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return false
   }
 
   private def isSubCollectionIdInCollection(subCollectionId: UUID, collection: Collection) : Boolean = {

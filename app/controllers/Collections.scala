@@ -458,10 +458,13 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           }
 
           var collectionSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
+          var collectionSpaces_canRemove : Map[ProjectSpace,Boolean] = Map.empty
           collection.spaces.map{
             sp=> spaceService.get(sp) match {
               case Some(s) => {
                 collectionSpaces = s :: collectionSpaces
+                var removeFromSpace = removeFromSpaceAllowed(dCollection.id,s.id)
+                collectionSpaces_canRemove += (Utils.decodeSpaceElements(s) -> removeFromSpace)
               }
               case None => Logger.error(s"space with id $sp on collection $id doesn't exist.")
             }
@@ -482,7 +485,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           val decodedSpaces: List[ProjectSpace] = collectionSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
-          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList, Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap, Some(decodedSpaces), prevd,nextd, prevcc, nextcc, limit))
+          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList, Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap,Some(collectionSpaces_canRemove), prevd,nextd, prevcc, nextcc, limit))
 
         }
         case None => {
@@ -758,6 +761,18 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title, owner, when, date))
   }
 
+  private def removeFromSpaceAllowed(collectionId : UUID, spaceId : UUID) : Boolean = {
+    collections.get(collectionId) match {
+      case Some(collection) => {
+        spaceService.get(spaceId) match {
+          case Some(space) => {
+            return !(collections.hasParentInSpace(collection.id, space.id))
+          }
+        }
+      }
+    }
+    return false
+  }
 
 
 }

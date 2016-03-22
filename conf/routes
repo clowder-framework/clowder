@@ -459,6 +459,7 @@ GET            /api/collections/:coll_id/getChildCollections                    
 GET            /api/collections/:coll_id/getParentCollectionIds                         @api.Collections.getParentCollectionIds(coll_id: UUID)
 GET            /api/collections/:coll_id/getParentCollections                           @api.Collections.getParentCollections(coll_id: UUID)
 POST           /api/collections/:coll_id/addSubCollection/:sub_coll_id                  @api.Collections.attachSubCollection(coll_id: UUID, sub_coll_id: UUID)
+GET            /api/collections/:coll_id/removeFromSpaceAllowed/:space_id               @api.Collections.removeFromSpaceAllowed(coll_id: UUID, space_id: UUID)
 
 
 # ----------------------------------------------------------------------
