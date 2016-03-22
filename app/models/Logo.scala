@@ -1,7 +1,6 @@
 package models
 
 import java.util.Date
-
 import play.api.libs.json.{Json, JsValue, Writes}
 
 case class Logo(id: UUID = UUID.generate,

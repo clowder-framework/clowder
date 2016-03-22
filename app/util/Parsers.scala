@@ -7,7 +7,7 @@ import org.joda.time.DateTime
 import play.api.libs.json.JsValue
 
 /**
- * Created by kooper on 9/2/14.
+ * Parse methods.
  */
 object Parsers {
   /**

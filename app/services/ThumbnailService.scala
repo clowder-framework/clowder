@@ -5,7 +5,7 @@ import models.{UUID, Thumbnail}
 
 
 /**
- * Created by lmarini on 2/27/14.
+ * Service to manipulate thumbnails
  */
 trait ThumbnailService {
 

@@ -182,7 +182,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
 	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, userRoleMap))
       }
-      case None => InternalServerError("Space not found")
+      case None => BadRequest(views.html.notFound("Space does not exist."))
     }
   }
 
@@ -196,7 +196,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       spaces.get(id) match {
         case Some(s) => {
           Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), s.resourceTimeToLive, s.isTimeToLiveEnabled, "Update")), Some(s.id)))}
-        case None => InternalServerError("Space not found")
+        case None =>  BadRequest(views.html.notFound("Space does not exist."))
       }
   }
 
@@ -259,7 +259,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
         Ok(views.html.spaces.users(spaceInviteForm, Utils.decodeSpaceElements(s), creator, userRoleMap, externalUsers.toList, roleList.sorted, inviteBySpace))
       }
-      case None => InternalServerError("Space not found")
+      case None =>  BadRequest(views.html.notFound("Space does not exist."))
     }
   }
 
@@ -311,7 +311,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
           )
         }
-        case None => InternalServerError("Space not found")
+        case None =>  BadRequest(views.html.notFound("Space does not exist."))
       }
   }
 
@@ -319,7 +319,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   /**
    * Each user with EditSpace permission will see the request on index and receive an email.
    */
-   def addRequest(id: UUID) = UserAction(needActive = true) { implicit request =>
+   def addRequest(id: UUID) = AuthenticatedAction { implicit request =>
       implicit val requestuser = request.user
 
     requestuser match{
@@ -329,7 +329,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
           // already inserted
           if(s.requests.contains(RequestResource(user.id))) {
             Ok(views.html.authorizationMessage("Your prior request is active, and pending"))
-          }else{
+          }else if (spaces.getRoleForUserInSpace(s.id, user.id) != None) {
+            Ok(views.html.authorizationMessage("You are already part of the space"))
+          } else{
             Logger.debug("Request submitted in controller.Space.addRequest  ")
             val subject: String = "Request for access from " + AppConfiguration.getDisplayName
             val body = views.html.spaces.requestemail(user, id.toString, s.name)
@@ -623,7 +625,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
           }
           Ok(views.html.spaces.stagingarea(s, curationDatasets, prev, next, limit ))
         }
-        case None => InternalServerError("Space Not found")
+        case None =>  BadRequest(views.html.notFound("Space does not exist."))
       }
   }
 

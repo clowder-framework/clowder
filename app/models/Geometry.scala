@@ -3,7 +3,6 @@ package models
 /**
  * 3D binary geometry files for x3dom.
  *
- * @author Constantinos Sophocleous
  *
  */
 case class ThreeDGeometry(

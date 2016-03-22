@@ -13,7 +13,7 @@ import play.api.Play.current
 
 
 /**
- * Created by lmarini on 2/24/14.
+ * Use Mongodb to store tempfiles.
  */
 @Singleton
 class MongoDBTempFileService extends TempFileService {

@@ -402,15 +402,18 @@ class Datasets @Inject()(
           }
 
           var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
+
+          var decodedSpaces_canRemove : Map[ProjectSpace, Boolean] = Map.empty;
+
           dataset.spaces.map{
-                  sp => spaceService.get(sp) match {
-                    case Some(s) => {
-                      datasetSpaces = s :: datasetSpaces
-                    }
-                    case None => Logger.error(s"space with id $sp on dataset $id doesn't exist.")
-                  }
+            sp => spaceService.get(sp) match {
+              case Some(s) => {
+                decodedSpaces_canRemove +=  (Utils.decodeSpaceElements(s) -> true)
+                datasetSpaces = s :: datasetSpaces
+              }
+              case None => Logger.error(s"space with id $sp on dataset $id doesn't exist.")
+            }
           }
-          val decodedSpaces: List[ProjectSpace] = datasetSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
 
           val fileList : List[File]= dataset.files.reverse.map(f => files.get(f)).flatten
 
@@ -423,12 +426,12 @@ class Datasets @Inject()(
           val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
-            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces), fileList,
+            decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove),fileList,
             filesTags, toPublish, curPubObjects, currentSpace, limit))
         }
         case None => {
           Logger.error("Error getting dataset" + id)
-          InternalServerError
+          BadRequest(views.html.notFound("Dataset does not exist."))
         }
     }
   }

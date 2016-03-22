@@ -3,7 +3,7 @@ import java.util.Date
 import models._
 /**
  * Tracks extractions requests
- * @author Smruti Padhy
+ *
  */
 trait ExtractionRequestsService {
   

@@ -6,7 +6,6 @@ import java.util.Date
 /**
  * Job to be put into scheduler
  *
- * @author Varun Kethineedi
  */
 case class TimerJob(
   name: String,
