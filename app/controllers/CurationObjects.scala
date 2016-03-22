@@ -669,7 +669,7 @@ class CurationObjects @Inject()(
   /**
    * Endpoint for receiving status/ uri from repository.
    */
-  def savePublishedObject(id: UUID) = UserAction(needActive = true) (parse.json) {
+  def savePublishedObject(id: UUID) = AuthenticatedAction (parse.json) {
     implicit request =>
       Logger.debug("get infomation from repository")
 

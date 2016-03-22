@@ -319,7 +319,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   /**
    * Each user with EditSpace permission will see the request on index and receive an email.
    */
-   def addRequest(id: UUID) = UserAction(needActive = true) { implicit request =>
+   def addRequest(id: UUID) = AuthenticatedAction { implicit request =>
       implicit val requestuser = request.user
 
     requestuser match{
