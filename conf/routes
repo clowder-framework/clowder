@@ -689,6 +689,7 @@ POST           /sendEmail                                                       
 # ----------------------------------------------------------------------
 
 GET         /api/vocabularies/list                                                      @api.Vocabularies.list()
+POST        /api/vocabularies/createVocabularyFromJson                                  @api.Vocabularies.createVocabularyFromJson()
 POST        /api/vocabularies/createVocabulary                                          @api.Vocabularies.createVocabularyFromForm()
 GET         /api/vocabularies/getByAuthor                                               @api.Vocabularies.getByAuthor()
 POST        /api/vocabularies/findByDescription                                         @api.Vocabularies.findByDescription()
