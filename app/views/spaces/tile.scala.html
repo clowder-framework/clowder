@@ -3,9 +3,6 @@
 @import api.Permission
 <div class="post-box @classes" id="@space.id-tile">
     <div class="panel panel-default">
-        <div class="pull-right">
-            <a href="#" title="Bookmark" class="pull-right bookmark-link"><span class="glyphicon glyphicon-bookmark bookmark"></span></a>
-        </div>
         <div class="panel-body">
             @if(!space.logoURL.isEmpty) {
                 <a href="@routes.Spaces.getSpace(space.id)">

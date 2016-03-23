@@ -88,10 +88,6 @@
                 case dataset: models.Dataset => {
                     <div class="post-box col-lg-3 col-md-3 col-sm-3">
                         <div class="panel panel-default">
-                            <div class="pull-right">
-                                <a href="@(routes.Datasets.dataset(dataset.id))"><span class="glyphicon glyphicon-book" title="Dataset"></span></a>
-                                <a href="#" title="Bookmark" class="pull-right bookmark-link"><span class="glyphicon glyphicon-bookmark bookmark"></span></a>
-                            </div>
                             <div class="panel-body">
                                 @if(!dataset.thumbnail_id.isEmpty){
                                     <a href="@(routes.Datasets.dataset(dataset.id))">
