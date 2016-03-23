@@ -85,7 +85,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
     Ok(toJson(vocabs))
   }
 
-  @ApiOperation(value = "Create a template",
+  @ApiOperation(value = "Create a vocabulary object",
     notes = "",
     responseClass = "None", httpMethod = "POST")
   def createVocabularyFromJson() = AuthenticatedAction (parse.json) { implicit request =>
