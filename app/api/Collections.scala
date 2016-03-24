@@ -549,16 +549,38 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
 
   /**
-    * changes root flag value for collection
+    * Adds a Root flag for a collection in a space
     */
-  @ApiOperation(value = "Change value of root flag for collection",
+  @ApiOperation(value = "Add root flags for a collection in space",
     notes = "",
     responseClass = "None",httpMethod = "POST")
-  def setRootFlag(collectionId: UUID, root_flag: Int)  = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
+  def setRootSpace(collectionId: UUID, spaceId: UUID)  = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     Logger.debug("changing the value of the root flag")
     collections.get(collectionId) match {
       case Some(collection) => {
-        collections.setRootFlag(collectionId, root_flag)
+        spaces.addCollection(collectionId, spaceId)
+        collections.addToRootSpaces(collectionId, spaceId)
+        spaces.incrementCollectionCounter(collectionId, spaceId, 1)
+        Ok(jsonCollection(collection))
+      } case None => {
+        Logger.error("Error getting collection  " + collectionId)
+        BadRequest(toJson(s"The given collection id $collectionId is not a valid ObjectId."))
+      }
+    }
+  }
+
+  /**
+    * Remove root flag from a collection in a space
+    */
+  @ApiOperation(value = "Removes root flag from a collection in  a space",
+    notes = "",
+    responseClass = "None",httpMethod = "POST")
+  def unsetRootSpace(collectionId: UUID, spaceId: UUID)  = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+    Logger.debug("changing the value of the root flag")
+    collections.get(collectionId) match {
+      case Some(collection) => {
+        collections.removeFromRootSpaces(collectionId, spaceId)
+        spaces.decrementCollectionCounter(collectionId, spaceId, 1)
         Ok(jsonCollection(collection))
       } case None => {
         Logger.error("Error getting collection  " + collectionId)

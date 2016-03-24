@@ -470,6 +470,32 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       false, false)
   }
 
+  private def syncUpRootSpaces(collectionId: UUID): Unit ={
+    get(collectionId) match {
+      case Some(collection) => {
+        val parentSpaces = ListBuffer.empty[UUID]
+        collection.parent_collection_ids.foreach{ parentId =>
+          get(parentId) match {
+            case Some(parent) => parent.spaces.foreach{ space => parentSpaces += space}
+            case None =>
+          }
+        }
+        collection.spaces.foreach { space =>
+          if(!(parentSpaces contains space)) {
+            addToRootSpaces(collection.id, space)
+          } else {
+            if(collection.root_spaces contains space) {
+              removeFromRootSpaces(collection.id, space)
+            }
+          }
+
+        }
+      }
+      case None =>
+    }
+
+  }
+
   def getRootSpaceIds(collectionId: UUID) : ListBuffer[UUID] = {
     var rootSpaceIds = ListBuffer.empty[UUID]
 
@@ -697,10 +723,9 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
               Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $inc("childCollectionsCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
               //remove collection from the list of parent collection for sub collection
               Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)), $pull("parent_collection_ids" -> Some(new ObjectId(collectionId.stringify))), false, false, WriteConcern.Safe)
-              //If there are no more parent collections for the collection. Mark it as a root collection.
-              if(sub_collection.parent_collection_ids.length - 1 <= 0) {
-                setRootFlag(subCollectionId, 0)
-              }
+              //Check if any of the remaining spaces come from a parent or not. If not, add it to the root_spaces
+              syncUpRootSpaces(sub_collection.id)
+
               Logger.info("Removing subcollection from collection completed")
             }
             else{
@@ -731,17 +756,17 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
               addSubCollectionId(subCollectionId,collection)
               addParentCollectionId(subCollectionId,collectionId)
               val parentSpaceIds = collection.spaces
-              for (parentSpaceId <- parentSpaceIds){
-                if (!sub_collection.spaces.contains(parentSpaceId)){
+              for (parentSpaceId <- parentSpaceIds) {
+                if (!sub_collection.spaces.contains(parentSpaceId)) {
                   spaceService.get(parentSpaceId) match {
                     case Some(parentSpace) => {
-                      spaceService.addCollection(subCollectionId,parentSpaceId)
+                      spaceService.addCollection(subCollectionId, parentSpaceId)
                     }
                     case None => Logger.error("No space found for " + parentSpaceId)
                   }
                 }
               }
-              if(isPartialRoot(sub_collection)) {setRootFlag(subCollectionId, 1)}
+              syncUpRootSpaces(sub_collection.id)
               index(collection.id)
               Collection.findOneById(new ObjectId(subCollectionId.stringify)) match {
                 case Some(sub_collection) => {
@@ -760,7 +785,6 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       }
     }
   }
-
 
   def addSubCollectionId(subCollectionId: UUID, collection: Collection) = Try {
     Collection.update(MongoDBObject("_id" -> new ObjectId((collection.id).stringify)), $addToSet("child_collection_ids" -> Some(new ObjectId(subCollectionId.stringify))), false, false, WriteConcern.Safe)
@@ -786,9 +810,6 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)), $addToSet("parent_collection_ids" -> Some(new ObjectId(parentCollectionId.stringify))), false, false, WriteConcern.Safe)
   }
 
-  def setRootFlag(collectionId : UUID, flag : Int) = Try {
-    Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),$set("root_flag" -> flag), false, false, WriteConcern.Safe )
-  }
 
   def getSelfAndAncestors(collectionId : UUID) : List[Collection] = {
     var selfAndAncestors : ListBuffer[models.Collection] = ListBuffer.empty[models.Collection]
@@ -822,30 +843,15 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
                     return true
                   }
                 }
+                case None =>
               }
             }
           }
+          case None =>
         }
       }
     }
     return false
-  }
-
-  private def isPartialRoot(collection: Collection): Boolean = {
-    var isPartialRoot = false
-    val parentSpaces = ListBuffer.empty[UUID]
-    collection.parent_collection_ids.foreach { parentId =>
-      get(parentId) match {
-        case Some(parent) => parentSpaces.++(parent.spaces)
-      }
-    }
-    collection.spaces.foreach{ space =>
-      if(!(parentSpaces contains space )){
-        isPartialRoot = true
-      }
-    }
-
-    isPartialRoot
   }
 
   private def isSubCollectionIdInCollection(subCollectionId: UUID, collection: Collection) : Boolean = {

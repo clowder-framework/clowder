@@ -176,8 +176,6 @@ trait CollectionService {
 
   def removeParentCollectionId(parentCollectionId: UUID, collection: Collection, ignoreNotFound: Boolean = true) : Try[Unit]
 
-  def setRootFlag(collectionId: UUID, flag: Int) : Try[Unit]
-
   def listChildCollections(parentCollectionId: UUID) : List[Collection]
 
   def getAllDescendants(parentCollectionId : UUID) : ListBuffer[Collection]

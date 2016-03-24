@@ -452,7 +452,8 @@ PUT            /api/collections/:coll_id/title                                  
 PUT            /api/collections/:coll_id/description                                    @api.Collections.updateCollectionDescription(coll_id: UUID)
 
 POST           /api/collections/:coll_id/removeSubCollection/:sub_coll_id               @api.Collections.removeSubCollection(coll_id: UUID,sub_coll_id:UUID, ignoreNotFound?="True")
-POST           /api/collections/:coll_id/rootFlag/:root_flag                            @api.Collections.setRootFlag(coll_id: UUID, root_flag: Int )
+POST           /api/collections/:coll_id/rootFlag/:spaceId                              @api.Collections.setRootSpace(coll_id: UUID, spaceId: UUID)
+POST           /api/collections/:coll_id/unsetRootFlag/:spaceId                         @api.Collections.unsetRootSpace(coll_id: UUID, spaceId: UUID)
 POST           /api/collections/newCollectionWithParent                                 @api.Collections.createCollectionWithParent
 GET            /api/collections/:coll_id/getChildCollectionIds                          @api.Collections.getChildCollectionIds(coll_id: UUID)
 GET            /api/collections/:coll_id/getChildCollections                            @api.Collections.getChildCollections(coll_id: UUID)
