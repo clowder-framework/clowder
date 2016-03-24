@@ -47,30 +47,16 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   def newCollectionWithParent(parentCollectionId: Option[String]) = PermissionAction(Permission.CreateCollection) { implicit request =>
     implicit val user = request.user
 
-    val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
-    var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
-    var parentSpaces : List[UUID] = List.empty[UUID]
-
-    for (aSpace <- spacesList) {
-      //For each space in the list, check if the user has permission to add something to it, if so
-      //decode it and add it to the list to pass back to the view.
-      if (Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, aSpace.id))) {
-        decodedSpaceList += Utils.decodeSpaceElements(aSpace)
-      }
-
-
-    }
-
-
     parentCollectionId match {
       case Some(currentParentCollectionId) =>{
         collections.get(UUID(currentParentCollectionId)) match {
           case Some(parentCollection) => {
-            parentSpaces = parentCollection.spaces
-            Ok(views.html.newCollectionWithParent(null, decodedSpaceList.toList,  RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None,Some(currentParentCollectionId),Some(parentCollection.name), parentSpaces))
+
+            Ok(views.html.newCollectionWithParent(null, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None,Some(currentParentCollectionId),Some(parentCollection.name)))
           }
           case None => Ok(toJson("newCollectionWithParent, no collection matches parentCollectionId"))
         }
+
       }
       case None => Ok(toJson("newCollectionWithParent, no parentCollectionId provided"))
     }
@@ -293,20 +279,10 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
    */
   def submit() = PermissionAction(Permission.CreateCollection)(parse.multipartFormData) { implicit request =>
       Logger.debug("------- in Collections.submit ---------")
-      var colName = request.body.asFormUrlEncoded.getOrElse("name", null)
-      var colDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
-      var colSpace = request.body.asFormUrlEncoded.getOrElse("space", List.empty)
-      var colParentCollection = request.body.asFormUrlEncoded.getOrElse("collection", List.empty)
-
-      var colParentColId = request.body.asFormUrlEncoded.getOrElse("parentcolid",null)
-      var colParentSpaces = request.body.asFormUrlEncoded.getOrElse("parentspacesids",List.empty)
-      var colRootFlag = request.body.asFormUrlEncoded.getOrElse("rootflag",List.empty)
-
-      var rootFlag = 0
-      if (colRootFlag(0) == "false")
-        rootFlag = 2
-
-
+      val colName = request.body.asFormUrlEncoded.getOrElse("name", null)
+      val colDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
+      val colSpace = request.body.asFormUrlEncoded.getOrElse("space", List.empty)
+      val colParentColId = request.body.asFormUrlEncoded.getOrElse("parentcolid",null)
 
       implicit val user = request.user
       user match {
@@ -504,9 +480,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             decodedSpaces_canRemove = decodedSpaces_canRemove + (decodedSpace -> removeFromSpace)
           }
 
-          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList, Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap, Some(decodedSpaces), decodedSpaces_canRemove,prev,next,limit))
-
-          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList, Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap,Some(collectionSpaces_canRemove), prevd,nextd, prevcc, nextcc, limit))
+          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList,
+            Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap,Some(collectionSpaces_canRemove),
+            prevd,nextd, prevcc, nextcc, limit))
 
         }
         case None => {
@@ -782,20 +758,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title, owner, when, date))
   }
 
-  private def removeFromSpaceAllowed(collectionId : UUID, spaceId : UUID) : Boolean = {
-    collections.get(collectionId) match {
-      case Some(collection) => {
-        spaceService.get(spaceId) match {
-          case Some(space) => {
-            return !(collections.hasParentInSpace(collection.id, space.id))
-          }
-        }
-      }
-    }
-    return false
-  }
-
-  private def removeFromSpaceAllowed(collectionId : UUID, spaceId : UUID) : Boolean = {
+   private def removeFromSpaceAllowed(collectionId : UUID, spaceId : UUID) : Boolean = {
     return !(collections.hasParentInSpace(collectionId, spaceId))
   }
 
