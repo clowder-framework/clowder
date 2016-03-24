@@ -34,9 +34,6 @@ case class ExtractorMessage(
 /**
  * Rabbitmq service.
  *
- * @author Luigi Marini
- * @author Rob Kooper
- * @author Smruti Padhy
  */
 class RabbitmqPlugin(application: Application) extends Plugin {
   val files: FileService = DI.injector.getInstance(classOf[FileService])

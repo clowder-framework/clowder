@@ -27,7 +27,6 @@ import play.api.Play._
 /**
  * Use Mongodb to store collections.
  *
- * @author Constantinos Sophocleous
  *
  */
 @Singleton

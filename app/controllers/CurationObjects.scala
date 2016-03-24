@@ -3,6 +3,7 @@ package controllers
 import java.util.Date
 import javax.inject.Inject
 import api.Permission
+import com.fasterxml.jackson.annotation.JsonValue
 import models._
 import play.api.Logger
 import play.api.libs.json._
@@ -203,7 +204,7 @@ class CurationObjects @Inject()(
 
           Redirect(routes.CurationObjects.getCurationObject(id))
         }
-        case None => InternalServerError("Curation Object Not found")
+        case None => BadRequest(views.html.notFound("Curation Object does not exist."))
       }
   }
 
@@ -244,7 +245,7 @@ class CurationObjects @Inject()(
           Ok(views.html.spaces.curationObject(c, m , isRDFExportEnabled, limit))
         }
       }
-      case None => InternalServerError("Curation Object Not found")
+      case None => BadRequest(views.html.notFound("Curation Object does not exist."))
     }
   }
 
@@ -288,14 +289,14 @@ class CurationObjects @Inject()(
                 val next = cf.files.length + cf.folders.length > limit * (filepageUpdate+1)
                 Ok(views.html.curations.filesAndFolders(c, Some(cf.id.stringify), foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, mCurationFile))
               }
-              case None => InternalServerError ("Curation Folder Not found")
+              case None => BadRequest(views.html.notFound("Curation Folder does not exist."))
             }
           }
 
         }
 
       }
-      case None => InternalServerError("Curation Object Not found")
+      case None => BadRequest(views.html.notFound("Curation Object does not exist."))
     }
   }
 
@@ -314,7 +315,7 @@ class CurationObjects @Inject()(
                 case None =>Results.Redirect(routes.Error.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
               }
             }
-            case None => InternalServerError("Curation Object not found")
+            case None => BadRequest(views.html.notFound("Curation Object does not exist."))
           }
   }
 
@@ -463,20 +464,45 @@ class CurationObjects @Inject()(
     jsonResponse.as[List[MatchMakerResponse]]
   }
 
+  def submitRepositorySelection(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) (parse.multipartFormData)   {
+    implicit request =>
+      implicit val user = request.user
+      user match {
+        case Some(usr) => {
+          curations.get(curationId) match {
+            case Some(c) => {
+              val repository = request.body.asFormUrlEncoded.getOrElse("repository", null)
+              val purpose = request.body.asFormUrlEncoded.getOrElse("purpose", null)
+              curations.updateRepository(c.id, repository(0))
+              val mmResp = callMatchmaker(c, user).filter(_.orgidentifier == repository(0))
+              if(purpose != null) {
+                val userPreferences:Map[String, String] = Map("Purpose" -> purpose(0))
+                userService.updateRepositoryPreferences(usr.id, userPreferences)
+              }
+              Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository(0)))
+            }
+            case None => InternalServerError("Space not found")
+          }
+        }
+        case None => InternalServerError("User Not Found")
+      }
+  }
+
   def compareToRepository(curationId: UUID, repository: String) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       implicit val user = request.user
 
-       curations.get(curationId) match {
-         case Some(c) => {
-           curations.updateRepository(c.id, repository)
-           val mmResp = callMatchmaker(c, user).filter(_.orgidentifier == repository)
+      curations.get(curationId) match {
+        case Some(c) => {
+          curations.updateRepository(c.id, repository)
+          val mmResp = callMatchmaker(c, user).filter(_.orgidentifier == repository)
 
-           Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository))
+          Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository))
         }
         case None => InternalServerError("Space not found")
       }
   }
+
 
   def sendToRepository(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
@@ -643,7 +669,7 @@ class CurationObjects @Inject()(
   /**
    * Endpoint for receiving status/ uri from repository.
    */
-  def savePublishedObject(id: UUID) = UserAction(needActive = true) (parse.json) {
+  def savePublishedObject(id: UUID) = AuthenticatedAction (parse.json) {
     implicit request =>
       Logger.debug("get infomation from repository")
 

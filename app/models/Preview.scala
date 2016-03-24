@@ -5,7 +5,6 @@ import com.mongodb.casbah.Imports._
 /**
  * Preview bytes and metadata.
  *
- * @author Luigi Marini
  */
 
 case class Preview(
