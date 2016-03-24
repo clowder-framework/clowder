@@ -800,11 +800,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
             case Some(parent_collection) => {
               selfAndAncestors = selfAndAncestors ++ getSelfAndAncestors(parentCollectionId)
             }
-
+            case None =>
           }
         }
       }
-
+      case None =>
     }
     return selfAndAncestors.toList
 
