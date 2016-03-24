@@ -260,7 +260,6 @@ class MongoDBSpaceService @Inject() (
   def addCollection(collection: UUID, space: UUID): Unit = {
     log.debug(s"Adding $collection to $space")
 
-    var isRoot = false
     collections.addToSpace(collection, space)
     collections.get(collection) match {
       case Some(current_collection) => {
