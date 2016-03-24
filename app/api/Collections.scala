@@ -52,7 +52,12 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
           collections.insert(c) match {
             case Some(id) => {
-              c.spaces.map{ s => spaces.addCollection(c.id, s)}
+              c.spaces.map{ s =>
+                spaces.addCollection(c.id, s)
+                spaces.incrementCollectionCounter(c.id, s,1)
+                collections.addToRootSpaces(c.id, s)
+
+              }
               Ok(toJson(Map("id" -> id)))
             }
             case None => Ok(toJson(Map("status" -> "error")))
@@ -161,14 +166,14 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     notes = "This will check for Permission.ViewCollection",
     responseClass = "None", multiValueResponse=true, httpMethod = "GET")
   def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.ViewCollection), false, request.user, request.superAdmin, false)))
+    Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.ViewCollection), false, request.user, request.superAdmin)))
   }
 
   @ApiOperation(value = "List all collections the user can edit",
     notes = "This will check for Permission.AddResourceToCollection and Permission.EditCollection",
     responseClass = "None", httpMethod = "GET")
   def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.superAdmin, false)))
+    Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.superAdmin)))
   }
 
 
@@ -178,7 +183,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   def listPossibleParents(currentCollectionId : String, title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
     val selfAndAncestors = collections.getSelfAndAncestors(UUID(currentCollectionId))
     val descendants = collections.getAllDescendants(UUID(currentCollectionId)).toList
-    val allCollections = lisCollections(None, None, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.superAdmin, false)
+    val allCollections = lisCollections(None, None, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.superAdmin)
     val possibleNewParents = allCollections.filter((c: Collection) => (!selfAndAncestors.contains(c) && !descendants.contains(c)))
     Ok(toJson(possibleNewParents))
   }
@@ -189,33 +194,33 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
    * Returns list of collections based on parameters and permissions.
    * TODO this needs to be cleaned up when do permissions for adding to a resource
    */
-  private def lisCollections(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], mine: Boolean, user: Option[User], superAdmin: Boolean, root: Boolean) : List[Collection] = {
+  private def lisCollections(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], mine: Boolean, user: Option[User], superAdmin: Boolean) : List[Collection] = {
     if (mine && user.isEmpty) return List.empty[Collection]
 
     (title, date) match {
       case (Some(t), Some(d)) => {
         if (mine)
-          collections.listUser(d, true, limit, t, user, superAdmin, user.get, false)
+          collections.listUser(d, true, limit, t, user, superAdmin, user.get)
         else
-          collections.listAccess(d, true, limit, t, permission, user, superAdmin, root)
+          collections.listAccess(d, true, limit, t, permission, user, superAdmin)
       }
       case (Some(t), None) => {
         if (mine)
-          collections.listUser(limit, t, user, superAdmin, user.get, false)
+          collections.listUser(limit, t, user, superAdmin, user.get)
         else
-          collections.listAccess(limit, t, permission, user, superAdmin, root)
+          collections.listAccess(limit, t, permission, user, superAdmin)
       }
       case (None, Some(d)) => {
         if (mine)
-          collections.listUser(d, true, limit, user, superAdmin, user.get, false)
+          collections.listUser(d, true, limit, user, superAdmin, user.get)
         else
-          collections.listAccess(d, true, limit, permission, user, superAdmin, root)
+          collections.listAccess(d, true, limit, permission, user, superAdmin)
       }
       case (None, None) => {
         if (mine)
-          collections.listUser(limit, user, superAdmin, user.get, false)
+          collections.listUser(limit, user, superAdmin, user.get)
         else
-          collections.listAccess(limit, permission, user, superAdmin, root)
+          collections.listAccess(limit, permission, user, superAdmin)
       }
     }
   }
@@ -231,7 +236,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
   def jsonCollection(collection: Collection): JsValue = {
     toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description,
-      "created" -> collection.created.toString,"author"-> collection.author.toString, "root_flag" -> collection.root_flag.toString,
+      "created" -> collection.created.toString,"author"-> collection.author.toString, "root_flag" -> collections.hasRoot(collection).toString,
       "child_collection_ids"-> collection.child_collection_ids.toString, "parent_collection_ids" -> collection.parent_collection_ids.toString,
     "childCollectionsCount" -> collection.childCollectionsCount.toString, "datasetCount"-> collection.datasetCount.toString, "spaces" -> collection.spaces.toString))
   }
@@ -467,7 +472,11 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
           collections.insert(c) match {
             case Some(id) => {
-              c.spaces.map{ s => spaces.addCollection(c.id, s)}
+              c.spaces.map{ s =>
+                spaces.addCollection(c.id, s)
+                spaces.incrementCollectionCounter(c.id, s, 1)
+                collections.addToRootSpaces(c.id, s)
+              }
 
               //do stuff with parent here
               (request.body \"parentId").asOpt[String] match {
@@ -527,7 +536,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   def isCollectionRootOrHasNoParent(collectionId: UUID): Unit = {
     collections.get(collectionId) match {
       case Some(collection) => {
-        if (collection.root_flag == true || collection.parent_collection_ids.isEmpty) {
+        if (collections.hasRoot(collection) || collection.parent_collection_ids.isEmpty) {
           return true
         } else
           return false
@@ -545,11 +554,11 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Change value of root flag for collection",
     notes = "",
     responseClass = "None",httpMethod = "POST")
-  def setRootFlag(collectionId: UUID, isRoot: Boolean)  = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
+  def setRootFlag(collectionId: UUID, root_flag: Int)  = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     Logger.debug("changing the value of the root flag")
     collections.get(collectionId) match {
       case Some(collection) => {
-        collections.setRootFlag(collectionId, isRoot)
+        collections.setRootFlag(collectionId, root_flag)
         Ok(jsonCollection(collection))
       } case None => {
         Logger.error("Error getting collection  " + collectionId)
@@ -562,7 +571,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     notes = "",
     responseClass = "None", httpMethod = "GET")
   def getRootCollections() = PermissionAction(Permission.ViewCollection) { implicit request =>
-    val root_collections_list = for (collection <- collections.listAccess(100,Set[Permission](Permission.ViewCollection),request.user,true, true); if collection.root_flag == true)
+    val root_collections_list = for (collection <- collections.listAccess(100,Set[Permission](Permission.ViewCollection),request.user,true); if collections.hasRoot(collection)  )
       yield jsonCollection(collection)
 
     Ok(toJson(root_collections_list))
@@ -573,9 +582,9 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     responseClass = "None", httpMethod = "GET")
   def getAllCollections() = PermissionAction(Permission.ViewCollection) { implicit request =>
     implicit val user = request.user
-    val count : Long  = collections.countAccess(Set[Permission](Permission.ViewCollection),user,true, false);
+    val count : Long  = collections.countAccess(Set[Permission](Permission.ViewCollection),user,true)
     val limit = count.toInt
-    val all_collections_list = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection),request.user,true, false))
+    val all_collections_list = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection),request.user,true))
       yield jsonCollection(collection)
     Ok(toJson(all_collections_list))
   }
@@ -587,11 +596,10 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     responseClass = "None", httpMethod = "GET")
   def getTopLevelCollections() = PermissionAction(Permission.ViewCollection){ implicit request =>
     implicit val user = request.user
-    val count = collections.countAccess(Set[Permission](Permission.ViewCollection),user,true, false);
+    val count = collections.countAccess(Set[Permission](Permission.ViewCollection),user,true)
     val limit = count.toInt
-    val top_level_collections = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection),request.user,true, false); if (collection.root_flag == true || collection.parent_collection_ids.isEmpty))
+    val top_level_collections = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection),request.user,true); if (collections.hasRoot(collection) || collection.parent_collection_ids.isEmpty))
       yield jsonCollection(collection)
-
     Ok(toJson(top_level_collections))
   }
 
@@ -665,7 +673,21 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
         Ok(toJson(parentCollections))
       }
+
       case None => BadRequest(toJson("collection not found"))
+    }
+  }
+
+  @ApiOperation(value = "Checks if we can remove a collection from a space",
+    responseClass = "None", httpMethod = "GET")
+  def removeFromSpaceAllowed(collectionId: UUID , spaceId : UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+    val user = request.user
+    user match {
+      case Some(identity) => {
+        val hasParentInSpace = collections.hasParentInSpace(collectionId, spaceId)
+        Ok(toJson(!(hasParentInSpace)))
+      }
+      case None => Ok(toJson(false))
     }
   }
 

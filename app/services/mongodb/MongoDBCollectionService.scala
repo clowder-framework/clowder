@@ -19,7 +19,6 @@ import scala.util.Try
 import services._
 import javax.inject.{Singleton, Inject}
 import scala.util.Failure
-import scala.Some
 import scala.util.Success
 import MongoContext.context
 import play.api.Play._
@@ -44,106 +43,106 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
    * Return the count of root collections in a space, this does not check for permissions
    */
   def countSpace(space: String): Long = {
-    count(None, false,  None, Some(space), Set[Permission](Permission.ViewCollection), None, showAll=true, None, true)
+    count(None, false,  None, Some(space), Set[Permission](Permission.ViewCollection), None, showAll=true, None)
   }
 
   /**
    * Return a list of collections in a space, this does not check for permissions
    */
   def listSpace(limit: Integer, space: String): List[Collection] = {
-    list(None, false, limit, None, Some(space), Set[Permission](Permission.ViewCollection), None, showAll=true, None, true)
+    list(None, false, limit, None, Some(space), Set[Permission](Permission.ViewCollection), None, showAll=true, None)
   }
 
   /**
    * Return a list of collections in a space starting at a specific date, this does not check for permissions
    */
   def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Collection] = {
-    list(Some(date), nextPage, limit, None, Some(space), Set[Permission](Permission.ViewCollection), None, showAll=true, None, true)
+    list(Some(date), nextPage, limit, None, Some(space), Set[Permission](Permission.ViewCollection), None, showAll=true, None)
   }
 
   /**
    * Return the count of collections the user has access to.
    */
-  def countAccess(permissions: Set[Permission], user: Option[User], showAll: Boolean, root: Boolean): Long = {
-    count(None, false,  None, None, permissions, user, showAll, None, root)
+  def countAccess(permissions: Set[Permission], user: Option[User], showAll: Boolean): Long = {
+    count(None, false,  None, None, permissions, user, showAll, None)
   }
 
   /**
    * Return a list of collections the user has access to.
    */
-  def listAccess(limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean, root: Boolean): List[Collection] = {
-    list(None, false, limit, None, None, permissions, user, showAll, None, root)
+  def listAccess(limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection] = {
+    list(None, false, limit, None, None, permissions, user, showAll, None)
   }
 
   /**
    * Return a list of collections the user has access to.
    */
-  def listAccess(limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean, root: Boolean): List[Collection] = {
-    list(None, false, limit, Some(title), None, permissions, user, showAll, None, root)
+  def listAccess(limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection] = {
+    list(None, false, limit, Some(title), None, permissions, user, showAll, None)
   }
 
   /**
    * Return a list of collections the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean, root: Boolean): List[Collection] = {
-    list(Some(date), nextPage, limit, None, None, permissions, user, showAll, None, root)
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection] = {
+    list(Some(date), nextPage, limit, None, None, permissions, user, showAll, None)
   }
 
   /**
    * Return a list of collections the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean, root: Boolean): List[Collection] = {
-    list(Some(date), nextPage, limit, Some(title), None, permissions, user, showAll, None, root)
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection] = {
+    list(Some(date), nextPage, limit, Some(title), None, permissions, user, showAll, None)
   }
 
   /**
    * Return the count of collections the user has created.
    */
-  def countUser(user: Option[User], showAll: Boolean, owner: User, root:Boolean): Long = {
-    count(None, false, None, None, Set[Permission](Permission.ViewCollection), user, showAll, Some(owner), root)
+  def countUser(user: Option[User], showAll: Boolean, owner: User): Long = {
+    count(None, false, None, None, Set[Permission](Permission.ViewCollection), user, showAll, Some(owner))
   }
 
   /**
    * Return a list of collections the user has created.
    */
-  def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User, root:Boolean): List[Collection] = {
-    list(None, false, limit, None, None, Set[Permission](Permission.ViewCollection), user, showAll, Some(owner), root)
+  def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Collection] = {
+    list(None, false, limit, None, None, Set[Permission](Permission.ViewCollection), user, showAll, Some(owner))
   }
 
   /**
    * Return a list of collections the user has created with matching title.
    */
-  def listUser(limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User, root: Boolean): List[Collection] = {
-    list(None, false, limit, Some(title), None, Set[Permission](Permission.ViewCollection), user, showAll, Some(owner), root: Boolean)
+  def listUser(limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[Collection] = {
+    list(None, false, limit, Some(title), None, Set[Permission](Permission.ViewCollection), user, showAll, Some(owner))
   }
 
   /**
    * Return a list of collections the user has created starting at a specific date.
    */
-  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User, root: Boolean): List[Collection] = {
-    list(Some(date), nextPage, limit, None, None, Set[Permission](Permission.ViewCollection), user, showAll, Some(owner), root)
+  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Collection] = {
+    list(Some(date), nextPage, limit, None, None, Set[Permission](Permission.ViewCollection), user, showAll, Some(owner))
   }
 
   /**
    * Return a list of collections the user has created starting at a specific date with matching title.
    */
-  def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User, root: Boolean): List[Collection] = {
-    list(Some(date), nextPage, limit, Some(title), None, Set[Permission](Permission.ViewCollection), user, showAll, Some(owner), root)
+  def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[Collection] = {
+    list(Some(date), nextPage, limit, Some(title), None, Set[Permission](Permission.ViewCollection), user, showAll, Some(owner))
   }
 
   /**
    * Return count of the requested collections
    */
-  private def count(date: Option[String], nextPage: Boolean, title: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User], root: Boolean): Long = {
-    val (filter, _) = filteredQuery(date, nextPage, title, space, Set[Permission](Permission.ViewCollection), user, showAll, owner, root)
+  private def count(date: Option[String], nextPage: Boolean, title: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
+    val (filter, _) = filteredQuery(date, nextPage, title, space, Set[Permission](Permission.ViewCollection), user, showAll, owner)
     Collection.count(filter)
   }
 
   /**
    * Return a list of the requested collections
    */
-  private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User], root: Boolean): List[Collection] = {
-    val (filter, sort) = filteredQuery(date, nextPage, title, space, permissions, user, showAll, owner, root)
+  private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): List[Collection] = {
+    val (filter, sort) = filteredQuery(date, nextPage, title, space, permissions, user, showAll, owner)
     //println("db.collections.find(" + MongoUtils.mongoQuery(filter) + ").sort(" + MongoUtils.mongoQuery(sort) + ")")
     if (date.isEmpty || nextPage) {
       Collection.find(filter).sort(sort).limit(limit).toList
@@ -155,7 +154,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   /**
    * Monster function, does all the work. Will create a filters and sorts based on the given parameters
    */
-  private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User], root: Boolean):(DBObject, DBObject) = {
+  private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]):(DBObject, DBObject) = {
     // filter =
     // - owner   == show collections owned by owner that user can see
     // - space   == show all collections in space
@@ -187,21 +186,22 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     }
     val filterOwner = owner match {
       case Some(o) => MongoDBObject("author.identityId.userId" -> o.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> o.identityId.providerId)
-      case None => MongoDBObject()
+      case None => {
+        space match {
+          case Some(s) => MongoDBObject()
+          case None => MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject( "$size" -> 0)))
+        }
+      }
     }
     val filterSpace = space match {
-      case Some(s) => MongoDBObject("spaces" -> new ObjectId(s))
+      case Some(s) => MongoDBObject("root_spaces" -> new ObjectId(s))
       case None => MongoDBObject()
     }
     val filterTitle = titleSearch match {
       case Some(title) =>  MongoDBObject("name" -> ("(?i)" + title).r)
       case None => MongoDBObject()
     }
-    val filterRoot = if(root) {
-      MongoDBObject("root_flag" -> true)
-    } else {
-      MongoDBObject()
-    }
+
     val filterDate = date match {
       case Some(d) => {
         if (nextPage) {
@@ -219,7 +219,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       MongoDBObject("created" -> -1) ++ MongoDBObject("name" -> 1)
     }
 
-    (filterAccess ++ filterDate ++ filterTitle ++ filterSpace ++ filterOwner ++ filterRoot, sort)
+    (filterAccess ++ filterDate ++ filterTitle ++ filterSpace ++ filterOwner, sort)
   }
 
   /**
@@ -345,7 +345,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   def listOutsideDataset(datasetId: UUID, user: Option[User], showAll: Boolean): List[Collection] = {
     Dataset.findOneById(new ObjectId(datasetId.stringify)) match {
       case Some(dataset) => {
-        val list = for (collection <- listAccess(0, Set[Permission](Permission.ViewCollection), user, showAll, false); if (!isInDataset(dataset, collection))) yield collection
+        val list = for (collection <- listAccess(0, Set[Permission](Permission.ViewCollection), user, showAll); if (!isInDataset(dataset, collection))) yield collection
         return list.reverse
       }
       case None => {
@@ -361,7 +361,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   def listInsideDataset(datasetId: UUID, user: Option[User], showAll: Boolean): List[Collection] = {
     Dataset.findOneById(new ObjectId(datasetId.stringify)) match {
       case Some(dataset) => {
-        val list = for (collection <- listAccess(0, Set[Permission](Permission.ViewCollection), user, showAll, false); if (isInDataset(dataset, collection))) yield collection
+        val list = for (collection <- listAccess(0, Set[Permission](Permission.ViewCollection), user, showAll); if (isInDataset(dataset, collection))) yield collection
         return list.reverse
       }
       case None => {
@@ -439,7 +439,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
         for (parentCollectionId <- parentCollectionIds){
           Collection.findOneById(new ObjectId(parentCollectionId.stringify))  match {
             case Some(parentCollection) => {
-              if (parentCollection.root_flag == true) {
+              if (hasRoot(parentCollection)) {
                 rootCollections += parentCollection
               } else {
                 rootCollections = rootCollections++( getRootCollections(parentCollectionId))
@@ -453,10 +453,28 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     return rootCollections
   }
 
+  def hasRoot(collection: Collection): Boolean = {
+    collection.root_spaces.length > 0
+  }
+
+  def addToRootSpaces(collectionId: UUID, spaceId: UUID): Unit = {
+    Collection.update(
+      MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+      $addToSet("root_spaces" -> Some(new ObjectId(spaceId.stringify))),
+      false, false)
+  }
+
+  def removeFromRootSpaces(collectionId: UUID, spaceId: UUID)= {
+    Collection.update(
+      MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+      $pull("root_spaces" -> Some(new ObjectId(spaceId.stringify))),
+      false, false)
+  }
+
   def getRootSpaceIds(collectionId: UUID) : ListBuffer[UUID] = {
     var rootSpaceIds = ListBuffer.empty[UUID]
 
-    var rootCollectionIds =  getRootCollections(collectionId).toList
+    val rootCollectionIds =  getRootCollections(collectionId).toList
 
     for (rootCollectionId <- rootCollectionIds){
       Collection.findOneById(new ObjectId(rootCollectionId.id.stringify)) match {
@@ -682,7 +700,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
               Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)), $pull("parent_collection_ids" -> Some(new ObjectId(collectionId.stringify))), false, false, WriteConcern.Safe)
               //If there are no more parent collections for the collection. Mark it as a root collection.
               if(sub_collection.parent_collection_ids.length - 1 <= 0) {
-                setRootFlag(subCollectionId, true)
+                setRootFlag(subCollectionId, 0)
               }
               Logger.info("Removing subcollection from collection completed")
             }
@@ -705,8 +723,6 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     }
   }
 
-
-
   def addSubCollection(collectionId :UUID, subCollectionId: UUID) = Try{
     Collection.findOneById(new ObjectId(collectionId.stringify)) match {
       case Some(collection) => {
@@ -726,6 +742,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
                   }
                 }
               }
+              if(isPartialRoot(sub_collection)) {setRootFlag(subCollectionId, 1)}
               index(collection.id)
               Collection.findOneById(new ObjectId(subCollectionId.stringify)) match {
                 case Some(sub_collection) => {
@@ -770,8 +787,8 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)), $addToSet("parent_collection_ids" -> Some(new ObjectId(parentCollectionId.stringify))), false, false, WriteConcern.Safe)
   }
 
-  def setRootFlag(collectionId : UUID, isRoot : Boolean) = Try {
-    Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),$set("root_flag" -> isRoot), false, false, WriteConcern.Safe )
+  def setRootFlag(collectionId : UUID, flag : Int) = Try {
+    Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),$set("root_flag" -> flag), false, false, WriteConcern.Safe )
   }
 
   def getSelfAndAncestors(collectionId : UUID) : List[Collection] = {
@@ -792,7 +809,44 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     }
     return selfAndAncestors.toList
 
+  }
 
+  def hasParentInSpace(collectionId : UUID, spaceId: UUID) : Boolean = {
+    get(collectionId) match {
+      case Some(collection) => {
+        spaceService.get(spaceId) match {
+          case Some(space) => {
+            for (parentId <- collection.parent_collection_ids) {
+              get(parentId) match {
+                case Some(parentCollection) => {
+                  if (parentCollection.spaces.contains(spaceId)) {
+                    return true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return false
+  }
+
+  private def isPartialRoot(collection: Collection): Boolean = {
+    var isPartialRoot = false
+    val parentSpaces = ListBuffer.empty[UUID]
+    collection.parent_collection_ids.foreach { parentId =>
+      get(parentId) match {
+        case Some(parent) => parentSpaces.++(parent.spaces)
+      }
+    }
+    collection.spaces.foreach{ space =>
+      if(!(parentSpaces contains space )){
+        isPartialRoot = true
+      }
+    }
+
+    isPartialRoot
   }
 
   private def isSubCollectionIdInCollection(subCollectionId: UUID, collection: Collection) : Boolean = {

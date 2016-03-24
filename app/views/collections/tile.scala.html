@@ -20,8 +20,10 @@
             <!-- Collection Info -->
         <ul class="list-group">
             <li class="list-group-item">
-                <span class="glyphicon glyphicon glyphicon-file" title="@collection.datasetCount datasets"></span> @collection.datasetCount
-                <span class="glyphicon glyphicon glyphicon-th-large" title="@collection.childCollectionsCount child collections"></span> @collection.childCollectionsCount
+                <span class="glyphicon glyphicon-file" title="@collection.datasetCount datasets"></span> @collection.datasetCount
+                <span class="glyphicon glyphicon-th-large" title="@collection.childCollectionsCount child collections"></span> @collection.childCollectionsCount
+
+
                 @if(user.isDefined) {
                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                     @if( user.get.identityId.userId.equals(collection.author.identityId.userId) || Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){

@@ -304,7 +304,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("add-creator-to-curation-folders", addAuthorAndDateToCurationFolders)
 
     //Whenever a root flag is not set, mark it as true.
-    updateMongo("add-collection-root-flag", addRootFlagToCollections)
+    updateMongo("add-collection-root-map", addRootMapToCollections)
 
     updateMongo("update-collection-counter-in-space", fixCollectionCounterInSpaces)
   }
@@ -800,14 +800,26 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
-  private def addRootFlagToCollections() {
+  private def addRootMapToCollections() {
     collection("collections").foreach{ c =>
-      var root_flag = c.getAsOrElse[Boolean]("root_flag", true)
       val parents = c.getAsOrElse[MongoDBList]("parent_collection_ids", MongoDBList.empty)
-      if(parents.length == 0 & !root_flag){
-        root_flag = true
+
+
+      val spaces = c.getAsOrElse[MongoDBList]("spaces", MongoDBList.empty)
+      val parentCollections = collection("collections").find(MongoDBObject("_id" -> MongoDBObject("$in" -> parents)))
+      var parentSpaces = MongoDBList.empty
+      parentCollections.foreach{pc =>
+       pc.getAsOrElse[MongoDBList]("spaces", MongoDBList.empty).foreach{ps => parentSpaces += ps} }
+      val root_spaces= scala.collection.mutable.ListBuffer.empty[ObjectId]
+      spaces.foreach { s =>
+
+        if (!(parentSpaces contains s)) {
+          root_spaces += new ObjectId(s.toString())
+        }
       }
-      c.put("root_flag", root_flag)
+
+      c.put("root_spaces", root_spaces.toList)
+      c.remove("root_flag")
       try {
         collection("collections").save(c, WriteConcern.Safe)
       } catch {
@@ -820,8 +832,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   private def fixCollectionCounterInSpaces() {
     collection("spaces.projects").foreach{ space =>
       val spaceId = space.getAsOrElse[ObjectId]("_id", new ObjectId())
-      val q = MongoDBObject("spaces" -> MongoDBObject("$in" -> MongoDBList(spaceId)), "root_flag" -> true)
-      val collections = collection("collections").find(q)
+      val collections = collection("collections").find( MongoDBObject("root_spaces" -> spaceId))
       space.put("collectionCount", collections.length)
       try{
         collection("spaces.projects").save(space, WriteConcern.Safe)

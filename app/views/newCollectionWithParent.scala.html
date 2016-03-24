@@ -1,3 +1,4 @@
+
 @(errorString: String, spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], parentId : Option[String], parentName : Option[String] ,parentSpaces : List[UUID])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
@@ -53,7 +54,7 @@
             <td>	                            
             </td>
             <td>
-                <button style="margin-top: 10px; margin-right: 10px;" class="btn btn-primary" title="Create the collection" onclick="return createCollection();">
+                <button style="margin-top: 10px; margin-right: 10px;" class="btn btn-primary" title="Create the collection" onclick="return createChildCollection();">
                   <span class="glyphicon glyphicon-ok"></span> Create
                 </button>
                 <button style="margin-top: 10px;" class="btn btn-default" title="Clear the input fields" onclick="return clearFields();">

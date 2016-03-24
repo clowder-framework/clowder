@@ -350,6 +350,7 @@ POST           /api/files/:id/tags/remove_all                                   
 DELETE         /api/files/:id/tags                                                      @api.Files.removeTags(id: UUID)
 POST           /api/files/:id/license                                                   @api.Files.updateLicense(id: UUID)
 GET            /api/files/:id/extracted_metadata                                        @api.Files.extract(id:UUID)
+PUT            /api/files/:id/filename                                                  @api.Files.updateFileName(id: UUID)
 POST           /api/files/:id/reindex                                                   @api.Files.reindex(id:UUID)
 
 # ----------------------------------------------------------------------
@@ -450,13 +451,14 @@ PUT            /api/collections/:coll_id/title                                  
 PUT            /api/collections/:coll_id/description                                    @api.Collections.updateCollectionDescription(coll_id: UUID)
 
 POST           /api/collections/:coll_id/removeSubCollection/:sub_coll_id               @api.Collections.removeSubCollection(coll_id: UUID,sub_coll_id:UUID, ignoreNotFound?="True")
-POST           /api/collections/:coll_id/rootFlag/:isRoot                               @api.Collections.setRootFlag(coll_id: UUID, isRoot: Boolean )
+POST           /api/collections/:coll_id/rootFlag/:root_flag                            @api.Collections.setRootFlag(coll_id: UUID, root_flag: Int )
 POST           /api/collections/newCollectionWithParent                                 @api.Collections.createCollectionWithParent
 GET            /api/collections/:coll_id/getChildCollectionIds                          @api.Collections.getChildCollectionIds(coll_id: UUID)
 GET            /api/collections/:coll_id/getChildCollections                            @api.Collections.getChildCollections(coll_id: UUID)
 GET            /api/collections/:coll_id/getParentCollectionIds                         @api.Collections.getParentCollectionIds(coll_id: UUID)
 GET            /api/collections/:coll_id/getParentCollections                           @api.Collections.getParentCollections(coll_id: UUID)
 POST           /api/collections/:coll_id/addSubCollection/:sub_coll_id                  @api.Collections.attachSubCollection(coll_id: UUID, sub_coll_id: UUID)
+GET            /api/collections/:coll_id/removeFromSpaceAllowed/:space_id               @api.Collections.removeFromSpaceAllowed(coll_id: UUID, space_id: UUID)
 
 
 # ----------------------------------------------------------------------

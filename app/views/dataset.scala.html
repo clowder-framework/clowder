@@ -5,7 +5,7 @@
   collectionsInside: List[models.Collection],
   rdfExported: Boolean,
   relatedSensors: List[(String,String,String)],
-  datasetSpaces: Option[List[ProjectSpace]],
+  datasetSpaces_canRemove : Option[Map[ProjectSpace,Boolean]],
   fileList: List[File],
   filesTags: scala.collection.immutable.TreeSet[String],
   toPublish: Boolean,
@@ -181,7 +181,7 @@
 
 		<!-- right column -->
 		<div class="col-md-4 col-left-border">
-            @spaces.spaceAllocation(dataset.id, ResourceRef.dataset, datasetSpaces.getOrElse(List.empty),None)
+            @spaces.spaceAllocation(dataset.id, ResourceRef.dataset,datasetSpaces_canRemove.getOrElse(Map.empty),None)
             @if(user.isDefined) {
                 <br/>
                 @datasets.userLink(dataset)

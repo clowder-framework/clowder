@@ -38,7 +38,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.superAdmin)
     val filesCount = files.count()
     val collectionsCount = collections.count()
-    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.superAdmin, true)
+    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.superAdmin)
     val spacesCount = spaces.count()
     val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.superAdmin)
     val usersCount = users.count()
@@ -62,7 +62,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
           }
           dataset.id -> allComments.size
         }.toMap
-        val collectionList = collections.listUser(4, Some(clowderUser), request.superAdmin, clowderUser, false)
+        val collectionList = collections.listUser(4, Some(clowderUser), request.superAdmin, clowderUser)
         val collectionsWithThumbnails = collectionList.map {c =>
           if (c.thumbnail_id.isDefined) {
             c
@@ -154,7 +154,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.superAdmin)
     val filesCount = files.count()
     val collectionsCount = collections.count()
-    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.superAdmin, true)
+    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.superAdmin)
     val spacesCount = spaces.count()
     val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.superAdmin)
     val usersCount = users.count()
@@ -250,6 +250,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Files.removeTags,
         api.routes.javascript.Files.removeAllTags,
         api.routes.javascript.Files.updateLicense,
+        api.routes.javascript.Files.updateFileName,
         api.routes.javascript.Files.updateDescription,
         api.routes.javascript.Files.extract,
         api.routes.javascript.Files.removeFile,
@@ -292,6 +293,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Collections.updateCollectionName,
         api.routes.javascript.Collections.updateCollectionDescription,
         api.routes.javascript.Collections.getCollection,
+        api.routes.javascript.Collections.removeFromSpaceAllowed,
         api.routes.javascript.Spaces.get,
         api.routes.javascript.Spaces.removeSpace,
         api.routes.javascript.Spaces.list,
