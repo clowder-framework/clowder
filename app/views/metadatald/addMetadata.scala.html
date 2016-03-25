@@ -115,6 +115,9 @@ line-height: 1.5;
         if (field_value != "") {
             var context = {};
             context[field_label] = field_id;
+            // FIXME replace with real context terms
+            context["file_id"] = "http://medici.ncsa.illinois.edu/metadata/file_id";
+            context["content"] = "http://medici.ncsa.illinois.edu/metadata/content";
             var content = {};
             if (field_type === "listgeocode") {
                 // geocode example: "Champaign, IL, USA: 40.12, -88.24"
