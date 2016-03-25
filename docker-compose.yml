@@ -11,27 +11,27 @@ clowder:
     - elasticsearch
 
 # extractors
-audio-preview:
+audiopreview:
   image: ncsa/clowder-extractors-audio-preview
   links:
     - rabbitmq
 
-image-preview:
+imagepreview:
   image: ncsa/clowder-extractors-image-preview
   links:
     - rabbitmq
 
-image-metadata:
+imagemetadata:
   image: ncsa/clowder-extractors-image-metadata
   links:
     - rabbitmq
 
-pdf-preview:
+pdfpreview:
   image: ncsa/clowder-extractors-pdf-preview
   links:
     - rabbitmq
 
-video-preview:
+videopreview:
   image: ncsa/clowder-extractors-video-preview
   links:
     - rabbitmq
