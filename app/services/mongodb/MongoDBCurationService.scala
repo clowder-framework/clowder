@@ -32,6 +32,21 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
     CurationDAO.findOneById(new ObjectId(id.stringify))
   }
 
+  def getAbstract(id: UUID): Option[UUID]  = {
+    get(id) match {
+      case Some(c) =>  {
+        metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, id)).filter(m =>(m.content \ "Abstract").asOpt[String].equals(Some(c.description))) match {
+          case Nil => None
+          case alist => {
+            Logger.debug("the required abstract metadata id is: " + alist.head.id.toString())
+            Some(alist.head.id)
+          }
+        }
+      }
+      case None =>  None
+    }
+  }
+
   def updateStatus(id: UUID, status: String) {
     CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("status" -> status), false, false, WriteConcern.Safe)
   }

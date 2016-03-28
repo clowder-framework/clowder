@@ -107,7 +107,8 @@ class CurationObjects @Inject()(
                 files = newFiles,
                 folders = List.empty,
                 repository = None,
-                status = "In Curation")
+                status = "In Curation"
+              )
 
               // insert curation
               Logger.debug("create curation object: " + newCuration.id)
@@ -194,7 +195,7 @@ class CurationObjects @Inject()(
             .filter(space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))), spaces.get(c.space))
 
           Ok(views.html.curations.newCuration(id, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
-            RequiredFieldsConfig.isDescriptionRequired, false))
+            true, false))
 
         case None => InternalServerError("Curation Object Not found")
       }
@@ -203,17 +204,37 @@ class CurationObjects @Inject()(
   def updateCuration(id: UUID, spaceId:UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) (parse.multipartFormData) {
     implicit request =>
       implicit val user = request.user
-      curations.get(id) match {
-        case Some(c) => {
-          val COName = request.body.asFormUrlEncoded.getOrElse("name", null)
-          val CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
-          Logger.debug(COName(0))
-          curations.updateInformation(id, CODesc(0), COName(0), c.space, spaceId)
-          events.addObjectEvent(user, id, COName(0), "update_curation_information")
+      user match {
+        case Some(identity) => {
+          curations.get(id) match {
+            case Some(c) => {
+              val COName = request.body.asFormUrlEncoded.getOrElse("name", null)
+              val CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
+              curations.getAbstract(id) match{
+                case Some(ab) => metadatas.removeMetadata(ab)
+                case None =>
+              }
+              curations.updateInformation(id, CODesc(0), COName(0), c.space, spaceId)
 
-          Redirect(routes.CurationObjects.getCurationObject(id))
+              val userURI = controllers.routes.Application.index().absoluteURL() + "api/users/" + identity.id
+              val context = Json.obj("Abstract" -> "http://purl.org/dc/terms/abstract")
+
+              val newabstract = Metadata(attachedTo = ResourceRef(ResourceRef.curationObject, id),
+                contextId = context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _)),
+                createdAt = new Date(),
+                creator =  UserAgent(identity.id, "cat:user", MiniUser(identity.id, identity.fullName, identity.avatarUrl.getOrElse(""), identity.email), Some(new URL(userURI))),
+                content = Json.obj("Abstract" -> CODesc(0))
+              )
+              metadatas.addMetadata(newabstract)
+
+              events.addObjectEvent(user, id, COName(0), "update_curation_information")
+
+              Redirect(routes.CurationObjects.getCurationObject(id))
+            }
+            case None => InternalServerError("Curation Object Not found")
+          }
         }
-        case None => InternalServerError("Curation Object Not found")
+        case None => InternalServerError("User Not found")
       }
   }
 
@@ -244,7 +265,8 @@ class CurationObjects @Inject()(
     curations.get(curationId) match {
       case Some(c) => {
         // metadata of curation files are getting from getUpdatedFilesAndFolders
-        val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
+        val requiredAbstract = curations.getAbstract(curationId).getOrElse(UUID(""))
+        val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).filterNot(m => m.id == requiredAbstract)
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
         val fileByDataset = curations.getCurationFiles(curations.getAllCurationFileIds(c.id))
         if (c.status != "In Curation") {
