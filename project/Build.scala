@@ -131,6 +131,10 @@ object ApplicationBuild extends Build {
     // jsonp return from /api
     "org.julienrf" %% "play-jsonp-filter" % "1.1",
 
+    "org.apache.httpcomponents" % "httpclient" % "4.3.1",
+
+    "org.apache.httpcomponents" % "httpmime" % "4.3.1",
+
     //bagit java
     "gov.loc" % "bagit" % "4.12.0"
   )
