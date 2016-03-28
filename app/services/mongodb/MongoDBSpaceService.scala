@@ -259,7 +259,26 @@ class MongoDBSpaceService @Inject() (
    */
   def addCollection(collection: UUID, space: UUID): Unit = {
     log.debug(s"Adding $collection to $space")
+
     collections.addToSpace(collection, space)
+
+    collections.get(collection) match {
+      case Some(current_collection) => {
+        val childCollectionIds = current_collection.child_collection_ids
+        for (childCollectionId <- childCollectionIds){
+          collections.get(childCollectionId) match {
+            case Some(child_collection) => {
+              addCollection(childCollectionId, space)
+            }
+            case None => {
+              log.error("no collection found for " + childCollectionId)
+            }
+          }
+        }
+      } case None => {
+        log.error("No collection found for " + collection)
+      }
+    }
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("collectionCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
   }
 

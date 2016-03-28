@@ -26,8 +26,6 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
  * Dataset API.
  *
- * @author Luigi Marini
- *
  */
 @Api(value = "/datasets", listingPath = "/api-docs.json/datasets", description = "A dataset is a container for files and metadata")
 @Singleton
@@ -1532,28 +1530,6 @@ class Datasets @Inject()(
         InternalServerError
       }      
 
-    }
-  }
-  
-  def setNotesHTML(id: UUID) = PermissionAction(Permission.CreateNote, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
-	  request.user match {
-	    case Some(identity) => {
-		    request.body.\("notesHTML").asOpt[String] match {
-			    case Some(html) => {
-			        datasets.setNotesHTML(id, html)
-			        //index(id)
-			        Ok(toJson(Map("status"->"success")))
-			    }
-			    case None => {
-			    	Logger.error("no html specified.")
-			    	BadRequest(toJson("no html specified."))
-			    }
-		    }
-	    }
-	    case None => {
-	      Logger.error(("No user identity found in the request, request body: " + request.body))
-	      BadRequest(toJson("No user identity found in the request, request body: " + request.body))
-	    }
     }
   }
 

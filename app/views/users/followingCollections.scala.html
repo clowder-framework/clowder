@@ -5,6 +5,7 @@
     @util.masonry()
 
     <script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
     <div class="row">
@@ -111,10 +112,10 @@
         <div class="col-md-12">
             <ul class="pager">
                 @if(prev >=0) {
-                    <li class="previous"><a id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
+                    <li class="previous"><a id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span> Previous</a></li>
                 }
                 @if(next >=0) {
-                    <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next<span class="glyphicon glyphicon-chevron-right"></span></a></li>
+                    <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
                 }
             </ul>
         </div>

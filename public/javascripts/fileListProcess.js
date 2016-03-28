@@ -30,6 +30,7 @@ function removeFileAndRedirect(fileId, url){
 
 	request.done(function (response, textStatus, jqXHR){		
 		window.location.href=url;
+		$(window).trigger('fileDelete');
 	});
 	
 	request.fail(function (jqXHR, textStatus, errorThrown){

@@ -1,7 +1,10 @@
 @(datasetsInCollection: List[models.Dataset],
+  childCollections: List[models.Collection],
+  parentCollections: Option[List[models.Collection]],
   collection: models.Collection,
   previewers: List[Previewer],
-  collectionSpaces: Option[List[ProjectSpace]])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  commentMap : Map[UUID, Int],
+  collectionSpaces: Option[List[ProjectSpace]],prev: Int, next: Int, limit: Int)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import models.ResourceRef
 @import models.UUID
@@ -17,11 +20,12 @@
 <script type="text/javascript" src="@(url)"></script>
 }
 
-@main("Collection") {
+@main(collection.name) {
 
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/collectionDatasetsList.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
 
 
@@ -57,9 +61,6 @@
 								</dd>
 							</dl>
 					<div class="col-md-12">
-
-
-
 							<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
 							@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
 									<button id="deleteButton" onclick="removeCollectionAndRedirect('@(collection.id)','@(routes.Collections.list(""))')"
@@ -88,8 +89,10 @@
 								}
 							}
 							@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
-								<a id="create_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Delete Collection but not Enclosed Datasets">
+								<a id="create_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))" style="margin-right:15px;" class="btn btn-link btn-sm" title="Create Dataset">
 									<span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
+								<a id="create_childcollection" href="@routes.Collections.newCollectionWithParent(Some(collection.id.toString()))" style=":15px;" class="btn btn-link btn-sm" title="Create Child Collection">
+									<span class="glyphicon glyphicon-ok"></span> Create Child Collection</a>
 							}
 
 						</div>
@@ -145,43 +148,52 @@
 			</div>
 			<div class="row">
 			<div class="col-md-12">
-				<h3>Datasets in the collection</h3>
-					@datasetsInCollection.map { dataset =>
-						<div class="panel panel-default" id="@dataset.id">
-							<div class="panel-body">
-								<div class="row">
-									<div class="col-md-2 col-sm-2 col-lg-2">
-										@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
-									</div>
-									<div class="col-md-10 col-sm-10 col-lg-10">
-										<div><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></div>
-										<div>@Html(dataset.description)</div>
-										<div>@dataset.created.format("MMM dd, yyyy")</div>
-										@if(user.isDefined) {
-											<div>
-												@if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
-													<a onclick="removeDataset('@(dataset.id.toString)',event)" title="Detach the Dataset">
-														<span class="glyphicon glyphicon-trash"></span></a>
-												}
-											</div>
-										}
-									</div>
-								</div>
-							</div>
-						</div>
-
+				<h3>Child Collections in the collection</h3>
+				@childCollections.map { child_collection =>
+					@collections.listchildcollection(collection, child_collection, routes.Collections.collection(collection.id))
+				}
+				@if(childCollections.isEmpty){
+					@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
+						There are no child collections in this collection.  <a id="create_first_childcollection" href="@routes.Collections.newCollectionWithParent(Some(collection.id.toString()))" class="inline" title="Create Child Collection"><i>  Create a child collection.</i></a>
+					} else {
+						There are no child collections in this collection.
 					}
 
-				<ul class="pager" id="datasetsPager">
-					<li class="previous" id="datasetsPagerPrev" style="visibility:hidden;"><a class="btn btn-link" href="#!"><span class="glyphicon glyphicon-chevron-left"></span> Previous</a></li>
-					<li class ="next" id="datasetsPagerNext" style="visibility:hidden;"><a class="btn btn-link" href="#!">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
-				</ul>
+				}
+			</div>
+			<div class="col-md-12">
+				<h3>Datasets in the collection</h3>
+				@datasetsInCollection.map { dataset =>
+					@datasets.listitem(dataset,commentMap , routes.Collections.collection(collection.id))
+				}
+				@if(datasetsInCollection.isEmpty){
+					@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
+						There are not datasets in this collection. <a id="create_first_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))"  class="inline" title="Create New Dataset"><i>  Add a dataset.</i></a>
+					} else {
+						There are no datasets in this collection.
+					}
+
+				}
 			</div>
 		</div>
+			<div class="row">
+				<div class="col-md-12">
+					<ul class="pager">
+							<!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
+						@if(prev >= 0) {
+							<li class="previous"><a id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
+						}
+						@if(next >= 0) {
+							<li class ="next"><a id="nextlink" title="Page forwards" href="#">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
+						}
+					</ul>
+				</div>
+			</div>
 		</div>
 	<!-- right column -->
 	<div class="col-md-4">
-		@spaces.spaceAllocation(collection.id, ResourceRef.collection, collectionSpaces.getOrElse(List.empty))
+		@spaces.spaceAllocation(collection.id, ResourceRef.collection, collectionSpaces.getOrElse(List.empty), Some(collection))
+		@collections.parentAllocation(collection,collection.id,ResourceRef.collection, parentCollections.getOrElse(List.empty))
 		<br />
 		@if(user.isDefined && collectionSpaces.isDefined && !collectionSpaces.get.isEmpty){
 			<div id="collection-users">
@@ -196,6 +208,7 @@
 		}
 	</div>
 	</div>
+
 
 <script language="javascript">
 	@if(user.isDefined) {
@@ -343,11 +356,17 @@
                     $('#edit-description').addClass("hiddencomplete");
                  });
 		}
+		updatePage();
 
 	});
+	 function updatePage() {
+		$('#nextlink').attr('href', "@(routes.Collections.collection(collection.id, next, limit))");
+		$('#prevlink').attr('href', "@(routes.Collections.collection(collection.id, prev, limit))");
+	 }
 </script>
     <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/spaceModify.js")" type="text/javascript"></script>
+	<script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
 
 }

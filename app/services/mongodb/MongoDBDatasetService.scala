@@ -42,7 +42,8 @@ class MongoDBDatasetService @Inject() (
   comments: CommentService,
   sparql: RdfSPARQLService,
   spaces: SpaceService,
-  userService: UserService) extends DatasetService {
+  userService: UserService,
+  folders: FolderService) extends DatasetService {
 
   object MustBreak extends Exception {}
 
@@ -1024,6 +1025,9 @@ class MongoDBDatasetService @Inject() (
           if (notTheDataset.size == 0)
             files.removeFile(f)
         }
+        for (folder <- dataset.folders ) {
+          folders.delete(folder)
+        }
         for (follower <- dataset.followers) {
           userService.unfollowDataset(follower, id)
         }
@@ -1091,10 +1095,6 @@ class MongoDBDatasetService @Inject() (
       }
       case None => Logger.error("Dataset not found: " + id)
     }
-  }
-
-  def setNotesHTML(id: UUID, notesHTML: String){
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(notesHTML)), false, false, WriteConcern.Safe)
   }
 
   def addToSpace(datasetId: UUID, spaceId: UUID): Unit = {

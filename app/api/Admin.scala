@@ -3,7 +3,7 @@ package api
 import play.api.mvc.Controller
 import play.api.Play.current
 import play.api.libs.json.Json.toJson
-import services.{AppConfiguration, AppConfigurationService}
+import services.{ElasticsearchPlugin, AppConfiguration}
 import services.mongodb.MongoSalatPlugin
 import play.api.Logger
 
@@ -17,12 +17,14 @@ object Admin extends Controller with ApiController {
   /**
    * DANGER: deletes all data, keep users.
    */
-  def deleteAllData = ServerAdminAction { implicit request =>
-    current.plugin[MongoSalatPlugin].map(_.dropAllData())
+  def deleteAllData(resetAll: Boolean) = ServerAdminAction { implicit request =>
+    current.plugin[MongoSalatPlugin].map(_.dropAllData(resetAll))
+    current.plugin[ElasticsearchPlugin].map(_.deleteAll)
+
     Ok(toJson("done"))
   }
-  
-  
+
+
   def removeAdmin = ServerAdminAction(parse.json) { implicit request =>
     Logger.debug("Removing admin")
 
@@ -52,14 +54,23 @@ object Admin extends Controller with ApiController {
       case None => Unauthorized("Not authorized")
     }
   }
-  
-  
+
+
   def submitAppearance = ServerAdminAction(parse.json) { implicit request =>
+    (request.body \ "theme").asOpt[String] match {
+      case Some(theme) => AppConfiguration.setTheme(theme)
+    }
     (request.body \ "displayName").asOpt[String] match {
       case Some(displayName) => AppConfiguration.setDisplayName(displayName)
     }
     (request.body \ "welcomeMessage").asOpt[String] match {
       case Some(welcomeMessage) => AppConfiguration.setWelcomeMessage(welcomeMessage)
+    }
+    (request.body \ "googleAnalytics").asOpt[String] match {
+      case Some(s) => AppConfiguration.setGoogleAnalytics(s)
+    }
+    (request.body \ "userAgreement").asOpt[String] match {
+      case Some(userAgreement) => AppConfiguration.setUserAgreement(userAgreement)
     }
     Ok(toJson(Map("status" -> "success")))
   }
@@ -71,8 +82,13 @@ object Admin extends Controller with ApiController {
     (request.body \ "sensor").asOpt[String] match {
       case Some(sensor) => AppConfiguration.setSensorTitle(sensor)
     }
+    (request.body \ "parameters").asOpt[String] match {
+      case Some(parameters) => AppConfiguration.setParametersTitle(parameters)
+    }
+    (request.body \ "parameter").asOpt[String] match {
+      case Some(parameter) => AppConfiguration.setParameterTitle(parameter)
+    }
     Ok(toJson(Map("status" -> "success")))
   }
 
 }
-
