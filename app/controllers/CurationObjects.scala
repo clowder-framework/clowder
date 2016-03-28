@@ -197,7 +197,7 @@ class CurationObjects @Inject()(
           Ok(views.html.curations.newCuration(id, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
             true, false))
 
-        case None => InternalServerError("Curation Object Not found")
+        case None => BadRequest(views.html.notFound("Curation Object does not exist."))
       }
   }
 
@@ -231,7 +231,7 @@ class CurationObjects @Inject()(
 
               Redirect(routes.CurationObjects.getCurationObject(id))
             }
-            case None => InternalServerError("Curation Object Not found")
+            case None => BadRequest(views.html.notFound("Curation Object does not exist."))
           }
         }
         case None => InternalServerError("User Not found")
