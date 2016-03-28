@@ -95,9 +95,9 @@ object Events {
   							case Some(email) => {	
   								job.lastJobTime match {
   									case Some(date) => {
-                      email,events.getEventsByTime(user.followedEntities, date, None) match{
+                      events.getEventsByTime(user.followedEntities, date, None) match{
                         case Nil =>
-                        case alist => sendDigestEmail(alist)
+                        case alist => sendDigestEmail(email, alist)
                       }
                     }
                     case None =>
