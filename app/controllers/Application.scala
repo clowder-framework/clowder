@@ -164,8 +164,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   }
 
   def email(subject: String) = UserAction(needActive=false) { implicit request =>
-    implicit val user = request.user
-    Ok(views.html.emailAdmin(subject))
+    if (request.user.isEmpty) {
+      Redirect(routes.Application.index())
+    } else {
+      implicit val user = request.user
+      Ok(views.html.emailAdmin(subject))
+    }
   }
 
   def options(path:String) = UserAction(needActive = false) { implicit request =>
@@ -211,6 +215,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         routes.javascript.Geostreams.list,
         routes.javascript.Collections.collection,
         routes.javascript.Error.authenticationRequiredMessage,
+        routes.javascript.Collections.getUpdatedDatasets,
+        routes.javascript.Collections.getUpdatedChildCollections,
         routes.javascript.Profile.viewProfileUUID,
         routes.javascript.Assets.at,
         api.routes.javascript.Comments.comment,
@@ -293,6 +299,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Collections.updateCollectionName,
         api.routes.javascript.Collections.updateCollectionDescription,
         api.routes.javascript.Collections.getCollection,
+        api.routes.javascript.Collections.removeFromSpaceAllowed,
         api.routes.javascript.Spaces.get,
         api.routes.javascript.Spaces.removeSpace,
         api.routes.javascript.Spaces.list,

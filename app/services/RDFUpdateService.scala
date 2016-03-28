@@ -21,7 +21,6 @@ import play.api.libs.concurrent.Execution.Implicits._
 /**
  * External RDF store update service.
  *
- * @author Constantinos Sophocleous
  *
  */
 class RDFUpdateService(application: Application) extends Plugin {

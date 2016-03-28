@@ -5,7 +5,7 @@ import java.io.InputStream
 import play.api.libs.json.JsValue
 
 /**
- * Created by lmarini on 2/27/14.
+ * Service to manipulate tiles.
  */
 trait TileService {
 

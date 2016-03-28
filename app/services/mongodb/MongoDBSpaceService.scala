@@ -268,7 +268,10 @@ class MongoDBSpaceService @Inject() (
         for (childCollectionId <- childCollectionIds){
           collections.get(childCollectionId) match {
             case Some(child_collection) => {
-              addCollection(childCollectionId, space)
+              if (!child_collection.spaces.contains(space)){
+                addCollection(childCollectionId, space)
+              }
+
             }
             case None => {
               log.error("no collection found for " + childCollectionId)
@@ -279,6 +282,7 @@ class MongoDBSpaceService @Inject() (
         log.error("No collection found for " + collection)
       }
     }
+    //set the collectionCount, do not increment it
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("collectionCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
   }
 

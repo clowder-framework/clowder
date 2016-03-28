@@ -6,8 +6,7 @@ import com.mongodb.casbah.Imports._
 import play.api.Play.current
 
 /**
- * @author Luigi Marini
- * @author Rob Kooper
+  * App Configuration Service.
  */
 class MongoDBAppConfigurationService extends AppConfigurationService {
   def addPropertyValue(key: String, value: AnyRef) {

@@ -5,7 +5,7 @@ import javax.inject.Inject
 import api.Permission
 import edu.illinois.ncsa.isda.lsva.ImageDescriptors.FeatureType
 import edu.illinois.ncsa.isda.lsva.ImageMeasures
-import models.UUID
+import models.{ResourceRef, UUID}
 import org.elasticsearch.action.search.SearchResponse
 import play.Logger
 import play.api.Play.current
@@ -158,8 +158,10 @@ class Search @Inject() (
   /**
    * Search MultimediaFeatures.
    */
-  def callSearchMultimediaIndexView(section_id: UUID) = PermissionAction(Permission.ViewDataset) { implicit request =>
+  def callSearchMultimediaIndexView(section_id: UUID) = PermissionAction(Permission.ViewSection,
+    Some(ResourceRef(ResourceRef.section, section_id))) { implicit request =>
     Logger.debug("Searching multimedia index " + section_id.stringify)
+    implicit val user = request.user
     // TODO handle multiple previews found
     val preview = previews.findBySectionId(section_id)(0)
     Ok(views.html.searchMultimediaIndex(section_id, preview))

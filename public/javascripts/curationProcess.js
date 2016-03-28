@@ -1,14 +1,18 @@
 //Method to remove the CO and redirect back to staging area on completion
-function removeCuration(spaceId, curationId){
-    console.log(spaceId);
+function removeCuration(id, isreload, url){
 
-    var request = jsRoutes.controllers.CurationObjects.deleteCuration(curationId).ajax({
+    var request = jsRoutes.controllers.CurationObjects.deleteCuration(id).ajax({
         type: 'DELETE'
     });
 
     request.done(function (response, textStatus, jqXHR){
-        window.location.href= "/spaces/"+ spaceId +"/stagingArea";
-        console.log(response);
+        if(isreload === "true")
+            window.location.href=url;
+        else {
+            var obj = $('#'+ id+'-tile').parent();
+            $('#masonry').masonry( 'remove', obj );
+            $('#masonry').masonry( 'layout' );
+        }
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
@@ -41,6 +45,44 @@ function retractCuration(curationId) {
     });
 }
 
+function removeCurationFile(id, currentFolder, curationid){
+        var request = jsRoutes.api.CurationObjects.deleteCurationFile(curationid, currentFolder, id).ajax({
+            type: 'DELETE'
+        });
+
+    request.done(function (response, textStatus, jqXHR) {
+        $('#'+ id+'-listitem').remove();
+        getFiles(curationid);
+    });
+
+    request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error("The following error occured: " + textStatus, errorThrown);
+        var errMsg = "You must be logged in to delete curation file";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("Curation file was not removed due to : " + jqXHR.textResponse, "error");
+        }
+    });
+}
+
+function removeCurationFolder(id, parentCurationObject, parentId){
+    var request = jsRoutes.api.CurationObjects.deleteCurationFolder(parentCurationObject, parentId, id).ajax({
+        type: 'DELETE'
+    });
+
+    request.done(function (response, textStatus, jqXHR) {
+        $('#'+ id+'-listitem').remove();
+        getFiles(parentCuratonObject);
+    });
+
+    request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error("The following error occured: " + textStatus, errorThrown);
+        var errMsg = "You must be logged in to delete curation file";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("Curation folder was not removed due to : " + errorThrown, "error");
+        }
+    });
+}
+
 function updatePageAndFolder(idx, folderId){
     if(folderId != "") {
         location.hash = "folderId="+folderId+"&page="+idx;
@@ -52,7 +94,7 @@ function updatePageAndFolder(idx, folderId){
 
 function getUpdatedFilesAndFolders(curationObject, limit) {
     parseHash();
-    if(folderId == "") {
+    if(folderId === "") {
         folderId = "None";
     }
 
@@ -98,4 +140,31 @@ function parseHash() {
     if(!pageSet) {
         pageIndex = 0;
     }
+}
+
+function getFiles(id) {
+    var request = jsRoutes.api.CurationObjects.getCurationFiles(id).ajax({
+        type: "GET",
+        contentType : "application/json"
+    }).done(function( response, textStatus, jqXHR ) {
+        var totalSize = 0;
+        $.each(response.cf, function (i, el) {
+            totalSize += this.length;
+        });
+
+        var formatAll = response.cf.map(f => f.contentType.valueOf());
+        var formats = [];
+        $.each(formatAll, function(i, el){
+            if($.inArray(el, formats) === -1) formats.push(el);
+        });
+
+        $( "#size" ).replaceWith( '<div id="size">Size: '+Math.round(totalSize /1024) +"KB</div>" );
+        $( "#format" ).replaceWith('<div id="format">File Formats: '+formats.join(', ')+'</div>' );
+
+    }).fail(function( ) {
+        $( "#size" ).replaceWith("Unknown");
+        $( "#format" ).replaceWith("Unknown");
+
+    });
+
 }
