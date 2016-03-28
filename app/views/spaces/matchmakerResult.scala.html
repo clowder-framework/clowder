@@ -77,7 +77,7 @@
     <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
     <script>
 
-        Handlebars.registerHelper('lessthan', function(lvalue, rvalue, options) {
+        Handlebars.registerHelper('nomorethan', function(lvalue, rvalue, options) {
             if (arguments.length < 3)
                 throw new Error("Handlebars Helper equal needs 2 parameters");
             if( lvalue>rvalue ) {
@@ -85,6 +85,12 @@
             } else {
                 return options.fn(this);
             }
+        });
+        Handlebars.registerHelper('ifCond', function(v1, v2, options) {
+            if(v1 == v2) {
+                return options.fn(this);
+            }
+            return options.inverse(this);
         });
         var repositoryTemplate = Handlebars.getTemplate('@routes.Assets.at("templates/spaces/mmrepository")');
         @for(curRepository <- mmResponse) {
