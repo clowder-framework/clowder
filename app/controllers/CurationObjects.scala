@@ -55,7 +55,7 @@ class CurationObjects @Inject()(
     }
 
     Ok(views.html.curations.newCuration(datasetId, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired, true))
+      RequiredFieldsConfig.isDescriptionRequired, true, List.empty))
   }
 
   /**
@@ -67,6 +67,7 @@ class CurationObjects @Inject()(
     //get name, des, space from request
     val COName = request.body.asFormUrlEncoded.getOrElse("name", null)
     val CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
+    val COCreators = request.body.asFormUrlEncoded.getOrElse("creators", List.empty)
 
     implicit val user = request.user
     user match {
@@ -104,7 +105,8 @@ class CurationObjects @Inject()(
                 datasets = List(dataset),
                 files = newFiles,
                 repository = None,
-                status = "In Curation")
+                status = "In Curation",
+                creators = COCreators(0).split(",").toList)
 
               // insert curation
               Logger.debug("create curation object: " + newCuration.id)
@@ -137,7 +139,7 @@ class CurationObjects @Inject()(
             .filter(space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))), spaces.get(c.space))
 
           Ok(views.html.curations.newCuration(id, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
-            RequiredFieldsConfig.isDescriptionRequired, false))
+            RequiredFieldsConfig.isDescriptionRequired, false, c.creators))
 
         case None => InternalServerError("Curation Object Not found")
       }

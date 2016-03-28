@@ -24,7 +24,8 @@ case class CurationObject (
   repository: Option[String],
   status: String,
   externalIdentifier: Option[URI] = None,
-  metadataCount: Long = 0
+  metadataCount: Long = 0,
+  creators: List[String] = List.empty
 )
 
 case class StatusFromRepository(date: String, reporter: String, message: String, stage: String)
