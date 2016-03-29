@@ -101,7 +101,17 @@ function updateCuration(id) {
         $('#spaceerror').show();
         error = true;
     }
+    var creators = [];
+    $('.creators .control-group input').each(function (index) {
+        if($(this).val().trim() != "") {
+            creators.push($(this).val().trim());
+        }
+    });
 
+    if(creators.length == 0) {
+        $('#creatorerror').show();
+        error = true
+    }
 
     if (error) {
         return false;
@@ -111,6 +121,7 @@ function updateCuration(id) {
     var encDescription = htmlEncode(desc.val());
     $('#hiddenname').val(encName);
     $('#hiddendescription').val(encDescription);
+    $('#hiddencreators').val(creators);
     //document.getElementById('curationcreate').removeAttribute('action');
     document.getElementById('curationcreate').setAttribute('action', 'spaces/'+spaceId+'/update');
 

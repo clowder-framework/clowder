@@ -152,8 +152,9 @@ class CurationObjects @Inject()(
         case Some(c) => {
           val COName = request.body.asFormUrlEncoded.getOrElse("name", null)
           val CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
+          val COCreators = request.body.asFormUrlEncoded.getOrElse("creators", List.empty)
           Logger.debug(COName(0))
-          curations.updateInformation(id, CODesc(0), COName(0), c.space, spaceId)
+          curations.updateInformation(id, CODesc(0), COName(0), c.space, spaceId, COCreators(0).split(",").toList)
           events.addObjectEvent(user, id, COName(0), "update_curation_information")
 
           Redirect(routes.CurationObjects.getCurationObject(id))

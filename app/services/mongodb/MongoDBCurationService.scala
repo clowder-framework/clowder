@@ -90,9 +90,9 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
     CurationDAO.update(MongoDBObject("_id" ->new ObjectId(curationId.stringify)), $pull("files" -> new ObjectId(curationFileId.stringify)), false, false, WriteConcern.Safe)
   }
 
-  def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID) = {
+  def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID, creators: List[String]) = {
     val result = CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-      $set("description" -> description, "name" -> name, "space" -> new ObjectId(newSpace.stringify)),
+      $set("description" -> description, "name" -> name, "space" -> new ObjectId(newSpace.stringify), "creators" -> creators),
       false, false, WriteConcern.Safe)
     if(oldSpace != newSpace) {
       spaces.removeCurationObject(oldSpace, id)
