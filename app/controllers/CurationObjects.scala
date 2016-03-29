@@ -71,6 +71,7 @@ class CurationObjects @Inject()(
     val COName = request.body.asFormUrlEncoded.getOrElse("name", null)
     val CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
     val COCreators = request.body.asFormUrlEncoded.getOrElse("creators", List.empty)
+
     implicit val user = request.user
     user match {
       case Some(identity) => {
