@@ -900,3 +900,18 @@ table.borderless tbody tr td, table.borderless tbody tr th {
     top:2px;
     right:5px;
 }
+
+#curationObjectFieldSet .creators .control-group {
+    display: inline-block;
+    width: 85%;
+}
+
+#curationObjectFieldSet .creators .creator-delete {
+    display: inline-block;
+    margin-left: 10px;
+}
+
+#curationObjectFieldSet .creators .creator-add {
+    display: inline-block;
+    margin-left: 10px;
+}

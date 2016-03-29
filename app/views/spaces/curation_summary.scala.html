@@ -8,6 +8,7 @@
                 <li><div id="format">File Formats: </div></li>
                 <li>Creator: @curationObject.datasets(0).author.fullName</li>
                 <li>Created: @curationObject.created.format("MMM dd, yyyy")</li>
+                <li> Authors: @curationObject.creators.mkString(", ")</li>
             </ul>
             @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, curationObject.space))){
                 <a class="btn btn-sm btn-link" href="@routes.Spaces.stagingArea(curationObject.space)">
