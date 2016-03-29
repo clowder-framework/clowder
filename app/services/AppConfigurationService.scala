@@ -1,6 +1,5 @@
 package services
 
-import play.Logger
 import util.ResourceLister
 
 /**
@@ -8,8 +7,6 @@ import util.ResourceLister
  * and can be used to store application configuration options. See also AppConfiguration
  * for specific configuration options.
  *
- * @author Luigi Marini
- * @author Rob Kooper
  */
 trait AppConfigurationService {
   /** Adds an additional value to the property with the specified key. */
@@ -162,6 +159,7 @@ object AppConfiguration {
    * Get list of all admins. This list is primarily used when a new user signs up (requires
    * registerThroughAdmins to be set to true in application.conf) or when the plugin is enabled
    * to send emails on creating of new datasets, collections and/or files.
+   * This will return a list of email addresses!
    */
   def getAdmins: List[String] = appConfig.getProperty[List[String]]("admins", List.empty[String])
 

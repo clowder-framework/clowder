@@ -2,10 +2,9 @@ package models
 
 import com.mongodb.casbah.Imports._
 import java.util.Date
-import play.api.libs.json.{JsObject, Writes, Json}
-import securesocial.core.Identity
+import play.api.libs.json.{Writes, Json}
 import play.api.libs.json._
-import play.api.libs.functional.syntax._
+import securesocial.core.Identity
 
 /**
  * A dataset is a collection of files, and streams.
@@ -29,7 +28,6 @@ case class Dataset(
   @deprecated("use Metadata","since the use of jsonld") datasetXmlMetadata: List[DatasetXMLMetadata] = List.empty,
   @deprecated("use Metadata","since the use of jsonld") userMetadataWasModified: Option[Boolean] = None,
   licenseData: LicenseData = new LicenseData(),
-  notesHTML: Option[String] = None,
   spaces: List[UUID] = List.empty,
   lastModifiedDate: Date = new Date(),
   followers: List[UUID] = List.empty)

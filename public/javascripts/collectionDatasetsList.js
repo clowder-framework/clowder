@@ -46,7 +46,7 @@
 		
 	}
 	
-	function removeDataset(datasetId, event){
+	function removeDatasetFromCollection(datasetId, event){
 		
 		var request = jsRoutes.api.Collections.removeDataset(collectionId, datasetId).ajax({
 			type: 'POST'

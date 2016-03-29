@@ -4,7 +4,6 @@ import models._
 import securesocial.core.Identity
 import util.Direction
 import util.Direction.Direction
-import util.Direction.Direction
 
 /**
  * Service definition to interact with the users.
@@ -14,12 +13,11 @@ import util.Direction.Direction
  * through securesocial right now. Eventually this should become a
  * wrapper for securesocial and we use User everywhere.
  *
- * @author Rob Kooper
  */
 trait UserService  {
   def get(id: UUID): Option[User]
 
-  def insert(model: User): Option[String]
+  def insert(model: User): Option[User]
 
   def update(model: User)
 

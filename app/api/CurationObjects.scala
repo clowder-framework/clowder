@@ -39,7 +39,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
 
           val https = controllers.Utils.https(request)
           val key = play.api.Play.configuration.getString("commKey").getOrElse("")
-          val filesJson = curations.getCurationFiles(c.files).map { file =>
+          val filesJson = curations.getCurationFiles(curations.getAllCurationFileIds(c.id)).map { file =>
 
             var fileMetadata = scala.collection.mutable.Map.empty[String, JsValue]
             metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, file.id)).filter(_.creator.typeOfAgent == "cat:user").map {
@@ -62,7 +62,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "Publication Date" -> Json.toJson(""),
               "External Identifier" -> Json.toJson(""),
               "SHA512 Hash" -> Json.toJson(files.get(file.fileId).map{ f => f.sha512}),
-              "Keyword" -> Json.toJson(file.tags.map(_.name)),
               "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2015/File")),
               "Is Version Of" -> Json.toJson(controllers.routes.Files.file(file.fileId).absoluteURL(https) + "?key=" + key),
               "similarTo" -> Json.toJson(api.routes.Files.download(file.fileId).absoluteURL(https)  + "?key=" + key)
@@ -75,9 +74,28 @@ class CurationObjects @Inject()(datasets: DatasetService,
             tempMap ++ fileMetadata
 
           }
-          val hasPart = c.files.map(file => "urn:uuid:"+file)
+          val foldersJson = curations.getCurationFolders(curations.getAllCurationFolderIds(c.id)).map { folder =>
+
+              val hasPart = folder.files.map(file=>"urn:uuid:"+file) ++ folder.folders.map(fd => "urn:uuid:"+fd)
+              val tempMap = Map(
+                "Creation Date" -> Json.toJson(format.format(folder.created)),
+                "Rights" -> Json.toJson(c.datasets(0).licenseData.m_licenseText),
+                "Identifier" -> Json.toJson("urn:uuid:"+folder.id),
+                "License" -> Json.toJson(c.datasets(0).licenseData.m_licenseText),
+                "Label" -> Json.toJson(folder.name),
+                "Title" -> Json.toJson(folder.displayName),
+                "Uploaded By" -> Json.toJson(folder.author.fullName + ": " +  api.routes.Users.findById(folder.author.id).absoluteURL(https)),
+                "@id" -> Json.toJson("urn:uuid:"+folder.id),
+                "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2016/Folder")),
+                "Is Version Of" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https) +"#folderId=" +folder.folderId),
+                "Has Part" -> Json.toJson(hasPart)
+              )
+              tempMap
+
+          }
+          val hasPart = c.files.map(file => "urn:uuid:"+file) ++ c.folders.map(folder => "urn:uuid:"+folder)
           var commentsByDataset = comments.findCommentsByDatasetId(c.datasets(0).id)
-          curations.getCurationFiles(c.files).map {
+          curations.getCurationFiles(curations.getAllCurationFileIds(c.id)).map {
             file =>
               commentsByDataset ++= comments.findCommentsByFileId(file.fileId)
               sections.findByFileId(UUID(file.fileId.toString)).map { section =>
@@ -172,7 +190,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     "SHA512 Hash" -> Json.toJson("http://sead-data.net/terms/hasSHA512Digest"),
                     "Dataset Description" -> Json.toJson("http://sead-data.net/terms/datasetdescription"),
                     "Publishing Project" -> Json.toJson("http://sead-data.net/terms/publishingProject"),
-                    "Authors" -> Json.toJson("http://purl.org/dc/terms/creator")
+                    "License" -> Json.toJson("http://purl.org/dc/terms/license")
                   )
                 )
 
@@ -195,7 +213,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "@type" -> Json.toJson(Seq("Aggregation", "http://cet.ncsa.uiuc.edu/2015/Dataset")),
                   "Is Version Of" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https)),
                   "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https)),
-                  "aggregates" -> Json.toJson(filesJson),
+                  "aggregates" -> Json.toJson(filesJson ++ foldersJson.toList),
                   "Has Part" -> Json.toJson(hasPart),
                   "Publishing Project"-> Json.toJson(controllers.routes.Spaces.getSpace(c.space).absoluteURL(https))
                 )),
@@ -289,21 +307,50 @@ class CurationObjects @Inject()(datasets: DatasetService,
       implicit val user = request.user
       curations.get(curationId) match {
         case Some(c) => {
-          Ok(toJson(Map("cf" -> curations.getCurationFiles(c.files))))
+          Ok(toJson(Map("cf" -> curations.getCurationFiles(curations.getAllCurationFileIds(c.id)))))
         }
         case None => InternalServerError("Curation Object Not found")
       }
   }
 
   @ApiOperation(value = "Delete a file in curation object", notes = "",
-    responseClass = "None", httpMethod = "POST")
-  def deleteCurationFiles(curationId: UUID, curationFileId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
+    responseClass = "None", httpMethod = "DELETE")
+  def deleteCurationFile(curationId:UUID, parentId: UUID, curationFileId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
-      implicit val user = request.user
       curations.get(curationId) match {
-        case Some(c) => {
-          curations.deleteCurationFiles(curationId, curationFileId)
-          Ok(toJson("Success"))
+        case Some(c) => c.status match {
+          case "In Curation" => {
+            if(curationId == parentId){
+              curations.removeCurationFile("dataset", parentId, curationFileId)
+            } else {
+              curations.removeCurationFile("folder", parentId, curationFileId)
+            }
+            curations.deleteCurationFile( curationFileId)
+            Ok(toJson("Success"))
+          }
+          case _ => InternalServerError("Cannot modify Curation Object ")
+        }
+        case None => InternalServerError("Curation Object Not found")
+      }
+
+  }
+
+  @ApiOperation(value = "Delete a folder in curation object", notes = "",
+    responseClass = "None", httpMethod = "DELETE")
+  def deleteCurationFolder(curationId:UUID, parentId: UUID, curationFolderId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
+    implicit request =>
+      curations.get(curationId) match {
+        case Some(c) => c.status match {
+          case "In Curation" => {
+            if(curationId == parentId){
+              curations.removeCurationFolder("dataset", parentId, curationFolderId)
+            } else {
+              curations.removeCurationFolder("folder", parentId, curationFolderId)
+            }
+            curations.deleteCurationFolder( curationFolderId)
+            Ok(toJson("Success"))
+          }
+          case _ => InternalServerError("Cannot modify Curation Object ")
         }
         case None => InternalServerError("Curation Object Not found")
       }

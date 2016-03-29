@@ -1,6 +1,6 @@
 package models
 
-import java.net.{URL, URI}
+import java.net.URI
 import java.util.Date
 import play.api.libs.json.Json._
 import play.api.libs.json._
@@ -21,6 +21,7 @@ case class CurationObject (
   datasets: List[Dataset] =  List.empty,
   collections: List[Collection] = List.empty,
   files: List[UUID] =  List.empty,  //id of curationFile, different from live object
+  folders: List[UUID] =  List.empty,  //id of curationFolder, different from live object
   repository: Option[String],
   status: String,
   externalIdentifier: Option[URI] = None,
@@ -122,23 +123,23 @@ object MatchMakerResponse{
 
 
 case class CurationFile(
-                         id: UUID = UUID.generate,
-                         fileId: UUID,
-                         path: Option[String] = None,
-                         filename: String,
-                         author: Identity,
-                         uploadDate: Date,
-                         contentType: String,
-                         length: Long = 0,
-                         showPreviews: String = "DatasetLevel",
-                         sections: List[Section] = List.empty,
-                         previews: List[Preview] = List.empty,
-                         tags: List[Tag] = List.empty,
-                         thumbnail_id: Option[String] = None,
-                         metadataCount: Long = 0,
-                         licenseData: LicenseData = new LicenseData(),
-                         notesHTML: Option[String] = None,
-                         sha512: String = "" )
+  id: UUID = UUID.generate,
+  fileId: UUID,
+  path: Option[String] = None,
+  filename: String,
+  author: Identity,
+  uploadDate: Date,
+  contentType: String,
+  length: Long = 0,
+  showPreviews: String = "DatasetLevel",
+  sections: List[Section] = List.empty,
+  previews: List[Preview] = List.empty,
+  tags: List[Tag] = List.empty,
+  thumbnail_id: Option[String] = None,
+  metadataCount: Long = 0,
+  licenseData: LicenseData = new LicenseData(),
+  notesHTML: Option[String] = None,
+  sha512: String = "" )
 
 
 object CurationFile {
@@ -153,3 +154,16 @@ object CurationFile {
     }
   }
 }
+
+case class CurationFolder(
+  id: UUID = UUID.generate,
+  folderId: UUID,
+  author: MiniUser,
+  created: Date,
+  name: String = "N/A",
+  displayName: String = "N/A",
+  files: List[UUID] = List.empty,
+  folders: List[UUID] = List.empty,
+  parentId: UUID,
+  parentType: String,
+  parentCurationObjectId: UUID)

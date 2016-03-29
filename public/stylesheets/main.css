@@ -893,17 +893,10 @@ table.borderless tbody tr td, table.borderless tbody tr th {
     margin-bottom: 20px !important;
 }
 
-#curationObjectFieldSet .creators .control-group {
-    display: inline-block;
-    width: 85%;
-}
-
-#curationObjectFieldSet .creators .creator-delete {
-    display: inline-block;
-    margin-left: 10px;
-}
-
-#curationObjectFieldSet .creators .creator-add{
-    display: inline-block;
-    margin-left: 10px;
+/* custom class for noty notification, position of a close x */
+.close-notify {
+    font-weight:bold;
+    position:absolute;
+    top:2px;
+    right:5px;
 }

@@ -16,7 +16,6 @@ import play.api.libs.json._
 /**
  * Postgres connection and simple geoindex methods.
  *
- * @author Luigi Marini
  *
  */
 class PostgresPlugin(application: Application) extends Plugin {
@@ -727,32 +726,43 @@ class PostgresPlugin(application: Application) extends Plugin {
   // ----------------------------------------------------------------------
   def updateDatabase() {
     // update datapoints to JSONB
-    updateDatapointsPropertiesToJSONB
-
+    updatePostgres("datapoints-properties-to-jsonb", updateDatapointsPropertiesToJSONB)
   }
 
-  private def updateDatapointsPropertiesToJSONB {
+  private def updatePostgres(updateKey: String, block: () => Unit): Unit = {
     val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
-    if (!appConfig.hasPropertyValue("postgres.updates", "datapoints-properties-to-jsonb")) {
+    if (!appConfig.hasPropertyValue("postgres.updates", updateKey)) {
       if (System.getProperty("POSTGRESUPDATE") != null) {
-        Logger.info("[PostgresUpdate] : Upgrading datapoints to jsonb.")
-        val query = "ALTER TABLE datapoints ALTER COLUMN data SET DATA TYPE jsonb USING data::jsonb"
-        val st = conn.prepareStatement(query)
-        Logger.debug("[PostgresUpdate] : Upgrading datapoints to jsonb: " + st)
-        st.execute()
-        st.close()
-
-        val query2 = "CREATE INDEX datapoints_data_idx ON datapoints USING gin (data)"
-        val st2 = conn.prepareStatement(query2)
-        Logger.debug("[PostgresUpdate] : Creating datapoint properties index: " + st2)
-        st2.execute()
-        st2.close()
-
-        appConfig.addPropertyValue("postgres.updates", "datapoints-properties-to-jsonb")
+        Logger.info(s"About to begin update of postgres : ${updateKey}.")
+        val start = System.currentTimeMillis()
+        try {
+          block()
+          appConfig.addPropertyValue("postgres.updates", updateKey)
+        } catch {
+          case e:Exception => {
+            Logger.error(s"Could not run postgres update for ${updateKey}", e)
+          }
+        }
+        val time = (System.currentTimeMillis() - start) / 1000.0
+        Logger.info(s"Took ${time} second to migrate postgres : ${updateKey}")
       } else {
-        Logger.error("[PostgresUpdate] : Datapoints properties column needs to be updated to JSONB. Restart Clowder with -DPOSTGRESUPDATE=1")
+        Logger.warn(s"Missing postgres update ${updateKey}. Application might be broken.")
       }
     }
+  }
+
+  private def updateDatapointsPropertiesToJSONB() {
+    val query = "ALTER TABLE datapoints ALTER COLUMN data SET DATA TYPE jsonb USING data::jsonb"
+    val st = conn.prepareStatement(query)
+    Logger.debug("[PostgresUpdate] : Upgrading datapoints to jsonb: " + st)
+    st.execute()
+    st.close()
+
+    val query2 = "CREATE INDEX datapoints_data_idx ON datapoints USING gin (data)"
+    val st2 = conn.prepareStatement(query2)
+    Logger.debug("[PostgresUpdate] : Creating datapoint properties index: " + st2)
+    st2.execute()
+    st2.close()
   }
 }

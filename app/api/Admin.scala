@@ -1,18 +1,23 @@
 package api
 
+import javax.inject.Inject
+
+import models.{ClowderUser, UUID}
+import org.apache.commons.lang3.StringEscapeUtils
 import play.api.mvc.Controller
 import play.api.Play.current
 import play.api.libs.json.Json.toJson
-import services.{ElasticsearchPlugin, AppConfiguration}
+import play.api.templates.Html
+import services.{UserService, ElasticsearchPlugin, AppConfiguration}
 import services.mongodb.MongoSalatPlugin
 import play.api.Logger
+import util.Mail
 
 /**
  * Admin endpoints for JSON API.
  *
- * @author Luigi Marini
  */
-object Admin extends Controller with ApiController {
+class Admin @Inject()(userService: UserService) extends Controller with ApiController {
 
   /**
    * DANGER: deletes all data, keep users.
@@ -23,38 +28,6 @@ object Admin extends Controller with ApiController {
 
     Ok(toJson("done"))
   }
-
-
-  def removeAdmin = ServerAdminAction(parse.json) { implicit request =>
-    Logger.debug("Removing admin")
-
-    request.user match {
-      case Some(user) => {
-        if(user.email.nonEmpty && AppConfiguration.checkAdmin(user.email.get)) {
-          (request.body \ "email").asOpt[String].map { email =>
-            AppConfiguration.checkAdmin(email) match {
-              case true => {
-                Logger.debug("Removing admin with email " + email)
-                AppConfiguration.removeAdmin(email)
-
-                Ok(toJson(Map("status" -> "success")))
-              }
-              case false => {
-                Logger.info("Identified admin does not exist.")
-                Ok(toJson(Map("status" -> "notmodified")))
-              }
-            }
-          }.getOrElse {
-            BadRequest(toJson("Missing parameter [email]"))
-          }
-        } else {
-          Unauthorized("Not authorized")
-        }
-      }
-      case None => Unauthorized("Not authorized")
-    }
-  }
-
 
   def submitAppearance = ServerAdminAction(parse.json) { implicit request =>
     (request.body \ "theme").asOpt[String] match {
@@ -91,4 +64,86 @@ object Admin extends Controller with ApiController {
     Ok(toJson(Map("status" -> "success")))
   }
 
+  def mail = UserAction(false)(parse.json) { implicit request =>
+    val body = StringEscapeUtils.escapeHtml4((request.body \ "body").asOpt[String].getOrElse("no text"))
+    val subj = (request.body \ "subject").asOpt[String].getOrElse("no subject")
+
+    val htmlbody = "<html><body><p>" + body + "</p>" + views.html.emails.footer() + "</body></html>"
+
+    Mail.sendEmailAdmins(subj, request.user, Html(htmlbody))
+    Ok(toJson(Map("status" -> "success")))
+  }
+
+  def users = ServerAdminAction(parse.json) { implicit request =>
+    (request.body \ "active").asOpt[List[String]].foreach(list =>
+      list.foreach(id =>
+        userService.findById(UUID(id)) match {
+          case Some(u:ClowderUser) => {
+            if (!u.active) {
+              userService.update(u.copy(active=true))
+              if (u.email.isDefined) {
+                val subject = s"[${AppConfiguration.getDisplayName}] account activated"
+                val body = views.html.emails.userActivated(u, active=true)(request)
+                util.Mail.sendEmail(subject, request.user, u.email.get, body)
+              }
+            }
+          }
+          case None => Logger.error(s"Could not find user with id=${id}")
+        }
+      )
+    )
+    (request.body \ "inactive").asOpt[List[String]].foreach(list =>
+      list.foreach(id =>
+        userService.findById(UUID(id)) match {
+          case Some(u:ClowderUser) => {
+            if (u.active) {
+              userService.update(u.copy(active = false))
+              if (u.email.isDefined) {
+                if(AppConfiguration.checkAdmin(u.email.get)) {
+                  AppConfiguration.removeAdmin(u.email.get)
+                }
+                val subject = s"[${AppConfiguration.getDisplayName}] account deactivated"
+                val body = views.html.emails.userActivated(u, active=false)(request)
+                util.Mail.sendEmail(subject, request.user, u.email.get, body)
+              }
+            }
+          }
+          case _ => Logger.error(s"Could not find user with id=${id}")
+        }
+      )
+    )
+    (request.body \ "admin").asOpt[List[String]].foreach(list =>
+      list.foreach(id =>
+        userService.findById(UUID(id)) match {
+          case Some(u) => {
+            if (u.active && u.email.isDefined && !AppConfiguration.checkAdmin(u.email.get)) {
+              AppConfiguration.addAdmin(u.email.get)
+              val subject = s"[${AppConfiguration.getDisplayName}] admin access granted"
+              val body = views.html.emails.userAdmin(u, admin=true)(request)
+              util.Mail.sendEmail(subject, request.user, u.email.get, body)
+            }
+          }
+          case _ => Logger.error(s"Could not find user with id=${id}")
+        }
+      )
+    )
+    (request.body \ "unadmin").asOpt[List[String]].foreach(list =>
+      list.foreach(id =>
+        userService.findById(UUID(id)) match {
+          case Some(u) if u.email.isDefined && AppConfiguration.checkAdmin(u.email.get) => {
+            if (u.email.isDefined && AppConfiguration.checkAdmin(u.email.get)) {
+              AppConfiguration.removeAdmin(u.email.get)
+              if (u.active) {
+                val subject = s"[${AppConfiguration.getDisplayName}] admin access revoked"
+                val body = views.html.emails.userAdmin(u, admin=false)(request)
+                util.Mail.sendEmail(subject, request.user, u.email.get, body)
+              }
+            }
+          }
+          case _ => Logger.error(s"Could not find user with id=${id}")
+        }
+      )
+    )
+    Ok(toJson(Map("status" -> "success")))
+  }
 }

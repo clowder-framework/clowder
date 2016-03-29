@@ -31,7 +31,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   /**
    * Main page.
    */
-  def index = UserAction { implicit request =>
+  def index = UserAction(needActive = false) { implicit request =>
   	implicit val user = request.user
   	val latestFiles = files.latest(5)
     val datasetsCount = datasets.count()
@@ -47,111 +47,107 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     newsfeedEvents =  (newsfeedEvents ::: events.getRequestEvents(user, Some(20)))
       .sorted(Ordering.by((_: Event).created).reverse).take(20)
     user match {
-      case Some(usr) => {
-        users.findById(usr.id) match {
-          case Some(clowderUser) => {
-            val datasetsUser = datasets.listUser(4, Some(clowderUser), request.superAdmin, clowderUser)
-            val datasetcommentMap = datasetsUser.map { dataset =>
-              var allComments = comments.findCommentsByDatasetId(dataset.id)
-              dataset.files.map { file =>
-                allComments ++= comments.findCommentsByFileId(file)
-                sections.findByFileId(file).map { section =>
-                  allComments ++= comments.findCommentsBySectionId(section.id)
-                }
-              }
-              dataset.id -> allComments.size
-            }.toMap
-            val collectionList = collections.listUser(4, Some(clowderUser), request.superAdmin, clowderUser)
-            var collectionsWithThumbnails = collectionList.map {c =>
-              if (c.thumbnail_id.isDefined) {
-                c
-              } else {
-                val collectionThumbnail = datasets.listCollection(c.id.stringify).find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
-                c.copy(thumbnail_id = collectionThumbnail)
-              }
-            }
-
-            //Modifications to decode HTML entities that were stored in an encoded fashion as part
-            //of the collection's names or descriptions
-            val decodedCollections = ListBuffer.empty[models.Collection]
-            for (aCollection <- collectionsWithThumbnails) {
-              decodedCollections += Utils.decodeCollectionElements(aCollection)
-            }
-            val spacesUser = spaces.listUser(4, Some(clowderUser),request.superAdmin, clowderUser)
-            var followers: List[(UUID, String, String, String)] = List.empty
-            for (followerID <- clowderUser.followers.take(3)) {
-              var userFollower = users.findById(followerID)
-              userFollower match {
-                case Some(uFollower) => {
-                  var ufEmail = uFollower.email.getOrElse("")
-                  followers = followers.++(List((uFollower.id, uFollower.fullName, ufEmail, uFollower.getAvatarUrl())))
-                }
-                case None =>
-              }
-            }
-            var followedUsers: List[(UUID, String, String, String)] = List.empty
-            var followedFiles: List[(UUID, String, String)] = List.empty
-            var followedDatasets: List[(UUID, String, String)] = List.empty
-            var followedCollections: List[(UUID, String, String)] = List.empty
-            var followedSpaces: List[(UUID, String, String)] = List.empty
-            val maxDescLength = 50
-            for (tidObject <- clowderUser.followedEntities) {
-              if (tidObject.objectType == "user") {
-                val followedUser = users.get(tidObject.id)
-                followedUser match {
-                  case Some(fuser) => {
-                    followedUsers = followedUsers.++(List((fuser.id, fuser.fullName, fuser.email.getOrElse(""), fuser.getAvatarUrl())))
-                  }
-                  case None =>
-                }
-              } else if (tidObject.objectType == "file") {
-                val followedFile = files.get(tidObject.id)
-                followedFile match {
-                  case Some(ffile) => {
-                    followedFiles = followedFiles.++(List((ffile.id, ffile.filename, ffile.contentType)))
-                  }
-                  case None =>
-                }
-              } else if (tidObject.objectType == "dataset") {
-                val followedDataset = datasets.get(tidObject.id)
-                followedDataset match {
-                  case Some(fdset) => {
-                    followedDatasets = followedDatasets.++(List((fdset.id, fdset.name, fdset.description.substring(0, Math.min(maxDescLength, fdset.description.length())))))
-                  }
-                  case None =>
-                }
-              } else if (tidObject.objectType == "collection") {
-                val followedCollection = collections.get(tidObject.id)
-                followedCollection match {
-                  case Some(fcoll) => {
-                    followedCollections = followedCollections.++(List((fcoll.id, fcoll.name, fcoll.description.substring(0, Math.min(maxDescLength, fcoll.description.length())))))
-                  }
-                  case None =>
-                }
-              } else if (tidObject.objectType == "'space") {
-                val followedSpace = spaces.get(tidObject.id)
-                followedSpace match {
-                  case Some(fspace) => {
-                    followedSpaces = followedSpaces.++(List((fspace.id, fspace.name, fspace.description.substring(0, Math.min(maxDescLength, fspace.description.length())))))
-                  }
-                  case None => {}
-                }
-              }
-            }
-            Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser, datasetcommentMap, decodedCollections.toList, spacesUser, true, followers, followedUsers.take(3),
-           followedFiles.take(3), followedDatasets.take(3), followedCollections.take(3),followedSpaces.take(3), Some(true)))
-          }
-          case None =>  Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess,
-            spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
-
-        }
+      case Some(clowderUser) if !clowderUser.active => {
+        Redirect(routes.Error.notActivated())
       }
-      case None => Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess,
+      case Some(clowderUser) if clowderUser.active => {
+        val datasetsUser = datasets.listUser(4, Some(clowderUser), request.superAdmin, clowderUser)
+        val datasetcommentMap = datasetsUser.map { dataset =>
+          var allComments = comments.findCommentsByDatasetId(dataset.id)
+          dataset.files.map { file =>
+            allComments ++= comments.findCommentsByFileId(file)
+            sections.findByFileId(file).map { section =>
+              allComments ++= comments.findCommentsBySectionId(section.id)
+            }
+          }
+          dataset.id -> allComments.size
+        }.toMap
+        val collectionList = collections.listUser(4, Some(clowderUser), request.superAdmin, clowderUser)
+        var collectionsWithThumbnails = collectionList.map {c =>
+          if (c.thumbnail_id.isDefined) {
+            c
+          } else {
+            val collectionThumbnail = datasets.listCollection(c.id.stringify).find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
+            c.copy(thumbnail_id = collectionThumbnail)
+          }
+        }
+
+        //Modifications to decode HTML entities that were stored in an encoded fashion as part
+        //of the collection's names or descriptions
+        val decodedCollections = ListBuffer.empty[models.Collection]
+        for (aCollection <- collectionsWithThumbnails) {
+          decodedCollections += Utils.decodeCollectionElements(aCollection)
+        }
+        val spacesUser = spaces.listUser(4, Some(clowderUser),request.superAdmin, clowderUser)
+        var followers: List[(UUID, String, String, String)] = List.empty
+        for (followerID <- clowderUser.followers.take(3)) {
+          var userFollower = users.findById(followerID)
+          userFollower match {
+            case Some(uFollower) => {
+              var ufEmail = uFollower.email.getOrElse("")
+              followers = followers.++(List((uFollower.id, uFollower.fullName, ufEmail, uFollower.getAvatarUrl())))
+            }
+            case None =>
+          }
+        }
+        var followedUsers: List[(UUID, String, String, String)] = List.empty
+        var followedFiles: List[(UUID, String, String)] = List.empty
+        var followedDatasets: List[(UUID, String, String)] = List.empty
+        var followedCollections: List[(UUID, String, String)] = List.empty
+        var followedSpaces: List[(UUID, String, String)] = List.empty
+        val maxDescLength = 50
+        for (tidObject <- clowderUser.followedEntities) {
+          if (tidObject.objectType == "user") {
+            val followedUser = users.get(tidObject.id)
+            followedUser match {
+              case Some(fuser) => {
+                followedUsers = followedUsers.++(List((fuser.id, fuser.fullName, fuser.email.getOrElse(""), fuser.getAvatarUrl())))
+              }
+              case None =>
+            }
+          } else if (tidObject.objectType == "file") {
+            val followedFile = files.get(tidObject.id)
+            followedFile match {
+              case Some(ffile) => {
+                followedFiles = followedFiles.++(List((ffile.id, ffile.filename, ffile.contentType)))
+              }
+              case None =>
+            }
+          } else if (tidObject.objectType == "dataset") {
+            val followedDataset = datasets.get(tidObject.id)
+            followedDataset match {
+              case Some(fdset) => {
+                followedDatasets = followedDatasets.++(List((fdset.id, fdset.name, fdset.description.substring(0, Math.min(maxDescLength, fdset.description.length())))))
+              }
+              case None =>
+            }
+          } else if (tidObject.objectType == "collection") {
+            val followedCollection = collections.get(tidObject.id)
+            followedCollection match {
+              case Some(fcoll) => {
+                followedCollections = followedCollections.++(List((fcoll.id, fcoll.name, fcoll.description.substring(0, Math.min(maxDescLength, fcoll.description.length())))))
+              }
+              case None =>
+            }
+          } else if (tidObject.objectType == "'space") {
+            val followedSpace = spaces.get(tidObject.id)
+            followedSpace match {
+              case Some(fspace) => {
+                followedSpaces = followedSpaces.++(List((fspace.id, fspace.name, fspace.description.substring(0, Math.min(maxDescLength, fspace.description.length())))))
+              }
+              case None => {}
+            }
+          }
+        }
+        Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser, datasetcommentMap, decodedCollections.toList, spacesUser, true, followers, followedUsers.take(3),
+       followedFiles.take(3), followedDatasets.take(3), followedCollections.take(3),followedSpaces.take(3), Some(true)))
+      }
+      case _ => Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess,
         spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
     }
   }
 
-  def about = UserAction { implicit request =>
+  def about = UserAction(needActive = false) { implicit request =>
     implicit val user = request.user
     val latestFiles = files.latest(5)
     val datasetsCount = datasets.count()
@@ -166,8 +162,17 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess,
         spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
   }
-  
-  def options(path:String) = UserAction { implicit request =>
+
+  def email(subject: String) = UserAction(needActive=false) { implicit request =>
+    if (request.user.isEmpty) {
+      Redirect(routes.Application.index())
+    } else {
+      implicit val user = request.user
+      Ok(views.html.emailAdmin(subject))
+    }
+  }
+
+  def options(path:String) = UserAction(needActive = false) { implicit request =>
     Logger.info("---controller: PreFlight Information---")
     Ok("")
    }
@@ -187,8 +192,6 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   def javascriptRoutes = Action { implicit request =>
     Ok(
       Routes.javascriptRouter("jsRoutes")(
-        routes.javascript.Admin.test,
-        routes.javascript.Admin.secureTest,
         routes.javascript.Admin.reindexFiles,
         routes.javascript.Admin.createIndex,
         routes.javascript.Admin.buildIndex,
@@ -211,10 +214,11 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         routes.javascript.Folders.addFiles,
         routes.javascript.Geostreams.list,
         routes.javascript.Collections.collection,
-        routes.javascript.RedirectUtility.authenticationRequiredMessage,
+        routes.javascript.Error.authenticationRequiredMessage,
+        routes.javascript.Collections.getUpdatedDatasets,
+        routes.javascript.Collections.getUpdatedChildCollections,
         routes.javascript.Profile.viewProfileUUID,
         routes.javascript.Assets.at,
-        api.routes.javascript.Admin.removeAdmin,        
         api.routes.javascript.Comments.comment,
         api.routes.javascript.Comments.removeComment,
         api.routes.javascript.Comments.editComment,
@@ -228,6 +232,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Datasets.deleteDataset,
         api.routes.javascript.Datasets.detachAndDeleteDataset,
         api.routes.javascript.Datasets.datasetFilesList,
+        api.routes.javascript.Datasets.datasetAllFilesList,
         api.routes.javascript.Datasets.getTechnicalMetadataJSON,
         api.routes.javascript.Datasets.listInCollection,
         api.routes.javascript.Datasets.getTags,
@@ -251,6 +256,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Files.removeTags,
         api.routes.javascript.Files.removeAllTags,
         api.routes.javascript.Files.updateLicense,
+        api.routes.javascript.Files.updateFileName,
+        api.routes.javascript.Files.updateDescription,
         api.routes.javascript.Files.extract,
         api.routes.javascript.Files.removeFile,
         api.routes.javascript.Files.follow,
@@ -292,6 +299,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Collections.updateCollectionName,
         api.routes.javascript.Collections.updateCollectionDescription,
         api.routes.javascript.Collections.getCollection,
+        api.routes.javascript.Collections.removeFromSpaceAllowed,
         api.routes.javascript.Spaces.get,
         api.routes.javascript.Spaces.removeSpace,
         api.routes.javascript.Spaces.list,
@@ -318,7 +326,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.CurationObjects.findMatchmakingRepositories,
         api.routes.javascript.CurationObjects.retractCurationObject,
         api.routes.javascript.CurationObjects.getCurationFiles,
-        api.routes.javascript.CurationObjects.deleteCurationFiles,
+        api.routes.javascript.CurationObjects.deleteCurationFile,
+        api.routes.javascript.CurationObjects.deleteCurationFolder,
         api.routes.javascript.Metadata.addUserMetadata,
         api.routes.javascript.Metadata.searchByKeyValue,
         api.routes.javascript.Metadata.getDefinitions,
@@ -346,6 +355,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Spaces.stagingArea,
         controllers.routes.javascript.CurationObjects.submit,
         controllers.routes.javascript.CurationObjects.getCurationObject,
+        controllers.routes.javascript.CurationObjects.getUpdatedFilesAndFolders,
         controllers.routes.javascript.CurationObjects.findMatchingRepositories,
         controllers.routes.javascript.CurationObjects.sendToRepository,
         controllers.routes.javascript.CurationObjects.compareToRepository,

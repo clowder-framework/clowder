@@ -32,13 +32,11 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import com.mongodb.casbah.Imports._
-import securesocial.core.Identity
 
 
 /**
  * Use mongo for both metadata and blobs.
- * 
- * @author Luigi Marini
+ *
  *
  */
 @Singleton
@@ -53,7 +51,8 @@ class MongoDBFileService @Inject() (
   sparql: RdfSPARQLService,
   storage: ByteStorageService,
   userService: UserService,
-  folders: FolderService) extends FileService {
+  folders: FolderService,
+  metadatas:MetadataService) extends FileService {
 
   object MustBreak extends Exception {}
 
@@ -159,7 +158,7 @@ class MongoDBFileService @Inject() (
   /**
    * Save blob.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File] = {
+  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: User, showPreviews: String = "DatasetLevel"): Option[File] = {
     val extra = Map("showPreviews" -> showPreviews,
                     "author" -> SocialUserDAO.toDBObject(author),
                     "licenseData" -> grater[LicenseData].asDBObject(License.fromAppConfig()))
@@ -220,6 +219,13 @@ class MongoDBFileService @Inject() (
       }
       case None => Logger.error("File not found: " + id)
     }
+  }
+
+  /**
+    * Directly insert a file into the db (even with a local path)
+    */
+  def insert(file: File): Option[String] = {
+    FileDAO.insert(file).map(_.toString)
   }
 
   /**
@@ -680,6 +686,7 @@ class MongoDBFileService @Inject() (
           }
           if(!file.thumbnail_id.isEmpty)
             thumbnails.remove(UUID(file.thumbnail_id.get))
+          metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
         }
 
         // finally delete the actual file
@@ -969,6 +976,12 @@ class MongoDBFileService @Inject() (
                     $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 
+  def updateDescription(id: UUID, description: String) {
+    val result = FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $set("description" -> description),
+      false, false, WriteConcern.Safe)
+
+  }
 }
 
 object FileDAO extends ModelCompanion[File, ObjectId] {

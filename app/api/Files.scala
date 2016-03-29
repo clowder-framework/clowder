@@ -2,15 +2,10 @@ package api
 
 import java.io.{BufferedWriter, FileInputStream, FileWriter}
 import java.net.{URL, URLEncoder}
-import java.text.SimpleDateFormat
-import java.util.Date
 import javax.inject.Inject
 import javax.mail.internet.MimeUtility
 
 import _root_.util.{Parsers, JSONLD}
-import securesocial.core.Identity
-
-import org.bson.types.ObjectId
 
 import com.mongodb.casbah.Imports._
 import com.wordnik.swagger.annotations.{Api, ApiOperation}
@@ -32,16 +27,11 @@ import services._
 
 import scala.collection.mutable.{ListBuffer, ArrayBuffer}
 import scala.util.parsing.json.JSONArray
-
-
-import javax.imageio.ImageIO
+import collection.JavaConversions._
 
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import scala.concurrent.Future
- 
-import scala.util.control._
 import controllers.Utils
 
 /**
@@ -137,7 +127,7 @@ class Files @Inject()(
 		                }
 		              }
 		              case None => {
-                    val userAgent = request.headers("user-agent")
+                    val userAgent = request.headers.get("user-agent").getOrElse("")
                     val filenameStar = if (userAgent.indexOf("MSIE") > -1) {
                       URLEncoder.encode(filename, "UTF-8")
                     } else {
@@ -355,6 +345,231 @@ class Files @Inject()(
     }
 
   /**
+    * Submit saved file for indexing, DTS requests, metadata extraction, etc.
+    */
+  def processSavedFile(user: User, f: File, creator_url: String, showPreviews: String, filename: String, flagsFromPrevious: String,
+                       host: String, serverIP: String, clientIP: String, fileObj: java.io.File, originalIdAndFlags: String,
+                       file_md: Option[Seq[String]], dataset: Dataset, index: Boolean, intermediateUpload: Boolean) = {
+    val id = f.id
+    var originalId = originalIdAndFlags
+
+    if (intermediateUpload) files.setIntermediate(f.id)
+
+    var flags = flagsFromPrevious
+    if (showPreviews.equals("FileLevel"))
+      flags = flags + "+filelevelshowpreviews"
+    else if (showPreviews.equals("None"))
+      flags = flags + "+nopreviews"
+    var fileType = f.contentType
+    if (fileType == null) {
+      fileType = play.api.http.ContentTypes.BINARY
+    }
+    var nameOfFile = filename
+    if (fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.toLowerCase().endsWith(".zip")) {
+      fileType = FilesUtils.getMainFileTypeOfZipFile(fileObj, nameOfFile, "file")
+      if (fileType.startsWith("ERROR: ")) {
+        Logger.error(fileType.substring(7))
+        InternalServerError(fileType.substring(7))
+      }
+      if (fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") || fileType.equals("multi/files-ptm-zipped")) {
+        if (fileType.equals("multi/files-ptm-zipped")) {
+          fileType = "multi/files-zipped";
+        }
+
+        var thirdSeparatorIndex = nameOfFile.indexOf("__")
+        if (thirdSeparatorIndex >= 0) {
+          var firstSeparatorIndex = nameOfFile.indexOf("_")
+          var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
+          flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
+          nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
+          files.renameFile(f.id, nameOfFile)
+        }
+        files.setContentType(f.id, fileType)
+      }
+    }
+    if (!intermediateUpload) {
+      current.plugin[FileDumpService].foreach {
+        _.dump(DumpOfFile(fileObj, f.id.toString, nameOfFile))
+      }
+
+      /*---- Insert DTS Request to database---*/
+      dtsrequests.insertRequest(serverIP, clientIP, f.filename, id, fileType, f.length, f.uploadDate)
+    }
+
+    // TODO RK need to replace unknown with the server name
+    val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+    val extra = Map("filename" -> f.filename)
+
+    if (index.equals(true)) {
+      // index the file using Versus
+      current.plugin[VersusPlugin].foreach {
+        _.index(f.id.toString, fileType)
+      }
+    }
+
+    // Add metadata to file if we have it
+    // TODO: Should metdata permission be checked separately from AddFile?
+    file_md match {
+      case Some(md) => {
+        md.map { jsonObj =>
+          Logger.info("Adding metadata to " + nameOfFile)
+
+          files.get(f.id) match {
+            case Some(x) => {
+              //parse request for agent/creator info
+              val creator = UserAgent(id = UUID.generate(), user=user.getMiniUser, userId = Some(new URL(creator_url)))
+
+              // TODO: Put this block and the similar chunk from addMetadataJsonLD into helper function so not repeated
+              // Extract context from metadata object and remove it so it isn't repeated twice
+              var parseJson = Json.parse(jsonObj)
+              val context: JsValue = (parseJson \ "@context")
+              parseJson = parseJson.as[JsObject] - "@context"
+              // check if the context is a URL to external endpoint
+              var contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
+              // check if context is a JSON-LD document
+              // TODO: check if this actually exists first
+              var contextID: Option[UUID] =
+                if (context.isInstanceOf[JsObject]) {
+                  context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
+                } else if (context.isInstanceOf[JsArray]) {
+                  context.asOpt[JsArray].map(contextService.addContext(new JsString("context name"), _))
+                } else None
+
+              // when the new metadata is added
+              val createdAt = new Date()
+              //parse the rest of the request to create a new models.Metadata object
+              val attachedTo = ResourceRef(ResourceRef.file, f.id)
+              val version = None
+              val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+                Json.parse(jsonObj), version)
+
+              //add metadata to mongo
+              metadataService.addMetadata(metadata)
+              files.index(f.id)
+            }
+            case None => Logger.error(s"Error getting file to attach metadata"); NotFound
+          }
+        }
+      }
+      case null => {}
+      case None => {}
+    }
+
+    if (dataset == null) {
+      // No dataset is provided, so just upload the file.
+      if (!intermediateUpload) {
+        events.addObjectEvent(Some(user), f.id, f.filename, "upload_file")
+        originalId = f.id.toString
+      }
+      // TODO replace null with None
+      current.plugin[RabbitmqPlugin].foreach {
+        _.extract(ExtractorMessage(UUID(originalId), f.id, host, key, extra, f.length.toString, null, flags))
+      }
+
+      if (!intermediateUpload) {
+        //for metadata files
+        val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+        if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
+          val xmlToJSON = FilesUtils.readXMLgetJSON(fileObj)
+          files.addXMLMetadata(f.id, xmlToJSON)
+
+          Logger.debug("xmlmd=" + xmlToJSON)
+
+          if (index.equals(true)) {
+            current.plugin[ElasticsearchPlugin].foreach {
+              //_.index("data", "file", f.id, List(("filename", nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
+              _.index(f)
+            }
+          }
+
+          //add file to RDF triple store if triple store is used
+          configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+            case "yes" => sqarql.addFileToGraph(f.id)
+            case _ => {}
+          }
+        }
+        else {
+          if (index.equals(true)) {
+            current.plugin[ElasticsearchPlugin].foreach {
+              //_.index("data", "file", f.id, List(("filename", nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date()))))
+              _.index(f)
+            }
+          }
+        }
+        current.plugin[AdminsNotifierPlugin].foreach {
+          _.sendAdminsNotification(host, "File", "added", f.id.stringify, nameOfFile)
+        }
+      }
+    }
+    else {
+      // Handle adding file to dataset if one is provided
+      events.addSourceEvent(Some(user), f.id, f.filename, dataset.id, dataset.name, "add_file_dataset")
+      current.plugin[RabbitmqPlugin].foreach {
+        _.extract(ExtractorMessage(new UUID(id.toString), new UUID(id.toString), host, key, extra, f.length.toString, dataset.id, ""))
+      }
+
+      //for metadata files, associate with dataset
+      val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+      if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
+        val xmlToJSON = FilesUtils.readXMLgetJSON(fileObj)
+        files.addXMLMetadata(new UUID(id.toString), xmlToJSON)
+        Logger.debug("xmlmd=" + xmlToJSON)
+
+        if (index.equals(true)) {
+          current.plugin[ElasticsearchPlugin].foreach {
+            //_.index("data", "file", new UUID(id), List(("filename", f.filename), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("datasetId", dataset.id.toString), ("datasetName", dataset.name), ("xmlmetadata", xmlToJSON)))
+            _.index(f)
+          }
+        }
+      } else {
+        if (index.equals(true)) {
+          current.plugin[ElasticsearchPlugin].foreach {
+            //_.index("data", "file", new UUID(id), List(("filename", f.filename), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("datasetId", dataset.id.toString), ("datasetName", dataset.name)))
+            _.index(f)
+          }
+        }
+      }
+
+      // add file to dataset
+      // TODO create a service instead of calling salat directly
+      val theFile = files.get(f.id)
+      if (theFile.isEmpty) {
+        Logger.error("Could not retrieve file that was just saved.")
+        InternalServerError("Error uploading file")
+      } else {
+        datasets.addFile(dataset.id, theFile.get)
+        datasets.index(dataset.id)
+
+        // TODO RK need to replace unknown with the server name and dataset type
+        val dtkey = "unknown." + "dataset." + "unknown"
+
+        current.plugin[RabbitmqPlugin].foreach {
+          _.extract(ExtractorMessage(dataset.id, dataset.id, host, dtkey, Map.empty, f.length.toString, dataset.id, ""))
+        }
+
+        Logger.info("Attached to dataset successfully.")
+
+        //add file to RDF triple store if triple store is used
+        if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
+          configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+            case "yes" => {
+              sqarql.addFileToGraph(f.id)
+              sqarql.linkFileToDataset(f.id, dataset.id)
+            }
+            case _ => {}
+          }
+        }
+
+        //sending success message
+        current.plugin[AdminsNotifierPlugin].foreach {
+          _.sendAdminsNotification(host, "File", "added", id.toString, nameOfFile)
+        }
+        Ok(toJson(Map("id" -> id)))
+      }
+    }
+  }
+
+    /**
     * Upload file from a request and attach metadata if necessary. Returns uploaded file.
     *
     * @param file some File to upload
@@ -371,8 +586,8 @@ class Files @Inject()(
     * @return file that was uploaded
     */
   private def uploadFile(file: MultipartFormData.FilePart[Files.TemporaryFile], user: User, host: String,
-                         clientIP: String="", serverIP: String="", file_md: Option[Seq[String]], dataset: Dataset = null,
-                         index: Boolean = true, showPreviews: String = "DatasetLevel",
+                         clientIP: String="", serverIP: String="", file_md: Option[Seq[String]], creator_url: String,
+                         dataset: Dataset = null, index: Boolean = true, showPreviews: String = "DatasetLevel",
                          originalZipFile: String = "", flagsFromPrevious: String = "",
                          intermediateUpload: Boolean = false, originalIdAndFlags: String = "") : Option[File] = {
     var nameOfFile = file.filename
@@ -402,10 +617,10 @@ class Files @Inject()(
     }
 
     // store file
-    var realUser = user.asInstanceOf[Identity]
+    var realUser = user
     if (!originalZipFile.equals("")) {
       files.get(new UUID(originalZipFile)) match {
-        case Some(originalFile) => realUser = originalFile.author
+        case Some(originalFile) => realUser = userService.findByIdentity(originalFile.author).getOrElse(user)
         case None => {}
       }
     }
@@ -416,189 +631,7 @@ class Files @Inject()(
     // submit file for extraction
     savedFile match {
       case Some(f) => {
-        val id = f.id.toString
-        if (showPreviews.equals("FileLevel")) {
-          flags = flags + "+filelevelshowpreviews"
-        } else if (showPreviews.equals("None")) {
-          flags = flags + "+nopreviews"
-        }
-
-        if (intermediateUpload) files.setIntermediate(f.id)
-
-        var fileType = f.contentType
-        if (fileType.contains("/zip") || fileType.contains("/x-zip") || nameOfFile.endsWith(".zip")) {
-          fileType = FilesUtils.getMainFileTypeOfZipFile(file.ref.file, nameOfFile, "dataset")
-          if (fileType.startsWith("ERROR: ")) {
-            Logger.error(fileType.substring(7))
-            InternalServerError(fileType.substring(7))
-          }
-        }
-
-        if (!intermediateUpload) {
-          current.plugin[FileDumpService].foreach {
-            _.dump(DumpOfFile(file.ref.file, f.id.toString, nameOfFile))
-          }
-
-          // Insert DTS Requests
-          dtsrequests.insertRequest(serverIP, clientIP, f.filename, f.id, fileType, f.length, f.uploadDate)
-        }
-
-        // TODO RK need to replace unknown with the server name
-        val key = "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
-        val extra = Map("filename" -> f.filename)
-
-        if (index.equals(true)) {
-          // index the file using Versus
-          current.plugin[VersusPlugin].foreach {
-            _.index(f.id.toString, fileType)
-          }
-        }
-
-        // Add metadata to file if we have it
-        // TODO: Should metdata permission be checked separately from AddFile?
-        file_md match {
-          case Some(md) => {
-            md.map { jsonObj =>
-              Logger.info("Adding metadata to " + nameOfFile)
-
-              files.get(f.id) match {
-                case Some(x) => {
-                  //parse request for agent/creator info
-                  //creator can be UserAgent or ExtractorAgent
-                  // TODO: This is not an extractor, how should ID be handled? UserAgent?
-                  val creator = ExtractorAgent(id = UUID.generate(),
-                    extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/deprecatedapi")))
-                  // check if the context is a URL to external endpoint
-                  val contextURL: Option[URL] = None
-                  // check if context is a JSON-LD document
-                  val contextID: Option[UUID] = None
-                  // when the new metadata is added
-                  val createdAt = new Date()
-                  //parse the rest of the request to create a new models.Metadata object
-                  val attachedTo = ResourceRef(ResourceRef.file, f.id)
-                  val version = None
-                  val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                    Json.parse(jsonObj), version)
-
-                  //add metadata to mongo
-                  metadataService.addMetadata(metadata)
-                  files.index(f.id)
-                }
-                case None => Logger.error(s"Error getting file to attach metadata"); NotFound
-              }
-            }
-          }
-          case None => {}
-        }
-
-        if (dataset == null) {
-          // No dataset is provided, so just upload the file.
-          if (!intermediateUpload) {
-            events.addObjectEvent(Option(user), f.id, f.filename, "upload_file")
-            originalId = f.id.toString
-          }
-          // TODO replace null with None
-          current.plugin[RabbitmqPlugin].foreach {
-            _.extract(ExtractorMessage(UUID(originalId), f.id, host, key, extra, f.length.toString, null, flags))
-          }
-
-          if (!intermediateUpload) {
-            //for metadata files
-            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-            if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-              val xmlToJSON = FilesUtils.readXMLgetJSON(file.ref.file)
-              files.addXMLMetadata(f.id, xmlToJSON)
-
-              Logger.debug("xmlmd=" + xmlToJSON)
-
-              if (index.equals(true)) {
-                current.plugin[ElasticsearchPlugin].foreach {
-                  _.index("data", "file", f.id, List(("filename", nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
-                }
-              }
-
-              //add file to RDF triple store if triple store is used
-              configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                case "yes" => sqarql.addFileToGraph(f.id)
-                case _ => {}
-              }
-            }
-            else {
-              if (index.equals(true)) {
-                current.plugin[ElasticsearchPlugin].foreach {
-                  _.index("data", "file", f.id, List(("filename", nameOfFile), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date()))))
-                }
-              }
-            }
-            current.plugin[AdminsNotifierPlugin].foreach {
-              _.sendAdminsNotification(host, "File", "added", f.id.stringify, nameOfFile)
-            }
-          }
-        }
-        else {
-          // Handle adding file to dataset if one is provided
-          events.addSourceEvent(Option(user), f.id, f.filename, dataset.id, dataset.name, "add_file_dataset")
-          current.plugin[RabbitmqPlugin].foreach {
-            _.extract(ExtractorMessage(new UUID(id), new UUID(id), host, key, extra, f.length.toString, dataset.id, ""))
-          }
-
-          //for metadata files, associate with dataset
-          val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-          if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-            val xmlToJSON = FilesUtils.readXMLgetJSON(file.ref.file)
-            files.addXMLMetadata(new UUID(id), xmlToJSON)
-            Logger.debug("xmlmd=" + xmlToJSON)
-
-            if (index.equals(true)) {
-              current.plugin[ElasticsearchPlugin].foreach {
-                _.index("data", "file", new UUID(id), List(("filename", f.filename), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("datasetId", dataset.id.toString), ("datasetName", dataset.name), ("xmlmetadata", xmlToJSON)))
-              }
-            }
-          } else {
-            if (index.equals(true)) {
-              current.plugin[ElasticsearchPlugin].foreach {
-                _.index("data", "file", new UUID(id), List(("filename", f.filename), ("contentType", f.contentType), ("author", realUserName), ("uploadDate", dateFormat.format(new Date())), ("datasetId", dataset.id.toString), ("datasetName", dataset.name)))
-              }
-            }
-          }
-
-          // add file to dataset
-          // TODO create a service instead of calling salat directly
-          val theFile = files.get(f.id)
-          if (theFile.isEmpty) {
-            Logger.error("Could not retrieve file that was just saved.")
-            InternalServerError("Error uploading file")
-          } else {
-            datasets.addFile(dataset.id, theFile.get)
-            datasets.index(dataset.id)
-
-            // TODO RK need to replace unknown with the server name and dataset type
-            val dtkey = "unknown." + "dataset." + "unknown"
-
-            current.plugin[RabbitmqPlugin].foreach {
-              _.extract(ExtractorMessage(dataset.id, dataset.id, host, dtkey, Map.empty, f.length.toString, dataset.id, ""))
-            }
-
-            Logger.info("Attached to dataset successfully.")
-
-            //add file to RDF triple store if triple store is used
-            if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
-              configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-                case "yes" => {
-                  sqarql.addFileToGraph(f.id)
-                  sqarql.linkFileToDataset(f.id, dataset.id)
-                }
-                case _ => {}
-              }
-            }
-
-            //sending success message
-            current.plugin[AdminsNotifierPlugin].foreach {
-              _.sendAdminsNotification(host, "File", "added", id, nameOfFile)
-            }
-            Ok(toJson(Map("id" -> id)))
-          }
-        }
+        processSavedFile(user,f,creator_url,showPreviews,f.filename,flagsFromPrevious,host,serverIP,clientIP,file.ref.file,originalId,file_md,dataset,index,intermediateUpload)
       }
       case None => {
         Logger.error("Could not retrieve file that was just saved.")
@@ -622,8 +655,8 @@ class Files @Inject()(
    * @param flagsFromPrevious
    * @return a list of files that were uploaded
    */
-  private def uploadFiles(request: Request[MultipartFormData[Files.TemporaryFile]], user: User, dataset: Dataset = null,
-                 key: String = "Files", index: Boolean = true, showPreviews: String = "DatasetLevel",
+  private def uploadFiles(request: Request[MultipartFormData[Files.TemporaryFile]], user: User, creator_url: String,
+                          dataset: Dataset = null, key: String = "Files", index: Boolean = true, showPreviews: String = "DatasetLevel",
                  originalZipFile: String = "", flagsFromPrevious: String = "") : List[File] = {
     val file_list = if (key == "Files") {
       // No specific key provided, so attempt to upload every file
@@ -647,16 +680,32 @@ class Files @Inject()(
     // container for list of uploaded files
     var uploadedFiles = new ArrayBuffer[File](file_list.length)
 
-    // Get file(s) found and iterate, uploading each
+    // Get file(s) attached and iterate, uploading each
     file_list.map { f =>
       try {
         // Check for metadata using filename as key; if not found, check using file's key (e.g. "File")
-        var metadata = request.body.dataParts.get(f.filename)
-        metadata match {
-          case Some(md) => {}
-          case None => metadata = request.body.dataParts.get(f.key)
+        val metadata: Option[Seq[String]] = request.body.dataParts.get(f.filename) match {
+          case Some(md) => Some(md)
+          case None => {
+            request.body.dataParts.get(f.key) match {
+              case Some(md) => {
+                // If we find "@context" field we assume this is json metadata and not a file path
+                // TODO: Revisit this, can we also check for a "path" field and improve?
+                var foundMd: Option[Seq[String]] = None
+                for (fobj <- md) {
+                  Json.parse(fobj) \ "@context" match {
+                    case v: JsUndefined => None
+                    case v: JsObject => foundMd = Some(md)
+                    case v: JsString => foundMd = Some(md)
+                  }
+                }
+                foundMd
+              }
+              case None => None
+            }
+          }
         }
-        val loadedFile = uploadFile(f, user, host, clientIP, serverIP, metadata, dataset,
+        val loadedFile = uploadFile(f, user, host, clientIP, serverIP, metadata, creator_url, dataset,
                                     index, showPreviews, originalZipFile, flagsFromPrevious)
         loadedFile match {
           case Some(lf) => uploadedFiles.append(lf)
@@ -664,6 +713,75 @@ class Files @Inject()(
         }
       } finally {
         f.ref.clean()
+      }
+    }
+
+    // Now check whether we have any local file paths to handle
+    //    e.g. "file":{"path":"/home/file.txt","md":{"field1":"val","field2": 100}}
+    for ((k,v) <- request.body.dataParts) {
+      if (k == "file") {
+        for (fobj <- v) {
+          // We found a 'file' entry, but does it actually have a path and metadata?
+          Json.parse(fobj) \ "path" match {
+            case p: JsString => {
+              val path = p.toString.replace("\"","")
+              // getStringList returns a java.util.List as opposed to the kind of List we want, thus the conversion
+              val sourcelistopt: Option[List[String]] = play.api.Play.configuration.getStringList("filesystem.sourcepaths").map(_.toList)
+              val sourcelist = sourcelistopt.getOrElse(List.empty[String])
+
+              // Is the current path included in the source whitelist?
+              if (sourcelist.exists(s => path.startsWith(s))) {
+                Logger.debug(path + " is whitelisted for upload")
+
+                // Determine properties of local file on disk
+                val filestream = new java.io.BufferedInputStream(new FileInputStream(path))
+                val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
+                val date: java.util.Calendar = java.util.Calendar.getInstance()
+                var contentType = java.net.URLConnection.guessContentTypeFromStream(filestream)
+                val loader = classOf[services.filesystem.DiskByteStorageService].getName
+                val byteSize = new java.io.File(path).length()
+                // Calculate SHA-512 hash
+                val md = java.security.MessageDigest.getInstance("SHA-512")
+                val cis = new com.google.common.io.CountingInputStream(filestream)
+                val dis = new java.security.DigestInputStream(cis, md)
+                val sha512 = org.apache.commons.codec.binary.Hex.encodeHexString(md.digest())
+                dis.close()
+
+                if (contentType == null) {
+                  contentType = play.api.http.ContentTypes.BINARY
+                }
+
+                // Create models.File object and insert it directly
+                val newFile = new File(UUID(),Some(path),filename, user,
+                  date.getTime(),contentType,byteSize,sha512,loader)
+                files.insert(newFile)
+
+                // Check for metadata to go with local file
+                val file_md = Json.parse(fobj) \ "md" match {
+                    case mdobj: JsObject => Some(Seq(Json.stringify(mdobj)))
+                    case mdobj: JsUndefined => {
+                      Json.parse(fobj) \ "metadata" match {
+                        case mdobj: JsObject => Some(Seq(Json.stringify(mdobj)))
+                        case mdobj: JsUndefined => None
+                      }
+                    }
+                  }
+
+                // Submit file for other requests, etc.
+                processSavedFile(user,newFile,creator_url,showPreviews,filename,flagsFromPrevious,
+                  Utils.baseUrl(request),request.host,request.remoteAddress,new java.io.File(path),
+                  "",file_md,dataset,true,false)
+
+                uploadedFiles.append(newFile)
+              } else {
+                Logger.debug(path +" is not a whitelisted upload location")
+              }
+
+
+            }
+            case p: JsUndefined => {}
+          }
+        }
       }
     }
     return uploadedFiles.toList
@@ -679,7 +797,8 @@ class Files @Inject()(
   def upload(showPreviews: String = "DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
       request.user match {
         case Some(user) => {
-          val uploaded_files = uploadFiles(request, user, showPreviews=showPreviews, originalZipFile=originalZipFile, flagsFromPrevious=flagsFromPrevious)
+          val creator_url = controllers.routes.Profile.viewProfileUUID(user.id).absoluteURL()
+          val uploaded_files = uploadFiles(request, user, creator_url, showPreviews=showPreviews, originalZipFile=originalZipFile, flagsFromPrevious=flagsFromPrevious)
           if (uploaded_files.length == 1) {
             // Only one file was uploaded so return its ID only
             Ok(toJson(Map("id" -> uploaded_files(0).id)))
@@ -688,8 +807,8 @@ class Files @Inject()(
             Ok(toJson(Map("ids" -> uploaded_files.toList)))
           }
         }
-        case None => BadRequest(toJson("Not authorized."))
-      }
+      case None => BadRequest(toJson("Not authorized."))
+    }
   }
 
   /**
@@ -772,7 +891,8 @@ class Files @Inject()(
      case Some(user) => {
        datasets.get(dataset_id) match {
          case Some(dataset) => {
-           val uploaded_files = uploadFiles(request, user, dataset, showPreviews=showPreviews, originalZipFile=originalZipFile, flagsFromPrevious=flagsFromPrevious)
+           val creator_url = controllers.routes.Profile.viewProfileUUID(user.id).absoluteURL()
+           val uploaded_files = uploadFiles(request, user, creator_url, dataset, showPreviews=showPreviews, originalZipFile=originalZipFile, flagsFromPrevious=flagsFromPrevious)
            if (uploaded_files.length == 1) {
              // Only one file was uploaded so return its ID only
              Ok(toJson(Map("id" -> uploaded_files(0).id)))
@@ -801,7 +921,8 @@ class Files @Inject()(
         case Some(user) => {
           request.body.file("File").map { f =>
             try {
-              savedFile = uploadFile(f, user, Utils.baseUrl(request), file_md=None, intermediateUpload=true, originalIdAndFlags=originalIdAndFlags)
+              val creator_url = controllers.routes.Profile.viewProfileUUID(user.id).absoluteURL()
+              savedFile = uploadFile(f, user, Utils.baseUrl(request), file_md=None, creator_url=creator_url, intermediateUpload=true, originalIdAndFlags=originalIdAndFlags)
             } finally {
               f.ref.clean()
             }
@@ -973,7 +1094,7 @@ class Files @Inject()(
   }
 
   def jsonFile(file: File): JsValue = {
-    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "content-type" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString,
+    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "filedescription" -> file.description, "content-type" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString,
     		"authorId" -> file.author.identityId.userId))
   }
 
@@ -1238,9 +1359,49 @@ class Files @Inject()(
           case None => Logger.error("Texture file not found"); InternalServerError
         }
     }
-  
-  
-   //Update License code 
+
+  /**
+    * REST endpoint: PUT: update or change the filename
+    * args
+    *   id: the UUID associated with this file
+    * data
+    *   name: String
+    */
+  @ApiOperation(value = "Update a file name",
+    notes= "Takes one argument, a UUID of the file. Request body takes a key-value pair for the name",
+    responseClass = "None", httpMethod = "PUT")
+  def updateFileName(id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file, id)))(parse.json) {
+    implicit request =>
+      implicit val user = request.user
+      if (UUID.isValid(id.stringify)) {
+        var name: String = null
+        val aResult = (request.body \ "name").validate[String]
+        aResult match {
+          case s: JsSuccess[String] => {
+            name = s.get
+          }
+          case e: JsError => {
+            Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+            BadRequest(toJson(s"name data is missing"))
+          }
+        }
+        Logger.debug(s"Update title for file with id $id. New name: $name")
+        files.renameFile(id, name)
+        files.get(id) match {
+          case Some(file) => {
+            events.addObjectEvent(user, id, file.filename, "update_file_information")
+          }
+
+        }
+        Ok(Json.obj("status" -> "success"))
+      }
+      else {
+        Logger.error(s"The given id $id is not a valid ObjectId.")
+        BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
+      }
+  }
+
+  //Update License code
   /**
    * REST endpoint: POST: update the license data associated with a specific File
    * 
@@ -1806,6 +1967,32 @@ class Files @Inject()(
         }
         case None => Ok(toJson(Map("status" -> "success")))
       }
+  }
+
+
+  @ApiOperation(value = "Update file description",
+    notes = "Takes one argument, a UUID of the file. Request body takes key-value pair for the description",
+    responseClass = "None", httpMethod = "PUT")
+  def updateDescription(id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file, id))) (parse.json){ implicit request =>
+    files.get(id) match {
+      case Some(file) => {
+        var description: String = null
+        val aResult = (request.body \ "description").validate[String]
+        aResult match {
+          case s: JsSuccess[String] => {
+            description = s.get
+            files.updateDescription(file.id,description)
+            Ok(toJson(Map("status"->"success")))
+          }
+          case e: JsError => {
+            Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+            BadRequest(toJson(s"description data is missing"))
+          }
+        }
+
+      }
+      case None => BadRequest("No file exists with that id")
+    }
   }
 
   /**
