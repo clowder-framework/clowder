@@ -187,6 +187,26 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
     CurationFolderDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
   }
 
+  def deleteCurationFolder(id: UUID): Unit = {
+    getCurationFolder(id) match {
+      case Some(curationFolder )=> {
+        curationFolder.folders.map { cf => {
+          removeCurationFolder("folders", id, cf)
+          deleteCurationFolder(cf)
+        }
+        }
+        curationFolder.files.map { cf => {
+          removeCurationFile("folders", id, cf)
+          deleteCurationFile(cf)
+        }
+        }
+
+      }
+      case None =>
+    }
+    CurationFolderDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
+  }
+
   def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID, creators: List[String]) = {
     val result = CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
       $set("description" -> description, "name" -> name, "space" -> new ObjectId(newSpace.stringify), "creators" -> creators),
