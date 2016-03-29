@@ -278,8 +278,11 @@ class CurationObjects @Inject()(
       "Publishing Project"-> Json.toJson(controllers.routes.Spaces.getSpace(c.space).absoluteURL(https)),
       "Creation Date" -> Json.toJson(format.format(c.created))
       )
-    if(!metadataJson.contains("Creator")) {
-      aggregation = aggregation ++ Map("Creator" -> Json.toJson(creator))
+    if(metadataJson.contains("Creator")) {
+      val value = c.creators ++ metadataList.filter(_.label == "Creator").map{item => item.content.as[String]}.toList
+      aggregation = aggregation ++ Map("Creator" -> Json.toJson(value))
+    } else {
+      aggregation = aggregation ++ Map("Creator" -> Json.toJson(c.creators))
     }
     if(!metadataDefsMap.contains("Creator")){
       metadataDefsMap("Creator") = Json.toJson("http://purl.org/dc/terms/creator")
@@ -318,6 +321,7 @@ class CurationObjects @Inject()(
           "Purpose" -> Json.toJson("http://sead-data.net/vocab/publishing#Purpose"),
           "Publishing Project" -> Json.toJson("http://sead-data.net/terms/publishingProject"),
           "Creation Date" -> Json.toJson("http://purl.org/dc/terms/created"),
+          "Authors" -> Json.toJson("http://purl.org/dc/terms/creator"),
           "Spatial Reference" ->
             Json.toJson(
               Map(
@@ -445,8 +449,11 @@ class CurationObjects @Inject()(
               "Publishing Project"-> Json.toJson(controllers.routes.Spaces.getSpace(c.space).absoluteURL(https)),
               "Creation Date" -> Json.toJson(format.format(c.created))
             )
-          if(!metadataToAdd.contains("Creator")) {
-            aggregation = aggregation ++ Map("Creator" -> Json.toJson(creator))
+          if(metadataJson.contains("Creator")) {
+            val value = c.creators ++ metadataList.filter(_.label == "Creator").map{item => item.content.as[String]}.toList
+            aggregation = aggregation ++ Map("Creator" -> Json.toJson(value))
+          } else {
+            aggregation = aggregation ++ Map("Creator" -> Json.toJson(c.creators))
           }
           if(!metadataDefsMap.contains("Creator")){
             metadataDefsMap("Creator") = Json.toJson("http://purl.org/dc/terms/creator")

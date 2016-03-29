@@ -38,14 +38,18 @@
                 <label id="creators-label"> Creators</label>
             </div>
             <div class="creators">
+                <ul class="list-unstyled">
             @for(i <- 0 to (authors.length  - 2) ) {
+                <li>
                 <div class="control-group">
                     <input class="form-control" type="text" id="author_@i" value="@authors(i)"/>
                 </div>
                 <div class="creator-delete">
                     <a href="#"> delete</a>
                 </div>
+                </li>
             }
+                <li>
                 <div class="control-group">
                     <input class="form-control" type="text" id="author_@authors.length"/>
 
@@ -54,6 +58,8 @@
                     <a href="#"> add</a>
                 </div>
                 <div><span class="error hiddencomplete" id="creatorerror">A creator is required </span></div>
+                </li>
+                </ul>
             </div>
 
             @if(!spaces.isEmpty) {

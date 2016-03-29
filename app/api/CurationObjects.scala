@@ -110,6 +110,15 @@ class CurationObjects @Inject()(datasets: DatasetService,
           for(md <- metadatas.getDefinitions()) {
             metadataDefsMap((md.json\ "label").asOpt[String].getOrElse("").toString()) = Json.toJson((md.json \ "uri").asOpt[String].getOrElse(""))
           }
+          if(metadataJson.contains("Creator")) {
+            val value = c.creators ++ metadataList.filter(_.label == "Creator").map{item => item.content.as[String]}.toList
+            metadataJson = metadataJson ++ Map("Creator" -> Json.toJson(value))
+          } else {
+            metadataJson = metadataJson ++ Map("Creator" -> Json.toJson(c.creators))
+          }
+          if(!metadataDefsMap.contains("Creator")){
+            metadataDefsMap("Creator") = Json.toJson("http://purl.org/dc/terms/creator")
+          }
           val publicationDate = c.publishedDate match {
             case None => ""
             case Some(p) => format.format(c.created)
@@ -162,7 +171,8 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     "Mimetype" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
                     "SHA512 Hash" -> Json.toJson("http://sead-data.net/terms/hasSHA512Digest"),
                     "Dataset Description" -> Json.toJson("http://sead-data.net/terms/datasetdescription"),
-                    "Publishing Project" -> Json.toJson("http://sead-data.net/terms/publishingProject")
+                    "Publishing Project" -> Json.toJson("http://sead-data.net/terms/publishingProject"),
+                    "Authors" -> Json.toJson("http://purl.org/dc/terms/creator")
                   )
                 )
 
@@ -180,7 +190,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "Published In" -> Json.toJson(""),
                   "External Identifier" -> Json.toJson(""),
                   "Proposed for publication" -> Json.toJson("true"),
-
+                  "Authors" -> Json.toJson(c.creators),
                   "@id" -> Json.toJson(api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "#aggregation"),
                   "@type" -> Json.toJson(Seq("Aggregation", "http://cet.ncsa.uiuc.edu/2015/Dataset")),
                   "Is Version Of" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https)),
