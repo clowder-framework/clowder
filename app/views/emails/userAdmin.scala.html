@@ -1,0 +1,14 @@
+@(user: User, admin: Boolean, ssl: Boolean = true)(implicit request: RequestHeader)
+
+@import services.AppConfiguration
+
+<html>
+    <body>
+        <p>@user.fullName,</p>
+        <p>
+            Your account on <a href="@routes.Application.index().absoluteURL(ssl)" style="text-decoration: none">@AppConfiguration.getDisplayName</a>
+            now @if(!admin) { no longer } has admin privileges.
+        </p>
+        @footer()
+    </body>
+</html>

@@ -1,0 +1,6 @@
+{ "name" : "geospatial-geojson",
+  "main" : "geospatial-geojson.js",
+  "contentType" : [],
+  "dataset" : true,
+  "supported_previews" : []
+}
