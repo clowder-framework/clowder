@@ -54,7 +54,6 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             case Some(id) => {
               c.spaces.map{ s =>
                 spaces.addCollection(c.id, s)
-                spaces.incrementCollectionCounter(c.id, s,1)
                 collections.addToRootSpaces(c.id, s)
 
               }
@@ -474,7 +473,6 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             case Some(id) => {
               c.spaces.map{ s =>
                 spaces.addCollection(c.id, s)
-                spaces.incrementCollectionCounter(c.id, s, 1)
                 collections.addToRootSpaces(c.id, s)
               }
 
@@ -560,7 +558,6 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       case Some(collection) => {
         spaces.addCollection(collectionId, spaceId)
         collections.addToRootSpaces(collectionId, spaceId)
-        spaces.incrementCollectionCounter(collectionId, spaceId, 1)
         Ok(jsonCollection(collection))
       } case None => {
         Logger.error("Error getting collection  " + collectionId)
@@ -580,7 +577,6 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     collections.get(collectionId) match {
       case Some(collection) => {
         collections.removeFromRootSpaces(collectionId, spaceId)
-        spaces.decrementCollectionCounter(collectionId, spaceId, 1)
         Ok(jsonCollection(collection))
       } case None => {
         Logger.error("Error getting collection  " + collectionId)

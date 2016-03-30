@@ -188,7 +188,13 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       case None => {
         space match {
           case Some(s) => MongoDBObject()
-          case None => MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject( "$size" -> 0)))
+          case None => {
+            if (permissions.contains(Permission.AddResourceToCollection)) {
+              MongoDBObject()
+            } else {
+              MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject( "$size" -> 0)))
+            }
+          }
         }
       }
     }
@@ -461,6 +467,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
       $addToSet("root_spaces" -> Some(new ObjectId(spaceId.stringify))),
       false, false)
+    spaceService.incrementCollectionCounter(collectionId, spaceId, 1)
   }
 
   def removeFromRootSpaces(collectionId: UUID, spaceId: UUID)= {
@@ -468,6 +475,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
       $pull("root_spaces" -> Some(new ObjectId(spaceId.stringify))),
       false, false)
+    spaceService.decrementCollectionCounter(collectionId, spaceId, 1)
   }
 
   private def syncUpRootSpaces(collectionId: UUID): Unit ={

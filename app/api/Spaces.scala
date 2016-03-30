@@ -152,7 +152,6 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
             Forbidden(toJson(s"You are not the owner of the collection"))
           } else {
             spaces.addCollection(collectionId, spaceId)
-            spaces.incrementCollectionCounter(collectionId, spaceId, 1)
             collectionService.addToRootSpaces(collectionId, spaceId)
             spaces.get(spaceId) match {
               case Some(space) => {
@@ -193,7 +192,6 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     (spaces.get(spaceId), collectionService.get(collectionId)) match {
       case (Some(s), Some(c)) => {
         spaces.removeCollection(collectionId, spaceId)
-        spaces.decrementCollectionCounter(collectionId, spaceId, 1)
         collectionService.removeFromRootSpaces(collectionId, spaceId)
         updateSubCollections(spaceId, collectionId)
         Ok(toJson("success"))

@@ -324,7 +324,6 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             sp => spaceService.get(sp) match {
               case Some(s) => {
                 spaces.addCollection(collection.id, s.id)
-                spaces.incrementCollectionCounter(collection.id, s.id, 1 )
                 collections.addToRootSpaces(collection.id, s.id)
               }
               case None => Logger.error(s"space with id $sp on collection $collection.id doesn't exist.")
@@ -475,8 +474,8 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           var decodedSpaces_canRemove : Map[ProjectSpace, Boolean] = Map.empty
           for (collectionSpace <- collectionSpaces){
-            var decodedSpace = Utils.decodeSpaceElements(collectionSpace)
-            var removeFromSpace = removeFromSpaceAllowed(dCollection.id,collectionSpace.id)
+            val decodedSpace = Utils.decodeSpaceElements(collectionSpace)
+            val removeFromSpace = removeFromSpaceAllowed(dCollection.id,collectionSpace.id)
             decodedSpaces_canRemove = decodedSpaces_canRemove + (decodedSpace -> removeFromSpace)
           }
 
