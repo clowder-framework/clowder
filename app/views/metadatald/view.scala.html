@@ -11,7 +11,7 @@
         formatter.format(date)
     }
 
-    @printContent(content: JsValue) = {
+    @printContent(content: JsValue, contextId: Option[UUID], contextURL: Option[URL]) = {
         @content match {
             case o: JsObject => {
                 <ul>
@@ -22,7 +22,20 @@
                                     <a class="collapse-icon">
                                         <span class="glyphicon glyphicon-minus"></span>
                                     </a>
-                                    <strong>@key:</strong> @printContent(value)
+                                    @if(contextId.isDefined) {
+                                        <a href="#" onmouseover="getMetadataContext('@contextId.get','@key.replaceAll(" ", "")');" onmouseout="leaveMetadataContext('@key.replaceAll(" ", "")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
+                                        <!-- ids don't like spaces, you can use regex for removing different characters in metadata names (key) as well -->
+                                        <div id='@key.replaceAll(" ", "")' hidden></div>
+                                    } else {
+                                        @contextURL match {
+                                            case Some(u) => {
+                                                <a href="@u.toString" target="_blank" title="Show context reference"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
+                                            }
+                                            case None => {
+                                                <strong>@key:</strong> @printContent(value,contextId,contextURL)
+                                            }
+                                        }
+                                    }
                                 </li>
                             }
                             case o: JsArray => {
@@ -30,10 +43,36 @@
                                     <a class="collapse-icon">
                                         <span class="glyphicon glyphicon-minus"></span>
                                     </a>
-                                    <strong>@key:</strong> @printContent(value)
+                                    @if(contextId.isDefined) {
+                                        <a href="#" onmouseover="getMetadataContext('@contextId.get','@key.replaceAll(" ", "")');" onmouseout="leaveMetadataContext('@key.replaceAll(" ", "")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
+                                        <div id='@key.replaceAll(" ", "")' hidden></div>
+                                    } else {
+                                        @contextURL match {
+                                            case Some(u) => {
+                                                <a href="@u.toString" target="_blank" title="Show context reference"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
+                                            }
+                                            case None => {
+                                                <strong>@key:</strong> @printContent(value,contextId,contextURL)
+                                            }
+                                        }
+                                    }
                                 </li>
                             }
-                            case _ => {<li class="md-block"><strong>@key:</strong> @printContent(value)</li>}
+                            case _ => {
+                                <li class="md-block">
+                                @if(contextId.isDefined) {
+                                    <a href="#" onmouseover="getMetadataContext('@contextId.get','@key.replaceAll(" ", "")');" onmouseout="leaveMetadataContext('@key.replaceAll(" ", "")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
+                                    <div id='@key.replaceAll(" ", "")' hidden></div>
+                                } else {
+                                    @contextURL match {
+                                        case Some(u) => {
+                                            <a href="@u.toString" target="_blank" title="Show context reference"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
+                                        }
+                                        case None => {<strong>@key:</strong> @printContent(value,contextId,contextURL)}
+                                    }
+                                }
+                                </li>
+                            }
                         }
 
                     }
@@ -42,7 +81,7 @@
             case a: JsArray => {
                 <ul>
                 @for((value, i) <- a.value.zipWithIndex) {
-                    <li class="md-block">@printContent(value)</li>
+                    <li class="md-block">@printContent(value,contextId,contextURL)</li>
                 }
                 </ul>
             }
@@ -57,7 +96,7 @@
         }
     }
 
-    @printHeader(agent: Agent, date: java.util.Date, contextId: Option[UUID], contextURL: Option[URL]) = {
+    @printHeader(agent: Agent, date: java.util.Date) = {
         @agent.operation by
         @if(agent.url.isDefined) {
            <a href="@agent.url">@agent.displayName</a>
@@ -65,16 +104,6 @@
             @agent.displayName
         }
         on @dateFormatter(date)
-        @if(contextId.isDefined) {
-            <a href="@api.routes.ContextLD.getContextById(contextId.get)" class="pull-right">context</a>
-        } else {
-            @contextURL match {
-                case Some(u) => {
-                    <a href="@u.toString" target="_blank" class="pull-right">context</a>
-                }
-                case None => {}
-            }
-        }
     }
 
     @if(metadata.size == 0) {
@@ -87,10 +116,10 @@
                     <span class="panel-icon glyphicon glyphicon-minus"></span>
                 </a>
                 <span>
-                    @printHeader(m.creator, m.createdAt, m.contextId, m.contextURL)
+                    @printHeader(m.creator, m.createdAt)
                 </span>
                 @if(toDelete && Permission.checkPermission(Permission.DeleteMetadata, ResourceRef(ResourceRef.metadata, m.id))) {
-                        <a id="@m.id" title="Delete metadata entry" class="btn btn-link delete-icon">
+                        <a id="@m.id" title="Delete this metadata" class="btn btn-link delete-icon">
                             <span class="panel-icon glyphicon glyphicon-trash"></span>
                         </a>
                 }
@@ -98,13 +127,14 @@
             <div id="collapse_@i" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading_@i">
                 <div class="panel-body">
                     <div class="tree">
-                        @printContent(m.content)
+                        @printContent(m.content, m.contextId, m.contextURL)
                     </div>
                 </div>
             </div>
         </div>
     }
-<script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+
+    <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
     <script>
         $(function () {
             $('[data-toggle="tooltip"]').tooltip()
@@ -118,7 +148,7 @@
                 });
 
             $('.tree li').on('click', function (e) {
-                console.log("clicked");
+                //console.log("clicked");
                 var children = $(this).find('> ul > li');
                 if (children.is(":visible")) {
                     children.hide('fast');
@@ -140,7 +170,7 @@
                 });
 
                 request.done(function (response, textStatus, jqXHR) {
-                    console.log("success");
+                    //console.log("success");
                     delete_icon.closest(".panel").remove();
                 });
 
@@ -153,4 +183,31 @@
                 });
             });
         })
+
+        // get metadata definitions
+        function getMetadataContext(uuid, mkey) {
+            var request = jsRoutes.api.ContextLD.getContextById(uuid).ajax({
+                type: 'GET',
+                contentType: "application/json"
+            });
+
+            request.done(function (response, textStatus, jqXHR) {
+                var fields = response;
+                $("#"+mkey).text(JSON.stringify(fields));
+                $("#"+mkey).show();
+                //console.log(uuid + ", " + mkey + ": " + JSON.stringify(fields));
+            });
+
+            request.fail(function (jqXHR, textStatus, errorThrown){
+                console.error("The following error occured: " + textStatus, errorThrown);
+                var errMsg = "You must be logged in to retrieve metadata definitions";
+                if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                    notify("Metadata context was not shown due to : " + errorThrown, "error");
+                }
+            });
+        }
+        function leaveMetadataContext(mkey) {
+            $("#"+mkey).text("");
+            $("#"+mkey).hide();
+        }
     </script>

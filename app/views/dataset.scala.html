@@ -149,16 +149,6 @@
                          @comment(comments)</div>
                   </div>
                   <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
-
-                      <div class="row">
-                          <div class="col-md-10">
-                          </div>
-                          <div class="col-md-2">
-                              <a href="@api.routes.Datasets.getMetadataJsonLD(dataset.id)" class="pull-right" title="JSON-LD">
-                                  <img src="@routes.Assets.at("images/json-ld.png")"/>
-                              </a>
-                          </div>
-                      </div>
                       <div class="row">
                           <div class="col-md-12">
                             @metadatald.addMetadata("dataset", dataset.id.toString, "metadata-content")
