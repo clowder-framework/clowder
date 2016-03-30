@@ -1,0 +1,151 @@
+<div class="row">
+  <div class="col-md-12">
+    <hr />
+    {{!-- the current scope of 'this' is the stream's json. all values are directly available. so we'll use 'params' here instead of this.params --}}
+    {{!-- params will exist if this stream has datapoints --}}
+    {{#if params}}
+      <div class="panel-group" id="accordion-{{id}}" role="tablist" aria-multiselectable="true">
+        <div class="panel panel-default">
+          <div class="panel-heading" role="tab" id="headingOne">
+            <h4 class="panel-title">
+              <a role="button" data-toggle="collapse" data-parent="#accordion-{{id}}" href="#parameterTable-{{id}}" aria-expanded="true">
+                Parameters
+              </a>
+            </h4>
+          </div>
+          <div id="parameterTable-{{id}}" class="panel-collapse collapse in" role="tabpanel">
+            <div class="panel-body">
+              The following parameters were found in the data for this {{ sensorTitle }}.
+              The following table allows you to create mappings from the original parameter
+              names to a controlled vocabulary term. For example, an instrument may measure
+              temperature and record the measurement as "temp c" in the raw data. A sensor
+              from another manufacturer might record it as "Temperature". Here you can map the
+              values to a known term in a controlled vocabulary. Administrators can add new
+              Controlled Vocabularies in "Metadata Definitions" in the Admin menu and they
+              will be available as Controlled Vocabulary options below.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="row">
+          <div class="col-md-2"><b>Original Parameter</b></div>
+          <div class="col-md-3"><b>Parameter Controlled Vocabulary</b></div>
+          <div class="col-md-2"><b>Selected Parameter</b></div>
+          <div class="col-md-3"><b>Unit Controlled Vocabulary</b></div>
+          <div class="col-md-2"><b>Selected Unit</b></div>
+        </div>
+        <hr />
+
+        {{#each params}}
+
+          <div class="row controlled-vocabulary-form">
+              <div class="col-md-2">
+                  {{!-- 'this' is just a string for a param name --}}
+                  <div>{{this}}</div>
+              </div>
+              <div class="col-md-3">
+                {{!-- 'slugify' is a handlebars helper in views/geostreams/edit.scala.html. It converts spaces to dashes and lowercases --}}
+                <label for="md-{{slugify this}}-def"></label>
+                <select id="md-{{slugify this}}-def" name="metadata[mappings][{{slugify this}}][source-definition]"
+                        data-id="{{slugify this}}" class="controlled-vocabulary-select form-control" data-group="parameter">
+                    <option value="" selected></option>
+                    {{!-- we access the parent scope which is all of the stream.json values by calling ../metadataDefinitions --}}
+                    {{!-- we added metadataDefinitions dynamically to the stream.json when we compiled this handlebars template --}}
+                    {{#each ../metadataDefinitions}}
+                      {{!-- the scope of 'this' just changed. we are now two levels deep and are looping through each of the metadataDefinitions --}}
+                      {{!-- to get back to stream.json, we use ../../ and here we check to see if metadata mappings have been added to the stream's properties --}}
+                      {{!-- the 'select' helper is in views/geostreams/edit.scala.html and it allows us to check to see if one of the select options should be selected by default --}}
+                      {{!-- we are also using 'lookup' which is a handlebars helper that allows us to get the value of a variable --}}
+                      {{!-- and we are doing a nested lookup because one of the variables we are looking up is a variable --}}
+                      {{!-- the value of ../this goes back up to the param, so this next line would look like this if extrapolated: --}}
+                      {{!-- select properties.metadata.mappings.water-temperature-c.source-definition --}}
+                      {{!-- so if we have a value for the source definition, we'll see if any of our select options has the same value and we will mark it as selected --}}
+                      {{#select (lookup (lookup ../../properties.metadata.mappings (slugify ../this)) 'source-definition') }}
+
+                        {{!-- our scope hasn't changed inside the select, so this.json.uri refers to the metadataDefinition loop --}}
+                        <option value="{{this.json.uri}}"
+                                data-id="{{this.id}}"
+                                data-type="{{this.json.type}}"
+                                data-definitions_url="{{this.json.definitions_url}}"
+                                data-query_parameter="{{this.json.query_parameter}}"
+                            >{{this.json.label}}</option>
+                      {{/select}}
+                    {{/each}}
+                    {{!-- the scope of 'this' is back to the param we are iterating --}}
+
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label for="md-{{slugify this}}-value"></label>
+                <input id="md-{{slugify this}}-value" name="metadata[mappings][{{slugify this}}][source-value]"
+                       type="text" data-id="{{slugify this}}" class="controlled-vocabulary-value form-control" data-group="parameter"
+                  {{!-- the scope of 'this' is the param we are iterating, so we will use lookup to see if the stream has a value in properties.metadata.mappings for this param --}}
+                  {{#if (lookup (lookup ../properties.metadata.mappings (slugify this)) 'source-value')}}
+                    {{!-- scope doesn't change inside an if helper --}}
+                    value="{{lookup (lookup ../properties.metadata.mappings (slugify this)) 'source-value'}}"
+                  {{/if}}
+                />
+              </div>
+              <div class="col-md-3">
+                {{!-- 'slugify' is a handlebars helper in views/geostreams/edit.scala.html. It converts spaces to dashes and lowercases --}}
+                <label for="md-{{slugify this}}-unit-def"></label>
+                <select id="md-{{slugify this}}-unit-def" name="metadata[mappings][{{slugify this}}][unit-definition]"
+                        data-id="{{slugify this}}" class="controlled-vocabulary-select form-control" data-group="unit">
+                  <option value="" selected></option>
+                  {{!-- we access the parent scope which is all of the stream.json values by calling ../metadataDefinitions --}}
+                  {{!-- we added metadataDefinitions dynamically to the stream.json when we compiled this handlebars template --}}
+                  {{#each ../metadataDefinitions}}
+                  {{!-- the scope of 'this' just changed. we are now two levels deep and are looping through each of the metadataDefinitions --}}
+                  {{!-- to get back to stream.json, we use ../../ and here we check to see if metadata mappings have been added to the stream's properties --}}
+                  {{!-- the 'select' helper is in views/geostreams/edit.scala.html and it allows us to check to see if one of the select options should be selected by default --}}
+                  {{!-- we are also using 'lookup' which is a handlebars helper that allows us to get the value of a variable --}}
+                  {{!-- and we are doing a nested lookup because one of the variables we are looking up is a variable --}}
+                  {{!-- the value of ../this goes back up to the param, so this next line would look like this if extrapolated: --}}
+                  {{!-- select properties.metadata.mappings.water-temperature-c.unit-definition --}}
+                  {{!-- so if we have a value for the unit definition, we'll see if any of our select options has the same value and we will mark it as selected --}}
+                    {{#select (lookup (lookup ../../properties.metadata.mappings (slugify ../this)) 'unit-definition') }}
+
+                    {{!-- our scope hasn't changed inside the select, so this.json.uri refers to the metadataDefinition loop --}}
+                      <option value="{{this.json.uri}}"
+                              data-id="{{this.id}}"
+                              data-type="{{this.json.type}}"
+                              data-definitions_url="{{this.json.definitions_url}}"
+                              data-query_parameter="{{this.json.query_parameter}}"
+                          >{{this.json.label}}</option>
+                    {{/select}}
+                  {{/each}}
+                  {{!-- the scope of 'this' is back to the param we are iterating --}}
+
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label for="md-{{slugify this}}-unit-value"></label>
+                <input id="md-{{slugify this}}-unit-value" name="metadata[mappings][{{slugify this}}][unit-value]"
+                       type="text" data-id="{{slugify this}}" class="controlled-vocabulary-value form-control" data-group="unit"
+                  {{!-- the scope of 'this' is the param we are iterating, so we will use lookup to see if the stream has a value in properties.metadata.mappings for this unit --}}
+                  {{#if (lookup (lookup ../properties.metadata.mappings (slugify this)) 'unit-value')}}
+                  {{!-- scope doesn't change inside an if helper --}}
+                       value="{{lookup (lookup ../properties.metadata.mappings (slugify this)) 'unit-value'}}"
+                  {{/if}}
+                    />
+              </div>
+
+            </div>
+
+        {{/each}}
+
+        {{!-- the scope of 'this' is back to the stream.json --}}
+
+      </div>
+
+
+    {{else}}
+      <h4>Parameters</h4>
+      <div class="well well-lg">
+        This instrument does not have any datapoints in the api yet. Once datapoints are added, you'll be able to identify parameter names.
+      </div>
+    {{/if}}
+  </div>
+</div>

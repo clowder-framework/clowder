@@ -1,10 +1,14 @@
 package services
 
+import javax.inject.Inject
+
+import play.api.templates.Html
 import play.api.{ Plugin, Logger, Application }
 import play.api.Play.current
 import models.UUID
+import util.Mail
 
-class AdminsNotifierPlugin(application:Application) extends Plugin {
+class AdminsNotifierPlugin @Inject()(userService: UserService) (application:Application) extends Plugin {
   override def onStart() {
     Logger.debug("Starting Admins Notifier Plugin")
   }
@@ -44,22 +48,8 @@ class AdminsNotifierPlugin(application:Application) extends Plugin {
         	  Logger.error("Unknown event type.")
           }
           case _=> {
-	          var adminsNotSent = ""
-            val admins = AppConfiguration.getAdmins
-	          for(admin <- admins) {
-	            var wasSent = false
-	            current.plugin[MailerPlugin].foreach{currentPlugin => {
-		    	      wasSent = wasSent || currentPlugin.sendMail(admin, mailHTML, mailSubject)}}
-	            if(!wasSent) adminsNotSent = adminsNotSent + ", " + admin
-	          }
-	        
-  	        if(adminsNotSent.equals("")) {
-		    	    Logger.info("Notification posted successfully.")
-		        } else {
-		    	    Logger.info("Notification was posted to all admins but the following, for which posting failed: " +
-                adminsNotSent.substring(2))
-		        }
-          }          
+            Mail.sendEmailAdmins(mailSubject, None, Html(mailHTML))
+          }
         }	
       }
     }

@@ -23,6 +23,12 @@ trait UserService  {
 
   def delete(id: UUID)
 
+  /** Activate all users, and mark them as admin, who are listed in application.conf by email */
+  def updateAdmins()
+
+  /** Return a list of all users that are admins and are active */
+  def getAdmins: List[User]
+
   /**
    * The number of objects that are available based on the filter
    */

@@ -105,6 +105,13 @@ GET            /datasets/createStep2                                            
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
 GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
+GET            /datasets/toolManager                                                    @controllers.Datasets.toolManager
+GET            /datasets/refreshToolList                                                @controllers.Datasets.refreshToolSidebar(datasetid: UUID, datasetName: String)
+GET            /datasets/launchableTools                                                @controllers.Datasets.getLaunchableTools
+GET            /datasets/uploadToTool                                                   @controllers.Datasets.uploadDatasetToTool(instanceID: UUID, datasetID: UUID, datasetName: String)
+GET            /datasets/getInstances                                                   @controllers.Datasets.getInstances
+GET            /datasets/removeInstance                                                 @controllers.Datasets.removeInstance(toolType: String, instanceID: UUID)
+GET            /datasets/launchTool                                                     @controllers.Datasets.launchTool(sessionName: String, ttype: String, datasetId: UUID, datasetName: String)
 GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, limit: Int ?= 20)
 POST           /datasets/:datasetId/updatedFilesAndFolders                              @controllers.Datasets.getUpdatedFilesAndFolders(datasetId: UUID, limit: Int ?= 20, pageIndex: Int ?= 0)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
@@ -113,6 +120,7 @@ POST           /dataset/submit                                                  
 GET            /datasets/:id/addFiles                                                   @controllers.Datasets.addFiles(id: UUID)
 GET            /datasets/:id/:folderId/addFiles                                         @controllers.Folders.addFiles(id: UUID, folderId: String)
 POST           /datasets/:parentDatasetId/newFolder                                     @controllers.Folders.createFolder(parentDatasetId: UUID)
+
 # ----------------------------------------------------------------------
 # COLLECTIONS
 # ----------------------------------------------------------------------
@@ -147,10 +155,10 @@ POST           /spaces/submit                                                   
 # ----------------------------------------------------------------------
 # SENSORS
 # ----------------------------------------------------------------------
-GET            /geostreams                                                              controllers.Geostreams.map
-GET            /geostreams/sensors                                                      controllers.Geostreams.list
-GET            /geostreams/sensors/new                                                  controllers.Geostreams.newSensor
-GET            /geostreams/sensors/:id                                                  controllers.Geostreams.edit(id)
+GET            /geostreams                                                              @controllers.Geostreams.map
+GET            /geostreams/sensors                                                      @controllers.Geostreams.list
+GET            /geostreams/sensors/new                                                  @controllers.Geostreams.newSensor
+GET            /geostreams/sensors/:id                                                  @controllers.Geostreams.edit(id)
 
 # ----------------------------------------------------------------------
 # JSON-LD Metadata

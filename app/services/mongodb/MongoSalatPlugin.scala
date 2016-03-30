@@ -303,6 +303,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     //Add author and creation date to curation folders.
     updateMongo("add-creator-to-curation-folders", addAuthorAndDateToCurationFolders)
 
+    //Store admin in database not by email
+    updateMongo("add-admin-to-user-object", addAdminFieldToUser)
+
     //Whenever a root flag is not set, mark it as true.
     updateMongo("add-collection-root-map", addRootMapToCollections)
 
@@ -800,6 +803,31 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
+  private def addAdminFieldToUser() {
+    val admins = collection("app.configuration").findOne(MongoDBObject("key" -> "admins")) match {
+      case Some(x) => {
+        x.get("value") match {
+          case l:BasicDBList => l.toList.asInstanceOf[List[String]]
+          case y => List[String](y.asInstanceOf[String])
+        }
+      }
+      case None => List.empty[String]
+    }
+
+    val users = collection("social.users")
+    admins.foreach{email =>
+      users.find(MongoDBObject("email" -> email)).foreach{ user =>
+        user.put("admin", true)
+        try{
+          users.save(user, WriteConcern.Safe)
+        } catch {
+          case e: BSONException => Logger.error("Unable to mark user as admin: " + user._id.toString)
+        }
+      }
+    }
+
+    collection("app.configuration").remove(MongoDBObject("key" -> "admins"))
+  }
   private def addRootMapToCollections() {
     collection("collections").foreach{ c =>
       val parents = c.getAsOrElse[MongoDBList]("parent_collection_ids", MongoDBList.empty)

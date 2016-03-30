@@ -51,6 +51,7 @@ if [ "$VERSION" = "" ]; then
     VERSION="$( echo $BRANCH | sed -e 's#^release/\(.*\)$#\1#' )"
   else
     PUSH=${PUSH:-""}
+    VERSION="local"
   fi
 else
   PUSH=${PUSH:-""}
@@ -66,8 +67,10 @@ fi
 # tag all versions and push if need be
 for v in $VERSION; do
   ${DEBUG} docker tag $$ ${REPO}:${v}
+  echo "Tagged ${REPO}:${v}"
   if [ ! -z "$PUSH" -a ! "$PROJECT" = "" ]; then
     ${DEBUG} docker push ${REPO}:${v}
+    echo "Pushed to dockerhub ${REPO}:${v}"
   fi
 done
 
