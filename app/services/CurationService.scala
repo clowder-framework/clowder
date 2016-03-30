@@ -19,8 +19,6 @@ trait CurationService {
    */
   def get(id: UUID): Option[CurationObject]
 
-  def getAbstract(id: UUID): Option[UUID]
-
   /**
    * Update status of a curation object.
    */

@@ -114,21 +114,6 @@ class CurationObjects @Inject()(
               Logger.debug("create curation object: " + newCuration.id)
               curations.insert(newCuration)
 
-              metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id)).map{m =>
-                val newm = m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id))
-                metadatas.addMetadata(newm)
-              }
-              //add description as abstract
-              val userURI = controllers.routes.Application.index().absoluteURL() + "api/users/" + identity.id
-              val context = Json.obj("Abstract" -> "http://purl.org/dc/terms/abstract")
-
-              val newabstract = Metadata(attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id),
-                contextId = context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _)),
-                createdAt = new Date(),
-                creator =  UserAgent(identity.id, "cat:user", MiniUser(identity.id, identity.fullName, identity.avatarUrl.getOrElse(""), identity.email), Some(new URL(userURI))),
-                content = Json.obj("Abstract" -> CODesc(0))
-              )
-              metadatas.addMetadata(newabstract)
               dataset.folders.map(f => copyFolders(f, newCuration.id, "dataset",  newCuration.id))
 
               Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
@@ -210,22 +195,7 @@ class CurationObjects @Inject()(
             case Some(c) => {
               val COName = request.body.asFormUrlEncoded.getOrElse("name", null)
               val CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
-              curations.getAbstract(id) match{
-                case Some(ab) => metadatas.removeMetadata(ab)
-                case None =>
-              }
               curations.updateInformation(id, CODesc(0), COName(0), c.space, spaceId)
-
-              val userURI = controllers.routes.Application.index().absoluteURL() + "api/users/" + identity.id
-              val context = Json.obj("Abstract" -> "http://purl.org/dc/terms/abstract")
-
-              val newabstract = Metadata(attachedTo = ResourceRef(ResourceRef.curationObject, id),
-                contextId = context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _)),
-                createdAt = new Date(),
-                creator =  UserAgent(identity.id, "cat:user", MiniUser(identity.id, identity.fullName, identity.avatarUrl.getOrElse(""), identity.email), Some(new URL(userURI))),
-                content = Json.obj("Abstract" -> CODesc(0))
-              )
-              metadatas.addMetadata(newabstract)
 
               events.addObjectEvent(user, id, COName(0), "update_curation_information")
 
@@ -265,12 +235,11 @@ class CurationObjects @Inject()(
     curations.get(curationId) match {
       case Some(c) => {
         // metadata of curation files are getting from getUpdatedFilesAndFolders
-        val requiredAbstract = curations.getAbstract(curationId).getOrElse(UUID(""))
-        val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id)).filterNot(m => m.id == requiredAbstract)
+
+        val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
         val fileByDataset = curations.getCurationFiles(curations.getAllCurationFileIds(c.id))
         if (c.status != "In Curation") {
-
           Ok(views.html.spaces.submittedCurationObject(c, fileByDataset, m, limit ))
         } else {
           Ok(views.html.spaces.curationObject(c, m , isRDFExportEnabled, limit))
@@ -415,6 +384,15 @@ class CurationObjects @Inject()(
     }
     if(!metadataDefsMap.contains("Creator")){
       metadataDefsMap("Creator") = Json.toJson("http://purl.org/dc/terms/creator")
+    }
+    if(metadataJson.contains("Abstract")) {
+      val value = List(c.description) ++ metadataList.filter(_.label == "Abstract").map{item => item.content.as[String]}
+      metadataJson = metadataJson ++ Map("Abstract" -> Json.toJson(value))
+    } else {
+      metadataJson = metadataJson ++ Map("Abstract" -> Json.toJson(c.description))
+    }
+    if(!metadataDefsMap.contains("Abstract")){
+      metadataDefsMap("Abstract") = Json.toJson("http://purl.org/dc/terms/abstract")
     }
     val valuetoSend = Json.obj(
       "@context" -> Json.toJson(Seq(
@@ -584,13 +562,19 @@ class CurationObjects @Inject()(
             case None =>  api.routes.Users.findById(usr.id).absoluteURL(https)
 
           }))
-          var metadataToAdd = metadataJson.toMap
-          if(metadataJson.toMap.get("Abstract") == None) {
-            metadataToAdd = metadataJson.toMap.+("Abstract" -> Json.toJson(c.description))
+          if(metadataJson.contains("Abstract")) {
+            val value =List(c.description) ++ metadataList.filter(_.label == "Abstract").map{item => item.content.as[String]}
+            metadataJson = metadataJson ++ Map("Abstract" -> Json.toJson(value))
+          } else {
+            metadataJson = metadataJson ++ Map("Abstract" -> Json.toJson(c.description))
           }
+          var metadataToAdd = metadataJson.toMap
           val metadataDefsMap = scala.collection.mutable.Map.empty[String, JsValue]
           for(md <- metadatas.getDefinitions()) {
             metadataDefsMap((md.json\ "label").asOpt[String].getOrElse("").toString()) = Json.toJson((md.json \ "uri").asOpt[String].getOrElse(""))
+          }
+          if(!metadataDefsMap.contains("Abstract")){
+            metadataDefsMap("Abstract") = Json.toJson("http://purl.org/dc/terms/abstract")
           }
           val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
           var aggregation = metadataToAdd ++
@@ -609,6 +593,7 @@ class CurationObjects @Inject()(
           if(!metadataDefsMap.contains("Creator")){
             metadataDefsMap("Creator") = Json.toJson("http://purl.org/dc/terms/creator")
           }
+
           val rightsholder = user.map ( usr => usr.profile match {
             case Some(prof) => prof.orcidID match {
               case Some(oid) => oid
