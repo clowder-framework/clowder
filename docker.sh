@@ -49,6 +49,7 @@ if [ "$VERSION" = "" ]; then
     VERSION="$( echo $BRANCH | sed -e 's#^release/\(.*\)$#\1#' )"
   else
     PUSH=${PUSH:-""}
+    VERSION="local"
   fi
 else
   PUSH=${PUSH:-""}

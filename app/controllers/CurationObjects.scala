@@ -471,6 +471,8 @@ class CurationObjects @Inject()(
         case Some(usr) => {
           curations.get(curationId) match {
             case Some(c) => {
+              val propertiesMap: Map[String, List[String]] = Map("Purpose" -> List("Testing-Only"))
+              val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
               val repository = request.body.asFormUrlEncoded.getOrElse("repository", null)
               val purpose = request.body.asFormUrlEncoded.getOrElse("purpose", null)
               curations.updateRepository(c.id, repository(0))
@@ -479,7 +481,7 @@ class CurationObjects @Inject()(
                 val userPreferences:Map[String, String] = Map("Purpose" -> purpose(0))
                 userService.updateRepositoryPreferences(usr.id, userPreferences)
               }
-              Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository(0)))
+              Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository(0), propertiesMap, repPreferences))
             }
             case None => InternalServerError("Space not found")
           }
@@ -491,16 +493,22 @@ class CurationObjects @Inject()(
   def compareToRepository(curationId: UUID, repository: String) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       implicit val user = request.user
-
-      curations.get(curationId) match {
-        case Some(c) => {
-          curations.updateRepository(c.id, repository)
-          val mmResp = callMatchmaker(c, user).filter(_.orgidentifier == repository)
-
-          Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository))
+      user match {
+        case Some(usr) => {
+          curations.get(curationId) match {
+            case Some(c) => {
+              curations.updateRepository(c.id, repository)
+              val mmResp = callMatchmaker(c, user).filter(_.orgidentifier == repository)
+              val propertiesMap: Map[String, List[String]] = Map("Purpose" -> List("Testing-Only"))
+              val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
+              Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository, propertiesMap, repPreferences))
+            }
+            case None => InternalServerError("Curation Object not found")
+          }
         }
-        case None => InternalServerError("Space not found")
+        case None => InternalServerError("User not found")
       }
+
   }
 
 

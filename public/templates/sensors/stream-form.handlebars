@@ -5,263 +5,123 @@
           <div class="panel panel-default">
             <div class="panel-heading" role="tab" id="instrument-heading-{{id}}">
               <h4 class="panel-title">
-                <a data-toggle="collapse" data-parent="#instrument-group-{{id}}" href="#instrument-contents-{{id}}" id="instrument-link-{{id}}" aria-expanded="true" aria-controls="collapseOne">
-                  Instrument Information
+                <a data-toggle="collapse"
+                  data-parent="#instrument-group-{{id}}"
+                  href="#instrument-contents-{{id}}"
+                  id="instrument-link-{{id}}"
+                  aria-expanded="true"
+                  aria-controls="collapseOne">
+                  {{#if name}}
+                    {{name}}
+                  {{else}}
+                    Instrument
+                  {{/if}}
                 </a>
+                {{#if permalink}}
+                  <span class="label pull-right">
+                    <a href="{{permalink}}" target="_blank">
+                      <span class="label label-default">
+                        STREAM ID: {{id}} <span class="glyphicon glyphicon-new-window"></span>
+                      </span>
+                    </a>
+                  </span>
+                {{/if}}
               </h4>
             </div>
             <div id="instrument-contents-{{id}}" class="panel-collapse collapse" role="tabpanel" aria-labelledby="instrument-heading-{{id}}">
               <div class="panel-body">
                 <div class="row">
                   <div class="col-md-12">
-                    <h3>Instrument Device Info</h3>
                     <div class="form-group">
-                      <label for="instrumentName" class="col-sm-4 paddingTop7 control-label" data-toggle="tooltip" data-placement="left"
-                             title="The full description of the instrument, typically provided by the Data Source. Should be concise, but descriptive.">Instrument Name</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="instrumentName" name="instrumentName" value="{{name}}" placeholder="Falls Creek Northeast Temperature Monitor" required>
-                      </div>
-                      <input type="hidden" name="id" value="{{id}}" />
-                      <label for="instrumentID" class="col-sm-4 paddingTop7 control-label">Instrument ID</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="instrumentID" name="instrumentID" value="{{name}}" placeholder="FCN-01" required>
-                      </div>
-                      <label for="instrumentMake" class="col-sm-4 paddingTop7 control-label">Make</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="instrumentMake" name="instrumentMake" value="{{properties.instrument_make}}" placeholder="PISCES">
-                      </div>
-                      <label for="instrumentModel" class="col-sm-4 paddingTop7 control-label">Model</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="instrumentModel" name="instrumentModel" value="{{properties.instrument_model}}" placeholder="PT-5000">
-                      </div>
-                      <label for="source" class="col-sm-4 paddingTop7 control-label">Source URL</label>
-                      <div class="col-sm-8">
-                        <input type="url" class="form-control input-sm" id="source" name="source" value="{{properties.source}}" placeholder="http://example.com/...">
+                      <div class="row">
+                        <label for="instrumentName" class="col-sm-4 paddingTop7 control-label" data-toggle="tooltip" data-placement="left"
+                               title="The full description of the instrument, typically provided by the Data Source. Should be concise, but descriptive.">Name</label>
+                        <div class="col-sm-8">
+                          <input type="text" class="form-control input-sm" id="instrumentName" name="instrumentName" value="{{name}}" placeholder="Falls Creek Northeast Temperature Monitor" required>
+                        </div>
                       </div>
 
-                      <div id="hasDepth" style="display: none">
-                        <label for="instrumentVerticalOffset" class="col-sm-4 paddingTop7 control-label"
-                               data-toggle="tooltip" data-placement="left"
-                               title="An 'offset' instrumentis above or below the surface.">
-                          Vertical Offset
-                        </label>
-                        <div class="col-sm-4">
-                          <input type="text" class="form-control input-sm" id="instrumentVerticalOffset" name="instrumentVerticalOffset" value="{{properties.instrumentVerticalOffset}}" placeholder="5">
-                        </div>
-                        <div class="col-sm-4">
-                          <input type="text" class="form-control input-sm" id="instrumentVerticalOffsetUnits" name="instrumentVerticalOffsetUnits" value="{{properties.instrumentVerticalOffsetUnits}}" placeholder="meters">
-                        </div>
-                        <label for="instrumentOffsetVerticalType" class="col-sm-4 paddingTop7 control-label">Vertical Offset Orientation</label>
+                      <div class="row">
+                        <input type="hidden" name="id" value="{{id}}" />
+                        <label for="instrumentMake" class="col-sm-4 paddingTop7 control-label">Make</label>
                         <div class="col-sm-8">
-                          <select class="form-control input-sm" id="instrumentOffsetVerticalType" name="instrumentOffsetVerticalType">
-                            <option selected disabled hidden value=''>No offset</option>
-                            <option value="above">Above</option>
-                            <option value="below">Below</option>
-                          </select>
+                          <input type="text" class="form-control input-sm" id="instrumentMake" name="instrumentMake" value="{{properties.instrumentMake}}" placeholder="PISCES">
                         </div>
-                        <label for="instrumentHorizontalOffset" class="col-sm-4 paddingTop7 control-label"
+                      </div>
+
+                      <div class="row">
+                        <label for="instrumentModel" class="col-sm-4 paddingTop7 control-label">Model</label>
+                        <div class="col-sm-8">
+                          <input type="text" class="form-control input-sm" id="instrumentModel" name="instrumentModel" value="{{properties.instrumentModel}}" placeholder="PT-5000">
+                        </div>
+                      </div>
+
+                      <div class="row">
+                        <h3></h3>
+                      </div>
+
+                      <div id="hasDepth">
+                        <div class="row">
+                          <label for="instrumentVerticalOffset" class="col-sm-4 paddingTop7 control-label"
+                                 data-toggle="tooltip" data-placement="left"
+                                 title="The vertical 'offset', or how far the instrument is above or below the surface. Use negative values for items below the surface.">
+                            Elevation
+                          </label>
+                          <div class="col-sm-4">
+                            <input type="text" class="form-control input-sm" id="instrumentVerticalOffset" name="instrumentVerticalOffset" value="{{properties.instrumentVerticalOffset}}" placeholder="use negative values to indicate items below the surface">
+                          </div>
+                          <div class="col-sm-4">
+                            <input type="text" class="form-control input-sm" id="instrumentVerticalOffsetUnits" name="instrumentVerticalOffsetUnits" value="{{properties.instrumentVerticalOffsetUnits}}" placeholder="meters">
+                          </div>
+                        </div>
+
+                        <div class="row">
+                          <label for="instrumentHorizontalOffset" class="col-sm-4 paddingTop7 control-label"
                                data-toggle="tooltip" data-placement="left"
                                title="An 'horizontal offset' instrument is at the same lat/long, but positioned slightly away.">
-                          Horizontal Offset
-                        </label>
-                        <div class="col-sm-4">
-                          <input type="number" class="form-control input-sm" id="instrumentHorizontalOffset" name="instrumentHorizontalOffset" value="{{properties.instrumentHorizontalOffset}}" placeholder="5">
+                            Horizontal Offset
+                          </label>
+                          <div class="col-sm-4">
+                            <input type="number" class="form-control input-sm" id="instrumentHorizontalOffset" name="instrumentHorizontalOffset" value="{{properties.instrumentHorizontalOffset}}" placeholder="5">
+                          </div>
+                          <div class="col-sm-4">
+                            <input type="text" class="form-control input-sm" id="instrumentHorizontalOffsetUnits" name="instrumentHorizontalOffsetUnits" value="{{properties.instrumentHorizontalOffsetUnits}}" placeholder="meters">
+                          </div>
                         </div>
-                        <div class="col-sm-4">
-                          <input type="text" class="form-control input-sm" id="instrumentHorizontalOffsetUnits" name="instrumentHorizontalOffsetUnits" value="{{properties.instrumentHorizontalOffsetUnits}}" placeholder="meters">
+
+                        <div class="row">
+                          <label for="instrumentOffsetHorizontalOrientation" class="col-sm-4 paddingTop7 control-label">Horizontal Offset Orientation (in compass degrees)</label>
+                          <div class="col-sm-8">
+                            <input type="number" class="form-control input-sm" id="instrumentHorizontalOffsetOrientation" name="instrumentHorizontalOffsetOrientation" value="{{properties.instrumentHorizontalOffsetOrientation}}" placeholder="180 (ie: south of the lat/long)">
+                          </div>
                         </div>
-                        <label for="instrumentOffsetHorizontalOrientation" class="col-sm-4 paddingTop7 control-label">Horizontal Offset Orientation (in compass degrees)</label>
-                        <div class="col-sm-8">
-                          <input type="number" class="form-control input-sm" id="instrumentHorizontalOffsetOrientation" name="instrumentHorizontalOffsetOrientation" value="{{properties.instrumentHorizontalOffsetOrientation}}" placeholder="180 (ie: south of the lat/long)">
+
+                        <div class="row">
+                          <label for="notes" class="col-sm-4 paddingTop7 control-label">Notes</label>
+                          <div class="col-sm-8">
+                            <textarea class="form-control input-sm" id="notes" name="notes" placeholder="optional information...">{{properties.notes}}</textarea>
+                          </div>
                         </div>
-                      </div>
-                      <label for="instrumentSamplingInterval" class="col-sm-4 paddingTop7 control-label">Sampling Interval</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="instrumentSamplingInterval" name="instrumentSamplingInterval" value="{{properties.instrumentSamplingInterval}}" placeholder="Sampling Interval">
-                      </div>
-                      <label for="instrumentInstallationDate" class="col-sm-4 paddingTop7 control-label">Installation Date</label>
-                      <div class="col-sm-8">
-                        <input type="datetime" class="form-control input-sm" id="instrumentInstallationDate" name="instrumentInstallationDate" value="{{properties.instrumentInstallationDate}}" placeholder="YYYY/MM/DD">
-                      </div>
-                      <label for="instrumentInstallationPeriod" class="col-sm-4 paddingTop7 control-label">Installation Period</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="instrumentInstallationPeriod" name="instrumentInstallationPeriod" value="{{properties.instrumentInstallationPeriod}}" placeholder="2 weeks, etc.">
+
+
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div class="row">
-                  <div class="col-md-12">
-                    <h3>Variables</h3>
-                    <div class="form-group">
-                      <label for="variableName" class="col-sm-4 paddingTop7 control-label">Variable Name</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="variableName" name="variableName" placeholder="Variable Name">
-                      </div>
-                    </div>
-                    <label for="variableCategory" class="col-sm-4 paddingTop7 control-label">Variable Category</label>
-                    <div class="col-sm-8">
-                      <select class="form-control input-md" id="variableCategory" name="variableCategory">
-                        <option selected disabled hidden value=''>Select a category</option>
-                        <option value="streamflow">Streamflow</option>
-                        <option value="hydromet">Hydromet</option>
-                        <option value="sediment">Sediment</option>
-                        <option value="water-quality">Water Quality</option>
-                        <option value="soil-chemistry">Soil Chemistry</option>
-                        <option value="flux-tower">Flux Tower</option>
-                      </select>
-                    </div>
-                    <div class="form-group">
-                      <label for="variableSpeciation" class="col-sm-4 paddingTop7 control-label">Variable Speciation</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="variableSpeciation" name="variableSpeciation" placeholder="Variable Speciation">
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label for="variableAnalysisProc" class="col-sm-4 paddingTop7 control-label">Analysis Procedure / Method</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="variableAnalysisProc" name="variableAnalysisProc" placeholder="Analysis Procedure / Method">
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label for="variableSampleMedium" class="col-sm-4 paddingTop7 control-label">Sample Medium</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="variableSampleMedium" name="variableSampleMedium" placeholder="Sample Medium">
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label for="variableUnits" class="col-sm-4 paddingTop7 control-label">Variable Units</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="variableUnits" name="variableUnits" placeholder="Variable Units">
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label for="variableDataType" class="col-sm-4 paddingTop7 control-label">Variable Data Type</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="variableDataType" name="variableDataType" placeholder="Variable Data Type">
+                {{> parameters this}}
+
+                {{!-- the remove instrument button is only used on new forms to cancel adding one. existing streams shouldn't be deleted without deleting the datapoints, etc. --}}
+                {{#unless name}}
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="pull-right instrument-delete">
+                        <div class="btn btn-primary btn-sm removeInstrument" id="instrument-delete-{{id}}" data-id="{{id}}">Remove Instrument</div>
                       </div>
                     </div>
                   </div>
-                </div>
+                {{/unless}}
 
-                <div class="row">
-                  <div class="col-md-12">
-                    <h3>Measurements</h3>
-                    <div class="form-group">
-                      <label for="measurementDateTime" class="col-sm-4 paddingTop7 control-label">Date and Time</label>
-                      <div class="col-sm-8">
-                        <input type="datetime" class="form-control input-sm" id="measurementDateTime" name="measurementDateTime" placeholder="YYYY-MM-DD:HH:MM:SS">
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label for="measurementDataValue" class="col-sm-4 paddingTop7 control-label">Data Value</label>
-                      <div class="col-sm-8">
-                        <input type="number" class="form-control input-sm" id="measurementDataValue" name="measurementDataValue" placeholder="50.95">
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label for="measurementAccuracy" class="col-sm-4 paddingTop7 control-label">Accuracy</label>
-                      <div class="col-sm-8">
-                        <input type="number" class="form-control input-sm" id="measurementAccuracy" name="measurementAccuracy" placeholder="0.95 or 1.0">
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label for="measurementValueCategory" class="col-sm-4 paddingTop7 control-label">Value Category</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="measurementValueCategory" name="measurementValueCategory" placeholder="Value Category">
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label for="measurementCensoring" class="col-sm-4 paddingTop7 control-label">Censoring</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="measurementCensoring" name="measurementCensoring" placeholder="Censoring">
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label for="measurementDataQualifyingComments" class="col-sm-4 paddingTop7 control-label">Data Qualifying Comments</label>
-                      <div class="col-sm-8">
-                        <textarea class="form-control input-sm" id="measurementDataQualifyingComments" name="measurementDataQualifyingComments" placeholder="description"></textarea>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="row">
-                  <div class="col-md-12">
-                    <h3>Output</h3>
-                    <div class="form-group">
-                      <label for="outputFileFormat" class="col-sm-4 paddingTop7 control-label">Output Data File Format</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="outputFileFormat" name="outputFileFormat" placeholder=".csv">
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label for="outputDownloadingMethod" class="col-sm-4 paddingTop7 control-label">Downloading Method</label>
-                      <div class="col-sm-8">
-                        <input type="text" class="form-control input-sm" id="outputDownloadingMethod" name="outputDownloadingMethod" placeholder="http://example.com/...">
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="row">
-                  <div class="col-md-12">
-                    <h3>Instrument Parameters</h3>
-                    <div class="form-group">
-                      <label for="parameters" class="col-sm-4 paddingTop7 control-label"
-                             data-toggle="tooltip" data-placement="left"
-                             title="Select the parameters that should be visible on the Dashboard. Hold Command or Control to select multiple.">
-                        Parameters to Display
-                      </label>
-                      <div class="col-sm-8">
-                        <select multiple class="form-control" id="parameters" name="parameters[]">
-                          <option value='absolute-pressure-psi'>Absolute Pressure</option>
-                          <option value='air-temperature-f'>Air Temperature</option>
-                          <option value='ammonium'>Ammonium</option>
-                          <option value='kjeldahl-nitrogen'>Kjeldahl Nitrogen</option>
-                          <option value='monthly-precipitation'>Monthly Precipitation</option>
-                          <option value='nitrate-n'>Nitrate-N</option>
-                          <option value='river-discharge'>River Discharge</option>
-                          <option value='river-stage'>River Stage</option>
-                          <option value='soil-temperature-f'>Soil Temperature</option>
-                          <option value='water-temperature-f'>Stream Water Temperature</option>
-                          <option value='ph'>pH</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div class="form-group">
-
-                    </div>
-                    <div class="form-group">
-
-                    </div>
-                  </div>
-                </div>
-
-                <div class="row">
-                  <div class="col-md-12">
-                    <h3>Miscellaneous</h3>
-                    <div class="form-group">
-                      <label for="miscSpecialFeatures" class="col-sm-4 paddingTop7 control-label">Special Features</label>
-                      <div class="col-sm-8">
-                        <textarea class="form-control input-sm" id="miscSpecialFeatures" name="miscSpecialFeatures" placeholder="special features of note...">{{properties.miscSpecialFeatures}}</textarea>
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label for="miscInformation" class="col-sm-4 paddingTop7 control-label">Miscellaneous Information</label>
-                      <div class="col-sm-8">
-                        <textarea class="form-control input-sm" id="miscInformation" name="miscInformation" placeholder="additional information...">{{properties.miscInformation}}</textarea>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="col-md-12">
-                    <div class="pull-right instrument-delete">
-                      <div class="btn btn-primary btn-sm removeInstrument" id="instrument-delete-{{id}}" data-id="{{id}}">Remove Instrument</div>
-                    </div>
-                  </div>
-                </div>
 
                 <div class="row">
                   <div class="col-md-12">

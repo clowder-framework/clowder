@@ -28,11 +28,12 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
     ServerStartTime.startTime = Calendar.getInstance().getTime
     Logger.debug("\n----Server Start Time----" + ServerStartTime.startTime + "\n \n")
 
-    // set admins
-    AppConfiguration.setDefaultAdmins()
+    val users: UserService = DI.injector.getInstance(classOf[UserService])
+
+    // add all new admins
+    users.updateAdmins()
 
     // create default roles
-    val users: UserService = DI.injector.getInstance(classOf[UserService])
     if (users.listRoles().isEmpty) {
       Logger.debug("Ensuring roles exist")
       users.updateRole(Role.Admin)

@@ -15,6 +15,8 @@
 
 @import helper._
 @import api.Permission
+@import play.api.Play.current
+@import scala.collection.mutable.{Map => MutableMap}
 
 @main(dataset.name) {
 	<div class="row">
@@ -191,9 +193,10 @@
             @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
                 @datasets.listCurationObjects(curationObjects)
             }
-            @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {
+            @if(current.plugin[services.PostgresPlugin].isDefined) {
                 @sensors.relatedSensors(relatedSensors, "Dataset", dataset.id.stringify)
             }
+            <div id="toolListContainer"></div>
 		</div>
 	</div>
 
@@ -289,6 +292,10 @@
 
             var description = $('#ds_description').html().trim();
             $('#ds_description').html(urlify(description));
+
+            @if(dataset.files.length > 0 && Permission.checkPermission(Permission.ExecuteOnDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                refreshToolSidebar()
+            }
 
         });
 
@@ -395,6 +402,19 @@
         return text.replace(urlRegex, function(url) {
             return '<a href="' + url + '">' + url + '</a>';
         })
+    }
+
+    function refreshToolSidebar() {
+        // Get current status from ToolManagerPlugin and refresh sidebar table
+        var request = new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (request.readyState == 4 && request.status == 200) {
+                $('#toolListContainer').html(request.response);
+            }
+        }
+
+        request.open("GET", jsRoutes.controllers.Datasets.refreshToolSidebar("@dataset.id", "@dataset.name").url, true);
+        request.send();
     }
 
     $(function() {

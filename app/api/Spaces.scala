@@ -408,7 +408,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
                           events.addRequestEvent(user, userService.get(UUID(aUserId)).get, spaceId, spaces.get(spaceId).get.name, "add_user_to_space")
                           val newmember = userService.get(UUID(aUserId))
                           val theHtml = views.html.spaces.inviteNotificationEmail(spaceId.stringify, space.name, user.get.getMiniUser, newmember.get.getMiniUser.fullName, aRole.name)
-                          Mail.sendEmail("Added to Space", request.user, newmember.get.getMiniUser.email.get ,theHtml)
+                          Mail.sendEmail("Added to Space", request.user, newmember ,theHtml)
                         }
                       }
                       else {
