@@ -3,6 +3,10 @@
 function clearFields() {
     $('#name').val("");
     $('#description').val("");
+    $('.creators .creator-delete a').click();
+    $('.creators .control-group input').each(function (index) {
+        $(this).val("");
+    });
 }
 
 //Call on Create button click. Move to create a curation object as specified after validating input fields
