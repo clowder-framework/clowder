@@ -23,7 +23,8 @@ object MultimediaIndex {
 
   def searchPrecomputedDistances(querySectionId: String, representation: String, limit: Int): Unit = {
     Logger.debug(s"Query for section $querySectionId against index $representation found the following results:")
-    queries.searchMultimediaDistances(querySectionId, representation, limit).foreach { d =>
+    // Would need to provide appropriate Space IDs to the method below to get result
+    queries.searchMultimediaDistances(querySectionId, representation, limit, List.empty).foreach { d =>
       Logger.debug(s"${d.source_section} -> ${d.target_section} = ${d.distance}")
     }
   }

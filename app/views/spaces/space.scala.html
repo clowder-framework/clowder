@@ -25,7 +25,7 @@
             <p><span id="spacedescdisplay">@space.description</span></p>
             <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
             @if(user.isDefined && Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
-                <button id="deleteButton" onclick="confirmDeleteResource('space','@(space.id)','@(space.name.replace("'","&#39;"))','@(routes.Spaces.list(""))')"
+                <button id="deleteButton" onclick="confirmDeleteResource('space','@(space.id)','@(space.name.replace("'","&#39;"))',true, '@(routes.Spaces.list(""))')"
                     class="btn btn-link btn-sm" title="Delete Space but not Enclosed Resources">
                         <span class="glyphicon glyphicon-trash"></span> Delete</button>
             } else {

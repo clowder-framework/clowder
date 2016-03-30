@@ -116,7 +116,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("dtsrequests").ensureIndex(MongoDBObject("file_id" -> -1))
     collection("versus.descriptors").ensureIndex(MongoDBObject("fileId" -> 1))
 
-    collection("multimedia.distances").ensureIndex(MongoDBObject("source_section"->1,"representation"->1,"distance"->1))
+    collection("multimedia.distances").ensureIndex(MongoDBObject("source_section"->1,"representation"->1,"distance"->1, "target_spaces"->1))
   }
 
   override def onStop() {
@@ -306,6 +306,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //don't use gridfs for metadata
     updateMongo("split-gridfs", splitGridFSMetadata)
+
+    //Store admin in database not by email
+    updateMongo("add-admin-to-user-object", addAdminFieldToUser)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -809,7 +812,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       if (x.getAsOrElse[String]("loader", "") == classOf[MongoDBByteStorage].getName) {
         x.put("loader_id", x.get("file_id").toString)
         collection("logos.files").find(id).foreach { y =>
-          y.keySet().asScala.toList.foreach{ k =>
+          y.keySet().asScala.toList.foreach { k =>
             if (!ignoreRemoveKeys.contains(k)) {
               y.remove(k)
             }
@@ -854,7 +857,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           c.put("loader_id", x.get("path"))
         }
 
-        x.keySet.asScala.toList.foreach{ k =>
+        x.keySet.asScala.toList.foreach { k =>
           if (!ignoreCopyKeys.contains(k)) {
             c.put(k, x.get(k))
           }
@@ -884,5 +887,31 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         }
       }
     }
+  }
+
+  private def addAdminFieldToUser() {
+    val admins = collection("app.configuration").findOne(MongoDBObject("key" -> "admins")) match {
+      case Some(x) => {
+        x.get("value") match {
+          case l:BasicDBList => l.toList.asInstanceOf[List[String]]
+          case y => List[String](y.asInstanceOf[String])
+        }
+      }
+      case None => List.empty[String]
+    }
+
+    val users = collection("social.users")
+    admins.foreach{email =>
+      users.find(MongoDBObject("email" -> email)).foreach{ user =>
+        user.put("admin", true)
+        try{
+          users.save(user, WriteConcern.Safe)
+        } catch {
+          case e: BSONException => Logger.error("Unable to mark user as admin: " + user._id.toString)
+        }
+      }
+    }
+
+    collection("app.configuration").remove(MongoDBObject("key" -> "admins"))
   }
 }

@@ -47,7 +47,7 @@ $(document).ready(function() {
   };
 
   // setup form validation
-  var sensorForm = $('#sensor-create');
+  var sensorForm = $('#sensor-edit');
   sensorForm.validate({
     messages: {
       sensorFullName: "You must provide a name",
@@ -62,25 +62,9 @@ $(document).ready(function() {
   var sensorTypesUrlElement = $("#sensorTypesUrl");
   sensorTypesUrlElement.attr('href', sensorTypesUrl);
 
-  // set the sensor types dynamically - TODO store this in the sensor config
-  var sensorTypes = {
-    1: "1 Instrument, 1 Measurement, No Depth, No Time-Series",
-    2: "1 Instrument, 1 Measurement, No Depth, Yes Time-Series",
-    3: "1 Instrument, Many Measurements, No Depth, No Time-Series",
-    4: "1 Instrument, Many Measurements, No Depth, Yes Time-Series",
-    5: "Many Instruments, 1 Measurement, Many Depths, Yes Time-Series",
-    6: "Many Instruments, Many Measurements, Many Depths, Yes Time-Series",
-    7: "1 Instrument, Many Measurements, One Depth, Yes Time-Series"
-  };
-
-  var sensorType = $("#sensorType");
-  sensorType.empty();
-  $.each(sensorTypes, function(key, value) {
-    sensorType.append($("<option></option>").attr("value", key).text(value));
-  });
-
-
   var insertInstrumentForm = function(data) {
+    var parametersTemplate = Handlebars.getTemplate(jsRoutes.controllers.Assets.at("templates/sensors/parameters-form").url);
+    Handlebars.registerPartial('parameters', parametersTemplate);
     var instrumentTemplate = Handlebars.getTemplate(jsRoutes.controllers.Assets.at("templates/sensors/stream-form").url);
     $("#instruments").append(instrumentTemplate(data));
   };
@@ -104,46 +88,12 @@ $(document).ready(function() {
     $("#instrument-" + instrumentNumber).remove();
   });
 
-
-  // TODO store this in the sensor config
-  sensorType.on('change', function() {
-    var sensorType = $(this).val();
-    var hasDepth = $("#hasDepth");
-    var sensorTypeSensorCount = $("#sensorTypeSensorCount");
-    var sensorTypeMultipleInstruments = $("#sensorTypeMultipleInstruments");
-    var instrumentContents1 = $("#instrument-contents-1");
-    var instrumentLink1 = $("#instrument-link-1");
-    var addInstrument = $("#addInstrument");
-
-    $("#sensorTypeSummary").text(sensorType);
-    switch(sensorType) {
-      case "5":
-      case "6":
-      case "7":
-        hasDepth.show();
-        sensorTypeSensorCount.text('multiple');
-        sensorTypeMultipleInstruments.text('s');
-        instrumentContents1.collapse('hide');
-        instrumentLink1.text('Instrument #1 Information');
-        addInstrument.show();
-        break;
-      default:
-        hasDepth.hide();
-        sensorTypeSensorCount.text('1');
-        sensorTypeMultipleInstruments.text('');
-        instrumentContents1.collapse('show');
-        instrumentLink1.text('Instrument Information');
-        addInstrument.hide();
-        break;
-    }
-  });
-
   // enable tooltips
   $('[data-toggle="tooltip"]').tooltip();
 
   $("#formSubmit").click(function(event) {
     event.preventDefault();
-    if (!sensorForm.valid()) {
+    if (!$("#sensor-edit").valid()) {
       return;
     }
     var sensorsValid = true;
@@ -153,8 +103,7 @@ $(document).ready(function() {
       $(this).validate({
         ignore: false,
         messages: {
-          instrumentName: "You must provide a name for this instrument",
-          instrumentID: "You must provide a unique ID for this instrument"
+          instrumentName: "You must provide a name for this instrument"
         }
       });
       if (!$(this).valid()) {

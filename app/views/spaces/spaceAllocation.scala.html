@@ -1,4 +1,4 @@
-@(resourceId: UUID, resourceType: Symbol, resourceSpaces: List[ProjectSpace], currentCollection: Option[Collection])(implicit user: Option[models.User])
+@(resourceId: UUID, resourceType: Symbol, resourceSpaces_canRemove : Map[ProjectSpace,Boolean], currentCollection: Option[Collection])(implicit user: Option[models.User])
 @import api.Permission
 @import play.api.libs.json.Json
     <div class="row bottom-padding">
@@ -13,7 +13,7 @@
 
     <div class="row">
         <div id="spacesList" class="col-md-12">
-        @resourceSpaces.map { s =>
+        @resourceSpaces_canRemove.map {case (s, v) =>
             <div id="col_@s.id" class="row bottom-padding">
                 <div class="col-md-2">
                     @if(s.logoURL.isDefined) {
@@ -47,9 +47,10 @@
                                 @s.collectionCount collections
                             }
                             @**
-                                if the collection is a child collection, only the root can be removed or added to space
+                                a collection can be removed from a space as long as it is the highest level collection in that space;
+                                meaning it has no parent in the space.
                             **@
-                            @if((currentCollection.get.root_flag == true && currentCollection.get.parent_collection_ids.isEmpty) || currentCollection.get.parent_collection_ids.isEmpty){
+                            @if(v == true){
                                 @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
                                     | <a href="#" class="btn btn-link btn-xs" onclick="removeCollectionFromSpace('@(s.id)', '@resourceId', event)" title="Remove from space">
                                         <span class="glyphicon glyphicon-remove"></span>  Remove</a>
@@ -73,12 +74,9 @@
         <div class="form-inline">
             <div class="input-group input-group-sm col-md-8">
                 @if(resourceType == ResourceRef.collection) {
-                    @if((currentCollection.get.root_flag == true && currentCollection.get.parent_collection_ids.isEmpty) || currentCollection.get.parent_collection_ids.isEmpty) {
-                        <select id="spaceAddSelect" class="form-control add-resource">
-                        </select>
-                    }else {
+                    <select id="spaceAddSelect" class="form-control add-resource">
+                    </select>
 
-                    }
 
                 } else {
                     <select id="spaceAddSelect" class="form-control add-resource">
@@ -92,14 +90,11 @@
                     </a>
                     </span>
                 } else {
-                    @if((currentCollection.get.root_flag == true && currentCollection.get.parent_collection_ids.isEmpty) || currentCollection.get.parent_collection_ids.isEmpty){
-                        <span class="input-group-btn">
-                            <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add collection to Space" onclick="addCollectionToSpace('@resourceId')">
-                                <span class="glyphicon glyphicon-plus"></span> Add
-                            </a>
-                        </span>
-                    }
-
+                    <span class="input-group-btn">
+                    <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add collection to Space" onclick="addCollectionToSpace('@resourceId')">
+                        <span class="glyphicon glyphicon-plus"></span> Add
+                    </a>
+                    </span>
                 }
             </div>
         </div>
