@@ -180,7 +180,10 @@ class Folders @Inject() (
               var displayName = name
               // Avoid folders with the same name within a folder/dataset (parent). Check the name, and display name.
               // And if it already exists, add a (x) with the corresponding number to the display name.
-              val countByName = folders.countByName(name, folder.parentType, folder.parentId.stringify)
+              var countByName = folders.countByName(name, folder.parentType, folder.parentId.stringify)
+              if(name == folder.name) {
+                countByName -=1
+              }
               if(countByName > 0) {
                 displayName = name + " (" + countByName + ")"
               } else {
