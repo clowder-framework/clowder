@@ -102,7 +102,7 @@ object Permission extends Enumeration {
 
   /** Returns true if the user is listed as a server admin */
 	def checkServerAdmin(user: Option[User]): Boolean = {
-		user.exists(u => u.email.nonEmpty && u.active && AppConfiguration.checkAdmin(u.email.get))
+		user.exists(u => u.active && u.admin)
 	}
 
   /** Returns true if the user is the owner of the resource, this function is used in the code for checkPermission as well. */
