@@ -596,6 +596,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
 
         for(space <- collection.spaces){
           spaceService.removeCollection(collection.id,space)
+          spaceService.decrementCollectionCounter(collectionId, space, 1)
         }
 
         for(follower <- collection.followers) {
@@ -811,6 +812,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     Collection.update(MongoDBObject("_id" -> new ObjectId((collection.id).stringify)),
       $pull("parent_collection_ids" -> Some(new ObjectId(parentCollectionId.stringify))),
       false, false)
+    Collection.update(MongoDBObject("_id" -> new ObjectId(parentCollectionId.stringify)), $inc("childCollectionsCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
 
   }
 
