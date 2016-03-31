@@ -14,6 +14,7 @@ import securesocial.core._
 trait User extends Identity {
   def id: UUID
   def active: Boolean
+  def admin: Boolean
   def profile: Option[Profile]
   def friends: Option[List[String]]
   def followedEntities: List[TypedID]
@@ -96,8 +97,11 @@ case class ClowderUser(
   oAuth2Info: Option[OAuth2Info] = None,
   passwordInfo: Option[PasswordInfo] = None,
 
-  //should user be active
+  // should user be active
   active: Boolean = false,
+
+  // is the user an admin
+  admin: Boolean = false,
 
   // profile
   profile: Option[Profile] = None,

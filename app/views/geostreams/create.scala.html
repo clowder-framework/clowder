@@ -11,83 +11,15 @@
             <h1>@(AppConfiguration.getSensorTitle) Information</h1>
         </div>
 
-        <form class="form-horizontal" role="form" id="sensor-create">
-
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            <h4>Location Information</h4>
-                        </div>
-                        <div class="panel-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="sensorFullName" class="col-sm-4 paddingTop7 control-label" data-toggle="tooltip" data-placement="left"
-                                        title="The full description of the @(AppConfiguration.getSensorTitle), typically provided by the Data Source. Should be concise, but descriptive.">Descriptive Name</label>
-                                        <div class="col-sm-8">
-                                            <input type="text" class="form-control input-sm" id="sensorFullName" name="sensorFullName" placeholder="White River Falls in Duvall County (required)" required>
-                                        </div>
-                                        <label for="sensor_name" class="col-sm-4 paddingTop7 control-label"
-                                        data-toggle="tooltip" data-placement="left"
-                                        title="A short, unique identifier for this location for when it is displayed along with many other @(AppConfiguration.getSensorsTitle) (like on a map).">Location ID</label>
-                                        <div class="col-sm-8">
-                                            <input type="text" class="form-control input-sm" id="sensor_name" name="sensor_name" placeholder="DC105-WRF (required)" required>
-                                        </div>
-                                        <label for="sensorRegion" class="col-sm-4 paddingTop7 control-label">Region</label>
-                                        <div class="col-sm-8">
-                                            <input type="text" class="form-control input-sm" id="sensorRegion" name="sensorRegion" placeholder="Illinois (required)" required>
-                                        </div>
-                                        <label for="sensorDataSource" class="col-sm-4 paddingTop7 control-label">Data Source</label>
-                                        <div class="col-sm-8">
-                                            <input type="text" class="form-control input-sm" id="sensorDataSource" name="sensorDataSource" placeholder="USGS (required)" required>
-                                        </div>
-                                        <label for="sensorType" class="col-sm-4 paddingTop7 control-label"><a href='#' id="sensorTypesUrl" target="_blank">Location Type</a> <span class="glyphicon glyphicon-new-window" style="font-size: 10px; color: #C0C0C0" aria-hidden="true"></span></label>
-                                        <div class="col-sm-8">
-                                            <select class="form-control input-sm" id="sensorType" name="sensorType">
-                                            </select>
-                                        </div>
-                                        <div class="col-sm-4"></div>
-                                        <div class="col-sm-8 paddingTop7">
-                                            <p>Location Type <span id="sensorTypeSummary">1</span> can have <span id="sensorTypeSensorCount">1</span> instrument<span id="sensorTypeMultipleInstruments"></span>.</p>
-                                        </div>
-                                        <label for="sensorLocationLat" class="col-sm-4 paddingTop7 control-label">Lat / Long</label>
-                                        <div class="col-sm-4">
-                                            <input type="number" class="form-control input-sm" id="sensorLocationLat" name="sensorLocationLat" placeholder="latitude (required)" required>
-                                        </div>
-                                        <div class="col-sm-4">
-                                            <input type="number" class="form-control input-sm" id="sensorLocationLong" name="sensorLocationLong" placeholder="longitude (required)" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="map" class="col-sm-4 paddingTop7 control-label">Location</label>
-                                        <div class="col-sm-8">
-                                            <div id="map" name="map" style="border: 1px solid black; height: 200px;"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="panel-footer">
-                            <p>Each location will contain at least one instrument, depending on it's Location Type.</p>
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </form>
+        <div id="sensor-form"></div>
 
         <div id="instruments">
                 <!-- additional instruments will be added here as the "Add Instrument" button is clicked -->
         </div>
 
-        <div class="btn btn-default" id="addInstrument" style="display: none"><span class="glyphicon glyphicon-plus"></span> Add Instrument</div>
+        <div class="btn btn-primary" id="addInstrument"><span class="glyphicon glyphicon-plus"></span> Add Instrument</div>
 
-        <br />
-
-        <button type="submit" class="btn btn-primary submit" id="formSubmit"><span class="glyphicon glyphicon-ok"></span> Create</button>
+        <button type="submit" class="btn btn-primary submit" id="formSubmit"><span class="glyphicon glyphicon-send"></span> Create</button>
 
     </div>
 
@@ -98,5 +30,49 @@
 <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")"></script>
 <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/lib/jquery.serializejson.min.js")"></script>
+<script type="text/javascript">
+    Handlebars.registerHelper('select', function( value, options ){
+        var $el = $('<select />').html( options.fn(this) );
+        $el.find('[value="' + value + '"]').attr({'selected':'selected'});
+        return $el.html();
+    });
+
+    Handlebars.registerHelper('slugify', function(string) {
+        return string.replace(/[\s]+/g, "-").replace(/[^\w|-]+/g, "").toLowerCase();
+    });
+
+    var insertSensorForm = function(data) {
+        var sensorTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/sensors/sensor-form")");
+        $("#sensor-form").append(sensorTemplate(data));
+    };
+
+    var insertInstrumentForm = function(data) {
+        var parametersTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/sensors/parameters-form")");
+        Handlebars.registerPartial('parameters', parametersTemplate);
+        var instrumentTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/sensors/stream-form")");
+        $("#instruments").append(instrumentTemplate(data));
+    };
+
+    $(document).ready(function() {
+        var sensorsTitle = "@(AppConfiguration.getSensorsTitle)";
+        var sensorTitle = "@(AppConfiguration.getSensorTitle)";
+
+        var sensorJson = {
+            sensorsTitle: sensorsTitle,
+            sensorTitle: sensorTitle,
+            sensorTypes: {
+                1: "1 Instrument, 1 Measurement, No Depth, No Time-Series",
+                2: "1 Instrument, 1 Measurement, No Depth, Yes Time-Series",
+                3: "1 Instrument, Many Measurements, No Depth, No Time-Series",
+                4: "1 Instrument, Many Measurements, No Depth, Yes Time-Series",
+                5: "Many Instruments, 1 Measurement, Many Depths, Yes Time-Series",
+                6: "Many Instruments, Many Measurements, Many Depths, Yes Time-Series",
+                7: "1 Instrument, Many Measurements, One Depth, Yes Time-Series"
+            }
+        };
+        insertSensorForm(sensorJson);
+
+    });
+</script>
 <script src="@routes.Assets.at("javascripts/geostreams/sensorCreate.js")"></script>
 <script src="@routes.Assets.at("javascripts/geostreams/updateMap.js")"></script>

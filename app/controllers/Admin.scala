@@ -307,16 +307,8 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
 
   def getMetadataDefinitions() = ServerAdminAction { implicit request =>
     implicit val user = request.user
-    user match {
-      case Some(x) => {
-        if (x.email.nonEmpty && AppConfiguration.checkAdmin(x.email.get)) {
-          val metadata = metadataService.getDefinitions()
-          Ok(views.html.manageMetadataDefinitions(metadata.toList))
-        } else {
-          Unauthorized("Not authorized")
-        }
-      }
-    }
+    val metadata = metadataService.getDefinitions()
+    Ok(views.html.manageMetadataDefinitions(metadata.toList))
   }
 
   val roleForm = Form(
@@ -427,10 +419,9 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
   def users() = ServerAdminAction { implicit request =>
     implicit val user = request.user
 
-    val admins = AppConfiguration.getAdmins
     val configAdmins = play.Play.application().configuration().getString("initialAdmins").trim.split("\\s*,\\s*").filter(_ != "").toList
     val users = userService.list.sortWith(_.lastName.toLowerCase() < _.lastName.toLowerCase())
-    Ok(views.html.admin.users(admins, configAdmins, users))
+    Ok(views.html.admin.users(configAdmins, users))
   }
 }
 
