@@ -124,7 +124,6 @@ object MatchMakerResponse{
 case class CurationFile(
   id: UUID = UUID.generate,
   fileId: UUID,
-  loader_id: String = "",
   filename: String,
   author: Identity,
   uploadDate: Date,
