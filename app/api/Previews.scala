@@ -136,7 +136,7 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
 
             // Check whether a title for the preview was sent
             request.body.dataParts.get("title") match {
-              case Some(t: List[String]) => previews.updateTitle(id, t.head)
+              case Some(t: List[String]) => previews.setTitle(id, t.head)
               case None => {}
             }
 
@@ -323,14 +323,14 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
   @ApiOperation(value = "Update displayed title of preview",
     notes = "Change the title of the preview that is displayed when viewing the associated file. String must be passed as 'title' parameter in request.",
     responseClass = "None", httpMethod = "POST")
-  def updateTitle(preview_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.preview, preview_id)))(parse.json) { implicit request =>
+  def setTitle(preview_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.preview, preview_id)))(parse.json) { implicit request =>
     request.body match {
       case JsObject(fields) => {
         previews.get(preview_id) match {
           case Some(preview) => {
             (request.body \ "title").asOpt[String] match {
               case Some(t) => {
-                previews.updateTitle(preview_id, t.replace("\"",""))
+                previews.setTitle(preview_id, t.replace("\"",""))
                 Ok(toJson(Map("status" -> "success")))
               }
               case None => BadRequest(toJson("Preview not found"))

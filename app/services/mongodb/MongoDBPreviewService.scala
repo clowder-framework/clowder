@@ -253,7 +253,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
     }
   }
 
-  def updateTitle(previewId: UUID, title: String) {
+  def setTitle(previewId: UUID, title: String) {
     PreviewDAO.dao.collection.update(
           MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
           $set("title" -> title),
