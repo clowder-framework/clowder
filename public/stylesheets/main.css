@@ -892,3 +892,21 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 .margin-bottom-20 {
     margin-bottom: 20px !important;
 }
+
+.contextInitDialog {
+    display:none;
+    pointer-events: none;
+}
+.contextDialog {
+    position: absolute;
+    width: 500px;
+    border: solid 1px grey;
+    border-radius: 5px;
+    font-family: Arial, Helvetica, sans-serif;
+    z-index: 99999;
+    margin: 5px;
+    padding: 5px;
+    pointer-events: auto;
+    display:true;
+    background:white;
+}

@@ -23,9 +23,9 @@
                                         <span class="glyphicon glyphicon-minus"></span>
                                     </a>
                                     @if(contextId.isDefined) {
-                                        <a href="#" onmouseover="getMetadataContext('@contextId.get','@key.replaceAll(" ", "")');" onmouseout="leaveMetadataContext('@key.replaceAll(" ", "")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
+                                        <a href="#" onmouseover="getMetadataContext('@contextId.get','@key.replaceAll(" ", "")');" onmouseout="leaveMetadataContext('@contextId.get@key.replaceAll(" ", "")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
                                         <!-- ids don't like spaces, you can use regex for removing different characters in metadata names (key) as well -->
-                                        <div id='@key.replaceAll(" ", "")' hidden></div>
+                                        <div id='@contextId.get@key.replaceAll(" ", "")' class="contextInitDialog"></div>
                                     } else {
                                         @contextURL match {
                                             case Some(u) => {
@@ -44,8 +44,8 @@
                                         <span class="glyphicon glyphicon-minus"></span>
                                     </a>
                                     @if(contextId.isDefined) {
-                                        <a href="#" onmouseover="getMetadataContext('@contextId.get','@key.replaceAll(" ", "")');" onmouseout="leaveMetadataContext('@key.replaceAll(" ", "")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
-                                        <div id='@key.replaceAll(" ", "")' hidden></div>
+                                        <a href="#" onmouseover="getMetadataContext('@contextId.get','@key.replaceAll(" ", "")');" onmouseout="leaveMetadataContext('@contextId.get@key.replaceAll(" ", "")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
+                                        <div id='@contextId.get@key.replaceAll(" ", "")' class="contextInitDialog"></div>
                                     } else {
                                         @contextURL match {
                                             case Some(u) => {
@@ -61,8 +61,8 @@
                             case _ => {
                                 <li class="md-block">
                                 @if(contextId.isDefined) {
-                                    <a href="#" onmouseover="getMetadataContext('@contextId.get','@key.replaceAll(" ", "")');" onmouseout="leaveMetadataContext('@key.replaceAll(" ", "")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
-                                    <div id='@key.replaceAll(" ", "")' hidden></div>
+                                    <a href="#" onmouseover="getMetadataContext('@contextId.get','@key.replaceAll(" ", "")');" onmouseout="leaveMetadataContext('@contextId.get@key.replaceAll(" ", "")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
+                                    <div id='@contextId.get@key.replaceAll(" ", "")' class="contextInitDialog"></div>
                                 } else {
                                     @contextURL match {
                                         case Some(u) => {
@@ -193,9 +193,9 @@
 
             request.done(function (response, textStatus, jqXHR) {
                 var fields = response;
-                $("#"+mkey).text(JSON.stringify(fields));
-                $("#"+mkey).show();
-                //console.log(uuid + ", " + mkey + ": " + JSON.stringify(fields));
+                $("#"+uuid+mkey).text(JSON.stringify(fields['@@context']));
+                $("#"+uuid+mkey).removeClass("contextInitDialog");
+                $("#"+uuid+mkey).addClass("contextDialog");
             });
 
             request.fail(function (jqXHR, textStatus, errorThrown){
@@ -206,8 +206,10 @@
                 }
             });
         }
-        function leaveMetadataContext(mkey) {
-            $("#"+mkey).text("");
-            $("#"+mkey).hide();
+        function leaveMetadataContext(mid) {
+            $("#"+mid).text("");
+            $("#"+mid).removeClass("contextDialog");
+            $("#"+mid).addClass("contextInitDialog");
+            //$("#"+mid).hide();
         }
     </script>
