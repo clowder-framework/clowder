@@ -51,7 +51,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         Redirect(routes.Error.notActivated())
       }
       case Some(clowderUser) if clowderUser.active => {
-        if(newsfeedEvents.length < 5) newsfeedEvents= newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20))
+        newsfeedEvents= newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20))
         val datasetsUser = datasets.listUser(4, Some(clowderUser), request.superAdmin, clowderUser)
         val datasetcommentMap = datasetsUser.map { dataset =>
           var allComments = comments.findCommentsByDatasetId(dataset.id)
