@@ -2,6 +2,7 @@ package api
 
 import java.io._
 import java.net.URL
+import java.security.{DigestInputStream, MessageDigest}
 import java.util.Date
 import api.Permission.Permission
 import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
@@ -11,6 +12,7 @@ import com.wordnik.swagger.annotations.{Api, ApiOperation}
 import controllers.{Previewers, Utils}
 import jsonutils.JsonUtil
 import models.{File, _}
+import org.apache.commons.codec.binary.Hex
 import org.json.JSONObject
 import play.api.Logger
 import play.api.Play.{configuration, current}
@@ -1686,8 +1688,8 @@ class Datasets @Inject()(
    * @return Enumerator to produce array of bytes from a zipped stream containing the bytes of each file
    *         in the dataset
    */
-  def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION)
-      (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
+  def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean = false)
+                           (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
     implicit val pec = ec.prepare()
     val folderNameMap = scala.collection.mutable.Map.empty[UUID, String]
     var inputFilesBuffer = new ListBuffer[File]()
@@ -1698,6 +1700,9 @@ class Datasets @Inject()(
       }
       case None => Logger.error(s"No file with id $f")
     })
+
+    val rootFolder = if (bagit) "/root" else ""
+    var md5Tracker = scala.collection.mutable.HashMap.empty[String, MessageDigest]
 
     folders.findByParentDatasetId(dataset.id).map {
       folder => folder.files.map(f=> files.get(f) match {
@@ -1721,12 +1726,24 @@ class Datasets @Inject()(
     }
     val inputFiles = inputFilesBuffer.toList
     // which file we are currently processing
+    var fileinfo = 0
     var count = 0
     val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
     val zip = new ZipOutputStream((byteArrayOutputStream))
     // zip compression level
     zip.setLevel(compression)
-    var is: Option[InputStream] = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+
+    var is : Option[java.io.InputStream] = null
+    // TODO first one should either bef
+    if (bagit) {
+      // dataset case
+      fileinfo = 1
+      is = addDatasetInfoToZip("/", dataset, zip)
+    } else {
+      // regular file case
+      count = count + 1
+      is  = addFileToZip(rootFolder + folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+    }
 
     Enumerator.generateM({
       is match {
@@ -1740,14 +1757,50 @@ class Datasets @Inject()(
               // finished individual file
               zip.closeEntry()
               inputStream.close()
-              count = count + 1
-              // more files available
-              if (count < inputFiles.size) {
-                is = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
-              } else {
-                // close the zip file and exit
-                zip.close()
-                is = None
+              fileinfo = fileinfo + 1
+              fileinfo match {
+                case 1 => if (count == 0) {
+                  // dataset case
+                  is = addDatasetInfoToZip(rootFolder + folderNameMap(inputFiles(count).id), dataset, zip)
+                } else if (count >= inputFiles.size) {
+                  // bagit case
+                  is = addBagMD5ToZip()
+                } else {
+                  // file case
+                  is = addFileInfoToZip(rootFolder + folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                }
+                case 2 => if (count == 0) {
+                  // dataset case
+                  is = addInfoToZip(rootFolder + folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                } else if (count >= inputFiles.size) {
+                  // bagit case
+                  is = addMD5ToZip()
+                } else {
+                  // file case
+                  is = addMetadataToZip(rootFolder + folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                }
+                case _ => {
+                  fileinfo = 0
+                  if (count < inputFiles.size) {
+                    // file case
+                    is = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  } else if (count == inputFiles.size) {
+                    // bagit metadata case
+                    is = addMetadataBagToZip()
+                  } else {
+                    // close the zip file and exit
+                    zip.close()
+                    is = None
+                  }
+                  count = count + 1
+                }
+              }
+
+              if (is.isDefined) {
+                val md5 = MessageDigest.getInstance("MD5")
+                md5Tracker.put("path on disk", md5)
+                is = Some(new DigestInputStream(is.get, md5))
+                Hex.encodeHex(md5.digest())
               }
               Some(byteArrayOutputStream.toByteArray)
             }
@@ -1783,6 +1836,55 @@ class Datasets @Inject()(
       }
       case None => None
     }
+  }
+
+  // TODO don't use a .get here!!! -todd n
+  private def addMetadataToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
+    val s : String = metadataService.getMetadataById(file.id).get.toString()
+    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
+  }
+
+  // TODO don't use a .get here!!! -todd n
+  private def addDatasetInfoToZip(folderName: String, dataset: models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
+    val s : String = ""
+    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
+  }
+
+  // TODO don't use a .get here!!! -todd n
+  private def addFileInfoToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
+    val s : String = ""
+    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
+  }
+
+  // TODO don't use a .get here!!! -todd n
+  private def addInfoToZip(folderName: String, file : models.File, zip: ZipOutputStream): Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
+    val s : String = ""
+    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
+  }
+
+  // TODO don't use a .get here!!! -todd n
+  private def addBagMD5ToZip() = {
+
+    val s : String = ""
+    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
+  }
+
+  // TODO don't use a .get here!!! -todd n
+  private def addMD5ToZip() = {
+
+    val s : String = ""
+    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
+  }
+
+  // TODO don't use a .get here!!! -todd n
+  private def addMetadataBagToZip() = {
+
+    val s : String = ""
+    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
   @ApiOperation(value = "Download dataset",

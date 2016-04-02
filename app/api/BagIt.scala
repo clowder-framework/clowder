@@ -1,8 +1,10 @@
 package api
 
+import java.nio.file.{Path, Files}
 import javax.inject.Inject
 
-import models.{Dataset, File}
+import models.{UUID, Dataset, File}
+import play.api.mvc.Action
 import services.{UserService, FileService, DatasetService}
 
 import scala.util.Try
@@ -13,12 +15,19 @@ import scala.util.Try
 class BagIt @Inject()(userService : UserService, files : FileService, datasets : DatasetService) extends ApiController {
 
 
-  def bagDataset(dataset : Dataset) = Try {
-
+  def bagDataset(dataset : Dataset) = Action {
+    val temp = Files.createTempDirectory(null)
+    temp.toFile().deleteOnExit()
+    temp.toFile.delete()
+    Ok("not implemented")
   }
 
-  def bagFile(file : File) = Try {
-
+  def bagFile(id : UUID) = Action {
+    val tmp = System.getProperty("java.io.tmpdir")
+    val temp = Files.createTempDirectory(null);
+    temp.toFile().deleteOnExit()
+    temp.toFile().delete()
+    Ok("not implemented")
 
   }
 

@@ -684,3 +684,9 @@ GET            /spaces/curations/:id/updatedFilesAndFolders                     
 
 
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()
+
+# ----------------------------------------------------------------------
+# BAGIT ENDPOINTS
+# ----------------------------------------------------------------------
+
+GET            /bagit/bagFile/:id                                                       @api.BagIt.bagFile(id : UUID)
