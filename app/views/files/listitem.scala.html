@@ -1,5 +1,6 @@
 @(file: File, comments: Map[UUID, Int], redirect: Call, folder: Option[String])(implicit user: Option[models.User])
 @import api.Permission
+@import _root_.util.FileUtils
 <div class="panel panel-default" id="@file.id-listitem">
     <div class="panel-body">
         <div class="row">
@@ -13,6 +14,7 @@
                         <ul class="list-unstyled">
                             <li>@(if(file.contentType != null) file.contentType else "N/A")</li>
                             <li>@file.uploadDate.format("MMM dd, yyyy")</li>
+                            <li>@FileUtils.humanReadableByteCount(file.length)</li>
                             <li>
                                 <span class="glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
                                 <span class="glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
