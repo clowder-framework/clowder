@@ -1889,21 +1889,21 @@ class Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  // TODO don't use a .get here!!! -todd n
+  // TODO  -todd n
   private def addBagMD5ToZip() = {
 
     val s : String = ""
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  // TODO don't use a .get here!!! -todd n
+  // TODO  what file does this write? What values? -todd n
   private def addMD5ToZip() = {
 
     val s : String = ""
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  // TODO don't use a .get here!!! -todd n
+  // TODO what file does this write? What values ?  -todd n
   private def addMetadataBagToZip() = {
 
     val s : String = ""

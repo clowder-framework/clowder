@@ -537,7 +537,7 @@ class MongoDBDatasetService @Inject() (
       }
     }
   }
-  
+
   def getUserMetadata(id: UUID): scala.collection.mutable.Map[String, Any] = {
     Dataset.dao.collection.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)), MongoDBObject("userMetadata" -> 1)) match {
       case None => new scala.collection.mutable.HashMap[String, Any]
