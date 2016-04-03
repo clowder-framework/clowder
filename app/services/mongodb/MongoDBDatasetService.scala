@@ -538,14 +538,22 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
-  def getMetadataAllInfo(id: UUID): Map[String, Any] = {
+  def getMetadataAndAllInfo(id: UUID): Map[String, Any] = {
+
+    var all_info : Map[String, Any] = Map.empty[String,Any]
+
+    var metadata :  Map[String, Any] = Map.empty[String,Any]
+
     Dataset.dao.collection.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)), MongoDBObject("metadata" -> 1)) match {
       case None => Map.empty
       case Some(x) => {
         //get description, author all other information, add to map
-        x.getAs[DBObject]("metadata").get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap
+        metadata = x.getAs[DBObject]("metadata").get.toMap.asScala.asInstanceOf[scala.collection.mutable.Map[String, Any]].toMap
+        //get other information
+
       }
     }
+    return all_info
   }
 
   def getUserMetadata(id: UUID): scala.collection.mutable.Map[String, Any] = {

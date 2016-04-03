@@ -1688,7 +1688,7 @@ class Datasets @Inject()(
    * @return Enumerator to produce array of bytes from a zipped stream containing the bytes of each file
    *         in the dataset
    */
-  def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean = false)
+  def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean = true)
                            (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
     implicit val pec = ec.prepare()
     val folderNameMap = scala.collection.mutable.Map.empty[UUID, String]
@@ -1845,17 +1845,40 @@ class Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  // TODO don't use a .get here!!! -todd n
-  private def addDatasetInfoToZip(folderName: String, dataset: models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
-    zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
-    val s : String = ""
-    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
+  // TODO are other fields necessary ? -todd n
+  private def getDatasetInfoAsMap(dataset : Dataset) : Map[String,String] = {
+    var dataset_info = Map.empty[String,String]
+    dataset_info = dataset_info + ("name"->dataset.name,"author"->dataset.author.email.toString,"description"->dataset.description,
+      "tags"->dataset.tags.mkString(","), "spaces"->dataset.spaces.toString,"lastModified"->dataset.lastModifiedDate.toString)
+    return dataset_info
   }
 
   // TODO don't use a .get here!!! -todd n
+  private def addDatasetInfoToZip(folderName: String, dataset: models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
+    var metadata_and_info  = List.empty[Any]
+    val metadata  = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id)).map(JSONLD.jsonMetadataWithContext(_))
+    val infoListMap = getDatasetInfoAsMap(dataset)
+    metadata_and_info = metadata ++ infoListMap.toList
+    Some(new ByteArrayInputStream(metadata_and_info.toString().getBytes("UTF-8")))
+  }
+
+  // TODO don't use a .get here!!! -todd n
+  //this is the file metadata plus any other info
+
+  private def getFileInfoAsMap(file : models.File) : Map[String,String] = {
+    var fileInfo = Map.empty[String,String]
+    fileInfo = fileInfo + ("author" -> file.author.email.toString, "uploadDate" -> file.uploadDate.toString,"contentType"->file.contentType,
+      "tags"->file.tags.mkString(","),"description"->file.description,"licenseData"->file.licenseData.toString)
+    return fileInfo
+  }
+
   private def addFileInfoToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
-    val s : String = ""
+    val fileMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file.id))
+      .map(JSONLD.jsonMetadataWithContext(_))
+    val fileInfo = getFileInfoAsMap(file)
+    val s : String = (fileMetadata ++ fileInfo.toList).toString()
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
