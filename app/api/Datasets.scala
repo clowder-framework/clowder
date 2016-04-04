@@ -1764,6 +1764,7 @@ class Datasets @Inject()(
                   is = addDatasetInfoToZip(rootFolder + folderNameMap(inputFiles(count).id), dataset, zip)
                 } else if (count >= inputFiles.size) {
                   // bagit case
+                  //this is the tagmanifest
                   //is = addBagMD5ToZip()
                 } else {
                   // file case
@@ -1772,13 +1773,15 @@ class Datasets @Inject()(
                 case 2 => if (count == 0) {
                   // dataset case
                   // TODO - what should this be adding?
-                  is = addInfoToZip(rootFolder + folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  is = addDatasetMetadataToZip(rootFolder,dataset, zip)
                 } else if (count >= inputFiles.size) {
                   // bagit case
+
+                  //write out ALL md5 for files FILE!!!
                   //is = addMD5ToZip()
                 } else {
                   // file case
-                  is = addMetadataToZip(rootFolder + folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  is = addFileMetadataToZip(rootFolder + folderNameMap(inputFiles(count).id), inputFiles(count), zip)
                 }
                 case _ => {
                   fileinfo = 0
@@ -1787,6 +1790,7 @@ class Datasets @Inject()(
                     is = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
                   } else if (count == inputFiles.size) {
                     // bagit metadata case
+                    //bagit.txt bag-info.txt
                     //is = addMetadataBagToZip()
                   } else {
                     // close the zip file and exit
@@ -1797,11 +1801,15 @@ class Datasets @Inject()(
                 }
               }
 
-              if (is.isDefined) {
+              if (is.isDefined) {//and in bagit AND file or dataset case
                 val md5 = MessageDigest.getInstance("MD5")
                 md5Tracker.put("path on disk", md5)
-                //is = Some(new DigestInputStream(is.get, md5))
-                Hex.encodeHex(md5.digest())
+                //this input stream is for manifest-md5
+                //what is in the data folder AND the json files
+                //the md5 and the file name
+                is = Some(new DigestInputStream(is.get, md5))
+                //call hex when write out the md5 file
+                //Hex.encodeHex(md5.digest())
               }
               Some(byteArrayOutputStream.toByteArray)
             }
@@ -1841,7 +1849,7 @@ class Datasets @Inject()(
 
   // TODO don't use a .get here!!! -todd n
   // THIS METHOD IS THE PROBLEM
-  private def addMetadataToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
+  private def addFileMetadataToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
     val s : String = metadataService.getMetadataById(file.id).get.toString()
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
@@ -1868,7 +1876,7 @@ class Datasets @Inject()(
     var metadata_and_info  = List.empty[Any]
     val metadata  = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id)).map(JSONLD.jsonMetadataWithContext(_))
     val infoListMap = getDatasetInfoAsMap(dataset)
-    metadata_and_info = metadata ++ infoListMap.toList
+    metadata_and_info = infoListMap.toList
     Some(new ByteArrayInputStream(metadata_and_info.toString().getBytes("UTF-8")))
   }
 
@@ -1886,26 +1894,29 @@ class Datasets @Inject()(
     * adds a json with the file metadata, plus other fields
    */
   private def addFileInfoToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
-    zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
+    zip.putNextEntry(new ZipEntry(folderName + "/_info.json"))
     val fileMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file.id))
       .map(JSONLD.jsonMetadataWithContext(_))
     val fileInfo = getFileInfoAsMap(file)
-    val s : String = (fileMetadata ++ fileInfo.toList).toString()
+    val s : String = (fileInfo.toList).toString()
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
   // TODO !!! -todd n
   //what should this be writing?
-  private def addInfoToZip(folderName: String, file : models.File, zip: ZipOutputStream): Option[InputStream] = {
+  //tthe metadata
+  private def addDatasetMetadataToZip(folderName: String, dataset : models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
-    val s : String = "test test test"
+    val datasetMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
+      .map(JSONLD.jsonMetadataWithContext(_))
+    val s : String = datasetMetadata.toString()
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
   // TODO  -todd n
   private def addBagMD5ToZip() = {
 
-    val s : String = ""
+    val s : String = "test"
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
@@ -1914,7 +1925,7 @@ class Datasets @Inject()(
   //it will also write tagmanifest-md5.txt
   private def addMD5ToZip() = {
 
-    val s : String = ""
+    val s : String = "test"
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
@@ -1923,7 +1934,7 @@ class Datasets @Inject()(
   //it also writes bag-info.txt
   private def addMetadataBagToZip() = {
 
-    val s : String = ""
+    val s : String = "test"
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
