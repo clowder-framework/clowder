@@ -15,7 +15,7 @@ import models.ThreeDGeometry
 import models.ThreeDTexture
 
 /**
- * Created by lmarini on 2/26/14.
+ * Use MongoDB to store 3-d's
  */
 class MongoDBThreeDService extends ThreeDService {
 

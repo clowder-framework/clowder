@@ -17,8 +17,7 @@ import MongoContext.context
 
 /**
  * Track securesocial authenticated users in MongoDB.
- * 
- * @author Luigi Marini
+ *
  *
  */
 case class LocalAuthenticator(

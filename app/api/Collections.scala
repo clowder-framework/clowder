@@ -142,7 +142,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
   @ApiOperation(value = "Remove collection",
       notes = "Does not delete the individual datasets in the collection.",
-      responseClass = "None", httpMethod = "POST")
+      responseClass = "None", httpMethod = "DELETE")
   def removeCollection(collectionId: UUID) = PermissionAction(Permission.DeleteCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     collections.get(collectionId) match {
       case Some(collection) => {
@@ -665,7 +665,21 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
         Ok(toJson(parentCollections))
       }
+
       case None => BadRequest(toJson("collection not found"))
+    }
+  }
+
+  @ApiOperation(value = "Checks if we can remove a collection from a space",
+    responseClass = "None", httpMethod = "GET")
+  def removeFromSpaceAllowed(collectionId: UUID , spaceId : UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+    val user = request.user
+    user match {
+      case Some(identity) => {
+        val hasParentInSpace = collections.hasParentInSpace(collectionId, spaceId)
+        Ok(toJson(!(hasParentInSpace)))
+      }
+      case None => Ok(toJson(false))
     }
   }
 

@@ -62,7 +62,6 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "Publication Date" -> Json.toJson(""),
               "External Identifier" -> Json.toJson(""),
               "SHA512 Hash" -> Json.toJson(files.get(file.fileId).map{ f => f.sha512}),
-              "Keyword" -> Json.toJson(file.tags.map(_.name)),
               "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2015/File")),
               "Is Version Of" -> Json.toJson(controllers.routes.Files.file(file.fileId).absoluteURL(https) + "?key=" + key),
               "similarTo" -> Json.toJson(api.routes.Files.download(file.fileId).absoluteURL(https)  + "?key=" + key)
@@ -75,7 +74,26 @@ class CurationObjects @Inject()(datasets: DatasetService,
             tempMap ++ fileMetadata
 
           }
-          val hasPart = curations.getAllCurationFileIds(c.id).map(file => "urn:uuid:"+file)
+          val foldersJson = curations.getCurationFolders(curations.getAllCurationFolderIds(c.id)).map { folder =>
+
+              val hasPart = folder.files.map(file=>"urn:uuid:"+file) ++ folder.folders.map(fd => "urn:uuid:"+fd)
+              val tempMap = Map(
+                "Creation Date" -> Json.toJson(format.format(folder.created)),
+                "Rights" -> Json.toJson(c.datasets(0).licenseData.m_licenseText),
+                "Identifier" -> Json.toJson("urn:uuid:"+folder.id),
+                "License" -> Json.toJson(c.datasets(0).licenseData.m_licenseText),
+                "Label" -> Json.toJson(folder.name),
+                "Title" -> Json.toJson(folder.displayName),
+                "Uploaded By" -> Json.toJson(folder.author.fullName + ": " +  api.routes.Users.findById(folder.author.id).absoluteURL(https)),
+                "@id" -> Json.toJson("urn:uuid:"+folder.id),
+                "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2016/Folder")),
+                "Is Version Of" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https) +"#folderId=" +folder.folderId),
+                "Has Part" -> Json.toJson(hasPart)
+              )
+              tempMap
+
+          }
+          val hasPart = c.files.map(file => "urn:uuid:"+file) ++ c.folders.map(folder => "urn:uuid:"+folder)
           var commentsByDataset = comments.findCommentsByDatasetId(c.datasets(0).id)
           curations.getCurationFiles(curations.getAllCurationFileIds(c.id)).map {
             file =>
@@ -162,7 +180,8 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     "Mimetype" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
                     "SHA512 Hash" -> Json.toJson("http://sead-data.net/terms/hasSHA512Digest"),
                     "Dataset Description" -> Json.toJson("http://sead-data.net/terms/datasetdescription"),
-                    "Publishing Project" -> Json.toJson("http://sead-data.net/terms/publishingProject")
+                    "Publishing Project" -> Json.toJson("http://sead-data.net/terms/publishingProject"),
+                    "License" -> Json.toJson("http://purl.org/dc/terms/license")
                   )
                 )
 
@@ -185,7 +204,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   "@type" -> Json.toJson(Seq("Aggregation", "http://cet.ncsa.uiuc.edu/2015/Dataset")),
                   "Is Version Of" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https)),
                   "similarTo" -> Json.toJson(controllers.routes.Datasets.dataset(c.datasets(0).id).absoluteURL(https)),
-                  "aggregates" -> Json.toJson(filesJson),
+                  "aggregates" -> Json.toJson(filesJson ++ foldersJson.toList),
                   "Has Part" -> Json.toJson(hasPart),
                   "Publishing Project"-> Json.toJson(controllers.routes.Spaces.getSpace(c.space).absoluteURL(https))
                 )),

@@ -1,4 +1,4 @@
-@(curationObject: models.CurationObject, mmResponse: models.MatchMakerResponse, repository: String)(implicit user: Option[models.User] )
+@(curationObject: models.CurationObject, mmResponse: models.MatchMakerResponse, repository: String, properties: Map[String, List[String]],  userPreferences:  Map[String,List[String]])(implicit user: Option[models.User] )
 @main("Submit to Repository") {
     <div class="row">
         <div class="col-md-12">
@@ -25,6 +25,23 @@
     <div class="row">
         <div class="col-md-3">
             @spaces.curation_summary(curationObject, "Submit to Repository", false)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <h4>Preferences</h4>
+                    @for((prop, value) <- properties) {
+                        <h5>@prop</h5>
+                        @for(cur<-value) {
+                            @if((userPreferences.contains(prop.replace(" ", "_")) && userPreferences(prop.replace(" ", "_")).contains(cur))) {
+                                <input type="checkbox" name="@prop" value="@cur" checked> @cur <br/>
+
+                            } else {
+                                <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
+                            }
+
+                        }
+                    }
+                </div>
+            </div>
         </div>
         <div class="col-md-9">
             <h3>@mmResponse.repositoryName</h3>
@@ -41,15 +58,6 @@
                     }
                 </ul>
             </div>
-            <h4>Acknowledgments</h4>
-            <ul class="list-unstyled">
-                <li><h5>Confidentiality</h5><li/>
-                <li><input type="checkbox" id="confidential_agreement"> Dataset contains confidential info</li>
-            <li><h5>Copyrighted material</h5><li/>
-                <li><input type="checkbox" checked id="copyright_agreement"> Dataset contains copyrighted material</li>
-            <li><h5>Depositor Agreement</h5><li/>
-                <li><input type="checkbox" checked id="depositor_agreement"> I agree to @mmResponse.repositoryName deposit agreement</li>
-            </ul>
         </div>
     </div>
     <div class="row bottom-padding">

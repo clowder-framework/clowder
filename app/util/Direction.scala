@@ -1,7 +1,7 @@
 package util
 
 /**
- * @author Rob Kooper
+  * Enumeration for Direction
  */
 object Direction extends Enumeration {
   type Direction = Value
