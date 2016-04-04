@@ -1,0 +1,14 @@
+@(msg: String)
+@main("Not Found") {
+  <div class="row">
+    <div class="col-sm-12 col-md-12 col-lg-12 text-center">
+      <h2>
+      @if(msg != null){
+        @msg
+      }else{
+        The resource does not exist.
+      }
+      </h2>
+    </div>
+  </div>
+}

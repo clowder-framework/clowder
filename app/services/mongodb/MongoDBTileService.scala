@@ -15,7 +15,7 @@ import play.api.Logger
 import javax.inject.{Inject, Singleton}
 
 /**
- * Created by lmarini on 2/27/14.
+ * Use mongodb to mange tiles.
  */
 @Singleton
 class MongoDBTileService @Inject() (previews: PreviewService, storage: ByteStorageService) extends TileService {

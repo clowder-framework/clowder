@@ -5,7 +5,7 @@
     <div class="row">
         <div class="panel panel-default">
             <div class="panel-body">
-                <form class="form top-padding">
+                <form class="form top-padding" id="metadata-search">
                     <div class="form-group col-lg-4 col-md-4">
                         <select id="add-metadata-select">
                             <option value=""></option>
@@ -106,7 +106,7 @@
         });
 
         // form submission
-        $( "form" ).submit(function( event ) {
+        $( "form[id='metadata-search']").submit(function( event ) {
             event.preventDefault();
             var k = $("#add-metadata-select option:selected").text();
             var predicate = $("#add-metadata-select option:selected").val();

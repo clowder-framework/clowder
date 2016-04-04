@@ -15,7 +15,6 @@ import services.ByteStorageService
 /**
  * Helper to store data on disk.
  *
- * @author Rob Kooper
  */
 class DiskByteStorageService extends ByteStorageService {
   /**

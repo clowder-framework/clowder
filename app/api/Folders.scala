@@ -1,5 +1,7 @@
 package api
 
+import java.util.Date
+
 import models.{ResourceRef, Folder}
 import models.UUID
 import javax.inject.{Inject, Singleton}
@@ -87,11 +89,11 @@ class Folders @Inject() (
                         }
 
                         if(UUID(parentId) == parentDatasetId) {
-                          folder = Folder(name = trimname, displayName = displayName.trim(), files = List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType.toLowerCase(), parentDatasetId = parentDatasetId)
+                          folder = Folder(author= identity.getMiniUser, created = new Date(), name = trimname, displayName = displayName.trim(), files = List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType.toLowerCase(), parentDatasetId = parentDatasetId)
                         }  else if(parentType == "folder") {
                           folders.get(UUID(parentId)) match {
                             case Some(pfolder) => {
-                              folder = Folder(name = trimname, displayName = displayName.trim(), files=List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType.toLowerCase(), parentDatasetId = parentDatasetId)
+                              folder = Folder(author= identity.getMiniUser, created = new Date(), name = trimname, displayName = displayName.trim(), files=List.empty, folders = List.empty, parentId = UUID(parentId), parentType = parentType.toLowerCase(), parentDatasetId = parentDatasetId)
                             }
                             case None => InternalServerError(s"parent folder $parentId not found")
                           }

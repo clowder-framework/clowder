@@ -15,7 +15,6 @@ import com.typesafe.plugin._
 /**
  * Contains information about an user event
  *
- * @author Varun Kethineedi
  */
 
  case class Event(

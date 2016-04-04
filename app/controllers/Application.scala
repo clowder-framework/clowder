@@ -164,8 +164,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   }
 
   def email(subject: String) = UserAction(needActive=false) { implicit request =>
-    implicit val user = request.user
-    Ok(views.html.emailAdmin(subject))
+    if (request.user.isEmpty) {
+      Redirect(routes.Application.index())
+    } else {
+      implicit val user = request.user
+      Ok(views.html.emailAdmin(subject))
+    }
   }
 
   def options(path:String) = UserAction(needActive = false) { implicit request =>
@@ -211,6 +215,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         routes.javascript.Geostreams.list,
         routes.javascript.Collections.collection,
         routes.javascript.Error.authenticationRequiredMessage,
+        routes.javascript.Collections.getUpdatedDatasets,
+        routes.javascript.Collections.getUpdatedChildCollections,
         routes.javascript.Profile.viewProfileUUID,
         routes.javascript.Assets.at,
         api.routes.javascript.Comments.comment,
@@ -250,6 +256,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Files.removeTags,
         api.routes.javascript.Files.removeAllTags,
         api.routes.javascript.Files.updateLicense,
+        api.routes.javascript.Files.updateFileName,
         api.routes.javascript.Files.updateDescription,
         api.routes.javascript.Files.extract,
         api.routes.javascript.Files.removeFile,
@@ -273,6 +280,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Sections.removeAllTags,
         api.routes.javascript.Geostreams.searchSensors,
         api.routes.javascript.Geostreams.searchStreams,
+        api.routes.javascript.Geostreams.getSensor,
+        api.routes.javascript.Geostreams.getStream,
         api.routes.javascript.Geostreams.getSensorStreams,
         api.routes.javascript.Geostreams.searchDatapoints,
         api.routes.javascript.Geostreams.deleteSensor,
@@ -292,6 +301,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Collections.updateCollectionName,
         api.routes.javascript.Collections.updateCollectionDescription,
         api.routes.javascript.Collections.getCollection,
+        api.routes.javascript.Collections.removeFromSpaceAllowed,
         api.routes.javascript.Spaces.get,
         api.routes.javascript.Spaces.removeSpace,
         api.routes.javascript.Spaces.list,
@@ -337,6 +347,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Datasets.dataset,
         controllers.routes.javascript.Datasets.newDataset,
         controllers.routes.javascript.Datasets.createStep2,
+        controllers.routes.javascript.Datasets.launchTool,
+        controllers.routes.javascript.Datasets.getLaunchableTools,
+        controllers.routes.javascript.Datasets.uploadDatasetToTool,
+        controllers.routes.javascript.Datasets.getInstances,
+        controllers.routes.javascript.Datasets.refreshToolSidebar,
+        controllers.routes.javascript.Datasets.removeInstance,
         controllers.routes.javascript.Folders.createFolder,
         controllers.routes.javascript.Datasets.getUpdatedFilesAndFolders,
         controllers.routes.javascript.Collections.collection,
