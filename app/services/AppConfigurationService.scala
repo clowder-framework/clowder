@@ -1,6 +1,5 @@
 package services
 
-import play.Logger
 import util.ResourceLister
 
 /**
@@ -8,8 +7,6 @@ import util.ResourceLister
  * and can be used to store application configuration options. See also AppConfiguration
  * for specific configuration options.
  *
- * @author Luigi Marini
- * @author Rob Kooper
  */
 trait AppConfigurationService {
   /** Adds an additional value to the property with the specified key. */
@@ -60,10 +57,20 @@ object AppConfiguration {
   // ----------------------------------------------------------------------
 
   /** Set the default theme */
-  def setTheme(theme: String) = appConfig.setProperty("theme", theme)
+  def setTheme(theme: String) = {
+    if (themes.contains(theme))
+      appConfig.setProperty("theme", theme)
+  }
 
   /** Get the default theme */
-  def getTheme: String = appConfig.getProperty[String]("theme", "simplex.min.css")
+  def getTheme: String = {
+    val theme = appConfig.getProperty[String]("theme", "simplex.min.css")
+    if (themes.contains(theme)) {
+      theme
+    } else {
+      "simplex.min.css"
+    }
+  }
 
   /** Get list of available themes */
   def themes: List[String] = {
@@ -136,46 +143,4 @@ object AppConfiguration {
   def getParameterTitle: String = appConfig.getProperty("parameter.title", "Parameter")
 
   // ----------------------------------------------------------------------
-  /**
-   * Add the given admin to list of admins. This list is primarily used when a new user signs
-   * up (requires registerThroughAdmins to be set to true in application.conf) or when the
-   * plugin is enabled to send emails on creating of new datasets, collections and/or files.
-   */
-  def addAdmin(admin: String) = appConfig.addPropertyValue("admins", admin)
-
-  /**
-   * Removes the given admin to list of admins. This list is primarily used when a new user signs
-   * up (requires registerThroughAdmins to be set to true in application.conf) or when the
-   * plugin is enabled to send emails on creating of new datasets, collections and/or files.
-   */
-  def removeAdmin(admin: String) = appConfig.removePropertyValue("admins", admin)
-
-  /**
-   * Checks if the given admin is on the list of admins. This list is primarily used when a
-   * new user signs up (requires registerThroughAdmins to be set to true in application.conf)
-   * or when the plugin is enabled to send emails on creating of new datasets, collections
-   * and/or files.
-   */
-  def checkAdmin(admin: String) = appConfig.hasPropertyValue("admins", admin)
-
-  /**
-   * Get list of all admins. This list is primarily used when a new user signs up (requires
-   * registerThroughAdmins to be set to true in application.conf) or when the plugin is enabled
-   * to send emails on creating of new datasets, collections and/or files.
-   * This will return a list of email addresses!
-   */
-  def getAdmins: List[String] = appConfig.getProperty[List[String]]("admins", List.empty[String])
-
-  /**
-   * Sets default admins as specified in application.conf. This list is used when a new
-   * user signs up (requires registerThroughAdmins to be set to true in application.conf) or when
-   * the plugin is enabled to send emails on creating of new datasets, collections and/or files,
-   * as well as all server tasks that require admin privileges.
-   */
-  def setDefaultAdmins() = {
-    val admins = play.Play.application().configuration().getString("initialAdmins")
-    for(x <- admins.trim.split("\\s*,\\s*") if (x != "")) {
-      appConfig.addPropertyValue("admins", x)
-    }
-  }
 }

@@ -105,6 +105,13 @@ GET            /datasets/createStep2                                            
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
 GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
+GET            /datasets/toolManager                                                    @controllers.Datasets.toolManager
+GET            /datasets/refreshToolList                                                @controllers.Datasets.refreshToolSidebar(datasetid: UUID, datasetName: String)
+GET            /datasets/launchableTools                                                @controllers.Datasets.getLaunchableTools
+GET            /datasets/uploadToTool                                                   @controllers.Datasets.uploadDatasetToTool(instanceID: UUID, datasetID: UUID, datasetName: String)
+GET            /datasets/getInstances                                                   @controllers.Datasets.getInstances
+GET            /datasets/removeInstance                                                 @controllers.Datasets.removeInstance(toolType: String, instanceID: UUID)
+GET            /datasets/launchTool                                                     @controllers.Datasets.launchTool(sessionName: String, ttype: String, datasetId: UUID, datasetName: String)
 GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, limit: Int ?= 20)
 POST           /datasets/:datasetId/updatedFilesAndFolders                              @controllers.Datasets.getUpdatedFilesAndFolders(datasetId: UUID, limit: Int ?= 20, pageIndex: Int ?= 0)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
@@ -113,6 +120,7 @@ POST           /dataset/submit                                                  
 GET            /datasets/:id/addFiles                                                   @controllers.Datasets.addFiles(id: UUID)
 GET            /datasets/:id/:folderId/addFiles                                         @controllers.Folders.addFiles(id: UUID, folderId: String)
 POST           /datasets/:parentDatasetId/newFolder                                     @controllers.Folders.createFolder(parentDatasetId: UUID)
+
 # ----------------------------------------------------------------------
 # COLLECTIONS
 # ----------------------------------------------------------------------
@@ -122,10 +130,11 @@ GET            /collections/new                                                 
 GET            /collections/newCollectionWithParent                                     @controllers.Collections.newCollectionWithParent(parentCollectionId: Option[String])
 GET            /collections/following                                                   @controllers.Collections.followingCollections(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
 POST           /collection/submit                                                       @controllers.Collections.submit
-GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID, index: Int ?=0, limit: Int ?= 12)
+GET            /collection/:id                                                          @controllers.Collections.collection(id: UUID, limit: Int ?= 12)
 GET            /collection/:id/users                                                    @controllers.Collections.users(id: UUID)
 GET            /collections/:collection_id/previews                                     @controllers.Collections.previews(collection_id: UUID)
-
+GET            /collection/:id/datasets                                                 @controllers.Collections.getUpdatedDatasets(id:UUID, index: Int?=0, limit: Int?= 12)
+GET            /collection/:id/childCollections                                         @controllers.Collections.getUpdatedChildCollections(id:UUID, index: Int?=0, limit: Int ?=12)
 # ----------------------------------------------------------------------
 # Spaces
 # ----------------------------------------------------------------------
@@ -146,10 +155,10 @@ POST           /spaces/submit                                                   
 # ----------------------------------------------------------------------
 # SENSORS
 # ----------------------------------------------------------------------
-GET            /geostreams                                                              controllers.Geostreams.map
-GET            /geostreams/sensors                                                      controllers.Geostreams.list
-GET            /geostreams/sensors/new                                                  controllers.Geostreams.newSensor
-GET            /geostreams/sensors/:id                                                  controllers.Geostreams.edit(id)
+GET            /geostreams                                                              @controllers.Geostreams.map
+GET            /geostreams/sensors                                                      @controllers.Geostreams.list
+GET            /geostreams/sensors/new                                                  @controllers.Geostreams.newSensor
+GET            /geostreams/sensors/:id                                                  @controllers.Geostreams.edit(id)
 
 # ----------------------------------------------------------------------
 # JSON-LD Metadata
@@ -350,6 +359,7 @@ POST           /api/files/:id/tags/remove_all                                   
 DELETE         /api/files/:id/tags                                                      @api.Files.removeTags(id: UUID)
 POST           /api/files/:id/license                                                   @api.Files.updateLicense(id: UUID)
 GET            /api/files/:id/extracted_metadata                                        @api.Files.extract(id:UUID)
+PUT            /api/files/:id/filename                                                  @api.Files.updateFileName(id: UUID)
 POST           /api/files/:id/reindex                                                   @api.Files.reindex(id:UUID)
 
 # ----------------------------------------------------------------------
@@ -457,6 +467,7 @@ GET            /api/collections/:coll_id/getChildCollections                    
 GET            /api/collections/:coll_id/getParentCollectionIds                         @api.Collections.getParentCollectionIds(coll_id: UUID)
 GET            /api/collections/:coll_id/getParentCollections                           @api.Collections.getParentCollections(coll_id: UUID)
 POST           /api/collections/:coll_id/addSubCollection/:sub_coll_id                  @api.Collections.attachSubCollection(coll_id: UUID, sub_coll_id: UUID)
+GET            /api/collections/:coll_id/removeFromSpaceAllowed/:space_id               @api.Collections.removeFromSpaceAllowed(coll_id: UUID, space_id: UUID)
 
 
 # ----------------------------------------------------------------------
@@ -668,6 +679,7 @@ GET            /spaces/curations/:id/edit                                       
 POST           /spaces/curations/:id/spaces/:spaceId/update                             @controllers.CurationObjects.updateCuration(id: UUID, spaceId:UUID)
 DELETE         /spaces/curations/:id                                                    @controllers.CurationObjects.deleteCuration(id: UUID)
 GET            /spaces/curations/:id/compareToRepository                                @controllers.CurationObjects.compareToRepository(id: UUID, repository:String)
+POST           /spaces/curations/:id/submitRepositorySelection                          @controllers.CurationObjects.submitRepositorySelection(id: UUID)
 GET            /spaces/curations/:id/sendToRepository                                   @controllers.CurationObjects.sendToRepository(id: UUID)
 GET            /spaces/curations/:id/matchmaker                                         @controllers.CurationObjects.findMatchingRepositories(id: UUID)
 POST           /spaces/curations/:id/matchmaker                                         @api.CurationObjects.findMatchmakingRepositories(id: UUID)

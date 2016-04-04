@@ -66,11 +66,9 @@ class Files @Inject() (
    */
   def file(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
     implicit val user = request.user
-    Logger.info("GET file with id " + id)
     files.get(id) match {
       case Some(file) => {
         val previewsFromDB = previews.findByFileId(file.id)
-        Logger.debug("Previews available: " + previewsFromDB)
         val previewers = Previewers.findPreviewers
         //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
         val previewsWithPreviewer = {
@@ -99,11 +97,9 @@ class Files @Inject() (
             Map(file -> ff)
           }
         }
-        Logger.debug("Previewers available: " + previewsWithPreviewer)
 
         // add sections to file
         val sectionsByFile = sections.findByFileId(file.id)
-        Logger.debug("Sections: " + sectionsByFile)
         val sectionsWithPreviews = sectionsByFile.map { s =>
         	val p = previews.findBySectionId(s.id)
         	if(p.length>0)
@@ -180,7 +176,7 @@ class Files @Inject() (
       case None => {
         val error_str = s"The file with id ${id} is not found."
         Logger.error(error_str)
-        Future(NotFound(toJson(error_str)))  
+        Future(BadRequest(views.html.notFound("File does not exist.")))
         }
     }
   }

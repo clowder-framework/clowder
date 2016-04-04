@@ -1,6 +1,6 @@
 package services.mongodb
 
-import services.{PreviewService, SectionService, CommentService}
+import services.{PreviewService, SectionService, CommentService, FileService, DatasetService}
 import models.{UUID, Tag, Comment, Section}
 import javax.inject.{Inject, Singleton}
 import java.util.Date
@@ -13,11 +13,13 @@ import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.Imports._
 import play.api.libs.json.{JsValue, Json}
 
+import scala.collection.mutable.ArrayBuffer
+
 /**
- * Created by lmarini on 2/17/14.
+ * USe MongoDB to store sections
  */
 @Singleton
-class MongoDBSectionService @Inject() (comments: CommentService, previews: PreviewService) extends SectionService {
+class MongoDBSectionService @Inject() (comments: CommentService, previews: PreviewService, files: FileService, datasets: DatasetService) extends SectionService {
   
   def listSections(): List[Section] = {
     SectionDAO.findAll.toList
@@ -115,6 +117,41 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
     SectionDAO.update(MongoDBObject("_id" -> new ObjectId(sectionId.stringify)),
       $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
    }
+
+  /**
+   * Get the list of spaces that the section (section --> file --> dataset --> [collection] --> space) belongs to
+   */
+  def getParentSpaces(querySectionId: UUID): ArrayBuffer[UUID] = {
+    // Get section
+    get(querySectionId) match {
+
+      case Some(section) => {
+        // Get file ID
+        val fileId = section.file_id
+        Logger.debug("File ID: " + fileId)
+
+        // Get the list of datasets that the file is part of
+        val datasetList = datasets.findByFileId(fileId).toList
+        val spaceList = new ArrayBuffer[UUID]
+
+        // Iterate through each dataset and get the IDs of spaces that it belongs to
+        datasetList.foreach(dataset => {
+          // Iterate through each space ID and add it to the spaceList
+          dataset.spaces.foreach(space => {
+            spaceList.+=(space)
+          })
+        })
+
+        // Return the spaces (after removing duplicates) that the section is belonging to
+        return spaceList.distinct
+
+      }
+      case None => {
+        return ArrayBuffer.empty
+      }
+    }
+    
+  }
   
 }
 

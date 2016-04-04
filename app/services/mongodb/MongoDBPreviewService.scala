@@ -24,7 +24,7 @@ import com.mongodb.casbah.WriteConcern
 import collection.JavaConverters._
 
 /**
- * Created by lmarini on 2/17/14.
+ * Use MongoDB to store previews
  */
 @Singleton
 class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, storage: ByteStorageService) extends PreviewService {

@@ -10,7 +10,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
 
 /**
- * @author Will Hennessy
+ * Use mongodb to store institutions.
  */
 class MongoDBInstitutionService extends InstitutionService {
 

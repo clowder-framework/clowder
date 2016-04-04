@@ -1,6 +1,6 @@
 package models
 
-import java.net.{URL, URI}
+import java.net.URI
 import java.util.Date
 import play.api.libs.json.Json._
 import play.api.libs.json._
@@ -157,6 +157,8 @@ object CurationFile {
 case class CurationFolder(
   id: UUID = UUID.generate,
   folderId: UUID,
+  author: MiniUser,
+  created: Date,
   name: String = "N/A",
   displayName: String = "N/A",
   files: List[UUID] = List.empty,

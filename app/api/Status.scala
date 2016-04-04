@@ -115,6 +115,14 @@ class Status @Inject()(spaces: SpaceService,
         })
       }
 
+      case p: ToolManagerPlugin => {
+        result.put("toolmanager", if (Permission.checkServerAdmin(user)) {
+          Json.obj("host" -> configuration.getString("toolmanagerURI").getOrElse("").toString)
+        } else {
+          jsontrue
+        })
+      }
+
       case p => {
         val name = p.getClass.getName
         if (name.startsWith("services.")) {

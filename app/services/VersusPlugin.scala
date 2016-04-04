@@ -15,8 +15,6 @@ import scala.collection.immutable.Map
 /**
  * Versus Plugin
  *
- * @author Smruti Padhy
- * @author Inna Zharnitsky *
  */
 class VersusPlugin(application: Application) extends Plugin {
 
