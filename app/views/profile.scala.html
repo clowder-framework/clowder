@@ -81,22 +81,31 @@
                     }
                 </div>
             } else {
-                <div id="prf-first-name" class="text-left inline">
-                    <h1 id="first-name-title" class="inline">@Html(profile.firstName)</h1>
-                    <div id="h-edit-first" class="hiddencomplete">
-                        <a id ="edit-first" href="javascript:updateFirstName()" title="Click to edit user's first name.">
-                            <span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
-                        </a>
+                @if(ownProfile){
+                    <div id="prf-first-name" class="text-left inline">
+                        <h1 id="first-name-title" class="inline" style="cursor:pointer" title="Click to edit user's first name.">@Html(profile.firstName)</h1>
+                        </a><div id="h-edit-first" class="hiddencomplete">
+                            <a id ="edit-first" href="javascript:updateFirstName()" title="Click to edit user's first name.">
+                                <span class ="glyphicon glyphicon-edit"></span>
+                            </a>
+                        </div>
                     </div>
-                </div>
-                <div id="prf-last-name" class="text-left inline edit-tab">
-                    <h1 id="last-name-title" class="inline">@Html(profile.lastName)</h1>
-                    <div id="h-edit-last" class="hiddencomplete">
-                        <a id ="edit-last" href="javascript:updateLastName()" title="Click to edit user's last name.">
-                            <span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
-                        </a>
+                    <div id="prf-last-name" class="text-left inline edit-tab">
+                        <h1 id="last-name-title" class="inline" style="cursor:pointer" title="Click to edit user's last name.">@Html(profile.lastName)</h1>
+                        <div id="h-edit-last" class="hiddencomplete">
+                            <a id ="edit-last" href="javascript:updateLastName()" title="Click to edit user's last name.">
+                                <span class ="glyphicon glyphicon-edit"></span>
+                            </a>
+                        </div>
                     </div>
-                </div>
+                } else {
+                    <div class="text-left inline">
+                        <h1 class="inline">@Html(profile.firstName)</h1>
+                    </div>
+                    <div class="text-left inline edit-tab">
+                        <h1 class="inline">@Html(profile.lastName)</h1>
+                    </div>
+                }
             }
             @if(profile.email.isDefined) {
                 <div>@profile.email.get</div>
@@ -134,14 +143,21 @@
     <script language="javascript">
         var profileMail = "@profile.email.get";
         var firstName = $('#first-name-title').text();
+        $('#first-name-title').click(function(){
+            updateFirstName();
+        });
         var lastName = $('#last-name-title').text();
+        $('#last-name-title').click(function(){
+            updateLastName();
+        });
         function updateFirstName() {
             firstName = $('#first-name-title').text();
+            cancelLastName();
             $('<div class="inline first_name_div h3"> </div>').insertAfter($('#prf-first-name'));
-            $('.first_name_div').append('<input type="text" id="first_name_input" style="width:150px" class="text-left" />');
+            $('.first_name_div').append('<input type="text" id="first_name_input" class="form-control" />');
             $('.first_name_div').append('<button class="btn btn-sm btn-primary edit-tab" onclick="saveFirstName()"> <span class="glyphicon glyphicon-send"></span> Save</button>');
-            $('.first_name_div').append('<button class="btn btn-sm btn-link" onclick="cancelFirstName()"> <span class="glyphicon glyphicon-remove"></span> Cancel</button>');
-            $('.first_name_div').append('<div class="hiddencomplete" id="first-name-error"> <span class="small">First name is required.</span></div>');
+            $('.first_name_div').append('<button class="btn btn-sm btn-link" onclick="cancelFirstName()"> <span class="glyphicon glyphicon-remove"></span> Cancel</button><br />');
+            $('.first_name_div').append('<div class="hiddencomplete" id="first-name-error"> <span class="small error">First name is required.</span></div>');
 
             $('#first_name_input').val(firstName);
             $('#first-name-title').text("");
@@ -149,11 +165,12 @@
         }
         function updateLastName() {
             lastName = $('#last-name-title').text();
+            cancelFirstName();
             $('<div class="inline last_name_div h3"></div>').insertAfter($('#prf-last-name'));
-            $('.last_name_div').append('<input type="text" id="last_name_input" class="text-left" />');
+            $('.last_name_div').append('<input type="text" id="last_name_input" class="form-control" />');
             $('.last_name_div').append('<button class="btn btn-sm btn-primary edit-tab" onclick="saveLastName()"> <span class="glyphicon glyphicon-send"></span> Save</button>');
             $('.last_name_div').append('<button class="btn btn-sm btn-link" onclick="cancelLastName()"> <span class="glyphicon glyphicon-remove"></span> Cancel</button>');
-            $('.last_name_div').append('<div class="hiddencomplete" id="last-name-error"> <span class="error">Last name is required.</span></div>');
+            $('.last_name_div').append('<div class="hiddencomplete" id="last-name-error"> <span class="small error">Last name is required.</span></div>');
 
             $('#last_name_input').val(lastName);
             $('#last-name-title').text("");
