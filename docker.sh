@@ -12,12 +12,10 @@
 PROJECT=${PROJECT:-"ncsa"}
 if [ ! "${PROJECT}" = "" ]; then
   if [ ! "$( echo $PROJECT | tail -c 2)" = "/" ]; then
-    REPO="${PROJECT}/clowder"
-  else
-    REPO="clowder"
+    PROJECT="${PROJECT}/"
   fi
 else
-  REPO="clowder"
+  PROJECT="ncsa/"
 fi
 
 # copy dist file to docker folder
@@ -58,22 +56,30 @@ else
 fi
 
 # create image using temp id
-${DEBUG} docker build --pull --tag $$ docker
+${DEBUG} docker build --pull --tag clowder-$$ docker
 if [ $? -ne 0 ]; then
-  echo "FAILED build of $1/Dockerfile"
+  echo "FAILED build of clowder"
+  exit -1
+fi
+
+${DEBUG} docker build --pull --tag toolserver-$$ scripts/toollaunchservice
+if [ $? -ne 0 ]; then
+  echo "FAILED build of toolserver"
   exit -1
 fi
 
 # tag all versions and push if need be
 for v in $VERSION; do
-  ${DEBUG} docker tag $$ ${REPO}:${v}
-  echo "Tagged ${REPO}:${v}"
+  ${DEBUG} docker tag clowder-$$ ${PROJECT}clowder:${v}
+  ${DEBUG} docker tag toolserver-$$ ${PROJECT}toolserver:${v}
+  echo "Tagged clowder toolserver with ${v}"
   if [ ! -z "$PUSH" -a ! "$PROJECT" = "" ]; then
-    ${DEBUG} docker push ${REPO}:${v}
-    echo "Pushed to dockerhub ${REPO}:${v}"
+    ${DEBUG} docker push ${PROJECT}clowder:${v}
+    ${DEBUG} docker push ${PROJECT}toolserver:${v}
+    echo "Pushed clowder toolserver to dockerhub"
   fi
 done
 
 # cleanup
-${DEBUG} docker rmi $$
+${DEBUG} docker rmi toolserver-$$ clowder-$$
 ${DEBUG} rm -rf docker/files
