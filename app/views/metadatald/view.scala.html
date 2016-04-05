@@ -25,7 +25,7 @@
                                     @if(contextId.isDefined) {
                                         <a href="#" onmouseover="getMetadataContext('@contextId.get','@key.replaceAll(" ", "")');" onmouseout="leaveMetadataContext('@contextId.get@key.replaceAll(" ", "")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
                                         <!-- ids don't like spaces, you can use regex for removing different characters in metadata names (key) as well -->
-                                        <div id='@contextId.get@key.replaceAll(" ", "")' class="contextInitDialog"></div>
+                                        <div id='@contextId.get@key.replaceAll(" ", "")' class="bg-info contextInitDialog"></div>
                                     } else {
                                         @contextURL match {
                                             case Some(u) => {
@@ -45,7 +45,7 @@
                                     </a>
                                     @if(contextId.isDefined) {
                                         <a href="#" onmouseover="getMetadataContext('@contextId.get','@key.replaceAll(" ", "")');" onmouseout="leaveMetadataContext('@contextId.get@key.replaceAll(" ", "")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
-                                        <div id='@contextId.get@key.replaceAll(" ", "")' class="contextInitDialog"></div>
+                                        <div id='@contextId.get@key.replaceAll(" ", "")' class="bg-info contextInitDialog"></div>
                                     } else {
                                         @contextURL match {
                                             case Some(u) => {
@@ -62,7 +62,7 @@
                                 <li class="md-block">
                                 @if(contextId.isDefined) {
                                     <a href="#" onmouseover="getMetadataContext('@contextId.get','@key.replaceAll(" ", "")');" onmouseout="leaveMetadataContext('@contextId.get@key.replaceAll(" ", "")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
-                                    <div id='@contextId.get@key.replaceAll(" ", "")' class="contextInitDialog"></div>
+                                    <div id='@contextId.get@key.replaceAll(" ", "")' class="bg-info contextInitDialog"></div>
                                 } else {
                                     @contextURL match {
                                         case Some(u) => {

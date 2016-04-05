@@ -901,15 +901,12 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 .contextDialog {
     position: absolute;
     width: 500px;
-    border: solid 1px grey;
+    border: solid 1px;
     border-radius: 5px;
-    font-family: Arial, Helvetica, sans-serif;
     z-index: 99999;
     margin: 5px;
     padding: 5px;
     pointer-events: auto;
-    display: true;
-    background: white;
 }
 
 /* custom class for noty notification, position of a close x */
