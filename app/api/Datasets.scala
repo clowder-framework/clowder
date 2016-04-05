@@ -14,6 +14,7 @@ import jsonutils.JsonUtil
 import models.{File, _}
 import org.apache.commons.codec.binary.Hex
 import org.json.JSONObject
+import org.json.JSONObject
 import play.api.Logger
 import play.api.Play.{configuration, current}
 import play.api.libs.concurrent.Execution.Implicits._
@@ -1701,7 +1702,7 @@ class Datasets @Inject()(
       case None => Logger.error(s"No file with id $f")
     })
 
-    val rootFolder = if (bagit) "/root" else ""
+    val rootFolder = if (bagit) "" else ""
     var md5Tracker = scala.collection.mutable.HashMap.empty[String, MessageDigest]
 
     folders.findByParentDatasetId(dataset.id).map {
@@ -1761,7 +1762,7 @@ class Datasets @Inject()(
               fileinfo match {
                 case 1 => if (count == 0) {
                   // dataset case
-                  is = addDatasetInfoToZip(rootFolder + folderNameMap(inputFiles(count).id), dataset, zip)
+                  //is = addDatasetInfoToZip(rootFolder + folderNameMap(inputFiles(count).id), dataset, zip)
                 } else if (count >= inputFiles.size) {
                   // bagit case
                   //this is the tagmanifest
@@ -1773,7 +1774,7 @@ class Datasets @Inject()(
                 case 2 => if (count == 0) {
                   // dataset case
                   // TODO - what should this be adding?
-                  is = addDatasetMetadataToZip(rootFolder,dataset, zip)
+                  //is = addDatasetMetadataToZip(rootFolder,dataset, zip)
                 } else if (count >= inputFiles.size) {
                   // bagit case
 
@@ -1781,7 +1782,7 @@ class Datasets @Inject()(
                   //is = addMD5ToZip()
                 } else {
                   // file case
-                  is = addFileMetadataToZip(rootFolder + folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  //is = addFileMetadataToZip(rootFolder + folderNameMap(inputFiles(count).id), inputFiles(count), zip)
                 }
                 case _ => {
                   fileinfo = 0
@@ -1860,6 +1861,7 @@ class Datasets @Inject()(
     var dataset_info = Map.empty[String,String]
     dataset_info = dataset_info + ("name"->dataset.name,"author"->dataset.author.email.toString,"description"->dataset.description,
       "tags"->dataset.tags.mkString(","), "spaces"->dataset.spaces.toString,"lastModified"->dataset.lastModifiedDate.toString)
+    val asJson = dataset_info
     return dataset_info
   }
 
@@ -1872,12 +1874,11 @@ class Datasets @Inject()(
     * @return
     */
   private def addDatasetInfoToZip(folderName: String, dataset: models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
-    zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
+    zip.putNextEntry(new ZipEntry(folderName + "/_info.json"))
     var metadata_and_info  = List.empty[Any]
     val metadata  = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id)).map(JSONLD.jsonMetadataWithContext(_))
-    val infoListMap = getDatasetInfoAsMap(dataset)
-    metadata_and_info = infoListMap.toList
-    Some(new ByteArrayInputStream(metadata_and_info.toString().getBytes("UTF-8")))
+    val infoListMap = Json.toJson(getDatasetInfoAsMap(dataset))
+    Some(new ByteArrayInputStream(infoListMap.toString().getBytes("UTF-8")))
   }
 
   // TODO don't use a .get here!!! -todd n
@@ -1898,7 +1899,8 @@ class Datasets @Inject()(
     val fileMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file.id))
       .map(JSONLD.jsonMetadataWithContext(_))
     val fileInfo = getFileInfoAsMap(file)
-    val s : String = (fileInfo.toList).toString()
+    val fileInfoJson = Json.toJson(fileInfo)
+    val s : String = (fileInfoJson.toString())
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
@@ -1906,7 +1908,7 @@ class Datasets @Inject()(
   //what should this be writing?
   //tthe metadata
   private def addDatasetMetadataToZip(folderName: String, dataset : models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
-    zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
+    zip.putNextEntry(new ZipEntry(folderName + "/_dataset_metadata.json"))
     val datasetMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
       .map(JSONLD.jsonMetadataWithContext(_))
     val s : String = datasetMetadata.toString()
