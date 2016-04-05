@@ -417,7 +417,7 @@ class Files @Inject()(
           files.get(f.id) match {
             case Some(x) => {
               //parse request for agent/creator info
-              val creator = UserAgent(id = UUID.generate(), user=user.getMiniUser, userId = Some(new URL(creator_url)))
+              val creator = UserAgent(id = UUID.generate(), user=user, userId = Some(new URL(creator_url)))
 
               // TODO: Put this block and the similar chunk from addMetadataJsonLD into helper function so not repeated
               // Extract context from metadata object and remove it so it isn't repeated twice
@@ -425,10 +425,10 @@ class Files @Inject()(
               val context: JsValue = (parseJson \ "@context")
               parseJson = parseJson.as[JsObject] - "@context"
               // check if the context is a URL to external endpoint
-              var contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
+              val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
               // check if context is a JSON-LD document
               // TODO: check if this actually exists first
-              var contextID: Option[UUID] =
+              val contextID: Option[UUID] =
                 if (context.isInstanceOf[JsObject]) {
                   context.asOpt[JsObject].map(contextService.addContext(new JsString("context name"), _))
                 } else if (context.isInstanceOf[JsArray]) {
@@ -607,8 +607,8 @@ class Files @Inject()(
       if (nameOfFile.toLowerCase().endsWith(".ptm")) {
         val thirdSeparatorIndex = nameOfFile.indexOf("__")
         if (thirdSeparatorIndex >= 0) {
-          var firstSeparatorIndex = nameOfFile.indexOf("_")
-          var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
+          val firstSeparatorIndex = nameOfFile.indexOf("_")
+          val secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
           flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
           nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
         }
@@ -620,7 +620,7 @@ class Files @Inject()(
     var realUser = user
     if (!originalZipFile.equals("")) {
       files.get(new UUID(originalZipFile)) match {
-        case Some(originalFile) => realUser = userService.findByIdentity(originalFile.author).getOrElse(user)
+        case Some(originalFile) => realUser = userService.findById(originalFile.author.id).getOrElse(user)
         case None => {}
       }
     }
@@ -1095,7 +1095,7 @@ class Files @Inject()(
 
   def jsonFile(file: File): JsValue = {
     toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "filedescription" -> file.description, "content-type" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString,
-    		"authorId" -> file.author.identityId.userId))
+    		"authorId" -> file.author.id.stringify))
   }
 
   def jsonFileWithThumbnail(file: File): JsValue = {
@@ -1104,7 +1104,7 @@ class Files @Inject()(
       fileThumbnail = file.thumbnail_id.toString().substring(5, file.thumbnail_id.toString().length - 1)
 
     toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType, "dateCreated" -> file.uploadDate.toString(), "thumbnail" -> fileThumbnail,
-    		"authorId" -> file.author.identityId.userId))
+    		"authorId" -> file.author.id.stringify))
   }
 
   def toDBObject(fields: Seq[(String, JsValue)]): DBObject = {

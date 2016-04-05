@@ -2,12 +2,11 @@ package models
 
 import java.util.Date
 import play.api.libs.json.{Json, JsValue, Writes}
-import securesocial.core.Identity
 
 case class Collection(
   id: UUID = UUID.generate,
   name: String = "N/A",
-  author: Identity,
+  author: MiniUser,
   description: String = "N/A",
   created: Date,
   datasetCount: Integer,
@@ -31,7 +30,7 @@ object Collection {
       } else {
         collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1)
       }
-      val collectionAuthor = collection.author.identityId.userId
+      val collectionAuthor = collection.author.id
 
       Json.obj("id" -> collection.id.toString, "collectionname" -> collection.name, "description" -> collection.description,
         "created" -> collection.created.toString, "thumbnail" -> collectionThumbnail, "authorId" -> collectionAuthor)
