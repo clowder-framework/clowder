@@ -1702,7 +1702,8 @@ class Datasets @Inject()(
       case None => Logger.error(s"No file with id $f")
     })
 
-    val rootFolder = if (bagit) "" else ""
+    val rootFolder = if (bagit) "/root" else ""
+    val dataFolder = if (bagit) "/root/data/" else ""
     var md5Tracker = scala.collection.mutable.HashMap.empty[String, MessageDigest]
 
     folders.findByParentDatasetId(dataset.id).map {
@@ -1743,7 +1744,7 @@ class Datasets @Inject()(
     } else {
       // regular file case
       count = count + 1
-      is  = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+      is  = addFileToZip(dataFolder+folderNameMap(inputFiles(count).id), inputFiles(count), zip)
     }
 
     Enumerator.generateM({
@@ -1762,19 +1763,19 @@ class Datasets @Inject()(
               fileinfo match {
                 case 1 => if (count == 0) {
                   // dataset case
-                  //is = addDatasetInfoToZip(rootFolder + folderNameMap(inputFiles(count).id), dataset, zip)
+                  is = addDatasetInfoToZip(rootFolder + folderNameMap(inputFiles(count).id), dataset, zip)
                 } else if (count >= inputFiles.size) {
                   // bagit case
                   //this is the tagmanifest
                   //is = addBagMD5ToZip()
                 } else {
                   // file case
-                  is = addFileInfoToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  is = addFileInfoToZip(dataFolder+folderNameMap(inputFiles(count).id), inputFiles(count), zip)
                 }
                 case 2 => if (count == 0) {
                   // dataset case
                   // TODO - what should this be adding?
-                  //is = addDatasetMetadataToZip(rootFolder,dataset, zip)
+                  is = addDatasetMetadataToZip(rootFolder,dataset, zip)
                 } else if (count >= inputFiles.size) {
                   // bagit case
 
@@ -1782,13 +1783,13 @@ class Datasets @Inject()(
                   //is = addMD5ToZip()
                 } else {
                   // file case
-                  is = addFileMetadataToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  is = addFileMetadataToZip(dataFolder+folderNameMap(inputFiles(count).id), inputFiles(count), zip)
                 }
                 case _ => {
                   fileinfo = 0
                   if (count < inputFiles.size) {
                     // file case
-                    is = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                    is = addFileToZip(dataFolder+folderNameMap(inputFiles(count).id), inputFiles(count), zip)
                   } else if (count == inputFiles.size) {
                     // bagit metadata case
                     //bagit.txt bag-info.txt
