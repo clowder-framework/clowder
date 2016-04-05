@@ -1782,7 +1782,7 @@ class Datasets @Inject()(
                   //is = addMD5ToZip()
                 } else {
                   // file case
-                  //is = addFileMetadataToZip(rootFolder + folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  is = addFileMetadataToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
                 }
                 case _ => {
                   fileinfo = 0
@@ -1852,7 +1852,9 @@ class Datasets @Inject()(
   // THIS METHOD IS THE PROBLEM
   private def addFileMetadataToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
-    val s : String = metadataService.getMetadataById(file.id).get.toString()
+    val fileMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file.id))
+      .map(JSONLD.jsonMetadataWithContext(_))
+    val s : String = Json.toJson(fileMetadata).toString()
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
@@ -1868,6 +1870,7 @@ class Datasets @Inject()(
   // TODO don't use a .get here!!! -todd n
   /**
     * adds the dataset info and metadata as json
+    * WORKS !!!
     * @param folderName
     * @param dataset
     * @param zip
@@ -1893,6 +1896,7 @@ class Datasets @Inject()(
 
   /**
     * adds a json with the file metadata, plus other fields
+    * WORKS!! !!
    */
   private def addFileInfoToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "/_info.json"))
