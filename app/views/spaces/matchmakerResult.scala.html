@@ -31,7 +31,7 @@
                     @for((prop, value) <- properties) {
                         <h5>@prop</h5>
                            @for(cur<-value) {
-                                @if(userPreferences.contains(prop.replace(" ", "_")) && userPreferences(prop.replace(" ", "_")).contains(cur)) {
+                                @if((userPreferences.contains(prop.replace(" ", "_")) && userPreferences(prop.replace(" ", "_")).contains(cur)) || cur == "Testing-Only") {
                                     <input type="checkbox" name="@prop" value="@cur" checked> @cur <br/>
 
                                 } else {

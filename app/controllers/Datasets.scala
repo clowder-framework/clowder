@@ -10,11 +10,12 @@ import fileutils.FilesUtils
 import models._
 import play.api.Logger
 import play.api.Play.current
+import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json._
 import services._
 import util.{Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ListBuffer, Map => MutableMap}
 
 /**
  * A dataset is a collection of files and streams.
@@ -333,9 +334,9 @@ class Datasets @Inject()(
         case Some(dataset) => {
 
           // get files info sorted by date
-          val filesInDataset = dataset.files.map(f => files.get(f) match {
-            case Some(file) => file
-            case None => Logger.debug(s"Unable to find file $f")
+          val filesInDataset = dataset.files.flatMap(f => files.get(f) match {
+            case Some(file) => Some(file)
+            case None => Logger.debug(s"Unable to find file $f"); None
           }).asInstanceOf[List[File]].sortBy(_.uploadDate)
 
           var datasetWithFiles = dataset.copy(files = filesInDataset.map(_.id))
@@ -830,7 +831,7 @@ class Datasets @Inject()(
         for(k <- userListSpaceRoleTupleMap.keys) userListSpaceRoleTupleMap += ( k -> userListSpaceRoleTupleMap(k).distinct.sortBy(_._1.toLowerCase) )
 
         if(userList.nonEmpty) {
-          val currUserIsAuthor = user.get.identityId.userId.equals(dataset.author.identityId.userId)
+          val currUserIsAuthor = user.get.id.equals(dataset.author.id)
           Ok(views.html.datasets.users(dataset, userListSpaceRoleTupleMap, currUserIsAuthor, userList))
         }
         else Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No users found for dataset $id.")
@@ -849,4 +850,139 @@ class Datasets @Inject()(
       implicit val user = request.user
       Ok(views.html.generalMetadataSearch())
   }
+
+
+  // TOOL MANAGER METHODS ----------------------------------------------------------------
+  /**
+    * With permission, prepare Tool Manager page with list of currently running tool instances.
+    */
+  def toolManager() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    var instanceMap = MutableMap[UUID, ToolInstance]()
+    var toolList: JsObject = JsObject(Seq[(String, JsValue)]())
+    // Get mapping of instanceIDs to URLs API has returned
+    current.plugin[ToolManagerPlugin].map( mgr => {
+      mgr.refreshActiveInstanceListFromServer()
+      toolList = mgr.toolList
+      instanceMap = mgr.instanceMap
+    })
+
+    Ok(views.html.datasets.toolManager(toolList, instanceMap.keys.toList, instanceMap))
+  }
+
+  /**
+    * Construct the sidebar listing active tools relevant to the given datasetId
+    * @param datasetId UUID of dataset that is currently displayed
+    */
+  def refreshToolSidebar(datasetId: UUID, datasetName: String) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    // Get mapping of instanceIDs to returned URLs
+    var instanceMap = MutableMap[UUID, ToolInstance]()
+    // Get mapping of instanceID -> ToolInstance if datasetID is in uploadHistory
+    current.plugin[ToolManagerPlugin].map( mgr => instanceMap = mgr.getInstancesWithDataset(datasetId))
+    Ok(views.html.datasets.tools(instanceMap.keys.toList, instanceMap, datasetId, datasetName))
+  }
+
+  /**
+    * Send request to ToolManagerPlugin to launch a new tool instance and upload datasetID.
+    */
+  def launchTool(instanceName: String, tooltype: String, datasetId: UUID, datasetName: String) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    val hostURL = request.headers.get("Host").getOrElse("")
+    val userId: Option[UUID] = user match {
+      case Some(u) => Some(u.id)
+      case None => None
+    }
+
+    current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        val instanceID = mgr.launchTool(hostURL, instanceName, tooltype, datasetId, datasetName, userId)
+        Ok(instanceID.toString)
+      }
+      case None => BadRequest("No ToolManagerPlugin found.")
+    }
+  }
+
+  /**
+    * Fetch list of launchable tools from Plugin.
+    */
+  def getLaunchableTools() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        val tools = mgr.getLaunchableTools()
+        Ok(tools)
+      }
+      case None => BadRequest("No ToolManagerPlugin found.")
+    }
+  }
+
+  /**
+    * Upload a dataset to an existing tool instance. Does not check for or prevent against duplication.
+    */
+  def uploadDatasetToTool(instanceID: UUID, datasetID: UUID, datasetName: String) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    val hostURL = request.headers.get("Host").getOrElse("")
+    val userId: Option[UUID] = user match {
+      case Some(u) => Some(u.id)
+      case None => None
+    }
+
+    current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        mgr.uploadDatasetToInstance(hostURL, instanceID, datasetID, datasetName, userId)
+        Ok("request sent")
+      }
+      case None => BadRequest("No ToolManagerPlugin found.")
+    }
+  }
+
+  /**
+    * Get full list of running instances from Plugin.
+    */
+  def getInstances() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        val instances = mgr.getInstances()
+        Ok(toJson(instances.toMap))
+      }
+      case None => BadRequest("No ToolManagerPlugin found.")
+    }
+  }
+
+  /**
+    * Get remote URL of running instance, if available.
+    */
+  def getInstanceURL(instanceID: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    val url = current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => mgr.checkForInstanceURL(instanceID)
+      case None => ""
+    }
+    Ok(url)
+  }
+
+  /**
+    * Send request to server to destroy instance, and remove from Plugin.
+    */
+  def removeInstance(toolPath: String, instanceID: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        mgr.removeInstance(toolPath, instanceID)
+        Ok(instanceID.toString)
+      }
+      case None => BadRequest("No ToolManagerPlugin found.")
+    }
+  }
+  // END TOOL MANAGER METHODS ---------------------------------------------------------------
 }

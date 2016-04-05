@@ -39,7 +39,7 @@
 		else if("@p._2" === "Video presentation"){
 			Configuration.authenticatedFileModify = false;
 			@if(user.isDefined) {
-	     	 	@if(user.get.identityId.userId.equals(file.author.identityId.userId)){
+	     	 	@if(user.get.id.equals(file.author.id)){
 					Configuration.authenticatedFileModify = true;
 	     	 	}
 			}			
@@ -47,7 +47,7 @@
 		else if("@p._2" === "External resource"){
 			Configuration.authenticatedFileModify = false;
 			@if(user.isDefined) {
-	     	 	@if(user.get.identityId.userId.equals(file.author.identityId.userId)){
+	     	 	@if(user.get.id.equals(file.author.id)){
 					Configuration.authenticatedFileModify = true;
 	     	 	}
 			}			
@@ -250,7 +250,7 @@
           </div> <!-- end of class btn-group -->
                 @if(user.isDefined) {
                 <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->                
-                    @if(user.get.identityId.userId.equals(file.author.identityId.userId)){                    
+                    @if(user.get.id.equals(file.author.id)){
                         <span class="align-right">
 							@if(datasets.length > 0) {
 				            <button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(datasets.head.id))')" class="btn btn-link" title="Delete">
@@ -378,7 +378,7 @@
 						  			 <td class="galleriaDescr">
 						  			 	<span id="sectiondescr_@(s.id)"  style="display:block;white-space: pre-line;">@s.description.getOrElse("")</span>
 						  			 	@if(user.isDefined) {
-						  			 		@if(user.get.identityId.userId.equals(file.author.identityId.userId)){
+						  			 		@if(user.get.id.equals(file.author.id)){
 						  			 			<div id="sectiondescrEditArea_@(s.id)" style="display:none;">
 													<textarea name="sectiondescrText" class="sectionTextBox" id="sectiondescrText_@(s.id)" style="width:100%; height:100px;">@s.description.getOrElse("")</textarea>
 												</div>
@@ -648,16 +648,16 @@
 							<td>mongo</td>
 						}
 						@if(file.loader == "services.filesystem.DiskByteStorageService") {
-							@if(file.path.isEmpty) {
+							@if(file.loader_id.isEmpty) {
 								<td>missing</td>
 							} else {
 								<td>
-								@if(file.path.get.length>10) {
-									<span title="@file.path.get">...@file.path.get.substring(file.path.get.length-10, file.path.get.length)</span>
+								@if(file.loader_id.length>10) {
+									<span title="@file.loader_id">...@file.loader_id.substring(file.loader_id.length-10, file.loader_id.length)</span>
 								} else {
-									@file.path.get
+									@file.loader_id
 								}
-								<a class="btn btn-link btn-sm clipboard" data-copy="@file.path.get" title="Copy path to clipboard"><span class="glyphicon glyphicon-edit"></span> copy</a></td>
+								<a class="btn btn-link btn-sm clipboard" data-copy="@file.loader_id" title="Copy path to clipboard"><span class="glyphicon glyphicon-edit"></span> copy</a></td>
 							}
 						}
 						</tr>
@@ -924,7 +924,7 @@
     }
 
     @if(user.isDefined) {
-        @if(!user.get.identityId.userId.equals(file.author.identityId.userId)){
+        @if(!user.get.id.equals(file.author.id)){
             <script language="javascript">
                 $(".requiresLogin:not(.requiresLoginCommunity)").css("display","none");
             </script>

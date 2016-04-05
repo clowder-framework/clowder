@@ -35,4 +35,5 @@
 #10503:services.irods.IRODSPlugin
 #10700:services.ElasticsearchPlugin
 10800:services.StagingAreaPlugin
+#11000:services.ToolManagerPlugin
 

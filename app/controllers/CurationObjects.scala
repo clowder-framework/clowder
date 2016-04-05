@@ -85,7 +85,7 @@ class CurationObjects @Inject()(
               for ( fileId <- dataset.files) {
                 files.get(fileId) match {
                   case Some(f) => {
-                    val cf = CurationFile(fileId = f.id, path= f.path, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
+                    val cf = CurationFile(fileId = f.id, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
                       contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
                       thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = f.sha512)
                     curations.insertFile(cf)
@@ -141,7 +141,7 @@ class CurationObjects @Inject()(
         for ( fileId <- folder.files) {
           files.get(fileId) match {
             case Some(f) => {
-              val cf = CurationFile(fileId = f.id, path= f.path, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
+              val cf = CurationFile(fileId = f.id, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
                 contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
                 thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = f.sha512)
               curations.insertFile(cf)
@@ -322,7 +322,7 @@ class CurationObjects @Inject()(
   def callMatchmaker(c: CurationObject, user: Option[User])(implicit request: Request[Any]): List[MatchMakerResponse] = {
     val https = controllers.Utils.https(request)
     val hostUrl = api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "#aggregation"
-    val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => if(pref._1 != "Purpose") { pref._1-> Json.toJson(pref._2.toString().split(",").toList)} else {pref._1-> Json.toJson(pref._2.toString())})).getOrElse(Map.empty)
+    val userPrefMap = userService.findById(c.author.id).map(usr => usr.repositoryPreferences.map( pref => if(pref._1 != "Purpose") { pref._1-> Json.toJson(pref._2.toString().split(",").toList)} else {pref._1-> Json.toJson(pref._2.toString())})).getOrElse(Map.empty)
     var userPreferences = userPrefMap + ("Repository" -> Json.toJson(c.repository))
     user.map ( usr => usr.profile match {
       case Some(prof) => prof.institution match {
@@ -353,7 +353,7 @@ class CurationObjects @Inject()(
       metadataDefsMap((md.json\ "label").asOpt[String].getOrElse("").toString()) = Json.toJson((md.json \ "uri").asOpt[String].getOrElse(""))
     }
 
-    val creator = userService.findByIdentity(c.author).map ( usr => usr.profile match {
+    val creator = userService.findById(c.author.id).map ( usr => usr.profile match {
       case Some(prof) => prof.orcidID match {
         case Some(oid) => oid
         case None => api.routes.Users.findById(usr.id).absoluteURL(https)
@@ -471,6 +471,8 @@ class CurationObjects @Inject()(
         case Some(usr) => {
           curations.get(curationId) match {
             case Some(c) => {
+              val propertiesMap: Map[String, List[String]] = Map("Purpose" -> List("Testing-Only"))
+              val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
               val repository = request.body.asFormUrlEncoded.getOrElse("repository", null)
               val purpose = request.body.asFormUrlEncoded.getOrElse("purpose", null)
               curations.updateRepository(c.id, repository(0))
@@ -479,7 +481,7 @@ class CurationObjects @Inject()(
                 val userPreferences:Map[String, String] = Map("Purpose" -> purpose(0))
                 userService.updateRepositoryPreferences(usr.id, userPreferences)
               }
-              Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository(0)))
+              Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository(0), propertiesMap, repPreferences))
             }
             case None => InternalServerError("Space not found")
           }
@@ -491,16 +493,22 @@ class CurationObjects @Inject()(
   def compareToRepository(curationId: UUID, repository: String) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       implicit val user = request.user
-
-      curations.get(curationId) match {
-        case Some(c) => {
-          curations.updateRepository(c.id, repository)
-          val mmResp = callMatchmaker(c, user).filter(_.orgidentifier == repository)
-
-          Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository))
+      user match {
+        case Some(usr) => {
+          curations.get(curationId) match {
+            case Some(c) => {
+              curations.updateRepository(c.id, repository)
+              val mmResp = callMatchmaker(c, user).filter(_.orgidentifier == repository)
+              val propertiesMap: Map[String, List[String]] = Map("Purpose" -> List("Testing-Only"))
+              val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
+              Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository, propertiesMap, repPreferences))
+            }
+            case None => InternalServerError("Curation Object not found")
+          }
         }
-        case None => InternalServerError("Space not found")
+        case None => InternalServerError("User not found")
       }
+
   }
 
 
@@ -519,7 +527,7 @@ class CurationObjects @Inject()(
           val key = play.api.Play.configuration.getString("commKey").getOrElse("")
           val https = controllers.Utils.https(request)
           val hostUrl = api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "?key=" + key
-          val userPrefMap = userService.findByIdentity(c.author).map(usr => usr.repositoryPreferences.map( pref => if(pref._1 != "Purpose") { pref._1-> Json.toJson(pref._2.toString().split(",").toList)} else {pref._1-> Json.toJson(pref._2.toString())})).getOrElse(Map.empty)
+          val userPrefMap = userService.findById(c.author.id).map(usr => usr.repositoryPreferences.map( pref => if(pref._1 != "Purpose") { pref._1-> Json.toJson(pref._2.toString().split(",").toList)} else {pref._1-> Json.toJson(pref._2.toString())})).getOrElse(Map.empty)
           var userPreferences = userPrefMap
           user.map ( usr => usr.profile match {
             case Some(prof) => prof.institution match {
@@ -545,7 +553,7 @@ class CurationObjects @Inject()(
           for(key <- metadataKeys) {
             metadataJson = metadataJson ++ Map(key -> Json.toJson(metadataList.filter(_.label == key).map{item => item.content}toList))
           }
-          val creator = Json.toJson(userService.findByIdentity(c.author).map ( usr => usr.profile match {
+          val creator = Json.toJson(userService.findById(c.author.id).map ( usr => usr.profile match {
             case Some(prof) => prof.orcidID match {
               case Some(oid) => oid
               case None =>  api.routes.Users.findById(usr.id).absoluteURL(https)

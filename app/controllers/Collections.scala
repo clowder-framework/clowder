@@ -606,7 +606,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         for(k <- userListSpaceRoleTupleMap.keys) userListSpaceRoleTupleMap += ( k -> userListSpaceRoleTupleMap(k).distinct.sortBy(_._1.toLowerCase) )
 
         if(userList.nonEmpty) {
-          val currUserIsAuthor = user.get.identityId.userId.equals(collection.author.identityId.userId)
+          val currUserIsAuthor = user.get.id.equals(collection.author.id)
           Ok(views.html.collections.users(collection, userListSpaceRoleTupleMap, currUserIsAuthor, userList))
         }
         else Redirect(routes.Collections.collection(id)).flashing("error" -> s"Error: No users found for collection $id.")
