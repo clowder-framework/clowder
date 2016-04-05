@@ -93,7 +93,7 @@ object FileUtils {
 
     val user = request.user.get
     val creator_url = api.routes.Users.findById(user.id).absoluteURL(Utils.https(request))(request)
-    val creator = UserAgent(id = UUID.generate(), user = user.getMiniUser, userId = Some(new URL(creator_url)))
+    val creator = UserAgent(id = UUID.generate(), user = user, userId = Some(new URL(creator_url)))
 
     // Extract path information from requests for later
     val clowderurl = Utils.baseUrl(request)
@@ -494,7 +494,7 @@ object FileUtils {
     // get the real user
     val realUser = if (!originalZipFile.equals("")) {
       files.get(new UUID(originalZipFile)) match {
-        case Some(originalFile) => userService.findByIdentity(originalFile.author).getOrElse(file.author)
+        case Some(originalFile) => userService.findById(originalFile.id).fold(file.author)(_.getMiniUser)
         case None => file.author
       }
     } else {

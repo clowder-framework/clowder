@@ -14,6 +14,7 @@ import securesocial.core._
 trait User extends Identity {
   def id: UUID
   def active: Boolean
+  def admin: Boolean
   def profile: Option[Profile]
   def friends: Option[List[String]]
   def followedEntities: List[TypedID]
@@ -71,7 +72,15 @@ object User {
     "Anonymous", "User", "Anonymous User",
     None,
     AuthenticationMethod.UserPassword, active=true)
+  implicit def userToMiniUser(x: User): MiniUser = x.getMiniUser
 }
+
+
+case class MiniUser(
+   id: UUID,
+   fullName: String,
+   avatarURL: String,
+   email: Option[String])
 
 case class ClowderUser(
   id: UUID = UUID.generate(),
@@ -88,8 +97,11 @@ case class ClowderUser(
   oAuth2Info: Option[OAuth2Info] = None,
   passwordInfo: Option[PasswordInfo] = None,
 
-  //should user be active
+  // should user be active
   active: Boolean = false,
+
+  // is the user an admin
+  admin: Boolean = false,
 
   // profile
   profile: Option[Profile] = None,

@@ -185,7 +185,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       }
     }
     val filterOwner = owner match {
-      case Some(o) => MongoDBObject("author.identityId.userId" -> o.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> o.identityId.providerId)
+      case Some(o) => MongoDBObject("author._id" -> new ObjectId(o.id.stringify))
       case None => MongoDBObject()
     }
     val filterSpace = space match {
@@ -774,7 +774,27 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     }
     return selfAndAncestors.toList
 
+  }
 
+  def hasParentInSpace(collectionId : UUID, spaceId: UUID) : Boolean = {
+    get(collectionId) match {
+      case Some(collection) => {
+        spaceService.get(spaceId) match {
+          case Some(space) => {
+            for (parentId <- collection.parent_collection_ids) {
+              get(parentId) match {
+                case Some(parentCollection) => {
+                  if (parentCollection.spaces.contains(spaceId)) {
+                    return true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return false
   }
 
   private def isSubCollectionIdInCollection(subCollectionId: UUID, collection: Collection) : Boolean = {

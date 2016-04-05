@@ -1,7 +1,6 @@
 package models
 
 import java.util.Date
-import securesocial.core.Identity
 import play.api.libs.json.{JsObject, Json, Writes}
 
 /**
@@ -13,7 +12,7 @@ case class File(
   id: UUID = UUID.generate,
   loader_id: String = "",
   filename: String,
-  author: Identity,
+  author: MiniUser,
   uploadDate: Date,
   contentType: String,
   length: Long = 0,

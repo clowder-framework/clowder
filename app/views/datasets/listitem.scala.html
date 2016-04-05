@@ -24,11 +24,11 @@
                                 <span class="glyphicon glyphicon-comment" title="@(comments.get(dataset.id)) comments"></span> @(comments.get(dataset.id))
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                                    @if(user.get.identityId.userId.equals(dataset.author.identityId.userId) || Permission.checkPermission(Permission.DeleteDataset, ResourceRef(ResourceRef.dataset, dataset.id))){
-                                        <button onclick="confirmDeleteResource('dataset','@(dataset.id)','@(dataset.name.replace("'","&#39;"))','@redirect')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
+                                    @if(user.get.id.equals(dataset.author.id) || Permission.checkPermission(Permission.DeleteDataset, ResourceRef(ResourceRef.dataset, dataset.id))){
+                                        <button onclick="confirmDeleteResource('dataset','@(dataset.id)','@(dataset.name.replace("'","&#39;"))',false, '@redirect')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     } else {
-                                        <button disabled onclick="confirmDeleteResource('dataset','@(dataset.id)','@(dataset.name.replace("'","&#39;"))','@redirect')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
+                                        <button disabled class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     }
                                 }
@@ -89,3 +89,4 @@
         </div>
     </div>
 </div>
+    <script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
