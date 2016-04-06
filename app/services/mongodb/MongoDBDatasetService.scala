@@ -272,7 +272,6 @@ class MongoDBDatasetService @Inject() (
    * Updated dataset.
    */
   def update(dataset: Dataset) {
-    Logger.debug("upahirueiwhivuerwhhgv")
     Dataset.save(dataset)
   }
 
@@ -645,8 +644,6 @@ class MongoDBDatasetService @Inject() (
   }
 
   def updateName(id: UUID, name: String) {
-    Logger.debug("updatenamemmmmmmmmmmmmm")
-
     events.updateObjectName(id, name)
     val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
       $set("name" -> name),
