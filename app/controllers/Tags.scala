@@ -116,7 +116,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
 
   def tagListWeighted() = PrivateServerAction { implicit request =>
     implicit val user = request.user
-    val tags = computeTagWeights()
+    val tags = computeTagWeights(user)
     if (tags.isEmpty) {
       Ok(views.html.tagList(List.empty[(String, Double)]))
     } else {
@@ -133,10 +133,10 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
   def tagListOrdered() = PrivateServerAction { implicit request =>
     implicit val user = request.user
 
-    Ok(views.html.tagListChar(createTagList()))
+    Ok(views.html.tagListChar(createTagList(user)))
   }
 
-  def createTagList() = {
+  def createTagList(user: Option[User]) = {
     val tagMap = collection.mutable.Map.empty[Char, collection.mutable.Map[String, Long]]
 
     // TODO allow for tags in collections
@@ -144,7 +144,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     //      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.collection").getOrElse(1)
     //    }
 
-    datasets.getTags().foreach { case (tag: String, count: Long) =>
+    datasets.getTags(user).foreach { case (tag: String, count: Long) =>
       if (tag.length == 0) {
         Logger.error("tag with length 0 : " + tag + " " + count)
       } else {
@@ -158,7 +158,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
         }
       }
     }
-    files.getTags().foreach { case (tag: String, count: Long) =>
+    files.getTags(user).foreach { case (tag: String, count: Long) =>
       if (tag.length == 0) {
         Logger.error("tag with length 0 : " + tag + " " + count)
       } else {
@@ -172,7 +172,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
         }
       }
     }
-    sections.getTags().foreach { case (tag: String, count: Long) =>
+    sections.getTags(user).foreach { case (tag: String, count: Long) =>
       if (tag.length == 0) {
         Logger.error("tag with length 0 : " + tag + " " + count)
       } else {
@@ -190,7 +190,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     tagMap.map{ case (k, v) => (k, v.toMap)}.toMap
   }
 
-  def computeTagWeights() = {
+  def computeTagWeights(user: Option[User]) = {
     val weightedTags = collection.mutable.Map.empty[String, Long].withDefaultValue(0)
 
     // TODO allow for tags in collections
@@ -198,15 +198,15 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
 //      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.collection").getOrElse(1)
 //    }
 
-    datasets.getTags().foreach { case (tag: String, count: Long) =>
+    datasets.getTags(user).foreach { case (tag: String, count: Long) =>
       weightedTags(tag) = weightedTags(tag) + count * current.configuration.getInt("tags.weight.dataset").getOrElse(1)
     }
 
-    files.getTags().foreach { case (tag: String, count: Long) =>
+    files.getTags(user).foreach { case (tag: String, count: Long) =>
       weightedTags(tag) = weightedTags(tag) + count * current.configuration.getInt("tags.weight.files").getOrElse(1)
     }
 
-    sections.getTags().foreach { case (tag: String, count: Long) =>
+    sections.getTags(user).foreach { case (tag: String, count: Long) =>
       weightedTags(tag) = weightedTags(tag) + count * current.configuration.getInt("tags.weight.sections").getOrElse(1)
     }
 

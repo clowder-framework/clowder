@@ -160,6 +160,23 @@ class MongoDBDatasetService @Inject() (
     list(Some(date), nextPage, limit, None, None, None, Set[Permission](Permission.ViewDataset), user, showAll, Some(owner))
   }
 
+  def listUser(user: User): List[Dataset] = {
+
+    val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
+    orlist += MongoDBObject("public" -> true)
+    orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(user.id.stringify))
+    val okspaces = user.spaceandrole.filter(_.role.permissions.intersect(Set(Permission.ViewDataset.toString)).nonEmpty)
+    if (okspaces.nonEmpty) {
+      orlist += ("spaces" $in okspaces.map(x => new ObjectId(x.spaceId.stringify)))
+    }
+    if (orlist.isEmpty) {
+
+      orlist += MongoDBObject("doesnotexist" -> true)
+    }
+
+    Dataset.find($or(orlist.map(_.asDBObject))).toList
+  }
+
   /**
    * return count based on input
    */
@@ -438,10 +455,27 @@ class MongoDBDatasetService @Inject() (
   /**
    * Return a list of tags and counts found in sections
    */
-  def getTags(): Map[String, Long] = {
-    val x = Dataset.dao.collection.aggregate(MongoDBObject("$unwind" -> "$tags"),
+  def getTags(user: Option[User]): Map[String, Long] = {
+    val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
+    if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")){
+      user match {
+        case Some(u)  => {
+          orlist += MongoDBObject("public" -> true)
+          orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
+          val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(Set(Permission.ViewDataset.toString)).nonEmpty)
+          if(okspaces.nonEmpty){
+            orlist += ("spaces" $in okspaces.map(x => new ObjectId(x.spaceId.stringify)))
+          }
+
+        }
+        case None => Map.empty
+      }
+    }
+
+    val x = Dataset.dao.collection.aggregate(MongoDBObject("$match" ->  $or(orlist.map(_.asDBObject))), MongoDBObject("$unwind" -> "$tags"),
       MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
     x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+
   }
 
   def isInCollection(datasetId: UUID, collectionId: UUID): Boolean = {

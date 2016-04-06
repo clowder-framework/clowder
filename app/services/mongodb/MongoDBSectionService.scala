@@ -1,12 +1,12 @@
 package services.mongodb
 
-import services.{PreviewService, SectionService, CommentService, FileService, DatasetService}
-import models.{UUID, Tag, Comment, Section}
+import services.{PreviewService, SectionService, CommentService, FileService, DatasetService, FolderService}
+import models.{UUID, Tag, Comment, Section, User}
 import javax.inject.{Inject, Singleton}
 import java.util.Date
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
-import play.api.Play.current
+import play.api.Play._
 import play.api.Logger
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.WriteConcern
@@ -19,7 +19,7 @@ import scala.collection.mutable.ArrayBuffer
  * USe MongoDB to store sections
  */
 @Singleton
-class MongoDBSectionService @Inject() (comments: CommentService, previews: PreviewService, files: FileService, datasets: DatasetService) extends SectionService {
+class MongoDBSectionService @Inject() (comments: CommentService, previews: PreviewService, files: FileService, datasets: DatasetService, folders: FolderService) extends SectionService {
   
   def listSections(): List[Section] = {
     SectionDAO.findAll.toList
@@ -104,8 +104,22 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
   /**
    * Return a list of tags and counts found in sections
    */
-  def getTags(): Map[String, Long] = {
-    val x = SectionDAO.dao.collection.aggregate(MongoDBObject("$unwind" -> "$tags"),
+  def getTags(user: Option[User]): Map[String, Long] = {
+    val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
+    if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")){
+      user match {
+        case Some(u) => {
+          orlist += MongoDBObject("author._id" ->new ObjectId(u.id.stringify))
+          //Get all datasets you have access to.
+          val datasetsList= datasets.listUser( u)
+          val foldersList = folders.findByParentDatasetIds(datasetsList.map(x=> x.id))
+          val fileIds = datasetsList.map(x=> x.files) ++ foldersList.map(x=> x.files)
+          orlist += ("file_id" $in fileIds.flatten.map(x=> new ObjectId(x.stringify)))
+        }
+        case None => Map.empty
+      }
+    }
+    val x = SectionDAO.dao.collection.aggregate(MongoDBObject("$match"-> $or(orlist.map(_.asDBObject))),MongoDBObject("$unwind" -> "$tags"),
       MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
     x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
   }

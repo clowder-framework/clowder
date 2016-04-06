@@ -92,7 +92,7 @@ trait FileService {
   /**
    * Return a list of tags and counts found in sections
    */
-  def getTags(): Map[String, Long]
+  def getTags(user: Option[User]): Map[String, Long]
 
   /**
    * Update thumbnail used to represent this dataset.

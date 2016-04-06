@@ -92,6 +92,10 @@ trait DatasetService {
   def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[Dataset]
 
   /**
+    * Return a list of all the datasets the user can view or has created.
+    */
+  def listUser( user: User): List[Dataset]
+  /**
    * Get dataset.
    */
   def get(id: UUID): Option[Dataset]
@@ -119,7 +123,7 @@ trait DatasetService {
   /**
    * Return a list of tags and counts found in sections
    */
-  def getTags(): Map[String, Long]
+  def getTags(user: Option[User]): Map[String, Long]
 
   def modifyRDFOfMetadataChangedDatasets()
 
