@@ -1702,7 +1702,7 @@ class Datasets @Inject()(
       case None => Logger.error(s"No file with id $f")
     })
 
-    val rootFolder = if (bagit) "/root" else ""
+    val rootFolder = if (bagit) "/root/" else ""
     val dataFolder = if (bagit) "/root/data/" else ""
     var md5Tracker = scala.collection.mutable.HashMap.empty[String, MessageDigest]
 
@@ -1855,7 +1855,7 @@ class Datasets @Inject()(
       case None => Logger.error(s"No file with id $f")
     })
 
-    val rootFolder = if (bagit) "/root" else ""
+    val rootFolder = if (bagit) "/root/" else ""
     val dataFolder = if (bagit) "/root/data/" else ""
     var md5Files = scala.collection.mutable.HashMap.empty[String, MessageDigest] //for the files
     var md5Bag = scala.collection.mutable.HashMap.empty[String, MessageDigest] //for the bag files
@@ -1964,7 +1964,7 @@ class Datasets @Inject()(
                     is = addFileToZip(dataFolder+folderNameMap(inputFiles(count).id), inputFiles(count), zip)
                     val md5 = MessageDigest.getInstance("MD5")
                     //this needs the file name !
-                    md5Files.put(dataFolder+folderNameMap(inputFiles(count).id)+"/"+inputFiles(count),md5)
+                    md5Files.put(dataFolder+folderNameMap(inputFiles(count).id)+"/"+inputFiles(count).filename,md5)
                     is = Some(new DigestInputStream(is.get, md5))
                     count +=1
                   } else {
@@ -2087,7 +2087,7 @@ class Datasets @Inject()(
     * @return
     */
   private def addDatasetInfoToZip(folderName: String, dataset: models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
-    zip.putNextEntry(new ZipEntry(folderName + "/_info.json"))
+    zip.putNextEntry(new ZipEntry(folderName + "_info.json"))
     var metadata_and_info  = List.empty[Any]
     val metadata  = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id)).map(JSONLD.jsonMetadataWithContext(_))
     val infoListMap = Json.toJson(getDatasetInfoAsMap(dataset))
@@ -2122,7 +2122,7 @@ class Datasets @Inject()(
   //what should this be writing?
   //tthe metadata
   private def addDatasetMetadataToZip(folderName: String, dataset : models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
-    zip.putNextEntry(new ZipEntry(folderName + "/_dataset_metadata.json"))
+    zip.putNextEntry(new ZipEntry(folderName + "_dataset_metadata.json"))
     val datasetMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
       .map(JSONLD.jsonMetadataWithContext(_))
     val s : String = (Json.toJson(datasetMetadata)).toString()
@@ -2138,7 +2138,7 @@ class Datasets @Inject()(
 
   // TODO  what file does this write? What values? -todd n
   private def addBagInfoToZip(folderName : String , zip : ZipOutputStream) : Option[InputStream] = {
-    zip.putNextEntry(new ZipEntry(folderName + "/bag-info.txt"))
+    zip.putNextEntry(new ZipEntry(folderName + "bag-info.txt"))
     val s : String = "test"
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
@@ -2146,13 +2146,26 @@ class Datasets @Inject()(
   // TODO what file does this write? What values ?  -todd n
   private def addManifestMD5ToZip(folderName : String, md5map : Map[String,MessageDigest] ,zip : ZipOutputStream) : Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "manifest-md5.txt"))
-    val s : String = "test"
+    var s : String = ""
+    md5map.map{
+      case (filePath,md) => {
+        var a = md.digest()
+        var current = Hex.encodeHex(md.digest()).toString()+" "+filePath+"\n"
+        s = s + current
+      }
+    }
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
   private def addTagManifestMD5ToZip(folderName : String,  md5map : Map[String,MessageDigest],zip : ZipOutputStream) : Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "tagmanifest-md5.txt"))
-    val s : String = "test"
+    var s : String = ""
+    md5map.map{
+      case (filePath,md) => {
+        var current = Hex.encodeHex(md.digest()).toString()+" "+filePath+"\n"
+        s = s + current
+      }
+    }
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
