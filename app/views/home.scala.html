@@ -39,20 +39,22 @@
                     @for(event <- newsfeed) {
                         <div class="panel panel-default">
                             <div class="panel-body">
-                                <div class="media">
-                                    <div class="media-left">
+                                <div class="row">
+                                    <div class="col-xs-1">
                                         <a href="@routes.Profile.viewProfileUUID(event.user.id)">
-                                            <img class="media-object" src="@event.user.avatarURL">
+                                            <img class="img-responsive" src="@event.user.avatarURL">
                                         </a>
                                     </div>
-                                    <div class="media-body">
-                                        <a href="@routes.Profile.viewProfileUUID(event.user.id)">
-                                            <h4 class="media-heading">@event.user.fullName</h4>
-                                        </a>
-                                        @newsfeedCard(event)
-                                    </div>
-                                    <div class="media-right">
-                                    @Formatters.humanReadableTimeSince(event.created)
+                                    <div class="col-xs-11">
+                                        <div class="row">
+                                            <a href="@routes.Profile.viewProfileUUID(event.user.id)">
+                                                @event.user.fullName
+                                            </a>
+                                            @newsfeedCard(event)
+                                        </div>
+                                        <div class="row top-padding">
+                                            @Formatters.humanReadableTimeSince(event.created)
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -70,7 +72,7 @@
                     <div class="col-xs-6">
 
                     </div>
-                    <div class="margin-top-h col-xs-6">
+                    <div class="col-xs-6">
                         <span class="pull-right">
                             <a href="@routes.Spaces.list("","",12, "", Some(profile.id.stringify))">See More</a>
                         </span>
@@ -78,7 +80,7 @@
                 </div>
                 <div class="row" id="masonry-spaces">
                 @spacesList.map { space =>
-                    @spaces.tile(space, "col-xs-6", routes.Application.index(), false)
+                    @spaces.tile(space, "col-xs-3", routes.Application.index(), false)
                 }
                 </div>
                 @if(spacesList.size < 1) {
@@ -93,21 +95,19 @@
                 @* datasets *@
                 <div class="row top-padding">
                     <div class="col-xs-6">
-                        Most recents datasets you have created
                     </div>
                     <div class="col-xs-6">
-                        <span class="pull-right"> <a href="@routes.Datasets.list("","",12, None, "", Some(profile.id.stringify))">See More</a></span>
+                        <span class="pull-right"><a href="@routes.Datasets.list("","",12, None, "", Some(profile.id.stringify))">See More</a></span>
                     </div>
                 </div>
                 <div class="row" id="masonry-datasets">
                 @datasetsList.map { dataset =>
-                    @datasets.tile(dataset, None, dscomments, "col-xs-6", false, false, routes.Application.index())
+                    @datasets.tile(dataset, None, dscomments, "col-xs-3", false, false, routes.Application.index())
                 }
                 </div>
                 @if(datasetsList.size < 1) {
                     <div class="text-center">
                         <div>This area will show all datasets you've created.</div>
-
                         <div> <a class="btn-link" href="@routes.Datasets.newDataset(None, None)" title="Create a new dataset">Create Dataset</a></div>
                     </div>
                 }
@@ -116,9 +116,8 @@
                 @* collections *@
                 <div class="row top-padding">
                     <div class="col-xs-6">
-                        <h5>Collections you have created</h5>
                     </div>
-                    <div class="margin-top-h col-xs-6">
+                    <div class="col-xs-6">
                         <span class="pull-right">
                             <a href="@routes.Collections.list("","",12, None, "", Some(profile.id.stringify))">See More</a>
                         </span>
@@ -126,7 +125,7 @@
                 </div>
                 <div class="row" id ="masonry-collections">
                 @collectionsList.map { collection =>
-                    @collections.tile(collection, routes.Application.index(), "col-xs-6", false)
+                    @collections.tile(collection, routes.Application.index(), "col-xs-3", false)
                 }
                 </div>
                 @if(collectionsList.size < 1) {
@@ -142,7 +141,7 @@
                     <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                         <h2> Followers</h2>
                     </div>
-                    <div class="margin-top-h col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                         <span class="pull-right"> <a href="@routes.Users.getFollowers()">See More</a></span>
                     </div>
                 </div>
@@ -508,43 +507,10 @@
             activateOne("masonry-collections");
             activateOne("masonry-spaces");
         }
+
         $(document).ready(function() {
-
-            /*
-            * Clamped-width.
-            * Usage:
-            *  <div data-clampedwidth=".myParent">This long content will force clamped width</div>
-            *
-            * Author: LV
-            */
-            $('[data-clampedwidth]').each(function () {
-                var elem = $(this);
-                var parentPanel = elem.data('clampedwidth');
-                var resizeFn = function () {
-                    var sideBarNavWidth = $(parentPanel).width() - parseInt(elem.css('paddingLeft')) - parseInt(elem.css('paddingRight')) - parseInt(elem.css('marginLeft')) - parseInt(elem.css('marginRight')) - parseInt(elem.css('borderLeftWidth')) - parseInt(elem.css('borderRightWidth'));
-                    elem.css('width', sideBarNavWidth);
-                };
-
-                resizeFn();
-                $(window).resize(resizeFn);
-            });
-
-            var panel = $('#resources-panel');
-            panel.affix({
-                offset: {
-                    top: panel.offset() - panel.height()
-                }
-            });
-
-            var width = $('.col-md-7').width() * 0.05;
-            $('.media-object' ).each(function() {
-                $(this ).css("width", width);
-                $(this ).css("height", width);
-            });
             activate();
         });
-
-
 
         // fire when showing from tab
         $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
