@@ -329,6 +329,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //Change creator in comments from Identity to MiniUser
     updateMongo("update-author-comments", updateCreatorInComments)
+
+    //Whenever a root flag is not set, mark it as true.
+    updateMongo("add-collection-root-map", addRootMapToCollections)
+
+    updateMongo("update-collection-counter-in-space", fixCollectionCounterInSpaces)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1069,4 +1074,46 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
+  private def addRootMapToCollections() {
+    collection("collections").foreach{ c =>
+      val parents = c.getAsOrElse[MongoDBList]("parent_collection_ids", MongoDBList.empty)
+
+
+      val spaces = c.getAsOrElse[MongoDBList]("spaces", MongoDBList.empty)
+      val parentCollections = collection("collections").find(MongoDBObject("_id" -> MongoDBObject("$in" -> parents)))
+      var parentSpaces = MongoDBList.empty
+      parentCollections.foreach{pc =>
+       pc.getAsOrElse[MongoDBList]("spaces", MongoDBList.empty).foreach{ps => parentSpaces += ps} }
+      val root_spaces= scala.collection.mutable.ListBuffer.empty[ObjectId]
+      spaces.foreach { s =>
+
+        if (!(parentSpaces contains s)) {
+          root_spaces += new ObjectId(s.toString())
+        }
+      }
+
+      c.put("root_spaces", root_spaces.toList)
+      c.remove("root_flag")
+      try {
+        collection("collections").save(c, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to set root flag for collection with id: " + c.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+      }
+
+    }
+  }
+
+  private def fixCollectionCounterInSpaces() {
+    collection("spaces.projects").foreach{ space =>
+      val spaceId = space.getAsOrElse[ObjectId]("_id", new ObjectId())
+      val collections = collection("collections").find( MongoDBObject("root_spaces" -> spaceId))
+      space.put("collectionCount", collections.length)
+      try{
+        collection("spaces.projects").save(space, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update the collection count for space with id: " + spaceId.toString)
+      }
+
+    }
+  }
 }
