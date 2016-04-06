@@ -1,7 +1,8 @@
 @(file: models.File, classes: String, redirect: Call, showFollow: Boolean)(implicit user: Option[models.User])
 
-@import org.apache.commons.io.FileUtils
+@import _root_.util.FileUtils
 @import api.Permission
+
 <div class="post-box @classes" id="@file.id-tile">
     <div class="panel panel-default">
         <div class="pull-right">
@@ -18,7 +19,7 @@
             <ul class="list-unstyled">
                 <li>Author: <strong>@file.author.fullName</strong></li>
                 <li>Uploaded: <strong>@file.uploadDate.format("dd MMM, yyyy")</strong></li>
-                <li>Size: <strong>@FileUtils.byteCountToDisplaySize(file.length)</strong></li>
+                <li>Size: <strong>@FileUtils.humanReadableByteCount(file.length)</strong></li>
             </ul>
         </div>
         </div>
