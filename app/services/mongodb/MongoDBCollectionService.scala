@@ -31,7 +31,11 @@ import play.api.Play._
  *
  */
 @Singleton
-class MongoDBCollectionService @Inject() (datasets: DatasetService, userService: UserService, spaceService: SpaceService)  extends CollectionService {
+class MongoDBCollectionService @Inject() (
+  datasets: DatasetService,
+  userService: UserService,
+  spaceService: SpaceService,
+  events:EventService)  extends CollectionService {
   /**
    * Count all collections
    */
@@ -630,6 +634,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   }
 
    def updateName(collectionId: UUID, name: String){
+     events.updateObjectName(collectionId, name)
      val result = Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
      $set("name" -> name), false, false, WriteConcern.Safe)
    }

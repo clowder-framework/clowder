@@ -36,7 +36,8 @@ class MongoDBSpaceService @Inject() (
   files: FileService,
   datasets: DatasetService,
   users: UserService,
-  curations: CurationService) extends SpaceService {
+  curations: CurationService,
+  events: EventService) extends SpaceService {
 
   def get(id: UUID): Option[ProjectSpace] = {
     ProjectSpaceDAO.findOneById(new ObjectId(id.stringify))
@@ -424,6 +425,7 @@ class MongoDBSpaceService @Inject() (
    *
    */
   def updateSpaceConfiguration(spaceId: UUID, name: String, description: String, timeToLive: Long, expireEnabled: Boolean) {
+        events.updateObjectName(spaceId, name)
       val result = ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
           $set("description" -> description, "name" -> name, "resourceTimeToLive" -> timeToLive, "isTimeToLiveEnabled" -> expireEnabled),
           false, false, WriteConcern.Safe)
