@@ -19,7 +19,7 @@ import play.api.mvc.{Request, Action, Results}
 import play.api.libs.ws._
 import scala.concurrent.duration._
 import play.api.libs.json.Reads._
-import java.net.URI
+import java.net.{URL, URI}
 
 /**
  * Methods for interacting with the curation objects in the staging area.
@@ -58,7 +58,7 @@ class CurationObjects @Inject()(
     }
 
     Ok(views.html.curations.newCuration(datasetId, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired, true))
+      true, true))
   }
 
   /**
@@ -113,11 +113,6 @@ class CurationObjects @Inject()(
               // insert curation
               Logger.debug("create curation object: " + newCuration.id)
               curations.insert(newCuration)
-
-              metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id)).map{m =>
-                val newm = m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id))
-                metadatas.addMetadata(newm)
-              }
 
               dataset.folders.map(f => copyFolders(f, newCuration.id, "dataset",  newCuration.id))
 
@@ -185,26 +180,31 @@ class CurationObjects @Inject()(
             .filter(space => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, space.id))), spaces.get(c.space))
 
           Ok(views.html.curations.newCuration(id, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
-            RequiredFieldsConfig.isDescriptionRequired, false))
+            true, false))
 
-        case None => InternalServerError("Curation Object Not found")
+        case None => BadRequest(views.html.notFound("Curation Object does not exist."))
       }
   }
 
   def updateCuration(id: UUID, spaceId:UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) (parse.multipartFormData) {
     implicit request =>
       implicit val user = request.user
-      curations.get(id) match {
-        case Some(c) => {
-          val COName = request.body.asFormUrlEncoded.getOrElse("name", null)
-          val CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
-          Logger.debug(COName(0))
-          curations.updateInformation(id, CODesc(0), COName(0), c.space, spaceId)
-          events.addObjectEvent(user, id, COName(0), "update_curation_information")
+      user match {
+        case Some(identity) => {
+          curations.get(id) match {
+            case Some(c) => {
+              val COName = request.body.asFormUrlEncoded.getOrElse("name", null)
+              val CODesc = request.body.asFormUrlEncoded.getOrElse("description", null)
+              curations.updateInformation(id, CODesc(0), COName(0), c.space, spaceId)
 
-          Redirect(routes.CurationObjects.getCurationObject(id))
+              events.addObjectEvent(user, id, COName(0), "update_curation_information")
+
+              Redirect(routes.CurationObjects.getCurationObject(id))
+            }
+            case None => BadRequest(views.html.notFound("Curation Object does not exist."))
+          }
         }
-        case None => BadRequest(views.html.notFound("Curation Object does not exist."))
+        case None => InternalServerError("User Not found")
       }
   }
 
@@ -235,11 +235,11 @@ class CurationObjects @Inject()(
     curations.get(curationId) match {
       case Some(c) => {
         // metadata of curation files are getting from getUpdatedFilesAndFolders
+
         val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
         val fileByDataset = curations.getCurationFiles(curations.getAllCurationFileIds(c.id))
         if (c.status != "In Curation") {
-
           Ok(views.html.spaces.submittedCurationObject(c, fileByDataset, m, limit ))
         } else {
           Ok(views.html.spaces.curationObject(c, m , isRDFExportEnabled, limit))
@@ -384,6 +384,15 @@ class CurationObjects @Inject()(
     }
     if(!metadataDefsMap.contains("Creator")){
       metadataDefsMap("Creator") = Json.toJson("http://purl.org/dc/terms/creator")
+    }
+    if(metadataJson.contains("Abstract")) {
+      val value = List(c.description) ++ metadataList.filter(_.label == "Abstract").map{item => item.content.as[String]}
+      metadataJson = metadataJson ++ Map("Abstract" -> Json.toJson(value))
+    } else {
+      metadataJson = metadataJson ++ Map("Abstract" -> Json.toJson(c.description))
+    }
+    if(!metadataDefsMap.contains("Abstract")){
+      metadataDefsMap("Abstract") = Json.toJson("http://purl.org/dc/terms/abstract")
     }
     val valuetoSend = Json.obj(
       "@context" -> Json.toJson(Seq(
@@ -561,13 +570,19 @@ class CurationObjects @Inject()(
             case None =>  api.routes.Users.findById(usr.id).absoluteURL(https)
 
           }))
-          var metadataToAdd = metadataJson.toMap
-          if(metadataJson.toMap.get("Abstract") == None) {
-            metadataToAdd = metadataJson.toMap.+("Abstract" -> Json.toJson(c.description))
+          if(metadataJson.contains("Abstract")) {
+            val value =List(c.description) ++ metadataList.filter(_.label == "Abstract").map{item => item.content.as[String]}
+            metadataJson = metadataJson ++ Map("Abstract" -> Json.toJson(value))
+          } else {
+            metadataJson = metadataJson ++ Map("Abstract" -> Json.toJson(c.description))
           }
+          var metadataToAdd = metadataJson.toMap
           val metadataDefsMap = scala.collection.mutable.Map.empty[String, JsValue]
           for(md <- metadatas.getDefinitions()) {
             metadataDefsMap((md.json\ "label").asOpt[String].getOrElse("").toString()) = Json.toJson((md.json \ "uri").asOpt[String].getOrElse(""))
+          }
+          if(!metadataDefsMap.contains("Abstract")){
+            metadataDefsMap("Abstract") = Json.toJson("http://purl.org/dc/terms/abstract")
           }
           val format = new java.text.SimpleDateFormat("dd-MM-yyyy")
           var aggregation = metadataToAdd ++
@@ -586,6 +601,7 @@ class CurationObjects @Inject()(
           if(!metadataDefsMap.contains("Creator")){
             metadataDefsMap("Creator") = Json.toJson("http://purl.org/dc/terms/creator")
           }
+
           val rightsholder = user.map ( usr => usr.profile match {
             case Some(prof) => prof.orcidID match {
               case Some(oid) => oid
