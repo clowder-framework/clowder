@@ -1955,7 +1955,8 @@ class Datasets @Inject()(
                   if (count < inputFiles.size ){
                     is = addFileToZip(dataFolder+folderNameMap(inputFiles(count).id), inputFiles(count), zip)
                     val md5 = MessageDigest.getInstance("MD5")
-                    md5Files.put(dataFolder+folderNameMap(inputFiles(count).id),md5)
+                    //this needs the file name !
+                    md5Files.put(dataFolder+folderNameMap(inputFiles(count).id)+"/"+inputFiles(count),md5)
                     count +=1
                   } else {
                     if (bagit){
@@ -1986,7 +1987,7 @@ class Datasets @Inject()(
                 }
                 //manifest-md5.txt
                 case (2,2) => {
-                  is = addManifestMD5ToZip(rootFolder,zip)
+                  is = addManifestMD5ToZip(rootFolder,md5Files,zip)
                   val md5 = MessageDigest.getInstance("MD5")
                   md5Bag.put(rootFolder+"manifest-md5.txt",md5)
                   file_type = file_type +1
@@ -2129,14 +2130,14 @@ class Datasets @Inject()(
   }
 
   // TODO what file does this write? What values ?  -todd n
-  private def addManifestMD5ToZip(folderName : String, zip : ZipOutputStream) : Option[InputStream] = {
-    zip.putNextEntry(new ZipEntry(folderName + "/manifest-md5.txt"))
+  private def addManifestMD5ToZip(folderName : String, md5map : Map[String,MessageDigest] ,zip : ZipOutputStream) : Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry(folderName + "manifest-md5.txt"))
     val s : String = "test"
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  private def addTagManifestMD5ToZip(folderName : String, zip : ZipOutputStream) : Option[InputStream] = {
-    zip.putNextEntry(new ZipEntry(folderName + "/tagmanifest-md5.txt"))
+  private def addTagManifestMD5ToZip(folderName : String,  md5map : Map[String,MessageDigest],zip : ZipOutputStream) : Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry(folderName + "tagmanifest-md5.txt"))
     val s : String = "test"
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
