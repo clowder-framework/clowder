@@ -1,7 +1,6 @@
 package models
 
 import java.util.Date
-import securesocial.core.Identity
 import com.novus.salat.annotations.raw.Ignore
 
 /**
@@ -9,11 +8,10 @@ import com.novus.salat.annotations.raw.Ignore
  *
  * Based on http://docs.mongodb.org/manual/use-cases/storing-comments/
  *
- * @author Rob Kooper
  *
  */
 case class Comment(
-  author: Identity,
+  author: MiniUser,
   text: String,
   comment_id: Option[UUID] = None,
   dataset_id: Option[UUID] = None,

@@ -66,10 +66,24 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
     for (md <- metadata.toList; if (md.creator.typeOfAgent == typeofAgent)) yield md
   }
 
+  /**
+   * Update metadata
+   * TODO: implement
+    *
+    * @param metadataId
+   * @param json
+   */
+  def updateMetadata(metadataId: UUID, json: JsValue) = {}
+
   /** Remove metadata, if this metadata does exit, nothing is executed */
   def removeMetadata(id: UUID) = {
     getMetadataById(id) match {
-      case Some(md) =>    MetadataDAO.remove(md, WriteConcern.Safe)
+      case Some(md) =>
+        if( getMetadataBycontextId(md.contextId.getOrElse(new UUID(""))).length  == 1) {
+          contextService.removeContext(md.contextId.getOrElse(new UUID("")))
+        }
+        MetadataDAO.remove(md, WriteConcern.Safe)
+        //update metadata count for resource
         current.plugin[MongoSalatPlugin] match {
           case None => throw new RuntimeException("No MongoSalatPlugin")
           case Some(x) => x.collection(md.attachedTo) match {
@@ -84,8 +98,13 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
     }
   }
 
+  def getMetadataBycontextId(contextId: UUID) : List[Metadata] = {
+    MetadataDAO.find(MongoDBObject("contextId" -> new ObjectId(contextId.toString()))).toList
+  }
+
   def removeMetadataByAttachTo(resourceRef: ResourceRef) = {
-    MetadataDAO.remove(MongoDBObject("attachTo" -> resourceRef), WriteConcern.Safe)
+    MetadataDAO.remove(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
+      "attachedTo._id" -> new ObjectId(resourceRef.id.stringify)), WriteConcern.Safe)
     //not providing metaData count modification here since we assume this is to delete the metadata's host
   }
 
@@ -114,6 +133,10 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
     MetadataDefinitionDAO.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)))
   }
 
+  def getDefinitionByUri(uri:String):Option[MetadataDefinition] = {
+    MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri))
+  }
+
   /** Add vocabulary definitions, leaving it unchanged if the update argument is set to false **/
   def addDefinition(definition: MetadataDefinition, update: Boolean = true): Unit = {
     val uri = (definition.json \ "uri").as[String]
@@ -135,13 +158,11 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
     }
   }
 
-  /**
-    * Update metadata
-    * TODO: implement
-    * @param metadataId
-    * @param json
-    */
-  def updateMetadata(metadataId: UUID, json: JsValue) = {}
+
+  def editDefinition(id: UUID, json: JsValue) = {
+    MetadataDefinitionDAO.update(MongoDBObject("_id" ->new ObjectId(id.stringify)),
+      $set("json" -> JSON.parse(json.toString()).asInstanceOf[DBObject]) , false, false, WriteConcern.Safe)
+  }
 
   def deleteDefinition(id :UUID): Unit = {
     MetadataDefinitionDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
@@ -149,6 +170,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
 
   /**
     * Search by metadata. Uses mongodb query structure.
+    *
     * @param query
     * @return
     */

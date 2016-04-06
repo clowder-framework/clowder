@@ -28,18 +28,15 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
   var client: Option[TransportClient] = None
-  
+  val nameOfCluster = play.api.Play.configuration.getString("elasticsearchSettings.clusterName").getOrElse("clowder")
+  val serverAddress = play.api.Play.configuration.getString("elasticsearchSettings.serverAddress").getOrElse("localhost")
+  val serverPort = play.api.Play.configuration.getInt("elasticsearchSettings.serverPort").getOrElse(9300)
 
   override def onStart() {
     Logger.debug("Elasticsearchplugin started but not yet connected to Elasticsearch")
-
   }
 
   def connect(): Boolean = {
-    val configuration = play.api.Play.configuration
-    var nameOfCluster = configuration.getString("elasticsearchSettings.clusterName").getOrElse("medici")
-    var serverAddress = configuration.getString("elasticsearchSettings.serverAddress").getOrElse("localhost")
-    var serverPort = configuration.getInt("elasticsearchSettings.serverPort").getOrElse(9300)
     if (client.isDefined) {
       Logger.debug("Already Connected to Elasticsearch")
       return true
@@ -157,6 +154,19 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           .execute()
           .actionGet()
         Logger.info("Indexing document: " + response.getId)
+      }
+      case None => Logger.error("Could not call index because we are not connected.")
+    }
+  }
+
+  /** delete all indices */
+  def deleteAll {
+    connect
+    client match {
+      case Some(x) => {
+        val response = x.admin().indices().prepareDelete("_all").get()
+        if (!response.isAcknowledged())
+          Logger.error("Did not delete all data from elasticsearch.")
       }
       case None => Logger.error("Could not call index because we are not connected.")
     }

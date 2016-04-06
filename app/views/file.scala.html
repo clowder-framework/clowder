@@ -8,7 +8,8 @@
 @import helper._
 @import play.api.Play.current
 @import api.Permission
-@import org.apache.commons.io.FileUtils
+@import _root_.util.FileUtils
+
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
 
@@ -38,7 +39,7 @@
 		else if("@p._2" === "Video presentation"){
 			Configuration.authenticatedFileModify = false;
 			@if(user.isDefined) {
-	     	 	@if(user.get.identityId.userId.equals(file.author.identityId.userId)){
+	     	 	@if(user.get.id.equals(file.author.id)){
 					Configuration.authenticatedFileModify = true;
 	     	 	}
 			}			
@@ -46,7 +47,7 @@
 		else if("@p._2" === "External resource"){
 			Configuration.authenticatedFileModify = false;
 			@if(user.isDefined) {
-	     	 	@if(user.get.identityId.userId.equals(file.author.identityId.userId)){
+	     	 	@if(user.get.id.equals(file.author.id)){
 					Configuration.authenticatedFileModify = true;
 	     	 	}
 			}			
@@ -61,30 +62,12 @@
     <script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
     <script src="@routes.Assets.at("javascripts/previews.js")" type="text/javascript"></script>
-    <script src="@routes.Assets.at("javascripts/tinymce/tinymce.min.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/popcorn-complete.min.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/galleria-1.2.9.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
+	<script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/sectionsListProcess.js")" type="text/javascript"></script>
 
-	<script>
-		tinymce.init({selector:'.notesArea',
-	    	theme: "modern",
-	    	plugins: [
-	    	          "advlist autolink lists link image charmap print preview hr anchor pagebreak",
-	    	          "searchreplace wordcount visualblocks visualchars code fullscreen",
-	    	          "insertdatetime media nonbreaking save table contextmenu directionality",
-	    	          "template paste textcolor"
-	    	      ],
-	    	      toolbar1: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image",
-	    	      toolbar2: "print preview media | forecolor backcolor emoticons",
-	    	      image_advtab: true,
-	    	      templates: [
-	    	          {title: 'Test template 1', content: 'Test 1'},
-	    	          {title: 'Test template 2', content: 'Test 2'}
-	    	      ]
-	    });
-	</script>
 	<script>
     	var isPageLoaded = false;
     	var isx3dActive = false;
@@ -97,6 +80,67 @@
 		Configuration.jsPath = "@(routes.Assets.at("javascripts"))";
 		Configuration.imagesPath = "@(routes.Assets.at("images"))";
 		Configuration.appContext = "@play.api.Play.configuration.getString("application.context").getOrElse("")";
+		var cur_description;
+		function updateFileDescription() {
+			cur_description = $('#ds_description').html().trim();
+			$('<div class="edit_desc"> </div>').insertAfter($('#ds_description'));
+			$('.edit_desc').append('<textarea id = "desc_input" class="form-control"/>');
+			$('.edit_desc').append('<button id = "update_desc" class= "btn btn-sm btn-primary btn-margins" onclick = "saveDescription()"> <span class="glyphicon glyphicon-send"> </span> Save </button>');
+			$('.edit_desc').append('<button id="cancel_desc" class="btn btn-sm edit-tab btn-default btn-margins" onclick="cancelDescription()"> <span class="glyphicon glyphicon-remove"></span> Cancel </button>');
+			if(cur_description.indexOf("Add a description") != 0) {
+				$('#desc_input').val(htmlDecode(cur_description.replace(new RegExp("<br>", "g"), "\n")));
+			}
+			$('#ds_description').text("");
+			$('#edit-description').css("display", "none");
+			$('#edit-description').addClass("hiddencomplete");
+		}
+
+		function cancelDescription() {
+			$('#ds_description').html(cur_description);
+			$('.edit_desc').remove();
+			$('#ds_description').css("display", "inline");
+			$('#edit-description').removeClass("inline");
+			$('#edit-description').css("display", "");
+			$('#aboutdesc').mouseleave();
+		}
+
+		function saveDescription() {
+			var description = $('#desc_input').val();
+			var encDescription = htmlEncode(description);
+			jsonData = JSON.stringify({"description": encDescription});
+
+			var request = jsRoutes.api.Files.updateDescription("@file.id").ajax({
+				data: jsonData,
+				type: 'PUT',
+				contentType: "application/json"
+			});
+
+			request.done(function(response, textStatus,jqXHR) {
+				$('#ds_description').html(urlify(htmlEncode(description).replace(/\n/g, "<br>")));
+				$('.edit_desc').remove();
+				$('#ds_description').css("display", "inline");
+				$('#edit-description').removeClass("inline");
+				$('#edit-description').css("display", "");
+				$('#aboutdesc').mouseleave();
+				notify("File description updated successfully", "success", false, 2000 );
+			});
+
+			request.fail(function(jqXHR, textStatus, errorThrown) {
+				console.error("The following error occurred: " + textStatus, errorThrown);
+				var errMsg = " You must be logged in to update the information about a collection.";
+				if(!checkErrorAndRedirect(jqXHR, errMsg)) {
+					notify("The collection information was not updated due to: " + errorThrown, "error");
+				}
+			});
+
+		}
+
+		function urlify(text) {
+			var urlRegex =/(\b(https?|ftp|file):\/\/[-A-Z0-9+&@@#\/%?=~_|!:,.;]*[-A-Z0-9+&@@#\/%=~_|])/ig;
+			return text.replace(urlRegex, function(url) {
+				return '<a href="' + url + '">' + url + '</a>';
+			})
+		}
     </script>
     <script>
     	window.onload = function() {
@@ -106,7 +150,18 @@
 
 	<div class="row">
 		<div class="col-md-8 col-right-border">
-			<h1>@file.filename</h1>
+			<div id="prf-file-name" class="text-left inline">
+				@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
+					<h1 id="file-name-title" class="inline" style="cursor:pointer" title="Click to edit file name.">@Html(file.filename)</h1>
+					<div id="h-edit-file" class="hiddencomplete">
+						<a id ="edit-file" href="javascript:updateFileName()" title="Click to edit file name.">
+							<span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
+						</a>
+					</div>
+				} else {
+					<h1 id="file-name-title" class="inline">@Html(file.filename)</h1>
+				}
+			</div>
 			<h4>in
 			@if(datasets.length > 0) {
 				@datasets.map {dataset =>
@@ -115,15 +170,22 @@
 					</span>
 				}
 			}
-
 			@if(folders.length > 0) {
 					@folders.map { folder =>
 						<span class="caption break-word">
-							<a href="@routes.Datasets.dataset(folder.parentDatasetId, None, 0, Some(folder.id.stringify))">@folder.displayName</a>
+							<a href="@routes.Datasets.dataset(folder.parentDatasetId)#folderId=@folder.id">@folder.displayName</a>
 						</span>
 					}
 			}
 			</h4>
+			<div class="col-md-12 box-white-space" id="aboutdesc">
+				<p id ="ds_description" class="inline">@if(file.description.length > 0) { @Html(file.description) } else {Add a description}</p>
+				@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
+					<a id="edit-description" class="hiddencomplete" href="javascript:updateFileDescription()" title="Click to edit description">
+						<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+					</a>
+				}
+			</div>
 		@for((f, pvs) <- previews) {
 			<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
 		    	<div class="col-md-12">
@@ -167,10 +229,11 @@
         <div class="col-md-12 button-margins">
           <div class="btn-group" role="group" aria-label="...">
 		  @if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
-			  <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file"> <span class="glyphicon glyphicon-save"></span>
+			  <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-primary" title="Download and enjoy this file."> <span class="glyphicon glyphicon-save"></span>
 				  Download </button>
 		  } else {
-			  <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-primary" title="You don't have permission to download this file" disabled="disabled"> <span class="glyphicon glyphicon-save"></span>
+			  <!-- if 'disabled' title is not visible -->
+			  <button type="button" class="btn btn-primary disabled" title="You don't have permission to download this file."> <span class="glyphicon glyphicon-save"></span>
 				  Download </button>
 		  }
             <!--  If outputFormats list is not empty, display downloadAs drop-down button with the list of available formats -->      
@@ -187,14 +250,20 @@
           </div> <!-- end of class btn-group -->
                 @if(user.isDefined) {
                 <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->                
-                    @if(user.get.identityId.userId.equals(file.author.identityId.userId)){                    
+                    @if(user.get.id.equals(file.author.id)){
                         <span class="align-right">
-				            <button id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" title="Delete">
+							@if(datasets.length > 0) {
+				            <button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(datasets.head.id))')" class="btn btn-link" title="Delete">
 						    <span class="glyphicon glyphicon-trash"></span> Delete</button>
+							} else {
+								<button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(folders.head.parentDatasetId))#folderId=@folders.head.id')" class="btn btn-link" title="Delete">
+									<span class="glyphicon glyphicon-trash"></span> Delete</button>
+							}
+
 					    </span>
 					} else {
 					    <span class="align-right">
-                            <button disabled id="deleteButton" onclick="removeFileAndRedirect('@(file.id)','@(routes.Application.index())')" class="btn btn-link" title="Delete">
+                            <button disabled id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Application.index())')" class="btn btn-link" title="Delete">
                             <span class="glyphicon glyphicon-trash"></span> Delete</button>
                         </span>
 					}
@@ -309,7 +378,7 @@
 						  			 <td class="galleriaDescr">
 						  			 	<span id="sectiondescr_@(s.id)"  style="display:block;white-space: pre-line;">@s.description.getOrElse("")</span>
 						  			 	@if(user.isDefined) {
-						  			 		@if(user.get.identityId.userId.equals(file.author.identityId.userId)){
+						  			 		@if(user.get.id.equals(file.author.id)){
 						  			 			<div id="sectiondescrEditArea_@(s.id)" style="display:none;">
 													<textarea name="sectiondescrText" class="sectionTextBox" id="sectiondescrText_@(s.id)" style="width:100%; height:100px;">@s.description.getOrElse("")</textarea>
 												</div>
@@ -450,13 +519,6 @@
     			}
     		}
 
-            <div class="row">
-                <div class="col-md-12 border-top col-section">
-                    <h4>Notes</h4>
-                    @notesform(file.id.toString, api.routes.Files.setNotesHTML(file.id).toString, file.notesHTML.getOrElse(""))
-                </div>
-            </div>
-
 			<div class="border-top">
 				<div class="row">
 					<div class="col-md-10">
@@ -505,7 +567,73 @@
                 </div>
             </div>
 
+			<script language="javascript">
+					var fileName = $('#file-name-title').text();
+					$('#file-name-title').click(function(){
+						updateFileName();
+					});
 
+					function updateFileName() {
+						fileName = $('#file-name-title').text();
+						$('<div class="inline file_name_div h3"> </div>').insertAfter($('#prf-file-name'));
+						$('.file_name_div').append('<input type="text" id="file_name_input" class="form-control" />');
+						$('.file_name_div').append('<button class="btn btn-sm btn-primary edit-tab" onclick="saveFileName()"> <span class="glyphicon glyphicon-send"></span> Save</button>');
+						$('.file_name_div').append('<button class="btn btn-sm btn-link" onclick="cancelFileName()"> <span class="glyphicon glyphicon-remove"></span> Cancel</button>');
+						$('.file_name_div').append('<div class="hiddencomplete" id="file-name-error"> <span class="small error">File name is required.</span></div>');
+
+						$('#file_name_input').val(fileName);
+						$('#file-name-title').text("");
+						$('#h-edit-file').css("display", "none");
+					}
+
+					function saveFileName() {
+						if($('#file_name_input').val().length < 1) {
+							$('#file-name-error').show();
+							return false;
+						} else {
+							$('#file-name-error').hide();
+						}
+						var name = $('#file_name_input').val();
+						jsonData = JSON.stringify({"name": htmlEncode(name)});
+
+						var request = jsRoutes.api.Files.updateFileName('@file.id').ajax({
+							data: jsonData,
+							type: 'PUT',
+							contentType: "application/json"
+						});
+						request.done(function(response, textStatus, jqXHR) {
+							$('.file_name_div').remove();
+							$('#file-name-title').text(htmlEncode(name).replace(/\n/g, "<br />"));
+							$('#prf-file-name').mouseleave();
+							$('#h-edit-file').css("display", "");
+						});
+						request.fail(function(jqXHR, textStatus, errorThrown) {
+							console.error("The following error occurred: " + textStatus, errorThrown);
+							var errMsg = "Yoy must be logged in to update the file name.";
+							if(!checkErrorAndRedirect(jqXHR, errMsg)) {
+								notify("The file name was not updated due to: "+ errorThrown, "error");
+							}
+						});
+					}
+
+					function cancelFileName() {
+						$('#file-name-title').html(fileName);
+						$('.file_name_div').remove();
+						$('#prf-file-name').css("display", "inline");
+						$('#h-edit-file').css("display", "");
+						$('#prf-file-name').mouseleave();
+					}
+
+					$(document).ready(function(){
+						$(document).on('mouseenter', '#prf-file-name', function() {
+							$('#h-edit-file').removeClass("hiddencomplete");
+							$('#h-edit-file').addClass("inline");
+						}).on('mouseleave', '#prf-file-name', function() {
+							$('#h-edit-file').removeClass("inline");
+							$('#h-edit-file').addClass("hiddencomplete");
+						});
+					});
+			</script>
 		</div>
 
         <div class="col-md-4">
@@ -513,23 +641,23 @@
             <div class="row ds-section-sm file-info">
                 <table class="table table-condensed">
 					<tr><td><b>Type:</b></td><td>@file.contentType</td></tr>
-					<tr><td><b>File&nbsp;size:</b></td><td title="@file.length bytes">@FileUtils.byteCountToDisplaySize(file.length)</td></tr>
+					<tr><td><b>File&nbsp;size:</b></td><td title="@file.length bytes">@FileUtils.humanReadableByteCount(file.length)</td></tr>
 					@if(Permission.checkServerAdmin(user)) {
 						<tr><td><b>File&nbsp;location:</b></td>
 						@if(file.loader == "services.mongodb.MongoDBByteStorage") {
 							<td>mongo</td>
 						}
 						@if(file.loader == "services.filesystem.DiskByteStorageService") {
-							@if(file.path.isEmpty) {
+							@if(file.loader_id.isEmpty) {
 								<td>missing</td>
 							} else {
 								<td>
-								@if(file.path.get.length>10) {
-									<span title="@file.path.get">...@file.path.get.substring(file.path.get.length-10, file.path.get.length)</span>
+								@if(file.loader_id.length>10) {
+									<span title="@file.loader_id">...@file.loader_id.substring(file.loader_id.length-10, file.loader_id.length)</span>
 								} else {
-									@file.path.get
+									@file.loader_id
 								}
-								<a class="btn btn-link btn-sm clipboard" data-copy="@file.path.get" title="Copy path to clipboard"><span class="glyphicon glyphicon-edit"></span> copy</a></td>
+								<a class="btn btn-link btn-sm clipboard" data-copy="@file.loader_id" title="Copy path to clipboard"><span class="glyphicon glyphicon-edit"></span> copy</a></td>
 							}
 						}
 						</tr>
@@ -615,6 +743,13 @@
                             }, undefined);
                         }
                     });
+					$(document).on('mouseenter', '#aboutdesc', function() {
+						$('#edit-description').removeClass("hiddencomplete");
+						$('#edit-description').addClass("inline");
+					}).on('mouseleave', '#aboutdesc', function() {
+						$('#edit-description').removeClass("inline");
+						$('#edit-description').addClass("hiddencomplete");
+					});
                 });
 
                 function downloadFile() {
@@ -789,11 +924,12 @@
     }
 
     @if(user.isDefined) {
-        @if(!user.get.identityId.userId.equals(file.author.identityId.userId)){
+        @if(!user.get.id.equals(file.author.id)){
             <script language="javascript">
                 $(".requiresLogin:not(.requiresLoginCommunity)").css("display","none");
             </script>
         }
     }
+
 }}
 

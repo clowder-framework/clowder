@@ -5,25 +5,20 @@
   collectionsInside: List[models.Collection],
   rdfExported: Boolean,
   relatedSensors: List[(String,String,String)],
-  datasetSpaces: Option[List[ProjectSpace]],
+  datasetSpaces_canRemove : Option[Map[ProjectSpace,Boolean]],
   fileList: List[File],
-  fileComments: Map[UUID, Int],
   filesTags: scala.collection.immutable.TreeSet[String],
   toPublish: Boolean,
   curationObjects: List[models.CurationObject],
   currentSpace: Option[String],
-  filepage: Int,
-  currentFolder: Option[UUID],
-  foldersList: List[Folder],
-  folderHierarchy: List[Folder],
-  next: Boolean, limit: Int)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  limit: Int)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
+@import play.api.Play.current
+@import scala.collection.mutable.{Map => MutableMap}
 
-@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
-
-@main("Dataset") {
+@main(dataset.name) {
 	<div class="row">
 		<!-- left column -->
 		<div class="col-md-8 col-right-border">
@@ -73,11 +68,7 @@
                 <div class="col-md-12 box-white-space">
                     <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                        <a id="addFilesLink" href="
-                            @currentFolder match {
-                                case None => {@(routes.Datasets.addFiles(dataset.id))}
-                                case Some(folder) => {@routes.Datasets.addFilesToFolder(dataset.id, folder.stringify)}
-                            }"
+                        <a id="addFilesLink" href="@(routes.Datasets.addFiles(dataset.id))"
                         class="btn btn-link btn-sm btn-margin-bottom" id="fileUploadBtn" title="Add File to Dataset" role="button">
                             <span class="glyphicon glyphicon-plus"></span> Add Files
                         </a>
@@ -127,10 +118,10 @@
                                         </div>
                                     </div>
                                     <div class="modal-footer">
-                                        <button type="submit" class="btn btn-primary start"  id="createFolder" title="Create the Dataset">
+                                        <button type="submit" class="btn btn-primary start"  id="createFolder" title="Create the folder">
                                             <span class="glyphicon glyphicon-ok"></span> Create Folder
                                         </button>
-                                        <button class="btn btn-default" title="Cancel creation of folder" data-dismiss="modal">
+                                        <button class="btn btn-default" title="Cancel creation of folder" data-dismiss="modal" onclick="$('.error').hide();">
                                             <span class="glyphicon glyphicon-remove"></span> Cancel
                                         </button>
                                     </div>
@@ -143,67 +134,49 @@
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
                 <ul class="nav nav-tabs margin-bottom-20" >
                     <li role="presentation" class="active"><a href="#tab-files" role="tab" data-toggle="tab">Files </a></li>
-                    <li role="presentation"><a id="metadata-counter" href="#tab-metadata" role="tab" data-toggle="tab">Metadata </a></li>
+                    <li role="presentation"><a href="#tab-metadata" role="tab" data-toggle="tab">Metadata </a></li>
                     <li role="presentation"><a href="#tab-visua" role="tab" data-toggle="tab">Visualizations</a></li>
-                    <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments </a></li>
-                    <li role="presentation"><a href="#tab-notes" role="tab" data-toggle="tab">Notes</a></li>
+                    <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
                 </ul>
                 <div class="tab-content">
-                  <div role="tabpanel" class="tab-pane  fade in active" id="tab-files">
-                      @currentFolder match {
-                        case Some(folder) => {@datasets.filesAndFolders(dataset, Some(folder.stringify), foldersList, folderHierarchy, currentSpace, filepage, next, fileList, fileComments)}
-                        case None => {@datasets.filesAndFolders(dataset, None, foldersList, folderHierarchy, currentSpace, filepage, next, fileList, fileComments)}
-                      }
-
-                  </div>
-                  <div role="tabpanel" class="tab-pane fade" id="tab-comments">
-                      <!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->
-                      @if(Permission.checkPermission(Permission.AddComment, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                          @commentform(dataset.id.stringify, "dataset")
-                      }
-                      <div class="list-unstyled" id="reply_@dataset.id.toString">
-                         @comment(comments)</div>
-                  </div>
-                  <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
-
-                      <div class="row">
-                          <div class="col-md-10">
-                          </div>
-                          <div class="col-md-2">
-                              <a href="@api.routes.Datasets.getMetadataJsonLD(dataset.id)" class="pull-right" title="JSON-LD">
-                                  <img src="@routes.Assets.at("images/json-ld.png")"/>
-                              </a>
-                          </div>
-                      </div>
-                      <div class="row">
-                          <div class="col-md-12">
-                            @metadatald.addMetadata("dataset", dataset.id.toString, "metadata-content")
-                          </div>
-                      </div>
-                      <div class="row">
-                          <div class="col-md-12" id="metadata-content">
-                          @metadatald.view(m, true)
-                          </div>
-                      </div>
-
-
-                  </div>
-                    <div role="tabpanel" class="tab-pane fade" id="tab-visua">
-                    @datasets.previews(dataset, previewers)
+                    <div role="tabpanel" class="tab-pane fade in active" id="tab-files"></div>
+                    <div role="tabpanel" class="tab-pane fade" id="tab-comments">
+                            <!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->
+                        @if(Permission.checkPermission(Permission.AddComment, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                            @commentform(dataset.id.stringify, "dataset")
+                        }
+                        <div class="list-unstyled" id="reply_@dataset.id.toString"> @comment(comments)</div>
                     </div>
-                  <!-- If the user can create a note on this dataset, display this tab. Otherwise, remove it. Is there a better way to do this? -->
-                  @if(Permission.checkPermission(Permission.CreateNote, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                      <div role="tabpanel" class="tab-pane fade" id="tab-notes">
-                      @notesform(dataset.id.toString, api.routes.Datasets.setNotesHTML(dataset.id).toString, dataset.notesHTML.getOrElse(""))
-                      </div>
-                  }
+                    <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
+                        <div class="row">
+                            <div class="col-md-10"></div>
+                            <div class="col-md-2">
+                                <a href="@api.routes.Datasets.getMetadataJsonLD(dataset.id)" class="pull-right" title="JSON-LD">
+                                    <img src="@routes.Assets.at("images/json-ld.png")"/>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                @metadatald.addMetadata("dataset", dataset.id.toString, "metadata-content")
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12" id="metadata-content">
+                                @metadatald.view(m, true)
+                            </div>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane fade" id="tab-visua">
+                        @datasets.previews(dataset, previewers)
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
 
 		<!-- right column -->
 		<div class="col-md-4 col-left-border">
-            @spaces.spaceAllocation(dataset.id, ResourceRef.dataset, datasetSpaces.getOrElse(List.empty))
+            @spaces.spaceAllocation(dataset.id, ResourceRef.dataset,datasetSpaces_canRemove.getOrElse(Map.empty),None)
             @if(user.isDefined) {
                 <br/>
                 @datasets.userLink(dataset)
@@ -213,9 +186,10 @@
             @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
                 @datasets.listCurationObjects(curationObjects)
             }
-            @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {
+            @if(current.plugin[services.PostgresPlugin].isDefined) {
                 @sensors.relatedSensors(relatedSensors, "Dataset", dataset.id.stringify)
             }
+            <div id="toolListContainer"></div>
 		</div>
 	</div>
 
@@ -224,28 +198,17 @@
 
     <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/updateLicenseInfo.js")" language="javascript"></script>
-    <script src="@routes.Assets.at("javascripts/tinymce/tinymce.min.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/folderListProcess.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/fileListProcess.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
     <script type="text/javascript">
+        var removeIndicator = false;
         var parentId = "@dataset.id";
         var parentType = "dataset";
-
-        tinymce.init ( { selector : '.notesArea',
-            theme : "modern",
-            plugins :[
-                "advlist autolink lists link image charmap print preview hr anchor pagebreak",
-                "searchreplace wordcount visualblocks visualchars code fullscreen",
-                "insertdatetime media nonbreaking save table contextmenu directionality",
-                "template paste textcolor"
-            ],
-            toolbar1 : "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | " +
-                        "bullist numlist outdent indent | link image",
-            toolbar2 : "print preview media | forecolor backcolor emoticons",
-            image_advtab : true,
-            templates :[ { title : 'Test template 1', content : 'Test 1' }, { title : 'Test template 2', content : 'Test 2' }
-            ]
-            } ) ;
+        var pageIndex = 0;
+        var folderId;
         var cur_title;
         function updateTitle() {
             cur_title = $('#datasettitle').text();
@@ -259,12 +222,35 @@
             $('#h-edit-title').addClass("hiddencomplete");
             $('#h-edit-title').css("display", "none");
         }
-
-        $(document).ready(function(){
-            if(@currentFolder.isDefined) {
-                parentId = '@currentFolder.getOrElse("")';
-                parentType = "folder";
+        function parseHash() {
+            var hash = location.hash.split('#')[1];
+            var folderSet = false;
+            var pageSet = false;
+            if(hash != undefined) {
+                var values = hash.split('&');
+                for (var i = 0; i < values.length; i++){
+                    var temp = values[i].split('=');
+                    if(temp[0] == 'folderId') {
+                        folderId = temp[1];
+                        folderSet = true
+                    }
+                    if(temp[0] == 'page'){
+                        pageIndex = temp[1];
+                        pageSet = true
+                    }
+                }
             }
+            if(!folderSet) {
+                folderId ='';
+            }
+            if(!pageSet) {
+                pageIndex = 0;
+            }
+        }
+        $(document).ready(function(){
+
+            getUpdatedFilesAndFolders();
+
             if(@dataset.spaces.size < 1 ) {
                 $('#dataset-users').hide();
             }
@@ -285,9 +271,8 @@
                     $('#edit-description').removeClass("inline");
                     $('#edit-description').addClass("hiddencomplete");
                  });
-
-
             }
+
             if(@Permission.checkPermission(Permission.EditLicense, ResourceRef(ResourceRef.dataset, dataset.id))) {
                 $(document).on('mouseenter', '#edit-license', function() {
                     $('#editlicense').removeClass("hiddencomplete");
@@ -297,9 +282,19 @@
                     $('#editlicense').addClass("hiddencomplete");
                 });
             }
+
             var description = $('#ds_description').html().trim();
             $('#ds_description').html(urlify(description));
 
+            @play.api.Play.current.plugin[services.ToolManagerPlugin] match {
+                case Some(p) => {
+                    @if(p.enabled && dataset.files.nonEmpty && Permission.checkPermission(Permission.ExecuteOnDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        refreshToolSidebar()
+                    }
+                }
+                case None => { }
+
+            }
         });
 
         function cancelTitle() {
@@ -392,9 +387,9 @@
 
 		request.fail(function(jqXHR, textStatus, errorThrown) {
 			console.error("The following error occurred: " + textStatus, errorThrown);
-			var errMsg = " You must be logged in to update the information about a collection.";
+			var errMsg = " You must be logged in to update the information about a dataset.";
 			if(!checkErrorAndRedirect(jqXHR, errMsg)) {
-				notify("The collection information was not updated due to: " + errorThrown, "error");
+				notify("The dataset information was not updated due to: " + errorThrown, "error");
 			}
 		});
 
@@ -407,7 +402,25 @@
         })
     }
 
+    function refreshToolSidebar() {
+        // Get current status from ToolManagerPlugin and refresh sidebar table
+        var request = new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (request.readyState == 4 && request.status == 200) {
+                $('#toolListContainer').html(request.response);
+            }
+        }
+
+        request.open("GET", jsRoutes.controllers.Datasets.refreshToolSidebar("@dataset.id", "@dataset.name").url, true);
+        request.send();
+    }
+
     $(function() {
+            $(window).on('fileDelete hashchange', function() {
+
+                getUpdatedFilesAndFolders();
+            });
+
             $('#createFolder').click(function() {
                 var name=$('#name');
 
@@ -415,12 +428,14 @@
                 if(!name.val()) {
                     $('#nameerror').show();
                     error = true;
+                } else{
+                    $('#nameerror').hide();
                 }
                 if(!error) {
 
                     var encName  = htmlEncode(name.val());
                     var jsonData = JSON.stringify({"name": encName, "parentId": parentId, "parentType": parentType, "currentSpace": "@currentSpace"});
-                    var request = jsRoutes.api.Folders.createFolder("@dataset.id").ajax({
+                    var request = jsRoutes.controllers.Folders.createFolder("@dataset.id").ajax({
                         data:jsonData,
                         type: 'POST',
                         contentType: "application/json"
@@ -429,13 +444,15 @@
                         $('#folder-modal').modal('hide');
                         $('#folderListDiv').prepend(response);
                         notify("Folder created successfully", "success", false, 2000 );
+                        $('#name').val("");
                     });
 
                     request.fail(function (jqXHR, textStatus, errorThrown){
+                        $('#name').val("");
                         console.error("The following error occured: " + textStatus, errorThrown);
                         var errMsg = "You must be logged in to create a new folder.";
                         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                            notify("Error in creating folder. : " + errorThrown, "error");
+                            notify("Error in creating folder: " + errorThrown, "error");
                         }
                     });
 
@@ -444,11 +461,25 @@
             });
         });
 
-       function getUpdatedFilesAndFolders(pageIndex, folderId) {
+       function updatePageAndFolder(idx, folderIdd){
+           if(folderIdd != "") {
+               location.hash = "folderId="+folderIdd+"&page="+idx;
+           } else {
+               location.hash="page="+idx;
+           }
+           $(window).trigger("hashchange");
+       }
+
+       function getUpdatedFilesAndFolders() {
+        parseHash();
         if(folderId == "") {
             folderId = null;
         }
-         var jsonData = JSON.stringify({"currentSpace": @currentSpace.getOrElse("null"), "folderId": folderId});
+        var currentSpace = null;
+        if(@currentSpace.isDefined){
+           currentSpace = "@currentSpace";
+        }
+         var jsonData = JSON.stringify({"currentSpace": currentSpace, "folderId": folderId});
          var request = jsRoutes.controllers.Datasets.getUpdatedFilesAndFolders("@dataset.id", @limit, pageIndex).ajax({
             data: jsonData,
             type: 'POST',
@@ -461,14 +492,18 @@
           if(folderId != null) {
             parentType = 'folder';
             parentId = folderId;
-            $('#addFilesLink').attr("href", jsRoutes.controllers.Datasets.addFilesToFolder('@dataset.id', folderId).url);
+            $('#addFilesLink').attr("href", jsRoutes.controllers.Folders.addFiles('@dataset.id', folderId).url);
+          } else {
+              parentId = "@dataset.id";
+              parentType = "dataset";
+              $('#addFilesLink').attr("href", jsRoutes.controllers.Datasets.addFiles('@dataset.id').url);
           }
          });
          request.fail(function (jqXHR, textStatus, errorThrown){
-            console.error("The following error occured: " + textStatus, errorThrown);
+            console.error("The following error occurred: " + textStatus, errorThrown);
             var errMsg = "You must be logged in to see files and folders.";
             if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                notify("Error in getting more files and folders. : " + errorThrown, "error");
+                notify("Error in getting more files and folders : " + errorThrown, "error");
             }
          });
 

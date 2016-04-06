@@ -28,11 +28,12 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
     ServerStartTime.startTime = Calendar.getInstance().getTime
     Logger.debug("\n----Server Start Time----" + ServerStartTime.startTime + "\n \n")
 
-    // set admins
-    AppConfiguration.setDefaultAdmins()
+    val users: UserService = DI.injector.getInstance(classOf[UserService])
+
+    // add all new admins
+    users.updateAdmins()
 
     // create default roles
-    val users: UserService = DI.injector.getInstance(classOf[UserService])
     if (users.listRoles().isEmpty) {
       Logger.debug("Ensuring roles exist")
       users.updateRole(Role.Admin)
@@ -43,14 +44,17 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
     // set default metadata definitions
     MetadataDefinition.registerDefaultDefinitions()
 
-    extractorTimer = Akka.system().scheduler.schedule(0 minutes, 5 minutes) {
-      ExtractionInfoSetUp.updateExtractorsInfo()
+    if (extractorTimer == null) {
+      extractorTimer = Akka.system().scheduler.schedule(0 minutes, 5 minutes) {
+        ExtractionInfoSetUp.updateExtractorsInfo()
+      }
     }
 
     // Use if Mailer Server and stmp in Application.conf are set up
-
-    jobTimer = Akka.system().scheduler.schedule(0 minutes, 1 minutes) {
-      JobsScheduler.runScheduledJobs()
+    if (jobTimer == null) {
+      jobTimer = Akka.system().scheduler.schedule(0 minutes, 1 minutes) {
+        JobsScheduler.runScheduledJobs()
+      }
     }
 
     Logger.info("Application has started")

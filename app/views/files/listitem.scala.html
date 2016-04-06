@@ -1,29 +1,38 @@
-@(file: File, comments: Map[UUID, Int], redirect: Call)(implicit user: Option[models.User])
+@(file: File, comments: Map[UUID, Int], redirect: Call, folder: Option[String])(implicit user: Option[models.User])
 @import api.Permission
+@import _root_.util.FileUtils
 <div class="panel panel-default" id="@file.id-listitem">
     <div class="panel-body">
         <div class="row">
             <div class="col-md-2 col-sm-2 col-lg-2">
-            @if(!file.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)" width="120">}
+                @if(!file.thumbnail_id.isEmpty){
+                    <img class="fit-in-space" src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)">
+                }
             </div>
             <div class="col-md-10 col-sm-10 col-lg-10">
-                <h2><a href="@(routes.Files.file(file.id))">@file.filename</a></h2>
+                <h3><a href="@(routes.Files.file(file.id))">@file.filename</a></h3>
                 <div class="row">
                     <div class="col-md-6 col-lg-6 col-sm-6">
                         <ul class="list-unstyled">
                             <li>@(if(file.contentType != null) file.contentType else "N/A")</li>
                             <li>@file.uploadDate.format("MMM dd, yyyy")</li>
+                            <li>@FileUtils.humanReadableByteCount(file.length)</li>
                             <li>
                                 <span class="glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
                                 <span class="glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
                                 <span class="glyphicon glyphicon-comment" title="@(comments.get(file.id)) comments"></span> @(comments.get(file.id))
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                                    @if(user.get.identityId.userId.equals(file.author.identityId.userId) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
-                                        <button onclick="removeFileAndRedirect('@(file.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Delete">
+                                    @if(user.get.id.equals(file.author.id) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
+                                        <button onclick="
+                                                @folder match {
+                                                    case None => {confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))',false, '@redirect')}
+                                                    case Some(s) => {confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))',false, '@redirect#@s')}
+                                                }
+                                                " class="btn btn-link" style="text-align:right" title="Delete">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     } else {
-                                        <button disabled onclick="removeFileAndRedirect('@(file.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Delete">
+                                        <button disabled onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))','@redirect')" class="btn btn-link" style="text-align:right" title="Delete">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     }
                                 }
@@ -33,7 +42,11 @@
                     <div class="col-md-6 col-lg-6 col-sm-6">
                         <ul class="list-unstyled">
                             @if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
-                                <li><a id="downloadButton" class="btn btn-link" type="button" onclick="window.open(jsRoutes.api.Files.download('@file.id').url, '_blank');" class="btn btn-primary" title="You don't have permission to download this file" > <span class="glyphicon glyphicon-save"></span>
+                                <li><a id="downloadButton" class="btn btn-link" type="button" onclick="window.open(jsRoutes.api.Files.download('@file.id').url, '_blank');" class="btn btn-primary" title="Download and enjoy this file." > <span class="glyphicon glyphicon-save"></span>
+                                    Download </a></li>
+                            } else {
+                                    <!-- if 'disabled' title is not visible -->
+                                <li><a class="btn btn-link disabled" type="button" class="btn btn-primary" title="You don't have permission to download this file." > <span class="glyphicon glyphicon-save"></span>
                                     Download </a></li>
                             }
 

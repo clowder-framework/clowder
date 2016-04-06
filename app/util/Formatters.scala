@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 /**
- * Created by lmarini on 4/21/14.
+ * Formatters
  */
 object Formatters {
 

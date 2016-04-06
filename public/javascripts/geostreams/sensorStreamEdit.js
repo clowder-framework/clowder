@@ -77,26 +77,6 @@ $(document).ready(function() {
   var sensorTypesUrlElement = $("#sensorTypesUrl");
   sensorTypesUrlElement.attr('href', sensorTypesUrl);
 
-  // set the sensor types dynamically - TODO store this in the sensor config
-  var sensorTypes = {
-    1: "1 Instrument, 1 Measurement, No Depth, No Time-Series",
-    2: "1 Instrument, 1 Measurement, No Depth, Yes Time-Series",
-    3: "1 Instrument, Many Measurements, No Depth, No Time-Series",
-    4: "1 Instrument, Many Measurements, No Depth, Yes Time-Series",
-    5: "Many Instruments, 1 Measurement, Many Depths, Yes Time-Series",
-    6: "Many Instruments, Many Measurements, Many Depths, Yes Time-Series",
-    7: "1 Instrument, Many Measurements, One Depth, Yes Time-Series"
-  };
-
-  var sensorType = $("#sensorType");
-  var selectedSensorType = sensorType.val();
-  sensorType.empty();
-  $.each(sensorTypes, function(key, value) {
-    var insertOption = $("<option></option>").attr("value", key).text(value);
-    if (+key == +selectedSensorType) { insertOption.attr('selected', 'selected'); }
-    sensorType.append(insertOption);
-  });
-
   // setup form validation
   var sensorForm = $('#sensor-edit');
   sensorForm.validate({
@@ -109,15 +89,15 @@ $(document).ready(function() {
   });
 
   var insertInstrumentForm = function(data) {
-    var instrumentTemplate = Handlebars.getTemplate("/assets/templates/sensors/stream-form");
+    var instrumentTemplate = Handlebars.getTemplate(jsRoutes.controllers.Assets.at('templates/sensors/stream-form').url);
     $("#instruments").append(instrumentTemplate(data));
   };
 
   var instrumentCounter = 0;
   var addInstrumentButton = $("#addInstrument");
     addInstrumentButton.on('click', instrumentCounter, function() {
-    instrumentCounter++;
-    insertInstrumentForm();
+    instrumentCounter--;
+    insertInstrumentForm({id: instrumentCounter});
   });
 
   $("#instruments").on('click', '.removeInstrument', function() {
@@ -126,38 +106,6 @@ $(document).ready(function() {
   });
 
 
-  sensorType.on('change', function() {
-    var sensorType = $(this).val();
-    var hasDepth = $("#hasDepth");
-    var sensorTypeSensorCount = $("#sensorTypeSensorCount");
-    var sensorTypeMultipleInstruments = $("#sensorTypeMultipleInstruments");
-    var instrumentContents1 = $("#instrument-contents-1");
-    var instrumentLink1 = $("#instrument-link-1");
-    var addInstrument = $("#addInstrument");
-
-    $("#sensorTypeSummary").text(sensorType);
-    switch(sensorType) {
-      case "5":
-      case "6":
-      case "7":
-        hasDepth.show();
-        sensorTypeSensorCount.text('multiple');
-        sensorTypeMultipleInstruments.text('s');
-        instrumentContents1.collapse('hide');
-        instrumentLink1.text('Instrument #1 Information');
-        addInstrument.show();
-        break;
-      default:
-        hasDepth.hide();
-        sensorTypeSensorCount.text('1');
-        sensorTypeMultipleInstruments.text('');
-        instrumentContents1.collapse('show');
-        instrumentLink1.text('Instrument Information');
-        addInstrument.hide();
-        break;
-    }
-  });
-
   // enable tooltips
   $('[data-toggle="tooltip"]').tooltip();
 
@@ -165,30 +113,9 @@ $(document).ready(function() {
   var deferredStreams = [];
   $("#formSubmit").click(function(event) {
     event.preventDefault();
-    if (!sensorForm.valid()) {
+    if (!$("#sensor-edit").valid()) {
       return;
     }
-
-    $('.stream-tmpl').each(function() {
-
-      $(this).validate({
-        ignore: false,
-        messages: {
-          instrumentName: "You must provide a name for this instrument",
-          instrumentID: "You must provide a unique ID for this instrument"
-        }
-      });
-      if (!$(this).valid()) {
-        $(this).find('.collapse').collapse('show');
-        instrumentsValid = false;
-        return false;
-      }
-    });
-
-    if (!instrumentsValid) {
-      return;
-    }
-
 
     var mediciSensorsURL = jsRoutes.api.Geostreams.searchSensors().url;
     var mediciStreamsURL = jsRoutes.api.Geostreams.searchStreams().url;
@@ -219,10 +146,10 @@ $(document).ready(function() {
 
           streamJSON['name'] = streamData['instrumentName'];
           delete streamData['instrumentName'];
-          if (streamData['id']) {
+          if (streamData['id'] > 0) {
             streamJSON['id'] = streamData['id'];
-            delete streamData['id'];
           }
+          delete streamData['id'];
 
           streamJSON['properties'] = streamData;
           streamJSON['geometry'] = sensorJSON['geometry'];
@@ -241,7 +168,7 @@ $(document).ready(function() {
 
         $.when.apply($, deferredStreams).done(function(data) {
           // redirect to the sensors list
-          window.location.href = jsRoutes.controllers.Geostreams.list().url;
+          window.location.reload();
         });
 
       });

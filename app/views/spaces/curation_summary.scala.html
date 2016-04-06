@@ -4,19 +4,22 @@
         <div class="panel-body">
             <h5><a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h5>
             <ul class="list-unstyled">
-                <li>Size: <div id="size"></div> <li/>
-                <li>File Formats: <div id="format"></div></li>
+                <li><div id="size">Size: </div> <li/>
+                <li><div id="format">File Formats: </div></li>
                 <li>Creator: @curationObject.datasets(0).author.fullName</li>
-                <li>Uploaded: @curationObject.created.format("MMM dd, yyyy")</li>
+                <li>Created: @curationObject.created.format("MMM dd, yyyy")</li>
+                <li>Abstract: @curationObject.description</li>
             </ul>
             @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, curationObject.space))){
+                <a class="btn btn-sm btn-link" href="@routes.Spaces.stagingArea(curationObject.space)">
+                    <span class="glyphicon glyphicon-briefcase"></span> Staging Area</a>
                 @if(!editCurationObject){
                     <a class="btn btn-sm btn-link" href ="@routes.CurationObjects.getCurationObject(curationObject.id)">
                         <span class="glyphicon glyphicon-chevron-left"></span> Go to Edit Metadata</a>
                 }
                 <a class="btn btn-sm btn-link"  href ="@(routes.CurationObjects.editCuration(curationObject.id))"  >
                     <span class="glyphicon glyphicon-edit"></span> Edit Curation Object</a>
-                <a class="btn btn-sm btn-link" onclick="removeCuration('@(curationObject.space)','@(curationObject.id)')"  >
+                <a class="btn btn-sm btn-link" onclick="confirmDeleteResource('curation object','@(curationObject.id)','@(curationObject.name.replace("'","&#39;"))',true, '@routes.Spaces.stagingArea(curationObject.space)')"  >
                     <span class="glyphicon glyphicon-trash"></span> Delete Curation Object</a>
             }
         </div>
@@ -24,31 +27,5 @@
     <script src="@routes.Assets.at("javascripts/curationProcess.js")" type="text/javascript"></script>
 
     <script>
-    $(document).ready(function() {
-        var request = jsRoutes.api.CurationObjects.getCurationFiles('@curationObject.id').ajax({
-            type: "GET",
-            contentType : "application/json"
-        }).done(function( response, textStatus, jqXHR ) {
-
-            var totalSize = 0;
-            $.each(response.cf, function (i, el) {
-                 totalSize += this.length;
-            });
-
-            var formatAll = response.cf.map(f => f.contentType.valueOf());
-            var formats = [];
-            $.each(formatAll, function(i, el){
-                 if($.inArray(el, formats) === -1) formats.push(el);
-            });
-
-            $( "#size" ).replaceWith( Math.round(totalSize /1024) +"KB" );
-            $( "#format" ).replaceWith(formats.join(', ') );
-
-        }).fail(function( ) {
-            $( "#size" ).replaceWith(Unknown);
-            $( "#format" ).replaceWith(Unknown);
-
-        });
-        ;
-    });
+    $(document).ready(getFiles('@curationObject.id'));
     </script>

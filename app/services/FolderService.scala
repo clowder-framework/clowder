@@ -53,7 +53,7 @@ trait FolderService {
   /**
    * Update name for a folder
    */
-  def updateName(folderId: UUID, name: String)
+  def updateName(folderId: UUID, name: String, displayName: String)
 
   /**
    * Find folders that contain a file by id.
@@ -63,10 +63,25 @@ trait FolderService {
   /**
    * Count how many folders have the same base name
    */
-  def countByName(name: String): Long
+  def countByName(name: String, parentType: String, parentId: String): Long
 
   /**
    * Count how many folders have the same display name
    */
-  def countByDisplayName(name: String): Long
+  def countByDisplayName(name: String, parentType: String, parentId: String): Long
+
+  /**
+    * Get all folders with the same base name
+    */
+  def findByNameInParent(name:String, parentType: String, parentId: String): List[Folder]
+
+  /**
+    * Get all folders with the same display name
+    */
+  def findByDisplayNameInParent(name:String, parentType:String, parentId: String): List[Folder]
+
+  /**
+    * Get all folders that are part of a dataset (doesn't matter the level)
+    */
+  def findByParentDatasetId(parentId: UUID): List[Folder]
 }

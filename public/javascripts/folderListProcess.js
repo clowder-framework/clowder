@@ -1,4 +1,5 @@
-function removeFolder(parentDataset, folderId) {
+function removeFolder(folderId, parentDataset) {
+
     var request = jsRoutes.api.Folders.deleteFolder(parentDataset, folderId).ajax({
         type: 'DELETE'
     });
@@ -12,7 +13,6 @@ function removeFolder(parentDataset, folderId) {
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The folder was not removed due to : " + errorThrown, "error");
         }
-
     });
 }
 
@@ -27,7 +27,7 @@ function updateFolderName(parentDataset, folderId) {
     $('.'+class_name).append('<div class="hiddencomplete" aria-hidden="true" id="title-error_'+folderId+'"> <span class="error"> Name is required </span> </div>');
     $('.'+class_name).append('<button id="update_title_'+folderId+'" class= "btn btn-sm btn-primary btn-margins" onclick="saveFolderName(\''+parentDataset+'\',\''+folderId+'\')"> <span class="glyphicon glyphicon-send"></span> Save </button>');
     $('.'+class_name).append('<button id="cancel_title_'+folderId+'" onclick="cancelFolderName(\''+folderId+'\')" class="btn btn-sm edit-tab btn-default btn-margins"> <span class="glyphicon glyphicon-remove"></span>Cancel </button>');
-    $('#title_input_'+folderId).val(cur_title);
+    $('#title_input_'+folderId).val(cur_names[folderId]);
     $('#'+folderId+'-name').text("");
     $('#h-edit-'+folderId).addClass("hiddencomplete");
     $('#h-edit-'+folderId).css("display", "none");
@@ -40,6 +40,10 @@ function saveFolderName(parentDataset, folderId) {
     }
 
     var name =$('#title_input_'+folderId).val();
+    if(name.trim() == cur_names[folderId].trim()){
+        cancelFolderName(folderId);
+        return false;
+    }
     var encName = htmlEncode(name);
     jsonData = JSON.stringify({"name": encName});
 
@@ -49,7 +53,7 @@ function saveFolderName(parentDataset, folderId) {
         contentType: "application/json"
     });
     request.done(function(response, textStatus, jqXHR){
-        $('#'+folderId+'-name').html('<a href="'+cur_hrefs[folderId]+'">'+encName.replace(/\n/g, "<br>")+'</a>');
+        $('#'+folderId+'-name').html('<a href="'+cur_hrefs[folderId]+'">'+response.newname.replace(/\n/g, "<br>")+'</a>');
         $('.edit_title_'+folderId).remove();
         $('#'+folderId+'-name').css("display", "inline");
         $('#h-edit-'+folderId).removeClass("inline");

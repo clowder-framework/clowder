@@ -1,10 +1,8 @@
 package models
 
-import java.net.URL
-
 import play.api.Logger
 import play.api.libs.json._
-import services.{MetadataService, DI, UserService}
+import services.{MetadataService, DI}
 
 /**
  * Definition of metadata fields to present to the user a list of options.
@@ -31,15 +29,19 @@ object MetadataDefinition {
         {"label":"Abstract",
           "uri":"http://purl.org/dc/terms/abstract",
           "type":"string"}"""),
-      Json.parse("""{"label":"Audience",
-          "uri":"http://purl.org/dc/terms/audience",
-          "type":"string"}"""),
       Json.parse("""{"label":"Alternative Title",
           "uri":"http://purl.org/dc/terms/alternative",
+          "type":"string"}"""),
+      Json.parse("""{"label":"Audience",
+          "uri":"http://purl.org/dc/terms/audience",
           "type":"string"}"""),
       Json.parse("""{"label":"References",
           "uri":"http://purl.org/dc/terms/references",
           "type":"string"}"""),
+      Json.parse("""{
+          "label":"Date and Time",
+          "uri":"http://purl.org/dc/terms/date",
+          "type":"datetime"}"""),
         Json.parse("""{"label":"CSDMS Standard Name",
           "uri":"http://csdms.colorado.edu/wiki/CSN_Searchable_List",
           "type":"list",
@@ -96,6 +98,9 @@ object MetadataDefinition {
             "type":"string"}""")
       )
     // Add the default definitions, do not update if they already exist.
-    default.map(d => metadataService.addDefinition(MetadataDefinition(json = d), update=false))
+    if(metadataService.getDefinitions().size == 0) {
+      Logger.debug("Add default metadata definition.")
+      default.map(d => metadataService.addDefinition(MetadataDefinition(json = d), update = false))
+    }
   }
 }

@@ -49,9 +49,12 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
     curation match {
       case Some(c) => {
         metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
-        c.files.map(f => metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f)))
+        c.files.map(f => deleteCurationFile(f))
+        c.folders.map(f => {
+          removeCurationFolder("dataset", id, f)
+          deleteCurationFolder(f)
+        })
         spaces.removeCurationObject(c.space, c.id)
-        c.files.map(f => CurationFileDAO.remove(MongoDBObject("_id" ->new ObjectId(f.stringify))))
         CurationDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
       }
       case None =>
@@ -60,6 +63,10 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
 
   def insertFile(cf: CurationFile) ={
     CurationFileDAO.insert(cf)
+  }
+
+  def insertFolder(cf: CurationFolder) ={
+    CurationFolderDAO.insert(cf)
   }
 
   def updateRepository(curationId: UUID, repository: String): Unit = {
@@ -78,16 +85,106 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
   }
 
   def getCurationFiles(curationFileIds:List[UUID]): List[CurationFile] ={
-    (for (cf <- curationFileIds) yield CurationFileDAO.findOneById(new ObjectId(cf.stringify))).flatten.toList
+    (for (cf <- curationFileIds) yield CurationFileDAO.findOneById(new ObjectId(cf.stringify))).flatten
   }
 
-  def getCurationByCurationFile(curationFile: UUID): Option[CurationObject] = {
-    CurationDAO.findOne(MongoDBObject("files" ->  new ObjectId(curationFile.stringify)))
+  def getCurationFolders(curationFolderIds:List[UUID]): List[CurationFolder] = {
+    (for (cf <- curationFolderIds) yield CurationFolderDAO.findOneById(new ObjectId(cf.stringify))).flatten
   }
 
-  def deleteCurationFiles(curationId: UUID, curationFileId: UUID) = {
+  def getAllCurationFileIds(id:UUID): List[UUID] ={
+    get(id) match {
+      case Some(c) => c.files ++ c.folders.map(subf => getAllCurationFileIdsbyCurationFolder(subf)).flatten
+      case None => List.empty
+    }
+  }
+
+  private def getAllCurationFileIdsbyCurationFolder(id:UUID): List[UUID] ={
+    getCurationFolder(id)  match {
+      case Some(f) => f.files ++ f.folders.map(subf => getAllCurationFileIdsbyCurationFolder(subf)).flatten
+      case None => List.empty
+    }
+  }
+
+  def getAllCurationFolderIds(id: UUID): List[UUID] = {
+    get(id) match {
+      case Some(c) => c.folders ++ c.folders.map(subf => getAllCurationFolderIdsByCurationFolder(subf)).flatten
+      case None => List.empty
+    }
+  }
+
+  private def getAllCurationFolderIdsByCurationFolder(id: UUID): List[UUID] ={
+    getCurationFolder(id) match {
+      case Some(f) => f.folders ++ f.folders.map(subf => getAllCurationFolderIdsByCurationFolder(subf)).flatten
+      case None => List.empty
+    }
+  }
+
+  def getCurationFolder(curationFolderId: UUID): Option[CurationFolder] = {
+    CurationFolderDAO.findOneById(new ObjectId(curationFolderId.stringify))
+  }
+
+  def getCurationByCurationFile(curationFileId: UUID): Option[CurationObject] = {
+    CurationDAO.findOne(MongoDBObject("files" ->  new ObjectId(curationFileId.stringify)))
+  }
+
+  def addCurationFile(parentType: String, parentId: UUID, curationFileId: UUID) = {
+    if(parentType == "dataset") {
+      CurationDAO.update(MongoDBObject("_id" -> new ObjectId(parentId.stringify)), $addToSet("files" -> new ObjectId(curationFileId.stringify)), false, false, WriteConcern.Safe)
+    } else {
+      CurationFolderDAO.update(MongoDBObject("_id" -> new ObjectId(parentId.stringify)), $addToSet("files" -> new ObjectId(curationFileId.stringify)), false, false, WriteConcern.Safe)
+    }
+  }
+
+  def removeCurationFile(parentType: String, parentId: UUID, curationFileId: UUID) = {
+    if(parentType == "dataset") {
+      CurationDAO.update(MongoDBObject("_id" -> new ObjectId(parentId.stringify)), $pull("files" -> new ObjectId(curationFileId.stringify)), false, false, WriteConcern.Safe)
+    } else {
+      CurationFolderDAO.update(MongoDBObject("_id" -> new ObjectId(parentId.stringify)), $pull("files" -> new ObjectId(curationFileId.stringify)), false, false, WriteConcern.Safe)
+    }
+  }
+
+  def addCurationFolder(parentType: String, parentId: UUID, subCurationFolderId: UUID) = {
+    if (parentType == "dataset") {
+      CurationDAO.update(MongoDBObject("_id" -> new ObjectId(parentId.stringify)), $addToSet("folders" -> new ObjectId(subCurationFolderId.stringify)), false, false, WriteConcern.Safe)
+    } else {
+      CurationFolderDAO.update(MongoDBObject("_id" -> new ObjectId(parentId.stringify)), $addToSet("folders" -> new ObjectId(subCurationFolderId.stringify)), false, false, WriteConcern.Safe)
+      CurationFolderDAO.update(MongoDBObject("_id" -> new ObjectId(subCurationFolderId.stringify)), $set("parentId" -> new ObjectId(parentId.stringify)), false, false, WriteConcern.Safe)
+      CurationFolderDAO.update(MongoDBObject("_id" -> new ObjectId(subCurationFolderId.stringify)), $set("parentType" -> "folder"), false, false, WriteConcern.Safe)
+    }
+  }
+
+  def removeCurationFolder(parentType: String, parentId: UUID, subCurationFolderId: UUID) = {
+    if (parentType == "dataset") {
+      CurationDAO.update(MongoDBObject("_id" -> new ObjectId(parentId.stringify)), $pull("folders" -> new ObjectId(subCurationFolderId.stringify)), false, false, WriteConcern.Safe)
+    } else {
+      CurationFolderDAO.update(MongoDBObject("_id" -> new ObjectId(parentId.stringify)), $pull("folders" -> new ObjectId(subCurationFolderId.stringify)), false, false, WriteConcern.Safe)
+    }
+  }
+
+  def deleteCurationFile(curationFileId: UUID) : Unit = {
+    metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, curationFileId))
     CurationFileDAO.remove(MongoDBObject("_id" ->new ObjectId(curationFileId.stringify)))
-    CurationDAO.update(MongoDBObject("_id" ->new ObjectId(curationId.stringify)), $pull("files" -> new ObjectId(curationFileId.stringify)), false, false, WriteConcern.Safe)
+  }
+
+  def deleteCurationFolder(id: UUID): Unit = {
+    getCurationFolder(id) match {
+      case Some(curationFolder )=> {
+        curationFolder.folders.map { cf => {
+          removeCurationFolder("folders", id, cf)
+          deleteCurationFolder(cf)
+        }
+        }
+        curationFolder.files.map { cf => {
+          removeCurationFile("folders", id, cf)
+          deleteCurationFile(cf)
+        }
+        }
+
+      }
+      case None =>
+    }
+    CurationFolderDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
   }
 
   def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID) = {
@@ -119,5 +216,16 @@ object CurationFileDAO extends ModelCompanion[CurationFile, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[CurationFile, ObjectId](collection = x.collection("curationFiles")) {}
+  }
+}
+
+
+/**
+ * Salat CurationObjectMetadata model companion.
+ */
+object CurationFolderDAO extends ModelCompanion[CurationFolder, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[CurationFolder, ObjectId](collection = x.collection("curationFolders")) {}
   }
 }

@@ -26,6 +26,7 @@ object ResourceRef {
   val space = 'space
   val dataset = 'dataset
   val file = 'file
+  val folder = 'folder
   val relation = 'relation
   val preview = 'preview
   val thumbnail = 'thumbnail
@@ -34,6 +35,7 @@ object ResourceRef {
   val comment = 'comment
   val section = 'section
   val curationObject = 'curationObject
+  val curationFolder = 'curationFolder
   val curationFile = 'curationFile
   val metadata = 'metadata
 }

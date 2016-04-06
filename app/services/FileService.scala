@@ -1,16 +1,13 @@
 package services
 
-
 import java.io.InputStream
-import models.{UUID, Dataset, File, Comment}
-import securesocial.core.Identity
+import models._
 import com.mongodb.casbah.Imports._
 import play.api.libs.json.{JsObject, JsArray, JsValue}
 
 /**
  * Generic file service to store blobs of files and metadata about them.
  *
- * @author Luigi Marini
  *
  */
 trait FileService {
@@ -22,7 +19,12 @@ trait FileService {
   /**
    * Save a file from an input stream.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File]
+  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File]
+
+  /**
+   * Save a file object
+   */
+  def save(file: File): Unit
 
   /**
    * Get the input stream of a file given a file id.
@@ -86,6 +88,11 @@ trait FileService {
   def first(): Option[File]
   
   def index(id: UUID)
+
+  /**
+   * Directly insert file into database, for example if the file path is local.
+   */
+  def insert(file: File): Option[String]
 
   /**
    * Return a list of tags and counts found in sections
@@ -176,8 +183,6 @@ trait FileService {
    */
   def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String)
 
-  def setNotesHTML(id: UUID, notesHTML: String)
-
   /**
    * Add follower to a file.
    */
@@ -192,5 +197,7 @@ trait FileService {
    * Update technical metadata
    */
   def updateMetadata(fileId: UUID, metadata: JsValue, extractor_id: String)
+
+  def updateDescription(fileId : UUID, description : String)
 
 }

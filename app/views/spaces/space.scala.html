@@ -1,5 +1,6 @@
 @(space: ProjectSpace, collections: List[Collection], datasets: List[Dataset], userRoleMap: Map[User, String])(implicit user: Option[models.User])
 @import play.api.Play.current
+@import api.Permission
 
 @main(space.name) {
 
@@ -19,13 +20,24 @@
     }
 
     <div class="row space-head vertical-align">
-
-            <div class="col-md-12 col-lg-12 col-sm-12">
-
-            <h1 id="spacenamedisplay">@space.name
-
-            </h1>
+        <div class="col-md-12 col-lg-12 col-sm-12">
+            <h1 id="spacenamedisplay">@space.name</h1>
             <p><span id="spacedescdisplay">@space.description</span></p>
+            <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+            @if(user.isDefined && Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
+                <button id="deleteButton" onclick="confirmDeleteResource('space','@(space.id)','@(space.name.replace("'","&#39;"))',true, '@(routes.Spaces.list(""))')"
+                    class="btn btn-link btn-sm" title="Delete Space but not Enclosed Resources">
+                        <span class="glyphicon glyphicon-trash"></span> Delete</button>
+            } else {
+                <button disabled id="deleteButton" class="btn btn-link btn-sm" title="Delete Space but not Enclosed Resources">
+                        <span class="glyphicon glyphicon-trash"></span> Delete</button>
+            }
+            @if(user.isDefined && Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))){
+                <a id="create_dataset" href="@routes.Datasets.newDataset(Some(space.id.toString()), None)" class="btn btn-link" title="Create Dataset">
+                    <span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
+                <a id="create_collection" href="@routes.Collections.newCollection(Some(space.id.toString()))" class="btn btn-link" title="Create Collection">
+                    <span class="glyphicon glyphicon-ok"></span> Create Collection</a>
+            }
         </div>
     </div>
 
@@ -71,5 +83,9 @@
             activate();
         })
     </script>
+    <script src="@routes.Assets.at("javascripts/spaceListProcess.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/errorRedirect.js")" language="javascript"></script>
 }

@@ -16,6 +16,9 @@
     case "space" => {
       space: <a href="@routes.Spaces.getSpace(obj_id.get)">@obj_name.get</a>
     }
+    case "curation" => {
+      space: <a href="@routes.CurationObjects.getCurationObject(obj_id.get)">@obj_name.get</a>
+    }
     case _ => {
       @obj_type: @obj_name.get
     }
@@ -57,6 +60,9 @@
   case "update_collection_information" => {
     updated information for @linkForObject("collection", event.object_id, event.object_name)
   }
+  case "update_curation_information" => {
+    updated information for @linkForObject("curation", event.object_id, event.object_name)
+  }
   case "set_note_file" => {
     set note for @linkForObject("file", event.object_id, event.object_name)
   }
@@ -65,6 +71,21 @@
   }
   case "remove_user_from_space" => {
     has removed you as a user from @linkForObject("space", event.object_id, event.object_name)
+  }
+  case "added_folder" => {
+    has created a folder in @linkForObject("dataset", event.object_id, event.object_name)
+  }
+  case "deleted_folder" => {
+    has deleted a folder from @linkForObject("dataset", event.object_id, event.object_name)
+  }
+  case "updated_folder" => {
+    has updated a folder in @linkForObject("dataset", event.object_id, event.object_name)
+  }
+  case "add_file" => {
+    has added a file to @linkForObject("dataset", event.object_id, event.object_name)
+  }
+  case "add_file_folder" => {
+    has added a file to a folder within @linkForObject("dataset", event.object_id, event.object_name)
   }
   case "addMetadata_file" | "addMetadata_dataset" => {
     added metadata to @linkForObject(

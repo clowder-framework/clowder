@@ -1,0 +1,20 @@
+@(user: User, active: Boolean, ssl: Boolean = true)(implicit request: RequestHeader)
+
+@import services.AppConfiguration
+
+<html>
+    <body>
+        @user.fullName,<br/>
+        <br>
+        <p>
+            Your account on <a href="@routes.Application.index().absoluteURL(ssl)" style="text-decoration: none">@AppConfiguration.getDisplayName</a><br/>
+            has been
+            @if(active) {
+                enabled and you can now login.
+            } else {
+                disabled.
+            }
+        </p>
+        @footer()
+    </body>
+</html>

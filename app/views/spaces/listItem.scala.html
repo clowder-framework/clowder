@@ -4,12 +4,12 @@
     <div class="panel-body">
         <div class = "row">
             <div class="col-md-2 col-sm-2 col-lg-2">
-            @if(!space.logoURL.isEmpty) {
-                <img src="@(space.logoURL)" alt="Thumbnail of @(space.name)" width="120">
+                @if(!space.logoURL.isEmpty) {
+                    <img class="fit-in-space" src="@(space.logoURL)" alt="Thumbnail of @(space.name)">
                 }
             </div>
             <div class="col-md-10 col-sm-10 col-lg-10">
-                <h2><a href="@routes.Spaces.getSpace(space.id)">@space.name</a></h2>
+                <h3><a href="@routes.Spaces.getSpace(space.id)">@space.name</a></h3>
                 <div class= "row">
                     <div class="col-md-6 col-sm-6 col-lg-6">
                         <div>@space.description</div>
@@ -21,7 +21,7 @@
                             @if(user.isDefined) {
                                     <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                 @if(Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id)) || user.get.identityId.userId.equals(space.creator)){
-                                    <button onclick="removeSpaceAndRedirect ( '@(space.id) ','@redirect')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
+                                    <button onclick="confirmDeleteResource('space','@(space.id)','@(space.name.replace("'","&#39;"))',false, '@redirect')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
                                         <span class="glyphicon glyphicon-trash"></span>
                                     </button>
                                 } else {

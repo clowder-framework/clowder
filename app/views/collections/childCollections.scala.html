@@ -1,0 +1,28 @@
+@(childCollections: List[Collection], collection: Collection, prev: Int, next: Int)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+
+@import api.Permission
+
+@childCollections.map { child_collection =>
+    @collections.listchildcollection(collection, child_collection, routes.Collections.collection(collection.id))
+}
+@if(childCollections.isEmpty){
+    @if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
+        There are no child collections in this collection.  <a id="create_first_childcollection" href="@routes.Collections.newCollectionWithParent(Some(collection.id.toString()))" class="inline" title="Create Child Collection"><i>  Create a child collection.</i></a>
+    } else {
+        There are no child collections in this collection.
+    }
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <ul class="pager">
+                <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
+            @if(prev >= 0) {
+                <li class="previous"><a id="prevlink-cc" title="Page backwards" href="javascript:updateChildCollections(@prev)"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
+            }
+            @if(next >= 0) {
+                <li class ="next"><a id="nextlink-cc" title="Page forwards" href="javascript:updateChildCollections(@next)">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
+            }
+        </ul>
+    </div>
+</div>

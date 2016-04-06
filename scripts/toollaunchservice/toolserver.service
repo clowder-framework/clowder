@@ -1,0 +1,17 @@
+[Unit]
+Description=TERRA Tool Launcher
+After=docker.service
+Requires=docker.service
+
+[Service]
+TimeoutSec=60
+RestartSec=60
+Restart=always
+ExecStartPre=-/usr/bin/docker kill clowder-toolserver
+ExecStartPre=-/usr/bin/docker rm clowder-toolserver
+ExecStartPre=/usr/bin/docker pull ncsa/clowder-toolserver:latest
+ExecStart=/usr/bin/docker run -p 8080:8080 --name clowder-toolserver -v /var/run/docker.sock:/var/run/docker.sock ncsa/clowder-toolserver toolserver
+
+[Install]
+WantedBy=multi-user.target
+

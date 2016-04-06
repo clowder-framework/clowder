@@ -42,7 +42,9 @@ class MongoDBDatasetService @Inject() (
   comments: CommentService,
   sparql: RdfSPARQLService,
   spaces: SpaceService,
-  userService: UserService) extends DatasetService {
+  userService: UserService,
+  folders: FolderService,
+  metadatas:MetadataService) extends DatasetService {
 
   object MustBreak extends Exception {}
 
@@ -219,7 +221,7 @@ class MongoDBDatasetService @Inject() (
       }
     }
     val filterOwner = owner match {
-      case Some(o) => MongoDBObject("author.identityId.userId" -> o.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> o.identityId.providerId)
+      case Some(o) => MongoDBObject("author._id" -> new ObjectId(o.id.stringify))
       case None => MongoDBObject()
     }
     val filterSpace = space match {
@@ -430,7 +432,7 @@ class MongoDBDatasetService @Inject() (
       datasetThumbnail = dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)
 
     toJson(Map("id" -> dataset.id.toString, "datasetname" -> dataset.name, "description" -> dataset.description,
-      "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail, "authorId" -> dataset.author.identityId.userId))
+      "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail, "authorId" -> dataset.author.id.stringify))
   }
 
   /**
@@ -1024,9 +1026,13 @@ class MongoDBDatasetService @Inject() (
           if (notTheDataset.size == 0)
             files.removeFile(f)
         }
+        for (folder <- dataset.folders ) {
+          folders.delete(folder)
+        }
         for (follower <- dataset.followers) {
           userService.unfollowDataset(follower, id)
         }
+        metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
         Dataset.remove(MongoDBObject("_id" -> new ObjectId(dataset.id.stringify)))
       }
       case None =>
@@ -1091,10 +1097,6 @@ class MongoDBDatasetService @Inject() (
       }
       case None => Logger.error("Dataset not found: " + id)
     }
-  }
-
-  def setNotesHTML(id: UUID, notesHTML: String){
-    Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(notesHTML)), false, false, WriteConcern.Safe)
   }
 
   def addToSpace(datasetId: UUID, spaceId: UUID): Unit = {

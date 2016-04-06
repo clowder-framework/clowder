@@ -66,11 +66,9 @@ class Files @Inject() (
    */
   def file(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
     implicit val user = request.user
-    Logger.info("GET file with id " + id)
     files.get(id) match {
       case Some(file) => {
         val previewsFromDB = previews.findByFileId(file.id)
-        Logger.debug("Previews available: " + previewsFromDB)
         val previewers = Previewers.findPreviewers
         //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
         val previewsWithPreviewer = {
@@ -99,11 +97,9 @@ class Files @Inject() (
             Map(file -> ff)
           }
         }
-        Logger.debug("Previewers available: " + previewsWithPreviewer)
 
         // add sections to file
         val sectionsByFile = sections.findByFileId(file.id)
-        Logger.debug("Sections: " + sectionsByFile)
         val sectionsWithPreviews = sectionsByFile.map { s =>
         	val p = previews.findBySectionId(s.id)
         	if(p.length>0)
@@ -180,7 +176,7 @@ class Files @Inject() (
       case None => {
         val error_str = s"The file with id ${id} is not found."
         Logger.error(error_str)
-        Future(NotFound(toJson(error_str)))  
+        Future(BadRequest(views.html.notFound("File does not exist.")))
         }
     }
   }
@@ -684,7 +680,7 @@ def uploadExtract() =
                           }
                           }
                           case None => {
-                            val userAgent = request.headers("user-agent")
+                            val userAgent = request.headers.get("user-agent").getOrElse("")
                             val filenameStar = if (userAgent.indexOf("MSIE") > -1) {
                               URLEncoder.encode(filename, "UTF-8")
                             } else {
@@ -1308,7 +1304,7 @@ def uploadExtract() =
   ////            val filename = f.ref.file.getName()
   ////            Logger.debug("Uploading file " + filename)
   ////            mongoFile.filename = filename
-  ////            mongoFile.contentType = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
+  ////            mongoFile.contentType = FileUtils.getContentType(filename, contentType)
   ////            mongoFile.save
   ////            val id = mongoFile.getAs[ObjectId]("_id").get.toString
   ////            Ok(views.html.file(mongoFile.asDBObject, id))

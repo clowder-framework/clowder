@@ -1,4 +1,4 @@
-@(resourceId: UUID, resourceType: Symbol, resourceSpaces: List[ProjectSpace])(implicit user: Option[models.User])
+@(resourceId: UUID, resourceType: Symbol, resourceSpaces_canRemove : Map[ProjectSpace,Boolean], currentCollection: Option[Collection])(implicit user: Option[models.User])
 @import api.Permission
 @import play.api.libs.json.Json
     <div class="row bottom-padding">
@@ -13,7 +13,7 @@
 
     <div class="row">
         <div id="spacesList" class="col-md-12">
-        @resourceSpaces.map { s =>
+        @resourceSpaces_canRemove.map {case (s, v) =>
             <div id="col_@s.id" class="row bottom-padding">
                 <div class="col-md-2">
                     @if(s.logoURL.isDefined) {
@@ -46,12 +46,18 @@
                             } else {
                                 @s.collectionCount collections
                             }
-                            @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
-                                | <a href="#" class="btn btn-link btn-xs" onclick="removeCollectionFromSpace('@(s.id)', '@resourceId', event)" title="Remove from space">
-                                    <span class="glyphicon glyphicon-remove"></span>  Remove</a>
-                            } else {
-                                | <a href="#" class="btn btn-link btn-xs disabled" title="Remove collection from space">
-                                    <span class="glyphicon glyphicon-remove"></span> Remove</a>
+                            @**
+                                a collection can be removed from a space as long as it is the highest level collection in that space;
+                                meaning it has no parent in the space.
+                            **@
+                            @if(v == true){
+                                @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
+                                    | <a href="#" class="btn btn-link btn-xs" onclick="removeCollectionFromSpace('@(s.id)', '@resourceId', event)" title="Remove from space">
+                                        <span class="glyphicon glyphicon-remove"></span>  Remove</a>
+                                } else {
+                                    | <a href="#" class="btn btn-link btn-xs disabled" title="Remove collection from space">
+                                        <span class="glyphicon glyphicon-remove"></span> Remove</a>
+                                }
                             }
                         }
                     </div>
@@ -67,8 +73,16 @@
     @if(Permission.checkOwner(user, ResourceRef(resourceType, resourceId))) {
         <div class="form-inline">
             <div class="input-group input-group-sm col-md-8">
-                <select id="spaceAddSelect" class="form-control add-resource">
-                </select>
+                @if(resourceType == ResourceRef.collection) {
+                    <select id="spaceAddSelect" class="form-control add-resource">
+                    </select>
+
+
+                } else {
+                    <select id="spaceAddSelect" class="form-control add-resource">
+                    </select>
+                }
+
                 @if(resourceType == ResourceRef.dataset) {
                     <span class="input-group-btn">
                     <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add dataset to Space" onclick="addDatasetToSpace('@resourceId')">
@@ -118,5 +132,28 @@
             }
         }
     });
+
+</script>
+<script language = "javascript">
+
+    function getCollection(id) {
+        var request = jsRoutes.api.Collections.getCollection(id).ajax({
+            type: 'GET'
+        });
+
+        request.done(function (response, textStatus, jqXHR) {
+            var o =$.parseJSON(jqXHR.responseText);
+            return o
+        });
+
+        request.fail(function (jqXHR, textStatus, errorThrown){
+            console.error("The following error occured: " + textStatus, errorThrown);
+            var errMsg = "Error message.";
+            if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                notify("Error : " + errorThrown, "error");
+            }
+        });
+        return false;
+    }
 
 </script>

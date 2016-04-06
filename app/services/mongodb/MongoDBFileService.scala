@@ -6,7 +6,6 @@ import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
 import _root_.util.{Parsers, License}
-import com.novus.salat._
 
 import scala.collection.mutable.ListBuffer
 import Transformation.LidoToCidocConvertion
@@ -32,13 +31,11 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import com.mongodb.casbah.Imports._
-import securesocial.core.Identity
 
 
 /**
  * Use mongo for both metadata and blobs.
- * 
- * @author Luigi Marini
+ *
  *
  */
 @Singleton
@@ -53,7 +50,8 @@ class MongoDBFileService @Inject() (
   sparql: RdfSPARQLService,
   storage: ByteStorageService,
   userService: UserService,
-  folders: FolderService) extends FileService {
+  folders: FolderService,
+  metadatas:MetadataService) extends FileService {
 
   object MustBreak extends Exception {}
 
@@ -62,6 +60,10 @@ class MongoDBFileService @Inject() (
    */
   def count(): Long = {
     FileDAO.count(MongoDBObject())
+  }
+
+  def save(file: File): Unit = {
+    FileDAO.save(file)
   }
 
   /**
@@ -159,18 +161,25 @@ class MongoDBFileService @Inject() (
   /**
    * Save blob.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File] = {
-    val extra = Map("showPreviews" -> showPreviews,
-                    "author" -> SocialUserDAO.toDBObject(author),
-                    "licenseData" -> grater[LicenseData].asDBObject(License.fromAppConfig()))
-    MongoUtils.writeBlob[File](inputStream, filename, contentType, extra, "uploads", "medici2.mongodb.storeFiles").flatMap(x => get(x._1))
+  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File] = {
+    ByteStorageService.save(inputStream, FileDAO.COLLECTION) match {
+      case Some(x) => {
+
+        val file = File(UUID.generate(), x._1, filename, author, new Date(), util.FileUtils.getContentType(filename, contentType), x._4, x._3, x._2, showPreviews = showPreviews, licenseData = License.fromAppConfig())
+        FileDAO.save(file)
+        Some(file)
+      }
+      case None => None
+    }
   }
 
   /**
    * Get blob.
    */
   def getBytes(id: UUID): Option[(InputStream, String, String, Long)] = {
-    MongoUtils.readBlob(id, "uploads", "medici2.mongodb.storeFiles")
+    get(id).flatMap { x =>
+      ByteStorageService.load(x.loader, x.loader_id, FileDAO.COLLECTION).map((_, x.filename, x.contentType, x.length))
+    }
   }
 
   def index(id: UUID) {
@@ -220,6 +229,13 @@ class MongoDBFileService @Inject() (
       }
       case None => Logger.error("File not found: " + id)
     }
+  }
+
+  /**
+    * Directly insert a file into the db (even with a local path)
+    */
+  def insert(file: File): Option[String] = {
+    FileDAO.insert(file).map(_.toString)
   }
 
   /**
@@ -680,10 +696,12 @@ class MongoDBFileService @Inject() (
           }
           if(!file.thumbnail_id.isEmpty)
             thumbnails.remove(UUID(file.thumbnail_id.get))
+          metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
         }
 
         // finally delete the actual file
-        MongoUtils.removeBlob(id, "uploads", "medici2.mongodb.storeFiles")
+        ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
+        FileDAO.remove(file)
       }
       case None => Logger.debug("File not found")
     }
@@ -892,10 +910,6 @@ class MongoDBFileService @Inject() (
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(fileId.stringify)),
       $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
   }
-  
-  def setNotesHTML(id: UUID, html: String) {
-	    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(html)), false, false, WriteConcern.Safe)    
-  }
 
   def dumpAllFileMetadata(): List[String] = {
 		    Logger.debug("Dumping metadata of all files.")
@@ -973,15 +987,22 @@ class MongoDBFileService @Inject() (
                     $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 
-}
+  def updateDescription(id: UUID, description: String) {
+    val result = FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $set("description" -> description),
+      false, false, WriteConcern.Safe)
 
-object FileDAO extends ModelCompanion[File, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[File, ObjectId](collection = x.collection("uploads.files")) {}
   }
 }
 
+object FileDAO extends ModelCompanion[File, ObjectId] {
+  val COLLECTION = "uploads"
+
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[File, ObjectId](collection = x.collection(COLLECTION)) {}
+  }
+}
 
 object VersusDAO extends ModelCompanion[Versus,ObjectId]{
     val dao = current.plugin[MongoSalatPlugin] match {

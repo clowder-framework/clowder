@@ -10,10 +10,11 @@ import securesocial.core._
 /**
  * Simple class to capture basic User Information. This is similar to Identity in securesocial
  *
- * @author Rob Kooper
  */
 trait User extends Identity {
   def id: UUID
+  def active: Boolean
+  def admin: Boolean
   def profile: Option[Profile]
   def friends: Option[List[String]]
   def followedEntities: List[TypedID]
@@ -70,8 +71,16 @@ object User {
     new IdentityId("anonymous", ""),
     "Anonymous", "User", "Anonymous User",
     None,
-    AuthenticationMethod.UserPassword)
+    AuthenticationMethod.UserPassword, active=true)
+  implicit def userToMiniUser(x: User): MiniUser = x.getMiniUser
 }
+
+
+case class MiniUser(
+   id: UUID,
+   fullName: String,
+   avatarURL: String,
+   email: Option[String])
 
 case class ClowderUser(
   id: UUID = UUID.generate(),
@@ -88,6 +97,12 @@ case class ClowderUser(
   oAuth2Info: Option[OAuth2Info] = None,
   passwordInfo: Option[PasswordInfo] = None,
 
+  // should user be active
+  active: Boolean = false,
+
+  // is the user an admin
+  admin: Boolean = false,
+
   // profile
   profile: Option[Profile] = None,
 
@@ -101,6 +116,7 @@ case class ClowderUser(
 
   // spaces
   spaceandrole: List[UserSpaceAndRole] = List.empty,
+
   //staging area
   repositoryPreferences: Map[String,Any] = Map.empty
 

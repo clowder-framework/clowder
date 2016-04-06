@@ -10,11 +10,11 @@ function clearErrors() {
 }
 
 //Call on Create button click. Move to create a collection as specified after validating input fields
-function createCollection() {			
+function createCollection() {
 	//Remove error messages if present
-	clearErrors();		    
-						
-	//Update the input we are adding to the form programmatically      
+	clearErrors();
+
+	//Update the input we are adding to the form programmatically
 	var name = $('#name');
     var desc = $('#description');
     var space = $('#spaceid').find(":selected").val();
@@ -22,7 +22,7 @@ function createCollection() {
     $('#spaceid').find(":selected").each(function(i, selected) {
         spaceList[i] = $(selected).val()
     });
-    
+
     //Add errors and return false if validation fails. Validation comes from the host page, passing in the isNameRequired and isDescRequired
     //variables.
     var error = false;
@@ -33,20 +33,19 @@ function createCollection() {
     if (!desc.val() && isDescRequired) {
         $('#descerror').show();
         error = true;
-    }    
-    if (error) {	    	
+    }
+    if (error) {
     	return false;
     }
-    
+
     var encName = htmlEncode(name.val());
 	var encDescription = htmlEncode(desc.val());
 	$('#hiddenname').val(encName);
     $('#hiddendescription').val(encDescription);
     $('#hiddenspace').val(spaceList);
-    
+
 	//Submit the form
     $('#collectioncreate').submit();
-    
+
     return true;
 }
-
