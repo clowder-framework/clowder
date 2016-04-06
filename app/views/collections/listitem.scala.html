@@ -4,7 +4,9 @@
     <div class="panel-body">
         <div class="row">
             <div class="col-md-2 col-sm-2 col-lg-2">
-                @if(!collection.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)" width="120">}
+                @if(!collection.thumbnail_id.isEmpty){
+                    <img class="fit-in-space" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)">
+                }
             </div>
             <div class="col-md-10 col-sm-10 col-lg-10">
                 <h3><a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a></h3>
