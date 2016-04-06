@@ -116,10 +116,17 @@ class Status @Inject()(spaces: SpaceService,
       }
 
       case p: ToolManagerPlugin => {
-        result.put("toolmanager", if (Permission.checkServerAdmin(user)) {
-          Json.obj("host" -> configuration.getString("toolmanagerURI").getOrElse("").toString)
+        val status = if (p.enabled) {
+          "enabled"
         } else {
-          jsontrue
+          "disabled"
+        }
+        result.put("toolmanager", if (Permission.checkServerAdmin(user)) {
+          Json.obj("host" -> configuration.getString("toolmanagerURI").getOrElse("").toString,
+            "tools" -> p.getLaunchableTools(),
+            "status" -> status)
+        } else {
+          Json.obj("status" -> status)
         })
       }
 

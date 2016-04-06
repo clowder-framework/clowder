@@ -293,10 +293,15 @@
             var description = $('#ds_description').html().trim();
             $('#ds_description').html(urlify(description));
 
-            @if(dataset.files.length > 0 && Permission.checkPermission(Permission.ExecuteOnDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                refreshToolSidebar()
-            }
+            @play.api.Play.current.plugin[services.ToolManagerPlugin] match {
+                case Some(p) => {
+                    @if(p.enabled && dataset.files.nonEmpty && Permission.checkPermission(Permission.ExecuteOnDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        refreshToolSidebar()
+                    }
+                }
+                case None => { }
 
+            }
         });
 
         function cancelTitle() {
