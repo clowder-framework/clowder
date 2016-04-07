@@ -128,4 +128,9 @@ trait CurationService {
    * Update curation object's name, description, space.
    */
   def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID, creators: List[String])
+
+  /**
+    * Get the maximum depth of a curation object
+    */
+  def maxCollectionDepth(curation: CurationObject ): Int
 }

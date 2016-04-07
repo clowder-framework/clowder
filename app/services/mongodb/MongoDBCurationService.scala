@@ -196,6 +196,42 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
       spaces.addCurationObject(newSpace, id)
     }
   }
+
+  def maxCollectionDepth(curation: CurationObject ): Int = {
+    val folders = getCurationFolders(curation.folders)
+    if(folders.length == 0) {
+      return 0
+    }
+    var maxValue = 0
+    curation.folders.foreach{ folder =>
+      val depth = maxFolderDepth(folder)
+      if(depth > maxValue) {
+        maxValue = depth
+      }
+    }
+    return maxValue +1
+  }
+
+  private def maxFolderDepth(folderId: UUID): Int = {
+    getCurationFolder(folderId) match {
+      case Some(folder) => {
+        if(folder.folders.length == 0) {
+          return 0
+        }
+        else {
+          var maxValue = 0
+          folder.folders.foreach{ subf =>
+            val depth = maxFolderDepth(subf)
+            if(depth > maxValue) {
+              maxValue = depth
+            }
+          }
+          return maxValue + 1
+        }
+      }
+      case None =>  return 0
+    }
+  }
 }
 
 /**
