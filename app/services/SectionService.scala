@@ -2,6 +2,7 @@ package services
 
 import models.{UUID, Section, Comment}
 import play.api.libs.json.JsValue
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * Service to manipulate sections
@@ -39,4 +40,9 @@ trait SectionService {
    * Update thumbnail used to represent this section.
    */
   def updateThumbnail(sectionId: UUID, thumbnailId: UUID)
+
+  /**
+   * Get the list of spaces that the section (section --> file --> dataset(s) --> [collection(s)] --> space(s)) belongs to
+   */
+  def getParentSpaces(querySectionId: UUID): ArrayBuffer[UUID]
 }

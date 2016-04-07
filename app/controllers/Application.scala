@@ -63,7 +63,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
           dataset.id -> allComments.size
         }.toMap
         val collectionList = collections.listUser(4, Some(clowderUser), request.superAdmin, clowderUser)
-        var collectionsWithThumbnails = collectionList.map {c =>
+        val collectionsWithThumbnails = collectionList.map {c =>
           if (c.thumbnail_id.isDefined) {
             c
           } else {
@@ -281,6 +281,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Sections.removeAllTags,
         api.routes.javascript.Geostreams.searchSensors,
         api.routes.javascript.Geostreams.searchStreams,
+        api.routes.javascript.Geostreams.getSensor,
+        api.routes.javascript.Geostreams.getStream,
         api.routes.javascript.Geostreams.getSensorStreams,
         api.routes.javascript.Geostreams.searchDatapoints,
         api.routes.javascript.Geostreams.deleteSensor,
@@ -345,6 +347,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Datasets.dataset,
         controllers.routes.javascript.Datasets.newDataset,
         controllers.routes.javascript.Datasets.createStep2,
+        controllers.routes.javascript.Datasets.launchTool,
+        controllers.routes.javascript.Datasets.getLaunchableTools,
+        controllers.routes.javascript.Datasets.uploadDatasetToTool,
+        controllers.routes.javascript.Datasets.getInstances,
+        controllers.routes.javascript.Datasets.refreshToolSidebar,
+        controllers.routes.javascript.Datasets.removeInstance,
         controllers.routes.javascript.Folders.createFolder,
         controllers.routes.javascript.Datasets.getUpdatedFilesAndFolders,
         controllers.routes.javascript.Collections.collection,

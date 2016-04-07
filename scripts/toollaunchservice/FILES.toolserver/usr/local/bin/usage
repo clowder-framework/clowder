@@ -1,0 +1,22 @@
+#!/bin/bash
+
+usage-docker() {
+    echo -n 'docker run -d -p 8080:8080 --name toolserver -v /var/run/docker.sock:/var/run/docker.sock toolserver ncsa/clowder-toolserver'
+}
+
+usage() {
+    echo "This image generates the command to run itself using the following commands:"
+    echo '  docker run --rm -t toolserver usage docker'
+    echo '  To deploy in this environment:'
+    echo '      eval $(docker run --rm -it toolserver usage docker)'
+
+}
+
+case $1 in
+    "docker" )
+        usage-docker
+        ;;
+    *)
+        usage
+        ;;
+esac

@@ -87,14 +87,12 @@ class Admin @Inject()(userService: UserService,
           case Some(u:ClowderUser) => {
             if (!u.active) {
               userService.update(u.copy(active=true))
-              if (u.email.isDefined) {
-                val subject = s"[${AppConfiguration.getDisplayName}] account activated"
-                val body = views.html.emails.userActivated(u, active=true)(request)
-                util.Mail.sendEmail(subject, request.user, u.email.get, body)
-              }
+              val subject = s"[${AppConfiguration.getDisplayName}] account activated"
+              val body = views.html.emails.userActivated(u, active=true)(request)
+              util.Mail.sendEmail(subject, request.user, u, body)
             }
           }
-          case None => Logger.error(s"Could not find user with id=${id}")
+          case _ => Logger.error(s"Could not update user with id=${id}")
         }
       )
     )
@@ -103,50 +101,43 @@ class Admin @Inject()(userService: UserService,
         userService.findById(UUID(id)) match {
           case Some(u:ClowderUser) => {
             if (u.active) {
-              userService.update(u.copy(active = false))
-              if (u.email.isDefined) {
-                if(AppConfiguration.checkAdmin(u.email.get)) {
-                  AppConfiguration.removeAdmin(u.email.get)
-                }
-                val subject = s"[${AppConfiguration.getDisplayName}] account deactivated"
-                val body = views.html.emails.userActivated(u, active=false)(request)
-                util.Mail.sendEmail(subject, request.user, u.email.get, body)
-              }
+              userService.update(u.copy(active=false, admin=false))
+              val subject = s"[${AppConfiguration.getDisplayName}] account deactivated"
+              val body = views.html.emails.userActivated(u, active=false)(request)
+              util.Mail.sendEmail(subject, request.user, u, body)
             }
           }
-          case _ => Logger.error(s"Could not find user with id=${id}")
+          case _ => Logger.error(s"Could not update user with id=${id}")
         }
       )
     )
     (request.body \ "admin").asOpt[List[String]].foreach(list =>
       list.foreach(id =>
         userService.findById(UUID(id)) match {
-          case Some(u) => {
-            if (u.active && u.email.isDefined && !AppConfiguration.checkAdmin(u.email.get)) {
-              AppConfiguration.addAdmin(u.email.get)
+          case Some(u:ClowderUser) if u.active => {
+            if (!u.admin) {
+              userService.update(u.copy(admin=true))
               val subject = s"[${AppConfiguration.getDisplayName}] admin access granted"
               val body = views.html.emails.userAdmin(u, admin=true)(request)
-              util.Mail.sendEmail(subject, request.user, u.email.get, body)
+              util.Mail.sendEmail(subject, request.user, u, body)
             }
           }
-          case _ => Logger.error(s"Could not find user with id=${id}")
+          case _ => Logger.error(s"Could not update user with id=${id}")
         }
       )
     )
     (request.body \ "unadmin").asOpt[List[String]].foreach(list =>
       list.foreach(id =>
         userService.findById(UUID(id)) match {
-          case Some(u) if u.email.isDefined && AppConfiguration.checkAdmin(u.email.get) => {
-            if (u.email.isDefined && AppConfiguration.checkAdmin(u.email.get)) {
-              AppConfiguration.removeAdmin(u.email.get)
-              if (u.active) {
-                val subject = s"[${AppConfiguration.getDisplayName}] admin access revoked"
-                val body = views.html.emails.userAdmin(u, admin=false)(request)
-                util.Mail.sendEmail(subject, request.user, u.email.get, body)
-              }
+          case Some(u:ClowderUser) if u.active => {
+            if (u.admin) {
+              userService.update(u.copy(admin=false))
+              val subject = s"[${AppConfiguration.getDisplayName}] admin access revoked"
+              val body = views.html.emails.userAdmin(u, admin=true)(request)
+              util.Mail.sendEmail(subject, request.user, u, body)
             }
           }
-          case _ => Logger.error(s"Could not find user with id=${id}")
+          case _ => Logger.error(s"Could not update user with id=${id}")
         }
       )
     )

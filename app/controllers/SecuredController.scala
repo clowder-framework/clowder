@@ -144,7 +144,16 @@ trait SecuredController extends Controller {
               curations.get(id) match {
                 case None =>  Future.successful(BadRequest(views.html.notFound("Curation Object does not exist.")))
                 case Some(curation) => Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission
-                  + "curation object \"" + curation.name + "\"", id.toString() ," curation")))
+                  + "curation object \"" + curation.name + "\"", id.toString(), "curation")))
+              }
+            }
+
+            case Some(ResourceRef(ResourceRef.section, id)) =>{
+              val sections: SectionService = DI.injector.getInstance(classOf[SectionService])
+              sections.get(id) match {
+                case None => Future.successful(BadRequest(views.html.notFound("Section does not exist.")))
+                case Some(section) => Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission
+                  + " section \"" + section.id + "\"", id.toString(), "section")))
               }
             }
 

@@ -105,6 +105,13 @@ GET            /datasets/createStep2                                            
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
 GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
+GET            /datasets/toolManager                                                    @controllers.Datasets.toolManager
+GET            /datasets/refreshToolList                                                @controllers.Datasets.refreshToolSidebar(datasetid: UUID, datasetName: String)
+GET            /datasets/launchableTools                                                @controllers.Datasets.getLaunchableTools
+GET            /datasets/uploadToTool                                                   @controllers.Datasets.uploadDatasetToTool(instanceID: UUID, datasetID: UUID, datasetName: String)
+GET            /datasets/getInstances                                                   @controllers.Datasets.getInstances
+GET            /datasets/removeInstance                                                 @controllers.Datasets.removeInstance(toolType: String, instanceID: UUID)
+GET            /datasets/launchTool                                                     @controllers.Datasets.launchTool(sessionName: String, ttype: String, datasetId: UUID, datasetName: String)
 GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, limit: Int ?= 20)
 POST           /datasets/:datasetId/updatedFilesAndFolders                              @controllers.Datasets.getUpdatedFilesAndFolders(datasetId: UUID, limit: Int ?= 20, pageIndex: Int ?= 0)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
@@ -113,6 +120,7 @@ POST           /dataset/submit                                                  
 GET            /datasets/:id/addFiles                                                   @controllers.Datasets.addFiles(id: UUID)
 GET            /datasets/:id/:folderId/addFiles                                         @controllers.Folders.addFiles(id: UUID, folderId: String)
 POST           /datasets/:parentDatasetId/newFolder                                     @controllers.Folders.createFolder(parentDatasetId: UUID)
+
 # ----------------------------------------------------------------------
 # COLLECTIONS
 # ----------------------------------------------------------------------
@@ -147,10 +155,10 @@ POST           /spaces/submit                                                   
 # ----------------------------------------------------------------------
 # SENSORS
 # ----------------------------------------------------------------------
-GET            /geostreams                                                              controllers.Geostreams.map
-GET            /geostreams/sensors                                                      controllers.Geostreams.list
-GET            /geostreams/sensors/new                                                  controllers.Geostreams.newSensor
-GET            /geostreams/sensors/:id                                                  controllers.Geostreams.edit(id)
+GET            /geostreams                                                              @controllers.Geostreams.map
+GET            /geostreams/sensors                                                      @controllers.Geostreams.list
+GET            /geostreams/sensors/new                                                  @controllers.Geostreams.newSensor
+GET            /geostreams/sensors/:id                                                  @controllers.Geostreams.edit(id)
 
 # ----------------------------------------------------------------------
 # JSON-LD Metadata
@@ -453,7 +461,8 @@ PUT            /api/collections/:coll_id/title                                  
 PUT            /api/collections/:coll_id/description                                    @api.Collections.updateCollectionDescription(coll_id: UUID)
 
 POST           /api/collections/:coll_id/removeSubCollection/:sub_coll_id               @api.Collections.removeSubCollection(coll_id: UUID,sub_coll_id:UUID, ignoreNotFound?="True")
-POST           /api/collections/:coll_id/rootFlag/:isRoot                               @api.Collections.setRootFlag(coll_id: UUID, isRoot: Boolean )
+POST           /api/collections/:coll_id/rootFlag/:spaceId                              @api.Collections.setRootSpace(coll_id: UUID, spaceId: UUID)
+POST           /api/collections/:coll_id/unsetRootFlag/:spaceId                         @api.Collections.unsetRootSpace(coll_id: UUID, spaceId: UUID)
 POST           /api/collections/newCollectionWithParent                                 @api.Collections.createCollectionWithParent
 GET            /api/collections/:coll_id/getChildCollectionIds                          @api.Collections.getChildCollectionIds(coll_id: UUID)
 GET            /api/collections/:coll_id/getChildCollections                            @api.Collections.getChildCollections(coll_id: UUID)
@@ -682,6 +691,5 @@ GET            /spaces/curations/:id/getStatusFromRepository                    
 DELETE         /spaces/curations/:id/files/:curationFileId                              @api.CurationObjects.deleteCurationFile(id:UUID, parentId: UUID, curationFileId: UUID)
 DELETE         /spaces/curations/:id/folders/:curationFolderId                          @api.CurationObjects.deleteCurationFolder(id:UUID, parentId: UUID, curationFolderId: UUID)
 GET            /spaces/curations/:id/updatedFilesAndFolders                             @controllers.CurationObjects.getUpdatedFilesAndFolders(id: UUID, curationFolderId: String, limit: Int, pageIndex:Int)
-
 
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()
