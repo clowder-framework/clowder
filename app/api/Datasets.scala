@@ -3,7 +3,8 @@ package api
 import java.io._
 import java.net.URL
 import java.security.{DigestInputStream, MessageDigest}
-import java.util.Date
+import java.text.SimpleDateFormat
+import java.util.{Calendar, Date}
 import api.Permission.Permission
 import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
 import java.util.zip._
@@ -1901,6 +1902,10 @@ class Datasets @Inject()(
 
     is = addDatasetInfoToZip(rootFolder,dataset,zip)
     var md5 = MessageDigest.getInstance("MD5")
+    md5Files.put(rootFolder+"_info.json",md5)
+    is = Some(new DigestInputStream(is.get, md5))
+    countingStream = new CountingInputStream(is.get)
+    totalBytes = totalBytes + countingStream.getByteCount()
 
     //digest input stream
     file_type = 1 //next is metadata
@@ -1923,21 +1928,21 @@ class Datasets @Inject()(
                 //dataset, info
                 case (0,0) => {
                   is = addDatasetInfoToZip(rootFolder,dataset,zip)
-                  var countingStream = new CountingInputStream(is.get)
-                  totalBytes = totalBytes + countingStream.getByteCount()
                   val md5 = MessageDigest.getInstance("MD5")
                   md5Files.put(rootFolder+"_info.json",md5)
                   is = Some(new DigestInputStream(is.get, md5))
+                  var countingStream = new CountingInputStream(is.get)
+                  totalBytes = totalBytes + countingStream.getByteCount()
                   file_type = file_type + 1
                 }
                 //dataset, metadata
                 case (0,1) => {
                   is = addDatasetMetadataToZip(rootFolder,dataset,zip)
-                  var countingStream = new CountingInputStream(is.get)
-                  totalBytes = totalBytes + countingStream.getByteCount()
                   val md5 = MessageDigest.getInstance("MD5")
                   md5Files.put(rootFolder+"_metadata.json",md5)
                   is = Some(new DigestInputStream(is.get, md5))
+                  var countingStream = new CountingInputStream(is.get)
+                  totalBytes = totalBytes + countingStream.getByteCount()
                   level = level + 1
                   file_type = 0
                 }
@@ -1945,11 +1950,11 @@ class Datasets @Inject()(
                 case (1,0) =>{
                   if (count < inputFiles.size ){
                     is = addFileInfoToZip(dataFolder+folderNameMap(inputFiles(count).id), inputFiles(count), zip)
-                    var countingStream = new CountingInputStream(is.get)
-                    totalBytes = totalBytes + countingStream.getByteCount()
                     val md5 = MessageDigest.getInstance("MD5")
                     md5Files.put(dataFolder+folderNameMap(inputFiles(count).id)+"/_info.json",md5)
                     is = Some(new DigestInputStream(is.get, md5))
+                    var countingStream = new CountingInputStream(is.get)
+                    totalBytes = totalBytes + countingStream.getByteCount()
                     count +=1
                   } else {
                     count = 0
@@ -1960,11 +1965,11 @@ class Datasets @Inject()(
                 case (1,1) =>{
                   if (count < inputFiles.size ){
                     is = addFileMetadataToZip(dataFolder+folderNameMap(inputFiles(count).id), inputFiles(count), zip)
-                    var countingStream = new CountingInputStream(is.get)
-                    totalBytes = totalBytes + countingStream.getByteCount()
                     val md5 = MessageDigest.getInstance("MD5")
                     md5Files.put(dataFolder+folderNameMap(inputFiles(count).id)+"/_metadata.json",md5)
                     is = Some(new DigestInputStream(is.get, md5))
+                    var countingStream = new CountingInputStream(is.get)
+                    totalBytes = totalBytes + countingStream.getByteCount()
                     count +=1
                   } else {
                     count = 0
@@ -1975,12 +1980,11 @@ class Datasets @Inject()(
                 case (1,2) => {
                   if (count < inputFiles.size ){
                     is = addFileToZip(dataFolder+folderNameMap(inputFiles(count).id), inputFiles(count), zip)
-                    var countingStream = new CountingInputStream(is.get)
-                    totalBytes = totalBytes + countingStream.getByteCount()
                     val md5 = MessageDigest.getInstance("MD5")
-                    //this needs the file name !
                     md5Files.put(dataFolder+folderNameMap(inputFiles(count).id)+"/"+inputFiles(count).filename,md5)
                     is = Some(new DigestInputStream(is.get, md5))
+                    var countingStream = new CountingInputStream(is.get)
+                    totalBytes = totalBytes + countingStream.getByteCount()
                     count +=1
                   } else {
                     if (bagit){
@@ -1997,7 +2001,7 @@ class Datasets @Inject()(
                 }
                 //bagit.txt
                 case (2,0) => {
-                  is = addBagItTextToZip(rootFolder,zip)
+                  is = addBagItTextToZip(rootFolder,totalBytes,zip)
                   val md5 = MessageDigest.getInstance("MD5")
                   md5Bag.put(rootFolder+"bagit.txt",md5)
                   is = Some(new DigestInputStream(is.get, md5))
@@ -2147,16 +2151,19 @@ class Datasets @Inject()(
   }
 
   // TODO  -todd n
-  private def addBagItTextToZip(folderName : String, zip : ZipOutputStream) = {
+  private def addBagItTextToZip(folderName : String,payload : Double, zip : ZipOutputStream) = {
     zip.putNextEntry(new ZipEntry(folderName + "bagit.txt"))
-    val s : String = "test"
+    val softwareLine = "Bag-Software-Agent: custom\n"
+    val baggingDate = "Bagging-Date: "+(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime)+"\n"
+    val payLoadOxum = "Payload-Oxum: "+payload.toString()
+    val s = softwareLine+baggingDate+payLoadOxum
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
   // TODO  what file does this write? What values? -todd n
   private def addBagInfoToZip(folderName : String , zip : ZipOutputStream) : Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "bag-info.txt"))
-    val s : String = "test"
+    val s : String = "BagIt-Version: 0.97\n"+"Tag-File-Character-Encoding: UTF-8"
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
