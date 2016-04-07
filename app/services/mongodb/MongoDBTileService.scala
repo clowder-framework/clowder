@@ -13,6 +13,7 @@ import play.api.libs.json.{JsValue, JsObject}
 import com.mongodb.casbah.Imports._
 import play.api.Logger
 import javax.inject.{Inject, Singleton}
+import util.FileUtils
 
 /**
  * Use mongodb to mange tiles.
@@ -46,9 +47,9 @@ class MongoDBTileService @Inject() (previews: PreviewService, storage: ByteStora
   def findTile(previewId: UUID, filename: String, level: String): Option[Tile] = {
     try {
       val theTile = TileDAO.find(MongoDBObject("preview_id" -> new ObjectId(previewId.stringify), "filename" -> filename, "level" -> level)).toList.head
-      return Option(theTile)
+      Option(theTile)
     } catch {
-      case e: NoSuchElementException => return None
+      case e: NoSuchElementException => None
     }
   }
 
@@ -60,24 +61,38 @@ class MongoDBTileService @Inject() (previews: PreviewService, storage: ByteStora
    * Save blob.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
-    MongoUtils.writeBlob[Tile](inputStream, filename, contentType, Map.empty[String, AnyRef], "tiles", "medici2.mongodb.storeTiles").fold("")(_._1.stringify)
+    ByteStorageService.save(inputStream, TileDAO.COLLECTION) match {
+      case Some(x) => {
+        val tile = Tile(UUID.generate(), x._1, x._2, None, Some(filename), FileUtils.getContentType(filename, contentType), None, x._4)
+        TileDAO.save(tile)
+        tile.id.stringify
+      }
+      case None => ""
+    }
   }
 
   /**
    * Get blob.
    */
   def getBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
-    MongoUtils.readBlob(id, "tiles", "medici2.mongodb.storeTiles")
+    get(id).flatMap { x =>
+      ByteStorageService.load(x.loader, x.loader_id, TileDAO.COLLECTION).map((_, x.filename.getOrElse(""), x.contentType, x.length))
+    }
   }
 
   def remove(id: UUID): Unit = {
-    MongoUtils.removeBlob(id, "tiles", "medici2.mongodb.storeTiles")
+    get(id).foreach { x =>
+      ByteStorageService.delete(x.loader, x.loader_id, TileDAO.COLLECTION)
+      TileDAO.remove(x)
+    }
   }
 }
 
 object TileDAO extends ModelCompanion[Tile, ObjectId] {
+  val COLLECTION = "tiles"
+
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Tile, ObjectId](collection = x.collection("tiles.files")) {}
+    case Some(x) => new SalatDAO[Tile, ObjectId](collection = x.collection(COLLECTION)) {}
   }
 }

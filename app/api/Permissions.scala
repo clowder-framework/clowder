@@ -26,6 +26,7 @@ object Permission extends Enumeration {
     DeleteDataset,
     EditDataset,
     AddResourceToDataset,
+    ExecuteOnDataset,
 
     // collections
     ViewCollection,
@@ -101,7 +102,7 @@ object Permission extends Enumeration {
 
   /** Returns true if the user is listed as a server admin */
 	def checkServerAdmin(user: Option[User]): Boolean = {
-		user.exists(u => u.email.nonEmpty && u.active && AppConfiguration.checkAdmin(u.email.get))
+		user.exists(u => u.active && u.admin)
 	}
 
   /** Returns true if the user is the owner of the resource, this function is used in the code for checkPermission as well. */
@@ -112,13 +113,13 @@ object Permission extends Enumeration {
   /** Returns true if the user is the owner of the resource, this function is used in the code for checkPermission as well. */
   def checkOwner(user: User, resourceRef: ResourceRef): Boolean = {
     resourceRef match {
-      case ResourceRef(ResourceRef.file, id) => files.get(id).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
-      case ResourceRef(ResourceRef.collection, id) => collections.get(id).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
-      case ResourceRef(ResourceRef.dataset, id) => datasets.get(id).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
+      case ResourceRef(ResourceRef.file, id) => files.get(id).exists(x => users.findById(x.author.id).exists(_.id == user.id))
+      case ResourceRef(ResourceRef.collection, id) => collections.get(id).exists(x => users.findById(x.author.id).exists(_.id == user.id))
+      case ResourceRef(ResourceRef.dataset, id) => datasets.get(id).exists(x => users.findById(x.author.id).exists(_.id == user.id))
       case ResourceRef(ResourceRef.space, id) => spaces.get(id).exists(_.creator == user.id)
-      case ResourceRef(ResourceRef.comment, id) => comments.get(id).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
-      case ResourceRef(ResourceRef.curationObject, id) => curations.get(id).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
-      case ResourceRef(ResourceRef.curationFile, id) => curations.getCurationFiles(List(id)).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
+      case ResourceRef(ResourceRef.comment, id) => comments.get(id).exists(x => users.findById(x.author.id).exists(_.id == user.id))
+      case ResourceRef(ResourceRef.curationObject, id) => curations.get(id).exists(x => users.findById(x.author.id).exists(_.id == user.id))
+      case ResourceRef(ResourceRef.curationFile, id) => curations.getCurationFiles(List(id)).exists(x => users.findById(x.author.id).exists(_.id == user.id))
       case ResourceRef(ResourceRef.metadata, id) => metadatas.getMetadataById(id).exists(_.creator.id == user.id)
       case ResourceRef(_, _) => false
     }

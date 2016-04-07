@@ -8,6 +8,7 @@
                 <li><div id="format">File Formats: </div></li>
                 <li>Author: @curationObject.datasets(0).author.fullName</li>
                 <li>Created: @curationObject.created.format("MMM dd, yyyy")</li>
+                <li>Abstract: @curationObject.description</li>
                 <li>Creators: @curationObject.creators.mkString(", ")</li>
             </ul>
             @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, curationObject.space))){
