@@ -19,8 +19,6 @@ import play.api.libs.concurrent.Execution.Implicits._
 
 /**
  * Admin endpoints for JSON API.
- *
- * @author Luigi Marini
  */
 class Admin @Inject()(userService: UserService,
                       datasets:DatasetService,
@@ -73,10 +71,12 @@ class Admin @Inject()(userService: UserService,
   }
 
   def mail = UserAction(false)(parse.json) { implicit request =>
-    val body = (request.body \ "body").asOpt[String].getOrElse("no text")
+    val body = StringEscapeUtils.escapeHtml4((request.body \ "body").asOpt[String].getOrElse("no text"))
     val subj = (request.body \ "subject").asOpt[String].getOrElse("no subject")
 
-    Mail.sendEmailAdmins(subj, request.user, Html(body))
+    val htmlbody = "<html><body><p>" + body + "</p>" + views.html.emails.footer() + "</body></html>"
+
+    Mail.sendEmailAdmins(subj, request.user, Html(htmlbody))
     Ok(toJson(Map("status" -> "success")))
   }
 
