@@ -4,7 +4,7 @@
   collection: models.Collection,
   previewers: List[Previewer],
   commentMap : Map[UUID, Int],
-  collectionSpaces_canRemove: Option[Map[ProjectSpace, Boolean]],
+  collectionSpaces_canRemove : Option[Map[ProjectSpace, Boolean]],
   prevd: Int, nextd: Int, prevcc: Int, nextcc: Int, limit: Int)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import models.ResourceRef
