@@ -8,7 +8,6 @@ import play.api.libs.json.{JsObject, JsArray, JsValue}
 /**
  * Generic file service to store blobs of files and metadata about them.
  *
- * @author Luigi Marini
  *
  */
 trait FileService {
@@ -20,7 +19,12 @@ trait FileService {
   /**
    * Save a file from an input stream.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: User, showPreviews: String = "DatasetLevel"): Option[File]
+  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File]
+
+  /**
+   * Save a file object
+   */
+  def save(file: File): Unit
 
   /**
    * Get the input stream of a file given a file id.

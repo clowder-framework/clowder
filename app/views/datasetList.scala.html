@@ -5,7 +5,6 @@
 
 @util.masonry()
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
-<script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
@@ -91,7 +90,7 @@
     </div>
 </div>
 
-  <div class="row hidden" id="tile-view">
+<div class="row hidden" id="tile-view">
 	<div class="col-md-12">
 		<div id="masonry">
 		@datasetsList.map { dataset =>
@@ -101,7 +100,7 @@
 	</div>
 </div>
 
-  <div class="row hidden" id="list-view">
+<div class="row hidden" id="list-view">
 	<div class="col-md-12">
         @datasetsList.map { dataset =>
           @datasets.listitem(dataset,comments, routes.Datasets.list(when, date, limit, space, "", owner))

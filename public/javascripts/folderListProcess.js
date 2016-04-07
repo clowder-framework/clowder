@@ -1,4 +1,5 @@
-function removeFolder(parentDataset, folderId) {
+function removeFolder(folderId, parentDataset) {
+
     var request = jsRoutes.api.Folders.deleteFolder(parentDataset, folderId).ajax({
         type: 'DELETE'
     });
@@ -12,7 +13,6 @@ function removeFolder(parentDataset, folderId) {
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The folder was not removed due to : " + errorThrown, "error");
         }
-
     });
 }
 
@@ -40,6 +40,10 @@ function saveFolderName(parentDataset, folderId) {
     }
 
     var name =$('#title_input_'+folderId).val();
+    if(name.trim() == cur_names[folderId].trim()){
+        cancelFolderName(folderId);
+        return false;
+    }
     var encName = htmlEncode(name);
     jsonData = JSON.stringify({"name": encName});
 

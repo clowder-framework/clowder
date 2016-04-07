@@ -5,7 +5,7 @@
   collectionsInside: List[models.Collection],
   rdfExported: Boolean,
   relatedSensors: List[(String,String,String)],
-  datasetSpaces: Option[List[ProjectSpace]],
+  datasetSpaces_canRemove : Option[Map[ProjectSpace,Boolean]],
   fileList: List[File],
   filesTags: scala.collection.immutable.TreeSet[String],
   toPublish: Boolean,
@@ -15,6 +15,8 @@
 
 @import helper._
 @import api.Permission
+@import play.api.Play.current
+@import scala.collection.mutable.{Map => MutableMap}
 
 @main(dataset.name) {
 	<div class="row">
@@ -137,51 +139,44 @@
                     <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
                 </ul>
                 <div class="tab-content">
-                  <div role="tabpanel" class="tab-pane  fade in active" id="tab-files">
-
-                  </div>
-                  <div role="tabpanel" class="tab-pane fade" id="tab-comments">
-                      <!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->
-                      @if(Permission.checkPermission(Permission.AddComment, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                          @commentform(dataset.id.stringify, "dataset")
-                      }
-                      <div class="list-unstyled" id="reply_@dataset.id.toString">
-                         @comment(comments)</div>
-                  </div>
-                  <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
-
-                      <div class="row">
-                          <div class="col-md-10">
-                          </div>
-                          <div class="col-md-2">
-                              <a href="@api.routes.Datasets.getMetadataJsonLD(dataset.id)" class="pull-right" title="JSON-LD">
-                                  <img src="@routes.Assets.at("images/json-ld.png")"/>
-                              </a>
-                          </div>
-                      </div>
-                      <div class="row">
-                          <div class="col-md-12">
-                            @metadatald.addMetadata("dataset", dataset.id.toString, "metadata-content")
-                          </div>
-                      </div>
-                      <div class="row">
-                          <div class="col-md-12" id="metadata-content">
-                          @metadatald.view(m, true)
-                          </div>
-                      </div>
-
-
-                  </div>
-                    <div role="tabpanel" class="tab-pane fade" id="tab-visua">
-                    @datasets.previews(dataset, previewers)
+                    <div role="tabpanel" class="tab-pane fade in active" id="tab-files"></div>
+                    <div role="tabpanel" class="tab-pane fade" id="tab-comments">
+                            <!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->
+                        @if(Permission.checkPermission(Permission.AddComment, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                            @commentform(dataset.id.stringify, "dataset")
+                        }
+                        <div class="list-unstyled" id="reply_@dataset.id.toString"> @comment(comments)</div>
                     </div>
+                    <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
+                        <div class="row">
+                            <div class="col-md-10"></div>
+                            <div class="col-md-2">
+                                <a href="@api.routes.Datasets.getMetadataJsonLD(dataset.id)" class="pull-right" title="JSON-LD">
+                                    <img src="@routes.Assets.at("images/json-ld.png")"/>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                @metadatald.addMetadata("dataset", dataset.id.toString, "metadata-content")
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12" id="metadata-content">
+                                @metadatald.view(m, true)
+                            </div>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane fade" id="tab-visua">
+                        @datasets.previews(dataset, previewers)
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
 
 		<!-- right column -->
 		<div class="col-md-4 col-left-border">
-            @spaces.spaceAllocation(dataset.id, ResourceRef.dataset, datasetSpaces.getOrElse(List.empty),None)
+            @spaces.spaceAllocation(dataset.id, ResourceRef.dataset,datasetSpaces_canRemove.getOrElse(Map.empty),None)
             @if(user.isDefined) {
                 <br/>
                 @datasets.userLink(dataset)
@@ -191,9 +186,10 @@
             @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
                 @datasets.listCurationObjects(curationObjects)
             }
-            @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {
+            @if(current.plugin[services.PostgresPlugin].isDefined) {
                 @sensors.relatedSensors(relatedSensors, "Dataset", dataset.id.stringify)
             }
+            <div id="toolListContainer"></div>
 		</div>
 	</div>
 
@@ -290,6 +286,15 @@
             var description = $('#ds_description').html().trim();
             $('#ds_description').html(urlify(description));
 
+            @play.api.Play.current.plugin[services.ToolManagerPlugin] match {
+                case Some(p) => {
+                    @if(p.enabled && dataset.files.nonEmpty && Permission.checkPermission(Permission.ExecuteOnDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        refreshToolSidebar()
+                    }
+                }
+                case None => { }
+
+            }
         });
 
         function cancelTitle() {
@@ -397,6 +402,19 @@
         })
     }
 
+    function refreshToolSidebar() {
+        // Get current status from ToolManagerPlugin and refresh sidebar table
+        var request = new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (request.readyState == 4 && request.status == 200) {
+                $('#toolListContainer').html(request.response);
+            }
+        }
+
+        request.open("GET", jsRoutes.controllers.Datasets.refreshToolSidebar("@dataset.id", "@dataset.name").url, true);
+        request.send();
+    }
+
     $(function() {
             $(window).on('fileDelete hashchange', function() {
 
@@ -482,10 +500,10 @@
           }
          });
          request.fail(function (jqXHR, textStatus, errorThrown){
-            console.error("The following error occured: " + textStatus, errorThrown);
+            console.error("The following error occurred: " + textStatus, errorThrown);
             var errMsg = "You must be logged in to see files and folders.";
             if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                notify("Error in getting more files and folders. : " + errorThrown, "error");
+                notify("Error in getting more files and folders : " + errorThrown, "error");
             }
          });
 

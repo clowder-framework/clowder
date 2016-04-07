@@ -1,6 +1,5 @@
 package api
 
-import models.ResourceRef
 import services.ContextLDService
 import javax.inject.Inject
 import play.api.libs.json.Json._
@@ -11,8 +10,7 @@ import play.api.libs.json.Json
 
 /**
  * API controller for Json-ld context service
- * 
- *@author Smruti Padhy 
+ *
  */
 class ContextLD @Inject() (
   contextlds: ContextLDService ) extends ApiController{

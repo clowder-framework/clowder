@@ -176,7 +176,7 @@ class Files @Inject() (
       case None => {
         val error_str = s"The file with id ${id} is not found."
         Logger.error(error_str)
-        Future(NotFound(toJson(error_str)))  
+        Future(BadRequest(views.html.notFound("File does not exist.")))
         }
     }
   }
@@ -1304,7 +1304,7 @@ def uploadExtract() =
   ////            val filename = f.ref.file.getName()
   ////            Logger.debug("Uploading file " + filename)
   ////            mongoFile.filename = filename
-  ////            mongoFile.contentType = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
+  ////            mongoFile.contentType = FileUtils.getContentType(filename, contentType)
   ////            mongoFile.save
   ////            val id = mongoFile.getAs[ObjectId]("_id").get.toString
   ////            Ok(views.html.file(mongoFile.asDBObject, id))

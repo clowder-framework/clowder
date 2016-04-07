@@ -6,8 +6,7 @@
  * Specifically, used by VersusPlugin, Search, multimediaSearchResults
  * 
  * Searching through files that can be of various types (image, pdf, etc) 
- * 
- * @author Inna Zharnitsky
+ *
  *
  */
 
