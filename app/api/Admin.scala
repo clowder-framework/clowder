@@ -4,6 +4,7 @@ import javax.inject.Inject
 
 import com.wordnik.swagger.annotations.ApiOperation
 import models.{ClowderUser, UUID}
+import org.apache.commons.lang3.StringEscapeUtils
 import play.api.libs.concurrent.Akka
 import play.api.mvc.Controller
 import play.api.Play.current
