@@ -167,6 +167,9 @@ trait DatasetService {
 
   def selectNewThumbnailFromFiles(datasetId: UUID)
 
+  /**
+    * Index dataset, if no id provided, index all datasets.
+    */
   def index(id: Option[UUID])
 
   def index(id: UUID)
