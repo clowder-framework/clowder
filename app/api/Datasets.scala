@@ -14,6 +14,7 @@ import controllers.{Previewers, Utils}
 import jsonutils.JsonUtil
 import models.{File, _}
 import org.apache.commons.codec.binary.Hex
+import org.apache.commons.io.IOUtils
 import org.json.JSONObject
 import org.json.JSONObject
 import play.api.Logger
@@ -1758,6 +1759,7 @@ class Datasets @Inject()(
           val buffer = new Array[Byte](chunkSize)
           val bytesRead = scala.concurrent.blocking {
             inputStream.read(buffer)
+
           }
           val chunk = bytesRead match {
             case -1 => {
@@ -1904,8 +1906,6 @@ class Datasets @Inject()(
     var md5 = MessageDigest.getInstance("MD5")
     md5Files.put(rootFolder+"_info.json",md5)
     is = Some(new DigestInputStream(is.get, md5))
-    countingStream = new CountingInputStream(is.get)
-    totalBytes = totalBytes + countingStream.getByteCount()
 
     //digest input stream
     file_type = 1 //next is metadata
@@ -1917,6 +1917,7 @@ class Datasets @Inject()(
           val buffer = new Array[Byte](chunkSize)
           val bytesRead = scala.concurrent.blocking {
             inputStream.read(buffer)
+
           }
           val chunk = bytesRead match {
             case -1 => {
@@ -1931,8 +1932,6 @@ class Datasets @Inject()(
                   val md5 = MessageDigest.getInstance("MD5")
                   md5Files.put(rootFolder+"_info.json",md5)
                   is = Some(new DigestInputStream(is.get, md5))
-                  var countingStream = new CountingInputStream(is.get)
-                  totalBytes = totalBytes + countingStream.getByteCount()
                   file_type = file_type + 1
                 }
                 //dataset, metadata
@@ -1941,9 +1940,7 @@ class Datasets @Inject()(
                   val md5 = MessageDigest.getInstance("MD5")
                   md5Files.put(rootFolder+"_metadata.json",md5)
                   is = Some(new DigestInputStream(is.get, md5))
-                  var countingStream = new CountingInputStream(is.get)
-                  totalBytes = totalBytes + countingStream.getByteCount()
-                  level = level + 1
+                  level = 1
                   file_type = 0
                 }
                 //file info
@@ -1953,8 +1950,6 @@ class Datasets @Inject()(
                     val md5 = MessageDigest.getInstance("MD5")
                     md5Files.put(dataFolder+folderNameMap(inputFiles(count).id)+"/_info.json",md5)
                     is = Some(new DigestInputStream(is.get, md5))
-                    var countingStream = new CountingInputStream(is.get)
-                    totalBytes = totalBytes + countingStream.getByteCount()
                     count +=1
                   } else {
                     count = 0
@@ -1968,8 +1963,6 @@ class Datasets @Inject()(
                     val md5 = MessageDigest.getInstance("MD5")
                     md5Files.put(dataFolder+folderNameMap(inputFiles(count).id)+"/_metadata.json",md5)
                     is = Some(new DigestInputStream(is.get, md5))
-                    var countingStream = new CountingInputStream(is.get)
-                    totalBytes = totalBytes + countingStream.getByteCount()
                     count +=1
                   } else {
                     count = 0
@@ -1983,8 +1976,6 @@ class Datasets @Inject()(
                     val md5 = MessageDigest.getInstance("MD5")
                     md5Files.put(dataFolder+folderNameMap(inputFiles(count).id)+"/"+inputFiles(count).filename,md5)
                     is = Some(new DigestInputStream(is.get, md5))
-                    var countingStream = new CountingInputStream(is.get)
-                    totalBytes = totalBytes + countingStream.getByteCount()
                     count +=1
                   } else {
                     if (bagit){
@@ -2045,6 +2036,9 @@ class Datasets @Inject()(
               zip.write(buffer, 0, read)
               Some(byteArrayOutputStream.toByteArray)
             }
+          }
+          if (level < 2){
+            totalBytes += bytesRead
           }
           // reset temporary byte array
           byteArrayOutputStream.reset()
@@ -2129,13 +2123,9 @@ class Datasets @Inject()(
    */
   private def addFileInfoToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "/_info.json"))
-    val fileMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file.id))
-      .map(JSONLD.jsonMetadataWithContext(_))
     val fileInfo = getFileInfoAsMap(file)
     val fileInfoJson = Json.toJson(fileInfo)
     val s : String = (fileInfoJson.toString())
-    val stream = new ByteArrayInputStream(s.getBytes("UTF-8"))
-    val b = s.getBytes("UTF-8").size
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
