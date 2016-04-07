@@ -1,7 +1,7 @@
 package services
 
 import play.api.libs.json.JsValue
-import models.{MetadataDefinition, ResourceRef, UUID, Metadata}
+import models.{MetadataDefinition, ResourceRef, UUID, Metadata, User}
 
 /**
  * MetadataService for add and query metadata
@@ -54,5 +54,5 @@ trait MetadataService {
   def search(query: JsValue): List[ResourceRef]
 
   /** Search for resources by key value pairs in the content of the metadata document **/
-  def search(key: String, value: String, count: Int): List[ResourceRef]
+  def search(key: String, value: String, count: Int, user: Option[User]): List[ResourceRef]
 }

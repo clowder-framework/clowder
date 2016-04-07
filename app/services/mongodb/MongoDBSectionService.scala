@@ -1,5 +1,6 @@
 package services.mongodb
 
+import org.bson.types.ObjectId
 import services.{PreviewService, SectionService, CommentService, FileService, DatasetService, FolderService}
 import models.{UUID, Tag, Comment, Section, User}
 import javax.inject.{Inject, Singleton}
@@ -65,8 +66,8 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
     SectionDAO.find(MongoDBObject("file_id" -> new ObjectId(id.stringify))).sort(MongoDBObject("startTime" -> 1)).toList
   }
 
-  def findByTag(tag: String): List[Section] = {
-    SectionDAO.find(MongoDBObject("tags.name" -> tag)).toList
+  def findByTag(tag: String, user: Option[User]): List[Section] = {
+    SectionDAO.find(buildTagFilter(user) ++ MongoDBObject("tags.name" -> tag)).toList
   }
 
   def removeAllTags(id: UUID) {
@@ -105,6 +106,13 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
    * Return a list of tags and counts found in sections
    */
   def getTags(user: Option[User]): Map[String, Long] = {
+
+    val x = SectionDAO.dao.collection.aggregate(MongoDBObject("$match"-> buildTagFilter(user)),MongoDBObject("$unwind" -> "$tags"),
+      MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
+    x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+  }
+
+  private def buildTagFilter(user: Option[User]): MongoDBObject = {
     val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
     if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")){
       user match {
@@ -119,11 +127,8 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
         case None => Map.empty
       }
     }
-    val x = SectionDAO.dao.collection.aggregate(MongoDBObject("$match"-> $or(orlist.map(_.asDBObject))),MongoDBObject("$unwind" -> "$tags"),
-      MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-    x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+    $or(orlist.map(_.asDBObject))
   }
-
   /**
    * Update thumbnail used to represent this section.
    */

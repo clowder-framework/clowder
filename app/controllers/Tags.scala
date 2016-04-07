@@ -39,25 +39,25 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     // get all datasets tagged
     //Modifications to decode HTML entities that were stored in an encoded fashion as part
     //of the datasets names or descriptions
-    tempItems ++= datasets.findByTag(tagCleaned, start, size + 1, false)
+    tempItems ++= datasets.findByTag(tagCleaned, start, size + 1, false, user)
     for (aDataset <- tempItems) {
       nextItems += Utils.decodeDatasetElements(aDataset)
     }
     tempItems = ListBuffer.empty[models.Dataset]
     if (start != "") {
-      tempItems ++= datasets.findByTag(tagCleaned, start, size + 1, true)
+      tempItems ++= datasets.findByTag(tagCleaned, start, size + 1, true, user)
       for (aDataset <- tempItems) {
         prevItems += Utils.decodeDatasetElements(aDataset)
       }
     }
 
     // get all files tagged
-    nextItems ++= files.findByTag(tagCleaned, start, size + 1, false)
-    if (start != "") prevItems ++= files.findByTag(tagCleaned, start, size + 1, true)
+    nextItems ++= files.findByTag(tagCleaned, start, size + 1, false, user)
+    if (start != "") prevItems ++= files.findByTag(tagCleaned, start, size + 1, true, user)
 
     // get all sections tagged
     // TODO this logic should be moved to findByTag in sections.
-    val sectionFiles = sections.findByTag(tagCleaned).map{ s => files.get(s.file_id) match {
+    val sectionFiles = sections.findByTag(tagCleaned, user).map{ s => files.get(s.file_id) match {
       case Some(f) => f
     } }
     if (start == "" ) {

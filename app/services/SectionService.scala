@@ -20,7 +20,7 @@ trait SectionService {
 
   def findByFileId(fileId: UUID): List[Section]
 
-  def findByTag(tag: String): List[Section]
+  def findByTag(tag: String, user: Option[User]): List[Section]
 
   def removeAllTags(id: UUID)
 

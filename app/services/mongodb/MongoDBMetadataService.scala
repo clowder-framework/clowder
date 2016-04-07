@@ -12,13 +12,13 @@ import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
 import services.MetadataService
-import services.ContextLDService
+import services.{ContextLDService, DatasetService, FileService, FolderService}
 
 /**
  * MongoDB Metadata Service Implementation
  */
 @Singleton
-class MongoDBMetadataService @Inject() (contextService: ContextLDService) extends MetadataService {
+class MongoDBMetadataService @Inject() (contextService: ContextLDService, datasets: DatasetService, files: FileService, folders: FolderService) extends MetadataService {
 
   /**
    * Add metadata to the metadata collection and attach to a section /file/dataset/collection
@@ -160,8 +160,6 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
 
   /**
     * Search by metadata. Uses mongodb query structure.
-    * @param query
-    * @return
     */
   def search(query: JsValue): List[ResourceRef] = {
     val doc = JSON.parse(Json.stringify(query)).asInstanceOf[DBObject]
@@ -169,15 +167,27 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
     resources
   }
 
-  def search(key: String, value: String, count: Int): List[ResourceRef] = {
+  def search(key: String, value: String, count: Int, user: Option[User]): List[ResourceRef] = {
     val field = "content." + key.trim
     val trimOr = value.trim().replaceAll(" ", "|")
     // for some reason "/"+value+"/i" doesn't work because it gets translate to
     // { "content.Abstract" : { "$regex" : "/test/i"}}
     val regexp = (s"""(?i)$trimOr""").r
     val doc = MongoDBObject(field -> regexp)
-    val resources: List[ResourceRef] = MetadataDAO.find(doc).limit(count).map(_.attachedTo).toList
-    resources
+    user match {
+      case Some(u) => {
+        val datasetsList= datasets.listUser(u)
+        val foldersList = folders.findByParentDatasetIds(datasetsList.map(x=> x.id))
+        val fileIds = datasetsList.map(x=> x.files) ++ foldersList.map(x=> x.files)
+        val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
+        datasetsList.map{x => orlist += MongoDBObject("attachedTo.resourceType" -> "dataset") ++ MongoDBObject("attachedTo._id" -> new ObjectId(x.id.stringify))}
+        fileIds.flatten.map{x => orlist +=MongoDBObject("attachedTo.resourceType" -> "file") ++ MongoDBObject("attachedTo._id" -> new ObjectId(x.stringify))}
+        val resources: List[ResourceRef] = MetadataDAO.find($or(orlist.map(_.asDBObject)) ++ doc).limit(count).map(_.attachedTo).toList
+        resources
+      }
+      case None => List.empty
+    }
+
   }
 
 }

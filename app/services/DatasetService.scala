@@ -193,9 +193,9 @@ trait DatasetService {
 
   def findNotContainingFile(file_id: UUID): List[Dataset]
 
-  def findByTag(tag: String): List[Dataset]
+  def findByTag(tag: String, user: Option[User]): List[Dataset]
 
-  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean): List[Dataset]
+  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean, user: Option[User]): List[Dataset]
 
   def getMetadata(id: UUID): Map[String, Any]
 

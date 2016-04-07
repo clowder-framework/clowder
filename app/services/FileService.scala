@@ -134,9 +134,9 @@ trait FileService {
 
   def addXMLMetadata(id: UUID, json: String)  
 
-  def findByTag(tag: String): List[File]
+  def findByTag(tag: String, user: Option[User]): List[File]
 
-  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean): List[File]
+  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean, user: Option[User]): List[File]
 
   def findIntermediates(): List[File]
 

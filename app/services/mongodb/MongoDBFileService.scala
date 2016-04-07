@@ -232,6 +232,14 @@ class MongoDBFileService @Inject() (
    * Return a list of tags and counts found in sections
    */
   def getTags(user: Option[User]): Map[String, Long] = {
+
+    val x = FileDAO.dao.collection.aggregate(MongoDBObject("$match"-> buildTagFilter(user)), MongoDBObject("$unwind" -> "$tags"),
+      MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
+    x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+  }
+
+
+  private def buildTagFilter(user: Option[User]): MongoDBObject = {
     val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
     if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")){
       user match {
@@ -246,10 +254,7 @@ class MongoDBFileService @Inject() (
         case None => Map.empty
       }
     }
-
-    val x = FileDAO.dao.collection.aggregate(MongoDBObject("$match"-> $or(orlist.map(_.asDBObject))), MongoDBObject("$unwind" -> "$tags"),
-      MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-    x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+    $or(orlist.map(_.asDBObject))
   }
 
   def modifyRDFOfMetadataChangedFiles() {
@@ -557,18 +562,18 @@ class MongoDBFileService @Inject() (
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("xmlMetadata" -> md), false, false, WriteConcern.Safe)
   }
 
-  def findByTag(tag: String): List[File] = {
-    FileDAO.find(MongoDBObject("tags.name" -> tag)).toList
+  def findByTag(tag: String, user: Option[User]): List[File] = {
+    FileDAO.find(buildTagFilter(user) ++ MongoDBObject("tags.name" -> tag)).toList
   }
 
-  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean): List[File] = {
+  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean, user: Option[User]): List[File] = {
     val filter = if (start == "") {
-      MongoDBObject("tags.name" -> tag)
+      buildTagFilter(user) ++ MongoDBObject("tags.name" -> tag)
     } else {
       if (reverse) {
-        MongoDBObject("tags.name" -> tag) ++ ("uploadDate" $gte Parsers.fromISO8601(start))
+        buildTagFilter(user) ++ MongoDBObject("tags.name" -> tag) ++ ("uploadDate" $gte Parsers.fromISO8601(start))
       } else {
-        MongoDBObject("tags.name" -> tag) ++ ("uploadDate" $lte Parsers.fromISO8601(start))
+        buildTagFilter(user)  ++ MongoDBObject("tags.name" -> tag) ++ ("uploadDate" $lte Parsers.fromISO8601(start))
       }
     }
     val order = if (reverse) {
