@@ -26,6 +26,7 @@ import services._
 import _root_.util.{JSONLD, License}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.mutable.ListBuffer
+import org.apache.commons.io.input.CountingInputStream
 
 /**
  * Dataset API.
@@ -1741,6 +1742,8 @@ class Datasets @Inject()(
       // dataset case
       fileinfo = 1
       is = addDatasetInfoToZip(rootFolder, dataset, zip)
+
+
     } else {
       // regular file case
       count = count + 1
@@ -1889,6 +1892,8 @@ class Datasets @Inject()(
     zip.setLevel(compression)
 
     var is : Option[InputStream] = null
+    var countingStream : org.apache.commons.io.input.CountingInputStream = null
+    var totalBytes = 0.0
     var level = 0 //dataset,file, bag
     var file_type = 0 //
     var count = 0 //count for files
@@ -1918,6 +1923,8 @@ class Datasets @Inject()(
                 //dataset, info
                 case (0,0) => {
                   is = addDatasetInfoToZip(rootFolder,dataset,zip)
+                  var countingStream = new CountingInputStream(is.get)
+                  totalBytes = totalBytes + countingStream.getByteCount()
                   val md5 = MessageDigest.getInstance("MD5")
                   md5Files.put(rootFolder+"_info.json",md5)
                   is = Some(new DigestInputStream(is.get, md5))
@@ -1926,6 +1933,8 @@ class Datasets @Inject()(
                 //dataset, metadata
                 case (0,1) => {
                   is = addDatasetMetadataToZip(rootFolder,dataset,zip)
+                  var countingStream = new CountingInputStream(is.get)
+                  totalBytes = totalBytes + countingStream.getByteCount()
                   val md5 = MessageDigest.getInstance("MD5")
                   md5Files.put(rootFolder+"_metadata.json",md5)
                   is = Some(new DigestInputStream(is.get, md5))
@@ -1936,6 +1945,8 @@ class Datasets @Inject()(
                 case (1,0) =>{
                   if (count < inputFiles.size ){
                     is = addFileInfoToZip(dataFolder+folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                    var countingStream = new CountingInputStream(is.get)
+                    totalBytes = totalBytes + countingStream.getByteCount()
                     val md5 = MessageDigest.getInstance("MD5")
                     md5Files.put(dataFolder+folderNameMap(inputFiles(count).id)+"/_info.json",md5)
                     is = Some(new DigestInputStream(is.get, md5))
@@ -1949,6 +1960,8 @@ class Datasets @Inject()(
                 case (1,1) =>{
                   if (count < inputFiles.size ){
                     is = addFileMetadataToZip(dataFolder+folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                    var countingStream = new CountingInputStream(is.get)
+                    totalBytes = totalBytes + countingStream.getByteCount()
                     val md5 = MessageDigest.getInstance("MD5")
                     md5Files.put(dataFolder+folderNameMap(inputFiles(count).id)+"/_metadata.json",md5)
                     is = Some(new DigestInputStream(is.get, md5))
@@ -1962,6 +1975,8 @@ class Datasets @Inject()(
                 case (1,2) => {
                   if (count < inputFiles.size ){
                     is = addFileToZip(dataFolder+folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                    var countingStream = new CountingInputStream(is.get)
+                    totalBytes = totalBytes + countingStream.getByteCount()
                     val md5 = MessageDigest.getInstance("MD5")
                     //this needs the file name !
                     md5Files.put(dataFolder+folderNameMap(inputFiles(count).id)+"/"+inputFiles(count).filename,md5)
@@ -2115,6 +2130,8 @@ class Datasets @Inject()(
     val fileInfo = getFileInfoAsMap(file)
     val fileInfoJson = Json.toJson(fileInfo)
     val s : String = (fileInfoJson.toString())
+    val stream = new ByteArrayInputStream(s.getBytes("UTF-8"))
+    val b = s.getBytes("UTF-8").size
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
