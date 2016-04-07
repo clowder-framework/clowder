@@ -2149,8 +2149,7 @@ class Datasets @Inject()(
     var s : String = ""
     md5map.map{
       case (filePath,md) => {
-        var a = md.digest()
-        var current = Hex.encodeHex(md.digest()).toString()+" "+filePath+"\n"
+        var current = Hex.encodeHexString(md.digest()).toString()+" "+filePath+"\n"
         s = s + current
       }
     }
@@ -2162,7 +2161,7 @@ class Datasets @Inject()(
     var s : String = ""
     md5map.map{
       case (filePath,md) => {
-        var current = Hex.encodeHex(md.digest()).toString()+" "+filePath+"\n"
+        var current = Hex.encodeHexString(md.digest()).toString()+" "+filePath+"\n"
         s = s + current
       }
     }
