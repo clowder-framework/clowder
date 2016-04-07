@@ -63,7 +63,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
           dataset.id -> allComments.size
         }.toMap
         val collectionList = collections.listUser(4, Some(clowderUser), request.superAdmin, clowderUser)
-        var collectionsWithThumbnails = collectionList.map {c =>
+        val collectionsWithThumbnails = collectionList.map {c =>
           if (c.thumbnail_id.isDefined) {
             c
           } else {

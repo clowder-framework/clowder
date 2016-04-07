@@ -334,9 +334,9 @@ class Datasets @Inject()(
         case Some(dataset) => {
 
           // get files info sorted by date
-          val filesInDataset = dataset.files.map(f => files.get(f) match {
-            case Some(file) => file
-            case None => Logger.debug(s"Unable to find file $f")
+          val filesInDataset = dataset.files.flatMap(f => files.get(f) match {
+            case Some(file) => Some(file)
+            case None => Logger.debug(s"Unable to find file $f"); None
           }).asInstanceOf[List[File]].sortBy(_.uploadDate)
 
           var datasetWithFiles = dataset.copy(files = filesInDataset.map(_.id))
@@ -831,7 +831,7 @@ class Datasets @Inject()(
         for(k <- userListSpaceRoleTupleMap.keys) userListSpaceRoleTupleMap += ( k -> userListSpaceRoleTupleMap(k).distinct.sortBy(_._1.toLowerCase) )
 
         if(userList.nonEmpty) {
-          val currUserIsAuthor = user.get.identityId.userId.equals(dataset.author.identityId.userId)
+          val currUserIsAuthor = user.get.id.equals(dataset.author.id)
           Ok(views.html.datasets.users(dataset, userListSpaceRoleTupleMap, currUserIsAuthor, userList))
         }
         else Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No users found for dataset $id.")

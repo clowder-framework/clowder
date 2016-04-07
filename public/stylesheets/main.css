@@ -853,6 +853,10 @@ table.borderless tbody tr td, table.borderless tbody tr th {
     color: red;
 }
 
+.yellow {
+    color: GoldenRod;
+}
+
 .indent_20{
     margin-left: 20px;
 }
