@@ -132,6 +132,15 @@ class CurationObjects @Inject()(datasets: DatasetService,
             case None => ""
             case Some(p) => format.format(c.created)
           }
+          if(metadataJson.contains("Abstract")) {
+            val value  = List(c.description) ++ metadataList.filter(_.label == "Abstract").map{item => item.content.as[String]}
+            metadataJson = metadataJson ++ Map("Abstract" -> Json.toJson(value))
+          } else {
+            metadataJson = metadataJson ++ Map("Abstract" -> Json.toJson(c.description))
+          }
+          if(!metadataDefsMap.contains("Abstract")){
+            metadataDefsMap("Abstract") = Json.toJson("http://purl.org/dc/terms/abstract")
+          }
           var parsedValue =
             Map(
               "@context" -> Json.toJson(Seq(

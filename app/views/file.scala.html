@@ -8,7 +8,8 @@
 @import helper._
 @import play.api.Play.current
 @import api.Permission
-@import org.apache.commons.io.FileUtils
+@import _root_.util.FileUtils
+
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
 
@@ -640,7 +641,7 @@
             <div class="row ds-section-sm file-info">
                 <table class="table table-condensed">
 					<tr><td><b>Type:</b></td><td>@file.contentType</td></tr>
-					<tr><td><b>File&nbsp;size:</b></td><td title="@file.length bytes">@FileUtils.byteCountToDisplaySize(file.length)</td></tr>
+					<tr><td><b>File&nbsp;size:</b></td><td title="@file.length bytes">@FileUtils.humanReadableByteCount(file.length)</td></tr>
 					@if(Permission.checkServerAdmin(user)) {
 						<tr><td><b>File&nbsp;location:</b></td>
 						@if(file.loader == "services.mongodb.MongoDBByteStorage") {

@@ -5,7 +5,9 @@
     <div class="panel-body">
         <div class="row">
             <div class="col-md-2 col-sm-2 col-lg-2">
-                @if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
+                @if(!dataset.thumbnail_id.isEmpty){
+                    <img class="fit-in-space" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)">
+                }
             </div>
             <div class="col-md-10 col-sm-10 col-lg-10">
                 <h3><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></h3>
