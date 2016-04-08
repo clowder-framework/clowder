@@ -1742,22 +1742,21 @@ class Datasets @Inject()(
     var file_type = 0 //
     var count = 0 //count for files
 
-
+    var is: Option[InputStream] = null
 
     //digest input stream
-    file_type = 1 //next is metadata
-    var is: Option[InputStream] = if (bagit) {
-        file_type = 0
-        var input : Option[InputStream] = addDatasetInfoToZip(rootFolder,dataset,zip)
+    if (bagit) {
+        is = addDatasetInfoToZip(rootFolder,dataset,zip)
         var md5 = MessageDigest.getInstance("MD5")
         md5Files.put(rootFolder+"_info.json",md5)
-        Some(new DigestInputStream(input.get,md5))
+        is = Some(new DigestInputStream(is.get,md5))
+        file_type = 1 //next is metadata
       } else {
+        var md5 = MessageDigest.getInstance("MD5")
+        is = addFileToZip(dataFolder+folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+        is = Some(new DigestInputStream(is.get, md5))
         file_type = 1
         count = count + 1
-        var md5 = MessageDigest.getInstance("MD5")
-        var input : Option[InputStream] = addFileToZip(dataFolder+folderNameMap(inputFiles(count).id), inputFiles(count), zip)
-        Some(new DigestInputStream(input.get, md5))
 
       }
 
@@ -2055,7 +2054,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Download dataset",
     notes = "Downloads all files contained in a dataset.",
     responseClass = "None", httpMethod = "GET")
-  def download(id: UUID, bagit: Boolean = false,compression: Int) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def download(id: UUID, bagit: Boolean,compression: Int) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(loggedInUser) => {
