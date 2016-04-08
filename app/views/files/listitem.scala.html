@@ -5,11 +5,11 @@
     <div class="panel-body">
         <div class="row">
             <div class="col-md-2 col-sm-2 col-lg-2">
-            @if(!file.thumbnail_id.isEmpty){
-                <a href="@(routes.Files.file(file.id))">
-                    <img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(file.filename)">
-                </a>
-            }
+                @if(!file.thumbnail_id.isEmpty){
+                    <a href="@(routes.Files.file(file.id))">
+                        <img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(file.filename)">
+                    </a>
+                }
             </div>
 
             <div class="col-md-10 col-sm-10 col-lg-10">
