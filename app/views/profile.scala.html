@@ -63,7 +63,7 @@
                 <div>
                     <h1>@profile.fullName</h1>
                 </div>
-                <div style="margin-left: 45px;">
+                <div>
                     <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
                     @profile.identityId.providerId match {
                         case "google" => {
@@ -84,7 +84,7 @@
                 @if(ownProfile){
                     <div id="prf-first-name" class="text-left inline">
                         <h1 id="first-name-title" class="inline" style="cursor:pointer" title="Click to edit user's first name.">@Html(profile.firstName)</h1>
-                        </a><div id="h-edit-first" class="hiddencomplete">
+                        <div id="h-edit-first" class="hiddencomplete">
                             <a id ="edit-first" href="javascript:updateFirstName()" title="Click to edit user's first name.">
                                 <span class ="glyphicon glyphicon-edit"></span>
                             </a>
@@ -157,7 +157,7 @@
             $('.first_name_div').append('<input type="text" id="first_name_input" class="form-control" />');
             $('.first_name_div').append('<button class="btn btn-sm btn-primary edit-tab" onclick="saveFirstName()"> <span class="glyphicon glyphicon-send"></span> Save</button>');
             $('.first_name_div').append('<button class="btn btn-sm btn-link" onclick="cancelFirstName()"> <span class="glyphicon glyphicon-remove"></span> Cancel</button><br />');
-            $('.first_name_div').append('<div class="hiddencomplete" id="first-name-error"> <span class="small error">First name is required.</span></div>');
+            $('.first_name_div').append('<div class="small hiddencomplete" id="first-name-error"> <span class="error">First name is required.</span></div>');
 
             $('#first_name_input').val(firstName);
             $('#first-name-title').text("");
@@ -170,7 +170,7 @@
             $('.last_name_div').append('<input type="text" id="last_name_input" class="form-control" />');
             $('.last_name_div').append('<button class="btn btn-sm btn-primary edit-tab" onclick="saveLastName()"> <span class="glyphicon glyphicon-send"></span> Save</button>');
             $('.last_name_div').append('<button class="btn btn-sm btn-link" onclick="cancelLastName()"> <span class="glyphicon glyphicon-remove"></span> Cancel</button>');
-            $('.last_name_div').append('<div class="hiddencomplete" id="last-name-error"> <span class="small error">Last name is required.</span></div>');
+            $('.last_name_div').append('<div class="small hiddencomplete" id="last-name-error"> <span class="error">Last name is required.</span></div>');
 
             $('#last_name_input').val(lastName);
             $('#last-name-title').text("");
