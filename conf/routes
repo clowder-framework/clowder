@@ -487,7 +487,6 @@ GET            /api/datasets/:id/xmlmetadatajson                                
 GET            /api/datasets/:id/usermetadatajson                                       @api.Datasets.getUserMetadataJSON(id: UUID)
 GET            /api/datasets/:id/listFiles                                              @api.Datasets.datasetFilesList(id: UUID)
 GET            /api/datasets/:id/listAllFiles                                           @api.Datasets.datasetAllFilesList(id:UUID)
-GET            /api/datasets/:id/download                                               @api.Datasets.download(id: UUID, compression: Int ?= -1)
 POST           /api/datasets/:id/comment                                                @api.Datasets.comment(id: UUID)
 POST           /api/datasets/:id/reindex                                                @api.Datasets.reindex(id:UUID, recursive: Boolean ?= true)
 POST           /api/datasets/:id/follow                                                 @api.Datasets.follow(id: UUID, name: String)
@@ -509,7 +508,7 @@ GET            /api/datasets/:id                                                
 DELETE         /api/datasets/:id                                                        @api.Datasets.deleteDataset(id: UUID)
 POST           /api/datasets/:id/detachdelete                                           @api.Datasets.detachAndDeleteDataset(id: UUID)
 POST           /api/datasets/:parentDatasetId/newFolder                                 @api.Folders.createFolder(parentDatasetId: UUID)
-
+GET            /api/datasets/:id/download/:bagit                                        @api.Datasets.download(id: UUID,bagit : Boolean,compression: Int ?= -1)
 # ----------------------------------------------------------------------
 # PREVIEWS ENDPOINT
 # ----------------------------------------------------------------------

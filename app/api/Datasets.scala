@@ -1848,7 +1848,7 @@ class Datasets @Inject()(
     * @return Enumerator to produce array of bytes from a zipped stream containing the bytes of each file
     *         in the dataset
     */
-  def enumeratorFromDatasetBagIt(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean = true)
+  def enumeratorFromDatasetBagIt(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean)
                            (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
     implicit val pec = ec.prepare()
     val folderNameMap = scala.collection.mutable.Map.empty[UUID, String]
@@ -2185,7 +2185,7 @@ class Datasets @Inject()(
   @ApiOperation(value = "Download dataset",
     notes = "Downloads all files contained in a dataset.",
     responseClass = "None", httpMethod = "GET")
-  def download(id: UUID, compression: Int) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def download(id: UUID, bagit: Boolean = false,compression: Int) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(loggedInUser) => {
@@ -2193,7 +2193,7 @@ class Datasets @Inject()(
           case Some(dataset) => {
             // Use custom enumerator to create the zip file on the fly
             // Use a 1MB in memory byte array
-            Ok.chunked(enumeratorFromDatasetBagIt(dataset, 1024*1024, compression)).withHeaders(
+            Ok.chunked(enumeratorFromDatasetBagIt(dataset,1024*1024, compression,bagit)).withHeaders(
               "Content-Type" -> "application/zip",
               "Content-Disposition" -> ("attachment; filename=" + dataset.name + ".zip")
             )
