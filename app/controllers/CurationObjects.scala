@@ -445,7 +445,7 @@ class CurationObjects @Inject()(
       "Aggregation Statistics" ->
         Map(
           "Data Mimetypes" -> Json.toJson(files.map(_.contentType).toSet),
-          "Max Collection Depth" -> Json.toJson("0"),
+          "Max Collection Depth" -> Json.toJson(curations.maxCollectionDepth(c).toString()),
           "Max Dataset Size" -> Json.toJson(maxDataset.toString),
           "Total Size" -> Json.toJson(totalSize.toString),
           "Number of Datasets" -> Json.toJson(fileIds.length),
@@ -652,7 +652,7 @@ class CurationObjects @Inject()(
                 "Aggregation" -> Json.toJson(aggregation),
                 "Aggregation Statistics" -> Json.toJson(
                   Map(
-                    "Max Collection Depth" -> Json.toJson("0"),
+                    "Max Collection Depth" -> Json.toJson(curations.maxCollectionDepth(c).toString()),
                     "Data Mimetypes" -> Json.toJson(files.map(_.contentType).toSet),
                     "Max Dataset Size" -> Json.toJson(maxDataset.toString),
                     "Total Size" -> Json.toJson(totalSize.toString),
