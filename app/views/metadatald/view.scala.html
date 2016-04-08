@@ -23,9 +23,9 @@
                                         <span class="glyphicon glyphicon-minus"></span>
                                     </a>
                                     @if(contextId.isDefined) {
-                                        <a href="#" onmouseover="getMetadataContext('@contextId.get','@key.replaceAll(" ", "")');" onmouseout="leaveMetadataContext('@contextId.get@key.replaceAll(" ", "")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
+                                        <a href="#" onmouseover="getMetadataContext('@contextId.get','@key.replaceAll("[() ]","")');" onmouseout="leaveMetadataContext('@contextId.get@key.replaceAll("[() ]","")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
                                         <!-- ids don't like spaces, you can use regex for removing different characters in metadata names (key) as well -->
-                                        <div id='@contextId.get@key.replaceAll(" ", "")' class="bg-info contextInitDialog"></div>
+                                        <div id='@contextId.get@key.replaceAll("[() ]","")' class="bg-info contextInitDialog"></div>
                                     } else {
                                         @contextURL match {
                                             case Some(u) => {
@@ -44,8 +44,8 @@
                                         <span class="glyphicon glyphicon-minus"></span>
                                     </a>
                                     @if(contextId.isDefined) {
-                                        <a href="#" onmouseover="getMetadataContext('@contextId.get','@key.replaceAll(" ", "")');" onmouseout="leaveMetadataContext('@contextId.get@key.replaceAll(" ", "")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
-                                        <div id='@contextId.get@key.replaceAll(" ", "")' class="bg-info contextInitDialog"></div>
+                                        <a href="#" onmouseover="getMetadataContext('@contextId.get','@key.replaceAll("[() ]","")');" onmouseout="leaveMetadataContext('@contextId.get@key.replaceAll("[() ]","")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
+                                        <div id='@contextId.get@key.replaceAll("[() ]","")' class="bg-info contextInitDialog"></div>
                                     } else {
                                         @contextURL match {
                                             case Some(u) => {
@@ -61,8 +61,8 @@
                             case _ => {
                                 <li class="md-block">
                                 @if(contextId.isDefined) {
-                                    <a href="#" onmouseover="getMetadataContext('@contextId.get','@key.replaceAll(" ", "")');" onmouseout="leaveMetadataContext('@contextId.get@key.replaceAll(" ", "")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
-                                    <div id='@contextId.get@key.replaceAll(" ", "")' class="bg-info contextInitDialog"></div>
+                                    <a href="#" onmouseover="getMetadataContext('@contextId.get','@key.replaceAll("[() ]","")');" onmouseout="leaveMetadataContext('@contextId.get@key.replaceAll("[() ]","")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
+                                    <div id='@contextId.get@key.replaceAll("[() ]","")' class="bg-info contextInitDialog"></div>
                                 } else {
                                     @contextURL match {
                                         case Some(u) => {
@@ -96,10 +96,11 @@
         }
     }
 
-    @printHeader(agent: Agent, date: java.util.Date) = {
+    @printHeader(agent: Agent, date: java.util.Date, i: Integer) = {
         @agent.operation by
         @if(agent.url.isDefined) {
-           <a href="@agent.url">@agent.displayName</a>
+            <a href="#" onmouseover="getAgentContext('@agent.id','agent@i');" onmouseout="leaveAgentContext('agent@i');">@agent.displayName</a>
+            <div id='agent@i' class="bg-info contextInitDialog"></div>
         } else {
             @agent.displayName
         }
@@ -116,7 +117,7 @@
                     <span class="panel-icon glyphicon glyphicon-minus"></span>
                 </a>
                 <span>
-                    @printHeader(m.creator, m.createdAt)
+                    @printHeader(m.creator, m.createdAt, i)
                 </span>
                 @if(toDelete && Permission.checkPermission(Permission.DeleteMetadata, ResourceRef(ResourceRef.metadata, m.id))) {
                         <a id="@m.id" title="Delete this metadata" class="btn btn-link delete-icon">
@@ -193,7 +194,7 @@
 
             request.done(function (response, textStatus, jqXHR) {
                 var fields = response;
-                $("#"+uuid+mkey).text(JSON.stringify(fields['@@context']));
+                $("#"+uuid+mkey).append(JSON.stringify(fields, null, 4));
                 $("#"+uuid+mkey).removeClass("contextInitDialog");
                 $("#"+uuid+mkey).addClass("contextDialog");
             });
@@ -211,5 +212,33 @@
             $("#"+mid).removeClass("contextDialog");
             $("#"+mid).addClass("contextInitDialog");
             //$("#"+mid).hide();
+        }
+
+        // get agent author definitions
+        function getAgentContext(uuid,aid) {
+            var request = jsRoutes.api.Users.findById(uuid).ajax({
+                type: 'GET',
+                contentType: "application/json"
+            });
+
+            request.done(function (response, textStatus, jqXHR) {
+                var fields = response;
+                $("#"+aid).append(JSON.stringify(fields, null, 4));
+                $("#"+aid).removeClass("contextInitDialog");
+                $("#"+aid).addClass("contextDialog");
+            });
+
+            request.fail(function (jqXHR, textStatus, errorThrown){
+                console.error("The following error occured: " + textStatus, errorThrown);
+                var errMsg = "You must be logged in to retrieve metadata definitions";
+                if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                    notify("Metadata context was not shown due to : " + errorThrown, "error");
+                }
+            });
+        }
+        function leaveAgentContext(aid) {
+            $("#"+aid).text("");
+            $("#"+aid).removeClass("contextDialog");
+            $("#"+aid).addClass("contextInitDialog");
         }
     </script>

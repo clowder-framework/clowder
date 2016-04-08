@@ -904,7 +904,8 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 }
 .contextDialog {
     position: absolute;
-    width: 500px;
+    white-space:pre-wrap;
+    width: 600px;
     border: solid 1px;
     border-radius: 5px;
     z-index: 99999;
