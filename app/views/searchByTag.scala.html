@@ -151,14 +151,14 @@
     @* Show as list *@
     <div class="row hidden" id="list-view">
     <div class="col-md-12">
-        <table class="table table-bordered table-hover">
+        <table class="table table-bordered table-hover fixedtable">
             <thead>
                 <tr>
                     <th style="width: 25%">Name</th>
                     <th style="width: 15%">Created</th>
                     <th style="width: 40%">Description</th>
-                    <th style="width: 15%">Preview</th>
-                    <th style="width: 5%">Type</th>
+                    <th style="width: 10%">Preview</th>
+                    <th style="width: 10%">Type</th>
                 </tr>
             </thead>
             <tbody>
@@ -170,7 +170,7 @@
                                 <td>@dataset.created.format("MMM dd, yyyy")</td>
                                 <td>@Html(dataset.description)</td>
                                 <td>
-                                    @if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120">}
+                                    @if(!dataset.thumbnail_id.isEmpty){<img class="fit-in-space" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)">}
                                     @if(dataset.thumbnail_id.isEmpty){No thumbnail available}
                                 </td>
                                 <td>Dataset</td>
@@ -182,7 +182,7 @@
                                 <td>@file.uploadDate.format("MMM dd, yyyy")</td>
                                 <td style="white-space:pre-line"></td>
                                 <td>
-                                    @if(!file.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)" width="120">}
+                                    @if(!file.thumbnail_id.isEmpty){<img class="fit-in-space" src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)">}
                                     @if(file.thumbnail_id.isEmpty){No thumbnail available}
                                 </td>
                                 <td>File</td>

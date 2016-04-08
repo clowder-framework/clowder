@@ -10,7 +10,7 @@ import play.api.libs.json.{JsObject, Json, Writes}
  */
 case class File(
   id: UUID = UUID.generate,
-  path: Option[String] = None,
+  loader_id: String = "",
   filename: String,
   author: MiniUser,
   uploadDate: Date,

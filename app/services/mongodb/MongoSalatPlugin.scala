@@ -20,8 +20,8 @@ import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.gridfs.GridFS
 import org.bson.types.ObjectId
 import services.filesystem.DiskByteStorageService
-import services.{MetadataService, DI, AppConfigurationService}
-import scala.collection.mutable.ListBuffer
+import services.{ByteStorageService, MetadataService, DI, AppConfigurationService}
+import scala.collection.JavaConverters._
 
 /**
  * Mongo Salat service.
@@ -238,10 +238,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   private def removeFiles(name: String): Unit = {
     // delete blobs
     collection(name + ".files").find(new BasicDBObject("loader", new BasicDBObject("$ne", classOf[MongoDBByteStorage].getName))).foreach { x =>
-      Logger.info(x.getOrElse("_id", "?") + " " + x.getOrElse("path", "?"))
-      x.getAs[ObjectId]("_id") match {
-        case Some(id) => MongoUtils.removeBlob(UUID(id.toString), name, "nevereverused")
-        case None =>
+      (x.getAs[String]("path"), x.getAs[String]("loader")) match {
+        case (Some(p), Some(l)) => ByteStorageService.delete(l, p, name)
+        case _ =>
       }
     }
     collection(name + ".chunks").drop()
@@ -304,6 +303,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     //Add author and creation date to curation folders.
     updateMongo("add-creator-to-curation-folders", addAuthorAndDateToCurationFolders)
 
+    //don't use gridfs for metadata
+    updateMongo("split-gridfs", splitGridFSMetadata)
+
     //Store admin in database not by email
     updateMongo("add-admin-to-user-object", addAdminFieldToUser)
 
@@ -327,6 +329,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //Change creator in comments from Identity to MiniUser
     updateMongo("update-author-comments", updateCreatorInComments)
+
+    //Whenever a root flag is not set, mark it as true.
+    updateMongo("add-collection-root-map", addRootMapToCollections)
+
+    updateMongo("update-collection-counter-in-space", fixCollectionCounterInSpaces)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -820,6 +827,93 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
+  private def splitGridFSMetadata() {
+    val ignoreCopyKeys = List[String]("_id", "path", "metadata", "chunkSize", "aliases", "md5")
+    val ignoreRemoveKeys = List[String]("_id", "filename", "contentType", "length", "chunkSize", "uploadDate", "aliases", "md5")
+
+    // fix logos
+    collection("logos").find().snapshot().foreach { x =>
+      val id = MongoDBObject("_id" -> new ObjectId(x.get("file_id").toString))
+      if (x.getAsOrElse[String]("loader", "") == classOf[MongoDBByteStorage].getName) {
+        x.put("loader_id", x.get("file_id").toString)
+        collection("logos.files").find(id).foreach { y =>
+          y.keySet().asScala.toList.foreach { k =>
+            if (!ignoreRemoveKeys.contains(k)) {
+              y.remove(k)
+            }
+          }
+          try {
+            collection("logos.files").save(y, WriteConcern.Safe)
+          } catch {
+            case e: BSONException => Logger.error("Unable to save logos.files: " + y.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+          }
+        }
+      } else {
+        collection("logos.files").find(id).foreach { y =>
+          x.put("loader_id", y.getAsOrElse[String]("path", ""))
+        }
+        try {
+          collection("logos.files").remove(id)
+        } catch {
+          case e: BSONException => Logger.error("Unable to remove logos.files: " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+        }
+      }
+      x.remove("file_id")
+      try {
+        collection("logos").save(x, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to write cleaned up logo: " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+      }
+    }
+
+    for (prefix <- List[String]("uploads", "previews", "textures", "geometries", "thumbnails", "tiles")) {
+      val oldCollection = collection(prefix + ".files")
+      val newCollection = collection(prefix)
+      oldCollection.find().snapshot().foreach { x =>
+        val id = x.get("_id")
+
+        val c = new MongoDBObject()
+        val r = new MongoDBObject()
+        c.put("_id", id)
+
+        if (x.getAsOrElse[String]("loader", "") == classOf[MongoDBByteStorage].getName) {
+          c.put("loader_id", id.toString)
+        } else {
+          c.put("loader_id", x.get("path"))
+        }
+
+        x.keySet.asScala.toList.foreach { k =>
+          if (!ignoreCopyKeys.contains(k)) {
+            c.put(k, x.get(k))
+          }
+          if (!ignoreRemoveKeys.contains(k)) {
+            r.put(k, "")
+          }
+        }
+
+        try {
+          newCollection.insert(c, WriteConcern.Safe)
+        } catch {
+          case e: BSONException => Logger.error(s"Unable to write new ${prefix} : " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+        }
+        if (x.getAsOrElse[String]("loader", "") == classOf[MongoDBByteStorage].getName) {
+          try {
+            oldCollection.update(MongoDBObject("_id" -> id), MongoDBObject("$unset" -> r))
+          } catch {
+            case e: BSONException => Logger.error(s"Unable to write cleaned up ${prefix}.files : " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+          }
+        } else {
+          Logger.info("Removing " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+          try {
+            oldCollection.remove(MongoDBObject("_id" -> id))
+          } catch {
+            case e: BSONException => Logger.error(s"Unable to remove ${prefix}.files : " + x.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+          }
+        }
+      }
+    }
+  }
+
   private def addAdminFieldToUser() {
     val admins = collection("app.configuration").findOne(MongoDBObject("key" -> "admins")) match {
       case Some(x) => {
@@ -980,4 +1074,46 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
+  private def addRootMapToCollections() {
+    collection("collections").foreach{ c =>
+      val parents = c.getAsOrElse[MongoDBList]("parent_collection_ids", MongoDBList.empty)
+
+
+      val spaces = c.getAsOrElse[MongoDBList]("spaces", MongoDBList.empty)
+      val parentCollections = collection("collections").find(MongoDBObject("_id" -> MongoDBObject("$in" -> parents)))
+      var parentSpaces = MongoDBList.empty
+      parentCollections.foreach{pc =>
+       pc.getAsOrElse[MongoDBList]("spaces", MongoDBList.empty).foreach{ps => parentSpaces += ps} }
+      val root_spaces= scala.collection.mutable.ListBuffer.empty[ObjectId]
+      spaces.foreach { s =>
+
+        if (!(parentSpaces contains s)) {
+          root_spaces += new ObjectId(s.toString())
+        }
+      }
+
+      c.put("root_spaces", root_spaces.toList)
+      c.remove("root_flag")
+      try {
+        collection("collections").save(c, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to set root flag for collection with id: " + c.getAsOrElse[ObjectId]("_id", new ObjectId()).toString)
+      }
+
+    }
+  }
+
+  private def fixCollectionCounterInSpaces() {
+    collection("spaces.projects").foreach{ space =>
+      val spaceId = space.getAsOrElse[ObjectId]("_id", new ObjectId())
+      val collections = collection("collections").find( MongoDBObject("root_spaces" -> spaceId))
+      space.put("collectionCount", collections.length)
+      try{
+        collection("spaces.projects").save(space, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update the collection count for space with id: " + spaceId.toString)
+      }
+
+    }
+  }
 }

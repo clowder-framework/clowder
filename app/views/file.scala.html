@@ -8,7 +8,8 @@
 @import helper._
 @import play.api.Play.current
 @import api.Permission
-@import org.apache.commons.io.FileUtils
+@import _root_.util.FileUtils
+
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
 
@@ -640,23 +641,23 @@
             <div class="row ds-section-sm file-info">
                 <table class="table table-condensed">
 					<tr><td><b>Type:</b></td><td>@file.contentType</td></tr>
-					<tr><td><b>File&nbsp;size:</b></td><td title="@file.length bytes">@FileUtils.byteCountToDisplaySize(file.length)</td></tr>
+					<tr><td><b>File&nbsp;size:</b></td><td title="@file.length bytes">@FileUtils.humanReadableByteCount(file.length)</td></tr>
 					@if(Permission.checkServerAdmin(user)) {
 						<tr><td><b>File&nbsp;location:</b></td>
 						@if(file.loader == "services.mongodb.MongoDBByteStorage") {
 							<td>mongo</td>
 						}
 						@if(file.loader == "services.filesystem.DiskByteStorageService") {
-							@if(file.path.isEmpty) {
+							@if(file.loader_id.isEmpty) {
 								<td>missing</td>
 							} else {
 								<td>
-								@if(file.path.get.length>10) {
-									<span title="@file.path.get">...@file.path.get.substring(file.path.get.length-10, file.path.get.length)</span>
+								@if(file.loader_id.length>10) {
+									<span title="@file.loader_id">...@file.loader_id.substring(file.loader_id.length-10, file.loader_id.length)</span>
 								} else {
-									@file.path.get
+									@file.loader_id
 								}
-								<a class="btn btn-link btn-sm clipboard" data-copy="@file.path.get" title="Copy path to clipboard"><span class="glyphicon glyphicon-edit"></span> copy</a></td>
+								<a class="btn btn-link btn-sm clipboard" data-copy="@file.loader_id" title="Copy path to clipboard"><span class="glyphicon glyphicon-edit"></span> copy</a></td>
 							}
 						}
 						</tr>

@@ -22,6 +22,11 @@ trait FileService {
   def save(inputStream: InputStream, filename: String, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File]
 
   /**
+   * Save a file object
+   */
+  def save(file: File): Unit
+
+  /**
    * Get the input stream of a file given a file id.
    * Returns input stream, file name, content type, content length.
    */

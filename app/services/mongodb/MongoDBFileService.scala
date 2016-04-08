@@ -6,7 +6,6 @@ import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
 import _root_.util.{Parsers, License}
-import com.novus.salat._
 
 import scala.collection.mutable.ListBuffer
 import Transformation.LidoToCidocConvertion
@@ -61,6 +60,10 @@ class MongoDBFileService @Inject() (
    */
   def count(): Long = {
     FileDAO.count(MongoDBObject())
+  }
+
+  def save(file: File): Unit = {
+    FileDAO.save(file)
   }
 
   /**
@@ -159,17 +162,24 @@ class MongoDBFileService @Inject() (
    * Save blob.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File] = {
-    val extra = Map("showPreviews" -> showPreviews,
-                    "author" -> MiniUserDAO.toDBObject(author),
-                    "licenseData" -> grater[LicenseData].asDBObject(License.fromAppConfig()))
-    MongoUtils.writeBlob[File](inputStream, filename, contentType, extra, "uploads", "medici2.mongodb.storeFiles").flatMap(x => get(x._1))
+    ByteStorageService.save(inputStream, FileDAO.COLLECTION) match {
+      case Some(x) => {
+
+        val file = File(UUID.generate(), x._1, filename, author, new Date(), util.FileUtils.getContentType(filename, contentType), x._4, x._3, x._2, showPreviews = showPreviews, licenseData = License.fromAppConfig())
+        FileDAO.save(file)
+        Some(file)
+      }
+      case None => None
+    }
   }
 
   /**
    * Get blob.
    */
   def getBytes(id: UUID): Option[(InputStream, String, String, Long)] = {
-    MongoUtils.readBlob(id, "uploads", "medici2.mongodb.storeFiles")
+    get(id).flatMap { x =>
+      ByteStorageService.load(x.loader, x.loader_id, FileDAO.COLLECTION).map((_, x.filename, x.contentType, x.length))
+    }
   }
 
   def index(id: UUID) {
@@ -710,7 +720,8 @@ class MongoDBFileService @Inject() (
         }
 
         // finally delete the actual file
-        MongoUtils.removeBlob(id, "uploads", "medici2.mongodb.storeFiles")
+        ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
+        FileDAO.remove(file)
       }
       case None => Logger.debug("File not found")
     }
@@ -1005,9 +1016,11 @@ class MongoDBFileService @Inject() (
 }
 
 object FileDAO extends ModelCompanion[File, ObjectId] {
+  val COLLECTION = "uploads"
+
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[File, ObjectId](collection = x.collection("uploads.files")) {}
+    case Some(x) => new SalatDAO[File, ObjectId](collection = x.collection(COLLECTION)) {}
   }
 }
 

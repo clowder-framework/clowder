@@ -139,47 +139,40 @@
                     <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
                 </ul>
                 <div class="tab-content">
-                  <div role="tabpanel" class="tab-pane  fade in active" id="tab-files">
-
-                  </div>
-                  <div role="tabpanel" class="tab-pane fade" id="tab-comments">
-                      <!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->
-                      @if(Permission.checkPermission(Permission.AddComment, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                          @commentform(dataset.id.stringify, "dataset")
-                      }
-                      <div class="list-unstyled" id="reply_@dataset.id.toString">
-                         @comment(comments)</div>
-                  </div>
-                  <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
-
-                      <div class="row">
-                          <div class="col-md-10">
-                          </div>
-                          <div class="col-md-2">
-                              <a href="@api.routes.Datasets.getMetadataJsonLD(dataset.id)" class="pull-right" title="JSON-LD">
-                                  <img src="@routes.Assets.at("images/json-ld.png")"/>
-                              </a>
-                          </div>
-                      </div>
-                      <div class="row">
-                          <div class="col-md-12">
-                            @metadatald.addMetadata("dataset", dataset.id.toString, "metadata-content")
-                          </div>
-                      </div>
-                      <div class="row">
-                          <div class="col-md-12" id="metadata-content">
-                          @metadatald.view(m, true)
-                          </div>
-                      </div>
-
-
-                  </div>
-                    <div role="tabpanel" class="tab-pane fade" id="tab-visua">
-                    @datasets.previews(dataset, previewers)
+                    <div role="tabpanel" class="tab-pane fade in active" id="tab-files"></div>
+                    <div role="tabpanel" class="tab-pane fade" id="tab-comments">
+                            <!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->
+                        @if(Permission.checkPermission(Permission.AddComment, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                            @commentform(dataset.id.stringify, "dataset")
+                        }
+                        <div class="list-unstyled" id="reply_@dataset.id.toString"> @comment(comments)</div>
                     </div>
+                    <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
+                        <div class="row">
+                            <div class="col-md-10"></div>
+                            <div class="col-md-2">
+                                <a href="@api.routes.Datasets.getMetadataJsonLD(dataset.id)" class="pull-right" title="JSON-LD">
+                                    <img src="@routes.Assets.at("images/json-ld.png")"/>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                @metadatald.addMetadata("dataset", dataset.id.toString, "metadata-content")
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12" id="metadata-content">
+                                @metadatald.view(m, true)
+                            </div>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane fade" id="tab-visua">
+                        @datasets.previews(dataset, previewers)
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
 
 		<!-- right column -->
 		<div class="col-md-4 col-left-border">
@@ -293,10 +286,15 @@
             var description = $('#ds_description').html().trim();
             $('#ds_description').html(urlify(description));
 
-            @if(dataset.files.length > 0 && Permission.checkPermission(Permission.ExecuteOnDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                refreshToolSidebar()
-            }
+            @play.api.Play.current.plugin[services.ToolManagerPlugin] match {
+                case Some(p) => {
+                    @if(p.enabled && dataset.files.nonEmpty && Permission.checkPermission(Permission.ExecuteOnDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        refreshToolSidebar()
+                    }
+                }
+                case None => { }
 
+            }
         });
 
         function cancelTitle() {

@@ -123,7 +123,6 @@ object MatchMakerResponse{
 case class CurationFile(
   id: UUID = UUID.generate,
   fileId: UUID,
-  path: Option[String] = None,
   filename: String,
   author: MiniUser,
   uploadDate: Date,
