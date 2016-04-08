@@ -129,14 +129,7 @@ object ApplicationBuild extends Build {
     "org.irods.jargon" % "jargon-core" % "3.3.3-beta1",
 
     // jsonp return from /api
-    "org.julienrf" %% "play-jsonp-filter" % "1.1",
-
-    "org.apache.httpcomponents" % "httpclient" % "4.3.1",
-
-    "org.apache.httpcomponents" % "httpmime" % "4.3.1",
-
-    //bagit java
-    "gov.loc" % "bagit" % "4.12.0"
+    "org.julienrf" %% "play-jsonp-filter" % "1.1"
   )
 
   // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory 
