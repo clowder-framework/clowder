@@ -69,7 +69,8 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
   /**
    * Update metadata
    * TODO: implement
-   * @param metadataId
+    *
+    * @param metadataId
    * @param json
    */
   def updateMetadata(metadataId: UUID, json: JsValue) = {}
@@ -77,7 +78,12 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
   /** Remove metadata, if this metadata does exit, nothing is executed */
   def removeMetadata(id: UUID) = {
     getMetadataById(id) match {
-      case Some(md) =>    MetadataDAO.remove(md, WriteConcern.Safe)
+      case Some(md) =>
+        if( getMetadataBycontextId(md.contextId.getOrElse(new UUID(""))).length  == 1) {
+          contextService.removeContext(md.contextId.getOrElse(new UUID("")))
+        }
+        MetadataDAO.remove(md, WriteConcern.Safe)
+        //update metadata count for resource
         current.plugin[MongoSalatPlugin] match {
           case None => throw new RuntimeException("No MongoSalatPlugin")
           case Some(x) => x.collection(md.attachedTo) match {
@@ -90,6 +96,10 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
           }
         }
     }
+  }
+
+  def getMetadataBycontextId(contextId: UUID) : List[Metadata] = {
+    MetadataDAO.find(MongoDBObject("contextId" -> new ObjectId(contextId.toString()))).toList
   }
 
   def removeMetadataByAttachTo(resourceRef: ResourceRef) = {
@@ -160,6 +170,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
 
   /**
     * Search by metadata. Uses mongodb query structure.
+    *
     * @param query
     * @return
     */

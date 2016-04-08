@@ -9,6 +9,8 @@ import com.mongodb.casbah.Imports._
 
 case class Preview(
   id: UUID = UUID.generate,
+  loader_id: String = "",
+  loader: String = "",
   file_id: Option[UUID] = None,
   section_id: Option[UUID] = None,
   dataset_id: Option[UUID] = None,

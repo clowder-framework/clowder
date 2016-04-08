@@ -51,6 +51,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         Redirect(routes.Error.notActivated())
       }
       case Some(clowderUser) if clowderUser.active => {
+        newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20)))
+          .sorted(Ordering.by((_: Event).created).reverse).take(20)
         val datasetsUser = datasets.listUser(4, Some(clowderUser), request.superAdmin, clowderUser)
         val datasetcommentMap = datasetsUser.map { dataset =>
           var allComments = comments.findCommentsByDatasetId(dataset.id)
@@ -63,7 +65,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
           dataset.id -> allComments.size
         }.toMap
         val collectionList = collections.listUser(4, Some(clowderUser), request.superAdmin, clowderUser)
-        var collectionsWithThumbnails = collectionList.map {c =>
+        val collectionsWithThumbnails = collectionList.map {c =>
           if (c.thumbnail_id.isDefined) {
             c
           } else {
