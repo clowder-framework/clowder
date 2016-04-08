@@ -1745,20 +1745,14 @@ class Datasets @Inject()(
     var is: Option[InputStream] = null
 
     //digest input stream
-    if (bagit) {
-        is = addDatasetInfoToZip(rootFolder,dataset,zip)
-        var md5 = MessageDigest.getInstance("MD5")
-        md5Files.put(rootFolder+"_info.json",md5)
-        is = Some(new DigestInputStream(is.get,md5))
-        file_type = 1 //next is metadata
-      } else {
-        var md5 = MessageDigest.getInstance("MD5")
-        is = addFileToZip(dataFolder+folderNameMap(inputFiles(count).id), inputFiles(count), zip)
-        is = Some(new DigestInputStream(is.get, md5))
-        file_type = 1
-        count = count + 1
 
-      }
+    is = addDatasetInfoToZip(rootFolder,dataset,zip)
+    var md5 = MessageDigest.getInstance("MD5")
+    md5Files.put(rootFolder+"_info.json",md5)
+    is = Some(new DigestInputStream(is.get,md5))
+    file_type = 1 //next is metadata
+
+
 
 
     Enumerator.generateM({
@@ -1834,8 +1828,8 @@ class Datasets @Inject()(
                       file_type = 0
                     } else {
                       //done
-                      level = 4
-                      file_type = 4
+                      level = -1
+                      file_type = -1
                     }
 
                   }
@@ -1870,7 +1864,8 @@ class Datasets @Inject()(
                   val md5 = MessageDigest.getInstance("MD5")
                   md5Bag.put(rootFolder+"tagmanifest-md5.txt",md5)
                   is = Some(new DigestInputStream(is.get, md5))
-                  file_type = 4
+                  level = -1
+                  file_type = -1
                 }
                 //bad case should not reach
                 case (_,_) => {
