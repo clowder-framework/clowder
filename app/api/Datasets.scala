@@ -1919,7 +1919,8 @@ class Datasets @Inject()(
 
   private def addFileMetadataToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
-    val fileMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file.id))
+    val fileMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file.id)).map(JSONLD.jsonMetadataWithContext(_))
+
     val s : String = Json.toJson(fileMetadata).toString()
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
