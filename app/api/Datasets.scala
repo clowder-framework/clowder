@@ -1920,8 +1920,7 @@ class Datasets @Inject()(
   private def addFileMetadataToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
     val fileMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file.id)).map(JSONLD.jsonMetadataWithContext(_))
-
-    val s : String = Json.toJson(fileMetadata).toString()
+    val s : String = Json.prettyPrint(Json.toJson(fileMetadata))
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
@@ -1934,21 +1933,10 @@ class Datasets @Inject()(
     return dataset_info
   }
 
-  // TODO don't use a .get here!!! -todd n
-  /**
-    * adds the dataset info and metadata as json
-    * WORKS !!!
-    * @param folderName
-    * @param dataset
-    * @param zip
-    * @return
-    */
   private def addDatasetInfoToZip(folderName: String, dataset: models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "_info.json"))
-    var metadata_and_info  = List.empty[Any]
-    val metadata  = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id)).map(JSONLD.jsonMetadataWithContext(_))
-    val infoListMap = Json.toJson(getDatasetInfoAsMap(dataset))
-    Some(new ByteArrayInputStream(infoListMap.toString().getBytes("UTF-8")))
+    val infoListMap = Json.prettyPrint(Json.toJson(getDatasetInfoAsMap(dataset)))
+    Some(new ByteArrayInputStream(infoListMap.getBytes("UTF-8")))
   }
 
   // TODO don't use a .get here!!! -todd n
@@ -1961,15 +1949,12 @@ class Datasets @Inject()(
     return fileInfo
   }
 
-  /**
-    * adds a json with the file metadata, plus other fields
-    * WORKS!! !!
-   */
+
   private def addFileInfoToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "/_info.json"))
     val fileInfo = getFileInfoAsMap(file)
     val fileInfoJson = Json.toJson(fileInfo)
-    val s : String = (fileInfoJson.toString())
+    val s : String = Json.prettyPrint(fileInfoJson)
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
@@ -1980,11 +1965,10 @@ class Datasets @Inject()(
     zip.putNextEntry(new ZipEntry(folderName + "_dataset_metadata.json"))
     val datasetMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
       .map(JSONLD.jsonMetadataWithContext(_))
-    val s : String = (Json.toJson(datasetMetadata)).toString()
+    val s : String = Json.prettyPrint(Json.toJson(datasetMetadata))
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  // TODO  -todd n
   private def addBagItTextToZip(folderName : String,payload : Double, zip : ZipOutputStream) = {
     zip.putNextEntry(new ZipEntry(folderName + "bagit.txt"))
     val softwareLine = "Bag-Software-Agent: clowder.ncsa.illinois.edu\n"
