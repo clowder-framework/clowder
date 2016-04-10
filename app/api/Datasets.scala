@@ -1691,7 +1691,7 @@ class Datasets @Inject()(
     * @return Enumerator to produce array of bytes from a zipped stream containing the bytes of each file
     *         in the dataset
     */
-  def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean)
+  def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean, user : User)
                            (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
     implicit val pec = ec.prepare()
     val folderNameMap = scala.collection.mutable.Map.empty[UUID, String]
@@ -1836,7 +1836,7 @@ class Datasets @Inject()(
                 }
                 //bagit.txt
                 case (2,0) => {
-                  is = addBagItTextToZip(rootFolder,totalBytes,zip,dataset)
+                  is = addBagItTextToZip(rootFolder,totalBytes,zip,dataset,user)
                   val md5 = MessageDigest.getInstance("MD5")
                   md5Bag.put(rootFolder+"bagit.txt",md5)
                   is = Some(new DigestInputStream(is.get, md5))
@@ -1867,13 +1867,12 @@ class Datasets @Inject()(
                   level = -1
                   file_type = -1
                 }
-                //bad case should not reach
+                //the end, or a bad case
                 case (_,_) => {
                   zip.close()
                   is = None
                 }
               }
-
               //this is generated after all the matches
               Some(byteArrayOutputStream.toByteArray)
             }
@@ -1901,10 +1900,6 @@ class Datasets @Inject()(
   /**
    * Used by enumeratorFromDataset to add an entry to the zip file.
    * Individual files are added to directories with id of file as the name to resolve naming conflicts.
-   *
-   * @param file file to be added to teh zip file
-   * @param zip zip output stream. One stream per dataset.
-   * @return input stream for input file
    */
   private def addFileToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     files.getBytes(file.id) match {
@@ -1924,7 +1919,6 @@ class Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  // TODO are other fields necessary ? -todd n
   private def getDatasetInfoAsMap(dataset : Dataset) : Map[String,String] = {
     var dataset_info = Map.empty[String,String]
     dataset_info = dataset_info + ("name"->dataset.name,"author"->dataset.author.email.toString,"description"->dataset.description,
@@ -1939,16 +1933,12 @@ class Datasets @Inject()(
     Some(new ByteArrayInputStream(infoListMap.getBytes("UTF-8")))
   }
 
-  // TODO don't use a .get here!!! -todd n
-  //this is the file metadata plus any other info
-
   private def getFileInfoAsMap(file : models.File) : Map[String,String] = {
     var fileInfo = Map.empty[String,String]
     fileInfo = fileInfo + ("author" -> file.author.email.toString, "uploadDate" -> file.uploadDate.toString,"contentType"->file.contentType,
       "tags"->file.tags.mkString(","),"description"->file.description,"licenseData"->file.licenseData.toString)
     return fileInfo
   }
-
 
   private def addFileInfoToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "/_info.json"))
@@ -1958,9 +1948,6 @@ class Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  // TODO !!! -todd n
-  //what should this be writing?
-  //tthe metadata
   private def addDatasetMetadataToZip(folderName: String, dataset : models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "_dataset_metadata.json"))
     val datasetMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
@@ -1969,46 +1956,25 @@ class Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  private def addBagItTextToZip(folderName : String,payload : Double, zip : ZipOutputStream, dataset : models.Dataset) = {
+  private def addBagItTextToZip(folderName : String,payload : Double, zip : ZipOutputStream, dataset : models.Dataset, user : models.User) = {
     zip.putNextEntry(new ZipEntry(folderName + "bagit.txt"))
     val softwareLine = "Bag-Software-Agent: clowder.ncsa.illinois.edu\n"
     val baggingDate = "Bagging-Date: "+(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime)+"\n"
-    val payLoadOxum = "Payload-Oxum: "+payload.toString()
-
-    /*
-
-       Source-Organization  Organization transferring the content.
-
-   Organization-Address  Mailing address of the organization.
-
-   Contact-Name  Person at the source organization who is responsible
-      for the content transfer.
-
-   Contact-Phone  International format telephone number of person or
-      position responsible.
-
-   Contact-Email  Fully qualified email address of person or position
-      responsible.
-
-      Internal-Sender-Identifier can be dataset.id
-      Internal-Sender-Description can be dataset.descript
-     */
-    val contactName = "Contact-Name: "
-    val contactEmail = "Contact-Phone: "
-    val senderIdentifier="Internal-Sender-Identifier: "+dataset.id
-    val senderDescription = "Internal-Sender-Description: "+dataset.description
-    val s = softwareLine+baggingDate+payLoadOxum
+    val payLoadOxum = "Payload-Oxum: "+payload.toString()+"\n"
+    val contactName = "Contact-Name: " + user.fullName+"\n"
+    val contactEmail = "Contact-Email: "+user.email.getOrElse("")+"\n"
+    val senderIdentifier="Internal-Sender-Identifier: "+dataset.id+"\n"
+    val senderDescription = "Internal-Sender-Description: "+dataset.description+"\n"
+    val s = softwareLine+baggingDate+payLoadOxum+contactName+contactEmail+senderIdentifier+senderDescription
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  // TODO  what file does this write? What values? -todd n
   private def addBagInfoToZip(folderName : String , zip : ZipOutputStream) : Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "bag-info.txt"))
     val s : String = "BagIt-Version: 0.97\n"+"Tag-File-Character-Encoding: UTF-8"
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  // TODO what file does this write? What values ?  -todd n
   private def addManifestMD5ToZip(folderName : String, md5map : Map[String,MessageDigest] ,zip : ZipOutputStream) : Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "manifest-md5.txt"))
     var s : String = ""
@@ -2044,7 +2010,7 @@ class Datasets @Inject()(
           case Some(dataset) => {
             // Use custom enumerator to create the zip file on the fly
             // Use a 1MB in memory byte array
-            Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression,bagit)).withHeaders(
+            Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression,bagit,loggedInUser)).withHeaders(
               "Content-Type" -> "application/zip",
               "Content-Disposition" -> ("attachment; filename=" + dataset.name + ".zip")
             )
