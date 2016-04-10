@@ -1836,7 +1836,7 @@ class Datasets @Inject()(
                 }
                 //bagit.txt
                 case (2,0) => {
-                  is = addBagItTextToZip(rootFolder,totalBytes,zip)
+                  is = addBagItTextToZip(rootFolder,totalBytes,zip,dataset)
                   val md5 = MessageDigest.getInstance("MD5")
                   md5Bag.put(rootFolder+"bagit.txt",md5)
                   is = Some(new DigestInputStream(is.get, md5))
@@ -1969,7 +1969,7 @@ class Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  private def addBagItTextToZip(folderName : String,payload : Double, zip : ZipOutputStream) = {
+  private def addBagItTextToZip(folderName : String,payload : Double, zip : ZipOutputStream, dataset : models.Dataset) = {
     zip.putNextEntry(new ZipEntry(folderName + "bagit.txt"))
     val softwareLine = "Bag-Software-Agent: clowder.ncsa.illinois.edu\n"
     val baggingDate = "Bagging-Date: "+(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime)+"\n"
@@ -1993,6 +1993,10 @@ class Datasets @Inject()(
       Internal-Sender-Identifier can be dataset.id
       Internal-Sender-Description can be dataset.descript
      */
+    val contactName = "Contact-Name: "
+    val contactEmail = "Contact-Phone: "
+    val senderIdentifier="Internal-Sender-Identifier: "+dataset.id
+    val senderDescription = "Internal-Sender-Description: "+dataset.description
     val s = softwareLine+baggingDate+payLoadOxum
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
