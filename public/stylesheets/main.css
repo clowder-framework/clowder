@@ -900,3 +900,8 @@ table.borderless tbody tr td, table.borderless tbody tr th {
     top:2px;
     right:5px;
 }
+
+.bigicon {
+    padding: 20px 20px 20px 20px;
+    font-size: 55px;
+}
