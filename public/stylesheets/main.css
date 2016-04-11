@@ -271,14 +271,13 @@ code {
   	width: 256px;
     height: 256px;
 }
-
-.editProfileInput input[type='text']{
-  width:450px;
-  height:30px;
+.editProfileInput input[type='text'] {
+    width:450px;
+    height:30px;
 }
-.editProfileInput textarea{
-  width:450px;
-  height:100px;
+.editProfileInput textarea {
+    width:450px;
+    height:100px;
 }
 .editProfileInput .chosen-select {
   width:450px;
@@ -449,13 +448,10 @@ textarea, input[type='text'], input[type='password']{
     padding-top: 7px;
 }
 
-span.error{
+p.error, span.error{
     color: red;
 }
 
-.error p{
-    color: red;
-}
 .space-head {
     border-bottom: 1px solid #E1E1E8;
 }
