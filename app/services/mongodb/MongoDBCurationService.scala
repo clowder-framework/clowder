@@ -187,9 +187,9 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
     CurationFolderDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
   }
 
-  def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID) = {
+  def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID, creators: List[String]) = {
     val result = CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-      $set("description" -> description, "name" -> name, "space" -> new ObjectId(newSpace.stringify)),
+      $set("description" -> description, "name" -> name, "space" -> new ObjectId(newSpace.stringify), "creators" -> creators),
       false, false, WriteConcern.Safe)
     if(oldSpace != newSpace) {
       spaces.removeCurationObject(oldSpace, id)
