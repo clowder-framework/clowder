@@ -9,7 +9,7 @@
         <div class="panel-body">
             @if(!collection.thumbnail_id.isEmpty){
                 <a href="@(routes.Collections.collection(collection.id))">
-                    <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)">
+                    <img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)">
                 </a>
             }
             <div class="caption break-word">
