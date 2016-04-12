@@ -1742,17 +1742,32 @@ class Datasets @Inject()(
     var file_type = 0 //
     var count = 0 //count for files
 
-    var is: Option[InputStream] = null
+    /*
+     * Explanation for the cases
+     *
+     * the level can be 0 (file) 1 (dataset) and 2 (bag).
+     *
+     * when the level is file, the file_type can be 0 (info) 1 (metadata) or 2 (the actual files)
+     *
+     * when the level is dataset, the file_type can be 0 (info) or 1 (metadata)
+     *
+     * when the level is bag, the file_type can be
+     *
+     * 0 - bagit.txt
+     * 1 - bag-info.txt
+     * 2 - manifest-md5.txt
+     * 3 - tagmanifest-md5.txt
+     *
+     * when the dataset is finished (in either mode) the level = -1 and file_type = -1 and
+     * the enumerator is finished
+     */
 
+    var is: Option[InputStream] = addDatasetInfoToZip(rootFolder,dataset,zip)
     //digest input stream
-
-    is = addDatasetInfoToZip(rootFolder,dataset,zip)
     var md5 = MessageDigest.getInstance("MD5")
     md5Files.put(rootFolder+"_info.json",md5)
     is = Some(new DigestInputStream(is.get,md5))
     file_type = 1 //next is metadata
-
-
 
 
     Enumerator.generateM({
@@ -1897,10 +1912,6 @@ class Datasets @Inject()(
   }
 
 
-  /**
-   * Used by enumeratorFromDataset to add an entry to the zip file.
-   * Individual files are added to directories with id of file as the name to resolve naming conflicts.
-   */
   private def addFileToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     files.getBytes(file.id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
@@ -1911,7 +1922,6 @@ class Datasets @Inject()(
     }
   }
 
-
   private def addFileMetadataToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
     val fileMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file.id)).map(JSONLD.jsonMetadataWithContext(_))
@@ -1921,8 +1931,7 @@ class Datasets @Inject()(
 
   private def getDatasetInfoAsMap(dataset : Dataset) : Map[String,String] = {
     var dataset_info = Map.empty[String,String]
-    dataset_info = dataset_info + ("name"->dataset.name,"author"->dataset.author.email.toString,"description"->dataset.description,
-      "tags"->dataset.tags.mkString(","), "spaces"->dataset.spaces.toString,"lastModified"->dataset.lastModifiedDate.toString)
+    dataset_info = dataset_info + ("name"->dataset.name,"author"->dataset.author.email.toString,"description"->dataset.description, "spaces"->dataset.spaces.toString,"lastModified"->dataset.lastModifiedDate.toString)
     val asJson = dataset_info
     return dataset_info
   }
@@ -1935,8 +1944,7 @@ class Datasets @Inject()(
 
   private def getFileInfoAsMap(file : models.File) : Map[String,String] = {
     var fileInfo = Map.empty[String,String]
-    fileInfo = fileInfo + ("author" -> file.author.email.toString, "uploadDate" -> file.uploadDate.toString,"contentType"->file.contentType,
-      "tags"->file.tags.mkString(","),"description"->file.description,"licenseData"->file.licenseData.toString)
+    fileInfo = fileInfo + ("author" -> file.author.email.toString, "uploadDate" -> file.uploadDate.toString,"contentType"->file.contentType,"description"->file.description,"licenseData"->file.licenseData.toString)
     return fileInfo
   }
 
