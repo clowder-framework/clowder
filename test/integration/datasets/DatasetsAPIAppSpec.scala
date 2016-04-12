@@ -450,7 +450,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
     }
 
     "respond to the getUserMetadataJSON(id: UUID) function routed by GET /api/datasets/:id/usermetadata" in {
-      val Some(result_get) = route(FakeRequest(GET, "/api/datasets/" + datasetId + "/usermetadatajson"))
+      val Some(result_get) = route(FakeRequest(GET, "/api/datasets/" + datasetId + "/usermetadatajson?key=" + secretKey))
       info("Status_Get="+status(result_get))
       status(result_get) mustEqual OK
       info("contentType_Get="+contentType(result_get))
@@ -462,7 +462,7 @@ class DatasetsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartU
     }
 
     "respond to the getTechnicalMetadataJSON(id: UUID) function routed by GET /api/datasets/:id/technicalmetadatajson" in {
-      val Some(result_get) = route(FakeRequest(GET, "/api/datasets/" + datasetId + "/technicalmetadatajson"))
+      val Some(result_get) = route(FakeRequest(GET, "/api/datasets/" + datasetId + "/technicalmetadatajson?key=" + secretKey))
       info("Status_Get="+status(result_get))
       status(result_get) mustEqual OK
       info("contentType_Get="+contentType(result_get))
