@@ -82,6 +82,8 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
   def updateAuthorFullName(userId: UUID, fullName: String) {
     CurationDAO.update(MongoDBObject("author._id" -> new ObjectId(userId.stringify)),
       $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
+    CurationDAO.update(MongoDBObject("datasets.author._id" -> new ObjectId(userId.stringify)),
+      $set("datasets.0.author.fullName" -> fullName), false, true, WriteConcern.Safe)
     CurationFileDAO.update(MongoDBObject("author._id" -> new ObjectId(userId.stringify)),
       $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
   }
