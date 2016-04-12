@@ -174,7 +174,7 @@ class FilesAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipartUplo
 
     "respond to the get(id: UUID) function routed by GET /api/files/:id/metadata" in {
       // Call RESTful API to get JSON information
-      val Some(result_get) = route(FakeRequest(GET, "/api/files/" + morrowPlotFileId + "/metadata"))
+      val Some(result_get) = route(FakeRequest(GET, "/api/files/" + morrowPlotFileId + "/metadata?key=" + secretKey))
       info("Status_Get="+status(result_get))
       status(result_get) mustEqual OK
       info("contentType_Get="+contentType(result_get))

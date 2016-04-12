@@ -27,7 +27,11 @@
 		    @for(file <- files) {
 			  <div class="row elasticsearchResult" id="filediv_@file.id.toString">
 				<div class="col-md-2">
-					@if(!file.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)" width="120" style="margin-bottom:20%;">}
+					@if(!file.thumbnail_id.isEmpty){
+						<a href="@(routes.Files.file(file.id))">
+							<img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(file.filename)">
+						</a>
+					}
 				</div>
 				<div class="col-md-10">
 					<dl class="dl-horizontal">
@@ -66,7 +70,11 @@
 	    @for(dataset <- datasets) {
 		  <div class="row elasticsearchResult" id="datasetdiv_@dataset.id.toString">
 		    <div class="col-md-2">
-				@if(!dataset.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)" width="120" style="margin-bottom:20%;">}
+				@if(!dataset.thumbnail_id.isEmpty){
+					<a href="@(routes.Datasets.dataset(dataset.id))">
+						<img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)">
+					</a>
+				}
 			</div>
 			<div class="col-md-10">
 				<dl class="dl-horizontal">
@@ -101,8 +109,12 @@
 	       <h3>Collections</h3>
 	    @for(collection <- collections) {
 		  <div class="row elasticsearchResult">
-		    <div class="col-md-2">  
-				@if(!collection.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)" width="120" style="margin-bottom:30%;">}
+		    <div class="col-md-2">
+				@if(!collection.thumbnail_id.isEmpty){
+					<a href="@(routes.Collections.collection(collection.id))">
+						<img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)">
+					</a>
+				}
 			</div>
 			<div class="col-md-10">
 				<dl class="dl-horizontal">

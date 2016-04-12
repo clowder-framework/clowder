@@ -1,11 +1,17 @@
 @(file: File, comments: Map[UUID, Int], redirect: Call, folder: Option[String])(implicit user: Option[models.User])
 @import api.Permission
+@import _root_.util.FileUtils
 <div class="panel panel-default" id="@file.id-listitem">
     <div class="panel-body">
         <div class="row">
             <div class="col-md-2 col-sm-2 col-lg-2">
-            @if(!file.thumbnail_id.isEmpty){<img src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)" width="120">}
+                @if(!file.thumbnail_id.isEmpty){
+                    <a href="@(routes.Files.file(file.id))">
+                        <img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(file.filename)">
+                    </a>
+                }
             </div>
+
             <div class="col-md-10 col-sm-10 col-lg-10">
                 <h3><a href="@(routes.Files.file(file.id))">@file.filename</a></h3>
                 <div class="row">
@@ -13,13 +19,14 @@
                         <ul class="list-unstyled">
                             <li>@(if(file.contentType != null) file.contentType else "N/A")</li>
                             <li>@file.uploadDate.format("MMM dd, yyyy")</li>
+                            <li>@FileUtils.humanReadableByteCount(file.length)</li>
                             <li>
                                 <span class="glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
                                 <span class="glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
                                 <span class="glyphicon glyphicon-comment" title="@(comments.get(file.id)) comments"></span> @(comments.get(file.id))
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                                    @if(user.get.identityId.userId.equals(file.author.identityId.userId) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
+                                    @if(user.get.id.equals(file.author.id) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
                                         <button onclick="
                                                 @folder match {
                                                     case None => {confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))',false, '@redirect')}

@@ -1,0 +1,16 @@
+{
+  "ipython": {
+    "toolName": "Jupyter",
+    "description": "Basic Jupyter notebook environment",
+    "dockerSrc": "jupyter/scipy-notebook",
+    "dataPath": "/home/jovyan/work",
+    "mappedPort": "8888/tcp"
+  },
+  "rstudio": {
+    "toolName": "RStudio",
+    "description": "RStudio analysis environment",
+    "dockerSrc": "rocker/ropensci",
+    "dataPath": "/home/rstudio",
+    "mappedPort": "8787/tcp"
+  }
+}

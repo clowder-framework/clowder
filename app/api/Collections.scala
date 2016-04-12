@@ -4,14 +4,11 @@ import api.Permission.Permission
 import play.api.Logger
 import play.api.Play.current
 import models._
-import play.api.http.Writeable
-import play.api.libs.json
 import services._
 import play.api.libs.json._
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
-import javax.inject.{ Singleton, Inject }
-import scala.collection.immutable.HashSet
+import javax.inject.{ Singleton, Inject}
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
 import scala.util.{Try, Success, Failure}
@@ -28,7 +25,6 @@ import controllers.Utils
 @Singleton
 class Collections @Inject() (datasets: DatasetService, collections: CollectionService, previews: PreviewService, userService: UserService, events: EventService, spaces:SpaceService) extends ApiController {
 
-
   @ApiOperation(value = "Create a collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
@@ -44,6 +40,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           (request.body \ "space").asOpt[String] match {
             case None | Some("default") => c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity)
             case Some(space) =>  if (spaces.get(UUID(space)).isDefined) {
+
               c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)))
             } else {
               BadRequest(toJson("Bad space = " + space))
@@ -52,7 +49,11 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
           collections.insert(c) match {
             case Some(id) => {
-              c.spaces.map{ s => spaces.addCollection(c.id, s)}
+              c.spaces.map{ s =>
+                spaces.addCollection(c.id, s)
+                collections.addToRootSpaces(c.id, s)
+
+              }
               Ok(toJson(Map("id" -> id)))
             }
             case None => Ok(toJson(Map("status" -> "error")))
@@ -231,7 +232,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
   def jsonCollection(collection: Collection): JsValue = {
     toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description,
-      "created" -> collection.created.toString,"author"-> collection.author.toString, "root_flag" -> collection.root_flag.toString,
+      "created" -> collection.created.toString,"author"-> collection.author.toString, "root_flag" -> collections.hasRoot(collection).toString,
       "child_collection_ids"-> collection.child_collection_ids.toString, "parent_collection_ids" -> collection.parent_collection_ids.toString,
     "childCollectionsCount" -> collection.childCollectionsCount.toString, "datasetCount"-> collection.datasetCount.toString, "spaces" -> collection.spaces.toString))
   }
@@ -457,9 +458,9 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         case Some(identity) => {
           val description = (request.body \ "description").asOpt[String].getOrElse("")
           (request.body \ "space").asOpt[String] match {
-            case None | Some("default") =>  c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, childCollectionsCount = 0, author = identity)
+            case None | Some("default") =>  c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, childCollectionsCount = 0, author = identity, root_spaces = List.empty)
             case Some(space) => if (spaces.get(UUID(space)).isDefined) {
-              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)))
+              c = Collection(name = name, description = description, created = new Date(), datasetCount = 0, author = identity, spaces = List(UUID(space)), root_spaces = List(UUID(space)))
             } else {
               BadRequest(toJson("Bad space = " + space))
             }
@@ -467,7 +468,10 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
           collections.insert(c) match {
             case Some(id) => {
-              c.spaces.map{ s => spaces.addCollection(c.id, s)}
+              c.spaces.map{ s =>
+                spaces.addCollection(c.id, s)
+                collections.addToRootSpaces(c.id, s)
+              }
 
               //do stuff with parent here
               (request.body \"parentId").asOpt[String] match {
@@ -527,7 +531,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   def isCollectionRootOrHasNoParent(collectionId: UUID): Unit = {
     collections.get(collectionId) match {
       case Some(collection) => {
-        if (collection.root_flag == true || collection.parent_collection_ids.isEmpty) {
+        if (collections.hasRoot(collection) || collection.parent_collection_ids.isEmpty) {
           return true
         } else
           return false
@@ -540,16 +544,36 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
 
   /**
-    * changes root flag value for collection
+    * Adds a Root flag for a collection in a space
     */
-  @ApiOperation(value = "Change value of root flag for collection",
+  @ApiOperation(value = "Add root flags for a collection in space",
     notes = "",
     responseClass = "None",httpMethod = "POST")
-  def setRootFlag(collectionId: UUID, isRoot: Boolean)  = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
+  def setRootSpace(collectionId: UUID, spaceId: UUID)  = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     Logger.debug("changing the value of the root flag")
     collections.get(collectionId) match {
       case Some(collection) => {
-        collections.setRootFlag(collectionId, isRoot)
+        spaces.addCollection(collectionId, spaceId)
+        collections.addToRootSpaces(collectionId, spaceId)
+        Ok(jsonCollection(collection))
+      } case None => {
+        Logger.error("Error getting collection  " + collectionId)
+        BadRequest(toJson(s"The given collection id $collectionId is not a valid ObjectId."))
+      }
+    }
+  }
+
+  /**
+    * Remove root flag from a collection in a space
+    */
+  @ApiOperation(value = "Removes root flag from a collection in  a space",
+    notes = "",
+    responseClass = "None",httpMethod = "POST")
+  def unsetRootSpace(collectionId: UUID, spaceId: UUID)  = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+    Logger.debug("changing the value of the root flag")
+    collections.get(collectionId) match {
+      case Some(collection) => {
+        collections.removeFromRootSpaces(collectionId, spaceId)
         Ok(jsonCollection(collection))
       } case None => {
         Logger.error("Error getting collection  " + collectionId)
@@ -562,7 +586,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     notes = "",
     responseClass = "None", httpMethod = "GET")
   def getRootCollections() = PermissionAction(Permission.ViewCollection) { implicit request =>
-    val root_collections_list = for (collection <- collections.listAccess(100,Set[Permission](Permission.ViewCollection),request.user,true); if collection.root_flag == true)
+    val root_collections_list = for (collection <- collections.listAccess(100,Set[Permission](Permission.ViewCollection),request.user,true); if collections.hasRoot(collection)  )
       yield jsonCollection(collection)
 
     Ok(toJson(root_collections_list))
@@ -573,8 +597,8 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     responseClass = "None", httpMethod = "GET")
   def getAllCollections() = PermissionAction(Permission.ViewCollection) { implicit request =>
     implicit val user = request.user
-    var count : Long  = collections.countAccess(Set[Permission](Permission.ViewCollection),user,true);
-    var limit = count.toInt
+    val count : Long  = collections.countAccess(Set[Permission](Permission.ViewCollection),user,true)
+    val limit = count.toInt
     val all_collections_list = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection),request.user,true))
       yield jsonCollection(collection)
     Ok(toJson(all_collections_list))
@@ -587,11 +611,10 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     responseClass = "None", httpMethod = "GET")
   def getTopLevelCollections() = PermissionAction(Permission.ViewCollection){ implicit request =>
     implicit val user = request.user
-    var count = collections.countAccess(Set[Permission](Permission.ViewCollection),user,true);
-    var limit = count.toInt
-    val top_level_collections = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection),request.user,true); if (collection.root_flag == true || collection.parent_collection_ids.isEmpty))
+    val count = collections.countAccess(Set[Permission](Permission.ViewCollection),user,true)
+    val limit = count.toInt
+    val top_level_collections = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection),request.user,true); if (collections.hasRoot(collection) || collection.parent_collection_ids.isEmpty))
       yield jsonCollection(collection)
-
     Ok(toJson(top_level_collections))
   }
 
@@ -600,7 +623,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   def getChildCollectionIds(collectionId: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection,collectionId))){implicit request =>
     collections.get(collectionId) match {
       case Some(collection) => {
-        var childCollectionIds = collection.child_collection_ids
+        val childCollectionIds = collection.child_collection_ids
         Ok(toJson(childCollectionIds))
       }
       case None => BadRequest(toJson("collection not found"))
@@ -627,7 +650,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     collections.get(collectionId) match {
       case Some(collection) => {
         val childCollections = ListBuffer.empty[JsValue]
-        var childCollectionIds = collection.child_collection_ids
+        val childCollectionIds = collection.child_collection_ids
         for (childCollectionId <- childCollectionIds) {
           collections.get(childCollectionId) match {
             case Some(child_collection) => {
@@ -651,7 +674,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     collections.get(collectionId) match {
       case Some(collection) => {
         val parentCollections = ListBuffer.empty[JsValue]
-        var parentCollectionIds = collection.parent_collection_ids
+        val parentCollectionIds = collection.parent_collection_ids
         for (parentCollectionId <- parentCollectionIds) {
           collections.get(parentCollectionId) match {
             case Some(parent_collection) => {
@@ -665,7 +688,21 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
         Ok(toJson(parentCollections))
       }
+
       case None => BadRequest(toJson("collection not found"))
+    }
+  }
+
+  @ApiOperation(value = "Checks if we can remove a collection from a space",
+    responseClass = "None", httpMethod = "GET")
+  def removeFromSpaceAllowed(collectionId: UUID , spaceId : UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+    val user = request.user
+    user match {
+      case Some(identity) => {
+        val hasParentInSpace = collections.hasParentInSpace(collectionId, spaceId)
+        Ok(toJson(!(hasParentInSpace)))
+      }
+      case None => Ok(toJson(false))
     }
   }
 

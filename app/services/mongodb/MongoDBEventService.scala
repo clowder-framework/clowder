@@ -159,6 +159,18 @@ class MongoDBEventService extends EventService {
      }
    }
 
+  def getEventsByUser( user: User, limit: Option[Integer]): List[Event] ={
+    val eventList = (Event.find(MongoDBObject(
+      "user._id"-> new ObjectId(user.id.toString()))).toList  :::
+      Event.find(MongoDBObject(
+      "object_id"-> new ObjectId(user.id.toString()))).toList)
+        .sorted(Ordering.by((_: Event).created).reverse)
+
+    limit match {
+      case Some(x) => eventList.take(x)
+      case None => eventList
+    }
+  }
 
 }
 

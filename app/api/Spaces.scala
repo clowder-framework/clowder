@@ -93,6 +93,10 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.superAdmin).map(spaceToJson)))
   }
 
+  def listCanEditNotAlreadyIn(collectionId : UUID, title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true ){ implicit request =>
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.superAdmin).map(spaceToJson)))
+  }
+
   /**
    * Returns list of collections based on parameters and permissions.
    * TODO this needs to be cleaned up when do permissions for adding to a resource
@@ -148,6 +152,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
             Forbidden(toJson(s"You are not the owner of the collection"))
           } else {
             spaces.addCollection(collectionId, spaceId)
+            collectionService.addToRootSpaces(collectionId, spaceId)
             spaces.get(spaceId) match {
               case Some(space) => {
                 Ok(Json.obj("collectionInSpace" -> space.collectionCount.toString))
@@ -187,6 +192,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     (spaces.get(spaceId), collectionService.get(collectionId)) match {
       case (Some(s), Some(c)) => {
         spaces.removeCollection(collectionId, spaceId)
+        collectionService.removeFromRootSpaces(collectionId, spaceId)
         updateSubCollections(spaceId, collectionId)
         Ok(toJson("success"))
       }
@@ -201,8 +207,9 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         for (descendant <- collectionDescendants){
           val rootCollectionSpaces = collectionService.getRootSpaceIds(descendant.id)
           for (space <- descendant.spaces) {
-            if (!rootCollectionSpaces.contains(space)){
+            if (space == spaceId){
               spaces.removeCollection(descendant.id, space)
+
             }
           }
         }
@@ -404,7 +411,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
                           events.addRequestEvent(user, userService.get(UUID(aUserId)).get, spaceId, spaces.get(spaceId).get.name, "add_user_to_space")
                           val newmember = userService.get(UUID(aUserId))
                           val theHtml = views.html.spaces.inviteNotificationEmail(spaceId.stringify, space.name, user.get.getMiniUser, newmember.get.getMiniUser.fullName, aRole.name)
-                          Mail.sendEmail("Added to Space", request.user, newmember.get.getMiniUser.email.get ,theHtml)
+                          Mail.sendEmail("Added to Space", request.user, newmember ,theHtml)
                         }
                       }
                       else {

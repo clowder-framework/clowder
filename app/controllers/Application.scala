@@ -51,6 +51,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         Redirect(routes.Error.notActivated())
       }
       case Some(clowderUser) if clowderUser.active => {
+        newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20)))
+          .sorted(Ordering.by((_: Event).created).reverse).take(20)
         val datasetsUser = datasets.listUser(4, Some(clowderUser), request.superAdmin, clowderUser)
         val datasetcommentMap = datasetsUser.map { dataset =>
           var allComments = comments.findCommentsByDatasetId(dataset.id)
@@ -63,7 +65,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
           dataset.id -> allComments.size
         }.toMap
         val collectionList = collections.listUser(4, Some(clowderUser), request.superAdmin, clowderUser)
-        var collectionsWithThumbnails = collectionList.map {c =>
+        val collectionsWithThumbnails = collectionList.map {c =>
           if (c.thumbnail_id.isDefined) {
             c
           } else {
@@ -164,8 +166,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   }
 
   def email(subject: String) = UserAction(needActive=false) { implicit request =>
-    implicit val user = request.user
-    Ok(views.html.emailAdmin(subject))
+    if (request.user.isEmpty) {
+      Redirect(routes.Application.index())
+    } else {
+      implicit val user = request.user
+      Ok(views.html.emailAdmin(subject))
+    }
   }
 
   def options(path:String) = UserAction(needActive = false) { implicit request =>
@@ -276,6 +282,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Sections.removeAllTags,
         api.routes.javascript.Geostreams.searchSensors,
         api.routes.javascript.Geostreams.searchStreams,
+        api.routes.javascript.Geostreams.getSensor,
+        api.routes.javascript.Geostreams.getStream,
         api.routes.javascript.Geostreams.getSensorStreams,
         api.routes.javascript.Geostreams.searchDatapoints,
         api.routes.javascript.Geostreams.deleteSensor,
@@ -295,6 +303,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Collections.updateCollectionName,
         api.routes.javascript.Collections.updateCollectionDescription,
         api.routes.javascript.Collections.getCollection,
+        api.routes.javascript.Collections.removeFromSpaceAllowed,
         api.routes.javascript.Spaces.get,
         api.routes.javascript.Spaces.removeSpace,
         api.routes.javascript.Spaces.list,
@@ -311,12 +320,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Users.getUser,
         api.routes.javascript.Users.follow,
         api.routes.javascript.Users.unfollow,
+        api.routes.javascript.Users.updateUserField,
         api.routes.javascript.Relations.findTargets,
         api.routes.javascript.Relations.add,
         api.routes.javascript.Relations.delete,
         api.routes.javascript.Projects.addproject,
         api.routes.javascript.Institutions.addinstitution,
-        api.routes.javascript.Users.getUser,
         api.routes.javascript.CurationObjects.getCurationObjectOre,
         api.routes.javascript.CurationObjects.findMatchmakingRepositories,
         api.routes.javascript.CurationObjects.retractCurationObject,
@@ -340,6 +349,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Datasets.dataset,
         controllers.routes.javascript.Datasets.newDataset,
         controllers.routes.javascript.Datasets.createStep2,
+        controllers.routes.javascript.Datasets.launchTool,
+        controllers.routes.javascript.Datasets.getLaunchableTools,
+        controllers.routes.javascript.Datasets.uploadDatasetToTool,
+        controllers.routes.javascript.Datasets.getInstances,
+        controllers.routes.javascript.Datasets.refreshToolSidebar,
+        controllers.routes.javascript.Datasets.removeInstance,
         controllers.routes.javascript.Folders.createFolder,
         controllers.routes.javascript.Datasets.getUpdatedFilesAndFolders,
         controllers.routes.javascript.Collections.collection,

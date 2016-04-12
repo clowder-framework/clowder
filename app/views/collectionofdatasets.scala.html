@@ -4,7 +4,7 @@
   collection: models.Collection,
   previewers: List[Previewer],
   commentMap : Map[UUID, Int],
-  collectionSpaces: Option[List[ProjectSpace]],
+  collectionSpaces_canRemove : Option[Map[ProjectSpace, Boolean]],
   prevd: Int, nextd: Int, prevcc: Int, nextcc: Int, limit: Int)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import models.ResourceRef
@@ -165,10 +165,10 @@
 
 	<!-- right column -->
 	<div class="col-md-4">
-		@spaces.spaceAllocation(collection.id, ResourceRef.collection, collectionSpaces.getOrElse(List.empty), Some(collection))
+		@spaces.spaceAllocation(collection.id, ResourceRef.collection, collectionSpaces_canRemove.getOrElse(Map.empty), Some(collection))
 		@collections.parentAllocation(collection,collection.id,ResourceRef.collection, parentCollections.getOrElse(List.empty))
 		<br />
-		@if(user.isDefined && collectionSpaces.isDefined && !collectionSpaces.get.isEmpty){
+		@if(user.isDefined && collectionSpaces_canRemove.isDefined && !collectionSpaces_canRemove.isEmpty){
 			<div id="collection-users">
 				<a href="@routes.Collections.users(collection.id)">
 					<span class="glyphicon glyphicon-hand-right"></span> Users with access to the collection
@@ -185,7 +185,7 @@
 
 <script language="javascript">
 	@if(user.isDefined) {
-		@if(!(user.get.identityId.userId.equals(collection.author.identityId.userId))) {
+		@if(!(user.get.id.equals(collection.author.id))) {
 			$(".requiresLogin:not(.requiresLoginCommunity)").css("display","none");
 		}
 	}
