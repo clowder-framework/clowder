@@ -67,7 +67,11 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
   }
 
   def findByTag(tag: String, user: Option[User]): List[Section] = {
-    SectionDAO.find(buildTagFilter(user) ++ MongoDBObject("tags.name" -> tag)).toList
+    var filter = MongoDBObject("tags.name" -> tag)
+    if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")){
+      filter = buildTagFilter(user) ++ MongoDBObject("tags.name" -> tag)
+    }
+    SectionDAO.find(filter).toList
   }
 
   def removeAllTags(id: UUID) {
@@ -106,26 +110,31 @@ class MongoDBSectionService @Inject() (comments: CommentService, previews: Previ
    * Return a list of tags and counts found in sections
    */
   def getTags(user: Option[User]): Map[String, Long] = {
+    if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public"){
+      val x = SectionDAO.dao.collection.aggregate(MongoDBObject("$unwind" -> "$tags"),
+        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
+      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+    } else {
+      val x = SectionDAO.dao.collection.aggregate(MongoDBObject("$match"-> buildTagFilter(user)),MongoDBObject("$unwind" -> "$tags"),
+        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
+      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+    }
 
-    val x = SectionDAO.dao.collection.aggregate(MongoDBObject("$match"-> buildTagFilter(user)),MongoDBObject("$unwind" -> "$tags"),
-      MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-    x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
   }
 
   private def buildTagFilter(user: Option[User]): MongoDBObject = {
     val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
-    if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")){
-      user match {
-        case Some(u) => {
-          orlist += MongoDBObject("author._id" ->new ObjectId(u.id.stringify))
-          //Get all datasets you have access to.
-          val datasetsList= datasets.listUser( u)
-          val foldersList = folders.findByParentDatasetIds(datasetsList.map(x=> x.id))
-          val fileIds = datasetsList.map(x=> x.files) ++ foldersList.map(x=> x.files)
-          orlist += ("file_id" $in fileIds.flatten.map(x=> new ObjectId(x.stringify)))
-        }
-        case None => Map.empty
+
+    user match {
+      case Some(u) => {
+        orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
+        //Get all datasets you have access to.
+        val datasetsList = datasets.listUser(u)
+        val foldersList = folders.findByParentDatasetIds(datasetsList.map(x => x.id))
+        val fileIds = datasetsList.map(x => x.files) ++ foldersList.map(x => x.files)
+        orlist += ("file_id" $in fileIds.flatten.map(x => new ObjectId(x.stringify)))
       }
+      case None =>
     }
     $or(orlist.map(_.asDBObject))
   }

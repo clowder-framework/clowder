@@ -2,6 +2,7 @@ package services.mongodb
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.util.JSON
 import play.api.Logger
+import play.api.Play._
 import models._
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
@@ -184,22 +185,24 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     // { "content.Abstract" : { "$regex" : "/test/i"}}
     val regexp = (s"""(?i)$trimOr""").r
     val doc = MongoDBObject(field -> regexp)
-    user match {
-      case Some(u) => {
-        val datasetsList= datasets.listUser(u)
-        val foldersList = folders.findByParentDatasetIds(datasetsList.map(x=> x.id))
-        val fileIds = datasetsList.map(x=> x.files) ++ foldersList.map(x=> x.files)
-        val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
-        datasetsList.map{x => orlist += MongoDBObject("attachedTo.resourceType" -> "dataset") ++ MongoDBObject("attachedTo._id" -> new ObjectId(x.id.stringify))}
-        fileIds.flatten.map{x => orlist +=MongoDBObject("attachedTo.resourceType" -> "file") ++ MongoDBObject("attachedTo._id" -> new ObjectId(x.stringify))}
-        val resources: List[ResourceRef] = MetadataDAO.find($or(orlist.map(_.asDBObject)) ++ doc).limit(count).map(_.attachedTo).toList
-        resources
+    var filter = doc
+    if (!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")) {
+      user match {
+        case Some(u) => {
+          val datasetsList = datasets.listUser(u)
+          val foldersList = folders.findByParentDatasetIds(datasetsList.map(x => x.id))
+          val fileIds = datasetsList.map(x => x.files) ++ foldersList.map(x => x.files)
+          val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
+          datasetsList.map { x => orlist += MongoDBObject("attachedTo.resourceType" -> "dataset") ++ MongoDBObject("attachedTo._id" -> new ObjectId(x.id.stringify)) }
+          fileIds.flatten.map { x => orlist += MongoDBObject("attachedTo.resourceType" -> "file") ++ MongoDBObject("attachedTo._id" -> new ObjectId(x.stringify)) }
+          filter = $or(orlist.map(_.asDBObject)) ++ doc
+        }
+        case None => List.empty
       }
-      case None => List.empty
     }
-
+    val resources: List[ResourceRef] = MetadataDAO.find( filter).limit(count).map(_.attachedTo).toList
+    resources
   }
-
 }
 
 object MetadataDAO extends ModelCompanion[Metadata, ObjectId] {

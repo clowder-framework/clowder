@@ -242,28 +242,33 @@ class MongoDBFileService @Inject() (
    * Return a list of tags and counts found in sections
    */
   def getTags(user: Option[User]): Map[String, Long] = {
-
-    val x = FileDAO.dao.collection.aggregate(MongoDBObject("$match"-> buildTagFilter(user)), MongoDBObject("$unwind" -> "$tags"),
-      MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-    x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+    if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public"){
+      val x = FileDAO.dao.collection.aggregate(MongoDBObject("$unwind" -> "$tags"),
+        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
+      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+    } else {
+      val x = FileDAO.dao.collection.aggregate(MongoDBObject("$match"-> buildTagFilter(user)), MongoDBObject("$unwind" -> "$tags"),
+        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
+      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+    }
   }
 
 
   private def buildTagFilter(user: Option[User]): MongoDBObject = {
     val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
-    if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")){
-      user match {
-        case Some(u) => {
-          orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
-          //Get all datasets you have access to.
-          val datasetsList= datasets.listUser(u)
-          val foldersList = folders.findByParentDatasetIds(datasetsList.map(x=> x.id))
-          val fileIds = datasetsList.map(x=> x.files) ++ foldersList.map(x=> x.files)
-          orlist += ("_id" $in fileIds.flatten.map(x=> new ObjectId(x.stringify)))
-        }
-        case None => Map.empty
+
+    user match {
+      case Some(u) => {
+        orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
+        //Get all datasets you have access to.
+        val datasetsList= datasets.listUser(u)
+        val foldersList = folders.findByParentDatasetIds(datasetsList.map(x=> x.id))
+        val fileIds = datasetsList.map(x=> x.files) ++ foldersList.map(x=> x.files)
+        orlist += ("_id" $in fileIds.flatten.map(x=> new ObjectId(x.stringify)))
       }
+      case None => Map.empty
     }
+
     $or(orlist.map(_.asDBObject))
   }
 
@@ -577,14 +582,18 @@ class MongoDBFileService @Inject() (
   }
 
   def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean, user: Option[User]): List[File] = {
-    val filter = if (start == "") {
-      buildTagFilter(user) ++ MongoDBObject("tags.name" -> tag)
+
+    var filter = if (start == "") {
+      MongoDBObject("tags.name" -> tag)
     } else {
       if (reverse) {
-        buildTagFilter(user) ++ MongoDBObject("tags.name" -> tag) ++ ("uploadDate" $gte Parsers.fromISO8601(start))
+        MongoDBObject("tags.name" -> tag) ++ ("uploadDate" $gte Parsers.fromISO8601(start))
       } else {
-        buildTagFilter(user)  ++ MongoDBObject("tags.name" -> tag) ++ ("uploadDate" $lte Parsers.fromISO8601(start))
+        MongoDBObject("tags.name" -> tag) ++ ("uploadDate" $lte Parsers.fromISO8601(start))
       }
+    }
+    if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")) {
+      filter = buildTagFilter(user) ++ filter
     }
     val order = if (reverse) {
       MongoDBObject("uploadDate" -> 1, "filename" -> 1)

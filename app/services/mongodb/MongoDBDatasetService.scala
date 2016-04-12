@@ -456,11 +456,17 @@ class MongoDBDatasetService @Inject() (
    * Return a list of tags and counts found in sections
    */
   def getTags(user: Option[User]): Map[String, Long] = {
-    val tagFilter = buildTagFilter(user)
-    val x = Dataset.dao.collection.aggregate(MongoDBObject("$match" ->  tagFilter), MongoDBObject("$unwind" -> "$tags"),
-      MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-    x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+    if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public"){
+      val x = Dataset.dao.collection.aggregate( MongoDBObject("$unwind" -> "$tags"),
+        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
+      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
 
+    } else {
+      val x = Dataset.dao.collection.aggregate(MongoDBObject("$match" ->  buildTagFilter(user)), MongoDBObject("$unwind" -> "$tags"),
+        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
+      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+
+    }
   }
 
   private def buildTagFilter(user: Option[User]): MongoDBObject = {
@@ -476,8 +482,11 @@ class MongoDBDatasetService @Inject() (
           }
 
         }
-        case None =>
+        case None => orlist += MongoDBObject()
       }
+    }
+    else {
+      orlist += MongoDBObject()
     }
     $or(orlist.map(_.asDBObject))
   }
@@ -546,20 +555,26 @@ class MongoDBDatasetService @Inject() (
   }
 
   def findByTag(tag: String, user: Option[User]): List[Dataset] = {
-    Dataset.dao.find(buildTagFilter(user) ++
-      MongoDBObject("tags.name" -> tag)).toList
+    if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public"){
+      Dataset.dao.find(MongoDBObject("tags.name" -> tag)).toList
+    } else {
+      Dataset.dao.find(buildTagFilter(user) ++
+        MongoDBObject("tags.name" -> tag)).toList
+    }
   }
 
   def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean, user: Option[User]): List[Dataset] = {
-    val tagFilter = buildTagFilter(user)
-    val filter = if (start == "") {
-      tagFilter ++ MongoDBObject("tags.name" -> tag)
+    var filter = if (start == "") {
+      MongoDBObject("tags.name" -> tag)
     } else {
       if (reverse) {
-        tagFilter ++ MongoDBObject("tags.name" -> tag) ++ ("created" $gte Parsers.fromISO8601(start))
+        MongoDBObject("tags.name" -> tag) ++ ("created" $gte Parsers.fromISO8601(start))
       } else {
-        tagFilter ++ MongoDBObject("tags.name" -> tag) ++ ("created" $lte Parsers.fromISO8601(start))
+        MongoDBObject("tags.name" -> tag) ++ ("created" $lte Parsers.fromISO8601(start))
       }
+    }
+    if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")) {
+      filter = buildTagFilter(user) ++ filter
     }
     val order = if (reverse) {
       MongoDBObject("created" -> -1, "name" -> 1)
