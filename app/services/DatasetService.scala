@@ -244,6 +244,8 @@ trait DatasetService {
 
   def updateDescription(id: UUID, description: String)
 
+  def updateAuthorFullName(userId: UUID, fullName: String)
+
   /**
    * Update the license data that is currently associated with the dataset.
    *

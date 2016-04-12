@@ -993,6 +993,11 @@ class MongoDBFileService @Inject() (
       false, false, WriteConcern.Safe)
 
   }
+
+  def updateAuthorFullName(userId: UUID, fullName: String) {
+    FileDAO.update(MongoDBObject("author._id" -> new ObjectId(userId.stringify)),
+      $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
+  }
 }
 
 object FileDAO extends ModelCompanion[File, ObjectId] {

@@ -705,6 +705,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       $set("description" -> description), false, false, WriteConcern.Safe)
   }
 
+  def updateAuthorFullName(userId: UUID, fullName: String) {
+    Collection.update(MongoDBObject("author._id" -> new ObjectId(userId.stringify)),
+      $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
+  }
+
   /**
    * Add follower to a collection.
    */

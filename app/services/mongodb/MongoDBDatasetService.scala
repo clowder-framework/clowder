@@ -654,6 +654,11 @@ class MongoDBDatasetService @Inject() (
       false, false, WriteConcern.Safe)
   }
 
+  def updateAuthorFullName(userId: UUID, fullName: String) {
+    Dataset.update(MongoDBObject("author._id" -> new ObjectId(userId.stringify)),
+      $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
+  }
+
   /**
    * Implementation of updateLicenseing defined in services/DatasetService.scala.
    */
@@ -661,7 +666,7 @@ class MongoDBDatasetService @Inject() (
       val licenseData = models.LicenseData(m_licenseType = licenseType, m_rightsHolder = rightsHolder, m_licenseText = licenseText, m_licenseUrl = licenseUrl, m_allowDownload = allowDownload.toBoolean)
       val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
           $set("licenseData" -> LicenseData.toDBObject(licenseData)),
-          false, false, WriteConcern.Safe);
+          false, false, WriteConcern.Safe)
   }
 
   def addTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
