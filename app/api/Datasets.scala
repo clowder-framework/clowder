@@ -1944,7 +1944,8 @@ class Datasets @Inject()(
 
   private def getFileInfoAsMap(file : models.File) : Map[String,String] = {
     var fileInfo = Map.empty[String,String]
-    fileInfo = fileInfo + ("author" -> file.author.email.toString, "uploadDate" -> file.uploadDate.toString,"contentType"->file.contentType,"description"->file.description,"licenseData"->file.licenseData.toString)
+    fileInfo = fileInfo + ("author" -> file.author.email.toString, "uploadDate" -> file.uploadDate.toString,"contentType"->file.contentType,"description"->file.description,"licenseText"->file.licenseData.m_licenseText,
+      "licencseType"->file.licenseData.m_licenseType,"rightsHolder"-> file.licenseData.m_rightsHolder)
     return fileInfo
   }
 
