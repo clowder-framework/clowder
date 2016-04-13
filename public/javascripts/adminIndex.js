@@ -53,7 +53,6 @@ function getAllAdapters() {
 	    var mimeTypes = "";	
     	for(var i=0; i<json_response.length; i++){
     		mimeTypes = json_response[i].supportedMimeTypes;		
-    		console.log('. ');	
     		allAdapterList.push({name:json_response[i].name,
     			id:json_response[i].id,
     			mimeTypes:json_response[i].supportedMimeTypes, 
@@ -484,7 +483,26 @@ var listBtn=document.getElementById('list');
 	    		console.error("The following error occured: "+textStatus, errorThrown);
 	            $('#deleteallmsg').text( "Could not delete all indexes");
 	    	});
-	}	
+	}
+
+var reindex=document.getElementById('reindexElasticsearch');
+reindex.onclick=function(evt){
+	var request= jsRoutes.api.Admin.reindex().ajax({
+		type:'POST',
+		beforeSend: function( xhr ) {
+			$('#reindexmsg').text( "In Progress");
+		}
+	});
+
+	request.done(function (response, textStatus, jqXHR){
+		//display info msg for reindex
+		$('#reindexmsg').text(response.status);
+	});
+	request.fail(function (jqXHR, textStatus, errorThrown){
+		console.error("The following error occured: "+textStatus, errorThrown);
+		$('#reindexmsg').text( "Could not reindex");
+	});
+}
     
    /*
     *Called when list of indexes changed  - created or deleted an index, or deleted all.
