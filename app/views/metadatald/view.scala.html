@@ -235,7 +235,7 @@
                 console.error("The following error occured: " + textStatus, errorThrown);
                 var errMsg = "You must be logged in to retrieve metadata definitions";
                 if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                    notify("Metadata context was not shown due to : " + errorThrown, "error");
+                    notify("Agent metadata context was not shown due to : " + errorThrown, "error");
                 }
             });
         }
