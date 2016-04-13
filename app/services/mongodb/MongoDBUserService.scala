@@ -38,6 +38,9 @@ class MongoDBUserService @Inject() (
   collections: CollectionService,
   spaces: SpaceService,
   comments: CommentService,
+  events: EventService,
+  folders: FolderService,
+  metadata: MetadataService,
   curations: CurationService) extends services.UserService {
   // ----------------------------------------------------------------------
   // Code to implement the common CRUD services
@@ -209,12 +212,14 @@ class MongoDBUserService @Inject() (
   }
 
   override def updateUserFullName(id: UUID, name: String): Unit = {
-    datasets.updateAuthorFullName(id, name)
     collections.updateAuthorFullName(id, name)
-    files.updateAuthorFullName(id, name)
-    curations.updateAuthorFullName(id, name)
     comments.updateAuthorFullName(id, name)
-
+    curations.updateAuthorFullName(id, name)
+    datasets.updateAuthorFullName(id, name)
+    events.updateAuthorFullName(id, name)
+    files.updateAuthorFullName(id, name)
+    folders.updateAuthorFullName(id, name)
+    metadata.updateAuthorFullName(id, name)
   }
 
   override def addUserDatasetView(email: String, dataset: UUID) {
