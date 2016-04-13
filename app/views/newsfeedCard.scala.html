@@ -20,7 +20,7 @@
       space: <a href="@routes.CurationObjects.getCurationObject(obj_id.get)">@obj_name.get</a>
     }
     case "subcollection" => {
-      sub collection: <a href="@routes.Collections.collection(obj_id.get)">@obj_name.get</a> from collection:
+      collection: <a href="@routes.Collections.collection(obj_id.get)">@obj_name.get</a> from collection:
       <a href="@routes.Collections.collection(event.source_id.get)">@event.source_name.get</a>
     }
     case _ => {
@@ -93,7 +93,7 @@
     has added a file to a folder within @linkForObject("dataset", event.object_id, event.object_name)
   }
   case "add_sub_collection" => {
-    added sub @linkForObject("collection", event.object_id, event.object_name) to
+    added @linkForObject("collection", event.object_id, event.object_name) to
     @linkForObject("collection", event.source_id, event.source_name)
   }
   case "addMetadata_file" | "addMetadata_dataset" => {
