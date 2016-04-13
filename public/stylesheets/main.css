@@ -893,23 +893,6 @@ table.borderless tbody tr td, table.borderless tbody tr th {
     margin-bottom: 20px !important;
 }
 
-/* classes for metadata context pop-over window */
-.contextInitDialog {
-    display:none;
-    pointer-events: none;
-}
-.contextDialog {
-    position: absolute;
-    white-space:pre-wrap;
-    width: 600px;
-    border: solid 1px;
-    border-radius: 5px;
-    z-index: 99999;
-    margin: 5px;
-    padding: 5px;
-    pointer-events: auto;
-}
-
 /* custom class for noty notification, position of a close x */
 .close-notify {
     font-weight:bold;
