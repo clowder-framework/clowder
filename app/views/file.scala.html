@@ -1,5 +1,5 @@
 @(file: models.File, id: String, comments: List[Comment],
-  previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]],
+  previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long, String)]],
   sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset], folders: List[Folder],
   mds: List[models.Metadata],
   rdfExported: Boolean,
@@ -14,7 +14,7 @@
 
 
 @* (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length) *@
-@showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long), filename: String, contentType: String) = {
+@showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long, String), filename: String, contentType: String) = {
 	<script>
 		Configuration.tab = "#previewer_@id";
 		Configuration.url = "@p._5";
@@ -200,7 +200,12 @@
 			  		<div class="tabbable">
 						<ul class="nav nav-pills" id="myTab_@(f.id.toString)">
 							@for(i <- pvs.indices) {
-					    		<li class=""><a href="#previewer_@(f.id.toString)_@i" data-toggle="tab">@pvs(i)._2</a></li>
+								<!-- Use preview.title as tab title if defined; otherwise use previewer name. -->
+								@if(pvs(i)._8 != "") {
+									<li class=""><a href="#previewer_@(f.id.toString)_@i" data-toggle="tab">@pvs(i)._8</a></li>
+								} else {
+									<li class=""><a href="#previewer_@(f.id.toString)_@i" data-toggle="tab">@pvs(i)._2</a></li>
+								}
 			  				}
 						</ul>
 						<div class="tab-content"  id="previewsContent_@(f.id.toString)">						    						    
