@@ -690,7 +690,7 @@ object FileUtils {
     }
   }
 
-  /** dataset processning */
+  /** dataset processing */
   private def processDataset(file: File, dataset: Option[Dataset], folder: Option[Folder], clowderurl: String, user: User, index: Boolean): Unit = {
     // add metadata to dataset
     dataset.foreach{ds =>
