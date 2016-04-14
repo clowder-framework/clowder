@@ -1929,31 +1929,26 @@ class Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  private def getDatasetInfoAsMap(dataset : Dataset) : Map[String,String] = {
-    var dataset_info = Map.empty[String,String]
-    dataset_info = dataset_info + ("name"->dataset.name,"author"->dataset.author.email.toString,"description"->dataset.description, "spaces"->dataset.spaces.toString,"lastModified"->dataset.lastModifiedDate.toString)
-    val asJson = dataset_info
-    return dataset_info
+  private def getDatasetInfoAsJson(dataset : Dataset) : JsValue = {
+    val datasetSpaces = for (space <- dataset.spaces) yield spaces.get(space).getOrElse("")
+    Json.obj("name"->dataset.name,"author"->dataset.author.email.toString,"description"->dataset.description, "spaces"->datasetSpaces.mkString(","),"lastModified"->dataset.lastModifiedDate.toString)
   }
 
   private def addDatasetInfoToZip(folderName: String, dataset: models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "_info.json"))
-    val infoListMap = Json.prettyPrint(Json.toJson(getDatasetInfoAsMap(dataset)))
+    val infoListMap = Json.prettyPrint(getDatasetInfoAsJson(dataset))
     Some(new ByteArrayInputStream(infoListMap.getBytes("UTF-8")))
   }
 
-  private def getFileInfoAsMap(file : models.File) : Map[String,String] = {
-    var fileInfo = Map.empty[String,String]
-    fileInfo = fileInfo + ("author" -> file.author.email.toString, "uploadDate" -> file.uploadDate.toString,"contentType"->file.contentType,"description"->file.description,"licenseText"->file.licenseData.m_licenseText,
-      "licencseType"->file.licenseData.m_licenseType,"rightsHolder"-> file.licenseData.m_rightsHolder)
-    return fileInfo
+  private def getFileInfoAsJson(file : models.File) : JsValue = {
+    val licenseInfo = Json.obj("licenseText"->file.licenseData.m_licenseText,"licenseType"->file.licenseData.m_licenseType,"rightsHolder"-> file.licenseData.m_rightsHolder)
+    Json.obj("author" -> file.author.email.toString, "uploadDate" -> file.uploadDate.toString,"contentType"->file.contentType,"description"->file.description,"license"->licenseInfo)
   }
 
   private def addFileInfoToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "/_info.json"))
-    val fileInfo = getFileInfoAsMap(file)
-    val fileInfoJson = Json.toJson(fileInfo)
-    val s : String = Json.prettyPrint(fileInfoJson)
+    val fileInfo = getFileInfoAsJson(file)
+    val s : String = Json.prettyPrint(fileInfo)
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
@@ -1989,7 +1984,7 @@ class Datasets @Inject()(
     var s : String = ""
     md5map.map{
       case (filePath,md) => {
-        var current = Hex.encodeHexString(md.digest()).toString()+" "+filePath+"\n"
+        var current = Hex.encodeHexString(md.digest())+" "+filePath+"\n"
         s = s + current
       }
     }
@@ -2001,7 +1996,7 @@ class Datasets @Inject()(
     var s : String = ""
     md5map.map{
       case (filePath,md) => {
-        var current = Hex.encodeHexString(md.digest()).toString()+" "+filePath+"\n"
+        var current = Hex.encodeHexString(md.digest())+" "+filePath+"\n"
         s = s + current
       }
     }
