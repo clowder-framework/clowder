@@ -337,7 +337,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
    */
   @ApiOperation(value = "Update the information associated with a space", notes = "",
     responseClass = "None", httpMethod = "POST")
-  def updateUsers(spaceId: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId)))(parse.json) { implicit request =>
+  def updateUsers(spaceId: UUID) = PermissionAction(Permission.EditUser, Some(ResourceRef(ResourceRef.space, spaceId)))(parse.json) { implicit request =>
     val user = request.user
     if (UUID.isValid(spaceId.stringify)) {
       val aResult: JsResult[Map[String, String]] = (request.body \ "rolesandusers").validate[Map[String, String]]
@@ -448,7 +448,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
 
   @ApiOperation(value = "Remove a user from a space", notes = "",
     responseClass = "None", httpMethod = "GET")
-  def removeUser(spaceId: UUID, removeUser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+  def removeUser(spaceId: UUID, removeUser:String) = PermissionAction(Permission.EditUser, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     val user = request.user
     if(spaces.getRoleForUserInSpace(spaceId, UUID(removeUser)) != None){
       spaces.removeUser(UUID(removeUser), spaceId)

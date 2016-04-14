@@ -264,7 +264,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   }
 
 
-  def inviteToSpace(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) {
+  def inviteToSpace(id: UUID) = PermissionAction(Permission.EditUser, Some(ResourceRef(ResourceRef.space, id))) {
     implicit request =>
       implicit val user = request.user
       spaces.get(id) match {
@@ -364,7 +364,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   /**
    * accept authorization request with specific Role. Send email to request user.
    */
-  def acceptRequest( id:UUID, requestuser:String, role:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+  def acceptRequest( id:UUID, requestuser:String, role:String) = PermissionAction(Permission.EditUser, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
@@ -391,7 +391,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
     }
   }
 
-  def rejectRequest( id:UUID, requestuser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+  def rejectRequest( id:UUID, requestuser:String) = PermissionAction(Permission.EditUser, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
