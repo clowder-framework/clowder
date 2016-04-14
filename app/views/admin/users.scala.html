@@ -25,13 +25,13 @@
                 <td><input type="checkbox" id="admin-@u.id" data-original=true checked disabled title="Specified in custom.conf"></td>
             } else {
                 @if(u.active) {
-                    @if(u.admin) {
+                    @if(u.serverAdmin) {
                         <td><input type="checkbox" id="admin-@u.id" data-original=true checked></td>
                     } else {
                         <td><input type="checkbox" id="admin-@u.id" data-original=false></td>
                     }
                 } else {
-                    @if(u.admin) {
+                    @if(u.serverAdmin) {
                         <td><input type="checkbox" id="admin-@u.id" data-original=true checked disabled></td>
                     } else {
                         <td><input type="checkbox" id="admin-@u.id" data-original=false disabled></td>
@@ -97,7 +97,7 @@
                             </tr>
                         </thead>
                         <tbody id="admin-users">
-                        @users.filter(u => u.active && u.admin).map(printRow)
+                        @users.filter(u => u.active && u.serverAdmin).map(printRow)
                         </tbody>
                     </table>
                 </div>
@@ -125,7 +125,7 @@
                             </tr>
                         </thead>
                         <tbody id="active-users">
-                        @users.filter(u => u.active && !u.admin).map(printRow)
+                        @users.filter(u => u.active && !u.serverAdmin).map(printRow)
                         </tbody>
                     </table>
                 </div>

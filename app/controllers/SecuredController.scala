@@ -2,11 +2,12 @@ package controllers
 
 import api.Permission.Permission
 import api.{Permission, UserRequest}
-import models.{User, RequestResource, ResourceRef}
+import models.{ClowderUser, RequestResource, ResourceRef, User}
 import play.api.mvc._
 import play.api.templates.Html
 import securesocial.core.{Authenticator, SecureSocial, UserService}
 import services._
+
 import scala.concurrent.Future
 
 /**
@@ -25,10 +26,9 @@ trait SecuredController extends Controller {
   def UserAction(needActive: Boolean) = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      if (needActive && !userRequest.user.exists(_.active)) {
-        Future.successful(Results.Redirect(routes.Error.notActivated()))
-      } else {
-        block(userRequest)
+      userRequest.user match {
+        case Some(u) if needActive && !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case _ => block(userRequest)
       }
     }
   }
@@ -39,12 +39,10 @@ trait SecuredController extends Controller {
   def PrivateServerAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      if (userRequest.user.exists(!_.active)) {
-        Future.successful(Results.Redirect(routes.Error.notActivated()))
-      } else if (Permission.checkPrivateServer(userRequest.user) || userRequest.superAdmin) {
-        block(userRequest)
-      } else {
-        Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
+      userRequest.user match {
+        case Some(u) if !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case Some(u) if u.superAdminMode || Permission.checkPrivateServer(userRequest.user) => block(userRequest)
+        case _ => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
           .flashing("error" -> "You must be logged in to access this page."))
       }
     }
@@ -54,12 +52,10 @@ trait SecuredController extends Controller {
   def AuthenticatedAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      if (userRequest.user.exists(!_.active)) {
-        Future.successful(Results.Redirect(routes.Error.notActivated()))
-      } else if (userRequest.user.isDefined || userRequest.superAdmin) {
-        block(userRequest)
-      } else {
-        Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
+      userRequest.user match {
+        case Some(u) if !u.active => Future.successful(Unauthorized("Account is not activated"))
+        case Some(u) => block(userRequest)
+        case _ => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
           .flashing("error" -> "You must be logged in to access this page."))
       }
     }
@@ -69,15 +65,12 @@ trait SecuredController extends Controller {
   def ServerAdminAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      if (userRequest.user.exists(!_.active)) {
-        Future.successful(Results.Redirect(routes.Error.notActivated()))
-      } else if (Permission.checkServerAdmin(userRequest.user) || userRequest.superAdmin) {
-        block(userRequest)
-      } else {
-        Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
+      userRequest.user match {
+        case Some(u) if !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case Some(u) if u.superAdminMode || Permission.checkServerAdmin(userRequest.user) => block(userRequest)
+        case _ => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
           .flashing("error" -> "You must be logged in as an administrator to access this page."))
       }
-
     }
   }
 
@@ -85,13 +78,10 @@ trait SecuredController extends Controller {
   def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None) = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      if (userRequest.user.exists(!_.active)) {
-        Future.successful(Results.Redirect(routes.Error.notActivated()))
-      } else {
-        val p = Permission.checkPermission(userRequest.user, permission, resourceRef)
-        if (p || userRequest.superAdmin) {
-          block(userRequest)
-        } else if (Permission.checkPrivateServer(userRequest.user)) {
+      userRequest.user match {
+        case Some(u) if !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case Some(u) if u.superAdminMode || Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
+        case Some(u) if Permission.checkPrivateServer(userRequest.user) => {
           val messageNoPermission = "You are not authorized to access "
 
           resourceRef match {
@@ -162,9 +152,8 @@ trait SecuredController extends Controller {
             }
           }
 
-        } else {
-          Future.successful(Results.Redirect(routes.Error.authenticationRequiredMessage("You must be logged in to perform that action.", userRequest.uri )))
         }
+        case _ => Future.successful(Results.Redirect(routes.Error.authenticationRequiredMessage("You must be logged in to perform that action.", userRequest.uri )))
       }
     }
   }
@@ -185,17 +174,23 @@ trait SecuredController extends Controller {
     // 1) secure social
     // 2) anonymous access
 
+    val superAdmin = request.cookies.get("superAdmin").exists(_.value.toBoolean)
+
     // 1) secure social, this allows the web app to make calls to the API and use the secure social user
     for (
       authenticator <- SecureSocial.authenticatorFromRequest(request);
       identity <- UserService.find(authenticator.identityId)
     ) yield {
       Authenticator.save(authenticator.touch)
-      val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
-      return UserRequest(user, superAdmin = false, request)
+      val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity) match {
+        case Some(u: ClowderUser) if Permission.checkServerAdmin(Some(u)) => Some(u.copy(superAdminMode=superAdmin))
+        case Some(u) => Some(u)
+        case None => None
+      }
+      return UserRequest(user, request)
     }
 
     // 2) anonymous access
-    UserRequest(None, superAdmin = false, request)
+    UserRequest(None, request)
   }
 }

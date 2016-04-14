@@ -254,8 +254,8 @@
             } <!-- end of    if(!outputFormats.isEmpty)-->              
           </div> <!-- end of class btn-group -->
                 @if(user.isDefined) {
-                <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->                
-                    @if(user.get.id.equals(file.author.id)){
+                <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+					@if(Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))) {
                         <span class="align-right">
 							@if(datasets.length > 0) {
 				            <button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(datasets.head.id))')" class="btn btn-link" title="Delete">

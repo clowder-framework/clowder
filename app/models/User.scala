@@ -14,7 +14,7 @@ import securesocial.core._
 trait User extends Identity {
   def id: UUID
   def active: Boolean
-  def admin: Boolean
+  def serverAdmin: Boolean
   def profile: Option[Profile]
   def friends: Option[List[String]]
   def followedEntities: List[TypedID]
@@ -22,6 +22,9 @@ trait User extends Identity {
   def viewed: Option[List[UUID]]
   def spaceandrole: List[UserSpaceAndRole]
   def repositoryPreferences: Map[String,Any]
+
+  // One can only be supeAdmin iff you are a serveradmin
+  def superAdminMode: Boolean
 
   /**
    * Get the avatar URL for this user's profile
@@ -101,7 +104,10 @@ case class ClowderUser(
   active: Boolean = false,
 
   // is the user an admin
-  admin: Boolean = false,
+  serverAdmin: Boolean = false,
+
+  // has the user escalated privileges, this is never saved to the database
+  @transient superAdminMode: Boolean = false,
 
   // profile
   profile: Option[Profile] = None,

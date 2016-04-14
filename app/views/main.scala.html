@@ -26,6 +26,7 @@
     <script src="@routes.Assets.at("javascripts/main.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/select2.min.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/clipboard.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
     <script type="text/javascript" src="@routes.Application.javascriptRoutes"></script>
 
     <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
@@ -37,7 +38,11 @@
 </head>
 <body>
     <div id="wrap">
-      <div class="navbar navbar-default navbar-fixed-top">
+      @if(user.exists(_.superAdminMode)) {
+          <div class="navbar navbar-inverse navbar-fixed-top">
+      } else {
+          <div class="navbar navbar-default navbar-fixed-top">
+      }
         <div class="container">
             <div class="navbar-header">
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
@@ -142,6 +147,11 @@
                                             }
                                             case None => {}
                                         }
+                                        @if(user.exists(_.superAdminMode)) {
+                                            <li><a href="javascript:toggelServerAdmin();">Drop SuperAdmin</a></li>
+                                        } else {
+                                            <li><a href="javascript:toggelServerAdmin();">Enable SuperAdmin</a></li>
+                                        }
 
                                     </ul>
                                 </li>
@@ -202,5 +212,11 @@
     </script>
 }
 
+<script>
+    function toggelServerAdmin() {
+        $.cookie("superAdmin", $.cookie("superAdmin") != "true", { path: '/' });
+        location.reload();
+    }
+</script>
 </body>
 </html>

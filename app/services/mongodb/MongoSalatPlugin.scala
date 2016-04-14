@@ -318,6 +318,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("add-collection-root-map", addRootMapToCollections)
 
     updateMongo("update-collection-counter-in-space", fixCollectionCounterInSpaces)
+
+    // rename admin to serverAdmin to make clear what type of admin they are
+    updateMongo("rename-admin-serverAdmin", renameAdminServerAdmin)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1010,5 +1013,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       }
 
     }
+  }
+
+  private def renameAdminServerAdmin() {
+    val q = MongoDBObject()
+    val o = MongoDBObject("$rename" -> MongoDBObject("admin" -> "serverAdmin"))
+    collection("social.users").update(q, o, multi=true, concern=WriteConcern.Safe)
   }
 }
