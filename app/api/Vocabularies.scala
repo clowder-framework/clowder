@@ -81,7 +81,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
     notes = "This will check for Permission.ViewVocabulary",
     responseClass = "None", httpMethod = "GET")
   def list() = PrivateServerAction { implicit request =>
-    val vocabs = vocabularyService.list()
+    val vocabs = vocabularyService.listAll()
     Ok(toJson(vocabs))
   }
 

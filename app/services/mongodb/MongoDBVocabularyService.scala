@@ -30,7 +30,7 @@ class MongoDBVocabularyService @Inject() (userService: UserService) extends Voca
     Vocabulary.insert(vocabulary).map(_.toString)
   }
 
-  def list() : List[Vocabulary] = {
+  def listAll() : List[Vocabulary] = {
     Vocabulary.findAll().toList
   }
 
@@ -76,6 +76,10 @@ class MongoDBVocabularyService @Inject() (userService: UserService) extends Voca
 
   def findByDescription(desc : List[String]) : List[Vocabulary] = {
     Vocabulary.findAll.toList.filter((v: Vocabulary )=> (!v.description.intersect(desc).isEmpty))
+  }
+
+  private def lista() : List[Vocabulary] = {
+    var vocabularies = List.empty[Vocabulary]
   }
 
 }

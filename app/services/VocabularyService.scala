@@ -26,7 +26,7 @@ trait VocabularyService {
 
   def delete(id: UUID) : Try[Unit]
 
-  def list() : List[Vocabulary]
+  def listAll() : List[Vocabulary]
 
   def addToSpace(vocabId: UUID, spaceId : UUID) : Try[Unit]
 
