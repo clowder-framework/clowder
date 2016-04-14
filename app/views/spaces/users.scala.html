@@ -13,7 +13,7 @@
                 </div>
             </div>
 
-            @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
+            @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
 
                     <div class="col-md-12 box-white-space">
                         <div class="tabbable" id="manage-access-tabbable"> <!-- Only required for left/right tabs -->
