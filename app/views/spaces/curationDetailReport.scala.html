@@ -50,10 +50,24 @@
                 <ul class="indent_20 list-unstyled">
                     @for(rule <- mmResponse.per_rule_score) {
                         <li>@rule.rule_name </li>
-                        @if(rule.Score == 0) {
-                            <li><span class="red">@rule.Message</span> <a href="@routes.CurationObjects.getCurationObject(curationObject.id)"> Edit Metadata</a> <br/> </li>
+                        @if(rule.Score < 0) {
+                            <li><span class="red">@rule.Message</span>
+                                @if(rule.rule_name.contains("Metadata")) {
+                                    <a href="@routes.CurationObjects.getCurationObject(curationObject.id)">
+                                        Edit Metadata</a> <br/>
+                                } else {
+                                    @if(rule.rule_name.contains("Organization") || rule.rule_name.contains("ORCID")) {
+                                        <a href="@routes.Profile.viewProfileUUID(curationObject.author.id)">
+                                            Edit Porfile</a> <br/>
+                                    }
+                                }
+                            </li>
                         } else {
-                            <li><span class="green">All Requirements are satisfied.</span></li>
+                            @if(rule.Score == 0) {
+                                <li><span class="yellow">This info is not required </span></li>
+                            } else {
+                                <li><span class="green">All Requirements are satisfied.</span></li>
+                            }
                         }
                     }
                 </ul>
