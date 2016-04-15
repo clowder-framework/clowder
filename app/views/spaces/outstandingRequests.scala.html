@@ -6,8 +6,6 @@
 
 <div class="row">
 
-        @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
-
             @if(space.requests.isEmpty) {
                 <ul class="list-unstyled"><li>No outstanding requests</li></ul>
             } else {
@@ -42,8 +40,6 @@
 
                 </div>
                }
-
-        }
 
 </div>
 
