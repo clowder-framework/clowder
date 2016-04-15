@@ -172,6 +172,11 @@ class MongoDBEventService extends EventService {
     }
   }
 
+  def updateObjectName(id:UUID, name:String) = {
+    Event.dao.update(MongoDBObject("object_id" -> new ObjectId(id.stringify)), $set("object_name" -> name), multi = true)
+    Event.dao.update(MongoDBObject("source_id" -> new ObjectId(id.stringify)), $set("source_name" -> name), multi = true)
+  }
+
 }
 
 object Event extends ModelCompanion[Event, ObjectId] {
