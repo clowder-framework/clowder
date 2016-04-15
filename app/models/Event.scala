@@ -84,31 +84,35 @@ object Events {
   * Gets the events for each viewer and sends out emails
   * TODO : move to event class most likely MMDB-1842
   */
-  def sendEmailUser(userList: List[TimerJob]) = {
-  	for (job <- userList){
-  		job.parameters match {
-  			case Some(id) => {
-  				users.findById(id) match {
-  					case Some(user) => {
-  						user.email match {
-  							case Some(email) => {	
-  								job.lastJobTime match {
-  									case Some(date) => {
-                      sendDigestEmail(email,events.getEventsByTime(user.followedEntities, date, None))
-                    }
-                  }
-                }
-                case None => {
-                  Logger.warn("No email specified for user " + user.fullName)
-                }
-              }
-            }
-          }
-        }
-        scheduler.updateLastRun("Digest[" + id + "]")
-      }
-    }
-  }
+ def sendEmailUser(userList: List[TimerJob]) = {
+   for (job <- userList){
+     job.parameters match {
+       case Some(id) => {
+         users.findById(id) match {
+           case Some(user) => {
+             user.email match {
+               case Some(email) => {
+                 job.lastJobTime match {
+                   case Some(date) => {
+                     events.getEventsByTime(user.followedEntities, date, None) match{
+                       case Nil => Logger.debug("No news specified for user " + user.fullName + " at " + date)
+                       case alist => sendDigestEmail(email, alist)
+                     }
+                   }
+                   case None =>
+                 }
+               }
+               case None => {
+                 Logger.warn("No email specified for user " + user.fullName)
+               }
+             }
+           }
+         }
+       }
+         scheduler.updateLastRun("Digest[" + id + "]")
+     }
+   }
+ }
 
     /**
     * Sends and creates a Digest Email

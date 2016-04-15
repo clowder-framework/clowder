@@ -159,9 +159,17 @@ class MongoDBEventService extends EventService {
      }
    }
 
-  def updateObjectName(id:UUID, name:String) = {
-    Event.dao.update(MongoDBObject("object_id" -> new ObjectId(id.stringify)), $set("object_name" -> name), multi = true)
-    Event.dao.update(MongoDBObject("source_id" -> new ObjectId(id.stringify)), $set("source_name" -> name), multi = true)
+  def getEventsByUser( user: User, limit: Option[Integer]): List[Event] ={
+    val eventList = (Event.find(MongoDBObject(
+      "user._id"-> new ObjectId(user.id.toString()))).toList  :::
+      Event.find(MongoDBObject(
+      "object_id"-> new ObjectId(user.id.toString()))).toList)
+        .sorted(Ordering.by((_: Event).created).reverse)
+
+    limit match {
+      case Some(x) => eventList.take(x)
+      case None => eventList
+    }
   }
 
 }

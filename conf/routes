@@ -274,6 +274,7 @@ POST           /api/admin/users                                                 
 POST           /api/sensors/config                                                      @api.Admin.sensorsConfig
 DELETE         /api/delete-data                                                         @api.Admin.deleteAllData(resetAll: Boolean ?= false)
 POST           /api/changeAppearance                                                    @api.Admin.submitAppearance
+POST           /api/reindex                                                             @api.Admin.reindex
 
 #----------------------------------------------------------------------
 # JSON-LD METADATA
@@ -460,7 +461,8 @@ PUT            /api/collections/:coll_id/title                                  
 PUT            /api/collections/:coll_id/description                                    @api.Collections.updateCollectionDescription(coll_id: UUID)
 
 POST           /api/collections/:coll_id/removeSubCollection/:sub_coll_id               @api.Collections.removeSubCollection(coll_id: UUID,sub_coll_id:UUID, ignoreNotFound?="True")
-POST           /api/collections/:coll_id/rootFlag/:isRoot                               @api.Collections.setRootFlag(coll_id: UUID, isRoot: Boolean )
+POST           /api/collections/:coll_id/rootFlag/:spaceId                              @api.Collections.setRootSpace(coll_id: UUID, spaceId: UUID)
+POST           /api/collections/:coll_id/unsetRootFlag/:spaceId                         @api.Collections.unsetRootSpace(coll_id: UUID, spaceId: UUID)
 POST           /api/collections/newCollectionWithParent                                 @api.Collections.createCollectionWithParent
 GET            /api/collections/:coll_id/getChildCollectionIds                          @api.Collections.getChildCollectionIds(coll_id: UUID)
 GET            /api/collections/:coll_id/getChildCollections                            @api.Collections.getChildCollections(coll_id: UUID)
@@ -530,6 +532,7 @@ GET            /api/previews/:id/metadata                                       
 POST           /api/previews/:id/annotationAdd                                          @api.Previews.attachAnnotation(id: UUID)
 POST           /api/previews/:id/annotationEdit                                         @api.Previews.editAnnotation(id: UUID)
 GET            /api/previews/:id/annotationsList                                        @api.Previews.listAnnotations(id: UUID)
+POST           /api/previews/:id/title                                                  @api.Previews.setTitle(id: UUID)
 GET            /api/previews                                                            @api.Previews.list
 GET            /api/previews/:id                                                        @api.Previews.download(id: UUID)
 DELETE         /api/previews/:id                                                        @api.Previews.removePreview(id: UUID)
@@ -684,11 +687,10 @@ GET            /spaces/curations/:id/sendToRepository                           
 GET            /spaces/curations/:id/matchmaker                                         @controllers.CurationObjects.findMatchingRepositories(id: UUID)
 POST           /spaces/curations/:id/matchmaker                                         @api.CurationObjects.findMatchmakingRepositories(id: UUID)
 GET            /spaces/curations/:id/curationFile                                       @api.CurationObjects.getCurationFiles(id: UUID)
-POST           /spaces/curations/:id/status                                             @controllers.CurationObjects.savePublishedObject(id: UUID)
+POST           /spaces/curations/:id/status                                             @api.CurationObjects.savePublishedObject(id: UUID)
 GET            /spaces/curations/:id/getStatusFromRepository                            @controllers.CurationObjects.getStatusFromRepository(id: UUID)
 DELETE         /spaces/curations/:id/files/:curationFileId                              @api.CurationObjects.deleteCurationFile(id:UUID, parentId: UUID, curationFileId: UUID)
 DELETE         /spaces/curations/:id/folders/:curationFolderId                          @api.CurationObjects.deleteCurationFolder(id:UUID, parentId: UUID, curationFolderId: UUID)
 GET            /spaces/curations/:id/updatedFilesAndFolders                             @controllers.CurationObjects.getUpdatedFilesAndFolders(id: UUID, curationFolderId: String, limit: Int, pageIndex:Int)
-
 
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()

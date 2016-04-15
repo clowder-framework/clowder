@@ -35,8 +35,6 @@
     case "edit" => "edited their comment to "
     case "download" => "downloaded "
     case "postrequest" => "requested access to"
-    case "acceptrequest" => "accepted your request to"
-    case "rejectrequest" => "rejected your request to"
     case _ => event_type_prefix
   }
 }
@@ -57,6 +55,9 @@
   case "update_dataset_information" => {
     updated information for @linkForObject("dataset", event.object_id, event.object_name)
   }
+  case "update_file_information" => {
+    updated information for @linkForObject("file", event.object_id, event.object_name)
+  }
   case "update_collection_information" => {
     updated information for @linkForObject("collection", event.object_id, event.object_name)
   }
@@ -67,10 +68,10 @@
     set note for @linkForObject("file", event.object_id, event.object_name)
   }
   case "add_user_to_space" => {
-    has added you as a user to @linkForObject("space", event.object_id, event.object_name)
+    has added @(event.targetuser.getOrElse(User.anonymous.getMiniUser).fullName) as a user to @linkForObject("space", event.object_id, event.object_name)
   }
   case "remove_user_from_space" => {
-    has removed you as a user from @linkForObject("space", event.object_id, event.object_name)
+    has removed @(event.targetuser.getOrElse(User.anonymous.getMiniUser).fullName) as a user from @linkForObject("space", event.object_id, event.object_name)
   }
   case "added_folder" => {
     has created a folder in @linkForObject("dataset", event.object_id, event.object_name)
@@ -93,6 +94,14 @@
       event.object_id,
       event.object_name
     )
+  }
+  case "acceptrequest_space" => {
+    accepted @(event.targetuser.getOrElse(User.anonymous.getMiniUser).fullName)'s request to
+    @linkForObject("space", event.object_id, event.object_name)
+  }
+  case "rejectrequest_space" => {
+    rejected  @(event.targetuser.getOrElse(User.anonymous.getMiniUser).fullName)'s  request to
+    @linkForObject("space", event.object_id, event.object_name)
   }
   case _ => {
     @defining(event.event_type.split("_")) { event_type_split =>

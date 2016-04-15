@@ -1041,6 +1041,13 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
+  def index(id: Option[UUID]) = {
+    id match {
+      case Some(datasetId) => index(datasetId)
+      case None => Dataset.dao.find(MongoDBObject()).foreach(d => index(d.id))
+    }
+  }
+
   def index(id: UUID) {
     Dataset.findOneById(new ObjectId(id.stringify)) match {
       case Some(dataset) => {
@@ -1087,6 +1094,7 @@ class MongoDBDatasetService @Inject() (
               dsCollsId = dsCollsId + collection.id.stringify + " %%% "
               dsCollsName = dsCollsName + collection.name + " %%% "
             }
+            case None =>
           }
         })
 

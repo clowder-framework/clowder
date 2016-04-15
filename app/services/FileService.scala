@@ -86,6 +86,8 @@ trait FileService {
    * First file in chronological order.
    */
   def first(): Option[File]
+
+  def index(id: Option[UUID])
   
   def index(id: UUID)
 

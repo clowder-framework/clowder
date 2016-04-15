@@ -9,7 +9,7 @@
         <div class="panel-body">
             @if(!collection.thumbnail_id.isEmpty){
                 <a href="@(routes.Collections.collection(collection.id))">
-                    <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)">
+                    <img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)">
                 </a>
             }
             <div class="caption break-word">
@@ -20,8 +20,10 @@
             <!-- Collection Info -->
         <ul class="list-group">
             <li class="list-group-item">
-                <span class="glyphicon glyphicon glyphicon-file" title="@collection.datasetCount datasets"></span> @collection.datasetCount
-                <span class="glyphicon glyphicon glyphicon-th-large" title="@collection.childCollectionsCount child collections"></span> @collection.childCollectionsCount
+                <span class="glyphicon glyphicon-file" title="@collection.datasetCount datasets"></span> @collection.datasetCount
+                <span class="glyphicon glyphicon-th-large" title="@collection.childCollectionsCount child collections"></span> @collection.childCollectionsCount
+
+
                 @if(user.isDefined) {
                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                     @if( user.get.id.equals(collection.author.id) || Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){

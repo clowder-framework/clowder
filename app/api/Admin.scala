@@ -2,22 +2,29 @@ package api
 
 import javax.inject.Inject
 
+import com.wordnik.swagger.annotations.ApiOperation
 import models.{ClowderUser, UUID}
 import org.apache.commons.lang3.StringEscapeUtils
+import play.api.libs.concurrent.Akka
 import play.api.mvc.Controller
 import play.api.Play.current
 import play.api.libs.json.Json.toJson
 import play.api.templates.Html
-import services.{UserService, ElasticsearchPlugin, AppConfiguration}
+import services._
 import services.mongodb.MongoSalatPlugin
 import play.api.Logger
 import util.Mail
+import scala.concurrent.duration._
+import play.api.libs.concurrent.Execution.Implicits._
+
 
 /**
  * Admin endpoints for JSON API.
- *
  */
-class Admin @Inject()(userService: UserService) extends Controller with ApiController {
+class Admin @Inject()(userService: UserService,
+                      datasets:DatasetService,
+                      collections:CollectionService,
+                      files:FileService) extends Controller with ApiController {
 
   /**
    * DANGER: deletes all data, keep users.
@@ -136,5 +143,19 @@ class Admin @Inject()(userService: UserService) extends Controller with ApiContr
       )
     )
     Ok(toJson(Map("status" -> "success")))
+  }
+
+
+  @ApiOperation(value = "reindex all resources in elasticsearch",
+    notes = "",
+    responseClass = "None", httpMethod = "POST")
+  def reindex = ServerAdminAction { implicit request =>
+    Akka.system.scheduler.scheduleOnce(1 seconds) {
+      current.plugin[ElasticsearchPlugin].map(_.deleteAll)
+      collections.index(None)
+      datasets.index(None)
+      files.index(None)
+    }
+    Ok(toJson(Map("status" -> "Success")))
   }
 }

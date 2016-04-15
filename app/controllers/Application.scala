@@ -51,6 +51,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         Redirect(routes.Error.notActivated())
       }
       case Some(clowderUser) if clowderUser.active => {
+        newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20)))
+          .sorted(Ordering.by((_: Event).created).reverse).take(20)
         val datasetsUser = datasets.listUser(4, Some(clowderUser), request.superAdmin, clowderUser)
         val datasetcommentMap = datasetsUser.map { dataset =>
           var allComments = comments.findCommentsByDatasetId(dataset.id)
@@ -63,7 +65,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
           dataset.id -> allComments.size
         }.toMap
         val collectionList = collections.listUser(4, Some(clowderUser), request.superAdmin, clowderUser)
-        var collectionsWithThumbnails = collectionList.map {c =>
+        val collectionsWithThumbnails = collectionList.map {c =>
           if (c.thumbnail_id.isDefined) {
             c
           } else {
@@ -219,6 +221,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         routes.javascript.Collections.getUpdatedChildCollections,
         routes.javascript.Profile.viewProfileUUID,
         routes.javascript.Assets.at,
+        api.routes.javascript.Admin.reindex,
         api.routes.javascript.Comments.comment,
         api.routes.javascript.Comments.removeComment,
         api.routes.javascript.Comments.editComment,
@@ -318,18 +321,19 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Users.getUser,
         api.routes.javascript.Users.follow,
         api.routes.javascript.Users.unfollow,
+        api.routes.javascript.Users.updateUserField,
         api.routes.javascript.Relations.findTargets,
         api.routes.javascript.Relations.add,
         api.routes.javascript.Relations.delete,
         api.routes.javascript.Projects.addproject,
         api.routes.javascript.Institutions.addinstitution,
-        api.routes.javascript.Users.getUser,
         api.routes.javascript.CurationObjects.getCurationObjectOre,
         api.routes.javascript.CurationObjects.findMatchmakingRepositories,
         api.routes.javascript.CurationObjects.retractCurationObject,
         api.routes.javascript.CurationObjects.getCurationFiles,
         api.routes.javascript.CurationObjects.deleteCurationFile,
         api.routes.javascript.CurationObjects.deleteCurationFolder,
+        api.routes.javascript.CurationObjects.savePublishedObject,
         api.routes.javascript.Metadata.addUserMetadata,
         api.routes.javascript.Metadata.searchByKeyValue,
         api.routes.javascript.Metadata.getDefinitions,
@@ -368,7 +372,6 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.CurationObjects.sendToRepository,
         controllers.routes.javascript.CurationObjects.compareToRepository,
         controllers.routes.javascript.CurationObjects.deleteCuration,
-        controllers.routes.javascript.CurationObjects.savePublishedObject,
         controllers.routes.javascript.CurationObjects.getStatusFromRepository
       )
     ).as(JSON) 

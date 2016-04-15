@@ -77,12 +77,10 @@ trait EventService {
 	 */
 	def getRequestEvents( targetuser: Option[User], limit: Option[Integer]): List[Event]
 
-
 	/**
-		* Update the object name
+		* Get the events by creator
 		*/
-	def updateObjectName(id:UUID, name:String)
-
+	def getEventsByUser( user: User, limit: Option[Integer]): List[Event]
 }
 
 

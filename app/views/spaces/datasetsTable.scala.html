@@ -24,7 +24,13 @@
             <td>@dataset.created.format("MMM dd, yyyy")</td>
             <td style="white-space:pre-line;">@dataset.description</td>
             <td>
-                @if(!dataset.thumbnail_id.isEmpty){<div class="fit-in-space"><img class="fit-in-space" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(dataset.name)"></div>}
+                @if(!dataset.thumbnail_id.isEmpty){
+                    <div class="fit-in-space">
+                        <a href="@(routes.Datasets.dataset(dataset.id))">
+                            <img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(dataset.name)">
+                        </a>
+                    </div>
+                }
                 @if(dataset.thumbnail_id.isEmpty){No thumbnail available}
             </td>
         </tr>
