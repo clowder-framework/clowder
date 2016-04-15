@@ -35,15 +35,13 @@
                     </ul>
 
                     <ul>
-                        @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
-                            <li style="list-style: none">
-                                <select class="chosen-select" multiple id='@currRole'>
-                                    @for(extUser <- externalUsers) {
-                                        <option value="@extUser.id">@extUser.fullName (@extUser.email)</option>
-                                    }
-                                </select>
-                            </li>
-                        }
+                        <li style="list-style: none">
+                            <select class="chosen-select" multiple id='@currRole'>
+                            @for(extUser <- externalUsers) {
+                                <option value="@extUser.id">@extUser.fullName (@extUser.email)</option>
+                            }
+                            </select>
+                        </li>
                     </ul>
                     <br />
 
