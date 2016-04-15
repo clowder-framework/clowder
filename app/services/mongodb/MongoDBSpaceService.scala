@@ -439,9 +439,11 @@ class MongoDBSpaceService @Inject() (
    * Implementation of the SpaceService trait.
    *
    */
-  def addUser(user: UUID, role: Role, space: UUID): Unit = {
-    users.addUserToSpace(user, role, space)
-    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("userCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
+  def addUser(userId: UUID, role: Role, spaceId: UUID): Unit = {
+    users.addUserToSpace(userId, role, spaceId)
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
+      $pull("requests" -> MongoDBObject( "_id" -> new ObjectId(userId.stringify))), false, false, WriteConcern.Safe)
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)), $inc("userCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
   }
 
   /**
