@@ -233,9 +233,9 @@ class CurationObjects @Inject()(
   def getCurationObject(curationId: UUID, limit: Int) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {    implicit request =>
     implicit val user = request.user
     curations.get(curationId) match {
-      case Some(c) => {
+      case Some(cOld) => {
         // metadata of curation files are getting from getUpdatedFilesAndFolders
-
+        val c = cOld.copy( datasets = datasets.get(cOld.datasets(0).id).toList)
         val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
         val fileByDataset = curations.getCurationFiles(curations.getAllCurationFileIds(c.id))
@@ -304,7 +304,8 @@ class CurationObjects @Inject()(
     implicit request =>
       implicit val user = request.user
           curations.get(curationId) match {
-            case Some(c) => {
+            case Some(cOld) => {
+              val c = cOld.copy( datasets = datasets.get(cOld.datasets(0).id).toList)
               val propertiesMap: Map[String, List[String]] = Map("Purpose" -> List("Testing-Only"))
               val mmResp = callMatchmaker(c, user)(request)
               user match {
@@ -479,7 +480,8 @@ class CurationObjects @Inject()(
       user match {
         case Some(usr) => {
           curations.get(curationId) match {
-            case Some(c) => {
+            case Some(cOld) => {
+              val c = cOld.copy( datasets = datasets.get(cOld.datasets(0).id).toList)
               val propertiesMap: Map[String, List[String]] = Map("Purpose" -> List("Testing-Only"))
               val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
               val repository = request.body.asFormUrlEncoded.getOrElse("repository", null)

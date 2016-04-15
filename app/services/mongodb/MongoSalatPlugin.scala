@@ -329,6 +329,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //Change creator in comments from Identity to MiniUser
     updateMongo("update-author-comments", updateCreatorInComments)
+
+    //Update all object_name & source_name in events
+    updateMongo("update-events-name", updateEventObjectName)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1068,5 +1071,46 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       }
     }
   }
+
+  private def updateEventObjectName(): Unit = {
+    collection("datasets").foreach { ds =>
+      (ds.getAs[ObjectId]("_id"), ds.getAs[String]("name")) match {
+        case (Some(id), Some(name)) => {
+          collection("events").update(MongoDBObject("object_id" -> new ObjectId(id.toString)), $set("object_name" -> name), multi = true)
+          collection("events").update(MongoDBObject("source_id" -> new ObjectId(id.toString)), $set("source_name" -> name), multi = true)
+        }
+        case _ => {}
+      }
+    }
+    collection("collection").foreach { c =>
+      (c.getAs[ObjectId]("_id"), c.getAs[String]("name")) match {
+        case (Some(id), Some(name)) => {
+          collection("events").update(MongoDBObject("object_id" -> new ObjectId(id.toString)), $set("object_name" -> name), multi = true)
+          collection("events").update(MongoDBObject("source_id" -> new ObjectId(id.toString)), $set("source_name" -> name), multi = true)
+        }
+        case _ => {}
+      }
+    }
+    collection("spaces.projects").foreach { s =>
+      (s.getAs[ObjectId]("_id"), s.getAs[String]("name")) match {
+        case (Some(id), Some(name)) => {
+          collection("events").update(MongoDBObject("object_id" -> new ObjectId(id.toString)), $set("object_name" -> name), multi = true)
+          collection("events").update(MongoDBObject("source_id" -> new ObjectId(id.toString)), $set("source_name" -> name), multi = true)
+        }
+        case _ => {}
+      }
+    }
+    collection("uploads.files").foreach { f =>
+      (f.getAs[ObjectId]("_id"), f.getAs[String]("name")) match {
+        case (Some(id), Some(name)) => {
+          collection("events").update(MongoDBObject("object_id" -> new ObjectId(id.toString)), $set("object_name" -> name), multi = true)
+          collection("events").update(MongoDBObject("source_id" -> new ObjectId(id.toString)), $set("source_name" -> name), multi = true)
+        }
+        case _ => {}
+      }
+    }
+
+  }
+
 
 }
