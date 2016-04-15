@@ -333,6 +333,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.CurationObjects.getCurationFiles,
         api.routes.javascript.CurationObjects.deleteCurationFile,
         api.routes.javascript.CurationObjects.deleteCurationFolder,
+        api.routes.javascript.CurationObjects.savePublishedObject,
         api.routes.javascript.Metadata.addUserMetadata,
         api.routes.javascript.Metadata.searchByKeyValue,
         api.routes.javascript.Metadata.getDefinitions,
@@ -371,7 +372,6 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.CurationObjects.sendToRepository,
         controllers.routes.javascript.CurationObjects.compareToRepository,
         controllers.routes.javascript.CurationObjects.deleteCuration,
-        controllers.routes.javascript.CurationObjects.savePublishedObject,
         controllers.routes.javascript.CurationObjects.getStatusFromRepository
       )
     ).as(JSON) 
