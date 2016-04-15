@@ -51,7 +51,8 @@ class MongoDBFileService @Inject() (
   storage: ByteStorageService,
   userService: UserService,
   folders: FolderService,
-  metadatas:MetadataService) extends FileService {
+  metadatas: MetadataService,
+  events: EventService) extends FileService {
 
   object MustBreak extends Exception {}
 
@@ -630,6 +631,7 @@ class MongoDBFileService @Inject() (
   }
 
   def renameFile(id: UUID, newName: String){
+    events.updateObjectName(id, newName)
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("filename" -> newName), false, false,
       WriteConcern.Safe)
   }
