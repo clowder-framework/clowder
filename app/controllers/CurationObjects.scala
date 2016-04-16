@@ -229,6 +229,7 @@ class CurationObjects @Inject()(
     implicit val user = request.user
     curations.get(curationId) match {
       case Some(cOld) => {
+        // this update is not written into MongoDB, only for page view purpose
         val c = cOld.copy( datasets = datasets.get(cOld.datasets(0).id).toList)
         // metadata of curation files are getting from getUpdatedFilesAndFolders
         val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
@@ -254,7 +255,11 @@ class CurationObjects @Inject()(
           case "None" =>{
             val foldersList = c.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => curations.getCurationFolder(f)).flatten
             val limitFileIds : List[UUID] = c.files.reverse.slice(limit * filepageUpdate - c.folders.length, limit * (filepageUpdate+1) - c.folders.length)
-            val limitFileList : List[CurationFile]=  curations.getCurationFiles( limitFileIds)
+            val limitFileList : List[CurationFile]=  curations.getCurationFiles( limitFileIds).map(cf =>
+              files.get(cf.fileId) match {
+                case Some(currentFile) => cf.copy( filename =currentFile.filename)
+                case None => cf
+              })
             val mCurationFile = c.files.map(f => metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f))).flatten
 
             val folderHierarchy = new ListBuffer[CurationFolder]()
@@ -267,7 +272,11 @@ class CurationObjects @Inject()(
               case Some (cf) => {
                 val foldersList = cf.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => curations.getCurationFolder(f)).flatten
                 val limitFileIds : List[UUID] = cf.files.reverse.slice(limit * filepageUpdate - cf.folders.length, limit * (filepageUpdate+1) - cf.folders.length)
-                val limitFileList : List[CurationFile]= curations.getCurationFiles(limitFileIds)
+                val limitFileList : List[CurationFile]= curations.getCurationFiles(limitFileIds).map(cf =>
+                  files.get(cf.fileId) match {
+                    case Some(currentFile) => cf.copy( filename =currentFile.filename)
+                    case None => cf
+                  })
                 val mCurationFile = limitFileIds.map(f => metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f))).flatten
                 var folderHierarchy = new ListBuffer[CurationFolder]()
                 folderHierarchy += cf
