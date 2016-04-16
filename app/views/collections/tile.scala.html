@@ -1,4 +1,4 @@
-@(collection: models.Collection, redirect: Call, classes: String, showFollow: Boolean)(implicit user: Option[models.User])
+@(collection: models.Collection, redirect: Call, space: Option[String], classes: String, showFollow: Boolean)(implicit user: Option[models.User])
 @import _root_.util.Formatters.ellipsize
 @import api.Permission
 <div class="post-box @classes" id="@collection.id-tile">
@@ -22,16 +22,26 @@
             <li class="list-group-item">
                 <span class="glyphicon glyphicon-file" title="@collection.datasetCount datasets"></span> @collection.datasetCount
                 <span class="glyphicon glyphicon-th-large" title="@collection.childCollectionsCount child collections"></span> @collection.childCollectionsCount
-
-
                 @if(user.isDefined) {
-                        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                    @if( user.get.id.equals(collection.author.id) || Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
-                        <button onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name.replace("'","&#39;"))', false, '@redirect')" class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
-                            <span class="glyphicon glyphicon-trash"></span></button>
+                    @if(space.isDefined) {
+                        @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.collection, collection.id))) {
+                            <button onclick="confirmRemoveResourceFromResource('space','@(UUID(space.getOrElse("")))','collection','@(collection.id)','@(collection.name.replace("'","&#39;"))','@redirect.url')" class="btn btn-link" title="Remove the collection from the space">
+                                <span class="glyphicon glyphicon-remove"></span></button>
+                        } else {
+                            <div class="inline" title="No permission to remove from the space.">
+                                <button disabled class="btn btn-link"><span class="glyphicon glyphicon-remove"></span></button>
+                            </div>
+                        }
                     } else {
-                        <button disabled class="btn btn-link" style="text-align:right" title="Detach Delete the Collection">
-                            <span class="glyphicon glyphicon-trash"></span></button>
+                        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                        @if( user.get.id.equals(collection.author.id) || Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
+                            <button onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name.replace("'","&#39;"))',false,'@redirect.url')" class="btn btn-link" title="Delete the collection">
+                                <span class="glyphicon glyphicon-trash"></span></button>
+                        } else {
+                            <div class="inline" title="No permission to delete collection.">
+                                <button disabled class="btn btn-link"><span class="glyphicon glyphicon-trash"></span></button>
+                            </div>
+                        }
                     }
                 }
             </li>
@@ -40,22 +50,13 @@
             <ul class="list-group center-margin">
             @user match {
                 case Some(viewer) => {
-                    <a
-                    id="followButton"
-                    type="button"
-                    class="btn-link"
-                    data-toggle="button"
-                    autocomplete="off"
-                    objectType="collection"
-                    objectId="@collection.id.stringify"
-                    >
+                    <a id="followButton" type="button" class="btn-link" data-toggle="button" autocomplete="off" objectType="collection" objectId="@collection.id.stringify">
                     @if(viewer.followedEntities.filter(x => (x.id == collection.id)).nonEmpty) {
                         <span class='glyphicon glyphicon-star-empty'></span>Unfollow
                     } else {
                         <span class='glyphicon glyphicon-star'></span> Follow
                     }
                     </a>
-
                 }
             }
             </ul>

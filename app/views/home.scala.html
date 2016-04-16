@@ -79,7 +79,7 @@
             </div>
             <div class="row" id ="masonry-collections">
                     @collectionsList.map { collection =>
-                       @collections.tile(collection, routes.Application.index(), "col-lg-6 col-md-6 col-sm-6", false)
+                        @collections.tile(collection, routes.Application.index(), None, "col-lg-6 col-md-6 col-sm-6", false)
                     }
             </div>
             @if(collectionsList.size < 1) {

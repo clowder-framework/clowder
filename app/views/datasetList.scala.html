@@ -103,7 +103,7 @@
 <div class="row hidden" id="list-view">
 	<div class="col-md-12">
         @datasetsList.map { dataset =>
-          @datasets.listitem(dataset,comments, routes.Datasets.list(when, date, limit, space, "", owner))
+            @datasets.listitem(dataset,None,comments, routes.Datasets.list(when, date, limit, space, "", owner))
         }
 	</div>
 </div>

@@ -66,7 +66,7 @@ function addDatasetToCollection(id) {
         } else {
             txt = txt + o.datasetCount +' datasets';
         }
-        txt = txt + ' | <a href="#" class="btn btn-link btn-xs" onclick="removeDataset(\''+selectedId+'\', \''+id+'\', event)" title="Remove from space">' +
+        txt = txt + ' | <a href="#" class="btn btn-link btn-xs" onclick="confirmRemoveResourceFromResourceEvent(\'collection\',\''+selectedId+'\',\'dataset\',\''+id+'\', event)" title="Remove the dataset from the collection">' +
             '<span class="glyphicon glyphicon-remove"></span> Remove</a></div></div></div>';
         $("#collectionsList").append(txt);
         $("#collectionAddSelect").select2("val", "");

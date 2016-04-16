@@ -93,8 +93,8 @@
     <div class="col-md-12">
         <div id="masonry">
             @collectionsList.map { collection =>
-                @collections.tile(collection, routes.Collections.list(when, date, limit, space, "", owner),  "col-lg-3 col-md-3 col-sm-3", false)
-             }            
+                @collections.tile(collection, routes.Collections.list(when, date, limit, space, "", owner), space, "col-lg-3 col-md-3 col-sm-3", false)
+             }
         </div>
     </div>
 </div>

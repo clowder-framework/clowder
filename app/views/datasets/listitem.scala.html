@@ -1,4 +1,4 @@
-@(dataset: models.Dataset, comments: Map[UUID, Int], redirect: Call)(implicit  flash: play.api.mvc.Flash, user: Option[models.User])
+@(dataset: models.Dataset, collectionId: Option[String], comments: Map[UUID, Int], redirect: Call)(implicit  flash: play.api.mvc.Flash, user: Option[models.User])
 @import api.Permission
 
 <div class = "panel panel-default" id="@dataset.id-listitem">
@@ -32,8 +32,9 @@
                                         <button onclick="confirmDeleteResource('dataset','@(dataset.id)','@(dataset.name.replace("'","&#39;"))',false, '@redirect')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     } else {
-                                        <button disabled class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
-                                            <span class="glyphicon glyphicon-trash"></span></button>
+                                        <div class="inline" title="No permission to remove datatset from the collection.">
+                                            <button disabled class="btn btn-link"><span class="glyphicon glyphicon-remove"></span></button>
+                                        </div>
                                     }
                                 }
                             </li>

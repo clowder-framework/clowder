@@ -26,11 +26,12 @@
             <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
             @if(user.isDefined && Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
                 <button id="deleteButton" onclick="confirmDeleteResource('space','@(space.id)','@(space.name.replace("'","&#39;"))',true, '@(routes.Spaces.list(""))')"
-                    class="btn btn-link btn-sm" title="Delete Space but not Enclosed Resources">
+                    class="btn btn-link btn-sm" title="Delete the space but not enclosed resources">
                         <span class="glyphicon glyphicon-trash"></span> Delete</button>
             } else {
-                <button disabled id="deleteButton" class="btn btn-link btn-sm" title="Delete Space but not Enclosed Resources">
-                        <span class="glyphicon glyphicon-trash"></span> Delete</button>
+                <div class="inline" title="No permission to delete the space">
+                    <button class="btn btn-link btn-sm disabled"><span class="glyphicon glyphicon-trash"></span> Delete</button>
+                </div>
             }
             @if(user.isDefined && Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))){
                 <a id="create_dataset" href="@routes.Datasets.newDataset(Some(space.id.toString()), None)" class="btn btn-link" title="Create Dataset">
@@ -87,5 +88,6 @@
     <script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/datasetListProcess.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/spaceModify.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/errorRedirect.js")" language="javascript"></script>
 }

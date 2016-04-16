@@ -3,7 +3,7 @@
 @import api.Permission
 
 @datasetsList.map { dataset =>
-    @datasets.listitem(dataset,commentMap , routes.Collections.collection(collectionId))
+    @datasets.listitem(dataset,None,commentMap,routes.Collections.collection(collectionId))
 }
 @if(datasetsList.isEmpty){
     @if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collectionId))){
