@@ -77,7 +77,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
     ByteStorageService.save(inputStream, PreviewDAO.COLLECTION) match {
       case Some(x) => {
-        val preview = Preview(UUID.generate(), x._1, x._2, None, None, None, None, Some(filename), FileUtils.getContentType(filename, contentType), None, List.empty, x._4)
+        val preview = Preview(UUID.generate(), x._1, x._2, None, None, None, None, Some(filename), FileUtils.getContentType(filename, contentType), None, None, List.empty, x._4)
         PreviewDAO.save(preview)
         preview.id.stringify
       }
@@ -267,6 +267,13 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, st
       }
       case _ => Logger.error("Expected a JSObject")
     }
+  }
+
+  def setTitle(previewId: UUID, title: String) {
+    PreviewDAO.dao.collection.update(
+          MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
+          $set("title" -> title),
+          upsert=false, multi=false, WriteConcern.Safe)
   }
   
   /**
