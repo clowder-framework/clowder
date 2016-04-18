@@ -103,7 +103,11 @@ trait ApiController extends Controller {
     //    key it will assume you are anonymous!
     // 4) anonymous access
 
-    val superAdmin = request.cookies.get("superAdmin").exists(_.value.toBoolean)
+    val superAdmin = try {
+      request.queryString.get("superAdmin").exists(_.exists(_.toBoolean)) || request.cookies.get("superAdmin").exists(_.value.toBoolean)
+    } catch {
+      case _: Throwable => false
+    }
 
     // 1) secure social, this allows the web app to make calls to the API and use the secure social user
     for (
