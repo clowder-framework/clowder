@@ -902,6 +902,20 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 }
 
 .bigicon {
-    padding: 20px 20px 20px 20px;
+    padding: 20px;
     font-size: 55px;
+}
+
+.smallicon {
+    padding: 2px 5px 5px 20px;
+    font-size: 30px;
+}
+
+.smallthumbnail {
+    padding: 5px 5px 5px 20px;
+    width: 55px;
+}
+
+.valign-link {
+    padding-top: 20px;
 }

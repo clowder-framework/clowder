@@ -22,7 +22,7 @@
                 <div class="row">
                     <div class="col-xs-8">
                         <div class="row">
-                            <div class="col-xs-12"><em>@Html(dataset.description)</em></div>
+                            <div class="col-xs-12">@Html(dataset.description)</div>
                         </div>
                         <div class="row top-padding">
                             <div class="col-xs-12">
@@ -38,22 +38,21 @@
                             @if(!dataset.followers.contains(user.get.id)) {
                                 <div>
                                     <a id="followButton"
-                                    class="btn btn-link"
-                                    objectId="@dataset.id"
-                                    objectName="@dataset.name"
-                                    objectType="dataset">
-                                        <span class='glyphicon glyphicon-star'></span> Follow
+                                        class="btn btn-link"
+                                        objectId="@dataset.id"
+                                        objectName="@dataset.name"
+                                        objectType="dataset">
+                                            <span class='glyphicon glyphicon-star'></span> Follow
                                     </a>
                                 </div>
                             } else {
                                 <div>
                                     <a id="followButton"
-                                    class="btn btn-link"
-                                    objectId="@dataset.id"
-                                    objectName="@dataset.name"
-                                    objectType="dataset">
-                                        <span class='glyphicon glyphicon-star-empty'></span>
-                                        Unfollow
+                                        class="btn btn-link"
+                                        objectId="@dataset.id"
+                                        objectName="@dataset.name"
+                                        objectType="dataset">
+                                            <span class='glyphicon glyphicon-star-empty'></span> Unfollow
                                     </a>
                                 </div>
                             }

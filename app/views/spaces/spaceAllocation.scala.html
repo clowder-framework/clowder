@@ -17,7 +17,11 @@
             <div id="col_@s.id" class="row bottom-padding">
                 <div class="col-md-2">
                     @if(s.logoURL.isDefined) {
-                        <img src="@s.logoURL.get" width="100%">
+                        <img src="@s.logoURL.get" class="smallthumbnail">
+                    } else {
+                        <a href="@routes.Spaces.getSpace(s.id)">
+                            <span class="smallicon glyphicon glyphicon-tent"></span>
+                        </a>
                     }
                 </div>
                 <div class="col-md-10">
@@ -41,7 +45,7 @@
                             }
                         }
                         @if(resourceType == ResourceRef.collection) {
-                            @if(s.collectionCount ==1){
+                            @if(s.collectionCount == 1){
                                 1 collection
                             } else {
                                 @s.collectionCount collections
@@ -71,31 +75,35 @@
 
     <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
     @if(Permission.checkOwner(user, ResourceRef(resourceType, resourceId))) {
-        <div class="form-inline">
-            <div class="input-group input-group-sm col-md-8">
-                @if(resourceType == ResourceRef.collection) {
-                    <select id="spaceAddSelect" class="form-control add-resource">
-                    </select>
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="form-inline">
+                    <div class="input-group input-group-sm col-md-8">
+                        @if(resourceType == ResourceRef.collection) {
+                            <select id="spaceAddSelect" class="form-control add-resource">
+                            </select>
 
 
-                } else {
-                    <select id="spaceAddSelect" class="form-control add-resource">
-                    </select>
-                }
+                        } else {
+                            <select id="spaceAddSelect" class="form-control add-resource">
+                            </select>
+                        }
 
-                @if(resourceType == ResourceRef.dataset) {
-                    <span class="input-group-btn">
-                    <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add dataset to Space" onclick="addDatasetToSpace('@resourceId')">
-                        <span class="glyphicon glyphicon-plus"></span> Add
-                    </a>
-                    </span>
-                } else {
-                    <span class="input-group-btn">
-                    <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add collection to Space" onclick="addCollectionToSpace('@resourceId')">
-                        <span class="glyphicon glyphicon-plus"></span> Add
-                    </a>
-                    </span>
-                }
+                        @if(resourceType == ResourceRef.dataset) {
+                            <span class="input-group-btn">
+                            <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add dataset to Space" onclick="addDatasetToSpace('@resourceId')">
+                                <span class="glyphicon glyphicon-plus"></span> Add
+                            </a>
+                            </span>
+                        } else {
+                            <span class="input-group-btn">
+                            <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add collection to Space" onclick="addCollectionToSpace('@resourceId')">
+                                <span class="glyphicon glyphicon-plus"></span> Add
+                            </a>
+                            </span>
+                        }
+                    </div>
+                </div>
             </div>
         </div>
     }
