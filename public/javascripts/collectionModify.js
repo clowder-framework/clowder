@@ -22,7 +22,9 @@ function addCollectionToParentCollection(id) {
     request.done(function (response, textStatus, jqXHR) {
         var o = $.parseJSON(jqXHR.responseText);
         var txt = '<div id="col_'+selectedId+'" class="row bottom-padding">' +
-            '<div class="col-md-2"></div>' +
+            '<div class="col-md-2">' +
+            '<a href="'+jsRoutes.controllers.Collections.collection(selectedId).url+'">' +
+            '<span class="smallicon glyphicon glyphicon-th-list"></span></a></div>' +
             '<div class="col-md-10"><div><a href="'+jsRoutes.controllers.Collections.collection(selectedId).url+'" id='+selectedId+' class ="collection">'+selectedName+'</a></div>' +
             '<div>';
         if (o.childCollectionsCount == 1) {
