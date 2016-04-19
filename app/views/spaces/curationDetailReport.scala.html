@@ -52,15 +52,29 @@
                         <li>@rule.rule_name </li>
                         @if(rule.Score < 0) {
                             <li><span class="red">@rule.Message</span>
-                                @if(rule.rule_name.contains("Metadata")) {
+                                @if(rule.rule_name.toLowerCase().contains("metadata".toLowerCase())) {
                                     <a href="@routes.CurationObjects.getCurationObject(curationObject.id)">
-                                        Edit Metadata</a> <br/>
-                                } else {
-                                    @if(rule.rule_name.contains("Organization") || rule.rule_name.contains("ORCID")) {
-                                        <a href="@routes.Profile.viewProfileUUID(curationObject.author.id)">
-                                            Edit Porfile</a> <br/>
-                                    }
+                                        Edit metadata</a> <br/>
+                                } else { @if(rule.rule_name.toLowerCase().contains("organization".toLowerCase()) || rule.rule_name.toLowerCase().contains("rights holder".toLowerCase())){
+
+                                    <a href="@routes.Profile.viewProfileUUID(curationObject.author.id)">
+                                        Edit profile</a> <br/>
+                                } else { @if(rule.rule_name.toLowerCase().contains("data types".toLowerCase())){
+
+                                    <a href="@routes.CurationObjects.getCurationObject(curationObject.id)">
+                                        Delete unacceptable files</a> <br/>
+                                } else { @if(rule.rule_name.toLowerCase().contains("collection depth".toLowerCase())){
+
+                                    <a href="@routes.CurationObjects.getCurationObject(curationObject.id)">
+                                        Delete folders</a> <br/>
+                                } else { @if(rule.rule_name.toLowerCase().contains("size".toLowerCase())){
+
+                                    <a href="@routes.CurationObjects.getCurationObject(curationObject.id)">
+                                        Delete files</a> <br/>
                                 }
+
+
+                                }}}}
                             </li>
                         } else {
                             @if(rule.Score == 0) {
