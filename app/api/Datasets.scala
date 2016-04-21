@@ -1915,7 +1915,7 @@ class Datasets @Inject()(
   private def addFileToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     files.getBytes(file.id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
-        zip.putNextEntry(new ZipEntry(folderName + "/" + filename))
+        zip.putNextEntry(new ZipEntry(folderName+"."+filename + "/" + filename))
         Some(inputStream)
       }
       case None => None
@@ -1923,7 +1923,7 @@ class Datasets @Inject()(
   }
 
   private def addFileMetadataToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
-    zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
+    zip.putNextEntry(new ZipEntry(folderName+"." +file.filename+"/_metadata.json"))
     val fileMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file.id)).map(JSONLD.jsonMetadataWithContext(_))
     val s : String = Json.prettyPrint(Json.toJson(fileMetadata))
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
@@ -1946,7 +1946,7 @@ class Datasets @Inject()(
   }
 
   private def addFileInfoToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
-    zip.putNextEntry(new ZipEntry(folderName + "/_info.json"))
+    zip.putNextEntry(new ZipEntry(folderName +"."+file.filename+"/_info.json"))
     val fileInfo = getFileInfoAsJson(file)
     val s : String = Json.prettyPrint(fileInfo)
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
