@@ -43,9 +43,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.superAdmin)
     val usersCount = users.count()
     //newsfeedEvents is the combination of followedEntities and requestevents, then take the most recent 20 of them.
-    var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)).sorted(Ordering.by((_: Event).created).reverse))
-    newsfeedEvents =  (newsfeedEvents ::: events.getRequestEvents(user, Some(20)))
-      .sorted(Ordering.by((_: Event).created).reverse)
+    var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)))
+    newsfeedEvents =  newsfeedEvents ::: events.getRequestEvents(user, Some(20))
     user match {
       case Some(clowderUser) if !clowderUser.active => {
         Redirect(routes.Error.notActivated())
