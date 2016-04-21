@@ -41,15 +41,7 @@
             @user match {
                 case Some(viewer) => {
                     <ul class="list-group center-margin">
-                        <button
-                        id="followButton"
-                        type="button"
-                        class="btn-link"
-                        data-toggle="button"
-                        autocomplete="off"
-                        objectType="space"
-                        objectId="@space.id.stringify"
-                        >
+                        <button id="followButton" type="button" class="btn-link" data-toggle="button" autocomplete="off" objectType="space" objectId="@space.id.stringify">
                         @if(viewer.followedEntities.filter(x => (x.id == space.id)).nonEmpty) {
                             <span class='glyphicon glyphicon-star-empty'></span> Unfollow
                         } else {

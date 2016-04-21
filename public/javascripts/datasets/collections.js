@@ -15,11 +15,23 @@ function addToCollection(datasetId) {
     request.done(function (response, textStatus, jqXHR) {
         var o =$.parseJSON(jqXHR.responseText);
         // TODO retrieve more information about collection from API and show it in the GUI
-        $("#collectionsList").append('<div id="col_'+selectedId+'" class="row bottom-padding">' +
-        '<div class="col-md-2"></div>' +
-        '<div class="col-md-10"><div><a href="'+jsRoutes.controllers.Collections.collection(selectedId).url+'" id='+selectedId+' class ="collection">'+selectedName+'</a></div><div>' +
-            o.datasetsInCollection+' dataset(s) | <a href="#" class="btn btn-link btn-xs" onclick="confirmRemoveResourceFromResourceEvent(\'collection\',\''+selectedId+'\',\'dataset\',\''+datasetId+'\', event)" title="Remove the datatset from the collection">' +
-        '<span class="glyphicon glyphicon-remove"></span> Remove</a></div></div></div>');
+        var txt = '<div id="col_'+selectedId+'" class="row bottom-padding">' +
+            '<div class="col-md-2"></div>' +
+            '<div class="col-md-10">' +
+            '<div><a href="'+jsRoutes.controllers.Collections.collection(selectedId).url+'" id='+selectedId+' class ="collection">'+selectedName+'</a> ' +
+            '</div>';
+        txt = txt + '<div>';
+        if (o.datasetsInCollection == 1) {
+            txt = txt + o.datasetsInCollection +' dataset';
+        } else {
+            txt = txt + o.datasetsInCollection +' datasets';
+        }
+        txt = txt + ' | <button class="btn btn-link btn-xs" onclick="confirmRemoveResourceFromResourceEvent(\'collection\',\''+selectedId+'\',\'dataset\',\''+datasetId+'\', event)" title="Remove the datatset from the collection">' +
+        '<span class="glyphicon glyphicon-remove"></span> Remove</button>';
+        txt = txt + '</div>';
+        txt = txt + '</div>';
+        txt = txt + '</div>';
+        $("#collectionsList").append(txt);
         $("#collectionAddSelect").select2("val", "");
     });
 

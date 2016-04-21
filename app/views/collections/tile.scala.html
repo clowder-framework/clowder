@@ -25,10 +25,10 @@
                 @if(user.isDefined) {
                     @if(space.isDefined) {
                         @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.collection, collection.id))) {
-                            <button onclick="confirmRemoveResourceFromResource('space','@(UUID(space.getOrElse("")))','collection','@(collection.id)','@(collection.name.replace("'","&#39;"))','@redirect.url')" class="btn btn-link" title="Remove the collection from the space">
+                            <button onclick="confirmRemoveResourceFromResource('space','@(UUID(space.getOrElse("")))','collection','@(collection.id)','@(collection.name.replace("'","&#39;"))',true,'@redirect.url')" class="btn btn-link" title="Remove the collection from the space">
                                 <span class="glyphicon glyphicon-remove"></span></button>
                         } else {
-                            <div class="inline" title="No permission to remove from the space.">
+                            <div class="inline" title="No permission to remove the collection from the space.">
                                 <button disabled class="btn btn-link"><span class="glyphicon glyphicon-remove"></span></button>
                             </div>
                         }

@@ -30,20 +30,19 @@
                 @if(user.isDefined) {
                     @if(space.isDefined) {
                         @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                            <button onclick="confirmRemoveResourceFromResource('space','@(UUID(space.getOrElse("")))','dataset','@(dataset.id)','@(dataset.name.replace("'","&#39;"))','@redirect.url')" class="btn btn-link" title="Remove the dataset from the space">
+                            <button onclick="confirmRemoveResourceFromResource('space','@(UUID(space.getOrElse("")))','dataset','@(dataset.id)','@(dataset.name.replace("'","&#39;"))',true,'@redirect.url')" class="btn btn-link" title="Remove the dataset from the space">
                                 <span class="glyphicon glyphicon-remove"></span></button>
                         } else {
-                            <button disabled onclick="confirmDeleteResource('dataset','@(dataset.id)','@(dataset.name.replace("'","&#39;"))','@redirect')" class="btn btn-link" style="text-align:right" title="Delete Dataset and Enclosed Contents">
-                                <div class="inline" title="No permission to remove from the space.">
-                                    <button disabled class="btn btn-link"><span class="glyphicon glyphicon-remove"></span></button>
-                                </div>
-                                }
+                            <div class="inline" title="No permission to remove the dataset from the space">
+                                <button disabled class="btn btn-link"><span class="glyphicon glyphicon-remove"></span></button>
+                            </div>
+                        }
                     } else {
                         @if(user.get.id.equals(dataset.author.id) || Permission.checkPermission(Permission.DeleteDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
                             <button onclick="confirmDeleteResource('datatset','@(dataset.id)','@(dataset.name.replace("'","&#39;"))',false,'@redirect.url')" class="btn btn-link" title="Delete the Dataset and its contents.">
                                 <span class="glyphicon glyphicon-trash"></span></button>
                         } else {
-                            <div class="inline" title="No permission to delete dataset.">
+                            <div class="inline" title="No permission to delete the dataset">
                                 <button disabled class="btn btn-link"><span class="glyphicon glyphicon-trash"></span></button>
                             </div>
                         }

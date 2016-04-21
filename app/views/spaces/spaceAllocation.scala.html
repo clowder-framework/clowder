@@ -13,7 +13,7 @@
 
     <div class="row">
         <div id="spacesList" class="col-md-12">
-        @resourceSpaces_canRemove.map {case (s, v) =>
+        @resourceSpaces_canRemove.map { case (s, v) =>
             <div id="col_@s.id" class="row bottom-padding">
                 <div class="col-md-2">
                     @if(s.logoURL.isDefined) {
@@ -23,22 +23,34 @@
                 <div class="col-md-10">
                     <div>
                         <a href="@routes.Spaces.getSpace(s.id)" id='@s.id' class="space">@Html(s.name)</a>
+                    </div>
+                    <div>
                         @if(resourceType == ResourceRef.dataset) {
+                            @if(s.datasetCount ==1){
+                                1 dataset
+                            } else {
+                                @s.datasetCount datasets
+                            }
                             @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
                                 | <button onclick="confirmRemoveResourceFromResourceEvent('space','@(s.id)','dataset','@(resourceId)',event)" class="btn btn-link btn-xs" title="Remove the dataset from the space">
-                                    <span class="glyphicon glyphicon-remove"></span> Remove</button>
+                                <span class="glyphicon glyphicon-remove"></span> Remove</button>
                             } else {
                                 |
                                 <div class="inline" title="No permission to remove from the space">
                                     <button class="btn btn-link btn-xs disabled"><span class="glyphicon glyphicon-remove"></span> Remove</button>
-                                </div>
+                            </div>
                             }
                         }
                         @if(resourceType == ResourceRef.collection) {
+                            @if(s.collectionCount ==1){
+                                1 collection
+                            } else {
+                                @s.collectionCount collections
+                            }
                             @**
-                                a collection can be removed from a space as long as it is the highest level collection in that space;
-                                meaning it has no parent in the space.
-                            **@ß
+                            a collection can be removed from a space as long as it is the highest level collection in that space;
+                            meaning it has no parent in the space.
+                            **@
                             @if(v == true){
                                 @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
                                     |  <button onclick="confirmRemoveResourceFromResourceEvent('space','@(s.id)','collection','@(resourceId)',event)" class="btn btn-link btn-xs" title="Remove the collection from the space">
@@ -68,13 +80,9 @@
         <div class="form-inline">
             <div class="input-group input-group-sm col-md-8">
                 @if(resourceType == ResourceRef.collection) {
-                    <select id="spaceAddSelect" class="form-control add-resource">
-                    </select>
-
-
+                    <select id="spaceAddSelect" class="form-control add-resource"></select>
                 } else {
-                    <select id="spaceAddSelect" class="form-control add-resource">
-                    </select>
+                    <select id="spaceAddSelect" class="form-control add-resource"></select>
                 }
 
                 @if(resourceType == ResourceRef.dataset) {

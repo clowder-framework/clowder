@@ -8,22 +8,32 @@
     </div>
 
     <div class="row">
-        <div id="collectionsList" class="col-md-12">
+        <div id="collectionsList" class="col-md-12 col-sm-12 col-lg-12">
         @parentCollections.map { p =>
             <div id="col_@p.id" class="row bottom-padding">
-                <div class="col-md-2">
+                <div class="col-md-2 col-sm-2 col-lg-2">
+                @if(!p.thumbnail_id.isEmpty){
+                    <a href="@(routes.Collections.collection(p.id))">
+                        <img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(p.thumbnail_id.get)))" alt="Thumbnail of @Html(p.name)">
+                    </a>
+                }
                 </div>
-                <div class="col-md-10">
+                <div class="col-md-10 col-sm-10 col-lg-10">
                     <div>
                         <a href="@routes.Collections.collection(p.id)" id='@p.id' class ="collection">@Html(p.name)</a>
+                    </div>
+                    <div>
+                        @if(p.childCollectionsCount ==1){
+                            1 collection
+                        } else {
+                            @p.childCollectionsCount collections
+                        }
                     </div>
                 </div>
             </div>
         }
         </div>
     </div>
-
-
 
     <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
     @if(Permission.checkOwner(user, ResourceRef(resourceType, resourceId))) {
