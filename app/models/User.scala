@@ -23,7 +23,7 @@ trait User extends Identity {
   def spaceandrole: List[UserSpaceAndRole]
   def repositoryPreferences: Map[String,Any]
 
-  // One can only be supeAdmin iff you are a serveradmin
+  // One can only be superAdmin iff you are a serveradmin
   def superAdminMode: Boolean
 
   /**
