@@ -150,7 +150,6 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     implicit request =>
       (spaces.get(spaceId), collectionService.get(collectionId)) match {
         case (Some(s), Some(c)) => {
-          Logger.debug("djgyewuyg!!!!!!!!!")
           // TODO this needs to be cleaned up when do permissions for adding to a resource
           if (!Permission.checkOwner(request.user, ResourceRef(ResourceRef.collection, collectionId))) {
             Forbidden(toJson(s"You are not the owner of the collection"))
