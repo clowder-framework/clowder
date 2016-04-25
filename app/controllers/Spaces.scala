@@ -440,6 +440,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
                     // insert space
                     spaces.insert(newSpace)
+                    val option_user = users.findByIdentity(identity)
+                    events.addObjectEvent(option_user, newSpace.id, newSpace.name, "create_space")
                     val role = Role.Admin
                     spaces.addUser(userId, role, newSpace.id)
                     //TODO - Put Spaces in Elastic Search?
@@ -464,6 +466,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                           val updated_space = existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
                             homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
                           spaces.update(updated_space)
+                          val option_user = users.findByIdentity(identity)
+                          events.addObjectEvent(option_user, updated_space.id, updated_space.name, "update_space_information")
                           Redirect(routes.Spaces.getSpace(existing_space.id))
                         } else {
                           Redirect(routes.Spaces.getSpace(existing_space.id)).flashing("error" -> "You are not authorized to edit this spaces")

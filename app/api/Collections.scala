@@ -49,10 +49,10 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
 
           collections.insert(c) match {
             case Some(id) => {
-              c.spaces.map{ s =>
-                spaces.addCollection(c.id, s)
-                collections.addToRootSpaces(c.id, s)
-
+              c.spaces.map(s => spaces.get(s)).flatten.map{ s =>
+                spaces.addCollection(c.id, s.id)
+                collections.addToRootSpaces(c.id, s.id)
+                events.addSourceEvent(request.user, c.id, c.name, s.id, s.name, "add_collection_space")
               }
               Ok(toJson(Map("id" -> id)))
             }

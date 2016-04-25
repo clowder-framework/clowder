@@ -142,7 +142,10 @@ class  Datasets @Inject()(
             case Some(file) =>
               datasets.insert(d) match {
                 case Some(id) => {
-                  d.spaces.map{ s => spaces.addDataset(d.id, s)}
+                  d.spaces.map( s => spaces.get(s)).flatten.map{ s =>
+                    spaces.addDataset(d.id, s.id)
+                    events.addSourceEvent(request.user, d.id, d.name, s.id, s.name, "add_dataset_space")
+                  }
                   attachExistingFileHelper(UUID(id), file.id, d, file, request.user)
                   files.index(UUID(file_id))
                   if (!file.xmlMetadata.isEmpty) {
