@@ -56,9 +56,6 @@
   case "edit_profile" => {
     edited their <a href="@routes.Profile.viewProfileUUID(event.user.id)">profile</a>
   }
-  case "update_space_information" => {
-    updated information for @linkForObject("space", event.object_id, event.object_name)
-  }
   case "update_dataset_information" => {
     updated information for @linkForObject("dataset", event.object_id, event.object_name)
   }

@@ -19,20 +19,15 @@ function addCollectionToSpace(id) {
         var o = $.parseJSON(jqXHR.responseText);
         var txt = '<div id="col_'+selectedId+'" class="row bottom-padding">' +
             '<div class="col-md-2"></div>' +
-            '<div class="col-md-10">' +
-            '<div><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+' class ="space">'+selectedName+'</a>' +
-            '</div>';
-        txt = txt + '<div>';
+            '<div class="col-md-10"><div><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+' class ="space">'+selectedName+'</a></div>' +
+            '<div>';
         if (o.collectionInSpace == 1) {
             txt = txt + o.collectionInSpace +' collection';
         } else {
             txt = txt + o.collectionInSpace +' collections';
         }
-        txt = txt + ' | <button class="btn btn-link btn-xs" onclick="confirmRemoveResourceFromResourceEvent(\'space\',\''+selectedId+'\',\'collection\',\''+id+'\', event)" title="Remove the collection from the space">' +
-            '<span class="glyphicon glyphicon-remove"></span> Remove</button>';
-        txt = txt + '</div>';
-        txt = txt + '</div>';
-        txt = txt + '</div>';
+        txt = txt + ' | <a href="#" class="btn btn-link btn-xs" onclick="removeCollectionFromSpace(\''+selectedId+'\', \''+id+'\', event)" title="Remove from space">' +
+            '<span class="glyphicon glyphicon-remove"></span> Remove</a></div></div></div>';
         $("#spacesList").append(txt);
         $("#spaceAddSelect").select2("val", "");
     });
@@ -48,7 +43,9 @@ function addCollectionToSpace(id) {
     return false;
 }
 
+
 function removeCollectionFromSpace(spaceId, id, event){
+
     var request = jsRoutes.api.Spaces.removeCollection(spaceId, id).ajax({
         type: 'POST'
     });
@@ -67,32 +64,6 @@ function removeCollectionFromSpace(spaceId, id, event){
     return false;
 }
 
-//Method to remove the collection from space and redirect back to a specific URL on completion
-function removeCollectionFromSpaceAndRedirect(spaceId, collectionId, isreload, url){
-    var request = jsRoutes.api.Spaces.removeCollection(spaceId, collectionId).ajax({
-        type: 'POST'
-    });
-
-    request.done(function (response, textStatus, jqXHR){
-        if(isreload === "true")
-            if(url === undefined) {
-                reloadPage = "/spaces";
-            } else {
-                window.location.href=url;
-            }
-        else {
-            $('#col_' + spaceId).remove();
-        }
-    });
-
-    request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to remove a collection from a space.";
-        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("The collection was not removed from the space due to : " + errorThrown, "error");
-        }
-    });
-}
 
 function addDatasetToSpace(id) {
     var selectedId = $("#spaceAddSelect").val();
@@ -105,23 +76,18 @@ function addDatasetToSpace(id) {
     });
 
     request.done(function (response, textStatus, jqXHR) {
-        var o = $.parseJSON(jqXHR.responseText);
+        var o =$.parseJSON(jqXHR.responseText);
         var txt = '<div id="col_'+selectedId+'" class="row bottom-padding">' +
             '<div class="col-md-2"></div>' +
-            '<div class="col-md-10">' +
-            '<div><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+' class ="space">'+selectedName+'</a>' +
-            '</div>';
-        txt = txt + '<div>';
+            '<div class="col-md-10"><div><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+' class ="space">'+selectedName+'</a></div>' +
+            '<div>';
         if (o.datasetsInSpace == 1) {
             txt = txt + o.datasetsInSpace +' dataset';
         } else {
             txt = txt + o.datasetsInSpace +' datasets';
         }
-        txt = txt + ' | <button class="btn btn-link btn-xs" onclick="confirmRemoveResourceFromResourceEvent(\'space\',\''+selectedId+'\',\'dataset\',\''+id+'\', event)" title="Remove the dataset from the space">' +
-            '<span class="glyphicon glyphicon-remove"></span> Remove</button>';
-        txt = txt + '</div>';
-        txt = txt + '</div>';
-        txt = txt + '</div>';
+        txt = txt + ' | <a href="#" class="btn btn-link btn-xs" onclick="removeDatasetFromSpace(\''+selectedId+'\', \''+id+'\', event)" title="Remove from space">' +
+            '<span class="glyphicon glyphicon-remove"></span> Remove</a></div></div></div>';
         $("#spacesList").append(txt);
         $("#spaceAddSelect").select2("val", "");
     });
@@ -137,8 +103,10 @@ function addDatasetToSpace(id) {
     return false;
 }
 
-function removeDatasetFromSpace(spaceId, datasetId, event){
-    var request = jsRoutes.api.Spaces.removeDataset(spaceId, datasetId).ajax({
+
+function removeDatasetFromSpace(spaceId, id, event){
+
+    var request = jsRoutes.api.Spaces.removeDataset(spaceId, id).ajax({
         type: 'POST'
     });
 
@@ -156,35 +124,11 @@ function removeDatasetFromSpace(spaceId, datasetId, event){
     return false;
 }
 
-//Method to remove the dataset from space and redirect back to a specific URL on completion
-function removeDatasetFromSpaceAndRedirect(spaceId, datasetId, isreload, url){
-    var request = jsRoutes.api.Spaces.removeDataset(spaceId, datasetId).ajax({
-        type: 'POST'
-    });
-
-    request.done(function (response, textStatus, jqXHR){
-        if(isreload === "true")
-            if(url === undefined) {
-                reloadPage = "/spaces";
-            } else {
-                window.location.href=url;
-            }
-        else {
-            $('#col_' + spaceId).remove();
-        }
-    });
-    request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to remove a dataset from a space.";
-        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("The dataset was not removed from the space due to : " + errorThrown, "error");
-        }
-    });
-}
 
 function updateSpaceEditLink(space_id, space_name) {
     $('#space_link').attr("href", jsRoutes.controllers.Spaces.getSpace(space_id).url).text(space_name);
 }
+
 
 function updateUsersInSpace(spaceId) {
     //Generate the string for each level

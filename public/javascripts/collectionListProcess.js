@@ -50,21 +50,16 @@ function removeCollectionAndRedirect(collectionId, url){
 }
 
 //method to remove child from parent and redirect to url
-function removeChildCollectionFromParent(parentId, childId, isreload, url) {
+function removeChildCollectionFromParent(parentId, childId, url) {
+	if (url == undefined) reloadPage = "/collections";
+
 	var request = jsRoutes.api.Collections.removeSubCollection(parentId, childId).ajax({
 		type : 'POST'
 	});
 
 	request.done(function (response,textStatus,jqXHR){
-		if(isreload === "true")
-			if(url === undefined) {
-				reloadPage = "/collections";
-			} else {
-				window.location.href=url;
-			}
-		else {
-			$('#col_' + parentId).remove();
-		}
+		console.log("Response " + response);
+		window.location.href=url;
 	});
 
 	request.fail(function (jqXHR, textStatus, errorThrown){
