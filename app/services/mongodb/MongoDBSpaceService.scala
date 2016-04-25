@@ -441,8 +441,7 @@ class MongoDBSpaceService @Inject() (
    */
   def addUser(userId: UUID, role: Role, spaceId: UUID): Unit = {
     users.addUserToSpace(userId, role, spaceId)
-    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
-      $pull("requests" -> MongoDBObject( "_id" -> new ObjectId(userId.stringify))), false, false, WriteConcern.Safe)
+    removeRequest(spaceId, userId)
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)), $inc("userCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
   }
 
