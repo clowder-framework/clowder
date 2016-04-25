@@ -1605,15 +1605,14 @@ class  Datasets @Inject()(
   @ApiOperation(value = "Follow dataset.",
     notes = "Add user to dataset followers and add dataset to user followed datasets.",
     responseClass = "None", httpMethod = "POST")
-  def follow(id: UUID, name: String) = AuthenticatedAction {
+  def follow(id: UUID) = AuthenticatedAction {
     request =>
       val user = request.user
-
       user match {
         case Some(loggedInUser) => {
           datasets.get(id) match {
             case Some(dataset) => {
-              events.addObjectEvent(user, id, name, "follow_dataset")
+              events.addObjectEvent(user, id, dataset.name, "follow_dataset")
               datasets.addFollower(id, loggedInUser.id)
               userService.followDataset(loggedInUser.id, id)
 
@@ -1637,14 +1636,14 @@ class  Datasets @Inject()(
   @ApiOperation(value = "Unfollow dataset.",
     notes = "Remove user from dataset followers and remove dataset from user followed datasets.",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(id: UUID, name: String) = AuthenticatedAction { implicit request =>
+  def unfollow(id: UUID) = AuthenticatedAction { implicit request =>
       implicit val user = request.user
 
       user match {
         case Some(loggedInUser) => {
           datasets.get(id) match {
             case Some(dataset) => {
-              events.addObjectEvent(user, id, name, "unfollow_dataset")
+              events.addObjectEvent(user, id, dataset.name, "unfollow_dataset")
               datasets.removeFollower(id, loggedInUser.id)
               userService.unfollowDataset(loggedInUser.id, id)
               Ok

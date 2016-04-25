@@ -353,14 +353,14 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Follow collection.",
     notes = "Add user to collection followers and add collection to user followed collections.",
     responseClass = "None", httpMethod = "POST")
-  def follow(id: UUID, name: String) = AuthenticatedAction { implicit request =>
+  def follow(id: UUID) = AuthenticatedAction { implicit request =>
       implicit val user = request.user
 
       user match {
         case Some(loggedInUser) => {
           collections.get(id) match {
             case Some(collection) => {
-              events.addObjectEvent(user, id, name, "follow_collection")
+              events.addObjectEvent(user, id, collection.name, "follow_collection")
               collections.addFollower(id, loggedInUser.id)
               userService.followCollection(loggedInUser.id, id)
 
@@ -384,14 +384,14 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Unfollow collection.",
     notes = "Remove user from collection followers and remove collection from user followed collections.",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(id: UUID, name: String) = AuthenticatedAction { implicit request =>
+  def unfollow(id: UUID) = AuthenticatedAction { implicit request =>
       implicit val user = request.user
 
       user match {
         case Some(loggedInUser) => {
           collections.get(id) match {
             case Some(collection) => {
-              events.addObjectEvent(user, id, name, "unfollow_collection")
+              events.addObjectEvent(user, id, collection.name, "unfollow_collection")
               collections.removeFollower(id, loggedInUser.id)
               userService.unfollowCollection(loggedInUser.id, id)
               Ok

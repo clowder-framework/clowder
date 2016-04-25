@@ -465,14 +465,14 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   @ApiOperation(value = "Follow space",
     notes = "Add user to space followers and add space to user followed spaces.",
     responseClass = "None", httpMethod = "POST")
-  def follow(id: UUID, name: String) = AuthenticatedAction { implicit request =>
+  def follow(id: UUID) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
     user match {
       case Some(loggedInUser) => {
         spaces.get(id) match {
-          case Some(file) => {
-            events.addObjectEvent(user, id, name, "follow_space")
+          case Some(space) => {
+            events.addObjectEvent(user, id, space.name, "follow_space")
             spaces.addFollower(id, loggedInUser.id)
             userService.followResource(loggedInUser.id, new ResourceRef(ResourceRef.space, id))
 
@@ -498,7 +498,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   @ApiOperation(value = "Unfollow space",
     notes = "Remove user from space followers and remove space from user followed spaces.",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(id: UUID, name: String) = AuthenticatedAction { implicit request =>
+  def unfollow(id: UUID) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
     user match {
