@@ -26,7 +26,7 @@ function addToCollection(datasetId) {
         } else {
             txt = txt + o.datasetsInCollection +' datasets';
         }
-        txt = txt + ' | <button class="btn btn-link btn-xs" onclick="confirmRemoveResourceFromResourceEvent(\'collection\',\''+selectedId+'\',\'dataset\',\''+datasetId+'\', event)" title="Remove the datatset from the collection">' +
+        txt = txt + ' | <button class="btn btn-link btn-xs" onclick="confirmRemoveResourceFromResourceEvent(\'collection\',\''+selectedId+'\',\'dataset\',\''+datasetId+'\', event)" title="Remove the dataset from the collection">' +
         '<span class="glyphicon glyphicon-remove"></span> Remove</button>';
         txt = txt + '</div>';
         txt = txt + '</div>';
@@ -65,7 +65,7 @@ function removeFromCollection(collectionId, datasetId, event){
     return false;
 }
 
-//Method to remove the datatset from collection and redirect back to a specific URL on completion
+//Method to remove the dataset from collection and redirect back to a specific URL on completion
 function removeDatasetFromCollectionAndRedirect(collectionId, datasetId, isreload, url){
     var request = jsRoutes.api.Collections.removeDataset(collectionId, datasetId).ajax({
         type: 'POST'

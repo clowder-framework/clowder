@@ -1,4 +1,5 @@
 function removeDataset(datasetId, isreload, url){
+	console.log(datasetId, isreload, url);
 	var request = jsRoutes.api.Datasets.deleteDataset(datasetId).ajax({
 		type: 'DELETE'
 	});

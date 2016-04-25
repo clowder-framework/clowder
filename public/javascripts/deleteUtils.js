@@ -32,7 +32,7 @@ function confirmDeleteTemplate(message, resourceType, resourceId, isreload, url)
 }
 
 function confirmRemoveResourceFromResource(resourceFromType, resourceFromId, resourceType, resourceId, resourceName, isreload, url) {
-    console.log(isreload, url);
+    //console.log(isreload, url);
     var msg = "Are you sure you want to remove the ";
     if (resourceFromType == "collection" && resourceType == "collection") {
         msg = msg + "child collection" + " '" + resourceName + "' from the parent " + resourceFromType + "?";
@@ -76,6 +76,7 @@ function confirmRemoveResourceFromResourceEvent(resourceFromType, resourceFromId
 }
 
 function DeleteTemplate(resourceType, resourceId, isreload, url) {
+    //console.log(resourceType, resourceId, isreload, url);
     $('.modal').modal('hide');
     if (resourceType == "file") {
         removeFile(resourceId,isreload, url);
