@@ -26,7 +26,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
    * The code will query the datasets, files and sections and combine the lists into a single sorted list
    * and display it to the user.
    */
-  def search(tag: String, start: String, size: Integer, mode: String) = AuthenticatedAction { implicit request =>
+  def search(tag: String, start: String, size: Integer, mode: String) = PrivateServerAction { implicit request =>
     implicit val user = request.user
 
     var nextItems = ListBuffer.empty[AnyRef]
