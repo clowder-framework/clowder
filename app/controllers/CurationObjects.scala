@@ -230,7 +230,12 @@ class CurationObjects @Inject()(
     curations.get(curationId) match {
       case Some(cOld) => {
         // this update is not written into MongoDB, only for page view purpose
-        val c = cOld.copy( datasets = datasets.get(cOld.datasets(0).id).toList)
+        Logger.debug(cOld.datasets(0).id.toString())
+        val c = datasets.get(cOld.datasets(0).id) match {
+          case Some(dataset) => cOld.copy(datasets = List(dataset))
+          // dataset is deleted
+          case None => cOld
+        }
         // metadata of curation files are getting from getUpdatedFilesAndFolders
         val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined

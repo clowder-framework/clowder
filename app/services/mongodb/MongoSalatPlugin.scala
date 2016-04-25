@@ -1016,42 +1016,17 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   }
 
   private def updateEventObjectName(): Unit = {
-    collection("datasets").foreach { ds =>
-      (ds.getAs[ObjectId]("_id"), ds.getAs[String]("name")) match {
-        case (Some(id), Some(name)) => {
-          collection("events").update(MongoDBObject("object_id" -> new ObjectId(id.toString)), $set("object_name" -> name), multi = true)
-          collection("events").update(MongoDBObject("source_id" -> new ObjectId(id.toString)), $set("source_name" -> name), multi = true)
+    for (coll <- List[String]("collections", "spaces.projects", "datasets", "uploads.files", "curationFiles", "curationObjects")){
+      collection(coll).foreach { ds =>
+        (ds.getAs[ObjectId]("_id"), ds.getAs[String]("name")) match {
+          case (Some(id), Some(name)) => {
+            collection("events").update(MongoDBObject("object_id" -> new ObjectId(id.toString)), $set("object_name" -> name), multi = true)
+            collection("events").update(MongoDBObject("source_id" -> new ObjectId(id.toString)), $set("source_name" -> name), multi = true)
+          }
+          case _ => {}
         }
-        case _ => {}
       }
     }
-    collection("collection").foreach { c =>
-      (c.getAs[ObjectId]("_id"), c.getAs[String]("name")) match {
-        case (Some(id), Some(name)) => {
-          collection("events").update(MongoDBObject("object_id" -> new ObjectId(id.toString)), $set("object_name" -> name), multi = true)
-          collection("events").update(MongoDBObject("source_id" -> new ObjectId(id.toString)), $set("source_name" -> name), multi = true)
-        }
-        case _ => {}
-      }
-    }
-    collection("spaces.projects").foreach { s =>
-      (s.getAs[ObjectId]("_id"), s.getAs[String]("name")) match {
-        case (Some(id), Some(name)) => {
-          collection("events").update(MongoDBObject("object_id" -> new ObjectId(id.toString)), $set("object_name" -> name), multi = true)
-          collection("events").update(MongoDBObject("source_id" -> new ObjectId(id.toString)), $set("source_name" -> name), multi = true)
-        }
-        case _ => {}
-      }
-    }
-    collection("uploads.files").foreach { f =>
-      (f.getAs[ObjectId]("_id"), f.getAs[String]("name")) match {
-        case (Some(id), Some(name)) => {
-          collection("events").update(MongoDBObject("object_id" -> new ObjectId(id.toString)), $set("object_name" -> name), multi = true)
-          collection("events").update(MongoDBObject("source_id" -> new ObjectId(id.toString)), $set("source_name" -> name), multi = true)
-        }
-        case _ => {}
-      }
-    }
-
   }
+
 }
