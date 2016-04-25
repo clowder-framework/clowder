@@ -1016,7 +1016,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   }
 
   private def updateEventObjectName(): Unit = {
-    for (coll <- List[String]("collections", "spaces.projects", "datasets", "uploads.files", "curationFiles", "curationObjects")){
+    for (coll <- List[String]("collections", "spaces.projects", "datasets", "uploads.files", "curationObjects")){
       collection(coll).foreach { ds =>
         (ds.getAs[ObjectId]("_id"), ds.getAs[String]("name")) match {
           case (Some(id), Some(name)) => {

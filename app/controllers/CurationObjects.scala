@@ -230,7 +230,6 @@ class CurationObjects @Inject()(
     curations.get(curationId) match {
       case Some(cOld) => {
         // this update is not written into MongoDB, only for page view purpose
-        Logger.debug(cOld.datasets(0).id.toString())
         val c = datasets.get(cOld.datasets(0).id) match {
           case Some(dataset) => cOld.copy(datasets = List(dataset))
           // dataset is deleted
