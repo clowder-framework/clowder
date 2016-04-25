@@ -73,10 +73,10 @@
                             <span class="glyphicon glyphicon-plus"></span> Add Files
                         </a>
                     }
-                    @if(dataset.files.length > 0 && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                    @if(Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
                         <a id='download-dataset-url' href="#"
                         onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id').url, '_blank');"
-                        class="btn btn-link btn-sm requiresLogin btn-margin-bottom" title="Download All Files as Zip" role="button">
+                        class="btn btn-link btn-sm btn-margin-bottom" title="Download All Files as Zip" role="button">
                             <span class="glyphicon glyphicon-download-alt"></span>
                             Download All Files
                         </a>
