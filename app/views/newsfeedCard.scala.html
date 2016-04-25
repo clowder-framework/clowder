@@ -19,6 +19,10 @@
     case "curation" => {
       space: <a href="@routes.CurationObjects.getCurationObject(obj_id.get)">@obj_name.get</a>
     }
+    case "subcollection" => {
+      collection: <a href="@routes.Collections.collection(obj_id.get)">@obj_name.get</a> from collection:
+      <a href="@routes.Collections.collection(event.source_id.get)">@event.source_name.get</a>
+    }
     case _ => {
       @obj_type: @obj_name.get
     }
@@ -50,13 +54,10 @@
 
 @event.event_type match {
   case "edit_profile" => {
-    edited their <a >profile</a>
+    edited their <a href="@routes.Profile.viewProfileUUID(event.user.id)">profile</a>
   }
   case "update_dataset_information" => {
     updated information for @linkForObject("dataset", event.object_id, event.object_name)
-  }
-  case "update_space_information" => {
-    updated information for @linkForObject("space", event.object_id, event.object_name)
   }
   case "update_file_information" => {
     updated information for @linkForObject("file", event.object_id, event.object_name)
@@ -90,6 +91,10 @@
   }
   case "add_file_folder" => {
     has added a file to a folder within @linkForObject("dataset", event.object_id, event.object_name)
+  }
+  case "add_sub_collection" => {
+    added @linkForObject("collection", event.object_id, event.object_name) to
+    @linkForObject("collection", event.source_id, event.source_name)
   }
   case "addMetadata_file" | "addMetadata_dataset" => {
     added metadata to @linkForObject(
