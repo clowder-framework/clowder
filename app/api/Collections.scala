@@ -517,7 +517,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           case Some(collection) => {
             collections.get(subCollectionId) match {
               case Some(sub_collection) => {
-                events.addSourceEvent(request.user , sub_collection.id, sub_collection.name, collection.id, collection.name, "remove_subcollection")
+                events.addSourceEvent(request.user, sub_collection.id, sub_collection.name, collection.id, collection.name, "remove_subcollection")
               }
             }
           }
@@ -599,7 +599,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     implicit val user = request.user
     val count : Long  = collections.countAccess(Set[Permission](Permission.ViewCollection),user,true)
     val limit = count.toInt
-    val all_collections_list = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection),request.user,true))
+    val all_collections_list = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection),request.user,false))
       yield jsonCollection(collection)
     Ok(toJson(all_collections_list))
   }
