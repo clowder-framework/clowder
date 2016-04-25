@@ -150,12 +150,14 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     implicit request =>
       (spaces.get(spaceId), collectionService.get(collectionId)) match {
         case (Some(s), Some(c)) => {
+          Logger.debug("djgyewuyg!!!!!!!!!")
           // TODO this needs to be cleaned up when do permissions for adding to a resource
           if (!Permission.checkOwner(request.user, ResourceRef(ResourceRef.collection, collectionId))) {
             Forbidden(toJson(s"You are not the owner of the collection"))
           } else {
             spaces.addCollection(collectionId, spaceId)
             collectionService.addToRootSpaces(collectionId, spaceId)
+            events.addSourceEvent(request.user,  c.id, c.name, s.id, s.name, "add_collection_space")
             spaces.get(spaceId) match {
               case Some(space) => {
                 Ok(Json.obj("collectionInSpace" -> space.collectionCount.toString))
@@ -181,7 +183,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
             Forbidden(toJson(s"You are not the owner of the dataset"))
           } else {
             spaces.addDataset(datasetId, spaceId)
-            events.addSourceEvent(request.user , s.id, s.name, d.id, d.name, "add_dataset_collection")
+            events.addSourceEvent(request.user,  d.id, d.name, s.id, s.name, "add_dataset_space")
             Ok(Json.obj("datasetsInSpace" -> (s.datasetCount + 1).toString))
           }
         }
@@ -198,7 +200,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         spaces.removeCollection(collectionId, spaceId)
         collectionService.removeFromRootSpaces(collectionId, spaceId)
         updateSubCollections(spaceId, collectionId)
-        events.addSourceEvent(request.user , s.id, s.name, c.id, c.name, "remove_dataset_collection")
+        events.addSourceEvent(request.user,  c.id, c.name, s.id, s.name,"remove_collection_space")
         Ok(toJson("success"))
       }
       case (_, _) => NotFound
@@ -230,7 +232,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     (spaces.get(spaceId), datasetService.get(datasetId)) match {
       case (Some(s), Some(d)) => {
         spaces.removeDataset(datasetId, spaceId)
-        events.addSourceEvent(request.user , s.id, s.name, d.id, d.name, "remove_dataset_collection")
+        events.addSourceEvent(request.user ,  d.id, d.name, s.id, s.name, "remove_dataset_space")
         Ok(toJson("success"))
       }
       case (_, _) => NotFound
