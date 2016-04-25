@@ -160,8 +160,10 @@ class MongoDBDatasetService @Inject() (
     list(Some(date), nextPage, limit, None, None, None, Set[Permission](Permission.ViewDataset), user, showAll, Some(owner))
   }
 
+  /**
+    * Return a list of datasets a user can View.
+    */
   def listUser(user: User): List[Dataset] = {
-
     val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
     orlist += MongoDBObject("public" -> true)
     orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(user.id.stringify))
@@ -170,10 +172,8 @@ class MongoDBDatasetService @Inject() (
       orlist += ("spaces" $in okspaces.map(x => new ObjectId(x.spaceId.stringify)))
     }
     if (orlist.isEmpty) {
-
       orlist += MongoDBObject("doesnotexist" -> true)
     }
-
     Dataset.find($or(orlist.map(_.asDBObject))).toList
   }
 

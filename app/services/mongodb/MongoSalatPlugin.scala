@@ -75,7 +75,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("collections").ensureIndex(MongoDBObject("spaces" -> 1))
     collection("collections").ensureIndex(MongoDBObject("datasets._id" -> 1))
     collection("collections").ensureIndex(MongoDBObject("public" -> 1))
-    collection("collections").ensureIndex(MongoDBObject("author.identityId.userId" -> 1, "author.identityId.providerId" -> 1))
+    collection("collections").ensureIndex(MongoDBObject("author._id" -> 1))
 
     collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
     collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
@@ -85,11 +85,15 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("datasets").ensureIndex(MongoDBObject("spaces" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("public" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("name" -> 1))
-    collection("datasets").ensureIndex(MongoDBObject("author.identityId.userId" -> 1, "author.identityId.providerId" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("author._id" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("public" -> 1, "spaces" -> 1, "author._id" -> 1))
+
+    collection("folders").ensureIndex(MongoDBObject("parentDatasetId" -> 1))
 
     collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
     collection("uploads.files").ensureIndex(MongoDBObject("author.email" -> 1))
     collection("uploads.files").ensureIndex(MongoDBObject("tags.name" -> 1))
+    collection("uploads.files").ensureIndex(MongoDBObject("author._id"-> 1,  "_id"-> 1))
 
     collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
     
@@ -104,10 +108,12 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
     collection("sections").ensureIndex(MongoDBObject("file_id" -> -1))
     collection("sections").ensureIndex(MongoDBObject("tags.name" -> 1))
+    collection("sections").ensureIndex(MongoDBObject("file_id" -> 1, "author._id" -> 1))
 
     collection("metadata").ensureIndex(MongoDBObject("createdAt" -> -1))
     collection("metadata").ensureIndex(MongoDBObject("creator" -> 1))
-    collection("metadata").ensureIndex(MongoDBObject("attachTo" -> 1))
+    collection("metadata").ensureIndex(MongoDBObject("attachedTo" -> 1))
+    collection("metadata").ensureIndex(MongoDBObject("attachedTo.resourceType" ->1, "attachedTo._id" -> 1))
 
     collection("contextld").ensureIndex(MongoDBObject("contextName" -> 1))
 
