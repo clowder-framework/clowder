@@ -88,7 +88,7 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
           users.updateUserField(email, field, fieldText)
           Ok(Json.obj("status" -> "success"))
         } catch {
-          case _ => BadRequest(Json.obj("status" -> "Undefined filed"))
+          case _ => BadRequest(Json.obj("status" -> "Undefined field"))
         }
       }
       case _ => BadRequest(Json.obj("status" -> "Unauthorized"))
