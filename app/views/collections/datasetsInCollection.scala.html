@@ -3,13 +3,13 @@
 @import api.Permission
 
 @datasetsList.map { dataset =>
-    @datasets.listitem(dataset,None,commentMap,routes.Collections.collection(collectionId))
+    @datasets.listitem(dataset,Some(collectionId.uuid),commentMap,routes.Collections.collection(collectionId))
 }
 @if(datasetsList.isEmpty){
     @if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collectionId))){
-        There are not datasets in this collection. <a id="create_first_dataset" href="@routes.Datasets.newDataset(None, Some(collectionId.toString()))"  class="inline" title="Create New Dataset"><i>  Add a dataset.</i></a>
+        There are not datasets in this collection.
     } else {
-        There are no datasets in this collection.
+        There are no datasets in this collection and not enough permission to edit this collection.
     }
 
 }

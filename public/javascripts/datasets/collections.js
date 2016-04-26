@@ -72,6 +72,7 @@ function removeDatasetFromCollectionAndRedirect(collectionId, datasetId, isreloa
     });
 
     request.done(function (response, textStatus, jqXHR){
+        console.log(collectionId, datasetId, isreload, url);
         if(isreload === "true")
             if(url === undefined) {
                 reloadPage = "/collections";
@@ -80,7 +81,6 @@ function removeDatasetFromCollectionAndRedirect(collectionId, datasetId, isreloa
             }
         else {
             $('#col_' + collectionId).remove();
-            //console.log("Response " + response);
         }
     });
 
