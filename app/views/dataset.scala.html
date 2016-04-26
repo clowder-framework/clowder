@@ -73,7 +73,7 @@
                             <span class="glyphicon glyphicon-plus"></span> Add Files
                         </a>
                     }
-                    @if(Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                    @if(dataset.files.length > 0 && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
                         <a id='download-url' href="#"
                         onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id').url, '_blank');"
                         class="btn btn-link btn-sm btn-margin-bottom" title="Download All Files as Zip" role="button">
@@ -89,7 +89,7 @@
                                 <span class="glyphicon glyphicon-globe"></span> Publish
                             </a>
                         } else {
-                            @if(dataset.spaces.size > 0) {
+                            @if(toPublish && dataset.spaces.size > 0) {
                                 <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-link btn-sm btn-margin-bottom">
                                     <span class="glyphicon glyphicon-globe"></span> Publish
                                 </a>
