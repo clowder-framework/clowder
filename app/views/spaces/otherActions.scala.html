@@ -2,18 +2,10 @@
 @import api.Permission
 <div class="row ds-section-sm">
     <ul class="list-unstyled">
-        @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
+        @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
             <li><a href="@routes.Spaces.manageUsers(space.id)" class="btn btn-link btn-xs btn-margins">
                 <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
             </a></li>
-        } else {
-            <li><a href="@routes.Spaces.manageUsers(space.id)" class="btn btn-link btn-xs disabled btn-margins">
-                <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
-            </a></li>
-        }
-
-        <!-- If the user can edit this space, the following are displayed; otherwise they are displayed and disabled, to provide a consistent UE. -->
-        @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
             <li><a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-link btn-xs btn-margins">
                 <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
             </a></li>
@@ -21,6 +13,9 @@
                 <span class = "glyphicon glyphicon-fullscreen" aria-hidden="true"></span> Extractors
             </a></li>
         } else {
+            <li><a href="@routes.Spaces.manageUsers(space.id)" class="btn btn-link btn-xs disabled btn-margins">
+                <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
+            </a></li>
             <li><a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-link btn-xs disabled btn-margins">
                 <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
             </a></li>

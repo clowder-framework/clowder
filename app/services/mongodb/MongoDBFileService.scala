@@ -182,6 +182,13 @@ class MongoDBFileService @Inject() (
     }
   }
 
+  def index(id: Option[UUID]) = {
+    id match {
+      case Some(fileId) => index(fileId)
+      case None => FileDAO.find(MongoDBObject()).foreach(f => index(f.id))
+    }
+  }
+
   def index(id: UUID) {
     get(id) match {
       case Some(file) => {

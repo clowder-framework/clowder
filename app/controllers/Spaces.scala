@@ -200,7 +200,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       }
   }
 
-  def manageUsers(id: UUID) = PermissionAction(Permission.EditUser, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+  def manageUsers(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
@@ -614,7 +614,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       implicit val user  = request.user
       spaces.get(id) match {
         case Some(s) => {
-          val curationIds = s.curationObjects.slice(index*limit, (index+1)*limit)
+          val curationIds = s.curationObjects.reverse.slice(index*limit, (index+1)*limit)
           val curationDatasets: List[CurationObject] = curationIds.map{curObject => curationService.get(curObject)}.flatten
 
           val prev = index-1
