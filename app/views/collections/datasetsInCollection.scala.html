@@ -7,7 +7,7 @@
 }
 @if(datasetsList.isEmpty){
     @if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collectionId))){
-        There are not datasets in this collection.
+        There are no datasets in this collection.
     } else {
         There are no datasets in this collection and not enough permission to edit this collection.
     }

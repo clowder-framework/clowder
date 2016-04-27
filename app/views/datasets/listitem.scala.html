@@ -31,10 +31,10 @@
                                         @if(user.get.id.equals(dataset.author.id) || Permission.checkPermission(Permission.DeleteDataset, ResourceRef(ResourceRef.dataset, dataset.id))){
                                             <button onclick="confirmRemoveResourceFromResource('collection','@collectionId.get','dataset','@(dataset.id)','@(dataset.name.replace("'","&#39;"))',true,'@redirect.url')"
                                             class="btn btn-link" title="Remove the dataset from the collection.">
-                                                <span class="glyphicon glyphicon-remove"></span></button>
+                                                <span class="glyphicon glyphicon-remove"></span> Remove</button>
                                         } else {
                                             <div class="inline" title="No permission to remove dataset from the collection.">
-                                                <button disabled class="btn btn-link"><span class="glyphicon glyphicon-remove"></span></button>
+                                                <button disabled class="btn btn-link"><span class="glyphicon glyphicon-remove"></span> Remove</button>
                                             </div>
                                         }
                                     } else {

@@ -32,7 +32,7 @@
                                                     case None => {confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))',false, '@redirect')}
                                                     case Some(s) => {confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))',false, '@redirect#@s')}
                                                 }
-                                                " class="btn btn-link" style="text-align:right" title="Delete the file">
+                                                " class="btn btn-link" title="Delete the file">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     } else {
                                         <div class="inline" title="No permission to delete the file">
@@ -47,7 +47,7 @@
                         <ul class="list-unstyled">
                             @if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
                                 <li>
-                                    <button id="downloadButton" onclick="window.open(jsRoutes.api.Files.download('@file.id').url, '_blank');" class="btn btn-primary" title="Download and enjoy this file.">
+                                    <button id="downloadButton" onclick="window.open(jsRoutes.api.Files.download('@file.id').url, '_blank');" class="btn btn-link" title="Download and enjoy this file.">
                                         <span class="glyphicon glyphicon-save"></span> Download
                                     </button>
                                 </li>
