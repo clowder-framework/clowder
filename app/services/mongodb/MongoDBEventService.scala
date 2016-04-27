@@ -172,6 +172,13 @@ class MongoDBEventService extends EventService {
     }
   }
 
+  def updateAuthorFullName(userId: UUID, fullName: String) {
+    Event.update(MongoDBObject("user._id" -> new ObjectId(userId.stringify)),
+      $set("user.fullName" -> fullName), false, true, WriteConcern.Safe)
+    Event.update(MongoDBObject("targetuser._id" -> new ObjectId(userId.stringify)),
+      $set("targetuser.fullName" -> fullName), false, true, WriteConcern.Safe)
+  }
+
 }
 
 object Event extends ModelCompanion[Event, ObjectId] {

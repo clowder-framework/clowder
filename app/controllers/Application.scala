@@ -83,10 +83,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         val spacesUser = spaces.listUser(4, Some(clowderUser),request.superAdmin, clowderUser)
         var followers: List[(UUID, String, String, String)] = List.empty
         for (followerID <- clowderUser.followers.take(3)) {
-          var userFollower = users.findById(followerID)
+          val userFollower = users.findById(followerID)
           userFollower match {
             case Some(uFollower) => {
-              var ufEmail = uFollower.email.getOrElse("")
+              val ufEmail = uFollower.email.getOrElse("")
               followers = followers.++(List((uFollower.id, uFollower.fullName, ufEmail, uFollower.getAvatarUrl())))
             }
             case None =>
