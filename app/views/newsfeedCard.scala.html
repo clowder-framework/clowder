@@ -59,6 +59,9 @@
   case "update_dataset_information" => {
     updated information for @linkForObject("dataset", event.object_id, event.object_name)
   }
+  case "update_space_information" => {
+    updated information for @linkForObject("space", event.object_id, event.object_name)
+  }
   case "update_file_information" => {
     updated information for @linkForObject("file", event.object_id, event.object_name)
   }
@@ -72,25 +75,25 @@
     set note for @linkForObject("file", event.object_id, event.object_name)
   }
   case "add_user_to_space" => {
-    has added @(event.targetuser.getOrElse(User.anonymous.getMiniUser).fullName) as a user to @linkForObject("space", event.object_id, event.object_name)
+    added @(event.targetuser.getOrElse(User.anonymous.getMiniUser).fullName) as a user to @linkForObject("space", event.object_id, event.object_name)
   }
   case "remove_user_from_space" => {
-    has removed @(event.targetuser.getOrElse(User.anonymous.getMiniUser).fullName) as a user from @linkForObject("space", event.object_id, event.object_name)
+    removed @(event.targetuser.getOrElse(User.anonymous.getMiniUser).fullName) as a user from @linkForObject("space", event.object_id, event.object_name)
   }
   case "added_folder" => {
-    has created a folder in @linkForObject("dataset", event.object_id, event.object_name)
+    created a folder in @linkForObject("dataset", event.object_id, event.object_name)
   }
   case "deleted_folder" => {
-    has deleted a folder from @linkForObject("dataset", event.object_id, event.object_name)
+    deleted a folder from @linkForObject("dataset", event.object_id, event.object_name)
   }
   case "updated_folder" => {
-    has updated a folder in @linkForObject("dataset", event.object_id, event.object_name)
+    updated a folder in @linkForObject("dataset", event.object_id, event.object_name)
   }
   case "add_file" => {
-    has added a file to @linkForObject("dataset", event.object_id, event.object_name)
+    added a file to @linkForObject("dataset", event.object_id, event.object_name)
   }
   case "add_file_folder" => {
-    has added a file to a folder within @linkForObject("dataset", event.object_id, event.object_name)
+    added a file to a folder within @linkForObject("dataset", event.object_id, event.object_name)
   }
   case "add_sub_collection" => {
     added @linkForObject("collection", event.object_id, event.object_name) to

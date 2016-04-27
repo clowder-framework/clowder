@@ -66,45 +66,49 @@ class Search @Inject() (
                 if (hit.getType() == "file") {
                   files.get(UUID(hit.getId())) match {
                     case Some(file) => {
-                      Logger.debug("FILES:hits.hits._id: Search result found file " + hit.getId());
-                      Logger.debug("FILES:hits.hits._source: Search result found dataset " + hit.getSource().get("datasetId"))
-                      //Logger.debug("Search result found file " + hit.getId()); files += file
+                      if (Permission.checkPermission(Permission.ViewFile, ResourceRef(ResourceRef.file, file.id))) {
+                        Logger.debug("FILES:hits.hits._id: Search result found file " + hit.getId())
+                        Logger.debug("FILES:hits.hits._source: Search result found dataset " + hit.getSource().get("datasetId"))
+                        //Logger.debug("Search result found file " + hit.getId()); files += file
 
-                      var datasetsList = ListBuffer(): ListBuffer[(String, String)]
-                      if ((hit.getSource().get("datasetId") != null) && (hit.getSource().get("datasetName") != null)) {
-                        val datasetsIdsList = hit.getSource().get("datasetId").toString().split(" %%% ").toList
-                        val datasetsNamesList = hit.getSource().get("datasetName").toString().split(" %%% ").toList.iterator
-                        for (currentDatasetId <- datasetsIdsList) {
-                          datasetsList = datasetsList :+ (currentDatasetId, datasetsNamesList.next())
+                        var datasetsList = ListBuffer(): ListBuffer[(String, String)]
+                        if ((hit.getSource().get("datasetId") != null) && (hit.getSource().get("datasetName") != null)) {
+                          val datasetsIdsList = hit.getSource().get("datasetId").toString().split(" %%% ").toList
+                          val datasetsNamesList = hit.getSource().get("datasetName").toString().split(" %%% ").toList.iterator
+                          for (currentDatasetId <- datasetsIdsList) {
+                            datasetsList = datasetsList :+(currentDatasetId, datasetsNamesList.next())
+                          }
                         }
-                      }
 
-                      mapdatasetIds.put(hit.getId(), datasetsList)
-                      listOfFiles += file
+                        mapdatasetIds.put(hit.getId(), datasetsList)
+                        listOfFiles += file
+                      }
                     }
                     case None => Logger.debug("File not found " + hit.getId())
                   }
                 } else if (hit.getType() == "dataset") {
+
                   Logger.debug("DATASETS:hits.hits._source: Search result found dataset " + hit.getSource().get("name"))
                   Logger.debug("DATASETS:Dataset.id=" + hit.getId());
                   //Dataset.findOneById(new ObjectId(hit.getId())) match {
 
                   datasets.get(UUID(hit.getId())) match {
                     case Some(dataset) => {
-                      Logger.debug("Search result found dataset" + hit.getId())
-
-                      var collectionsList = ListBuffer(): ListBuffer[(String, String)]
-                      Logger.debug("src: " + hit.getSource().toString())
-                      if ((hit.getSource().get("collId") != null) && (hit.getSource().get("collName") != null)) {
-                        val collectionsIdsList = hit.getSource().get("collId").toString().split(" %%% ").toList
-                        val collectionsNamesList = hit.getSource().get("collName").toString().split(" %%% ").toList.iterator
-                        for (currentCollectionId <- collectionsIdsList) {
-                          collectionsList = collectionsList :+ (currentCollectionId, collectionsNamesList.next())
+                      if (Permission.checkPermission(Permission.ViewDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        Logger.debug("Search result found dataset" + hit.getId())
+                        var collectionsList = ListBuffer(): ListBuffer[(String, String)]
+                        Logger.debug("src: " + hit.getSource().toString())
+                        if ((hit.getSource().get("collId") != null) && (hit.getSource().get("collName") != null)) {
+                          val collectionsIdsList = hit.getSource().get("collId").toString().split(" %%% ").toList
+                          val collectionsNamesList = hit.getSource().get("collName").toString().split(" %%% ").toList.iterator
+                          for (currentCollectionId <- collectionsIdsList) {
+                            collectionsList = collectionsList :+(currentCollectionId, collectionsNamesList.next())
+                          }
                         }
-                      }
-                      mapcollectionIds.put(hit.getId(), collectionsList)
+                        mapcollectionIds.put(hit.getId(), collectionsList)
 
-                      listOfdatasets += dataset
+                        listOfdatasets += dataset
+                      }
                     }
                     case None => {
                       Logger.debug("Dataset not found " + hit.getId())
@@ -114,14 +118,17 @@ class Search @Inject() (
                   }
                 } else if (hit.getType() == "collection") {
                   Logger.debug("COLLECTIONS:hits.hits._source: Search result found collection " + hit.getSource().get("name"))
-                  Logger.debug("COLLECTIONS:Collection.id=" + hit.getId());
+                  Logger.debug("COLLECTIONS:Collection.id=" + hit.getId())
                   //Dataset.findOneById(new ObjectId(hit.getId())) match {
                   collections.get(UUID(hit.getId())) match {
-                    case Some(collection) =>
-                      Logger.debug("Search result found collection" + hit.getId());
-                      val collectionThumbnail = datasets.listCollection(collection.id.stringify).find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
-                      val collectionWithThumbnail = collection.copy(thumbnail_id = collectionThumbnail)
-                      listOfcollections += collectionWithThumbnail
+                    case Some(collection) => {
+                      if(Permission.checkPermission(Permission.ViewCollection, ResourceRef(ResourceRef.collection, collection.id))) {
+                        Logger.debug("Search result found collection" + hit.getId())
+                        val collectionThumbnail = datasets.listCollection(collection.id.stringify).find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
+                        val collectionWithThumbnail = collection.copy(thumbnail_id = collectionThumbnail)
+                        listOfcollections += collectionWithThumbnail
+                      }
+                    }
                     case None => {
                       Logger.debug("Collection not found " + hit.getId())
                       Redirect(routes.Collections.collection(UUID(hit.getId)))
