@@ -8,7 +8,7 @@ import models._
 import org.bson.types.ObjectId
 import play.api.Play._
 import MongoContext.context
-import services.{MetadataService, CurationService, SpaceService}
+import services.{EventService, MetadataService, CurationService, SpaceService}
 import util.Direction._
 import java.util.Date
 import play.api.Logger
@@ -18,7 +18,7 @@ import com.mongodb.casbah.Imports._
 
 
 @Singleton
-class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: SpaceService)  extends CurationService {
+class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: SpaceService, events: EventService)  extends CurationService {
 
   def insert(curation: CurationObject) = {
 
@@ -198,7 +198,13 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
   }
 
   def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID, creators: List[String]) = {
-    val result = CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+    get(id) match {
+      case Some(c) if name != c.name => {
+        events.updateObjectName(id, name)
+      }
+      case _ => 
+    }
+    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
       $set("description" -> description, "name" -> name, "space" -> new ObjectId(newSpace.stringify), "creators" -> creators),
       false, false, WriteConcern.Safe)
     if(oldSpace != newSpace) {

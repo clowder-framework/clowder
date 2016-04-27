@@ -13,8 +13,7 @@ function unfollowCallback() {
 
 $(document).ready(function() {
 	var followButtonList = $("[id=followButton]");
-	
-	followButtonList.click(function() {
+	followButtonList.onclick = function() {
 		var index = followButtonList.index(this);
 		var followButton = followButtonList.eq(index);
 		console.log(followButton);
@@ -198,5 +197,5 @@ $(document).ready(function() {
 				});
 		}
 	}
-  });
+  };
 });

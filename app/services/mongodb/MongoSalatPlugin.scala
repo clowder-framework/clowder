@@ -358,6 +358,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("add-collection-root-map", addRootMapToCollections)
 
     updateMongo("update-collection-counter-in-space", fixCollectionCounterInSpaces)
+
+    //Update all object_name & source_name in events
+    updateMongo("update-events-name", updateEventObjectName)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1051,4 +1054,19 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     }
   }
+
+  private def updateEventObjectName(): Unit = {
+    for (coll <- List[String]("collections", "spaces.projects", "datasets", "uploads.files", "curationObjects")){
+      collection(coll).foreach { ds =>
+        (ds.getAs[ObjectId]("_id"), ds.getAs[String]("name")) match {
+          case (Some(id), Some(name)) => {
+            collection("events").update(MongoDBObject("object_id" -> new ObjectId(id.toString)), $set("object_name" -> name), multi = true)
+            collection("events").update(MongoDBObject("source_id" -> new ObjectId(id.toString)), $set("source_name" -> name), multi = true)
+          }
+          case _ => {}
+        }
+      }
+    }
+  }
+
 }

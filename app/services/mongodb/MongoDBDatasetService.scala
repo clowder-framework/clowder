@@ -44,7 +44,8 @@ class MongoDBDatasetService @Inject() (
   spaces: SpaceService,
   userService: UserService,
   folders: FolderService,
-  metadatas:MetadataService) extends DatasetService {
+  metadatas:MetadataService,
+  events: EventService) extends DatasetService {
 
   object MustBreak extends Exception {}
 
@@ -698,6 +699,7 @@ class MongoDBDatasetService @Inject() (
   }
 
   def updateName(id: UUID, name: String) {
+    events.updateObjectName(id, name)
     val result = Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
       $set("name" -> name),
       false, false, WriteConcern.Safe)
