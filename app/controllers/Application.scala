@@ -21,7 +21,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
                              sections: SectionService, users: UserService) extends SecuredController {
   /**
    * Redirect any url's that have a trailing /
- *
+   *
    * @param path the path minus the slash
    * @return moved permanently to path without /
    */
