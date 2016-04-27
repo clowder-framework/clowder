@@ -81,6 +81,11 @@ trait EventService {
 		* Get the events by creator
 		*/
 	def getEventsByUser( user: User, limit: Option[Integer]): List[Event]
+
+	/**
+		* Update user fullname
+    */
+	def updateAuthorFullName(userId: UUID, fullName: String)
 }
 
 

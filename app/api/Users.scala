@@ -80,7 +80,16 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
   @ApiOperation(value = "Edit User Field.",
     responseClass = "None", httpMethod = "POST")
   def updateUserField(email: String, field: String, fieldText: Any) = PermissionAction(Permission.ViewUser) { implicit request =>
+    implicit val user = request.user
     users.updateUserField(email, field, fieldText)
+    if(field == "fullName") {
+      user match {
+        case Some(u) => {
+          users.updateUserFullName(u.id, fieldText.toString())
+        }
+        case None =>
+      }
+    }
     Ok(Json.obj("status" -> "success"))
   }
 

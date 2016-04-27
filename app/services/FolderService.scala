@@ -56,6 +56,11 @@ trait FolderService {
   def updateName(folderId: UUID, name: String, displayName: String)
 
   /**
+    * Update author full name
+    */
+  def updateAuthorFullName(userId: UUID, fullName: String)
+
+  /**
    * Find folders that contain a file by id.
    */
   def findByFileId(file_id: UUID): List[Folder]

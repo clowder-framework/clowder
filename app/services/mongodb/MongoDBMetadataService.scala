@@ -203,6 +203,11 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     val resources: List[ResourceRef] = MetadataDAO.find( filter).limit(count).map(_.attachedTo).toList
     resources
   }
+
+  def updateAuthorFullName(userId: UUID, fullName: String) {
+    MetadataDAO.update(MongoDBObject("creator._id" -> new ObjectId(userId.stringify), "creator.typeOfAgent" -> "cat:user"),
+      $set("creator.user.fullName" -> fullName, "creator.fullName" -> fullName), false, true, WriteConcern.Safe)
+  }
 }
 
 object MetadataDAO extends ModelCompanion[Metadata, ObjectId] {
