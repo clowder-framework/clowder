@@ -72,7 +72,7 @@ class MongoDBEventService extends EventService {
     var eventsList = List.concat(userEvents, objectsEvents)
     eventsList = List.concat(eventsList, sourceEvents)
 
-    eventsList = eventsList.sortBy(_.created)
+    eventsList = eventsList.sortBy(_.created).reverse
     eventsList = eventsList.distinct
     eventsList = eventsList.filter(_.created.after(time))
 
@@ -93,7 +93,7 @@ class MongoDBEventService extends EventService {
     var eventsList = List.concat(userEvents, objectsEvents)
     eventsList = List.concat(eventsList, sourceEvents)
 
-    eventsList = eventsList.sortBy(_.created)
+    eventsList = eventsList.sortBy(_.created).reverse
     eventsList = eventsList.distinct
 
     limit match {
@@ -144,7 +144,6 @@ class MongoDBEventService extends EventService {
        case Some(modeluser) => {
          val eventList = Event.find(
            MongoDBObject(
-             // "targetuser" -> MongoDBObject( "_id" -> new ObjectId(targetuser.id.stringify))
              "targetuser._id" -> new ObjectId(modeluser.id.stringify)
            )
          ).toList
@@ -164,7 +163,7 @@ class MongoDBEventService extends EventService {
       "user._id"-> new ObjectId(user.id.toString()))).toList  :::
       Event.find(MongoDBObject(
       "object_id"-> new ObjectId(user.id.toString()))).toList)
-        .sorted(Ordering.by((_: Event).created).reverse)
+        .distinct.sorted(Ordering.by((_: Event).created).reverse)
 
     limit match {
       case Some(x) => eventList.take(x)
