@@ -426,9 +426,16 @@ class Datasets @Inject()(
           val curObjectsPermission: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(curation => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id)))
           val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
 
+          var showDownload: Boolean = dataset.files.length > 0
+          if(!showDownload) {
+            val foldersList = folders.findByParentDatasetId(dataset.id)
+            foldersList.map{ folder =>
+              if(folder.files.length > 0) { showDownload = true}
+            }
+          }
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
             decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove),fileList,
-            filesTags, toPublish, curPubObjects, currentSpace, limit))
+            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload))
         }
         case None => {
           Logger.error("Error getting dataset" + id)
