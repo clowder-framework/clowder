@@ -161,6 +161,23 @@ class MongoDBDatasetService @Inject() (
   }
 
   /**
+    * Return a list of datasets a user can View.
+    */
+  def listUser(user: User): List[Dataset] = {
+    val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
+    orlist += MongoDBObject("public" -> true)
+    orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(user.id.stringify))
+    val okspaces = user.spaceandrole.filter(_.role.permissions.intersect(Set(Permission.ViewDataset.toString)).nonEmpty)
+    if (okspaces.nonEmpty) {
+      orlist += ("spaces" $in okspaces.map(x => new ObjectId(x.spaceId.stringify)))
+    }
+    if (orlist.isEmpty) {
+      orlist += MongoDBObject("doesnotexist" -> true)
+    }
+    Dataset.find($or(orlist.map(_.asDBObject))).toList
+  }
+
+  /**
    * return count based on input
    */
   private def count(date: Option[String], nextPage: Boolean, title: Option[String], collection: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
@@ -438,10 +455,40 @@ class MongoDBDatasetService @Inject() (
   /**
    * Return a list of tags and counts found in sections
    */
-  def getTags(): Map[String, Long] = {
-    val x = Dataset.dao.collection.aggregate(MongoDBObject("$unwind" -> "$tags"),
-      MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-    x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+  def getTags(user: Option[User]): Map[String, Long] = {
+    if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public"){
+      val x = Dataset.dao.collection.aggregate( MongoDBObject("$unwind" -> "$tags"),
+        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
+      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+
+    } else {
+      val x = Dataset.dao.collection.aggregate(MongoDBObject("$match" ->  buildTagFilter(user)), MongoDBObject("$unwind" -> "$tags"),
+        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
+      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+
+    }
+  }
+
+  private def buildTagFilter(user: Option[User]): MongoDBObject = {
+    val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
+    if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")){
+      user match {
+        case Some(u)  => {
+          orlist += MongoDBObject("public" -> true)
+          orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
+          val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(Set(Permission.ViewDataset.toString)).nonEmpty)
+          if(okspaces.nonEmpty){
+            orlist += ("spaces" $in okspaces.map(x => new ObjectId(x.spaceId.stringify)))
+          }
+
+        }
+        case None => orlist += MongoDBObject()
+      }
+    }
+    else {
+      orlist += MongoDBObject()
+    }
+    $or(orlist.map(_.asDBObject))
   }
 
   def isInCollection(datasetId: UUID, collectionId: UUID): Boolean = {
@@ -507,12 +554,17 @@ class MongoDBDatasetService @Inject() (
     (for (dataset <- Dataset.find(MongoDBObject())) yield dataset).toList.filterNot(listContaining.toSet)
   }
 
-  def findByTag(tag: String): List[Dataset] = {
-    Dataset.dao.find(MongoDBObject("tags.name" -> tag)).toList
+  def findByTag(tag: String, user: Option[User]): List[Dataset] = {
+    if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public"){
+      Dataset.dao.find(MongoDBObject("tags.name" -> tag)).toList
+    } else {
+      Dataset.dao.find(buildTagFilter(user) ++
+        MongoDBObject("tags.name" -> tag)).toList
+    }
   }
 
-  def findByTag(tag: String,start: String, limit: Integer, reverse: Boolean): List[Dataset] = {
-    val filter = if (start == "") {
+  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean, user: Option[User]): List[Dataset] = {
+    var filter = if (start == "") {
       MongoDBObject("tags.name" -> tag)
     } else {
       if (reverse) {
@@ -520,6 +572,9 @@ class MongoDBDatasetService @Inject() (
       } else {
         MongoDBObject("tags.name" -> tag) ++ ("created" $lte Parsers.fromISO8601(start))
       }
+    }
+    if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")) {
+      filter = buildTagFilter(user) ++ filter
     }
     val order = if (reverse) {
       MongoDBObject("created" -> -1, "name" -> 1)
