@@ -1,5 +1,6 @@
 package api
 
+import java.net.URI
 import javax.inject.{Inject, Singleton}
 import models._
 import org.apache.http.client.methods.HttpDelete
@@ -363,4 +364,78 @@ class CurationObjects @Inject()(datasets: DatasetService,
         case None => InternalServerError("Curation Object Not found")
       }
   }
+
+  /**
+    * Endpoint for receiving status/ uri from repository.
+    */
+  def savePublishedObject(id: UUID) = AuthenticatedAction (parse.json) {
+    implicit request =>
+      Logger.debug("get infomation from repository")
+
+      curations.get(id) match {
+
+        case Some(c) => {
+          c.status match {
+
+            case "In Curation" => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object hasn't been submitted yet.")))
+            //sead2 receives status once from repository,
+            case "Published" | "ERROR" | "Reject" => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object already received status from repository.")))
+            case "Submitted" => {
+              //parse status from request's body
+              val statusList = (request.body \ "status").asOpt[String]
+
+              statusList.size match {
+                case 0 => {
+                  if ((request.body \ "uri").asOpt[String].isEmpty) {
+                    BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Receive empty request.")))
+                  } else {
+                    (request.body \ "uri").asOpt[String].map {
+                      externalIdentifier => {
+                        //set published when uri is provided
+                        curations.setPublished(id)
+                        if (externalIdentifier.startsWith("doi:") || externalIdentifier.startsWith("10.")) {
+                          val DOI_PREFIX = "http://dx.doi.org/"
+                          curations.updateExternalIdentifier(id, new URI(DOI_PREFIX + externalIdentifier.replaceAll("^doi:", "")))
+                        } else {
+                          curations.updateExternalIdentifier(id, new URI(externalIdentifier))
+                        }
+                      }
+                    }
+                    Ok(toJson(Map("status" -> "OK")))
+                  }
+                }
+                case 1 => {
+                  statusList.map {
+                    status =>
+                      if (status.compareToIgnoreCase("Published") == 0 || status.compareToIgnoreCase("Publish") == 0) {
+                        curations.setPublished(id)
+                      } else {
+                        //other status except Published, such as ERROR, Rejected
+                        curations.updateStatus(id, status)
+                      }
+                  }
+
+                  (request.body \ "uri").asOpt[String].map {
+                    externalIdentifier => {
+                      if (externalIdentifier.startsWith("doi:") || externalIdentifier.startsWith("10.")) {
+                        val DOI_PREFIX = "http://dx.doi.org/"
+                        curations.updateExternalIdentifier(id, new URI(DOI_PREFIX + externalIdentifier.replaceAll("^doi:", "")))
+                      } else {
+                        curations.updateExternalIdentifier(id, new URI(externalIdentifier))
+                      }
+                    }
+                  }
+                  Ok(toJson(Map("status" -> "OK")))
+                }
+                //multiple status
+                case _ => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object has unrecognized status .")))
+              }
+
+            }
+          }
+        }
+        case None => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object not found.")))
+      }
+  }
+
 }

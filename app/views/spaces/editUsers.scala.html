@@ -35,15 +35,13 @@
                     </ul>
 
                     <ul>
-                        @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
-                            <li style="list-style: none">
-                                <select class="chosen-select" multiple id='@currRole'>
-                                    @for(extUser <- externalUsers) {
-                                        <option value="@extUser.id">@extUser.fullName (@extUser.email)</option>
-                                    }
-                                </select>
-                            </li>
-                        }
+                        <li style="list-style: none">
+                            <select class="chosen-select" multiple id='@currRole'>
+                            @for(extUser <- externalUsers) {
+                                <option value="@extUser.id">@extUser.fullName (@extUser.email)</option>
+                            }
+                            </select>
+                        </li>
                     </ul>
                     <br />
 
@@ -52,7 +50,7 @@
             <br />
         </div>
 
-        @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
+        @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
             <button class="btn btn-primary" title="Update" onclick="return updateUsersInSpace('@space.id')"><span class="glyphicon glyphicon-saved"></span> Submit</button>
             <button class="btn btn-default" title="Cancel" type="button" id="cancel-button" onClick="window.location.reload();"><span class="glyphicon glyphicon-remove"></span> Cancel</button>
         }

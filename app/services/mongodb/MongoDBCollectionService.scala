@@ -656,6 +656,12 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     }
   }
 
+  def index(id: Option[UUID]) = {
+    id match {
+      case Some(collectionId) => index(collectionId)
+      case None => Collection.dao.find(MongoDBObject()).foreach(c => index(c.id))
+    }
+  }
 
   def index(id: UUID) {
     Collection.findOneById(new ObjectId(id.stringify)) match {
@@ -853,7 +859,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
                     return true
                   }
                 }
-                case None =>
+                case None => return false
               }
             }
           }
