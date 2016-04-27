@@ -151,15 +151,13 @@
 	<div class="row">
 		<div class="col-md-8 col-right-border">
 			<div id="prf-file-name" class="text-left inline">
+				<h1 id="file-name-title" class="inline">@Html(file.filename)</h1>
 				@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
-					<h1 id="file-name-title" class="inline" style="cursor:pointer" title="Click to edit file name.">@Html(file.filename)</h1>
 					<div id="h-edit-file" class="hiddencomplete">
 						<a id ="edit-file" href="javascript:updateFileName()" title="Click to edit file name.">
 							<span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
 						</a>
 					</div>
-				} else {
-					<h1 id="file-name-title" class="inline">@Html(file.filename)</h1>
 				}
 			</div>
 			<h4>in
@@ -568,10 +566,10 @@
             </div>
 
 			<script language="javascript">
-					var fileName = $('#file-name-title').text();
-					$('#file-name-title').click(function(){
-						updateFileName();
-					});
+//					var fileName = $('#file-name-title').text();
+//					$('#file-name-title').click(function(){
+//						updateFileName();
+//					});
 
 					function updateFileName() {
 						fileName = $('#file-name-title').text();
