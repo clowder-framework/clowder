@@ -151,6 +151,10 @@ class CurationObjects @Inject()(datasets: DatasetService,
           if(!metadataDefsMap.contains("Abstract")){
             metadataDefsMap("Abstract") = Json.toJson("http://purl.org/dc/terms/abstract")
           }
+          var aggregation = metadataJson
+          if(commentsJson.size > 0) {
+            aggregation = metadataJson ++ Map( "Comment" -> Json.toJson(JsArray(commentsJson)))
+          }
           var parsedValue =
             Map(
               "@context" -> Json.toJson(Seq(
@@ -205,9 +209,9 @@ class CurationObjects @Inject()(datasets: DatasetService,
                 )
 
               )),
-              "Rights" -> Json.toJson(c.datasets(0).licenseData.m_licenseText),
+              "Rights" -> Json.toJson("CC0"),
               "describes" ->
-                 Json.toJson( metadataJson.toMap ++ Map(
+                 Json.toJson( aggregation.toMap ++ Map(
                   "Identifier" -> Json.toJson("urn:uuid:" + c.id),
                   "Creation Date" -> Json.toJson(format.format(c.created)),
                   "Label" -> Json.toJson(c.name),
@@ -238,9 +242,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               Json.toJson(c.datasets(0).tags.map(_.name))
             ))
           }
-          if(commentsJson.size > 0) {
-            parsedValue = parsedValue ++ Map( "Comment" -> Json.toJson(JsArray(commentsJson)))
-          }
+
 
           Ok(Json.toJson(parsedValue))
         }
