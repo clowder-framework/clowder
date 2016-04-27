@@ -438,6 +438,7 @@ class MongoDBSpaceService @Inject() (
       case Some(s) if name != s.name => {
         events.updateObjectName(spaceId, name)
       }
+      case _ => 
     }
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
       $set("description" -> description, "name" -> name, "resourceTimeToLive" -> timeToLive, "isTimeToLiveEnabled" -> expireEnabled),
