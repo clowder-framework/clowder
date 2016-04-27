@@ -78,7 +78,7 @@ class MongoDBVocabularyService @Inject() (userService: UserService) extends Voca
     Vocabulary.findAll.toList.filter((v: Vocabulary )=> (!v.description.intersect(desc).isEmpty))
   }
 
-  private def lista() : List[Vocabulary] = {
+  private def list() : List[Vocabulary] = {
     var vocabularies = List.empty[Vocabulary]
   }
 
