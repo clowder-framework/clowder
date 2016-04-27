@@ -359,13 +359,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     updateMongo("update-collection-counter-in-space", fixCollectionCounterInSpaces)
 
-<<<<<<< HEAD
     // rename admin to serverAdmin to make clear what type of admin they are
     updateMongo("rename-admin-serverAdmin", renameAdminServerAdmin)
-=======
+
     //Update all object_name & source_name in events
     updateMongo("update-events-name", updateEventObjectName)
->>>>>>> 97cddba568ce0f641e991436949bd4886c8b9bb9
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
