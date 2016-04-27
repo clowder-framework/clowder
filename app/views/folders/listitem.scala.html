@@ -13,10 +13,8 @@
             </div>
             <div class="col-md-10 col-sm-10 col-lg-10">
                 <div id="folder-title-@folder.id">
-                    <h3 id ="@folder.id-name" class="inline">
-                        <a href="javascript:updatePageAndFolder(0, '@folder.id.stringify')">
-                            @folder.displayName
-                        </a>
+                    <h3  class="inline">
+                        <a id ="@folder.id-name" href="javascript:updatePageAndFolder(0, '@folder.id.stringify')">@folder.displayName</a>
                     </h3>
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))) {
                         <h3 id="h-edit-@folder.id" class="hiddencomplete">

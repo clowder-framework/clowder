@@ -21,6 +21,7 @@ var cur_hrefs=[];
 function updateFolderName(parentDataset, folderId) {
     cur_names[folderId] = $('#'+folderId+'-name').text();
     cur_hrefs[folderId] = $('#'+folderId+'-name a').attr('href');
+    console.log(cur_names[folderId]);
     var class_name = "edit_title_"+folderId;
     $('<span class="inline '+class_name+'"></span>').insertAfter($('#'+folderId+'-name'));
     $('.'+class_name).append('<input type="text" id = "title_input_'+folderId+'" class="form-control" required/>');
