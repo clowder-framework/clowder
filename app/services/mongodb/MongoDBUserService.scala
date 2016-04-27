@@ -36,7 +36,12 @@ class MongoDBUserService @Inject() (
   files: FileService,
   datasets: DatasetService,
   collections: CollectionService,
-  spaces: SpaceService) extends services.UserService {
+  spaces: SpaceService,
+  comments: CommentService,
+  events: EventService,
+  folders: FolderService,
+  metadata: MetadataService,
+  curations: CurationService) extends services.UserService {
   // ----------------------------------------------------------------------
   // Code to implement the common CRUD services
   // ----------------------------------------------------------------------
@@ -204,6 +209,17 @@ class MongoDBUserService @Inject() (
 
   override def updateUserField(email: String, field: String, fieldText: Any) {
     UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldText))
+  }
+
+  override def updateUserFullName(id: UUID, name: String): Unit = {
+    collections.updateAuthorFullName(id, name)
+    comments.updateAuthorFullName(id, name)
+    curations.updateAuthorFullName(id, name)
+    datasets.updateAuthorFullName(id, name)
+    events.updateAuthorFullName(id, name)
+    files.updateAuthorFullName(id, name)
+    folders.updateAuthorFullName(id, name)
+    metadata.updateAuthorFullName(id, name)
   }
 
   override def addUserDatasetView(email: String, dataset: UUID) {

@@ -5,11 +5,19 @@
     <div class="panel-body">
         <div class="row">
             <div class="col-md-2 col-sm-2 col-lg-2">
-                <h1 class="text-center"><span class="glyphicon glyphicon-folder-close"></span></h1>
+                <h1 class="text-center">
+                    <a href="javascript:updatePageAndFolder(0, '@folder.id.stringify')">
+                        <span class="glyphicon glyphicon-folder-close"></span>
+                    </a>
+                </h1>
             </div>
             <div class="col-md-10 col-sm-10 col-lg-10">
                 <div id="folder-title-@folder.id">
-                    <h3 id ="@folder.id-name" class="inline"><a href="javascript:updatePageAndFolder(0, '@folder.id.stringify')">@folder.displayName</a></h3>
+                    <h3 id ="@folder.id-name" class="inline">
+                        <a href="javascript:updatePageAndFolder(0, '@folder.id.stringify')">
+                            @folder.displayName
+                        </a>
+                    </h3>
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))) {
                         <h3 id="h-edit-@folder.id" class="hiddencomplete">
                             <a id="edit-@folder-id" href="javascript:updateFolderName('@parentDataset', '@folder.id')" title="Click to edit folder name">

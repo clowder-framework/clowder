@@ -80,7 +80,16 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
   @ApiOperation(value = "Edit User Field.",
     responseClass = "None", httpMethod = "POST")
   def updateUserField(email: String, field: String, fieldText: Any) = PermissionAction(Permission.ViewUser) { implicit request =>
+    implicit val user = request.user
     users.updateUserField(email, field, fieldText)
+    if(field == "fullName") {
+      user match {
+        case Some(u) => {
+          users.updateUserFullName(u.id, fieldText.toString())
+        }
+        case None =>
+      }
+    }
     Ok(Json.obj("status" -> "success"))
   }
 
@@ -102,12 +111,12 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
 
   @ApiOperation(value = "Follow a user",
     responseClass = "None", httpMethod = "POST")
-  def follow(followeeUUID: UUID, name: String) = AuthenticatedAction { implicit request =>
+  def follow(followeeUUID: UUID) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(loggedInUser) => {
         val followerUUID = loggedInUser.id
-        events.addObjectEvent(user, followeeUUID, name, "follow_user")
+        events.addObjectEvent(user, followeeUUID, loggedInUser.fullName, "follow_user")
         users.followUser(followeeUUID, followerUUID)
 
         val recommendations = getTopRecommendations(followeeUUID, loggedInUser)
@@ -124,12 +133,12 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
 
   @ApiOperation(value = "Unfollow a user",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(followeeUUID: UUID, name: String) = AuthenticatedAction { implicit request =>
+  def unfollow(followeeUUID: UUID) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
     user match {
       case Some(loggedInUser) => {
         val followerUUID = loggedInUser.id
-        events.addObjectEvent(user, followeeUUID, name, "unfollow_user")
+        events.addObjectEvent(user, followeeUUID, loggedInUser.fullName, "unfollow_user")
         users.unfollowUser(followeeUUID, followerUUID)
         Ok(Json.obj("status" -> "success"))
       }

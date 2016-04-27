@@ -80,6 +80,7 @@ trait CollectionService {
    */
   def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[Collection]
 
+  def updateAuthorFullName(userId: UUID, fullName: String)
   /**
    * Get collection.
    */
@@ -176,8 +177,6 @@ trait CollectionService {
 
   def removeParentCollectionId(parentCollectionId: UUID, collection: Collection, ignoreNotFound: Boolean = true) : Try[Unit]
 
-  def setRootFlag(collectionId: UUID, isRoot: Boolean) : Try[Unit]
-
   def listChildCollections(parentCollectionId: UUID) : List[Collection]
 
   def getAllDescendants(parentCollectionId : UUID) : ListBuffer[Collection]
@@ -188,5 +187,15 @@ trait CollectionService {
 
   def hasParentInSpace(collectionId : UUID, spaceId: UUID) : Boolean
 
+  def hasRoot(collection: Collection): Boolean
+
+  def addToRootSpaces(collectionId: UUID, spaceId: UUID)
+
+  def removeFromRootSpaces(collectionId: UUID, spaceId: UUID)
+
+  /**
+    * Index collection, if no id provided, index all collections.
+    */
+  def index(id: Option[UUID])
 
 }

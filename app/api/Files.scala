@@ -2106,14 +2106,14 @@ class Files @Inject()(
   @ApiOperation(value = "Follow file",
     notes = "Add user to file followers and add file to user followed files.",
     responseClass = "None", httpMethod = "POST")
-  def follow(id: UUID, name: String) = AuthenticatedAction {implicit request =>
+  def follow(id: UUID) = AuthenticatedAction {implicit request =>
       implicit val user = request.user
 
       user match {
         case Some(loggedInUser) => {
           files.get(id) match {
             case Some(file) => {
-              events.addObjectEvent(user, id, name, "follow_file")
+              events.addObjectEvent(user, id, file.filename, "follow_file")
               files.addFollower(id, loggedInUser.id)
               userService.followFile(loggedInUser.id, id)
 
@@ -2137,14 +2137,14 @@ class Files @Inject()(
   @ApiOperation(value = "Unfollow file",
     notes = "Remove user from file followers and remove file from user followed files.",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(id: UUID, name: String) = AuthenticatedAction {implicit request =>
+  def unfollow(id: UUID) = AuthenticatedAction {implicit request =>
       implicit val user = request.user
 
       user match {
         case Some(loggedInUser) => {
           files.get(id) match {
             case Some(file) => {
-              events.addObjectEvent(user, id, name, "unfollow_file")
+              events.addObjectEvent(user, id, file.filename, "unfollow_file")
               files.removeFollower(id, loggedInUser.id)
               userService.unfollowFile(loggedInUser.id, id)
               Ok
