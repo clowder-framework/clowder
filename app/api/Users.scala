@@ -65,8 +65,7 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
 
   /**
    * Returns a single user based on the email specified.
-    *
-    * @deprecated use findById
+   * @deprecated use findById
    */
   @ApiOperation(value = "Return a single user.",
     responseClass = "User", httpMethod = "GET")

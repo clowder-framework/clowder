@@ -169,7 +169,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
           if (permissions.contains(Permission.ViewCollection)) {
             orlist += MongoDBObject("public" -> true)
           }
-          orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author.identityId.userId" -> u.identityId.userId)
+          orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
           val permissionsString = permissions.map(_.toString)
           val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(permissionsString).nonEmpty)
           if (okspaces.nonEmpty) {
@@ -192,7 +192,13 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
             if (permissions.contains(Permission.AddResourceToCollection)) {
               MongoDBObject()
             } else {
-              MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject( "$size" -> 0)))
+              val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
+              orlist += MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject( "$size" -> 0)))
+              user match {
+                case Some(u) => orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
+                case None =>
+              }
+              $or(orlist.map(_.asDBObject))
             }
           }
         }
@@ -709,6 +715,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   def updateDescription(collectionId: UUID, description: String){
     val result = Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
       $set("description" -> description), false, false, WriteConcern.Safe)
+  }
+
+  def updateAuthorFullName(userId: UUID, fullName: String) {
+    Collection.update(MongoDBObject("author._id" -> new ObjectId(userId.stringify)),
+      $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
   }
 
   /**
