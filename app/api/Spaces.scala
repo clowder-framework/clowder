@@ -322,7 +322,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       Logger.debug("converted values are " + timeToLive + " and " + enabled)
 
       spaces.updateSpaceConfiguration(spaceid, name, description, timeToLive, enabled)
-      events.addObjectEvent(request.user, spaceid, name, "modify_space")
+      events.addObjectEvent(request.user, spaceid, name, "update_space_information")
       Ok(Json.obj("status" -> "success"))
     }
     else {

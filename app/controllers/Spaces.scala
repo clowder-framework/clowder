@@ -152,7 +152,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 	            	inSpaceBuffer += theCreator
 	            	creatorActual = theCreator
 	            }
-	            case None => Logger.debug("-------- No creator for space found...")
+	            case None => Logger.error(s" No creator for space $id found...")
 	        }
 
 	        var userRoleMap: Map[User, String] = Map.empty
@@ -213,7 +213,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
             inSpaceBuffer += theCreator
             creatorActual = theCreator
           }
-          case None => Logger.debug("-------- No creator for space found...")
+          case None => Logger.error(s" No creator for space $id found...")
         }
 
         var externalUsers = users.list.to[ArrayBuffer]
@@ -319,47 +319,48 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   /**
    * Each user with EditSpace permission will see the request on index and receive an email.
    */
-   def addRequest(id: UUID) = AuthenticatedAction { implicit request =>
-      implicit val requestuser = request.user
+  def addRequest(id: UUID) = AuthenticatedAction { implicit request =>
+    implicit val requestuser = request.user
 
     requestuser match{
-      case Some(user) =>  {    spaces.get(id) match {
-        case Some(s) => {
-          // when permission is public, user can reach the authorization request button, so we check if the request is
-          // already inserted
-          if(s.requests.contains(RequestResource(user.id))) {
-            Ok(views.html.authorizationMessage("Your prior request is active, and pending"))
-          }else if (spaces.getRoleForUserInSpace(s.id, user.id) != None) {
-            Ok(views.html.authorizationMessage("You are already part of the space"))
-          } else{
-            Logger.debug("Request submitted in controller.Space.addRequest  ")
-            val subject: String = "Request for access from " + AppConfiguration.getDisplayName
-            val body = views.html.spaces.requestemail(user, id.toString, s.name)
+      case Some(user) =>  {
+        spaces.get(id) match {
+          case Some(s) => {
+            // when permission is public, user can reach the authorization request button, so we check if the request is
+            // already inserted
+            if(s.requests.contains(RequestResource(user.id))) {
+              Ok(views.html.authorizationMessage("Your prior request is active, and pending"))
+            }else if (spaces.getRoleForUserInSpace(s.id, user.id) != None) {
+              Ok(views.html.authorizationMessage("You are already part of the space"))
+            } else{
+              Logger.debug("Request submitted in controller.Space.addRequest  ")
+              val subject: String = "Request for access from " + AppConfiguration.getDisplayName
+              val body = views.html.spaces.requestemail(user, id.toString, s.name)
 
-            for (requestReceiver <- spaces.getUsersInSpace(s.id)) {
-              spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
-                case Some(aRole) => {
-                  if (aRole.permissions.contains("EditSpace")) {
-                    events.addRequestEvent(Some(user), requestReceiver, id, s.name, "postrequest_space")
+              for (requestReceiver <- spaces.getUsersInSpace(s.id)) {
+                spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
+                  case Some(aRole) => {
+                    if (aRole.permissions.contains("EditSpace")) {
+                      events.addRequestEvent(Some(user), requestReceiver, id, s.name, "postrequest_space")
 
-                    //sending emails to the space's Admin && Editor
-                    val recipient: String = requestReceiver.email.get.toString
-                    Mail.sendEmail(subject, request.user, recipient, body)
+                      //sending emails to the space's Admin && Editor
+                      val recipient: String = requestReceiver.email.get.toString
+                      Mail.sendEmail(subject, request.user, recipient, body)
+                    }
                   }
                 }
               }
+              spaces.addRequest(id, user.id, user.fullName)
+              Ok(views.html.authorizationMessage("Request submitted"))
             }
-            spaces.addRequest(id, user.id, user.fullName)
-            Ok(views.html.authorizationMessage("Request submitted"))
           }
+          case None => InternalServerError("Space not found")
         }
-        case None => InternalServerError("Space not found")
       }
-    }
 
-    case None => InternalServerError("User not found")
-       }
+      case None => InternalServerError("User not found")
     }
+  }
 
   /**
    * accept authorization request with specific Role. Send email to request user.
@@ -467,7 +468,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                             homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
                           spaces.update(updated_space)
                           val option_user = users.findByIdentity(identity)
-                          events.addObjectEvent(option_user, updated_space.id, updated_space.name, "modify_space")
+                          events.addObjectEvent(option_user, updated_space.id, updated_space.name, "update_space_information")
                           Redirect(routes.Spaces.getSpace(existing_space.id))
                         } else {
                           Redirect(routes.Spaces.getSpace(existing_space.id)).flashing("error" -> "You are not authorized to edit this spaces")

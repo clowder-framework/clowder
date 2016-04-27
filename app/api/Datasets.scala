@@ -142,7 +142,7 @@ class  Datasets @Inject()(
             case Some(file) =>
               datasets.insert(d) match {
                 case Some(id) => {
-                  d.spaces.map( s => spaces.get(s)).flatten.map{ s =>
+                  d.spaces.map( spaceId => spaces.get(spaceId)).flatten.map{ s =>
                     spaces.addDataset(d.id, s.id)
                     events.addSourceEvent(request.user, d.id, d.name, s.id, s.name, "add_dataset_space")
                   }
@@ -219,7 +219,10 @@ class  Datasets @Inject()(
           //In this case, the dataset has been created and inserted. Now notify the space service and check
           //for the presence of existing files.
           Logger.debug("About to call addDataset on spaces service")
-          d.spaces.map{ s => spaces.addDataset(d.id, s)}
+          d.spaces.map( spaceId => spaces.get(spaceId)).flatten.map{ s =>
+            spaces.addDataset(d.id, s.id)
+            events.addSourceEvent(request.user, d.id, d.name, s.id, s.name, "add_dataset_space")
+          }
           //Add this dataset to a collection if needed
           (request.body \ "collection").asOpt[List[String]] match {
             case None | Some(List("default"))=>

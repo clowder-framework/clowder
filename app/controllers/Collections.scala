@@ -325,6 +325,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
               case Some(s) => {
                 spaces.addCollection(collection.id, s.id)
                 collections.addToRootSpaces(collection.id, s.id)
+                events.addSourceEvent(request.user, collection.id, collection.name, s.id, s.name, "add_collection_space")
               }
               case None => Logger.error(s"space with id $sp on collection $collection.id doesn't exist.")
             }
