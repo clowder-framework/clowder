@@ -341,23 +341,20 @@ object Permission extends Enumeration {
       }
 
       case ResourceRef(ResourceRef.user, id) => {
-        if (permission == Permission.EditUser) id == user.id
-        else {
-          users.get(id) match {
-            case Some(u) => {
-              if (id == u.id) {
-                true
-              } else {
-                u.spaceandrole.map { space_role =>
-                  if (space_role.role.permissions.contains(permission.toString)) {
-                    true
-                  }
+        users.get(id) match {
+          case Some(u) => {
+            if (id == user.id) {
+              true
+            } else {
+              u.spaceandrole.map { space_role =>
+                if (space_role.role.permissions.contains(permission.toString)) {
+                  true
                 }
-                false
               }
+              false
             }
-            case None => false
           }
+          case None => false
         }
       }
 

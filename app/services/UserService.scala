@@ -87,9 +87,8 @@ trait UserService  {
 
   /**
    * Updates a value in the User Model
-   * TODO: use UUID instead of email
    */
-  def updateUserField(email: String, field: String, fieldText: Any)
+  def updateUserField(id: UUID, field: String, fieldText: Any)
 
   /**
     * Update full name in all mini users (collections, uploads, datasets, curatonObjects, curationFiles, comments,
