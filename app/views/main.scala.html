@@ -38,11 +38,7 @@
 </head>
 <body>
     <div id="wrap">
-      @if(user.exists(_.superAdminMode)) {
-          <div class="navbar navbar-inverse navbar-fixed-top">
-      } else {
-          <div class="navbar navbar-default navbar-fixed-top">
-      }
+      <div class="navbar navbar-default navbar-fixed-top">
         <div class="container">
             <div class="navbar-header">
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
@@ -180,6 +176,12 @@
                     }
                 </ul>
             </div>
+    @if(user.exists(_.superAdminMode)) {
+        <div class="alert alert-warning" role="alert">
+            <span class="glyphicon glyphicon-warning-sign"></span>
+            You have temporary access to administrative functions. <a href="javascript:toggelServerAdmin();">Drop access</a> if you no longer require it.
+        </div>
+    }
     </div>
     </div>
     <div class="container">
