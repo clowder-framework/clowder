@@ -467,7 +467,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                             homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
                           spaces.update(updated_space)
                           val option_user = users.findByIdentity(identity)
-                          events.addObjectEvent(option_user, updated_space.id, updated_space.name, "update_space_information")
+                          events.addObjectEvent(option_user, updated_space.id, updated_space.name, "modify_space")
                           Redirect(routes.Spaces.getSpace(existing_space.id))
                         } else {
                           Redirect(routes.Spaces.getSpace(existing_space.id)).flashing("error" -> "You are not authorized to edit this spaces")
