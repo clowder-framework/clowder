@@ -66,6 +66,40 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
       collection("sections").dropIndex("tags.name_text")
     }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("uploadDate_-1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("author.email_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("tags.name_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("filename_1_uploadDate_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("uploadDate_-1_file_id_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("uploadDate_-1_section_id_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("section_id_-1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("file_id_-1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("filename_1_uploadDate_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("textures.files").dropIndex("file_id_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("tiles.files").dropIndex("preview_id_1_filename_1_level_1")
+    }
+
 
     // create indices.
     Logger.debug("Ensuring indices exist")
@@ -77,7 +111,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("collections").ensureIndex(MongoDBObject("spaces" -> 1))
     collection("collections").ensureIndex(MongoDBObject("datasets._id" -> 1))
     collection("collections").ensureIndex(MongoDBObject("public" -> 1))
-    collection("collections").ensureIndex(MongoDBObject("author.identityId.userId" -> 1, "author.identityId.providerId" -> 1))
+    collection("collections").ensureIndex(MongoDBObject("author._id" -> 1))
 
     collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
     collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
@@ -87,29 +121,35 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("datasets").ensureIndex(MongoDBObject("spaces" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("public" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("name" -> 1))
-    collection("datasets").ensureIndex(MongoDBObject("author.identityId.userId" -> 1, "author.identityId.providerId" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("author._id" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("public" -> 1, "spaces" -> 1, "author._id" -> 1))
 
-    collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
-    collection("uploads.files").ensureIndex(MongoDBObject("author.email" -> 1))
-    collection("uploads.files").ensureIndex(MongoDBObject("tags.name" -> 1))
+    collection("folders").ensureIndex(MongoDBObject("parentDatasetId" -> 1))
+
+    collection("uploads").ensureIndex(MongoDBObject("uploadDate" -> -1))
+    collection("uploads").ensureIndex(MongoDBObject("author.email" -> 1))
+    collection("uploads").ensureIndex(MongoDBObject("tags.name" -> 1))
+    collection("uploads").ensureIndex(MongoDBObject("author._id"-> 1,  "_id"-> 1))
 
     collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
     
-    collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
-    collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
-    collection("previews.files").ensureIndex(MongoDBObject("section_id" -> -1))
-    collection("previews.files").ensureIndex(MongoDBObject("file_id" -> -1))
+    collection("previews").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
+    collection("previews").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
+    collection("previews").ensureIndex(MongoDBObject("section_id" -> -1))
+    collection("previews").ensureIndex(MongoDBObject("file_id" -> -1))
 
-    collection("textures.files").ensureIndex(MongoDBObject("file_id" -> 1))
-    collection("tiles.files").ensureIndex(MongoDBObject("preview_id" -> 1, "filename" -> 1,"level" -> 1))
+    collection("textures").ensureIndex(MongoDBObject("file_id" -> 1))
+    collection("tiles").ensureIndex(MongoDBObject("preview_id" -> 1, "filename" -> 1,"level" -> 1))
     
     collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
     collection("sections").ensureIndex(MongoDBObject("file_id" -> -1))
     collection("sections").ensureIndex(MongoDBObject("tags.name" -> 1))
+    collection("sections").ensureIndex(MongoDBObject("file_id" -> 1, "author._id" -> 1))
 
     collection("metadata").ensureIndex(MongoDBObject("createdAt" -> -1))
     collection("metadata").ensureIndex(MongoDBObject("creator" -> 1))
-    collection("metadata").ensureIndex(MongoDBObject("attachTo" -> 1))
+    collection("metadata").ensureIndex(MongoDBObject("attachedTo" -> 1))
+    collection("metadata").ensureIndex(MongoDBObject("attachedTo.resourceType" ->1, "attachedTo._id" -> 1))
 
     collection("contextld").ensureIndex(MongoDBObject("contextName" -> 1))
 
@@ -319,8 +359,13 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     updateMongo("update-collection-counter-in-space", fixCollectionCounterInSpaces)
 
+<<<<<<< HEAD
     // rename admin to serverAdmin to make clear what type of admin they are
     updateMongo("rename-admin-serverAdmin", renameAdminServerAdmin)
+=======
+    //Update all object_name & source_name in events
+    updateMongo("update-events-name", updateEventObjectName)
+>>>>>>> 97cddba568ce0f641e991436949bd4886c8b9bb9
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1019,5 +1064,19 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     val q = MongoDBObject()
     val o = MongoDBObject("$rename" -> MongoDBObject("admin" -> "serverAdmin"))
     collection("social.users").update(q, o, multi=true, concern=WriteConcern.Safe)
+  }
+
+  private def updateEventObjectName(): Unit = {
+    for (coll <- List[String]("collections", "spaces.projects", "datasets", "uploads.files", "curationObjects")){
+      collection(coll).foreach { ds =>
+        (ds.getAs[ObjectId]("_id"), ds.getAs[String]("name")) match {
+          case (Some(id), Some(name)) => {
+            collection("events").update(MongoDBObject("object_id" -> new ObjectId(id.toString)), $set("object_name" -> name), multi = true)
+            collection("events").update(MongoDBObject("source_id" -> new ObjectId(id.toString)), $set("source_name" -> name), multi = true)
+          }
+          case _ => {}
+        }
+      }
+    }
   }
 }

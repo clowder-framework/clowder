@@ -92,6 +92,11 @@ trait UserService  {
   def updateUserField(email: String, field: String, fieldText: Any)
 
   /**
+    * Update full name in all mini users (collections, uploads, datasets, curatonObjects, curationFiles, comments,
+    */
+  def updateUserFullName(id: UUID, name: String)
+
+  /**
    * Updates the user repository preferences.
    */
   def updateRepositoryPreferences(id: UUID, preferences: Map[String, String])

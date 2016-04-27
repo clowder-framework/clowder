@@ -349,8 +349,8 @@ GET            /api/files/:id/usermetadatajson                                  
 POST           /api/files/:id/usermetadata                                              @api.Files.addUserMetadata(id: UUID)
 GET            /api/files/:id/technicalmetadatajson                                     @api.Files.getTechnicalMetadataJSON(id: UUID)
 GET            /api/files/:id/xmlmetadatajson                                           @api.Files.getXMLMetadataJSON(id: UUID)
-POST           /api/files/:id/follow                                                    @api.Files.follow(id: UUID, name: String)
-POST           /api/files/:id/unfollow                                                  @api.Files.unfollow(id: UUID, name: String)
+POST           /api/files/:id/follow                                                    @api.Files.follow(id: UUID)
+POST           /api/files/:id/unfollow                                                  @api.Files.unfollow(id: UUID)
 POST           /api/files/:id/comment                                                   @api.Files.comment(id: UUID)
 DELETE         /api/files/:id                                                           @api.Files.removeFile(id: UUID)
 GET            /api/files/:id/tags                                                      @api.Files.getTags(id: UUID)
@@ -426,8 +426,8 @@ POST           /api/spaces/:id/updateUsers                                      
 GET            /api/spaces/:id/removeUser                                               @api.Spaces.removeUser(id: UUID, removeUser: String)
 POST           /api/spaces/:spaceId/addDatasetToSpace/:datasetId                        @api.Spaces.addDatasetToSpace(spaceId: UUID, datasetId: UUID)
 POST           /api/spaces/:spaceId/addCollectionToSpace/:collectionId                  @api.Spaces.addCollectionToSpace(spaceId: UUID, collectionId: UUID)
-POST           /api/spaces/:id/follow                                                   @api.Spaces.follow(id: UUID, name: String)
-POST           /api/spaces/:id/unfollow                                                 @api.Spaces.unfollow(id: UUID, name: String)
+POST           /api/spaces/:id/follow                                                   @api.Spaces.follow(id: UUID)
+POST           /api/spaces/:id/unfollow                                                 @api.Spaces.unfollow(id: UUID)
 
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT
@@ -442,8 +442,8 @@ GET            /api/collections/allCollections                                  
 
 # deprecrated
 GET            /api/collections/list                                                    @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
-POST           /api/collections/:id/follow                                              @api.Collections.follow(id: UUID, name: String)
-POST           /api/collections/:id/unfollow                                            @api.Collections.unfollow(id: UUID, name: String)
+POST           /api/collections/:id/follow                                              @api.Collections.follow(id: UUID)
+POST           /api/collections/:id/unfollow                                            @api.Collections.unfollow(id: UUID)
 GET            /api/collections/:coll_id/datasets                                       @api.Datasets.listInCollection(coll_id: UUID)
 POST           /api/collections/:coll_id/datasets/:ds_id                                @api.Collections.attachDataset(coll_id: UUID, ds_id: UUID)
 # deprecrated use DELETE
@@ -500,8 +500,8 @@ GET            /api/datasets/:id/listAllFiles                                   
 GET            /api/datasets/:id/download                                               @api.Datasets.download(id: UUID, compression: Int ?= -1)
 POST           /api/datasets/:id/comment                                                @api.Datasets.comment(id: UUID)
 POST           /api/datasets/:id/reindex                                                @api.Datasets.reindex(id:UUID, recursive: Boolean ?= true)
-POST           /api/datasets/:id/follow                                                 @api.Datasets.follow(id: UUID, name: String)
-POST           /api/datasets/:id/unfollow                                               @api.Datasets.unfollow(id: UUID, name: String)
+POST           /api/datasets/:id/follow                                                 @api.Datasets.follow(id: UUID)
+POST           /api/datasets/:id/unfollow                                               @api.Datasets.unfollow(id: UUID)
 POST           /api/datasets/:id/removeTag                                              @api.Datasets.removeTag(id: UUID)
 GET            /api/datasets/:id/tags                                                   @api.Datasets.getTags(id: UUID)
 POST           /api/datasets/:id/tags                                                   @api.Datasets.addTags(id: UUID)
@@ -647,8 +647,8 @@ POST           /api/users/updateUserField                                       
 POST           /api/users/addUserDatasetView                                            @api.Users.addUserDatasetView(email: String, dataset: UUID)
 POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
 POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
-POST           /api/users/follow                                                        @api.Users.follow(followeeUUID: UUID, name: String)
-POST           /api/users/unfollow                                                      @api.Users.unfollow(followeeUUID: UUID, name: String)
+POST           /api/users/follow                                                        @api.Users.follow(followeeUUID: UUID)
+POST           /api/users/unfollow                                                      @api.Users.unfollow(followeeUUID: UUID)
 GET            /api/curations/:curationId/ore                                           @api.CurationObjects.getCurationObjectOre(curationId: UUID)
 
 # ----------------------------------------------------------------------
@@ -687,7 +687,7 @@ GET            /spaces/curations/:id/sendToRepository                           
 GET            /spaces/curations/:id/matchmaker                                         @controllers.CurationObjects.findMatchingRepositories(id: UUID)
 POST           /spaces/curations/:id/matchmaker                                         @api.CurationObjects.findMatchmakingRepositories(id: UUID)
 GET            /spaces/curations/:id/curationFile                                       @api.CurationObjects.getCurationFiles(id: UUID)
-POST           /spaces/curations/:id/status                                             @controllers.CurationObjects.savePublishedObject(id: UUID)
+POST           /spaces/curations/:id/status                                             @api.CurationObjects.savePublishedObject(id: UUID)
 GET            /spaces/curations/:id/getStatusFromRepository                            @controllers.CurationObjects.getStatusFromRepository(id: UUID)
 DELETE         /spaces/curations/:id/files/:curationFileId                              @api.CurationObjects.deleteCurationFile(id:UUID, parentId: UUID, curationFileId: UUID)
 DELETE         /spaces/curations/:id/folders/:curationFolderId                          @api.CurationObjects.deleteCurationFolder(id:UUID, parentId: UUID, curationFolderId: UUID)

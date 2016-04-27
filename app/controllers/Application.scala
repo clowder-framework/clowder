@@ -44,16 +44,15 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.user.fold(false)(_.superAdminMode))
     val usersCount = users.count()
     //newsfeedEvents is the combination of followedEntities and requestevents, then take the most recent 20 of them.
-    var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)).sorted(Ordering.by((_: Event).created).reverse))
-    newsfeedEvents =  (newsfeedEvents ::: events.getRequestEvents(user, Some(20)))
-      .sorted(Ordering.by((_: Event).created).reverse).take(20)
+    var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)))
+    newsfeedEvents =  newsfeedEvents ::: events.getRequestEvents(user, Some(20))
     user match {
       case Some(clowderUser) if !clowderUser.active => {
         Redirect(routes.Error.notActivated())
       }
       case Some(clowderUser) if clowderUser.active => {
         newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20)))
-          .sorted(Ordering.by((_: Event).created).reverse).take(20)
+        .sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
         val datasetsUser = datasets.listUser(4, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
         val datasetcommentMap = datasetsUser.map { dataset =>
           var allComments = comments.findCommentsByDatasetId(dataset.id)
@@ -84,10 +83,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         val spacesUser = spaces.listUser(4, Some(clowderUser),request.user.fold(false)(_.superAdminMode), clowderUser)
         var followers: List[(UUID, String, String, String)] = List.empty
         for (followerID <- clowderUser.followers.take(3)) {
-          var userFollower = users.findById(followerID)
+          val userFollower = users.findById(followerID)
           userFollower match {
             case Some(uFollower) => {
-              var ufEmail = uFollower.email.getOrElse("")
+              val ufEmail = uFollower.email.getOrElse("")
               followers = followers.++(List((uFollower.id, uFollower.fullName, ufEmail, uFollower.getAvatarUrl())))
             }
             case None =>
@@ -320,6 +319,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Spaces.follow,
         api.routes.javascript.Spaces.unfollow,
         api.routes.javascript.Users.getUser,
+        api.routes.javascript.Users.findById,
         api.routes.javascript.Users.follow,
         api.routes.javascript.Users.unfollow,
         api.routes.javascript.Users.updateUserField,
@@ -334,6 +334,11 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.CurationObjects.getCurationFiles,
         api.routes.javascript.CurationObjects.deleteCurationFile,
         api.routes.javascript.CurationObjects.deleteCurationFolder,
+        api.routes.javascript.CurationObjects.savePublishedObject,
+        api.routes.javascript.ContextLD.addContext,
+        api.routes.javascript.ContextLD.getContextByName,
+        api.routes.javascript.ContextLD.removeById,
+        api.routes.javascript.ContextLD.getContextById,
         api.routes.javascript.Metadata.addUserMetadata,
         api.routes.javascript.Metadata.searchByKeyValue,
         api.routes.javascript.Metadata.getDefinitions,
@@ -372,7 +377,6 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.CurationObjects.sendToRepository,
         controllers.routes.javascript.CurationObjects.compareToRepository,
         controllers.routes.javascript.CurationObjects.deleteCuration,
-        controllers.routes.javascript.CurationObjects.savePublishedObject,
         controllers.routes.javascript.CurationObjects.getStatusFromRepository
       )
     ).as(JSON) 
