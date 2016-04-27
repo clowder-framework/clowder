@@ -87,6 +87,11 @@ trait EventService {
 		* Update the object name
 		*/
 	def updateObjectName(id:UUID, name:String)
+
+	/**
+		* Update user fullname
+    */
+	def updateAuthorFullName(userId: UUID, fullName: String)
 }
 
 

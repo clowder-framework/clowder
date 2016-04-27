@@ -75,7 +75,6 @@ object User {
   implicit def userToMiniUser(x: User): MiniUser = x.getMiniUser
 }
 
-
 case class MiniUser(
    id: UUID,
    fullName: String,

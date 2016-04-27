@@ -202,4 +202,6 @@ trait FileService {
 
   def updateDescription(fileId : UUID, description : String)
 
+  def updateAuthorFullName(userId: UUID, fullName: String)
+
 }

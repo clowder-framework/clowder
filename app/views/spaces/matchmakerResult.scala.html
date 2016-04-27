@@ -92,6 +92,16 @@
             }
             return options.inverse(this);
         });
+
+        Handlebars.registerHelper('contains', function(string, sub_string, options){
+            if(string.toLowerCase().indexOf(sub_string.toLowerCase()) >=0) {
+                return options.fn(this);
+            } else {
+                return options.inverse(this);
+            }
+
+        });
+
         var repositoryTemplate = Handlebars.getTemplate('@routes.Assets.at("templates/spaces/mmrepository")');
         @for(curRepository <- mmResponse) {
             var rules = [];
@@ -99,11 +109,11 @@
                 rules.push({rule_name: "@rule.rule_name", score: "@rule.Score", message: "@rule.Message"});
             }
             @if(curationObject.repository.isDefined && curationObject.repository.get.compareTo(curRepository.orgidentifier) == 0) {
-                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", repositoryName: new Handlebars.SafeString("@curRepository.repositoryName"), orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules,  selected: true});
+                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", href_profile: "@routes.Profile.viewProfileUUID(curationObject.author.id)", repositoryName: new Handlebars.SafeString("@curRepository.repositoryName"), orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules,  selected: true});
                 $('#mmresults').append(html);
             } else {
 
-                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", repositoryName: new Handlebars.SafeString("@curRepository.repositoryName"),  orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules, selected: false});
+                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", href_profile: "@routes.Profile.viewProfileUUID(curationObject.author.id)", repositoryName: new Handlebars.SafeString("@curRepository.repositoryName"),  orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules, selected: false});
                 $('#mmresults').append(html);
             }
         }

@@ -66,6 +66,40 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
       collection("sections").dropIndex("tags.name_text")
     }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("uploadDate_-1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("author.email_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("tags.name_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("filename_1_uploadDate_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("uploadDate_-1_file_id_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("uploadDate_-1_section_id_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("section_id_-1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("file_id_-1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("filename_1_uploadDate_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("textures.files").dropIndex("file_id_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("tiles.files").dropIndex("preview_id_1_filename_1_level_1")
+    }
+
 
     // create indices.
     Logger.debug("Ensuring indices exist")
@@ -89,19 +123,19 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("datasets").ensureIndex(MongoDBObject("name" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("author.identityId.userId" -> 1, "author.identityId.providerId" -> 1))
 
-    collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
-    collection("uploads.files").ensureIndex(MongoDBObject("author.email" -> 1))
-    collection("uploads.files").ensureIndex(MongoDBObject("tags.name" -> 1))
+    collection("uploads").ensureIndex(MongoDBObject("uploadDate" -> -1))
+    collection("uploads").ensureIndex(MongoDBObject("author.email" -> 1))
+    collection("uploads").ensureIndex(MongoDBObject("tags.name" -> 1))
 
     collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
     
-    collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
-    collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
-    collection("previews.files").ensureIndex(MongoDBObject("section_id" -> -1))
-    collection("previews.files").ensureIndex(MongoDBObject("file_id" -> -1))
+    collection("previews").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
+    collection("previews").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
+    collection("previews").ensureIndex(MongoDBObject("section_id" -> -1))
+    collection("previews").ensureIndex(MongoDBObject("file_id" -> -1))
 
-    collection("textures.files").ensureIndex(MongoDBObject("file_id" -> 1))
-    collection("tiles.files").ensureIndex(MongoDBObject("preview_id" -> 1, "filename" -> 1,"level" -> 1))
+    collection("textures").ensureIndex(MongoDBObject("file_id" -> 1))
+    collection("tiles").ensureIndex(MongoDBObject("preview_id" -> 1, "filename" -> 1,"level" -> 1))
     
     collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
     collection("sections").ensureIndex(MongoDBObject("file_id" -> -1))

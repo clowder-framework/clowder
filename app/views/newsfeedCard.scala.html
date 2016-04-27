@@ -19,6 +19,10 @@
     case "curation" => {
       curation object: <a href="@routes.CurationObjects.getCurationObject(obj_id.get)">@obj_name.get</a>
     }
+    case "subcollection" => {
+      collection: <a href="@routes.Collections.collection(obj_id.get)">@obj_name.get</a> from collection:
+      <a href="@routes.Collections.collection(event.source_id.get)">@event.source_name.get</a>
+    }
     case _ => {
       @obj_type: @obj_name.get
     }
