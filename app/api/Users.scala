@@ -83,8 +83,8 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
     implicit val user = request.user
     users.updateUserField(id, "firstName", firstName)
     users.updateUserField(id, "lastName", lastName)
-    users.updateUserField(id, "fullName", firstName+ lastName)
-    users.updateUserFullName(id, firstName+ lastName)
+    users.updateUserField(id, "fullName", firstName + " " + lastName)
+    users.updateUserFullName(id, firstName + " " + lastName)
 
     Ok(Json.obj("status" -> "success"))
   }
