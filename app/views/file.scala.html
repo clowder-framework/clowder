@@ -773,16 +773,29 @@
                     }
                   }
               </ul>
-              <form class="form-inline requiresLogin requiresLoginCommunity">
-                <div class="input-group input-group-sm col-md-8">
-                  <input type="text" maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" id="tagField" class="form-control">
-                  <span class="input-group-btn">
-                        <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
-                            <span class="glyphicon glyphicon-tag"></span>
-                        </button>
-                  </span>                  
-                </div>
-              </form>
+				@if(Permission.checkPermission(Permission.AddTag, ResourceRef(ResourceRef.file, file.id))) {
+					<form class="form-inline">
+						<div class="input-group input-group-sm col-md-8">
+							<input type="text" maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" id="tagField" class="form-control">
+							<span class="input-group-btn">
+								<button class="btn btn-default btn-large" id="tagB" title="Add Tag">
+									<span class="glyphicon glyphicon-tag"></span>
+								</button>
+							</span>
+						</div>
+					</form>
+				} else {
+					<form class="form-inline">
+						<div class="input-group input-group-sm col-md-8">
+							<input disabled type="text" maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" id="tagField" class="form-control">
+							<span class="input-group-btn">
+								<button class="btn btn-default btn-large" id="tagB" title="Add Tag">
+									<span class="glyphicon glyphicon-tag"></span>
+								</button>
+							</span>
+						</div>
+					</form>
+				}
               <script language="javascript">
                 window["userDefined"] = false;
               </script>
@@ -893,12 +906,7 @@
                 });
                 
               });
-            </script>           
-            @if(!user.isDefined) {
-              <script language="javascript">
-                $(".requiresLogin").css("display","none");
-              </script>
-            }
+            </script>
             </div>
 
 
@@ -908,20 +916,6 @@
     </div> @* End of small right hand side column *@
 
 	</div>
-
-	@if(!user.isDefined) {
-        <script language="javascript">
-            $(".requiresLogin").css("display","none");
-        </script>
-    }
-
-    @if(user.isDefined) {
-        @if(!user.get.id.equals(file.author.id)){
-            <script language="javascript">
-                $(".requiresLogin:not(.requiresLoginCommunity)").css("display","none");
-            </script>
-        }
-    }
 
 }}
 
