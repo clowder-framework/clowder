@@ -75,9 +75,10 @@ class MongoDBVocabularyService @Inject() (userService: UserService) extends Voca
   }
 
   def findByDescription(desc : List[String]) : List[Vocabulary] = {
-    Vocabulary.findAll.toList.filter((v: Vocabulary )=> (!v.description.intersect(desc).isEmpty))
-  }
 
+    Vocabulary.findAll.toList.filter((v: Vocabulary )=> (!v.description.intersect(desc).isEmpty))
+    Vocabulary.findAll.toList.filter((v: Vocabulary )=> (desc.toSet[String].subsetOf(v.description.toSet[String])))
+  }
 }
 
 object Vocabulary extends ModelCompanion[Vocabulary, ObjectId] {
