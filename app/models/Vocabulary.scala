@@ -16,7 +16,8 @@ case class Vocabulary (
   lastModified : Date = new Date(),
   keys : List[String] = List.empty,
   description : List[String] = List.empty,
-  spaces : List[UUID] = List.empty)
+  spaces : List[UUID] = List.empty,
+  isPublic : Boolean = false)
 
 
 object Vocabulary{
