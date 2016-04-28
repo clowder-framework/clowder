@@ -99,11 +99,12 @@ function DeleteTemplate(resourceType, resourceId, isreload, url) {
 }
 
 function RemoveTemplate(resourceFromType,resourceFromId,resourceType,resourceId,isreload,url) {
+    //console.log(resourceFromType, resourceFromId, resourceType, resourceId, isreload, url);
     $('.modal').modal('hide');
     //console.log(url);
     if (resourceFromType == "collection") {
         if (resourceType == "collection") {
-            removeChildCollectionFromParent(resourceFromId,resourceId,isreload,url);
+            removeChildCollectionFromParent(resourceFromId,resourceId,url);
         } else if (resourceType == "dataset") {
             removeDatasetFromCollectionAndRedirect(resourceFromId,resourceId,isreload,url);
         }
