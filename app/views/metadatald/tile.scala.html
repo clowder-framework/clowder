@@ -1,9 +1,9 @@
-@(item: AnyRef, classes: String)(implicit user: Option[models.User])
+@(item: AnyRef)
 
 @import _root_.util.Formatters.ellipsize
     @item match {
         case dataset: models.Dataset => {
-            <div class="post-box @classes">
+            <div class="post-box col-lg-3 col-md-3 col-sm-3">
                 <div class="panel panel-default">
                     <div class="pull-right">
                         <a href="@(routes.Datasets.dataset(dataset.id))"><span class="glyphicon glyphicon-book" title="Dataset"></span></a>
@@ -27,7 +27,7 @@
             </div>
         }
         case file: models.File => {
-            <div class="post-box @classes">
+            <div class="post-box col-lg-3 col-md-3 col-sm-3">
                 <div class="panel panel-default">
                     <div class="pull-right">
                         <a href="@(routes.Files.file(file.id))"><span class="glyphicon glyphicon-file" title="File"></span></a>

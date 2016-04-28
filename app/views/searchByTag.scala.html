@@ -84,7 +84,7 @@
         <div class="col-md-12">
             <div id="masonry">
             @items.map { item =>
-                @metadatald.tile(item, "col-lg-3 col-md-3 col-sm-3")
+                @metadatald.tile(item)
             }
             </div>
         </div>
@@ -94,7 +94,7 @@
     <div class="row hidden" id="list-view">
         <div class="col-md-12">
         @items.map { item =>
-            <p>@item</p>
+            @metadatald.listitem(item)
         }
         </div>
     </div>
