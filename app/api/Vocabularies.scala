@@ -88,7 +88,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
   @ApiOperation(value = "Create a vocabulary object",
     notes = "",
     responseClass = "None", httpMethod = "POST")
-  def createVocabularyFromJson() = AuthenticatedAction (parse.json) { implicit request =>
+  def createVocabularyFromJson(isPublic : Boolean) = AuthenticatedAction (parse.json) { implicit request =>
     val user = request.user
     var t : Vocabulary = null
     user match {
@@ -97,7 +97,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
           case Some(keys) => {
             val name = (request.body\"name").asOpt[String].getOrElse("")
             val description = (request.body \ "description").asOpt[String].getOrElse("")
-            t = Vocabulary(author = Some(identity), created = new Date(),name = name,keys = keys.split(",").toList , description = description.split(',').toList)
+            t = Vocabulary(author = Some(identity), created = new Date(),name = name,keys = keys.split(",").toList , description = description.split(',').toList, isPublic = isPublic)
 
             vocabularyService.insert(t) match {
               case Some(id) => {
@@ -236,7 +236,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
 
 
   def jsonVocabulary(vocabulary : Vocabulary): JsValue = {
-    toJson(Map("id" -> vocabulary.id.toString, "name" -> vocabulary.name, "keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(",")))
+    toJson(Map("id" -> vocabulary.id.toString, "name" -> vocabulary.name, "keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic"->vocabulary.isPublic.toString))
   }
 
 }
