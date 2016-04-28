@@ -102,7 +102,6 @@
             <div class="row" id="masonry-spaces">
                     @spacesList.map { space =>
                             @spaces.tile(space, "col-lg-6 col-md-6 col-sm-6 col-xs-12", routes.Application.index(), false )
-
                     }
             </div>
             @if(spacesList.size < 1) {
