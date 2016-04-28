@@ -1731,7 +1731,10 @@ class  Datasets @Inject()(
     val zip = new ZipOutputStream((byteArrayOutputStream))
     // zip compression level
     zip.setLevel(compression)
-    var is: Option[InputStream] = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+    var is: Option[InputStream] = None
+    if(inputFiles.length > 0) {
+      is = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+    }
 
     Enumerator.generateM({
       is match {
