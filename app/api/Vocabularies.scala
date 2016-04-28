@@ -214,35 +214,12 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
     }
   }
 
-  @ApiOperation(value = "Gets tags of a file", notes = "Returns a list of strings, List[String].", responseClass = "None", httpMethod = "GET")
-  def getDescription(id: UUID) = PermissionAction(Permission.ViewVocabulary, Some(ResourceRef(ResourceRef.vocabulary, id))) { implicit request =>
-    Logger.info("Getting tags for vocabulary with id " + id)
-    if (UUID.isValid(id.stringify)) {
-      vocabularyService.get(id) match {
-        case Some(vocab) => Ok(Json.obj("id" -> vocab.id.toString, "name" -> vocab.name,
-          "description" -> Json.toJson(vocab.description.toString)))
-        case None => {
-          Logger.error("The vocabulary with id " + id + " is not found.")
-          NotFound(toJson("The vocabulary with id " + id + " is not found."))
-        }
-      }
-    } else {
-      Logger.error("The given id " + id + " is not a valid ObjectId.")
-      BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
-    }
-  }
-
   @ApiOperation(value = "List all vocabularies the user can view with description",
     notes = "This will check for Permission.ViewVocabulary",
     responseClass = "None", httpMethod = "POST")
-  def findByDescription() = PrivateServerAction (parse.multipartFormData) {implicit request=>
+  def findByDescription() = PrivateServerAction (parse.json) {implicit request=>
     val user = request.user
-    val formDescription = request.body.asFormUrlEncoded.getOrElse("description",null)
-
-    var description = List.empty[String]
-    if (formDescription != null) {
-      description = formDescription(0).split(',').toList
-    }
+    val description = (request.body \"description").asOpt[String].getOrElse("").split(',').toList
 
     user match {
       case Some(identity) => {
