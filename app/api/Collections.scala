@@ -255,7 +255,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             BadRequest(toJson(s"name data is missing"))
           }
         }
-        Logger.debug(s"Update title for dataset with id $id. New name: $name")
+        Logger.debug(s"Update title for collection with id $id. New name: $name")
         collections.updateName(id, name)
         collections.get(id) match {
           case Some(collection) => {
@@ -289,7 +289,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             BadRequest(toJson(s"description data is missing"))
           }
         }
-        Logger.debug(s"Update title for dataset with id $id. New description: $description")
+        Logger.debug(s"Update description for collection with id $id. New description: $description")
         collections.updateDescription(id, description)
         collections.get(id) match {
           case Some(collection) => {
