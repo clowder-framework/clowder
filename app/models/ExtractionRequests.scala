@@ -3,7 +3,7 @@ import java.util.Date
 
 /**
  * DTS Requests information
- * @author Smruti Padhy
+ *
  */
 
 case class ExtractionRequests(

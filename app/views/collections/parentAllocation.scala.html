@@ -1,0 +1,86 @@
+@(currentCollection: models.Collection, resourceId: UUID, resourceType: Symbol, parentCollections: List[models.Collection])(implicit user: Option[models.User])
+@import api.Permission
+@import play.api.libs.json.Json
+    <div class="row bottom-padding">
+        <div class="col-md-12">
+            <h4>Parent collections</h4>
+        </div>
+    </div>
+
+    <div class="row">
+        <div id="collectionsList" class="col-md-12">
+        @parentCollections.map { p =>
+            <div id="col_@p.id" class="row bottom-padding">
+                <div class="col-md-2">
+                </div>
+                <div class="col-md-10">
+                    <div>
+                        <a href="@routes.Collections.collection(p.id)" id='@p.id' class ="collection">@Html(p.name)</a>
+                    </div>
+                    <div>
+                    @if(p.childCollectionsCount ==1){
+                        1 collection
+                    } else {
+                        @p.childCollectionsCount collections
+                    }
+                    </div>
+                </div>
+            </div>
+        }
+        </div>
+    </div>
+
+
+
+    <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
+    @if(Permission.checkOwner(user, ResourceRef(resourceType, resourceId))) {
+        <div class="form-inline">
+            <div class="input-group input-group-sm col-md-8">
+                <select id="collectionAddSelect" class="form-control add-resource">
+                </select>
+                    <span class="input-group-btn">
+                    <a href="#" class="btn btn-default btn-large" id="addParentBtn" title="Add collection to parent" onclick="addCollectionToParentCollection('@currentCollection.id',event)">
+                        <span class="glyphicon glyphicon-plus"></span> Add
+                    </a>
+                    </span>
+
+            </div>
+        </div>
+    }
+
+
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
+<script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/collectionModify.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/datasets/collections.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/collectionChildCollectionsList.js")" type="text/javascript"></script>
+
+<script language="javascript">
+    $("#collectionAddSelect").select2({
+        theme: "bootstrap",
+        placeholder: "Select a collection",
+        allowClear: true,
+        ajax: {
+            url: function(params) {
+                return jsRoutes.api.Collections.listPossibleParents( '@resourceId', params.term,null, 10).url;
+            },
+            data: function(params) {
+                return { title: params.term };
+            },
+            processResults: function(data, page) {
+                return {results: data.filter(function(x) {
+                    var ids = $('.collection').map(function() {
+                        return $(this).attr('id');
+                    });
+                    return $.inArray(x["id"], ids) == -1;
+                }).map(function(x) {
+                    return {
+                        text: x["collectionname"],
+                        id: x["id"]
+                    }
+                })};
+            }
+        }
+    });
+
+</script>

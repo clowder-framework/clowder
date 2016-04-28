@@ -10,7 +10,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
 
 /**
- * Created by lmarini on 2/17/14.
+ * Use MongoDB to store Comments
  */
 class MongoDBCommentService extends CommentService {
 
@@ -23,7 +23,7 @@ class MongoDBCommentService extends CommentService {
   }
 
   def findCommentsByCommentId(id: UUID) : List[Comment] = {
-    Comment.dao.find(MongoDBObject("comment_id"->id)).map { comment =>
+    Comment.dao.find(MongoDBObject("comment_id"->new ObjectId(id.stringify))).sort(orderBy = MongoDBObject("posted" -> -1)).map { comment =>
       comment.copy(replies=findCommentsByCommentId(comment.id))
     }.toList
   }
@@ -74,9 +74,14 @@ class MongoDBCommentService extends CommentService {
    * This implementation removes the file by getting it by its identifier originally.
    */
   def removeComment(id: UUID) {      
-      var theComment = get(id)
+      val theComment = get(id)
       removeComment(theComment.get)
-  }  
+  }
+
+  def updateAuthorFullName(userId: UUID, fullName: String) {
+    Comment.update(MongoDBObject("author._id" -> new ObjectId(userId.stringify)),
+      $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
+  }
 
 }
 

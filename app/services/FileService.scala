@@ -1,30 +1,42 @@
 package services
 
-
 import java.io.InputStream
-import models.{UUID, Dataset, File, Comment}
-import securesocial.core.Identity
+import models._
 import com.mongodb.casbah.Imports._
 import play.api.libs.json.{JsObject, JsArray, JsValue}
 
 /**
  * Generic file service to store blobs of files and metadata about them.
  *
- * @author Luigi Marini
  *
  */
 trait FileService {
   /**
+   * The number of files
+   */
+  def count(): Long
+
+  /**
    * Save a file from an input stream.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File]
-  
+  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File]
+
+  /**
+   * Save a file object
+   */
+  def save(file: File): Unit
+
   /**
    * Get the input stream of a file given a file id.
    * Returns input stream, file name, content type, content length.
    */
   def getBytes(id: UUID): Option[(InputStream, String, String, Long)]
-  
+
+  /**
+   * Remove the file from mongo
+   */
+  def removeFile(id: UUID)
+
   /**
    * List all files in the system.
    */
@@ -46,6 +58,16 @@ trait FileService {
   def listFilesBefore(date: String, limit: Int): List[File]
   
   /**
+   * List files for a specific user after a specified date.
+   */
+  def listUserFilesAfter(date: String, limit: Int, email: String): List[File]
+  
+  /**
+   * List files for a specific user before a specified date.
+   */
+  def listUserFilesBefore(date: String, limit: Int, email: String): List[File]
+  
+  /**
    * Get file metadata.
    */
   def get(id: UUID): Option[File]
@@ -64,13 +86,20 @@ trait FileService {
    * First file in chronological order.
    */
   def first(): Option[File]
-  
-  /**
-   * Store file metadata.
-   */
-  def storeFileMD(id: UUID, filename: String, contentType: Option[String], author: Identity): Option[File]
 
+  def index(id: Option[UUID])
+  
   def index(id: UUID)
+
+  /**
+   * Directly insert file into database, for example if the file path is local.
+   */
+  def insert(file: File): Option[String]
+
+  /**
+   * Return a list of tags and counts found in sections
+   */
+  def getTags(user: Option[User]): Map[String, Long]
 
   /**
    * Update thumbnail used to represent this dataset.
@@ -83,6 +112,8 @@ trait FileService {
   def modifyRDFOfMetadataChangedFiles()
   
   def modifyRDFUserMetadata(id: UUID, mappingNumber: String="1")
+
+  def dumpAllFileMetadata(): List[String]
 
   def isInDataset(file: File, dataset: Dataset): Boolean
 
@@ -108,9 +139,11 @@ trait FileService {
 
   def addUserMetadata(id: UUID, json: String)
 
-  def addXMLMetadata(id: UUID, json: String)
+  def addXMLMetadata(id: UUID, json: String)  
 
-  def findByTag(tag: String): List[File]
+  def findByTag(tag: String, user: Option[User]): List[File]
+
+  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean, user: Option[User]): List[File]
 
   def findIntermediates(): List[File]
 
@@ -127,8 +160,6 @@ trait FileService {
   def setContentType(id: UUID, newType: String)
 
   def setUserMetadataWasModified(id: UUID, wasModified: Boolean)
-
-  def removeFile(id: UUID)
 
   def removeTemporaries()
 
@@ -154,6 +185,23 @@ trait FileService {
    */
   def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String)
 
-  def setNotesHTML(id: UUID, notesHTML: String)
+  /**
+   * Add follower to a file.
+   */
+  def addFollower(id: UUID, userId: UUID)
+
+  /**
+   * Remove follower from a file.
+   */
+  def removeFollower(id: UUID, userId: UUID)
+
+  /**
+   * Update technical metadata
+   */
+  def updateMetadata(fileId: UUID, metadata: JsValue, extractor_id: String)
+
+  def updateDescription(fileId : UUID, description : String)
+
+  def updateAuthorFullName(userId: UUID, fullName: String)
 
 }

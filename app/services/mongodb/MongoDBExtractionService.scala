@@ -10,9 +10,11 @@ import MongoContext.context
 import com.mongodb.casbah.commons.MongoDBObject
 import java.util.Date
 import play.api.Logger
+import models.WebPageResource
+import com.mongodb.casbah.Imports._
 
 /**
- * Created by lmarini on 2/21/14.
+ * Use MongoDB to store extractions
  */
 class MongoDBExtractionService extends ExtractionService {
 
@@ -27,6 +29,10 @@ class MongoDBExtractionService extends ExtractionService {
 
   def findAll(): List[Extraction] = {
     Extraction.findAll().toList
+  }
+
+  def findByFileId(fileId: UUID): List[Extraction]= {
+    Extraction.find(MongoDBObject("file_id" -> new ObjectId(fileId.stringify))).toList
   }
 
   def insert(extraction: Extraction) {
@@ -53,7 +59,21 @@ class MongoDBExtractionService extends ExtractionService {
 	    extractorsTimeArray = currentExtraction.start.get :: extractorsTimeArray
 	}
   return extractorsTimeArray
-} 
+}
+
+  def save(webpr:WebPageResource):UUID={
+    WebPageResource.insert(webpr,WriteConcern.Safe)
+    webpr.id
+  }
+  
+  def getWebPageResource(id: UUID): Map[String,String]={
+    val wpr=WebPageResource.findOne(MongoDBObject("_id"->new ObjectId(id.stringify)))
+    var wprlist= wpr.map{
+      e=>Logger.debug("resource id:" + id.toString)
+         e.URLs
+    }.getOrElse(Map.empty)
+    wprlist         
+  }
   
 }
 
@@ -63,3 +83,11 @@ object Extraction extends ModelCompanion[Extraction, ObjectId] {
     case Some(x) => new SalatDAO[Extraction, ObjectId](collection = x.collection("extractions")) {}
   }
 }
+
+object WebPageResource extends ModelCompanion[WebPageResource,ObjectId]{
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[WebPageResource, ObjectId](collection = x.collection("webpage.resources")) {}
+  }
+}
+

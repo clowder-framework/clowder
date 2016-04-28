@@ -12,13 +12,13 @@ function editComment(commentId, commentText, reloadPage){
     var request = jsRoutes.api.Comments.editComment(commentId).ajax({
   	    data: jsonData,
         type: 'POST',
-        contentType: "application/json",
+        contentType: "application/json"
     });
     
     request.done(function (response, textStatus, jqXHR){
         console.log("Response " + response);
         //Sucessful update of the DB - update the interface
-    	$("#comment-body_" + commentId).html(theText);
+    	$("#comment-body_" + commentId).html(theText.replace(/\n/g, "<br>"));
     });
 
      
@@ -26,11 +26,11 @@ function editComment(commentId, commentText, reloadPage){
     	 console.error("The following error occured: " + textStatus, errorThrown);
          var errMsg = "You must be logged in to edit a comment.";                                
          if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-         	alert("The comment was not edited due to : " + errorThrown);
+         	notify("The comment was not edited due to : " + errorThrown, "error");
          }  
          else {
         	 var responseText = jqXHR.responseText;
-        	 alert(responseText);
+        	 notify(responseText, "error");
          }
      });
     

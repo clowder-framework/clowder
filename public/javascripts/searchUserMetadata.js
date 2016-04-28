@@ -158,7 +158,7 @@ $(function() {
 																
 						var allowedChildrenForNode = allowedChildren.filter(function (a) {return a[0] == parentNodeType;});
 						if(allowedChildrenForNode.length == 0 && searchFor == "userMetadata"){
-							alert("The metadata model states that this property cannot have subproperties of any kind.");
+							notify("The metadata model states that this property cannot have subproperties of any kind.", "error");
 							return false;
 						}
 						
@@ -190,7 +190,7 @@ $(function() {
 					
 						var allowedChildrenForNode = allowedChildren.filter(function (a) {return a[0] == parentNodeType;});
 						if(allowedChildrenForNode.length == 0 && searchFor == "userMetadata"){
-							alert("The metadata model states that this property cannot have subproperties of any kind.");
+							notify("The metadata model states that this property cannot have subproperties of any kind.", "error");
 							return false;
 						}
 						
@@ -488,8 +488,8 @@ $(function() {
 						        	if(respJSON[i].thumbnail != "None")
 						        		datasetThumbnail = "<img src='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
 						        							+ "alt='Thumbnail of " + respJSON[i].datasetname + "' height='120' width='120'>";
-						        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')
-						        								+ "/datasets/" + respJSON[i].id + "'>"+ respJSON[i].datasetname + "</a></td>"
+						        	var dsUrl = jsRoutes.controllers.Datasets.dataset(respJSON[i].id).url;
+						        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + dsUrl + "'>"+ respJSON[i].datasetname + "</a></td>"
 						        								+ "<td>" + createdDate + "</td>"
 						        								+ "<td style='white-space:pre-line;'>" + respJSON[i].description + "</td>"
 						        								+ "<td>" + datasetThumbnail + "</td>"
@@ -511,8 +511,8 @@ $(function() {
 						        	if(respJSON[i].thumbnail != "None")
 						        		fileThumbnail = "<img src='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + "/fileThumbnail/" + respJSON[i].thumbnail + "/blob' "
 						        							+ "alt='Thumbnail of " + respJSON[i].filename + "' height='120' width='120'>";
-						        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')
-						        								+ "/files/" + respJSON[i].id + "'>"+ respJSON[i].filename + "</a></td>"
+						        	var fileUrl = jsRoutes.controllers.Files.file(respJSON[i].id).url;
+						        	$('#resultTable tbody').append("<tr id='resultRow" + (i+1) + "' style='display:none;'><td><a href='" + fileUrl + "'>"+ respJSON[i].filename + "</a></td>"
 						        								+ "<td>" + respJSON[i].contentType + "</td>"
 						        								+ "<td>" + respJSON[i].dateCreated + "</td>"
 						        								+ "<td>" + fileThumbnail + "</td>"
@@ -539,7 +539,7 @@ $(function() {
 		            		"The following error occured: "+
 		            		textStatus, errorThrown		            
 		        			);
-		        		alert("ERROR: " + errorThrown +". Search not executed." );
+		        		notify("ERROR: " + errorThrown +". Search not executed.", "error");
 		     			});
 					 
 					 

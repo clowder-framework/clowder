@@ -1,0 +1,8 @@
+.legend {
+    outline: thin solid lightGrey;
+    outline-offset: 3px;
+}
+
+.arc path {
+    stroke: white;
+}

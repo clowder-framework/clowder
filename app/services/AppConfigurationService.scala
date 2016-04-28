@@ -1,6 +1,5 @@
 package services
 
-import play.Logger
 import util.ResourceLister
 
 /**
@@ -8,8 +7,6 @@ import util.ResourceLister
  * and can be used to store application configuration options. See also AppConfiguration
  * for specific configuration options.
  *
- * @author Luigi Marini
- * @author Rob Kooper
  */
 trait AppConfigurationService {
   /** Adds an additional value to the property with the specified key. */
@@ -31,7 +28,7 @@ trait AppConfigurationService {
    * Gets the configuration property with the specified key. If the key is not found
    * it wil return the default value (empty string if not specified).
    */
-  def getProperty[objectType <: AnyRef](key: String, default:objectType): objectType = {
+  def getProperty[objectType <: AnyRef](key: String, default: objectType): objectType = {
     getProperty[objectType](key) match {
       case Some(x) => x
       case None => default
@@ -55,19 +52,31 @@ trait AppConfigurationService {
  * Object to handle some common configuration options.
  */
 object AppConfiguration {
-  lazy val themes = ResourceLister.listFiles("public/stylesheets/themes/", ".*.css")
-    .filter(s => s.contains("/themes/"))
-    .map(s => s.replaceAll(".*/themes/", ""))
-
   val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
   // ----------------------------------------------------------------------
 
   /** Set the default theme */
-  def setTheme(theme: String) = appConfig.setProperty("theme", theme)
+  def setTheme(theme: String) = {
+    if (themes.contains(theme))
+      appConfig.setProperty("theme", theme)
+  }
 
   /** Get the default theme */
-  def getTheme: String = appConfig.getProperty[String]("theme", "simplex.min.css")
+  def getTheme: String = {
+    val theme = appConfig.getProperty[String]("theme", "simplex.min.css")
+    if (themes.contains(theme)) {
+      theme
+    } else {
+      "simplex.min.css"
+    }
+  }
+
+  /** Get list of available themes */
+  def themes: List[String] = {
+    ResourceLister.listFiles("public.stylesheets.themes", ".*.css")
+      .map(s => s.replaceAll(".*.themes.", ""))
+  }
 
   // ----------------------------------------------------------------------
 
@@ -75,7 +84,7 @@ object AppConfiguration {
   def setDisplayName(displayName: String) = appConfig.setProperty("display.name", displayName)
 
   /** Get the display name (subtitle) */
-  def getDisplayName: String = appConfig.getProperty("display.name", "Medici 2.0")
+  def getDisplayName: String = appConfig.getProperty("display.name", "Clowder")
 
   // ----------------------------------------------------------------------
 
@@ -83,51 +92,55 @@ object AppConfiguration {
   def setWelcomeMessage(welcomeMessage: String) = appConfig.setProperty("welcome.message", welcomeMessage)
 
   /** Get the welcome message */
-  def getWelcomeMessage: String = appConfig.getProperty("welcome.message", "Welcome to Medici 2.0, " +
+  def getWelcomeMessage: String = appConfig.getProperty("welcome.message", "Welcome to Clowder, " +
     "a scalable data repository where you can share, organize and analyze data.")
 
   // ----------------------------------------------------------------------
 
-  /**
-   * Add the given admin to list of admins. This list is primarily used when a new user signs
-   * up (requires registerThroughAdmins to be set to true in application.conf) or when the
-   * plugin is enabled to send emails on creating of new datasets, collections and/or files.
-   */
-  def addAdmin(admin: String) = appConfig.addPropertyValue("admins", admin)
+  /** Set the google analytics code */
+  def setGoogleAnalytics(gacode: String) = appConfig.setProperty("google.analytics", gacode)
 
-  /**
-   * Removes the given admin to list of admins. This list is primarily used when a new user signs
-   * up (requires registerThroughAdmins to be set to true in application.conf) or when the
-   * plugin is enabled to send emails on creating of new datasets, collections and/or files.
-   */
-  def removeAdmin(admin: String) = appConfig.removePropertyValue("admins", admin)
+  /** Get the welcome message */
+  def getGoogleAnalytics: String = appConfig.getProperty("google.analytics", "")
 
-  /**
-   * Checks if the given admin is on the list of admins. This list is primarily used when a
-   * new user signs up (requires registerThroughAdmins to be set to true in application.conf)
-   * or when the plugin is enabled to send emails on creating of new datasets, collections
-   * and/or files.
-   */
-  def checkAdmin(admin: String) = appConfig.hasPropertyValue("admins", admin)
+  // ----------------------------------------------------------------------
 
-  /**
-   * Get list of all admins. This list is primarily used when a new user signs up (requires
-   * registerThroughAdmins to be set to true in application.conf) or when the plugin is enabled
-   * to send emails on creating of new datasets, collections and/or files.
-   */
-  def getAdmins: List[String] = appConfig.getProperty[List[String]]("admins", List.empty[String])
+  /** Set the user agreement */
+  def setUserAgreement(userAgreement: String) = appConfig.setProperty("userAgreement.message", userAgreement)
 
-  /**
-   * Sets default admins as specified in application.conf. This list is primarily used when a new
-   * user signs up (requires registerThroughAdmins to be set to true in application.conf) or when
-   * the plugin is enabled to send emails on creating of new datasets, collections and/or files.
-   */
-  def setDefaultAdmins() = {
-    if (!appConfig.getProperty[List[String]]("admins").isDefined) {
-      val x = play.Play.application().configuration().getString("initialAdmins")
-      if (x != "") {
-        appConfig.setProperty("admins", x.trim.split("\\s*,\\s*").toList)
-      }
-    }
-  }
+  /** Get the user agreement */
+  def getUserAgreement: String = appConfig.getProperty("userAgreement.message", "")
+
+  // ----------------------------------------------------------------------
+
+  /** Set the Sensors title */
+  def setSensorsTitle(sensorsTitle: String) = appConfig.setProperty("sensors.title", sensorsTitle)
+
+  /** Get the welcome message */
+  def getSensorsTitle: String = appConfig.getProperty("sensors.title", "Sensors")
+
+  // ----------------------------------------------------------------------
+
+  /** Set the Sensor title */
+  def setSensorTitle(sensorTitle: String) = appConfig.setProperty("sensor.title", sensorTitle)
+
+  /** Get the welcome message */
+  def getSensorTitle: String = appConfig.getProperty("sensor.title", "Sensor")
+
+  // ----------------------------------------------------------------------
+  /** Set the Parameters title */
+  def setParametersTitle(parametersTitle: String) = appConfig.setProperty("parameters.title", parametersTitle)
+
+  /** Get the welcome message */
+  def getParametersTitle: String = appConfig.getProperty("parameters.title", "Parameters")
+
+  // ----------------------------------------------------------------------
+
+  /** Set the Parameter title */
+  def setParameterTitle(parameterTitle: String) = appConfig.setProperty("parameter.title", parameterTitle)
+
+  /** Get the welcome message */
+  def getParameterTitle: String = appConfig.getProperty("parameter.title", "Parameter")
+
+  // ----------------------------------------------------------------------
 }

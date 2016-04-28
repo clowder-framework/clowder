@@ -1,0 +1,4 @@
+{ "name" : "External resource",
+  "main" : "some-library.js",
+  "contentType" : ["text/iframe"]
+  }

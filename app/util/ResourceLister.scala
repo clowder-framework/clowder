@@ -10,7 +10,7 @@ import play.api.Logger
 import scala.collection.JavaConversions
 
 /**
- * @author Rob Kooper
+ * List resources.
  */
 object ResourceLister {
   /**
@@ -31,7 +31,7 @@ object ResourceLister {
       // Find all resources
       val reflections = new Reflections(configBuilder)
       val files = JavaConversions.asScalaSet(reflections.getResources(Pattern.compile(regex))).toList.sorted
-      Logger.debug("Found " + files.length + " files in " + (System.currentTimeMillis() - startTime) + " ms.")
+      //Logger.debug("Found " + files.length + " files in " + (System.currentTimeMillis() - startTime) + " ms.")
       files
     } catch {
       case t:Throwable => {

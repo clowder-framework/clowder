@@ -1,24 +1,94 @@
+import com.typesafe.sbt.packager.Keys._
 import sbt._
 import Keys._
 import play.Project._
+import com.typesafe.sbt.SbtNativePackager._
+import NativePackagerKeys._
+//import com.typesafe.sbt.SbtLicenseReport.autoImportImpl._
+//import com.typesafe.sbt.license.LicenseCategory
+//import com.typesafe.sbt.license.LicenseInfo
+//import com.typesafe.sbt.license.DepModuleInfo
+//import com.typesafe.sbt.license.Html
 
 object ApplicationBuild extends Build {
 
-  val appName = "medici-play"
-  val appVersion = "1.0-SNAPSHOT"
+  val appName = "clowder"
+  val version = "0.9.2"
+  val jvm = "1.7"
+
+  def appVersion: String = {
+    if (gitBranchName == "master") {
+      version
+    } else {
+      s"${version}-SNAPSHOT"
+    }
+  }
+
+  def exec(cmd: String): Seq[String] = {
+    val r = java.lang.Runtime.getRuntime()
+    val p = r.exec(cmd)
+    p.waitFor()
+    val ret = p.exitValue()
+    if (ret != 0) {
+      sys.error("Command failed: " + cmd)
+    }
+    val is = p.getInputStream
+    val res = scala.io.Source.fromInputStream(is).getLines()
+    res.toSeq
+  }
+
+  def gitShortHash: String = {
+    try {
+      val hash = exec("git rev-parse --short HEAD")
+      assert(hash.length == 1)
+      hash(0)
+    } catch {
+      case e: Exception => "N/A"
+    }
+  }
+
+  def gitBranchName: String = {
+    try {
+      val branch = exec("git rev-parse --abbrev-ref HEAD")
+      assert(branch.length == 1)
+      if (branch(0) == "HEAD") return "detached"
+      branch(0)
+    } catch {
+      case e: Exception => "N/A"
+    }
+  }
+
+  def getBambooBuild: String = {
+    sys.env.getOrElse("bamboo_buildNumber", default = "local")
+  }
 
   val appDependencies = Seq(
-  	filters,
-    "com.novus" %% "salat" % "1.9.5" exclude("org.scala-stm", "scala-stm_2.10.0"),
+    filters,
+    // login
     "ws.securesocial" %% "securesocial" % "2.1.3" exclude("org.scala-stm", "scala-stm_2.10.0"),
+
+    // messagebus
     "com.rabbitmq" % "amqp-client" % "3.0.0",
+
+    // indexing
     "org.elasticsearch" % "elasticsearch" % "1.3.4",
-    "com.spatial4j" % "spatial4j" % "0.3",
+
+    // mongo storage
+    "com.novus" %% "salat" % "1.9.5" exclude("org.scala-stm", "scala-stm_2.10.0"),
     "org.mongodb" %% "casbah" % "2.6.3",
-    "postgresql" % "postgresql" % "9.1-901.jdbc4",
+
+    // geostreams
+    "org.postgresql" % "postgresql" % "9.4-1203-jdbc41",
+
+    // Documentation
     "com.wordnik" %% "swagger-play2" % "1.2.6-SNAPSHOT" exclude("org.scala-stm", "scala-stm_2.10.0"),
-    "org.reflections" % "reflections" % "0.9.9-RC1",
-    "com.google.code.findbugs" % "jsr305" % "2.0.1",
+
+    // Find listing of previewers/stylesheets at runtime
+    //  servlet is needed here since it is not specified in org.reflections.
+    "javax.servlet" % "servlet-api" % "2.5",
+    "org.reflections" % "reflections" % "0.9.10",
+
+    // RDF
     "org.openrdf.sesame" % "sesame-rio-api" % "2.7.8",
     "org.openrdf.sesame" % "sesame-model" % "2.7.8",
     "org.openrdf.sesame" % "sesame-rio-n3" % "2.7.8",
@@ -32,29 +102,35 @@ object ApplicationBuild extends Build {
     "info.aduna.commons" % "aduna-commons-net" % "2.7.0",
     "info.aduna.commons" % "aduna-commons-text" % "2.7.0",
     "info.aduna.commons" % "aduna-commons-xml" % "2.7.0",
+
+    // ??
     "commons-io" % "commons-io" % "2.4",
     "commons-logging" % "commons-logging" % "1.1.1",
+
+    // RDF
     "gr.forth.ics" % "flexigraph" % "1.0",
+
+    // Guice dependency injection
     "com.google.inject" % "guice" % "3.0",
-    "com.google.inject.extensions" % "guice-assistedinject" % "3.0",
-    "com.netflix.astyanax" % "astyanax-core" % "1.56.43" exclude("org.jboss.netty", "netty"),
-    "com.netflix.astyanax" % "astyanax-thrift" % "1.56.43" exclude("org.slf4j", "slf4j-log4j12") exclude("org.jboss.netty", "netty"),
-    "com.netflix.astyanax" % "astyanax-cassandra" % "1.56.43" exclude("org.slf4j", "slf4j-log4j12") exclude("org.jboss.netty", "netty") ,
-    "com.netflix.astyanax" % "astyanax-recipes" % "1.56.43" exclude("org.slf4j", "slf4j-log4j12") exclude("org.jboss.netty", "netty"),
+
+    // ??
     "org.apache.httpcomponents" % "httpclient" % "4.2.3",
     "org.apache.httpcomponents" % "httpcore" % "4.2.3",
     "org.apache.httpcomponents" % "httpmime" % "4.2.3",
+
+    // JSONparser and JSONObject
     "com.googlecode.json-simple" % "json-simple" % "1.1.1",
-    "log4j" % "log4j" % "1.2.14",
     "org.codeartisans" % "org.json" % "20131017",
-    "postgresql" % "postgresql" % "8.1-407.jdbc3",
-    "org.postgresql" % "com.springsource.org.postgresql.jdbc4" % "8.3.604",
-    "org.springframework" % "spring" % "2.5.6",
+
+    // Testing framework
     "org.scalatestplus" % "play_2.10" % "1.0.0" % "test",
+
+    // iRods filestorage
     "org.irods.jargon" % "jargon-core" % "3.3.3-beta1",
+
+    // jsonp return from /api
     "org.julienrf" %% "play-jsonp-filter" % "1.1"
   )
-
 
   // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory 
   def customLessEntryPoints(base: File): PathFinder = (
@@ -64,12 +140,16 @@ object ApplicationBuild extends Build {
   )
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
+    scalacOptions ++= Seq(s"-target:jvm-$jvm", "-feature"),
+    javacOptions ++= Seq("-source", jvm, "-target", jvm),
+    initialize := {
+      val current  = sys.props("java.specification.version")
+      assert(current >= jvm, s"Unsupported JDK: java.specification.version $current != $jvm")
+    },
     offline := true,
     lessEntryPoints <<= baseDirectory(customLessEntryPoints),
-    requireJs += "main.js",
-    requireJs += "masonry.js",
     javaOptions in Test += "-Dconfig.file=" + Option(System.getProperty("config.file")).getOrElse("conf/application.conf"),
-    testOptions in Test := Nil, // overwrite spec2 config to use scalatest instead
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/scalatest-reports"),
     routesImport += "models._",
     routesImport += "Binders._",
     templatesImport += "org.bson.types.ObjectId",
@@ -78,9 +158,45 @@ object ApplicationBuild extends Build {
     resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
     resolvers += "Aduna" at "http://maven-us.nuxeo.org/nexus/content/repositories/public/",
     //resolvers += "Forth" at "http://139.91.183.63/repository",
-    resolvers += "NCSA" at "https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty",
-    resolvers += "opencastproject" at "http://repository.opencastproject.org/nexus/content/repositories/public"
-   
+    resolvers += "NCSA" at "https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty",   
+
+    // add custom folder to the classpath, use this to add/modify medici:
+    // custom/public/stylesheets/themes     - for custom themes
+    // custom/public/javascripts/previewers - for custom previewers
+    // custom/custom.conf                   - to customize application.conf
+    scriptClasspath += "../custom",
+
+    // same for development mode
+    unmanagedClasspath in Runtime += baseDirectory.value / "custom",
+
+    // add build number so we can use it in templates
+    bashScriptExtraDefines += "addJava \"-Dbuild.version=" + version + "\"",
+    bashScriptExtraDefines += "addJava \"-Dbuild.bamboo=" + getBambooBuild + "\"",
+    bashScriptExtraDefines += "addJava \"-Dbuild.branch=" + gitBranchName + "\"",
+    bashScriptExtraDefines += "addJava \"-Dbuild.gitsha1=" + gitShortHash + "\"",
+
+    batScriptExtraDefines += "addJava \"-Dbuild.version=" + version + "\"",
+    batScriptExtraDefines += "addJava \"-Dbuild.bamboo=" + getBambooBuild + "\"",
+    batScriptExtraDefines += "addJava \"-Dbuild.branch=" + gitBranchName + "\"",
+    batScriptExtraDefines += "addJava \"-Dbuild.gitsha1=" + gitShortHash + "\""
+
+    // license report
+//    licenseReportTitle := "Medici Licenses",
+//    licenseConfigurations := Set("compile", "provided"),
+//    licenseSelection := Seq(LicenseCategory("NCSA"), LicenseCategory("Apache")) ++ LicenseCategory.all,
+//    licenseOverrides := licenseOverrides.value orElse {
+//      case DepModuleInfo("com.rabbitmq", "amqp-client", _) => LicenseInfo(LicenseCategory.Mozilla, "Mozilla Public License v1.1", "https://www.rabbitmq.com/mpl.html")
+//      case DepModuleInfo("com.typesafe.play", _, _) => LicenseInfo(LicenseCategory.Apache, "Apache 2", "http://www.apache.org/licenses/LICENSE-2.0")
+//      case DepModuleInfo("org.apache.lucene", _, _) => LicenseInfo(LicenseCategory.Apache, "Apache 2", "http://www.apache.org/licenses/LICENSE-2.0")
+//      // The word Aduna with capital A will crash dumpLicenseReport, no idea why.
+//      case DepModuleInfo("org.openrdf.sesame", _, _) => LicenseInfo(LicenseCategory.BSD, "aduna BSD license", "http://repo.aduna-software.org/legal/aduna-bsd.txt")
+//      case DepModuleInfo("org.reflections", _, _) => LicenseInfo(LicenseCategory.PublicDomain, "WTFPL", "http://www.wtfpl.net/txt/copying")
+//    },
+//    licenseReportMakeHeader := {
+//      case Html => Html.header1(licenseReportTitle.value) + "<p>Medici is licensed under the <a href='http://opensource.org/licenses/NCSA'>University of Illinois/NCSA Open Source License</a>.</p><p>Below are the libraries that Medici depends on and their licenses.<br></p>"
+//      case l => l.header1(licenseReportTitle.value)
+//    }
+
   ).settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
 }
 

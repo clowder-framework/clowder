@@ -5,9 +5,8 @@ import com.google.inject.Guice
 import com.google.inject.AbstractModule
 
 /**
- * Guice module configuration.
+ * Guide module configuration.
  *
- * @author Luigi Marini
  *
  */
 object DI {
@@ -21,8 +20,13 @@ class ConfigurationModule extends AbstractModule {
   protected def configure() {
     bind(classOf[AppConfigurationService]).to(get("service.appConfiguration", "services.mongodb.MongoDBAppConfigurationService"))
     bind(classOf[UserService]).to(get("service.users", "services.mongodb.MongoDBUserService"))
+
+    // ByteStorageService is used to store the actual bytes
+    bind(classOf[ByteStorageService]).to(get("service.byteStorage", "services.mongodb.MongoDBByteStorage"))
+
     bind(classOf[DatasetService]).to(get("service.datasets", "services.mongodb.MongoDBDatasetService"))
     bind(classOf[FileService]).to(get("service.files", "services.mongodb.MongoDBFileService"))
+    bind(classOf[SpaceService]).to(get("service.spaces", "services.mongodb.MongoDBSpaceService"))
     bind(classOf[MultimediaQueryService]).to(get("service.multimediaQuery", "services.mongodb.MongoDBMultimediaQueryService"))
     bind(classOf[CollectionService]).to(get("service.collections", "services.mongodb.MongoDBCollectionService"))
     bind(classOf[TagService]).to(get("service.tags", "services.mongodb.MongoDBTagService"))
@@ -38,6 +42,14 @@ class ConfigurationModule extends AbstractModule {
     bind(classOf[ThumbnailService]).to(get("service.thumbnails", "services.mongodb.MongoDBThumbnailService"))
     bind(classOf[TileService]).to(get("service.tiles", "services.mongodb.MongoDBTileService"))
     bind(classOf[SectionIndexInfoService]).to(get("service.sectionIndexInfo", "services.mongodb.MongoDBSectionIndexInfoService"))
+    bind(classOf[RelationService]).to(get("service.relations", "services.mongodb.MongoDBRelationService"))
+    bind(classOf[ContextLDService]).to(get("service.ContextLDService", "services.mongodb.MongoDBContextLDService"))
+    bind(classOf[EventService]).to(get("service.events", "services.mongodb.MongoDBEventService"))
+    bind(classOf[SchedulerService]).to(get("service.jobs", "services.mongodb.MongoDBSchedulerService"))
+    bind(classOf[CurationService]).to(get("service.curationObjs", "services.mongodb.MongoDBCurationService"))
+    bind(classOf[MetadataService]).to(get("service.metadata", "services.mongodb.MongoDBMetadataService"))
+    bind(classOf[FolderService]).to(get("service.folders", "services.mongodb.MongoDBFolderService"))
+    bind(classOf[LogoService]).to(get("service.logos", "services.mongodb.MongoDBLogoService"))
     bind(classOf[SelectionService]).to(get("service.select", "services.mongodb.MongoDBSelectionService"))
 
   }

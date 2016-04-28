@@ -7,8 +7,7 @@ import play.api.Logger
 
 /**
  * Documentation about API using swagger.
- * 
- * @author Luigi Marini
+ *
  */
 object ApiHelp extends Controller {
 

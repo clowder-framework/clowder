@@ -1,20 +1,35 @@
 package services.mongodb
 
 import java.io.InputStream
-import com.mongodb.casbah.commons.MongoDBObject
+import java.util.concurrent.TimeUnit
+
 import com.mongodb.casbah.Imports._
+import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.gridfs.GridFS
-import services.MultimediaQueryService
-import com.novus.salat.dao.{ModelCompanion, SalatDAO}
-import MongoContext.context
-import play.api.Play.current
-import models.{UUID, TempFile, MultimediaFeatures}
-import scala.Some
-import play.api.libs.json.JsObject
+import com.novus.salat.dao.{ModelCompanion, SalatDAO, SalatMongoCursor}
+import edu.illinois.ncsa.isda.lsva.ImageDescriptors.FeatureType
+import edu.illinois.ncsa.isda.lsva.ImageMeasures
+import models.{MultimediaDistance, MultimediaFeatures, TempFile, UUID}
 import play.api.Logger
+import play.api.Play.current
+import play.api.libs.json.JsObject
+import services.{MultimediaQueryService, SectionService, SpaceService}
+import services.mongodb.MongoContext.context
+import util.FileUtils
+import javax.inject.Inject
 
-class MongoDBMultimediaQueryService extends MultimediaQueryService {
+class MongoDBMultimediaQueryService @Inject() (sections: SectionService, spaces: SpaceService) extends MultimediaQueryService {
 
+   /**
+   * Update thumbnail used to represent this query.
+   */
+  def updateThumbnail(queryId: UUID, thumbnailId: UUID) {
+    TempFileDAO.update(MongoDBObject("_id" -> new ObjectId(queryId.stringify)),
+    	//because of a bug in Salat have to explicitely cast to ObjectId
+    	$set("thumbnail_id" -> new ObjectId(thumbnailId.stringify)), false, false, WriteConcern.Safe)
+  }
+  
+  
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): Option[TempFile] = {
     val files = current.plugin[MongoSalatPlugin] match {
       case None    => throw new RuntimeException("No MongoSalatPlugin");
@@ -25,13 +40,9 @@ class MongoDBMultimediaQueryService extends MultimediaQueryService {
     files.db.setWriteConcern(WriteConcern.Safe)
     
     val mongoFile = files.createFile(inputStream)
-    Logger.debug("Uploading file " + filename)
+    Logger.debug("MongoDBMultimediaQueryService.save Uploading file " + filename)
     mongoFile.filename = filename
-    var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)
-    if (ct == play.api.http.ContentTypes.BINARY) {
-      ct = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
-    }
-    mongoFile.contentType = ct
+    mongoFile.contentType = FileUtils.getContentType(filename, contentType)
     mongoFile.save
     val oid = mongoFile.getAs[ObjectId]("_id").get
     Some(TempFile(UUID(oid.toString), None, mongoFile.filename.get, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
@@ -39,7 +50,7 @@ class MongoDBMultimediaQueryService extends MultimediaQueryService {
   
    def get(id: UUID): Option[(InputStream, String, String, Long)] = {
     
-     val queries = GridFS(SocialUserDAO.dao.collection.db, "uploadquery")
+     val queries = GridFS(MultimediaFeaturesDAO.dao.collection.db, "uploadquery")
     
       queries.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
       
@@ -81,10 +92,7 @@ def getFile(id: UUID): Option[TempFile] = {
     
     val mongoFile = files.createFile(Array[Byte]())
     mongoFile.filename = filename
-    var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)
-    if (ct == play.api.http.ContentTypes.BINARY) {
-      ct = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
-    }
+    var ct = FileUtils.getContentType(filename, contentType)
     mongoFile.contentType = ct
     mongoFile.put("path", id)
     mongoFile.save
@@ -124,14 +132,119 @@ def getFile(id: UUID): Option[TempFile] = {
     MultimediaFeaturesDAO.save(multimediaFeature)
   }
 
-  def listAll(): List[MultimediaFeatures] = {
-    MultimediaFeaturesDAO.find(MongoDBObject()).toList
+  def listAll(): SalatMongoCursor[MultimediaFeatures] = {
+    MultimediaFeaturesDAO.find(MongoDBObject())
   }
+
+  def addMultimediaDistance(d: MultimediaDistance): Unit = {
+    MultimediaDistanceDAO.save(d)
+  }
+
+  def searchMultimediaDistances(querySectionId: String, representation: String, limit: Int, userSpaceIDs: List[UUID]): List[MultimediaDistance] = {
+
+    // Converting UUIDs to Object IDs
+    val userSpaceObjectIDs = new MongoDBList()
+    userSpaceIDs.foreach(spaceId => {
+      userSpaceObjectIDs.+=:(new ObjectId(spaceId.toString()))
+    })
+
+    // MongoDB query
+    MultimediaDistanceDAO.find(MongoDBObject("source_section"->new ObjectId(querySectionId),
+      "representation"->representation, "target_spaces" -> MongoDBObject("$in" -> userSpaceObjectIDs)))
+      .sort(MongoDBObject("distance" -> 1))
+      .limit(limit)
+      .toList
+  }
+
+  def recomputeAllDistances(): Unit = {
+    // drop existing distances
+    Logger.debug("Dropping mongo collection multimedia.distances")
+    MultimediaDistanceDAO.dao.collection.drop()
+    totalTime {
+      Logger.debug("Precomputing distances")
+      val outer = listAll()
+      // don't let the cursor time out
+      outer.underlying.addOption(com.mongodb.Bytes.QUERYOPTION_NOTIMEOUT)
+      while (outer.hasNext) {
+        val source = outer.next
+        time {
+          computeDistances(source)
+        }
+      }
+      outer.close()
+      Logger.debug("Done precomputing distances")
+    }
+  }
+
+  def computeDistances(source: MultimediaFeatures): Unit = {
+    Logger.debug("Computing feature distances for section " + source.section_id.get)
+    val inner = listAll()
+    val sourceSpaces = sections.getParentSpaces(source.section_id.get) // Get spaces that the source section is belonging to
+    // don't let the cursor time out
+    inner.underlying.addOption(com.mongodb.Bytes.QUERYOPTION_NOTIMEOUT)
+    while (inner.hasNext) {
+      val target = inner.next
+      Logger.trace("Target section = " + target.section_id.get)
+      source.features.foreach { fs =>
+
+        val targetSpaces  = sections.getParentSpaces(target.section_id.get) // Get spaces that the target section is belonging to
+
+        if (source.section_id != target.section_id) {
+          target.features.find(_.representation == fs.representation) match {
+            case Some(ft) => {
+              val distance = ImageMeasures.getDistance(FeatureType.valueOf(fs.representation),
+                fs.descriptor.toArray, ft.descriptor.toArray)
+              if (!distance.isNaN()) {
+                // skip distance 0 for now, lot's of edge histogram distances are coming back 0
+                if (distance == 0) {
+                  Logger.debug(s"Skipping ${fs.representation} distance ${source.section_id.get} -> ${target.section_id.get} = $distance")
+                } else {
+                  addMultimediaDistance(
+                    MultimediaDistance(source.section_id.get, target.section_id.get, fs.representation, distance, targetSpaces.toList))
+                  addMultimediaDistance(
+                    MultimediaDistance(target.section_id.get, source.section_id.get, fs.representation, distance, sourceSpaces.toList)) // Adding reverse distance to complete the matrix
+                  Logger.trace(s"Distance ${source.section_id.get} -> ${target.section_id.get} = $distance")
+                }
+              } else {
+                Logger.error("Distance = NaN")
+              }
+            }
+            case None => Logger.error(s"Feature ${fs.representation} not found for section ${target.section_id}")
+          }
+        }
+      }
+    }
+    inner.close()
+  }
+
+  def time[R](block: => R): R = {
+    val t0 = System.nanoTime()
+    val result = block    // call-by-name
+    val t1 = System.nanoTime()
+    Logger.debug("Elapsed time: " + TimeUnit.NANOSECONDS.toSeconds((t1 - t0)) + "s")
+    result
+  }
+
+  def totalTime[R](block: => R): R = {
+    val t0 = System.nanoTime()
+    val result = block    // call-by-name
+    val t1 = System.nanoTime()
+    Logger.debug("Total lapsed time: " + TimeUnit.NANOSECONDS.toSeconds((t1 - t0)) + "s")
+    result
+  }
+
 }
 
 object MultimediaFeaturesDAO extends ModelCompanion[MultimediaFeatures, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[MultimediaFeatures, ObjectId](collection = x.collection("multimedia.features")) {}
+  }
+}
+
+object MultimediaDistanceDAO extends ModelCompanion[MultimediaDistance, ObjectId] {
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[MultimediaDistance, ObjectId](collection = x.collection("multimedia.distances")) {}
   }
 }

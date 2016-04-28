@@ -1,0 +1,17 @@
+@(msg: String)(implicit user: Option[models.User])
+
+@main("Authorization Request") {
+
+	<div class="row">
+		<div class="col-sm-12 col-md-12 col-lg-12 text-center">
+			<h2>
+				@if(msg != null){
+					@msg
+				}else{
+					You are not authorized to proceed with your request
+				}
+			</h2>
+		</div>
+	</div>
+
+}

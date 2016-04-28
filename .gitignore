@@ -1,3 +1,5 @@
+docker/files
+custom
 logs
 project/project
 project/target
@@ -19,3 +21,4 @@ dist
 /RUNNING_PID
 doc/src/sphinx/_build
 /conf/custom.conf
+.DS_Store

@@ -3,7 +3,6 @@ package models
 /**
  * Previewers are javascripts library to visualize information on the web interface.
  *
- * @author Luigi Marini
  */
 case class Previewer(
   id: String,
@@ -11,4 +10,5 @@ case class Previewer(
   main: String,
   contentType: List[String],
   supportedPreviews: List[String],
-  collection: Boolean = false)
+  collection: Boolean = false,
+  dataset: Boolean = false)

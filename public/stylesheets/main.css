@@ -4,39 +4,16 @@ html,body {
 }
       
 body {
-  min-height: 1000px;
-  padding-top: 0px;
+  padding-top: 80px;
 }
 
 /* Wrapper for page content to push down footer */
 #wrap {
-  min-height: 100%;
-  height: auto !important;
-  height: 100%;
-  /* Negative indent footer by it's height */
-  margin: 0 auto -60px;
+  min-height: calc( 100% - 30px );
 }
 
-.oneline {
-    white-space: nowrap;
-}
-
-.no-overflow {
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.fit-in-space {
-    max-width: 100%;
-    max-height: 100%;
-}
-/* Set the fixed height of the footer here */
-#push, #footer {
-  height: 60px;
-}
-
-#footer {
-  background-color: #f5f5f5;
+.break-word {
+    word-wrap: break-word;
 }
 
 /* Lastly, apply responsive CSS fixes as necessary */
@@ -49,15 +26,53 @@ body {
   }
 }
 
-/* Custom page CSS
--------------------------------------------------- */
+/* Login and Sign up boxes */
+div.login-nav-box {
+    margin: 10px 0 25px 0
+}
+
+/* Previews */
+.fit-in-space {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* Basic button bars */
+span.button-bar {
+    width:50%;  
+}
+
+span.align-right { 
+    float:right;
+}
+
+.error span, label.error {
+    color: red;
+    padding-left: 10px;
+    text-align:left;
+}
+
+.success {
+	color: green;
+	padding-left: 10px;
+	text-align:left;
+}
+
+.hiddencomplete {
+    display: none;
+}
+
+.hiddenholdspace {
+    visibility: hidden;
+}
+
 /* Not required for template or sticky footer method. */
 #wrap > .container {
-  padding-top: 60px;
+  /*padding-top: 60px;*/
 }
 
 .container .credit {
-  margin: 20px 0;
+  margin: 0px;
 }
 
 code {
@@ -79,15 +94,8 @@ code {
  * Comments
  * ----------------------------------------------------------------------
  */
-ol.comment-threads {
-}
-
-.comment-thread {
-	margin: 0px 0px 0px 0px;
-}
-
 .comment {
-	padding-top: 20px;
+	padding-top: 25px;
 }
 
 .comment-image {
@@ -100,25 +108,20 @@ ol.comment-threads {
 	float: left;
 }
 
-.comment-date {
-	padding-right: 10px;
-	float: right;
-}
-
 .comment-header {
 	padding-left: 10px;
 	padding-bottom: 10px;
+    font-size: 85%;
 }
 
 .comment-body {
-	padding-left: 40px;
-	min-height:   10px;
+	padding-left: 10px;
+	min-height:   30px;
 }
 
 .comment-footer {
 	padding-left: 10px;
 	font-size: 85%;
-	text-align: right;
 	padding-right: 10px;
 }
 
@@ -129,11 +132,6 @@ ol.comment-threads {
 .comment-input-box {
 	width: 100%;
 	margin: 10px 0px;
-} 
-
-.file-list-cell {
-	text-align: right;
-	width: 80%;
 }
 
 .rubberbandDiv {
@@ -183,26 +181,9 @@ ol.comment-threads {
   height: 100px;
 }
 
-button.usr_md_ {
-    background:none!important;
-     border:none; 
-     padding:0!important;
-     
-     color:rgb(0, 136, 204);
-}
-
 .usr_md_{
 	margin-right:10px;
 	margin-bottom:5px;
-}
-
-button.tech_md_ {
-    background:none!important;
-     border:none; 
-     padding:0!important;
-     
-     color:rgb(0, 136, 204);
-     
 }
 
 .tech_md_{
@@ -218,9 +199,9 @@ button.tech_md_ {
   padding:10px;
 }
 
-.usr_md_search_list {
-	list-style-type:none;
-}
+/*.usr_md_search_list {*/
+	/*list-style-type:none;*/
+/*}*/
 
 .usr_md_search_list_not {
 	margin-left:58px;
@@ -313,53 +294,67 @@ button.tech_md_ {
 	left:20px;
 }
 
+#nameDescrFieldSet .control-group .controls .buttonset label
+{
+    margin-right: 10%;
+}
+
+#nameDescrFieldSet .homePages .external-link-delete
+{
+    display: inline-block;
+    margin-left:10px;
+}
+
+#nameDescrFieldSet .homePages .external-link-add {
+    display:inline-block;
+    margin-left: 10px;
+}
+
+#nameDescrFieldSet .homePages .control-group
+{
+    display:inline-block;
+    width: 85%;
+}
+
+#nameDescrFieldSet .homePages .control-label
+{
+    display: none;
+}
+
+.profilePicture {
+  	width: 256px;
+    height: 256px;
+}
+.editProfileInput input[type='text'] {
+    width:450px;
+    height:30px;
+}
+.editProfileInput textarea {
+    width:450px;
+    height:100px;
+}
+.editProfileInput .chosen-select {
+  width:450px;
+}
+
 #nameDescrFieldSet .control-group .controls textarea{
-	width:208px;
+	width:100%;
+    height: 100px;
 }
 #nameDescrFieldSet .control-group .controls input[type='text']{
-	width:208px;
+	width:100%;
 	height:30px;
 }
-fieldset #username_field .controls #username{
-	width:208px;
-	height:30px;
-}
-fieldset #password_field .controls #password{
-	width:208px;
-	height:30px;
-}
-fieldset #email_field .controls #email{
-	width:208px;
-	height:30px;
-}
-#firstName_field .controls #firstName{
-	width:208px;
-	height:30px;
-}
-#lastName_field .controls #lastName{
-	width:208px;
-	height:30px;
-}
-#password_password1_field .controls #password_password1{
-	width:208px;
-	height:30px;
-}
-#password_password2_field .controls #password_password2{
-	width:208px;
-	height:30px;
+
+.checkbox
+{
+    font-weight: normal;
 }
 
 #adminMailFieldSet .control-group .controls input[type='text']{
 	width:208px;
 	height:30px;
 }
-
-#displayNameField{
-	width:208px;
-	height:30px;
-}
-
-
 
 :-webkit-full-screen x3d {
   width: 100%;
@@ -467,20 +462,28 @@ textarea, input[type='text'], input[type='password']{
   border-top: none;
 }
 
-.col-left-border {
-  border-left: 1px solid #E1E1E8;
-}
-
 .col-right-border {
   border-right: 1px solid #E1E1E8;
+    margin:0px;
+}
+
+.col-left-border {
+    border-left: 1px solid #E1E1E8;
+    margin: -1px;
 }
 
 .border-top {
   border-top: 1px solid #E1E1E8;
+  padding-top: 10px;
+  margin-top: 10px;
 }
 
-.button-margins {
-  margin: 20px 0px;
+.btn-margins {
+     margin: 20px 0px;
+ }
+
+.btn-margin-bottom {
+    margin-bottom: 20px !important;
 }
 
 .col-section {
@@ -489,4 +492,476 @@ textarea, input[type='text'], input[type='password']{
 
 #tagCloudCanvas {
     border:1px solid #e6e6e6;
+}
+
+.paddingTop7 {
+    padding-top: 7px;
+}
+
+p.error, span.error{
+    color: red;
+}
+
+.space-head {
+    border-bottom: 1px solid #E1E1E8;
+}
+
+.space-col-left {
+    border-right: 1px solid #E1E1E8;
+}
+
+.tag {
+    display: inline-block;
+    border: none;
+    padding: 1px 10px 1px 10px;
+    margin: 5px;
+    background: #474949;
+    border-radius: .25em;
+}
+
+.tag a {
+    color: white;
+}
+
+.tag a:hover {
+    color: white;
+}
+
+.tag .tag-delete {
+    margin-right: -5px;
+}
+
+.space-head {
+    border-bottom: 1px solid #E1E1E8;
+}
+
+.space-col-right {
+
+}
+
+.space-col-left {
+    border-right: 1px solid #E1E1E8;
+}
+
+.tag-first-char {
+    font-size: 3em;
+    bottom: -1em;
+    font-weight: bold;
+}
+
+.input-table-cell {
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
+.horizontal-radio {
+	margin-right: 25px;
+}
+
+/* required to get comments to span the entire width of the container */
+.media .media-body {
+    width: 10000px;
+}
+
+.featurette {
+    margin-top: 50px;
+}
+
+.popup-content {
+    max-height: 200px;
+    overflow-x: hidden;
+}
+
+.instrument-delete {
+    padding: 20px 16px 0 10px;
+}
+
+table#sensorsListTable > thead > tr > th {
+    min-width: 80px;
+}
+table#sensorsListTable > thead > tr > th.headerSortUp {
+    background-color: #bcbcbc
+}
+
+table#sensorsListTable > thead > tr > th.headerSortDown {
+    background-color: #bcbcbc;
+}
+.box-white-space {
+    padding: 30px 0px 0px 0px;
+}
+
+#file-pane-buttons {
+    margin-top: 10px;
+    margin-left: 20px;
+}
+
+#ds-title {
+    margin-bottom: 10px;
+}
+
+#license-img {
+    height: 25px;
+}
+
+.bottom-padding {
+    padding-bottom: 15px;
+}
+
+.top-padding {
+    padding-top: 15px;
+}
+
+.vertical-align {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.space-banner {
+    height: 200px;
+    background-repeat:no-repeat;
+    background-size: 100% 100%;
+}
+
+.space-banner-logo {
+    max-height: 100px;
+    max-width: 200px;
+}
+
+.nopadding {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.dataset-preview {
+    padding: 20px 0px;
+}
+
+.img_wrapper {
+	position: relative;
+	width: 128px;
+	height: 128px;
+	margin: 5px;
+	display: inline-block;
+}
+
+.img_hover {
+	position : absolute;
+	width: 128px;
+	height: 128px;
+	background-color: #ffa500;
+	top: 0;
+	left: 0;
+	opacity: 0;
+	transition: opacity 1s;
+	padding-top: 40%;
+	text-align: center;
+	text-color: #fff;
+}
+
+.img_wrapper:hover > .img_hover {
+	opacity: 0.9;
+}
+
+.img_thumbnail {
+	height: 128px;
+	width: 128px;
+	border:1px solid #d3d3d3; 
+	padding:3px; 
+	border-radius: 5px; 
+}
+
+#scrollTableGalleria{
+	width: 100%;
+}
+
+#scrollTableGalleria tr:after{
+	content: ' ';
+    display: block;
+    visibility: hidden;
+    clear: both;
+
+}
+#scrollTableGalleria tbody{
+	overflow-y: auto;
+}
+#scrollTableGalleria tbody td, #scrollTableGalleria thead th{
+            float: left;
+}
+#scrollTableGalleria .galleriaOrder{
+	width: 5%;
+}
+#scrollTableGalleria .galleriaTheThumbnail{
+	width: 20%;
+}
+#scrollTableGalleria .galleriaPosition{
+	width: 20%;
+}
+#scrollTableGalleria .galleriaDescr{
+	width: 35%;
+}
+#scrollTableGalleria .galleriaFindSimilar{
+	width: 20%;
+}
+#scrollTableGalleria thead{
+	width:98%;
+}
+
+/* any custom CSS will override the Galleria theme. Here we enlarge the thumbnails: */
+.galleria-thumbnails .galleria-image{width:90px;height:60px;}
+.galleria-thumbnails-list{height:60px;}
+.galleria-thumb-nav-left,
+.galleria-thumb-nav-right{height:55px;}
+.galleria-info,
+.galleria-counter{bottom:80px;}
+.galleria-thumbnails-container { height: 62px;}
+
+.galleriaHelp{margin-bottom: 1%;}
+
+.galleria-fscr{
+    position:absolute;
+    bottom:2%;
+    right:2%;
+    z-index:4;
+    cursor: pointer;
+    font-size: 25px;
+    color: #bbb;
+}
+.galleria-fscr:before{
+	font-family:"Glyphicons Halflings";
+	content:"\e140";
+	line-height:1;
+  	margin:5px;
+}
+.galleria-fscr:hover{
+    color: #fff;
+}
+.galleria-fscr:active{
+    color: #fff;
+}
+
+.md-block {
+    padding: 5px 0px;
+    margin: 0px;
+    text-align: left;
+    white-space: -moz-pre-wrap;
+    white-space: -o-pre-wrap;
+    word-wrap: break-word;
+}
+
+.collapse-icon:link, .collapse-icon:visited, .collapse-icon:hover, .collapse-icon:active  {
+    text-decoration:none;
+    cursor: pointer; cursor: hand;
+}
+
+.tree li {
+    list-style-type: none;
+}
+
+
+.space-pills {
+    display: inline-block;
+    border: none;
+    padding: 1px 10px 1px 10px;
+    margin: 5px;
+    background: #eeeeee;
+    border-radius: .25em;
+}
+
+.space-pills a {
+    color: white;
+}
+
+.space-pills a:hover {
+    color: white;
+}
+
+.inline {
+    display: inline;
+}
+
+.edit-tab {
+    margin-left: 5px;
+}
+
+.align-right {
+    float: right;
+}
+
+.prevIframeWrap{
+	width: 36em;
+    height: 27em;
+    padding: 0;
+    overflow: hidden;
+    align-content: center;
+}
+.prevIframe{
+	width: 72em;
+	-moz-transform: scale(0.5);
+	-moz-transform-origin: 0 0;
+	-o-transform: scale(0.5);
+    -o-transform-origin: 0 0;
+    -webkit-transform: scale(0.5);
+    -webkit-transform-origin: 0 0;
+    height: 54em;
+    border: none;
+    background-image: url("../javascripts/previewers/iframe/images/iframe_error.jpg");
+    background-size: cover;
+}
+.iframeLink{
+	position: relative;
+	top: -27em;
+	width: 36em;
+	height: 30em;
+	display:block;
+	margin-bottom: -26em;
+	border: 1px solid grey;
+}
+.iframeLink:hover {
+	opacity:0.5;
+}
+.iframeBtn{
+	bottom: -27em;
+	position: relative;
+	left: 17em;
+}
+.iframeModalDiv{
+	width: 72%;
+	overflow:hidden !important;
+	position: fixed !important;
+    left: 14% !important;
+    top: 5% !important;
+}
+.iframeModal{
+/* 	height: 60em; */
+/* 	width: 100%; */
+}
+
+.iframeModalDivInternal{
+	position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%;
+}
+.iframeModalDivInternal iframe, .embed-container object, .embed-container embed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+.iframeClose{
+	font-size: 30px !important;
+	margin-top: -5px !important;
+}
+
+/* For the nested table in the 'users' view, under collections */
+table#user-space-role>thead>tr>th {
+    vertical-align: middle;
+}
+table#nested-space-role-headers {
+    margin: 0;
+}
+table#nested-space-role-headers>thead>tr>th {
+    border: none;
+    padding: 0;
+}
+table#nested-space-role-pairs>tbody>tr:first-child {
+    border-top-style: hidden;
+}
+table#nested-space-role-pairs>tbody>tr>td {
+    padding: 0;
+}
+
+table.borderless tbody tr td, table.borderless tbody tr th {
+    border: none;
+}
+
+.upload-files-buttons {
+    padding-top: 20px;
+}
+
+.margin-top-h{
+    margin-top: 30px;
+}
+.center-glyphicon{
+    display:block;
+    text-align: center;
+}
+
+.center-margin {
+    text-align: center;
+    margin: 0.5em;
+}
+/*.black-border {*/
+    /*border: 2px solid black;*/
+    /*display:block;*/
+    /*padding:10px;*/
+/*}*/
+
+.green{
+    color: green;
+}
+
+.red {
+    color: red;
+}
+
+.yellow {
+    color: GoldenRod;
+}
+
+.indent_20{
+    margin-left: 20px;
+}
+
+.submitted {
+    background-color: #dff0d8 !important;
+}
+
+.in-curation {
+    background-color: #fcf8e3 !important;
+}
+
+.publish {
+    background-color: #dcdcdc !important;
+}
+
+#user-space-role .table {
+    margin-bottom: 0px;
+}
+.form-md {
+    padding: 10px 0px;
+}
+
+.add-resource {
+    width: 240px !important
+}
+
+.tag-padding {
+    padding-right:15px;
+}
+
+.fixedtable {
+    table-layout:fixed;
+    word-wrap: break-word;
+}
+
+.margin-bottom-20 {
+    margin-bottom: 20px !important;
+}
+
+/* custom class for noty notification, position of a close x */
+.close-notify {
+    font-weight:bold;
+    position:absolute;
+    top:2px;
+    right:5px;
+}
+
+#curationObjectFieldSet .creators .control-group {
+    display: inline-block;
+    width: 85%;
+}
+
+#curationObjectFieldSet .creators .creator-delete {
+    display: inline-block;
+    margin-left: 10px;
+}
+
+#curationObjectFieldSet .creators .creator-add {
+    display: inline-block;
+    margin-left: 10px;
 }

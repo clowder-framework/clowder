@@ -1,6 +1,6 @@
 package services.mongodb
 
-import services.ThreeDService
+import services.{ByteStorageService, ThreeDService}
 import models._
 import com.mongodb.casbah.Imports._
 import com.mongodb.WriteConcern
@@ -10,14 +10,13 @@ import org.bson.types.ObjectId
 import MongoContext.context
 import play.api.Play.current
 import java.io.InputStream
-import com.mongodb.casbah.gridfs.GridFS
 import com.mongodb.casbah.commons.MongoDBObject
 import models.ThreeDGeometry
 import models.ThreeDTexture
-import scala.Some
+import util.FileUtils
 
 /**
- * Created by lmarini on 2/26/14.
+ * Use MongoDB to store 3-d's
  */
 class MongoDBThreeDService extends ThreeDService {
 
@@ -54,30 +53,22 @@ class MongoDBThreeDService extends ThreeDService {
    * Save blob.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
-    val files = current.plugin[MongoSalatPlugin] match {
-      case None => throw new RuntimeException("No MongoSalatPlugin");
-      case Some(x) => x.gridFS("textures")
+    ByteStorageService.save(inputStream, ThreeDTextureDAO.COLLECTION) match {
+      case Some(x) => {
+        val text = ThreeDTexture(UUID.generate(), x._1, x._2, None, Some(filename), FileUtils.getContentType(filename, contentType), x._4)
+        ThreeDTextureDAO.save(text)
+        text.id.stringify
+      }
+      case None => ""
     }
-    val mongoFile = files.createFile(inputStream)
-    //    Logger.debug("Uploading file " + filename)
-    mongoFile.filename = filename
-    var ct = play.api.http.ContentTypes.BINARY
-    mongoFile.contentType = ct
-    mongoFile.save
-    mongoFile.getAs[ObjectId]("_id").get.toString
   }
 
   /**
    * Get blob.
    */
   def getBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
-    val files = GridFS(SocialUserDAO.dao.collection.db, "textures")
-    files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
-      case Some(file) => Some(file.inputStream,
-        file.getAs[String]("filename").getOrElse("unknown-name"),
-        file.getAs[String]("contentType").getOrElse("unknown"),
-        file.getAs[Long]("length").getOrElse(0))
-      case None => None
+    getTexture(id).flatMap { x =>
+      ByteStorageService.load(x.loader, x.loader_id, ThreeDTextureDAO.COLLECTION).map((_, x.filename.getOrElse(""), x.contentType, x.length))
     }
   }
 
@@ -94,16 +85,14 @@ class MongoDBThreeDService extends ThreeDService {
    * Save blob.
    */
   def saveGeometry(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
-    val files = current.plugin[MongoSalatPlugin] match {
-      case None => throw new RuntimeException("No MongoSalatPlugin");
-      case Some(x) => x.gridFS("geometries")
+    ByteStorageService.save(inputStream, GeometryDAO.COLLECTION) match {
+      case Some(x) => {
+        val geom = ThreeDGeometry(UUID.generate(), x._1, x._2, None, Some(filename), FileUtils.getContentType(filename, contentType), None, x._4)
+        GeometryDAO.save(geom)
+        geom.id.stringify
+      }
+      case None => ""
     }
-    val mongoFile = files.createFile(inputStream)
-    mongoFile.filename = filename
-    var ct = play.api.http.ContentTypes.BINARY
-    mongoFile.contentType = ct
-    mongoFile.save
-    mongoFile.getAs[ObjectId]("_id").get.toString
   }
 
   def getGeometry(id: UUID): Option[ThreeDGeometry] = {
@@ -114,35 +103,36 @@ class MongoDBThreeDService extends ThreeDService {
    * Get blob.
    */
   def getGeometryBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
-    val files = GridFS(SocialUserDAO.dao.collection.db, "geometries")
-    files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
-      case Some(file) => Some(file.inputStream,
-        file.getAs[String]("filename").getOrElse("unknown-name"),
-        file.getAs[String]("contentType").getOrElse("unknown"),
-        file.getAs[Long]("length").getOrElse(0))
-      case None => None
+    getGeometry(id).flatMap { x =>
+      ByteStorageService.load(x.loader, x.loader_id, GeometryDAO.COLLECTION).map((_, x.filename.getOrElse(""), x.contentType, x.length))
     }
   }
 
 }
 
 object ThreeDTextureDAO extends ModelCompanion[ThreeDTexture, ObjectId] {
+  val COLLECTION = "textures"
+
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[ThreeDTexture, ObjectId](collection = x.collection("textures.files")) {}
+    case Some(x) => new SalatDAO[ThreeDTexture, ObjectId](collection = x.collection(COLLECTION)) {}
   }
 }
 
 object GeometryDAO extends ModelCompanion[ThreeDGeometry, ObjectId] {
+  val COLLECTION = "geometries"
+
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[ThreeDGeometry, ObjectId](collection = x.collection("geometries.files")) {}
+    case Some(x) => new SalatDAO[ThreeDGeometry, ObjectId](collection = x.collection(COLLECTION)) {}
   }
 }
 
 object ThreeDAnnotation extends ModelCompanion[ThreeDAnnotation, ObjectId] {
+  val COLLECTION = "previews.files.annotations"
+
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[ThreeDAnnotation, ObjectId](collection = x.collection("previews.files.annotations")) {}
+    case Some(x) => new SalatDAO[ThreeDAnnotation, ObjectId](collection = x.collection(COLLECTION)) {}
   }
 }

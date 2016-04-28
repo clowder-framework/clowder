@@ -13,11 +13,11 @@ import play.api.Play._
 import securesocial.core.IdentityId
 import scala.Some
 import MongoContext.context
+import models.UUID
 
 /**
  * SecureSocial implementation using MongoDB.
- * 
- * @author Luigi Marini
+ *
  */
 case class MongoToken(
   id: Object,
@@ -80,7 +80,8 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
   def save(user: Identity): Identity = {
     Logger.trace("Saving user " + user)
     val query = MongoDBObject("identityId.userId"->user.identityId.userId, "identityId.providerId"->user.identityId.providerId)
-    SocialUserDAO.update(query, user, true, false, WriteConcern.Normal)
+    val dbobj = MongoDBObject("$set" -> SocialUserDAO.toDBObject(user))
+    SocialUserDAO.update(query, dbobj, upsert=true, multi=false, WriteConcern.Safe)
     user
   }
 
@@ -140,5 +141,5 @@ class MongoUserService(application: Application) extends UserServicePlugin(appli
   def deleteExpiredTokens() {
     Logger.debug("----Deleting expired tokens")
     for (token <- TokenDAO.findAll) if (token.isExpired) TokenDAO.remove(token)
-  }
+  }  
 }

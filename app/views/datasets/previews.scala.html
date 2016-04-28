@@ -1,0 +1,29 @@
+@(dataset: Dataset, previewers: List[Previewer])
+
+@showPreview(name: String, path: String, url: String, datasetId: String) = {
+    <script>
+        var Configuration = {};
+        Configuration.div = "#previewer_@name";
+        Configuration.path = "@path";
+        Configuration.url = "@url";
+        Configuration.dataset_id = "@datasetId";
+        Configuration.name = "@name";
+    </script>
+    <script type="text/javascript" src="@(url)"></script>
+}
+
+@* FIXME load dynamically from previewer *@
+@import play.api.Play
+@if(Play.current.configuration.getString("google.maps.key").isDefined) {
+    <script type="text/javascript"
+        src="https://maps.googleapis.com/maps/api/js?key=@Play.current.configuration.getString("google.maps.key")">
+    </script>
+}
+
+@for((p,i) <- previewers.zipWithIndex) {
+    <div class="col-md-12 dataset-preview" id="previewer_@(p.id)_@i"></div>
+    @showPreview(p.id + "_" + i,
+        routes.Assets.at("javascripts/previewers") + "/" + p.id + "/",
+        routes.Assets.at("javascripts/previewers") + "/" + p.id + "/" + p.main,
+        dataset.id.stringify)
+}

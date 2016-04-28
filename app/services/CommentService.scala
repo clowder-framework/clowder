@@ -3,7 +3,7 @@ package services
 import models.{UUID, Comment}
 
 /**
- * Created by lmarini on 2/17/14.
+ * Service to manipulate comments in datasets and files.
  */
 trait CommentService {
 
@@ -35,6 +35,8 @@ trait CommentService {
    * id: The identifier of the comment to remove, as a UUID.
    */
   def removeComment(id: UUID)
+
+  def updateAuthorFullName(userId: UUID, fullName: String)
     
 }
 

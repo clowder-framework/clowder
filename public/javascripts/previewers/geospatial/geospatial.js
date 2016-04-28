@@ -3,8 +3,7 @@
 
 	var defaultOpacity = 0.8;
 	// retrieve the metadata
-	var metadataApiUrl = "/api/files/" + Configuration.fileid
-			+ "/technicalmetadatajson";
+	var metadataApiUrl = jsRoutes.api.Files.getTechnicalMetadataJSON(Configuration.fileid).url;
 	var request = $.ajax({
 		type : "GET",
 		url : metadataApiUrl,
@@ -22,15 +21,27 @@
 					return;
 				if (data.length == 0)
 					return;
-				if (data[0] == undefined)
-					return;
-				if (data[0]["WMS Layer URL"] == "")
-					return;
+
+                // search the metadata index which contains geospatial metadata
+                var geoMetadataIndex = -1;
+                for (var i=0;i<data.length;i++)
+                {
+                    if (data[i]["WMS Layer URL"] == undefined)
+                        continue;
+                    if (data[i]["WMS Layer URL"] == "")
+                        continue;
+                    geoMetadataIndex = i;
+                    break;
+                }
+
+                // if it couldn't find the index, return
+                if (geoMetadataIndex == -1)
+                    return;
 
 				console.log("Updating tab " + Configuration.tab);
 
 				// add css for ol3
-				var cssLink = $("<link rel='stylesheet' type='text/css' href='http://openlayers.org/en/v3.0.0/css/ol.css'>");
+				var cssLink = $("<link rel='stylesheet' type='text/css' href='" + Configuration.previewer + "/../../openlayers/ol.css'>");
 				$(Configuration.tab).append(cssLink);
 
 				// add map div for ol3
@@ -39,7 +50,7 @@
 				// loading the ol3 javascript
 				$
 						.getScript(
-								"http://openlayers.org/en/v3.0.0/build/ol.js",
+								Configuration.previewer + "/../../openlayers/ol.js",
 								function() {
 									// add layer opacity control
 									$(Configuration.tab).append(
@@ -48,9 +59,9 @@
 									// drawing the map
 									console.log("ol3js loaded");
 
-									wmsUrl = data[0]["WMS Service URL"];
-									layerName = data[0]["WMS Layer Name"];
-									wmsLayerUrl = data[0]["WMS Layer URL"];
+									wmsUrl = data[geoMetadataIndex]["WMS Service URL"];
+									layerName = data[geoMetadataIndex]["WMS Layer Name"];
+									wmsLayerUrl = data[geoMetadataIndex]["WMS Layer URL"];
 
 									// extract extent from WMS layer url
 									var parser = document.createElement('a'), searchObject = {}, queries, split;

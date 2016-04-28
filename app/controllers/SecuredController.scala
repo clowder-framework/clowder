@@ -1,111 +1,201 @@
-/**
- *
- */
 package controllers
 
-import org.apache.commons.codec.binary.Base64
-import org.mindrot.jbcrypt.BCrypt
-import api.Permission
-import api.RequestWithUser
-import api.WithPermission
-import play.api.Logger
-import play.api.mvc.Action
-import play.api.mvc.BodyParser
-import play.api.mvc.Controller
-import play.api.mvc.Result
-import play.api.mvc.Results
-import securesocial.core.AuthenticationMethod
-import securesocial.core.Authorization
-import securesocial.core.IdentityProvider
-import securesocial.core.SecureSocial
-import securesocial.core.SocialUser
-import securesocial.core.UserService
-import securesocial.core.providers.UsernamePasswordProvider
-import securesocial.core.providers.utils.RoutesHelper
-import securesocial.core.IdentityId
-import models.UUID
+import api.Permission.Permission
+import api.{Permission, UserRequest}
+import models.{User, RequestResource, ResourceRef}
+import play.api.mvc._
+import play.api.templates.Html
+import securesocial.core.{Authenticator, SecureSocial, UserService}
+import services._
+import scala.concurrent.Future
 
 /**
- * Enforce authentication and authorization.
- * 
- * @author Luigi Marini
- * @author Rob Kooper
+ * Action builders check permissions in controller calls. When creating a new endpoint, pick one of the actions defined below.
+ *
+ * All functions will always resolve the usr and place the user in the request.user.
+ *
+ * UserAction: call the wrapped code, no checks are done
+ * AuthenticatedAction: call the wrapped code iff the user is logged in.
+ * ServerAdminAction: call the wrapped code iff the user is a server admin.
+ * PermissionAction: call the wrapped code iff the user has the right permission on the reference object.
  *
  */
 trait SecuredController extends Controller {
-  val anonymous = new SocialUser(new IdentityId("anonymous", ""), "Anonymous", "User", "Anonymous User", None, None, AuthenticationMethod.UserPassword)
+  /** get user if logged in */
+  def UserAction(needActive: Boolean) = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      val userRequest = getUser(request)
+      if (needActive && !userRequest.user.exists(_.active)) {
+        Future.successful(Results.Redirect(routes.Error.notActivated()))
+      } else {
+        block(userRequest)
+      }
+    }
+  }
 
-  def SecuredAction[A](p: BodyParser[A] = parse.anyContent, authorization: Authorization = WithPermission(Permission.Public), resourceId: Option[UUID] = None)(f: RequestWithUser[A] => Result) = Action(p) {
-    implicit request =>
-      {
-        request.headers.get("Authorization") match { // basic authentication
-          case Some(authHeader) => {
-            val header = new String(Base64.decodeBase64(authHeader.slice(6, authHeader.length).getBytes))
-            val credentials = header.split(":")
-            UserService.findByEmailAndProvider(credentials(0), UsernamePasswordProvider.UsernamePassword) match {
-              case Some(identity) => {
-                if (BCrypt.checkpw(credentials(1), identity.passwordInfo.get.password)) {
-                  if (authorization.isInstanceOf[WithPermission]) {
-                    if (authorization.asInstanceOf[WithPermission].isAuthorized(identity, resourceId)) {
-                      f(RequestWithUser(Some(identity), request))
-                    } else {
-	                    if (SecureSocial.currentUser.isDefined) {  //User logged in but not authorized, so redirect to 'not authorized' page
-	                    	Results.Redirect(routes.Authentication.notAuthorized)
-	                    } else {   //User not logged in, so redirect to login page
-	                    	Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You are not authorized.")
-	                    }
-                    }	
+  /**
+   * Use when you want to require the user to be logged in on a private server or the server is public.
+   */
+  def PrivateServerAction = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      val userRequest = getUser(request)
+      if (userRequest.user.exists(!_.active)) {
+        Future.successful(Results.Redirect(routes.Error.notActivated()))
+      } else if (Permission.checkPrivateServer(userRequest.user) || userRequest.superAdmin) {
+        block(userRequest)
+      } else {
+        Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
+          .flashing("error" -> "You must be logged in to access this page."))
+      }
+    }
+  }
+
+  /** call code iff user is logged in */
+  def AuthenticatedAction = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      val userRequest = getUser(request)
+      if (userRequest.user.exists(!_.active)) {
+        Future.successful(Results.Redirect(routes.Error.notActivated()))
+      } else if (userRequest.user.isDefined || userRequest.superAdmin) {
+        block(userRequest)
+      } else {
+        Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
+          .flashing("error" -> "You must be logged in to access this page."))
+      }
+    }
+  }
+
+  /** call code if user is a server admin */
+  def ServerAdminAction = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      val userRequest = getUser(request)
+      if (userRequest.user.exists(!_.active)) {
+        Future.successful(Results.Redirect(routes.Error.notActivated()))
+      } else if (Permission.checkServerAdmin(userRequest.user) || userRequest.superAdmin) {
+        block(userRequest)
+      } else {
+        Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
+          .flashing("error" -> "You must be logged in as an administrator to access this page."))
+      }
+
+    }
+  }
+
+  /** call code if user has right permission for resource */
+  def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None) = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      val userRequest = getUser(request)
+      if (userRequest.user.exists(!_.active)) {
+        Future.successful(Results.Redirect(routes.Error.notActivated()))
+      } else {
+        val p = Permission.checkPermission(userRequest.user, permission, resourceRef)
+        if (p || userRequest.superAdmin) {
+          block(userRequest)
+        } else if (Permission.checkPrivateServer(userRequest.user)) {
+          val messageNoPermission = "You are not authorized to access "
+
+          resourceRef match {
+            case None => Future.successful(Results.Redirect(routes.Error.notAuthorized("Unknown resource", "Unknown id", "no resource")))
+
+            case Some(ResourceRef(ResourceRef.file, id)) => {
+              val files: FileService = DI.injector.getInstance(classOf[FileService])
+              files.get(id) match {
+                case None => Future.successful(BadRequest(views.html.notFound("File does not exist.")))
+                case Some(file) => Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission + "file \"" + file.filename + "\"", id.toString, "file")))
+              }
+            }
+
+            case Some(ResourceRef(ResourceRef.dataset, id)) => {
+              val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+              datasets.get(id) match {
+                case None => Future.successful(BadRequest(views.html.notFound("Dataset does not exist.")))
+                case Some(dataset) => Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission
+                  + "dataset \"" + dataset.name + "\"", id.toString, "dataset")))
+              }
+            }
+
+            case Some(ResourceRef(ResourceRef.collection, id)) => {
+              val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
+              collections.get(id) match {
+                case None => Future.successful(BadRequest(views.html.notFound("Collection does not exist.")))
+                case Some(collection) => Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission
+                  + "collection \"" + collection.name + "\"", id.toString, "collection")))
+              }
+            }
+
+            case Some(ResourceRef(ResourceRef.space, id)) => {
+              val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
+              spaces.get(id) match {
+                case None => Future.successful(BadRequest(views.html.notFound("Space does not exist.")))
+                case Some(space) => {
+                  if (userRequest.user.isDefined && space.requests.contains(RequestResource(userRequest.user.get.id))) {
+                    Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission + "space \""
+                      + space.name + "\". \nAuthorization request is pending", "", "space")))
                   } else {
-                    if (SecureSocial.currentUser.isDefined) {  //User logged in but not authorized, so redirect to 'not authorized' page
-                      Results.Redirect(routes.Authentication.notAuthorized)
-                    } else{   //User not logged in, so redirect to login page
-                      Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You are not authorized.")
-                    }
-                  }
-                } else {
-                  Logger.debug("Password doesn't match")
-                  Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "Username/password are not valid.")
-                }
-              }
-              case None => {
-                Logger.debug("User not found")
-                Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "Username/password are not valid.")
-              }
-            }
-          }
-          case None => {
-            SecureSocial.currentUser(request) match { // calls from browser
-              case Some(identity) => {
-                if (authorization.isInstanceOf[WithPermission]){
-                  if (authorization.asInstanceOf[WithPermission].isAuthorized(identity, resourceId)) {
-                    f(RequestWithUser(Some(identity), request))
-                  } else if(SecureSocial.currentUser.isDefined) {  //User logged in but not authorized, so redirect to 'not authorized' page
-                    Results.Redirect(routes.Authentication.notAuthorized)
-                  } else {   //User not logged in, so redirect to login page
-                    Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You are not authorized.")
-                  }
-                } else if(SecureSocial.currentUser.isDefined) {  //User logged in but not authorized, so redirect to 'not authorized' page
-                  Results.Redirect(routes.Authentication.notAuthorized)
-                } else {   //User not logged in, so redirect to login page
-                  Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You are not authorized.")
-                }
-              }
-              case None => {
-                if (authorization.isAuthorized(null))
-                  f(RequestWithUser(None, request))
-                else {
-                  if(SecureSocial.currentUser.isDefined){  //User logged in but not authorized, so redirect to 'not authorized' page
-                    Results.Redirect(routes.Authentication.notAuthorized)
-                  }
-                  else{   //User not logged in, so redirect to login page
-                    Results.Redirect(RoutesHelper.login.absoluteURL(IdentityProvider.sslEnabled)).flashing("error" -> "You are not authorized.")
+                    Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission + "space \""
+                      + space.name + "\"", id.toString, "space")))
                   }
                 }
               }
             }
+
+            case Some(ResourceRef(ResourceRef.curationObject, id)) =>{
+              val curations: CurationService = DI.injector.getInstance(classOf[CurationService])
+              curations.get(id) match {
+                case None =>  Future.successful(BadRequest(views.html.notFound("Curation Object does not exist.")))
+                case Some(curation) => Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission
+                  + "curation object \"" + curation.name + "\"", id.toString(), "curation")))
+              }
+            }
+
+            case Some(ResourceRef(ResourceRef.section, id)) =>{
+              val sections: SectionService = DI.injector.getInstance(classOf[SectionService])
+              sections.get(id) match {
+                case None => Future.successful(BadRequest(views.html.notFound("Section does not exist.")))
+                case Some(section) => Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission
+                  + " section \"" + section.id + "\"", id.toString(), "section")))
+              }
+            }
+
+            case Some(ResourceRef(resType, id)) => {
+              Future.successful(Results.Redirect(routes.Error.notAuthorized("error resource", id.toString(), resType.toString())))
+            }
           }
+
+        } else {
+          Future.successful(Results.Redirect(routes.Error.authenticationRequiredMessage("You must be logged in to perform that action.", userRequest.uri )))
         }
       }
+    }
+  }
+
+  /**
+   * Disable a route without having to comment out the entry in the routes file. Useful for when we want to keep the
+   * code around but we don't want users to have access to it.
+   */
+  def DisabledAction = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      Future.successful(Results.Redirect(routes.Error.notAuthorized("", null, null)))
+    }
+  }
+
+  /** Return user based on request object */
+  def getUser[A](request: Request[A]): UserRequest[A] = {
+    // controllers will check for user in the following order:
+    // 1) secure social
+    // 2) anonymous access
+
+    // 1) secure social, this allows the web app to make calls to the API and use the secure social user
+    for (
+      authenticator <- SecureSocial.authenticatorFromRequest(request);
+      identity <- UserService.find(authenticator.identityId)
+    ) yield {
+      Authenticator.save(authenticator.touch)
+      val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
+      return UserRequest(user, superAdmin = false, request)
+    }
+
+    // 2) anonymous access
+    UserRequest(None, superAdmin = false, request)
   }
 }
-

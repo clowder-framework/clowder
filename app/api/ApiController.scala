@@ -1,71 +1,152 @@
 package api
 
-import play.api.Logger
-import play.api.mvc.Action
-import play.api.mvc.BodyParser
-import play.api.mvc.Controller
-import play.api.mvc.Result
-import securesocial.core.AuthenticationMethod
-import securesocial.core.Authorization
-import securesocial.core.SecureSocial
-import securesocial.core.SocialUser
-import securesocial.core.IdentityId
-import models.UUID
+import api.Permission.Permission
+import models.ResourceRef
+import org.apache.commons.codec.binary.Base64
+import org.mindrot.jbcrypt.BCrypt
+import play.api.mvc._
+import models.User
+import securesocial.core.providers.UsernamePasswordProvider
+import securesocial.core.{Authenticator, SecureSocial, UserService}
+import services.DI
+
+import scala.concurrent.Future
 
 /**
- * New way to wrap actions for authentication so that we have access to Identity.
+ * Action builders check permissions in API calls. When creating a new endpoint, pick one of the actions defined below.
  *
- * @author Rob Kooper
+ * All functions will always resolve the usr and place the user in the request.user.
+ *
+ * UserAction: call the wrapped code, no checks are done
+ * AuthenticatedAction: call the wrapped code iff the user is logged in.
+ * ServerAdminAction: call the wrapped code iff the user is a server admin.
+ * PermissionAction: call the wrapped code iff the user has the right permission on the reference object.
  *
  */
 trait ApiController extends Controller {
-  val anonymous = new SocialUser(new IdentityId("anonymous", ""), "Anonymous", "User", "Anonymous User", None, None, AuthenticationMethod.UserPassword)
+  /** get user if logged in */
+  def UserAction(needActive: Boolean) = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      val userRequest = getUser(request)
+      if (needActive && userRequest.user.exists(!_.active)) {
+        Future.successful(Unauthorized("Account is not activated"))
+      } else {
+        block(userRequest)
+      }
+    }
+  }
 
-  def SecuredAction[A](p: BodyParser[A] = parse.json, authorization: Authorization = WithPermission(Permission.Public), resourceId: Option[UUID] = None)(f: RequestWithUser[A] => Result) = Action(p) {
-    implicit request =>
-      {
-        request.queryString.get("key") match { // token in url
-          case Some(key) => {
-            if (key.length > 0) {
-              // TODO Check for key in database
-              if (key(0).equals(play.Play.application().configuration().getString("commKey"))) {
-                if (authorization.isAuthorized(anonymous)) {
-                  f(RequestWithUser(Some(anonymous), request))
-                }
-                else
-                  Unauthorized("Not authorized")
-              } else {
-                Logger.debug("Key doesn't match")
-                Unauthorized("Not authenticated")
-              }
-            } else
-              Unauthorized("Not authenticated")
-          }
-          case None => {
-            SecureSocial.currentUser(request) match { // calls from browser
-              case Some(identity) => {
-                if (authorization.isInstanceOf[WithPermission]){
-                  if (authorization.asInstanceOf[WithPermission].isAuthorized(identity, resourceId))
-                	  f(RequestWithUser(Some(identity), request))
-                  else
-                	  Unauthorized("Not authorized")
-                }
-                else
-                	Unauthorized("Not authorized")
-              }
-              case None => {
-                if (authorization.isAuthorized(null))
-                  f(RequestWithUser(None, request))
-                else {
-                    Logger.debug("ApiController - Authentication failure")
-                    //Modified to return a message specifying that authentication is necessary, so that 
-                    //callers can handle it appropriately.
-                    Unauthorized("Authentication Required")
-                }
-              }
-            }
-          }
+  /**
+   * Use when you want to require the user to be logged in on a private server or the server is public.
+   */
+  def PrivateServerAction = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      val userRequest = getUser(request)
+      if (userRequest.user.exists(!_.active)) {
+        Future.successful(Unauthorized("Account is not activated"))
+      } else if (Permission.checkPrivateServer(userRequest.user) || userRequest.superAdmin) {
+        block(userRequest)
+      } else {
+        Future.successful(Unauthorized("Not authorized"))
+      }
+    }
+  }
+
+  /** call code iff user is logged in */
+  def AuthenticatedAction = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      val userRequest = getUser(request)
+      if (userRequest.user.exists(!_.active)) {
+        Future.successful(Unauthorized("Account is not activated"))
+      } else if (userRequest.user.isDefined || userRequest.superAdmin) {
+        block(userRequest)
+      } else {
+        Future.successful(Unauthorized("Not authorized"))
+      }
+    }
+  }
+
+  /** call code iff user is a server admin */
+  def ServerAdminAction = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      val userRequest = getUser(request)
+      if (userRequest.user.exists(!_.active)) {
+        Future.successful(Unauthorized("Account is not activated"))
+      } else if (Permission.checkServerAdmin(userRequest.user) || userRequest.superAdmin) {
+        block(userRequest)
+      } else {
+        Future.successful(Unauthorized("Not authorized"))
+      }
+    }
+  }
+
+  /** call code iff user has right permission for resource */
+  def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None) = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      val userRequest = getUser(request)
+      if (userRequest.user.exists(!_.active)) {
+        Future.successful(Unauthorized("Account is not activated"))
+      } else if (Permission.checkPermission(userRequest.user, permission, resourceRef) || userRequest.superAdmin) {
+        block(userRequest)
+      } else {
+        Future.successful(Unauthorized("Not authorized"))
+      }
+    }
+  }
+
+  /**
+   * Disable a route without having to comment out the entry in the routes file. Useful for when we want to keep the
+   * code around but we don't want users to have access to it.
+   */
+  def DisabledAction = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      Future.successful(Unauthorized("Disabled"))
+    }
+  }
+
+  /** Return user based on request object */
+  def getUser[A](request: Request[A]): UserRequest[A] = {
+    // API will check for the user in the following order:
+    // 1) secure social, this allows the web app to make calls to the API and use the secure social user
+    // 2) basic auth, this allows you to call the api with your username/password
+    // 3) key, this will need to become better, right now it will only accept the one key, when using the
+    //    key it will assume you are anonymous!
+    // 4) anonymous access
+
+    // 1) secure social, this allows the web app to make calls to the API and use the secure social user
+    for (
+      authenticator <- SecureSocial.authenticatorFromRequest(request);
+      identity <- UserService.find(authenticator.identityId)
+    ) yield {
+      Authenticator.save(authenticator.touch)
+      val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
+      return UserRequest(user, superAdmin=false, request)
+    }
+
+    // 2) basic auth, this allows you to call the api with your username/password
+    request.headers.get("Authorization").foreach { authHeader =>
+      val header = new String(Base64.decodeBase64(authHeader.slice(6, authHeader.length).getBytes))
+      val credentials = header.split(":")
+      UserService.findByEmailAndProvider(credentials(0), UsernamePasswordProvider.UsernamePassword).foreach { identity =>
+        val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity)
+        if (BCrypt.checkpw(credentials(1), identity.passwordInfo.get.password)) {
+          return UserRequest(user, superAdmin=false, request)
         }
       }
+    }
+
+    // 3) key, this will need to become better, right now it will only accept the one key, when using the
+    //    key it will assume you are anonymous!
+    request.queryString.get("key").foreach { key =>
+      // TODO this needs to become more secure
+      if (key.nonEmpty) {
+        if (key.head.equals(play.Play.application().configuration().getString("commKey"))) {
+          return UserRequest(Some(User.anonymous), superAdmin=true, request)
+        }
+      }
+    }
+
+    // 4) anonymous access
+    UserRequest(None, superAdmin=false, request)
   }
 }

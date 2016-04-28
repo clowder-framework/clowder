@@ -13,15 +13,15 @@ function removeAdmin(email){
         console.log("Response " + response);        
         
         if(textStatus == "success")
-        	alert("Admin removed.");
+        	notify("Admin removed.", "success");
         else if(textStatus == "notmodified")
-        	alert("Admin was removed already.")              
+        	notify("Admin was removed already.");
     });
 	request.fail(function (jqXHR, textStatus, errorThrown){
 		console.error(
     		"The following error occured: "+
     		textStatus, errorThrown		            
 			);
-		alert("ERROR: " + errorThrown +". Admin not removed." );
+		notify("ERROR: " + errorThrown +". Admin not removed.", error);
 			});	
 }

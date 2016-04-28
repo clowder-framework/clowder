@@ -1,10 +1,11 @@
 package services.mongodb
 
-import services.{TileService, FileService, PreviewService}
+import java.util.Date
+
+import services.{ByteStorageService, TileService, FileService, PreviewService}
 import com.mongodb.casbah.commons.MongoDBObject
 import java.io.{InputStreamReader, BufferedReader, InputStream}
 import play.api.Logger
-import com.mongodb.casbah.gridfs.GridFS
 import models._
 import org.apache.http.impl.client.DefaultHttpClient
 import org.apache.http.client.methods.HttpPost
@@ -19,17 +20,32 @@ import com.mongodb.casbah.Imports._
 import play.api.libs.json.JsValue
 import javax.inject.{Inject, Singleton}
 import models.Preview
-import scala.Some
 import play.api.libs.json.JsObject
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
+import util.FileUtils
 import collection.JavaConverters._
 
 /**
- * Created by lmarini on 2/17/14.
+ * Use MongoDB to store previews
  */
 @Singleton
-class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) extends PreviewService {
+class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService, storage: ByteStorageService) extends PreviewService {
+
+
+  /**
+   * Count all files
+   */
+  def count(): Long = {
+    PreviewDAO.count(MongoDBObject())
+  }
+
+  /**
+   * List all thumbnail files.
+   */
+  def listPreviews(): List[Preview] = {
+    (for (preview <- PreviewDAO.find(MongoDBObject())) yield preview).toList
+  }
 
   def get(previewId: UUID): Option[Preview] = {
     PreviewDAO.findOneById(new ObjectId(previewId.stringify))
@@ -59,33 +75,22 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
    * Save blob.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
-    val files = current.plugin[MongoSalatPlugin] match {
-      case None => throw new RuntimeException("No MongoSalatPlugin");
-      case Some(x) => x.gridFS("previews")
+    ByteStorageService.save(inputStream, PreviewDAO.COLLECTION) match {
+      case Some(x) => {
+        val preview = Preview(UUID.generate(), x._1, x._2, None, None, None, None, Some(filename), FileUtils.getContentType(filename, contentType), None, None, List.empty, x._4)
+        PreviewDAO.save(preview)
+        preview.id.stringify
+      }
+      case None => ""
     }
-    val mongoFile = files.createFile(inputStream)
-    Logger.debug("Uploading file " + filename)
-    mongoFile.filename = filename
-    var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)
-    if (ct == play.api.http.ContentTypes.BINARY) {
-      ct = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
-    }
-    mongoFile.contentType = ct
-    mongoFile.save
-    mongoFile.getAs[ObjectId]("_id").get.toString
   }
 
   /**
    * Get blob.
    */
   def getBlob(id: UUID): Option[(InputStream, String, String, Long)] = {
-    val files = GridFS(SocialUserDAO.dao.collection.db, "previews")
-    files.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
-      case Some(file) => Some(file.inputStream,
-        file.getAs[String]("filename").getOrElse("unknown-name"),
-        file.getAs[String]("contentType").getOrElse("unknown"),
-        file.getAs[Long]("length").getOrElse(0))
-      case None => None
+    get(id).flatMap { x =>
+      ByteStorageService.load(x.loader, x.loader_id, PreviewDAO.COLLECTION).map((_, x.filename.getOrElse(""), x.contentType, x.length))
     }
   }
 
@@ -114,7 +119,7 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
       case Some(preview) => {
         //var newAnnotations = List.empty[ThreeDAnnotation]
         for (annotation <- preview.annotations) {
-          if (annotation.id.toString().equals(annotation_id)) {
+          if (annotation.id.toString.equals(annotation_id.toString)) {
             PreviewDAO.update(MongoDBObject("_id" -> new ObjectId(preview_id.stringify), "annotations._id" -> new ObjectId(annotation.id.stringify)), $set("annotations.$.description" -> description), false, false, WriteConcern.Safe)
             return
           }
@@ -135,9 +140,17 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
     }
   }
 
+  def remove(id: UUID): Unit = {
+    get(id).foreach{ x=>
+      ByteStorageService.delete(x.loader, x.loader_id, PreviewDAO.COLLECTION)
+      PreviewDAO.remove(x)
+    }
+  }
+
+
   def removePreview(p: Preview) {
     for (tile <- tiles.get(p.id)) {
-      TileDAO.remove(MongoDBObject("_id" -> new ObjectId(tile.id.stringify)))
+      tiles.remove(tile.id)
     }
     // for IIP server references, also delete the files being referenced on the IIP server they reside
     if (!p.iipURL.isEmpty) {
@@ -186,7 +199,9 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
         frameRefReader.close()
       }
 
-    PreviewDAO.remove(MongoDBObject("_id" -> new ObjectId(p.id.stringify)))
+    // finally delete the actual file
+    ByteStorageService.delete(p.loader, p.loader_id, PreviewDAO.COLLECTION)
+    PreviewDAO.remove(p)
   }
 
   def attachToFile(previewId: UUID, fileId: UUID, extractorId: Option[String], json: JsValue) {
@@ -253,6 +268,13 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
       case _ => Logger.error("Expected a JSObject")
     }
   }
+
+  def setTitle(previewId: UUID, title: String) {
+    PreviewDAO.dao.collection.update(
+          MongoDBObject("_id" -> new ObjectId(previewId.stringify)),
+          $set("title" -> title),
+          upsert=false, multi=false, WriteConcern.Safe)
+  }
   
   /**
    * Get metadata from the mongo db as a map. 
@@ -268,26 +290,19 @@ class MongoDBPreviewService @Inject()(files: FileService, tiles: TileService) ex
     }
   }
   
-    def getExtractorId(id: UUID):Option[String] = {     
-      var extractor_id = getMetadata(id)("extractor_id") match{
-	  	case ex_id=> {
-	  		Logger.debug("MongoDBPreviewService: metadata for preview " + id + " contains extractor id = " + ex_id)
-	  		Some(ex_id.toString)
-	    }
-	  	case none =>{
-	  		Logger.debug("MongoDBPreviewService: metadata  for preview " + id + " DOES NOT contain extractor id")
-	  		None
-	  	}	              
-      }
+    def getExtractorId(id: UUID):String = {     
+      val extractor_id = getMetadata(id)("extractor_id").toString    
       extractor_id
    }
     
 }
 
 object PreviewDAO extends ModelCompanion[Preview, ObjectId] {
+  val COLLECTION = "previews"
+
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Preview, ObjectId](collection = x.collection("previews.files")) {}
+    case Some(x) => new SalatDAO[Preview, ObjectId](collection = x.collection(COLLECTION)) {}
   }
 }
 

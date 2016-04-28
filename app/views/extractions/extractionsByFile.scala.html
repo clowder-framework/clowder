@@ -1,0 +1,21 @@
+@(extractions: List[Extraction])
+
+<div class="well">
+    @if(extractions.size == 0) {
+        <p>Not extractions events recorded.</p>
+    } else {
+        <table class="table">
+            <thead><th>Extractor</th><th>Start</th><th>End</th><th>Status</th></thead>
+            <tbody>
+            @for(e <- extractions) {
+                <tr>
+                    <td>@e.extractor_id</td>
+                    <td>@e.start</td>
+                    <td>@e.end.getOrElse("N/A")</td>
+                    <td>@e.status</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>

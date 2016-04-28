@@ -171,13 +171,14 @@ SwaggerApi.prototype.buildFromSpec = function(response) {
       }
     }
   }
-  if (response.basePath) {
-    this.basePath = response.basePath;
-  } else if (this.url.indexOf('?') > 0) {
-    this.basePath = this.url.substring(0, this.url.lastIndexOf('?'));
-  } else {
-    this.basePath = this.url;
-  }
+  //if (response.basePath) {
+  //  this.basePath = response.basePath;
+  //} else if (this.url.indexOf('?') > 0) {
+  //  this.basePath = this.url.substring(0, this.url.lastIndexOf('?'));
+  //} else {
+  //  this.basePath = this.url
+  //}
+  this.basePath = this.url.replace("/api-docs.json", "");
   if (isApi) {
     var newName = response.resourcePath.replace(/\//g, '');
     this.resourcePath = response.resourcePath;
@@ -219,13 +220,14 @@ SwaggerApi.prototype.buildFrom1_1Spec = function(response) {
       }
     }
   }
-  if (response.basePath) {
-    this.basePath = response.basePath;
-  } else if (this.url.indexOf('?') > 0) {
-    this.basePath = this.url.substring(0, this.url.lastIndexOf('?'));
-  } else {
-    this.basePath = this.url;
-  }
+  //if (response.basePath) {
+  //  this.basePath = response.basePath;
+  //} else if (this.url.indexOf('?') > 0) {
+  //  this.basePath = this.url.substring(0, this.url.lastIndexOf('?'));
+  //} else {
+  //  this.basePath = this.url;
+  //}
+  this.basePath = this.url.replace("/api-docs.json", "");
   if (isApi) {
     var newName = response.resourcePath.replace(/\//g, '');
     this.resourcePath = response.resourcePath;

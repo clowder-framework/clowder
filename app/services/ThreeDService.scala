@@ -5,7 +5,7 @@ import java.io.InputStream
 import play.api.libs.json.JsValue
 
 /**
- * Created by lmarini on 2/26/14.
+ * Service to manipulate 3-D's
  */
 trait ThreeDService {
 

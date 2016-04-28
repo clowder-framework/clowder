@@ -54,7 +54,7 @@
 		    	
 		    	 },
 		    	 error: function(jqXHR, textStatus, errorThrown) { 
-		    	        alert("Status: " + textStatus); alert("Error: " + errorThrown); 
+		    	        notify("Status: " + textStatus + " Error: " + errorThrown, "error");
 		    	    },
 		    dataType: 'text'
 		});

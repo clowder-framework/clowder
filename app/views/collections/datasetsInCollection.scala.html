@@ -1,0 +1,29 @@
+@(datasetsList: List[Dataset], commentMap:  Map[UUID, Int], collectionId: UUID, prev: Int, next: Int)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+
+@import api.Permission
+
+@datasetsList.map { dataset =>
+    @datasets.listitem(dataset,commentMap , routes.Collections.collection(collectionId))
+}
+@if(datasetsList.isEmpty){
+    @if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collectionId))){
+        There are not datasets in this collection. <a id="create_first_dataset" href="@routes.Datasets.newDataset(None, Some(collectionId.toString()))"  class="inline" title="Create New Dataset"><i>  Add a dataset.</i></a>
+    } else {
+        There are no datasets in this collection.
+    }
+
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <ul class="pager">
+                <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
+            @if(prev >= 0) {
+                <li class="previous"><a id="prevlink-ds" title="Page backwards" href="javascript:updateDatasets(@prev)"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
+            }
+            @if(next >= 0) {
+                <li class ="next"><a id="nextlink-ds" title="Page forwards" href="javascript:updateDatasets(@next)">Next <span class="glyphicon glyphicon-chevron-right"></span></a></li>
+            }
+        </ul>
+    </div>
+</div>

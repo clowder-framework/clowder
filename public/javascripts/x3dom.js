@@ -156,7 +156,7 @@ x3dom.loadJS = function (src, path_prefix, blocking) {
             script.src = loadpath;
             head.appendChild(script, head.firstChild);
         } else {
-            alert("No document object found. Can't load components");
+            notify("No document object found. Can't load components", "error");
         }
     }
 };
@@ -491,10 +491,10 @@ x3dom.RefinementJobManager = function () {
 x3dom.RefinementJobManager.suppressOnTransferablesNotSupported = true;
 x3dom.RefinementJobManager.suppressOnWorkersNotSupported = false;
 x3dom.RefinementJobManager.onTransferablesNotSupported = function () {
-    alert('Your browser does not support transferables.\n' + 'This application might run slower than expected due to data cloning operations.');
+    notify('Your browser does not support transferables.\n' + 'This application might run slower than expected due to data cloning operations.', 'error');
 };
 x3dom.RefinementJobManager.onWorkersNotSupported = function () {
-    alert('WebWorkers are not supported by your browser. Unable to use RefinementJobManager.');
+    notify('WebWorkers are not supported by your browser. Unable to use RefinementJobManager.', 'error');
 };
 x3dom.RefinementJobManager.prototype.addResultBuffer = function (attributeId, bufferView) {
     this.attributes[attributeId] = {
@@ -2410,7 +2410,7 @@ x3dom.X3DCanvas.prototype.load = function (uri, sceneElemPos, settings) {
     };
     this.x3dElem.context = x3dCanvas.gl.ctx3d;
     this.doc.onerror = function () {
-        alert('Failed to load X3D document');
+        notify('Failed to load X3D document', 'error');
     };
     this.doc.load(uri, sceneElemPos);
 };

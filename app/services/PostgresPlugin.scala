@@ -9,13 +9,13 @@ import java.sql.DriverManager
 import java.util.Properties
 import java.sql.Timestamp
 import java.sql.Statement
-import play.api.libs.json.{Json, JsObject}
 import util.Parsers
+import play.api.libs.json._
+
 
 /**
  * Postgres connection and simple geoindex methods.
  *
- * @author Luigi Marini
  *
  */
 class PostgresPlugin(application: Application) extends Plugin {
@@ -44,6 +44,8 @@ class PostgresPlugin(application: Application) extends Plugin {
     } catch {
       case unknown: Throwable => Logger.error("Error connecting to postgres: " + unknown)
     }
+
+    updateDatabase()
   }
 
   override def onStop() {
@@ -55,7 +57,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   }
 
   def addDatapoint(start: java.util.Date, end: Option[java.util.Date], geoType: String, data: String, lat: Double, lon: Double, alt: Double, stream_id: String) {
-    val ps = conn.prepareStatement("INSERT INTO datapoints(start_time, end_time, stream_id, data, geog, created) VALUES(?, ?, ?, CAST(? AS json), ST_SetSRID(ST_MakePoint(?, ?, ?), 4326), NOW());")
+    val ps = conn.prepareStatement("INSERT INTO datapoints(start_time, end_time, stream_id, data, geog, created) VALUES(?, ?, ?, CAST(? AS jsonb), ST_SetSRID(ST_MakePoint(?, ?, ?), 4326), NOW());")
     ps.setTimestamp(1, new Timestamp(start.getTime))
     if (end.isDefined) ps.setTimestamp(2, new Timestamp(end.get.getTime))
     else ps.setDate(2, null)
@@ -79,7 +81,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     ps.close()
   }
 
-  def searchSensors(geocode: Option[String]): Option[String] = {
+  def searchSensors(geocode: Option[String], sensor_name: Option[String]): Option[String] = {
     val parts = geocode match {
       case Some(x) => x.split(",")
       case None => Array[String]()
@@ -94,6 +96,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     			"LEFT OUTER JOIN stream_info ON stream_info.sensor_id = sensors.gid "
 	  if (parts.length == 3) {
       query += "WHERE ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
+      if (sensor_name.isDefined) query += " AND name = ?"
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
       query += "WHERE ST_Covers(ST_MakePolygon(ST_MakeLine(ARRAY["
       i = 0
@@ -102,6 +105,9 @@ class PostgresPlugin(application: Application) extends Plugin {
         i += 2
       }
       query += "ST_MakePoint(?, ?)])), geog)"
+      if (sensor_name.isDefined) query += " AND name = ?"
+    } else if (parts.length == 0) {
+      if (sensor_name.isDefined) query += " WHERE name = ?"
     }
     query += " GROUP BY id"
     query += " ORDER BY name"
@@ -112,6 +118,7 @@ class PostgresPlugin(application: Application) extends Plugin {
       st.setDouble(i + 1, parts(1).toDouble)
       st.setDouble(i + 2, parts(0).toDouble)
       st.setDouble(i + 3, parts(2).toDouble * 1000)
+      if (sensor_name.isDefined) st.setString(i + 4, sensor_name.getOrElse(""))
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
       while (i < parts.length) {
         st.setDouble(i + 1, parts(i+1).toDouble)
@@ -120,6 +127,9 @@ class PostgresPlugin(application: Application) extends Plugin {
       }
       st.setDouble(i + 1, parts(1).toDouble)
       st.setDouble(i + 2, parts(0).toDouble)
+      if (sensor_name.isDefined) st.setString(i + 3, sensor_name.getOrElse(""))
+    } else if (parts.length == 0 && sensor_name.isDefined) {
+      st.setString(1, sensor_name.getOrElse(""))
     }
     st.setFetchSize(50)
     Logger.debug("Sensors search statement: " + st)
@@ -166,11 +176,101 @@ class PostgresPlugin(application: Application) extends Plugin {
       None
     } else Some(data)
   }
+
+  def updateSensorMetadata(id: String, data: String): Option[String] = {
+    val query = "SELECT row_to_json(t, true) AS my_sensor FROM (" +
+      "SELECT metadata As properties FROM sensors " +
+      "WHERE gid=?) AS t"
+    val st = conn.prepareStatement(query)
+    st.setInt(1, id.toInt)
+    Logger.debug("Sensors get statement: " + st)
+    val rs = st.executeQuery()
+    var sensorData = ""
+    while (rs.next()) {
+      sensorData += rs.getString(1)
+    }
+    rs.close()
+    st.close()
+
+    val oldDataJson = Json.parse(sensorData).as[JsObject]
+    val newDataJson = Json.parse(data).as[JsObject]
+
+    val jsonTransformer = (__ \ 'properties).json.update(
+      __.read[JsObject].map{ o => o ++ newDataJson }
+    )
+    val updatedJSON = oldDataJson.transform(jsonTransformer).get
+
+    val query2 = "UPDATE sensors SET metadata = CAST(? AS json) WHERE gid = ?"
+    val st2 = conn.prepareStatement(query2)
+    st2.setString(1, Json.stringify((updatedJSON \ "properties")))
+    st2.setInt(2, id.toInt)
+    Logger.debug("Sensors put statement: " + st2)
+    val rs2 = st2.executeUpdate()
+    st2.close()
+    getSensor(id)
+  }
+
+  /**
+   * Operates like the HTTP PATCH method, but uses HTTP PUT.
+   * PUT typically replaces everything in the field getting updated
+   * PATCH typically only modifies the changes you pass in
+   * This will not delete any values in metadata,
+   * even if a single tree of a nested object is passed, all siblings will remain.
+   * @param id stream id [String]
+   * @param data to be updated [JsValue]
+   * @return returns the entire stream response with updated values from getStream(id)
+   */
+  def patchStreamMetadata(id: String, data: String): Option[String] = {
+    val query = "SELECT row_to_json(t, true) AS my_stream FROM (" +
+      "SELECT metadata As properties FROM streams " +
+      "WHERE gid=?) AS t"
+    val st = conn.prepareStatement(query)
+    st.setInt(1, id.toInt)
+    Logger.debug("Streams get statement: " + st)
+    val rs = st.executeQuery()
+    var streamData = ""
+    while (rs.next()) {
+      streamData += rs.getString(1)
+    }
+    rs.close()
+    st.close()
+
+    val oldDataJson = Json.parse(streamData).as[JsObject]
+    val newDataJson = Json.parse(data).as[JsObject]
+
+    val jsonTransformer = (__ \ 'properties).json.update(
+      __.read[JsObject].map{ o => o ++ newDataJson }
+    )
+    val updatedJSON = oldDataJson.transform(jsonTransformer).get
+
+    val query2 = "UPDATE streams SET metadata = CAST(? AS json) WHERE gid = ?"
+    val st2 = conn.prepareStatement(query2)
+    st2.setString(1, Json.stringify((updatedJSON \ "properties")))
+    st2.setInt(2, id.toInt)
+    Logger.debug("Stream put statement: " + st2)
+    val rs2 = st2.executeUpdate()
+    st2.close()
+    getStream(id)
+  }
+
+  /**
+   * Retrieve links for sensor pages on da
+   * @param ids sensor ids
+   * @return a list of tuples, first element is sensor name, second is sensor url on dashboard
+   */
+  def getDashboardSensorURLs(ids: List[String]): List[(String, String)] = {
+    val base = play.api.Play.configuration.getString("geostream.dashboard.url").getOrElse("http://localhost:9000")
+    val sensorsJson = ids.map(id => Json.parse(getSensor(id).getOrElse("{}")))
+    List.tabulate(sensorsJson.size) { i =>
+      val name = (sensorsJson(i) \ "name").as[String]
+      (name, base + "#detail/location/" + name + "/")
+    }
+  }
   
   def getSensorStreams(id: String): Option[String] = {
     var data = ""
     val query = "SELECT array_to_json(array_agg(t),true) As my_places FROM " +
-      "(SELECT streams.gid As stream_id FROM streams WHERE sensor_id=?) As t;"
+      "(SELECT streams.gid As stream_id, streams.name As name FROM streams WHERE sensor_id=?) As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
     Logger.debug("Get streams by sensor statement: " + st)
@@ -193,7 +293,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     			"SELECT sensor_id, start_time, end_time, unnest(params) AS param FROM streams WHERE sensor_id=?" +
     			") " +
     			"SELECT row_to_json(t, true) AS my_sensor FROM (" +
-    			"SELECT to_char(min(start_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') As min_start_time, to_char(max(start_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') As max_start_time, array_agg(distinct param) AS parameters FROM stream_info" +
+    			"SELECT to_char(min(start_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') As min_start_time, to_char(max(end_time) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') As max_end_time, array_agg(distinct param) AS parameters FROM stream_info" +
     			") As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
@@ -231,7 +331,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     generatedKey.toString
   }
 
-  def searchStreams(geocode: Option[String]): Option[String] = {
+  def searchStreams(geocode: Option[String], stream_name: Option[String]): Option[String] = {
     val parts = geocode match {
       case Some(x) => x.split(",")
       case None => Array[String]()
@@ -242,6 +342,9 @@ class PostgresPlugin(application: Application) extends Plugin {
       "(SELECT gid As id, name, to_char(created AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS created, 'Feature' As type, metadata As properties, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, sensor_id::text, start_time, end_time, params FROM streams"
     if (parts.length == 3) {
       query += " WHERE ST_DWithin(geog, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)"
+      if (stream_name.isDefined) {
+        query += " AND name = ?"
+      }
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
       query += " WHERE ST_Covers(ST_MakePolygon(ST_MakeLine(ARRAY["
       i = 0
@@ -250,6 +353,13 @@ class PostgresPlugin(application: Application) extends Plugin {
         i += 2
       }
       query += "ST_MakePoint(?, ?)])), geog)"
+      if (stream_name.isDefined) {
+        query += " AND name = ?"
+      }
+    } else if (parts.length == 0) {
+      if (stream_name.isDefined) {
+        query += " WHERE name = ?"
+      }
     }
     query += ") As t;"
     val st = conn.prepareStatement(query)
@@ -258,6 +368,9 @@ class PostgresPlugin(application: Application) extends Plugin {
       st.setDouble(i + 1, parts(1).toDouble)
       st.setDouble(i + 2, parts(0).toDouble)
       st.setDouble(i + 3, parts(2).toDouble * 1000)
+      if (stream_name.isDefined) {
+        st.setString(i + 4, stream_name.getOrElse(""))
+      }
     } else if ((parts.length >= 6) && (parts.length % 2 == 0)) {
       while (i < parts.length) {
         st.setDouble(i + 1, parts(i+1).toDouble)
@@ -266,6 +379,11 @@ class PostgresPlugin(application: Application) extends Plugin {
       }
       st.setDouble(i + 1, parts(1).toDouble)
       st.setDouble(i + 2, parts(0).toDouble)
+      if (stream_name.isDefined) {
+        st.setString(i + 3, stream_name.getOrElse(""))
+      }
+    } else if (parts.length == 0 && stream_name.isDefined) {
+      st.setString(1, stream_name.getOrElse(""))
     }
     st.setFetchSize(50)
     Logger.debug("Sensors search statement: " + st)
@@ -295,7 +413,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     rs.close()
     st.close()
     Logger.debug("Searching streams result: " + data)
-    if (data == "null") { // FIXME
+    if (data == "null" || data == "") { // FIXME
       Logger.debug("Searching NONE")
       None
     } else Some(data)
@@ -315,8 +433,33 @@ class PostgresPlugin(application: Application) extends Plugin {
     st2.close()
     true
   }
-  
-  
+
+  def deleteSensor(id: Integer): Boolean = {
+    // get the stream id's for this sensor
+    var streams = Array[Int]()
+    val query = "DELETE FROM datapoints USING streams WHERE stream_id IN (SELECT gid FROM streams WHERE sensor_id = ?);" +
+      "DELETE FROM streams WHERE gid IN (SELECT gid FROM streams WHERE sensor_id = ?);" +
+      "DELETE FROM sensors where gid = ?;"
+    val st = conn.prepareStatement(query)
+    st.setInt(1, id.toInt)
+    st.setInt(2, id.toInt)
+    st.setInt(3, id.toInt)
+    Logger.debug("Deleting datapoints, streams and sensor statement: " + st)
+    st.executeUpdate()
+    st.close()
+    true
+  }
+
+  def deleteDatapoint(gid: Integer): Boolean = {
+    val query = "DELETE FROM datapoints where gid = ?"
+    val st = conn.prepareStatement(query)
+    st.setInt(1,gid)
+    Logger.debug("Deleting datapoint statement: " + st)
+    st.execute()
+    st.close
+    true
+  }  
+ 
   def dropAll(): Boolean = {
     val deleteSensors = "DELETE from sensors"
     val st = conn.prepareStatement(deleteSensors)
@@ -340,7 +483,6 @@ class PostgresPlugin(application: Application) extends Plugin {
     val rs = st.executeQuery()
     while (rs.next()) {
       counts = (rs.getInt(1), rs.getInt(2), rs.getInt(3))
-      System.out.println(counts)
     }
     rs.close()
     st.close()
@@ -371,9 +513,9 @@ class PostgresPlugin(application: Application) extends Plugin {
     }
     // attributes
     if (attributes.nonEmpty) {
-      query += " AND (? = ANY(SELECT json_object_keys(datapoints.data))"
+      query += " AND (datapoints.data ?? ?"
       for (x <- 1 until attributes.size)
-        query += " OR ? = ANY(SELECT json_object_keys(datapoints.data))"
+        query += " OR (datapoints.data ?? ?)"
       query += ")"
     }
     // data source
@@ -530,9 +672,9 @@ class PostgresPlugin(application: Application) extends Plugin {
     var query = "UPDATE streams SET start_time=n.start_time, end_time=n.end_time, params=n.params FROM ("
     query += "  SELECT stream_id, min(datapoints.start_time) AS start_time, max(datapoints.end_time) AS end_time, array_agg(distinct keys) AS params"
     if (!sensor_id.isDefined) {
-      query += "    FROM datapoints, json_object_keys(data) data(keys)"
+      query += "    FROM datapoints, jsonb_object_keys(data) data(keys)"
     } else {
-      query += "    FROM datapoints, json_object_keys(data) data(keys), streams"
+      query += "    FROM datapoints, jsonb_object_keys(data) data(keys), streams"
       query += "    WHERE streams.gid=datapoints.stream_id AND streams.sensor_id=?"
     }
     query += "    GROUP by stream_id) n"
@@ -552,7 +694,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     // next update the streams
     var query = "UPDATE streams SET start_time=n.start_time, end_time=n.end_time, params=n.params FROM ("
     query += "  SELECT stream_id, min(datapoints.start_time) AS start_time, max(datapoints.end_time) AS end_time, array_agg(distinct keys) AS params"
-    query += "    FROM datapoints, json_object_keys(data) data(keys)"
+    query += "    FROM datapoints, jsonb_object_keys(data) data(keys)"
     if (stream_id.isDefined) query += " WHERE stream_id = ?"
     query += "    GROUP BY stream_id) n"
     query += "  WHERE n.stream_id=streams.gid;"
@@ -577,5 +719,50 @@ class PostgresPlugin(application: Application) extends Plugin {
   def test() {
     addDatapoint(new java.util.Date(), None, "Feature", """{"value":"test"}""", 40.110588, -88.207270, 0.0, "http://test/stream")
     Logger.info("Searching postgis: " + searchDatapoints(None, None, None, None, None, List.empty, List.empty, false))
+  }
+
+  // ----------------------------------------------------------------------
+  // CODE TO UPDATE THE DATABASE
+  // ----------------------------------------------------------------------
+  def updateDatabase() {
+    // update datapoints to JSONB
+    updatePostgres("datapoints-properties-to-jsonb", updateDatapointsPropertiesToJSONB)
+  }
+
+  private def updatePostgres(updateKey: String, block: () => Unit): Unit = {
+    val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
+    if (!appConfig.hasPropertyValue("postgres.updates", updateKey)) {
+      if (System.getProperty("POSTGRESUPDATE") != null) {
+        Logger.info(s"About to begin update of postgres : ${updateKey}.")
+        val start = System.currentTimeMillis()
+        try {
+          block()
+          appConfig.addPropertyValue("postgres.updates", updateKey)
+        } catch {
+          case e:Exception => {
+            Logger.error(s"Could not run postgres update for ${updateKey}", e)
+          }
+        }
+        val time = (System.currentTimeMillis() - start) / 1000.0
+        Logger.info(s"Took ${time} second to migrate postgres : ${updateKey}")
+      } else {
+        Logger.warn(s"Missing postgres update ${updateKey}. Application might be broken.")
+      }
+    }
+  }
+
+  private def updateDatapointsPropertiesToJSONB() {
+    val query = "ALTER TABLE datapoints ALTER COLUMN data SET DATA TYPE jsonb USING data::jsonb"
+    val st = conn.prepareStatement(query)
+    Logger.debug("[PostgresUpdate] : Upgrading datapoints to jsonb: " + st)
+    st.execute()
+    st.close()
+
+    val query2 = "CREATE INDEX datapoints_data_idx ON datapoints USING gin (data)"
+    val st2 = conn.prepareStatement(query2)
+    Logger.debug("[PostgresUpdate] : Creating datapoint properties index: " + st2)
+    st2.execute()
+    st2.close()
   }
 }

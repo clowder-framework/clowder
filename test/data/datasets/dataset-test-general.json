@@ -1,0 +1,8 @@
+{
+    "archive": {
+        "exclude": ["/foo/bar", "baz", "/*.test", "!/foo/bar/baz"]
+    },
+    "Image": "fid",
+    "Format": "JPEG(JointPhotographicExpertsGroupJFIFformat)",
+    "Reason": "DataSet Test Suite"
+}

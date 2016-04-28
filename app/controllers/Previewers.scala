@@ -1,6 +1,9 @@
+/**
+ *
+ */
 package controllers
 
-import api.{Permission, WithPermission}
+import api.Permission
 import models.Previewer
 import play.api.Play.current
 import play.api.libs.json.Json
@@ -13,20 +16,15 @@ import scala.io.Source
 
 /**
  * Previewers.
- *
- * @author Luigi Marini
- * @author Rob Kooper
- *
  */
 object Previewers extends Controller with SecuredController {
-  lazy val previewers = ResourceLister.listFiles("public/javascripts/previewers", "package.json")
-  
-  def list = SecuredAction(parse.anyContent, authorization=WithPermission(Permission.ShowFile)) { implicit request =>
+  def list = PermissionAction(Permission.ViewFile) { implicit request =>
     Ok(views.html.previewers(findPreviewers()))
   }
 
   def findPreviewers(): Array[Previewer] = {
     var result = Array[Previewer]()
+    val previewers = ResourceLister.listFiles("public.javascripts.previewers", "package.json")
     for (previewer <- previewers) {
       Play.resourceAsStream(previewer) match {
         case Some(stream) => {
@@ -49,6 +47,7 @@ object Previewers extends Controller with SecuredController {
 
   def findCollectionPreviewers(): Array[Previewer] = {
     var result = Array[Previewer]()
+    val previewers = ResourceLister.listFiles("public.javascripts.previewers", "package.json")
     for (previewer <- previewers) {
       Play.resourceAsStream(previewer) match {
         case Some(stream) => {
@@ -61,6 +60,31 @@ object Previewers extends Controller with SecuredController {
             (json \ "collection").asOpt[Boolean].getOrElse(false)
           )
           if (preview.collection) result +:= preview
+        }
+        case None => {
+          Logger.warn("Thought I saw previewer " + previewer)
+        }
+      }
+    }
+    result
+  }
+
+  def findDatasetPreviewers(): Array[Previewer] = {
+    var result = Array[Previewer]()
+    val previewers = ResourceLister.listFiles("public.javascripts.previewers", "package.json")
+    for (previewer <- previewers) {
+      Play.resourceAsStream(previewer) match {
+        case Some(stream) => {
+          val json = Json.parse(Source.fromInputStream(stream).mkString)
+          val preview = Previewer((json \ "name").as[String],
+            previewer.replace("public/", "").replace("/package.json", ""),
+            (json \ "main").as[String],
+            (json \ "contentType").as[List[String]],
+            (json \ "supported_previews").asOpt[List[String]].getOrElse(List.empty[String]),
+            false,
+            (json \ "dataset").asOpt[Boolean].getOrElse(false)
+          )
+          if (preview.dataset) result +:= preview
         }
         case None => {
           Logger.warn("Thought I saw previewer " + previewer)

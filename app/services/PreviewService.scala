@@ -5,9 +5,21 @@ import java.io.InputStream
 import play.api.libs.json.JsValue
 
 /**
- * Created by lmarini on 2/17/14.
+ * Service to manipulate previews in files and datasets.
  */
 trait PreviewService {
+
+  /**
+   * Count all preview files
+   */
+  def count(): Long
+
+  /**
+   * List all preview files.
+   */
+  def listPreviews(): List[Preview]
+
+  def remove(id: UUID)
 
   def get(previewId: UUID): Option[Preview]
 
@@ -50,9 +62,14 @@ trait PreviewService {
   def attachToCollection(previewId: UUID, collectionId: UUID, previewType: String, extractorId: Option[String], json: JsValue)
 
   def updateMetadata(previewId: UUID, json: JsValue)
-  
+
+  /**
+    * Updated title property of preview. If no file is given, previewer default is used.
+    */
+  def setTitle(previewId: UUID, title: String)
+
   def getMetadata(id: UUID): scala.collection.immutable.Map[String,Any]
   
-  def getExtractorId(id: UUID):Option[String] 
+  def getExtractorId(id: UUID): String
   
 }

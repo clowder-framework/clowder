@@ -6,7 +6,7 @@ import play.api.libs.json.JsResult
 
 /**
  *   Versus Extraction of Descriptors with an adapter, an extractor and a measure
- *   @author Smruti Padhy
+ *
  */
 object VersusExtraction {
   

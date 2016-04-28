@@ -1,0 +1,53 @@
+@(myForm: Form[models.Profile], allInstitutionOptions: List[String], allProjectOptions: List[String], emailtimes: List[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+
+@import helper._
+@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
+
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
+
+@main("Edit Profile") {
+  <div class="page-header">
+    <h1>Edit Profile</h1>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      @if(myForm.hasErrors) {
+      <div class="alert alert-error">
+        <p>Please fix all errors</p>
+      </div>
+      }
+      @flash.get("error").map { message =>
+        <div class="alert alert-error">
+          <p>@message</p>
+        </div>
+      }
+      
+      @form(action = routes.Profile.submitChanges, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {   
+        <fieldset  class="editProfileInput">
+          @select(myForm("institution"), options(allInstitutionOptions), '_label -> "Institution", 'class -> "chosen-select", 'placeholder -> "Select an institution...")
+          @inputText(myForm("position"), 'class -> "form-control", '_label -> "Position")
+          @inputText(myForm("avatarUrl"), 'class -> "form-control", '_label -> "Avatar URL")
+          @inputText(myForm("orcidID"), 'class -> "form-control", '_label -> "Orcid ID")
+          @textarea(myForm("biography"),'class -> "form-control",  '_label -> "Biography")
+
+          @select(myForm("currentprojects"), options(allProjectOptions), '_label -> "Current Projects", 'multiple -> "true", 'class -> "chosen-select form-control", 'placeholder -> "Add your projects")
+
+          @select(myForm("pastprojects"), options(allProjectOptions), '_label -> "Past Projects", 'multiple -> "true", 'class -> "chosen-select form-control", 'placeholder -> "Add your projects")
+
+          @select(myForm("emailsettings"), options(emailtimes), '_label -> "Email Settings")
+
+        </fieldset>
+        <div class="form-actions" style="margin-top: 16px;">
+          <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-saved"></span> Submit Changes</button>
+        </div>
+      }
+    </div>
+  </div>
+<script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
+<script language="javascript">
+  $(".chosen-select").chosen({no_results_text: "Not found. Press enter to add", allow_single_deselect: true});
+  $(document).ready(function() {
+    $(".chosen-choices").addClass("form-control");
+   });
+</script>
+}

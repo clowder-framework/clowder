@@ -18,8 +18,25 @@ if($prefix) {
 
 //Run file through Medici's extractors
 if($run) {
-	$api_call = $dts . "/dts/extract.php?url=" . urlencode($file);
-	$command = "wget -O " . $output_file . " " . $api_call;
+	$username = "";
+	$password = "";
+
+	//Add authentication if required
+	if(strpos($dts,'@') !== false) {
+		$parts = explode('@', $dts);
+		$dts = $parts[2];
+		$parts = explode(':', $parts[0] . '@' . $parts[1]);
+		$username = $parts[0];
+		$password = $parts[1];
+	}
+
+	$api_call = "http://" . $dts . "/dts/extract.php?url=" . urlencode($file);
+
+	if($username && $password) {
+		$command = "wget --user=" . $username . " --password=" . $password . " -O " . $output_file . " " . $api_call;
+	} else {
+		$command = "wget -O " . $output_file . " " . $api_call;
+	}
 
 	exec($command);
 }
@@ -28,14 +45,23 @@ if($run) {
 $success = false;
 
 if(file_exists($output_file)) {
-	$json = json_decode(file_get_contents($output_file), true);
+	$json = file_get_contents($output_file);
+
+	//If output is a file load its contents	
+	if(substr($output, 0, 4) === "http"	|| substr($output, 0, 5) === "!http") {					
+		$output = trim(file_get_contents($output));
+	}
+
+	//echo $json . "<br>" . $output;
 	
 	if($output[0] == '!'){
-		if(!in_array_multi(substr($output, 1), $json)){
+		//if(!in_array_multi(substr($output, 1), $json)){
+		if(!find(substr($output, 1), $json)){
 			$success = true;
 		}
 	}else{
-		if(in_array_multi($output, $json)){
+		//if(in_array_multi($output, $json)){
+		if(find($output, $json)){
 			$success = true;
 		}
 	}
@@ -67,5 +93,93 @@ function in_array_multi($needle, $haystack) {
 	}
 
 	return false;
+}
+
+//Find the expected value anywhere in the answer. 
+//This will take the arguments and convert to associative arrays if needed. It will first check to see if the expected json
+//object matches the answer, if not it will loop through all levels of the answer to find a match with the expected value.
+function find($expected, $answer) {
+  if(is_string($expected)) {
+    $tmp = json_decode($expected, true);
+
+    if($tmp != "") {
+      $expected = $tmp;
+    }
+  }
+
+  if(is_string($answer)) {
+    $tmp = json_decode($answer, true);
+
+    if ($tmp != "") {
+      $answer = $tmp;
+    }
+  }
+
+  if(compareArrays($expected, $answer)) {
+    return true;
+  }else if(is_array($answer)) {
+    foreach($answer as $item) {
+      if(find($expected, $item)) {
+        return true;
+      }
+    }
+
+    return false;
+  }else{
+    return false;
+  }
+}
+
+//Compare two arrays.
+//This will try and see if the two arrays match, it will always try and see if the values in the expected value can be found the answer.
+function compareArrays($expected, $answer) {
+  if(!is_array($expected)) {
+    if(is_array($answer)) {
+      return false;
+    }
+
+    return $expected === $answer;
+  }else if(is_assoc($expected)) {
+    if(!is_assoc($answer)) {
+      return false;
+    }
+
+    foreach($expected as $key => $val) {
+      if(array_key_exists($key, $answer)) {
+        if(!compareArrays($val, $answer[$key])) {
+          return false;
+        }
+      }else{
+        return false;
+      }
+    }
+
+    return true;
+  }else{
+    if(is_assoc($answer)) {
+      return false;
+    }
+
+    foreach($expected as $expect) {
+      $foundit = false;
+
+      foreach($answer as $item) {  
+        if(compareArrays($expect, $item)) {
+          $foundit = true;
+          break;
+        }
+      }
+
+      if(!$foundit) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+}
+
+function is_assoc($arr) {
+  return is_array($arr) && array_keys($arr) !== range(0, count($arr) - 1);
 }
 ?>
