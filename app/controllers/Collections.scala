@@ -319,12 +319,13 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           }
 
           Logger.debug("Saving collection " + collection.name)
-          collections.insert(Collection(id = collection.id, name = collection.name, description = collection.description, datasetCount = 0, created = collection.created, author = collection.author, spaces = collection.spaces, root_spaces = collection.root_spaces))
+          collections.insert(collection)
           collection.spaces.map{
             sp => spaceService.get(sp) match {
               case Some(s) => {
                 spaces.addCollection(collection.id, s.id)
                 collections.addToRootSpaces(collection.id, s.id)
+                events.addSourceEvent(request.user, collection.id, collection.name, s.id, s.name, "add_collection_space")
               }
               case None => Logger.error(s"space with id $sp on collection $collection.id doesn't exist.")
             }
