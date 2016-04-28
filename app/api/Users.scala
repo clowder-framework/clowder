@@ -79,17 +79,13 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
   /** @deprecated use id instead of email */
   @ApiOperation(value = "Edit User Field.",
     responseClass = "None", httpMethod = "POST")
-  def updateUserField(email: String, field: String, fieldText: Any) = PermissionAction(Permission.ViewUser) { implicit request =>
+  def updateName(id: UUID, firstName: String, lastName: String) = PermissionAction(Permission.EditUser, Some(ResourceRef(ResourceRef.user, id))) { implicit request =>
     implicit val user = request.user
-    users.updateUserField(email, field, fieldText)
-    if(field == "fullName") {
-      user match {
-        case Some(u) => {
-          users.updateUserFullName(u.id, fieldText.toString())
-        }
-        case None =>
-      }
-    }
+    users.updateUserField(id, "firstName", firstName)
+    users.updateUserField(id, "lastName", lastName)
+    users.updateUserField(id, "fullName", firstName + " " + lastName)
+    users.updateUserFullName(id, firstName + " " + lastName)
+
     Ok(Json.obj("status" -> "success"))
   }
 
