@@ -151,15 +151,13 @@
 	<div class="row">
 		<div class="col-md-8 col-right-border">
 			<div id="prf-file-name" class="text-left inline">
+				<h1 id="file-name-title" class="inline">@Html(file.filename)</h1>
 				@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
-					<h1 id="file-name-title" class="inline" style="cursor:pointer" title="Click to edit file name.">@Html(file.filename)</h1>
 					<div id="h-edit-file" class="hiddencomplete">
 						<a id ="edit-file" href="javascript:updateFileName()" title="Click to edit file name.">
 							<span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
 						</a>
 					</div>
-				} else {
-					<h1 id="file-name-title" class="inline">@Html(file.filename)</h1>
 				}
 			</div>
 			<h4>in
@@ -568,11 +566,6 @@
             </div>
 
 			<script language="javascript">
-					var fileName = $('#file-name-title').text();
-					$('#file-name-title').click(function(){
-						updateFileName();
-					});
-
 					function updateFileName() {
 						fileName = $('#file-name-title').text();
 						$('<div class="inline file_name_div h3"> </div>').insertAfter($('#prf-file-name'));
@@ -781,16 +774,29 @@
                     }
                   }
               </ul>
-              <form class="form-inline requiresLogin requiresLoginCommunity">
-                <div class="input-group input-group-sm col-md-8">
-                  <input type="text" maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" id="tagField" class="form-control">
-                  <span class="input-group-btn">
-                        <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
-                            <span class="glyphicon glyphicon-tag"></span>
-                        </button>
-                  </span>                  
-                </div>
-              </form>
+				@if(Permission.checkPermission(Permission.AddTag, ResourceRef(ResourceRef.file, file.id))) {
+					<form class="form-inline">
+						<div class="input-group input-group-sm col-md-8">
+							<input type="text" maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" id="tagField" class="form-control">
+							<span class="input-group-btn">
+								<button class="btn btn-default btn-large" id="tagB" title="Add Tag">
+									<span class="glyphicon glyphicon-tag"></span>
+								</button>
+							</span>
+						</div>
+					</form>
+				} else {
+					<form class="form-inline">
+						<div class="input-group input-group-sm col-md-8">
+							<input disabled type="text" maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" id="tagField" class="form-control">
+							<span class="input-group-btn">
+								<button class="btn btn-default btn-large" id="tagB" title="Add Tag">
+									<span class="glyphicon glyphicon-tag"></span>
+								</button>
+							</span>
+						</div>
+					</form>
+				}
               <script language="javascript">
                 window["userDefined"] = false;
               </script>
@@ -901,12 +907,7 @@
                 });
                 
               });
-            </script>           
-            @if(!user.isDefined) {
-              <script language="javascript">
-                $(".requiresLogin").css("display","none");
-              </script>
-            }
+            </script>
             </div>
 
 
@@ -916,20 +917,6 @@
     </div> @* End of small right hand side column *@
 
 	</div>
-
-	@if(!user.isDefined) {
-        <script language="javascript">
-            $(".requiresLogin").css("display","none");
-        </script>
-    }
-
-    @if(user.isDefined) {
-        @if(!user.get.id.equals(file.author.id)){
-            <script language="javascript">
-                $(".requiresLogin:not(.requiresLoginCommunity)").css("display","none");
-            </script>
-        }
-    }
 
 }}
 

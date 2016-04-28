@@ -111,7 +111,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("collections").ensureIndex(MongoDBObject("spaces" -> 1))
     collection("collections").ensureIndex(MongoDBObject("datasets._id" -> 1))
     collection("collections").ensureIndex(MongoDBObject("public" -> 1))
-    collection("collections").ensureIndex(MongoDBObject("author.identityId.userId" -> 1, "author.identityId.providerId" -> 1))
+    collection("collections").ensureIndex(MongoDBObject("author._id" -> 1))
 
     collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
     collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
@@ -121,11 +121,15 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("datasets").ensureIndex(MongoDBObject("spaces" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("public" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("name" -> 1))
-    collection("datasets").ensureIndex(MongoDBObject("author.identityId.userId" -> 1, "author.identityId.providerId" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("author._id" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("public" -> 1, "spaces" -> 1, "author._id" -> 1))
+
+    collection("folders").ensureIndex(MongoDBObject("parentDatasetId" -> 1))
 
     collection("uploads").ensureIndex(MongoDBObject("uploadDate" -> -1))
     collection("uploads").ensureIndex(MongoDBObject("author.email" -> 1))
     collection("uploads").ensureIndex(MongoDBObject("tags.name" -> 1))
+    collection("uploads").ensureIndex(MongoDBObject("author._id"-> 1,  "_id"-> 1))
 
     collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
     
@@ -140,10 +144,12 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
     collection("sections").ensureIndex(MongoDBObject("file_id" -> -1))
     collection("sections").ensureIndex(MongoDBObject("tags.name" -> 1))
+    collection("sections").ensureIndex(MongoDBObject("file_id" -> 1, "author._id" -> 1))
 
     collection("metadata").ensureIndex(MongoDBObject("createdAt" -> -1))
     collection("metadata").ensureIndex(MongoDBObject("creator" -> 1))
-    collection("metadata").ensureIndex(MongoDBObject("attachTo" -> 1))
+    collection("metadata").ensureIndex(MongoDBObject("attachedTo" -> 1))
+    collection("metadata").ensureIndex(MongoDBObject("attachedTo.resourceType" ->1, "attachedTo._id" -> 1))
 
     collection("contextld").ensureIndex(MongoDBObject("contextName" -> 1))
 
@@ -352,6 +358,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("add-collection-root-map", addRootMapToCollections)
 
     updateMongo("update-collection-counter-in-space", fixCollectionCounterInSpaces)
+
+    //Update all object_name & source_name in events
+    updateMongo("update-events-name", updateEventObjectName)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1045,4 +1054,19 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     }
   }
+
+  private def updateEventObjectName(): Unit = {
+    for (coll <- List[String]("collections", "spaces.projects", "datasets", "uploads.files", "curationObjects")){
+      collection(coll).foreach { ds =>
+        (ds.getAs[ObjectId]("_id"), ds.getAs[String]("name")) match {
+          case (Some(id), Some(name)) => {
+            collection("events").update(MongoDBObject("object_id" -> new ObjectId(id.toString)), $set("object_name" -> name), multi = true)
+            collection("events").update(MongoDBObject("source_id" -> new ObjectId(id.toString)), $set("source_name" -> name), multi = true)
+          }
+          case _ => {}
+        }
+      }
+    }
+  }
+
 }

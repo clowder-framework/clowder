@@ -114,6 +114,11 @@ class MongoDBFolderService @Inject() (files: FileService, datasets: DatasetServi
       false, false, WriteConcern.Safe)
   }
 
+  def updateAuthorFullName(userId: UUID, fullName: String) {
+    FolderDAO.update(MongoDBObject("author._id" -> new ObjectId(userId.stringify)),
+      $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
+  }
+
   def findByFileId(file_id:UUID): List[Folder] = {
     FolderDAO.dao.find(MongoDBObject("files" -> new ObjectId(file_id.stringify))).toList
   }
@@ -128,6 +133,10 @@ class MongoDBFolderService @Inject() (files: FileService, datasets: DatasetServi
 
   def findByParentDatasetId(parentId: UUID): List[Folder] = {
     FolderDAO.find(MongoDBObject("parentDatasetId" -> new ObjectId(parentId.stringify))).toList
+  }
+
+  def findByParentDatasetIds(parentIds: List[UUID]): List[Folder] = {
+    FolderDAO.find("parentDatasetId" $in parentIds.map(x => new ObjectId(x.stringify))).toList
   }
 }
 

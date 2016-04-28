@@ -370,11 +370,11 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.user, id) => {
         users.get(id) match {
           case Some(u) => {
-            if(id == u.id) {
+            if (id == user.id) {
               true
             } else {
               u.spaceandrole.map { space_role =>
-                if (space_role.role.permissions.contains(permission.toString) ) {
+                if (space_role.role.permissions.contains(permission.toString)) {
                   true
                 }
               }
