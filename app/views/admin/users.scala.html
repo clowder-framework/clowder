@@ -1,9 +1,9 @@
-@(admins: List[String], configAdmins: List[String], users: List[User])(implicit user: Option[models.User])
+@(configAdmins: List[String], users: List[User])(implicit user: Option[models.User])
 
 @printRow(u: User) = {
     <tr id="@u.id">
         <td>@u.fullName</td>
-        <td>@u.email.getOrElse("NO EMAIL")</td>
+        <td>@u.email.getOrElse("")</td>
         <td>@u.identityId.providerId</td>
         @if(user.fold("")(_.id.stringify) == u.id.stringify) {
             @if(u.active) {
@@ -18,27 +18,23 @@
                 <td><input class="active" type="checkbox" id="active-@u.id" data-original=false></td>
             }
         }
-        @if(u.email.isEmpty) {
-
+        @if(user.fold("")(_.id.stringify) == u.id.stringify) {
+            <td><input type="checkbox" id="admin-@u.id" data-original=true checked disabled title="Can not change yourself"></td>
         } else {
-            @if(user.fold("")(_.id.stringify) == u.id.stringify) {
-                <td><input type="checkbox" id="admin-@u.id" data-original=true checked disabled title="Can not change yourself"></td>
+            @if(configAdmins.contains(u.email.getOrElse(""))) {
+                <td><input type="checkbox" id="admin-@u.id" data-original=true checked disabled title="Specified in custom.conf"></td>
             } else {
-                @if(configAdmins.contains(u.email.getOrElse(""))) {
-                    <td><input type="checkbox" id="admin-@u.id" data-original=true checked disabled title="Specified in custom.conf"></td>
-                } else {
-                    @if(u.active) {
-                        @if(admins.contains(u.email.getOrElse(""))) {
-                            <td><input type="checkbox" id="admin-@u.id" data-original=true checked></td>
-                        } else {
-                            <td><input type="checkbox" id="admin-@u.id" data-original=false></td>
-                        }
+                @if(u.active) {
+                    @if(u.admin) {
+                        <td><input type="checkbox" id="admin-@u.id" data-original=true checked></td>
                     } else {
-                        @if(admins.contains(u.email.getOrElse(""))) {
-                            <td><input type="checkbox" id="admin-@u.id" data-original=true checked disabled></td>
-                        } else {
-                            <td><input type="checkbox" id="admin-@u.id" data-original=false disabled></td>
-                        }
+                        <td><input type="checkbox" id="admin-@u.id" data-original=false></td>
+                    }
+                } else {
+                    @if(u.admin) {
+                        <td><input type="checkbox" id="admin-@u.id" data-original=true checked disabled></td>
+                    } else {
+                        <td><input type="checkbox" id="admin-@u.id" data-original=false disabled></td>
                     }
                 }
             }
@@ -101,7 +97,7 @@
                             </tr>
                         </thead>
                         <tbody id="admin-users">
-                        @users.filter(u => u.active && admins.contains(u.email.getOrElse(""))).map(printRow)
+                        @users.filter(u => u.active && u.admin).map(printRow)
                         </tbody>
                     </table>
                 </div>
@@ -129,7 +125,7 @@
                             </tr>
                         </thead>
                         <tbody id="active-users">
-                        @users.filter(u => u.active && !admins.contains(u.email.getOrElse(""))).map(printRow)
+                        @users.filter(u => u.active && !u.admin).map(printRow)
                         </tbody>
                     </table>
                 </div>

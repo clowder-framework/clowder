@@ -7,10 +7,9 @@ import java.util.Date
  */
 case class Thumbnail(
   id: UUID = UUID.generate(),
-  chunkSize: Long,
-  path: Option[String] = None,
+  loader_id: String = "",
+  loader: String = "",
   length: Long,
-  md5: Option[String] = None,
   filename: Option[String] = None,
   contentType: String,
   uploadDate: Date

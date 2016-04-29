@@ -1,8 +1,10 @@
 # clowder server
 clowder:
-  image: ncsa/clowder:develop
-  # environment:
-  #   SMTP_HOST: smtp.ncsa.illinois.edu
+  image: ncsa/clowder:local
+#  environment:
+#    CLOWDER_ADMIN: "joe@aol.com"
+#    TOOLMANAGER_URI: "http://192.168.99.100:8080"
+#    SMTP_HOST: smtp.ncsa.illinois.edu
   ports:
     - "9000:9000"
   links:

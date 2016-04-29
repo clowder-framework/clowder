@@ -4,7 +4,7 @@
   collection: models.Collection,
   previewers: List[Previewer],
   commentMap : Map[UUID, Int],
-  collectionSpaces_canRemove: Option[Map[ProjectSpace, Boolean]],
+  collectionSpaces_canRemove : Option[Map[ProjectSpace, Boolean]],
   prevd: Int, nextd: Int, prevcc: Int, nextcc: Int, limit: Int)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import models.ResourceRef
@@ -185,7 +185,7 @@
 
 <script language="javascript">
 	@if(user.isDefined) {
-		@if(!(user.get.identityId.userId.equals(collection.author.identityId.userId))) {
+		@if(!(user.get.id.equals(collection.author.id))) {
 			$(".requiresLogin:not(.requiresLoginCommunity)").css("display","none");
 		}
 	}

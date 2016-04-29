@@ -40,6 +40,10 @@ function saveFolderName(parentDataset, folderId) {
     }
 
     var name =$('#title_input_'+folderId).val();
+    if(name.trim() == cur_names[folderId].trim()){
+        cancelFolderName(folderId);
+        return false;
+    }
     var encName = htmlEncode(name);
     jsonData = JSON.stringify({"name": encName});
 

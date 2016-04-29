@@ -1,7 +1,8 @@
 @(file: models.File, classes: String, redirect: Call, showFollow: Boolean)(implicit user: Option[models.User])
 
-@import org.apache.commons.io.FileUtils
+@import _root_.util.FileUtils
 @import api.Permission
+
 <div class="post-box @classes" id="@file.id-tile">
     <div class="panel panel-default">
         <div class="pull-right">
@@ -10,24 +11,24 @@
         <div class="panel-body">
             @if(!file.thumbnail_id.isEmpty){
                 <a href="@(routes.Files.file(file.id))">
-                    <img class="img-responsive" src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)">
+                    <img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @(file.filename)">
                 </a>
             }
-        <div class="caption break-word">
-            <h4><a href="@(routes.Files.file(file.id))">@file.filename</a></h4>
-            <ul class="list-unstyled">
-                <li>Author: <strong>@file.author.fullName</strong></li>
-                <li>Uploaded: <strong>@file.uploadDate.format("dd MMM, yyyy")</strong></li>
-                <li>Size: <strong>@FileUtils.byteCountToDisplaySize(file.length)</strong></li>
-            </ul>
-        </div>
+            <div class="caption break-word">
+                <h4><a href="@(routes.Files.file(file.id))">@file.filename</a></h4>
+                <ul class="list-unstyled">
+                    <li>Author: <strong>@file.author.fullName</strong></li>
+                    <li>Uploaded: <strong>@file.uploadDate.format("dd MMM, yyyy")</strong></li>
+                    <li>Size: <strong>@FileUtils.humanReadableByteCount(file.length)</strong></li>
+                </ul>
+            </div>
         </div>
         <ul class="list-group">
             <li class="list-group-item">
                 <span class="glyphicon glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
                 <span class="glyphicon glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
                 @if(user.isDefined) {
-                    @if(user.get.identityId.userId.equals(file.author.identityId.userId) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
+                    @if(user.get.id.equals(file.author.id) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
                         <button onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', false, '@redirect')" class="btn btn-link" style="text-align:right" title="Delete">
                         <span class="glyphicon glyphicon-trash"></span></button>
                     }

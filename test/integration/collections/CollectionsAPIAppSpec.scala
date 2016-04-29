@@ -314,7 +314,7 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
     }
 
   "respond to the listCollections() function routed by GET /api/collections/list" in {
-      val Some(result) = route(FakeRequest(GET, "/api/collections/list"))
+      val Some(result) = route(FakeRequest(GET, "/api/collections/list?key=" + secretKey))
       info("Status="+status(result))
       status(result) mustEqual OK
       info("contentType="+contentType(result))

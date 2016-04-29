@@ -65,7 +65,7 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
   }
 
   def jsonThumbnail(thumbnail: Thumbnail): JsValue = {
-    toJson(Map("id" -> thumbnail.id.toString(), "chunksize" -> thumbnail.chunkSize.toString(),  "filename" -> thumbnail.filename.getOrElse(""),
+    toJson(Map("id" -> thumbnail.id.toString(),  "filename" -> thumbnail.filename.getOrElse(""),
       "content-type" -> thumbnail.contentType, "date-created" -> thumbnail.uploadDate.toString(), "size" -> thumbnail.length.toString()))
 
   }

@@ -62,7 +62,12 @@ trait PreviewService {
   def attachToCollection(previewId: UUID, collectionId: UUID, previewType: String, extractorId: Option[String], json: JsValue)
 
   def updateMetadata(previewId: UUID, json: JsValue)
-  
+
+  /**
+    * Updated title property of preview. If no file is given, previewer default is used.
+    */
+  def setTitle(previewId: UUID, title: String)
+
   def getMetadata(id: UUID): scala.collection.immutable.Map[String,Any]
   
   def getExtractorId(id: UUID): String

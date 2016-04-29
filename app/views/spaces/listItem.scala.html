@@ -4,8 +4,8 @@
     <div class="panel-body">
         <div class = "row">
             <div class="col-md-2 col-sm-2 col-lg-2">
-            @if(!space.logoURL.isEmpty) {
-                <img src="@(space.logoURL)" alt="Thumbnail of @(space.name)" width="120">
+                @if(!space.logoURL.isEmpty) {
+                    <img class="fit-in-space" src="@(space.logoURL)" alt="Thumbnail of @(space.name)">
                 }
             </div>
             <div class="col-md-10 col-sm-10 col-lg-10">

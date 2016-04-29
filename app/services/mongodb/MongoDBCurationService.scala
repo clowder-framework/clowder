@@ -187,13 +187,49 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
     CurationFolderDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
   }
 
-  def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID) = {
+  def updateInformation(id: UUID, description: String, name: String, oldSpace: UUID, newSpace:UUID, creators: List[String]) = {
     val result = CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-      $set("description" -> description, "name" -> name, "space" -> new ObjectId(newSpace.stringify)),
+      $set("description" -> description, "name" -> name, "space" -> new ObjectId(newSpace.stringify), "creators" -> creators),
       false, false, WriteConcern.Safe)
     if(oldSpace != newSpace) {
       spaces.removeCurationObject(oldSpace, id)
       spaces.addCurationObject(newSpace, id)
+    }
+  }
+
+  def maxCollectionDepth(curation: CurationObject ): Int = {
+    val folders = getCurationFolders(curation.folders)
+    if(folders.length == 0) {
+      return 0
+    }
+    var maxValue = 0
+    curation.folders.foreach{ folder =>
+      val depth = maxFolderDepth(folder)
+      if(depth > maxValue) {
+        maxValue = depth
+      }
+    }
+    return maxValue +1
+  }
+
+  private def maxFolderDepth(folderId: UUID): Int = {
+    getCurationFolder(folderId) match {
+      case Some(folder) => {
+        if(folder.folders.length == 0) {
+          return 0
+        }
+        else {
+          var maxValue = 0
+          folder.folders.foreach{ subf =>
+            val depth = maxFolderDepth(subf)
+            if(depth > maxValue) {
+              maxValue = depth
+            }
+          }
+          return maxValue + 1
+        }
+      }
+      case None =>  return 0
     }
   }
 }

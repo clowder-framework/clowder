@@ -36,7 +36,7 @@ import org.apache.commons.io.input.CountingInputStream
  */
 @Api(value = "/datasets", listingPath = "/api-docs.json/datasets", description = "A dataset is a container for files and metadata")
 @Singleton
-class Datasets @Inject()(
+class  Datasets @Inject()(
   datasets: DatasetService,
   files: FileService,
   collections: CollectionService,

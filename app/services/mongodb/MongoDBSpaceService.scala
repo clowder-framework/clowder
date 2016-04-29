@@ -261,7 +261,6 @@ class MongoDBSpaceService @Inject() (
     log.debug(s"Adding $collection to $space")
 
     collections.addToSpace(collection, space)
-
     collections.get(collection) match {
       case Some(current_collection) => {
         val childCollectionIds = current_collection.child_collection_ids
@@ -274,7 +273,7 @@ class MongoDBSpaceService @Inject() (
 
             }
             case None => {
-              log.error("no collection found for " + childCollectionId)
+              log.error("No collection found for " + childCollectionId)
             }
           }
         }
@@ -282,14 +281,19 @@ class MongoDBSpaceService @Inject() (
         log.error("No collection found for " + collection)
       }
     }
-    //set the collectionCount, do not increment it
-    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("collectionCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
+  }
+
+  def incrementCollectionCounter(collenction:UUID, space: UUID, increment: Int ): Unit = {
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("collectionCount" -> increment), upsert=false, multi=false, WriteConcern.Safe)
+  }
+
+  def decrementCollectionCounter(collection: UUID, space: UUID, decrement: Int): Unit = {
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("collectionCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
   }
 
   def removeCollection(collection:UUID, space:UUID): Unit = {
     log.debug(s"Space Service - removing $collection from $space")
     collections.removeFromSpace(collection, space)
-    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("collectionCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
   }
   /**
    * Associate a dataset with a space
