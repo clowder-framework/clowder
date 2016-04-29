@@ -376,7 +376,7 @@ class MongoDBCollectionService @Inject() (
   def listInsideDataset(datasetId: UUID, user: Option[User], showAll: Boolean): List[Collection] = {
     Dataset.findOneById(new ObjectId(datasetId.stringify)) match {
       case Some(dataset) => {
-        val list = for (collection <- listAccess(0, Set[Permission](Permission.ViewCollection), user, showAll); if (isInDataset(dataset, collection))) yield collection
+        val list = for (collection <- listAccess(0, Set[Permission](Permission.ViewCollection, Permission.AddResourceToCollection), user, showAll); if (isInDataset(dataset, collection))) yield collection
         return list.reverse
       }
       case None => {
