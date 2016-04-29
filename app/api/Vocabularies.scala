@@ -217,14 +217,14 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
   @ApiOperation(value = "List all vocabularies the user can view with description",
     notes = "This will check for Permission.ViewVocabulary",
     responseClass = "None", httpMethod = "POST")
-  def findByDescription() = PrivateServerAction (parse.json) {implicit request=>
+  def findByDescription(containsAll : Boolean) = PrivateServerAction (parse.json) {implicit request=>
     val user = request.user
     val description = (request.body \"description").asOpt[String].getOrElse("").split(',').toList
 
     user match {
       case Some(identity) => {
         if (!description.isEmpty){
-          Ok(toJson(vocabularyService.findByDescription(description)))
+          Ok(toJson(vocabularyService.findByDescription(description, containsAll)))
         }
         else {
           Ok(toJson("no description provided"))
