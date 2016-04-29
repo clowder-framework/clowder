@@ -6,7 +6,7 @@
     @collections.listchildcollection(collection, child_collection, routes.Collections.collection(collection.id))
 }
 @if(childCollections.isEmpty){
-    @if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
+    @if(Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.collection, collection.id))){
         There are no child collections in this collection.
     } else {
         There are no child collections in this collection and not enough permission to edit this collection.
