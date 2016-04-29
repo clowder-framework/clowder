@@ -703,7 +703,7 @@ GET         /api/vocabularies/list                                              
 POST        /api/vocabularies/createVocabularyFromJson                                  @api.Vocabularies.createVocabularyFromJson(isPublic : Boolean ?= false)
 POST        /api/vocabularies/createVocabulary                                          @api.Vocabularies.createVocabularyFromForm()
 GET         /api/vocabularies/getByAuthor                                               @api.Vocabularies.getByAuthor()
-POST        /api/vocabularies/findByDescription                                         @api.Vocabularies.findByDescription(containsAll : Boolean ?= false)
+GET        /api/vocabularies/findByDescription                                          @api.Vocabularies.findByDescription(containsAll : Boolean ?= false)
 
 GET         /api/vocabularies/:vocab_id                                                 @api.Vocabularies.get(vocab_id : UUID)
 GET         /api/vocabularies/:name                                                     @api.Vocabularies.getByName(name : String)
