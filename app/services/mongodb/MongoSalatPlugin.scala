@@ -359,6 +359,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     updateMongo("update-collection-counter-in-space", fixCollectionCounterInSpaces)
 
+    // rename admin to serverAdmin to make clear what type of admin they are
+    updateMongo("rename-admin-serverAdmin", renameAdminServerAdmin)
+
     //Update all object_name & source_name in events
     updateMongo("update-events-name", updateEventObjectName)
   }
@@ -1055,6 +1058,12 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
+  private def renameAdminServerAdmin() {
+    val q = MongoDBObject()
+    val o = MongoDBObject("$rename" -> MongoDBObject("admin" -> "serverAdmin"))
+    collection("social.users").update(q, o, multi=true, concern=WriteConcern.Safe)
+  }
+
   private def updateEventObjectName(): Unit = {
     for (coll <- List[String]("collections", "spaces.projects", "datasets", "uploads.files", "curationObjects")){
       collection(coll).foreach { ds =>
@@ -1068,5 +1077,4 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       }
     }
   }
-
 }
