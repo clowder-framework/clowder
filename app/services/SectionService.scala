@@ -3,6 +3,7 @@ package services
 import models.{UUID, Section, Comment}
 import play.api.libs.json.JsValue
 import scala.collection.mutable.ArrayBuffer
+import models.User
 
 /**
  * Service to manipulate sections
@@ -19,7 +20,7 @@ trait SectionService {
 
   def findByFileId(fileId: UUID): List[Section]
 
-  def findByTag(tag: String): List[Section]
+  def findByTag(tag: String, user: Option[User]): List[Section]
 
   def removeAllTags(id: UUID)
 
@@ -34,7 +35,7 @@ trait SectionService {
   /**
    * Return a list of tags and counts found in sections
    */
-  def getTags(): Map[String, Long]
+  def getTags(user: Option[User]): Map[String, Long]
 
   /**
    * Update thumbnail used to represent this section.

@@ -184,15 +184,6 @@
 
 
 <script language="javascript">
-	@if(user.isDefined) {
-		@if(!(user.get.id.equals(collection.author.id))) {
-			$(".requiresLogin:not(.requiresLoginCommunity)").css("display","none");
-		}
-	}
-	@if(!user.isDefined) {
-		$(".requiresLogin").css("display","none");
-	}
-
 
 	var collectionId = "@collection.id.stringify";
 	var cur_title;

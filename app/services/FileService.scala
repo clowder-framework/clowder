@@ -99,7 +99,7 @@ trait FileService {
   /**
    * Return a list of tags and counts found in sections
    */
-  def getTags(): Map[String, Long]
+  def getTags(user: Option[User]): Map[String, Long]
 
   /**
    * Update thumbnail used to represent this dataset.
@@ -141,9 +141,9 @@ trait FileService {
 
   def addXMLMetadata(id: UUID, json: String)  
 
-  def findByTag(tag: String): List[File]
+  def findByTag(tag: String, user: Option[User]): List[File]
 
-  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean): List[File]
+  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean, user: Option[User]): List[File]
 
   def findIntermediates(): List[File]
 
@@ -201,5 +201,7 @@ trait FileService {
   def updateMetadata(fileId: UUID, metadata: JsValue, extractor_id: String)
 
   def updateDescription(fileId : UUID, description : String)
+
+  def updateAuthorFullName(userId: UUID, fullName: String)
 
 }

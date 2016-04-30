@@ -36,7 +36,8 @@ class MongoDBSpaceService @Inject() (
   files: FileService,
   datasets: DatasetService,
   users: UserService,
-  curations: CurationService) extends SpaceService {
+  curations: CurationService,
+  events: EventService) extends SpaceService {
 
   def get(id: UUID): Option[ProjectSpace] = {
     ProjectSpaceDAO.findOneById(new ObjectId(id.stringify))
@@ -234,6 +235,12 @@ class MongoDBSpaceService @Inject() (
   }
 
   def update(space: ProjectSpace): Unit = {
+    // Although we current don't use this function to update space's name, this part is added for consistency
+    get(space.id) match {
+      case Some(s) if space.name != s.name => {
+        events.updateObjectName(space.id, space.name)
+      }
+    }
     ProjectSpaceDAO.save(space)
   }
 
@@ -309,7 +316,8 @@ class MongoDBSpaceService @Inject() (
 
   /**
    * Remove association betweren dataset and a space
-   * @param dataset dataset id
+    *
+    * @param dataset dataset id
    * @param space space id
    */
   def removeDataset(dataset:UUID, space:UUID): Unit = {
@@ -322,8 +330,7 @@ class MongoDBSpaceService @Inject() (
    * Check if the time to live scope for a space is enabled.
    *
    * @param space The id of the space to check
-   *
-   * @return A Boolean, true if it is enabled, false otherwise or if there was an error
+    * @return A Boolean, true if it is enabled, false otherwise or if there was an error
    *
    */
   def isTimeToLiveEnabled(space: UUID): Boolean = {
@@ -343,8 +350,7 @@ class MongoDBSpaceService @Inject() (
    * Retrieve the time to live value that a space is scoped by.
    *
    * @param space The id of the space to check
-   *
-   * @return An Integer that represents that lifetime of resources in whole days.
+    * @return An Integer that represents that lifetime of resources in whole days.
    */
   def getTimeToLive(space: UUID): Long = {
       get(space) match {
@@ -428,9 +434,15 @@ class MongoDBSpaceService @Inject() (
    *
    */
   def updateSpaceConfiguration(spaceId: UUID, name: String, description: String, timeToLive: Long, expireEnabled: Boolean) {
-      val result = ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
-          $set("description" -> description, "name" -> name, "resourceTimeToLive" -> timeToLive, "isTimeToLiveEnabled" -> expireEnabled),
-          false, false, WriteConcern.Safe)
+    get(spaceId) match {
+      case Some(s) if name != s.name => {
+        events.updateObjectName(spaceId, name)
+      }
+      case _ => 
+    }
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
+      $set("description" -> description, "name" -> name, "resourceTimeToLive" -> timeToLive, "isTimeToLiveEnabled" -> expireEnabled),
+      false, false, WriteConcern.Safe)
   }
 
   /**
@@ -439,9 +451,10 @@ class MongoDBSpaceService @Inject() (
    * Implementation of the SpaceService trait.
    *
    */
-  def addUser(user: UUID, role: Role, space: UUID): Unit = {
-    users.addUserToSpace(user, role, space)
-    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("userCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
+  def addUser(userId: UUID, role: Role, spaceId: UUID): Unit = {
+    users.addUserToSpace(userId, role, spaceId)
+    removeRequest(spaceId, userId)
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)), $inc("userCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
   }
 
   /**
