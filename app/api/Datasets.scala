@@ -14,8 +14,6 @@ import controllers.{Previewers, Utils}
 import jsonutils.JsonUtil
 import models.{File, _}
 import org.apache.commons.codec.binary.Hex
-import org.apache.commons.io.IOUtils
-import org.json.JSONObject
 import org.json.JSONObject
 import play.api.Logger
 import play.api.Play.{configuration, current}
@@ -66,14 +64,14 @@ class  Datasets @Inject()(
     notes = "This will check for Permission.ViewDataset",
     responseClass = "None", multiValueResponse=true, httpMethod = "GET")
   def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(lisDatasets(title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)))
+    Ok(toJson(lisDatasets(title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))))
   }
 
   @ApiOperation(value = "List all datasets the user can edit",
     notes = "This will check for Permission.AddResourceToDataset and Permission.EditDataset",
     responseClass = "None", httpMethod = "GET")
   def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(lisDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.superAdmin)))
+    Ok(toJson(lisDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
   }
 
   /**
@@ -102,12 +100,12 @@ class  Datasets @Inject()(
   def listOutsideCollection(collectionId: UUID) = PrivateServerAction { implicit request =>
     collections.get(collectionId) match {
       case Some(collection) => {
-        val list = for (dataset <- datasets.listAccess(0, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin); if (!datasets.isInCollection(dataset, collection)))
+        val list = for (dataset <- datasets.listAccess(0, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode)); if (!datasets.isInCollection(dataset, collection)))
           yield dataset
         Ok(toJson(list))
       }
       case None => {
-        val list = datasets.listAccess(0, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
+        val list = datasets.listAccess(0, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
         Ok(toJson(list))
       }
     }
@@ -148,7 +146,10 @@ class  Datasets @Inject()(
             case Some(file) =>
               datasets.insert(d) match {
                 case Some(id) => {
-                  d.spaces.map{ s => spaces.addDataset(d.id, s)}
+                  d.spaces.map( spaceId => spaces.get(spaceId)).flatten.map{ s =>
+                    spaces.addDataset(d.id, s.id)
+                    events.addSourceEvent(request.user, d.id, d.name, s.id, s.name, "add_dataset_space")
+                  }
                   attachExistingFileHelper(UUID(id), file.id, d, file, request.user)
                   files.index(UUID(file_id))
                   if (!file.xmlMetadata.isEmpty) {
@@ -222,7 +223,10 @@ class  Datasets @Inject()(
           //In this case, the dataset has been created and inserted. Now notify the space service and check
           //for the presence of existing files.
           Logger.debug("About to call addDataset on spaces service")
-          d.spaces.map{ s => spaces.addDataset(d.id, s)}
+          d.spaces.map( spaceId => spaces.get(spaceId)).flatten.map{ s =>
+            spaces.addDataset(d.id, s.id)
+            events.addSourceEvent(request.user, d.id, d.name, s.id, s.name, "add_dataset_space")
+          }
           //Add this dataset to a collection if needed
           (request.body \ "collection").asOpt[List[String]] match {
             case None | Some(List("default"))=>
@@ -1611,15 +1615,14 @@ class  Datasets @Inject()(
   @ApiOperation(value = "Follow dataset.",
     notes = "Add user to dataset followers and add dataset to user followed datasets.",
     responseClass = "None", httpMethod = "POST")
-  def follow(id: UUID, name: String) = AuthenticatedAction {
+  def follow(id: UUID) = AuthenticatedAction {
     request =>
       val user = request.user
-
       user match {
         case Some(loggedInUser) => {
           datasets.get(id) match {
             case Some(dataset) => {
-              events.addObjectEvent(user, id, name, "follow_dataset")
+              events.addObjectEvent(user, id, dataset.name, "follow_dataset")
               datasets.addFollower(id, loggedInUser.id)
               userService.followDataset(loggedInUser.id, id)
 
@@ -1643,14 +1646,14 @@ class  Datasets @Inject()(
   @ApiOperation(value = "Unfollow dataset.",
     notes = "Remove user from dataset followers and remove dataset from user followed datasets.",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(id: UUID, name: String) = AuthenticatedAction { implicit request =>
+  def unfollow(id: UUID) = AuthenticatedAction { implicit request =>
       implicit val user = request.user
 
       user match {
         case Some(loggedInUser) => {
           datasets.get(id) match {
             case Some(dataset) => {
-              events.addObjectEvent(user, id, name, "unfollow_dataset")
+              events.addObjectEvent(user, id, dataset.name, "unfollow_dataset")
               datasets.removeFollower(id, loggedInUser.id)
               userService.unfollowDataset(loggedInUser.id, id)
               Ok
@@ -1680,6 +1683,7 @@ class  Datasets @Inject()(
       }
     }
   }
+
 
   /**
     * Enumerator to loop over all files in a dataset and return chunks for the result zip file that will be
@@ -1908,7 +1912,6 @@ class  Datasets @Inject()(
         }
       }
     })(pec)
-
   }
 
 
