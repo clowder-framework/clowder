@@ -1,0 +1,32 @@
+@(newsfeed: List[models.Event])(implicit user: Option[models.User])
+@import _root_.util.Formatters
+@for(event <- newsfeed) {
+  <div class="panel panel-default">
+    <div class="panel-body">
+      <div class="media">
+        <div class="media-body">
+          <a href="@routes.Profile.viewProfileUUID(event.user.id)">
+            <h4 class="media-heading">@event.user.fullName</h4>
+          </a>
+          @newsfeedCard(event)
+        </div>
+        <div class="media-right">
+        @Formatters.humanReadableTimeSince(event.created)
+        </div>
+      </div>
+    </div>
+  </div>
+}
+<script>
+  $(document).ready(function() {
+    if(eventCount == 5){
+      // the default number of event index. means there is no event for this user.
+      @if( newsfeed.size < 1) {$("#moreeventbutton").replaceWith("<p>You can follow <a href=@routes.Users.getUsers()>users</a>, <a href=@routes.Spaces.list("")>spaces</a>,"
+              + " <a href=@routes.Datasets.list("")>datasets</a> and <a href=@routes.Collections.list("")>collections</a>."
+              + "Any updates on your followed instances will show here.</p>");}
+    } else {
+      @if( newsfeed.size < 5) {$("#moreeventbutton").replaceWith("<p>No more events.</p>");}
+    }
+
+  });
+</script>

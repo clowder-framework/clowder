@@ -2,7 +2,7 @@ package api
 
 import play.api.Logger
 import play.api.Play.current
-import models.{UUID, Collection, Event}
+import models.{ResourceRef, UUID, Collection, Event}
 import play.api.mvc.RequestHeader
 import services._
 import play.api.libs.json.{JsObject, JsValue}
@@ -43,4 +43,6 @@ class Events @Inject() (events: EventService) extends ApiController {
     Mail.sendEmail(subject, request.user, recipient, body)
     Ok(toJson("Send Email success"))
   }
+
+
 }
