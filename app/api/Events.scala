@@ -1,21 +1,15 @@
 package api
 
-import play.api.Logger
-import play.api.Play.current
-import models.{ResourceRef, UUID, Collection, Event}
-import play.api.mvc.RequestHeader
+import models.{Event}
 import services._
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json.toJson
-import javax.inject.{ Singleton, Inject }
+import javax.inject.Inject
 import util.Mail
 import play.api.templates.Html
-
 import scala.util.{Try, Success, Failure}
-import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
-import java.util.Date
-import controllers.Utils
+
 
 class Events @Inject() (events: EventService) extends ApiController {
 
