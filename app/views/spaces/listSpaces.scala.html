@@ -33,7 +33,10 @@
                         </div>
                     }
                 }
-                <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new space"><span class="glyphicon glyphicon-ok"></span> Create</a>
+                @if(user.isDefined) {
+                    <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new space"><span class="glyphicon glyphicon-ok"></span> Create</a>
+                }
+
             </div>
         </div>
                 <script>
@@ -142,10 +145,4 @@
                 </div>
             </div>
 
-            @if(!user.isDefined) {
-                <script type="text/javascript">
-                    $ ( ".requiresLogin" ).css ( "display", "none" ) ;
-                    $('#create-space').addClass('disabled');
-                </script>
-             }
 }

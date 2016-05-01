@@ -207,8 +207,8 @@ class MongoDBUserService @Inject() (
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("profile" -> pson))
   }
 
-  override def updateUserField(email: String, field: String, fieldText: Any) {
-    UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldText))
+  override def updateUserField(id: UUID, field: String, fieldText: Any) {
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify) ), $set(field -> fieldText))
   }
 
   override def updateUserFullName(id: UUID, name: String): Unit = {
