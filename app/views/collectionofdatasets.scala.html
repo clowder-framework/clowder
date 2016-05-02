@@ -91,16 +91,6 @@
                                 </button>
                             }
                         }
-                        @if(user.isDefined && collectionSpaces_canRemove.isDefined && !collectionSpaces_canRemove.isEmpty){
-                            <a href="@routes.Collections.users(collection.id)" class="btn btn-link">
-                                <span class="glyphicon glyphicon-user"></span> Collaborators</a>
-                        }
-                        @if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
-                            <a id="create_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))" class="btn btn-link btn-sm" title="Create Dataset">
-                                <span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
-                            <a id="create_childcollection" href="@routes.Collections.newCollectionWithParent(Some(collection.id.toString()))" class="btn btn-link btn-sm" title="Create Child Collection">
-                                <span class="glyphicon glyphicon-ok"></span> Create Child Collection</a>
-                        }
 						<hr/>
 					</div>
 				</div>
