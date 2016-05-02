@@ -3,7 +3,6 @@ package models
 import java.util.Date
 import play.api.Play.current
 import play.api.Logger
-import play.api.libs.json.{Json, JsValue, Writes}
 
 import services.SchedulerService
 import services.UserService
