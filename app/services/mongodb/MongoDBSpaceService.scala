@@ -237,9 +237,12 @@ class MongoDBSpaceService @Inject() (
   def update(space: ProjectSpace): Unit = {
     // Although we current don't use this function to update space's name, this part is added for consistency
     get(space.id) match {
-      case Some(s) if space.name != s.name => {
-        events.updateObjectName(space.id, space.name)
+      case Some(s) => {
+        if (space.name != s.name) {
+          events.updateObjectName(space.id, space.name)
+        }
       }
+      case None =>
     }
     ProjectSpaceDAO.save(space)
   }
