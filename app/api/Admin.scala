@@ -102,7 +102,7 @@ class Admin @Inject()(userService: UserService,
         userService.findById(UUID(id)) match {
           case Some(u:ClowderUser) => {
             if (u.active) {
-              userService.update(u.copy(active=false, admin=false))
+              userService.update(u.copy(active=false, serverAdmin=false))
               val subject = s"[${AppConfiguration.getDisplayName}] account deactivated"
               val body = views.html.emails.userActivated(u, active=false)(request)
               util.Mail.sendEmail(subject, request.user, u, body)
@@ -116,8 +116,8 @@ class Admin @Inject()(userService: UserService,
       list.foreach(id =>
         userService.findById(UUID(id)) match {
           case Some(u:ClowderUser) if u.active => {
-            if (!u.admin) {
-              userService.update(u.copy(admin=true))
+            if (!u.serverAdmin) {
+              userService.update(u.copy(serverAdmin=true))
               val subject = s"[${AppConfiguration.getDisplayName}] admin access granted"
               val body = views.html.emails.userAdmin(u, admin=true)(request)
               util.Mail.sendEmail(subject, request.user, u, body)
@@ -131,8 +131,8 @@ class Admin @Inject()(userService: UserService,
       list.foreach(id =>
         userService.findById(UUID(id)) match {
           case Some(u:ClowderUser) if u.active => {
-            if (u.admin) {
-              userService.update(u.copy(admin=false))
+            if (u.serverAdmin) {
+              userService.update(u.copy(serverAdmin=false))
               val subject = s"[${AppConfiguration.getDisplayName}] admin access revoked"
               val body = views.html.emails.userAdmin(u, admin=true)(request)
               util.Mail.sendEmail(subject, request.user, u, body)
