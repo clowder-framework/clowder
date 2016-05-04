@@ -521,6 +521,12 @@ POST           /api/datasets/:id/detachdelete                                   
 POST           /api/datasets/:parentDatasetId/newFolder                                 @api.Folders.createFolder(parentDatasetId: UUID)
 
 # ----------------------------------------------------------------------
+# VOCABULARIES ENDPOINT
+# ----------------------------------------------------------------------
+
+GET             /vocabularies/new                                                       @controllers.Vocabularies.newVocabulary(space : Option[String])
+
+# ----------------------------------------------------------------------
 # PREVIEWS ENDPOINT
 # ----------------------------------------------------------------------
 GET            /api/previews/:preview_id/textures/dataset/:datasetid/json               @api.Previews.downloadPreview(preview_id: UUID, datasetid: UUID)

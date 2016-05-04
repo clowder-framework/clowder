@@ -22,7 +22,7 @@ import scala.collection.mutable.ListBuffer
 class Vocabularies @Inject()(vocabularies: VocabularyService, datasets: DatasetService, collections: CollectionService, previewsService: PreviewService,
                              spaceService: SpaceService, users: UserService, events: EventService) extends SecuredController {
 
-  def newCollection(space: Option[String]) = PermissionAction(Permission.CreateVocabulary) { implicit request =>
+  def newVocabulary(space: Option[String]) = PermissionAction(Permission.CreateVocabulary) { implicit request =>
     implicit val user = request.user
     val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
     var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
