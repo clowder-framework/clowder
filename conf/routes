@@ -643,7 +643,7 @@ GET            /api/users                                                       
 GET            /api/users/email/:email                                                  @api.Users.findByEmail(email: String)
 GET            /api/users/:id                                                           @api.Users.findById(id: UUID)
 GET            /api/me                                                                  @api.Users.getUser()
-POST           /api/users/updateName                                                    @api.Users.updateName(id: UUID, firstName: String, lastName: String)
+POST           /api/users/:id/updateName                                                @api.Users.updateName(id: UUID, firstName: String, lastName: String)
 POST           /api/users/addUserDatasetView                                            @api.Users.addUserDatasetView(email: String, dataset: UUID)
 POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
 POST           /api/users/createNewListInUser                                           @api.Users.createNewListInUser(email: String, field: String, fieldList: List[String])
@@ -694,3 +694,4 @@ DELETE         /spaces/curations/:id/folders/:curationFolderId                  
 GET            /spaces/curations/:id/updatedFilesAndFolders                             @controllers.CurationObjects.getUpdatedFilesAndFolders(id: UUID, curationFolderId: String, limit: Int, pageIndex:Int)
 
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()
+GET            /getEvents                                                               @controllers.Events.getEvents(index: Int)
