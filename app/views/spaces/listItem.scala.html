@@ -21,13 +21,13 @@
                             @if(user.isDefined) {
                                     <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                 @if(Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id)) || user.get.identityId.userId.equals(space.creator)){
-                                    <button onclick="confirmDeleteResource('space','@(space.id)','@(space.name.replace("'","&#39;"))',false, '@redirect')" class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
+                                    <button onclick="confirmDeleteResource('space','@(space.id)','@(space.name.replace("'","&#39;"))',false, '@redirect')" class="btn btn-link" title="Delete the space but not its contents">
                                         <span class="glyphicon glyphicon-trash"></span>
                                     </button>
                                 } else {
-                                    <button disabled class="btn btn-link" style="text-align : right" title="Detach Delete the Space">
-                                        <span class="glyphicon glyphicon-trash"></span>
-                                    </button>
+                                    <div class="inline" title="No permission to delete the space">
+                                        <button disabled class="btn btn-link"><span class="glyphicon glyphicon-trash"></span></button>
+                                    </div>
                                 }
                             }
                         </div>
