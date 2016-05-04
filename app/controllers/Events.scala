@@ -23,9 +23,11 @@ class Events @Inject()(events: EventService) extends SecuredController {
         var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(index*5)))
         newsfeedEvents = newsfeedEvents ::: events.getRequestEvents(user, Some(index*5))
         newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(index*5)))
-          .sorted(Ordering.by((_: Event).created).reverse).distinct.take(index*5).takeRight(5)
+          if(newsfeedEvents.size > index*5-5 ) {
+            newsfeedEvents = newsfeedEvents.sorted(Ordering.by((_: Event).created).reverse).distinct.take(index * 5).takeRight(5)
 
-        Ok(views.html.eventsList(newsfeedEvents))
+            Ok(views.html.eventsList(newsfeedEvents))
+          } else Ok(views.html.eventsList(List.empty[Event]))
       }
       case _ => BadRequest("Unauthorized.")
     }
