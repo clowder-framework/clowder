@@ -32,11 +32,12 @@
                                                     case None => {confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))',false, '@redirect')}
                                                     case Some(s) => {confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))',false, '@redirect#@s')}
                                                 }
-                                                " class="btn btn-link" style="text-align:right" title="Delete">
+                                                " class="btn btn-link" title="Delete the file">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     } else {
-                                        <button disabled onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))','@redirect')" class="btn btn-link" style="text-align:right" title="Delete">
-                                            <span class="glyphicon glyphicon-trash"></span></button>
+                                        <div class="inline" title="No permission to delete the file">
+                                            <button disabled class="btn btn-link"><span class="glyphicon glyphicon-trash"></span></button>
+                                        </div>
                                     }
                                 }
                             </li>
@@ -45,12 +46,17 @@
                     <div class="col-md-6 col-lg-6 col-sm-6">
                         <ul class="list-unstyled">
                             @if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
-                                <li><a id="downloadButton" class="btn btn-link" type="button" onclick="window.open(jsRoutes.api.Files.download('@file.id').url, '_blank');" class="btn btn-primary" title="Download and enjoy this file." > <span class="glyphicon glyphicon-save"></span>
-                                    Download </a></li>
+                                <li>
+                                    <button id="downloadButton" onclick="window.open(jsRoutes.api.Files.download('@file.id').url, '_blank');" class="btn btn-link" title="Download and enjoy this file.">
+                                        <span class="glyphicon glyphicon-save"></span> Download
+                                    </button>
+                                </li>
                             } else {
-                                    <!-- if 'disabled' title is not visible -->
-                                <li><a class="btn btn-link disabled" type="button" class="btn btn-primary" title="You don't have permission to download this file." > <span class="glyphicon glyphicon-save"></span>
-                                    Download </a></li>
+                                <li>
+                                    <div class="inline" title="No permission to download the file">
+                                        <button disabled class="btn btn-link"><span class="glyphicon glyphicon-save"></span> Download</button>
+                                    </div>
+                                </li>
                             }
 
                             <li> @user match {

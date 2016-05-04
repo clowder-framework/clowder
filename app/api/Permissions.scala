@@ -109,12 +109,12 @@ object Permission extends Enumeration {
 
   /** Returns true if the user is listed as a server admin */
 	def checkServerAdmin(user: Option[User]): Boolean = {
-		user.exists(u => u.active && u.admin)
+		user.exists(u => u.active && u.serverAdmin)
 	}
 
   /** Returns true if the user is the owner of the resource, this function is used in the code for checkPermission as well. */
   def checkOwner(user: Option[User], resourceRef: ResourceRef): Boolean = {
-    user.exists(checkOwner(_, resourceRef))
+    user.exists(u => u.superAdminMode || checkOwner(u, resourceRef))
   }
 
   /** Returns true if the user is the owner of the resource, this function is used in the code for checkPermission as well. */
@@ -193,6 +193,7 @@ object Permission extends Enumeration {
   def checkPermission(user: User, permission: Permission, resourceRef: ResourceRef): Boolean = {
     // check if user is owner, in that case they can do what they want.
     if (checkOwner(users.findByIdentity(user), resourceRef)) return true
+    if (user.superAdminMode) return true
 
     resourceRef match {
       case ResourceRef(ResourceRef.preview, id) => {
@@ -394,6 +395,7 @@ object Permission extends Enumeration {
 
   def getUserByIdentity(identity: User): Option[User] = users.findByIdentity(identity)
 
+  /** on a private server this will return true iff user logged in, on public server this will always be true */
   def checkPrivateServer(user: Option[User]): Boolean = {
     configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" || user.isDefined
   }
@@ -402,4 +404,4 @@ object Permission extends Enumeration {
 /**
  * A request that adds the User for the current call
  */
-case class UserRequest[A](user: Option[User], superAdmin: Boolean = false, request: Request[A]) extends WrappedRequest[A](request)
+case class UserRequest[A](user: Option[User], request: Request[A]) extends WrappedRequest[A](request)
