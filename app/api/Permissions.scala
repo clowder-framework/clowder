@@ -368,6 +368,7 @@ object Permission extends Enumeration {
 
   def getUserByIdentity(identity: User): Option[User] = users.findByIdentity(identity)
 
+  /** on a private server this will return true iff user logged in, on public server this will always be true */
   def checkPrivateServer(user: Option[User]): Boolean = {
     configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" || user.isDefined
   }
