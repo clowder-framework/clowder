@@ -89,7 +89,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
         case Some(s) => {
           val runningExtractors: List[String] = extractors.getExtractorNames()
           val selectedExtractors: List[String] = spaces.getAllExtractors(id)
-          Ok(views.html.spaces.updateExtractors(runningExtractors, selectedExtractors, id.stringify))
+          Ok(views.html.spaces.updateExtractors(runningExtractors, selectedExtractors, id))
         }
         case None => InternalServerError("Space not found")      
     }
@@ -98,7 +98,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   /**
    * Processes POST request. Updates list of extractors associated with this space in mongo.
    */
-  def updateExtractors() = PermissionAction(Permission.EditSpace)(parse.multipartFormData) {
+  def updateExtractors(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id)))(parse.multipartFormData) {
     implicit request =>
       implicit val user = request.user
       //form contains space id and list of extractors.
@@ -130,10 +130,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
       }
   }
-  
-                      
-                      
-  
+
   /**
    * Space main page.
    */
@@ -365,7 +362,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   /**
    * accept authorization request with specific Role. Send email to request user.
    */
-  def acceptRequest( id:UUID, requestuser:String, role:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+  def acceptRequest(id:UUID, requestuser:String, role:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {

@@ -294,33 +294,32 @@ class Datasets @Inject()(
 
   def addViewer(id: UUID, user: Option[User]) = {
       user match{
-            case Some(viewer) => {
-              implicit val email = viewer.email
-              email match {
-                case Some(addr) => {
-                  implicit val modeluser = users.findByEmail(addr.toString())
-                  modeluser match {
-                    case Some(muser) => {
-                       muser.viewed match {
-                        case Some(viewList) =>{
-                          users.addUserDatasetView(addr, id)
-                        }
-                        case None => {
-                          val newList: List[UUID] = List(id)
-                          users.createNewListInUser(addr, "viewed", newList)
-                        }
-                      }
+        case Some(viewer) => {
+          implicit val email = viewer.email
+          email match {
+            case Some(addr) => {
+              implicit val modeluser = users.findByEmail(addr.toString())
+              modeluser match {
+                case Some(muser) => {
+                   muser.viewed match {
+                    case Some(viewList) =>{
+                      users.addUserDatasetView(addr, id)
+                    }
+                    case None => {
+                      val newList: List[UUID] = List(id)
+                      users.createNewListInUser(addr, "viewed", newList)
+                    }
                   }
-                  case None => {
-                    Ok("NOT WORKS")
-                  }
-                 }
-                }
               }
+              case None => {
+                Ok("NOT WORKS")
+              }
+             }
             }
-
-
           }
+        }
+
+      }
   }
 
   /**
@@ -508,11 +507,10 @@ class Datasets @Inject()(
     }
   }
 
-
   /**
    * Dataset by section.
    */
-  def datasetBySection(section_id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.section, section_id))) { implicit request =>
+  def datasetBySection(section_id: UUID) = PermissionAction(Permission.ViewSection, Some(ResourceRef(ResourceRef.section, section_id))) { implicit request =>
       sections.get(section_id) match {
         case Some(section) => {
           datasets.findOneByFileId(section.file_id) match {
@@ -796,7 +794,8 @@ class Datasets @Inject()(
       case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
     }
   }
-  def users(id: UUID) = PermissionAction(Permission.ViewDataset) { implicit request =>
+
+  def users(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
 
     datasets.get(id) match {
@@ -848,12 +847,12 @@ class Datasets @Inject()(
 
   }
 
-  def metadataSearch() = PermissionAction(Permission.ViewDataset) { implicit request =>
+  def metadataSearch() = PermissionAction(Permission.ViewMetadata) { implicit request =>
       implicit val user = request.user
       Ok(views.html.metadataSearch())
   }
 
-  def generalMetadataSearch() = PermissionAction(Permission.ViewDataset) { implicit request =>
+  def generalMetadataSearch() = PermissionAction(Permission.ViewMetadata) { implicit request =>
       implicit val user = request.user
       Ok(views.html.generalMetadataSearch())
   }

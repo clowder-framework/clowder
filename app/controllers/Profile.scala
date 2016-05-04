@@ -35,9 +35,9 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
     user match {
       case Some(muser) => {
         val newbioForm = bioForm.fill(muser.profile.getOrElse(new models.Profile()))
-        var allProjectOptions: List[String] = "" :: projects.getAllProjects()
-        var allInstitutionOptions: List[String] = "" :: institutions.getAllInstitutions()
-        var emailtimes: List[String] = List("daily", "hourly", "weekly", "none")
+        val allProjectOptions: List[String] = "" :: projects.getAllProjects()
+        val allInstitutionOptions: List[String] = "" :: institutions.getAllInstitutions()
+        val emailtimes: List[String] = List("daily", "hourly", "weekly", "none")
         Ok(views.html.editProfile(newbioForm, allInstitutionOptions, allProjectOptions, emailtimes))
       }
       case None => {
@@ -51,7 +51,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
     implicit val user = request.user
     val viewerUser = request.user
     var ownProfile: Option[Boolean] = None
-    var muser = users.findById(uuid)
+    val muser = users.findById(uuid)
 
     muser match {
       case Some(existingUser) => {
