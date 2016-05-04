@@ -20,11 +20,12 @@ class Events @Inject()(events: EventService) extends SecuredController {
 
     user match {
       case Some(clowderUser) if clowderUser.active => {
-        var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(index*5)))
-        newsfeedEvents = newsfeedEvents ::: events.getRequestEvents(user, Some(index*5))
-        newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(index*5)))
-          if(newsfeedEvents.size > index*5-5 ) {
-            newsfeedEvents = newsfeedEvents.sorted(Ordering.by((_: Event).created).reverse).distinct.take(index * 5).takeRight(5)
+        val newEventNumber = 10
+        var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(index*newEventNumber)))
+        newsfeedEvents = newsfeedEvents ::: events.getRequestEvents(user, Some(index*newEventNumber))
+        newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(index*newEventNumber)))
+          if(newsfeedEvents.size > index*newEventNumber-newEventNumber ) {
+            newsfeedEvents = newsfeedEvents.sorted(Ordering.by((_: Event).created).reverse).distinct.take(index * newEventNumber).takeRight(newEventNumber)
 
             Ok(views.html.eventsList(newsfeedEvents))
           } else Ok(views.html.eventsList(List.empty[Event]))
