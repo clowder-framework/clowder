@@ -1934,7 +1934,7 @@ class  Datasets @Inject()(
 
   private def getDatasetInfoAsJson(dataset : Dataset) : JsValue = {
     val datasetSpaces = for (space <- dataset.spaces) yield spaces.get(space).getOrElse("")
-    Json.obj("name"->dataset.name,"author"->dataset.author.email.toString,"description"->dataset.description, "spaces"->datasetSpaces.mkString(","),"lastModified"->dataset.lastModifiedDate.toString)
+    Json.obj("name"->dataset.name,"author"->dataset.author.email.getOrElse(""),"description"->dataset.description, "spaces"->datasetSpaces.mkString(","),"lastModified"->dataset.lastModifiedDate.toString)
   }
 
   private def addDatasetInfoToZip(folderName: String, dataset: models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
@@ -1945,7 +1945,7 @@ class  Datasets @Inject()(
 
   private def getFileInfoAsJson(file : models.File) : JsValue = {
     val licenseInfo = Json.obj("licenseText"->file.licenseData.m_licenseText,"licenseType"->file.licenseData.m_licenseType,"rightsHolder"-> file.licenseData.m_rightsHolder)
-    Json.obj("author" -> file.author.email.toString, "uploadDate" -> file.uploadDate.toString,"contentType"->file.contentType,"description"->file.description,"license"->licenseInfo)
+    Json.obj("author" -> file.author.email.getOrElse(""), "uploadDate" -> file.uploadDate.toString,"contentType"->file.contentType,"description"->file.description,"license"->licenseInfo)
   }
 
   private def addFileInfoToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
