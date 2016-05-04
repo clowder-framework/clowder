@@ -59,11 +59,11 @@ class MongoDBUserService @Inject() (
       model.email match {
         case Some(e) if admins.contains(e) => {
           user.put("active", true)
-          user.put("admin", true)
+          user.put("serverAdmin", true)
         }
         case _ => {
           user.put("active", !register)
-          user.put("admin", false)
+          user.put("serverAdmin", false)
         }
       }
     } else {
@@ -86,12 +86,12 @@ class MongoDBUserService @Inject() (
 
   override def updateAdmins() {
     play.Play.application().configuration().getString("initialAdmins").trim.split("\\s*,\\s*").filter(_ != "").foreach{e =>
-      UserDAO.dao.update(MongoDBObject("email" -> e), $set("admin" -> true, "active" -> true), upsert=false, multi=true)
+      UserDAO.dao.update(MongoDBObject("email" -> e), $set("serverAdmin" -> true, "active" -> true), upsert=false, multi=true)
     }
   }
 
   override def getAdmins: List[User] = {
-    UserDAO.find(MongoDBObject("admin" -> true, "active" -> true)).toList
+    UserDAO.find(MongoDBObject("serverAdmin" -> true, "active" -> true)).toList
   }
 
   /**
@@ -611,11 +611,11 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
       user.email match {
         case Some(e) if admins.contains(e) => {
           userobj.put("active", true)
-          userobj.put("admin", true)
+          userobj.put("serverAdmin", true)
         }
         case _ => {
           userobj.put("active", !register)
-          userobj.put("admin", false)
+          userobj.put("serverAdmin", false)
         }
       }
     }
