@@ -89,7 +89,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
         case Some(s) => {
           val runningExtractors: List[String] = extractors.getExtractorNames()
           val selectedExtractors: List[String] = spaces.getAllExtractors(id)
-          Ok(views.html.spaces.updateExtractors(runningExtractors, selectedExtractors, id.stringify))
+          Ok(views.html.spaces.updateExtractors(runningExtractors, selectedExtractors, id))
         }
         case None => InternalServerError("Space not found")      
     }
@@ -98,7 +98,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   /**
    * Processes POST request. Updates list of extractors associated with this space in mongo.
    */
-  def updateExtractors() = PermissionAction(Permission.EditSpace)(parse.multipartFormData) {
+  def updateExtractors(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id)))(parse.multipartFormData) {
     implicit request =>
       implicit val user = request.user
       //form contains space id and list of extractors.
@@ -130,10 +130,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
       }
   }
-  
-                      
-                      
-  
+
   /**
    * Space main page.
    */
@@ -365,7 +362,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   /**
    * accept authorization request with specific Role. Send email to request user.
    */
-  def acceptRequest( id:UUID, requestuser:String, role:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+  def acceptRequest(id:UUID, requestuser:String, role:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
@@ -432,28 +429,30 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                 spaceForm.bindFromRequest.fold(
                   errors => BadRequest(views.html.spaces.newSpace(errors)),
                   formData => {
-                    Logger.debug("Creating space " + formData.name)
-                    val newSpace = ProjectSpace(name = formData.name, description = formData.description,
-                                                created = new Date, creator = userId, homePage = formData.homePage,
-                                                logoURL = formData.logoURL, bannerURL = formData.bannerURL,
-                                                collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty,
-                                                resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
+                    if (Permission.checkPermission(user, Permission.CreateSpace)) {
+                      Logger.debug("Creating space " + formData.name)
+                      val newSpace = ProjectSpace(name = formData.name, description = formData.description,
+                        created = new Date, creator = userId, homePage = formData.homePage,
+                        logoURL = formData.logoURL, bannerURL = formData.bannerURL,
+                        collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty,
+                        resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
 
-                    // insert space
-                    spaces.insert(newSpace)
-                    val option_user = users.findByIdentity(identity)
-                    events.addObjectEvent(option_user, newSpace.id, newSpace.name, "create_space")
-                    val role = Role.Admin
-                    spaces.addUser(userId, role, newSpace.id)
-                    //TODO - Put Spaces in Elastic Search?
-                    // index collection
-                    // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-                    //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
-                    // Notify admins a new space is created
-                    //  List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
-                    //current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Space","added",space.id.toString,space.name)}
-                    // redirect to space page
-                     Redirect(routes.Spaces.getSpace(newSpace.id))
+                      // insert space
+                      spaces.insert(newSpace)
+                      val option_user = users.findByIdentity(identity)
+                      events.addObjectEvent(option_user, newSpace.id, newSpace.name, "create_space")
+                      val role = Role.Admin
+                      spaces.addUser(userId, role, newSpace.id)
+                      //TODO - Put Spaces in Elastic Search?
+                      // index collection
+                      // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+                      //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
+                      // Notify admins a new space is created
+                      //  List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
+                      //current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Space","added",space.id.toString,space.name)}
+                      // redirect to space page
+                      Redirect(routes.Spaces.getSpace(newSpace.id))
+                    } else {  BadRequest("Unauthorized.") }
                   })
               }
               case ("Update") => {

@@ -18,7 +18,7 @@
     <div class="col-md-12">
         <div id="masonry-collections">
         @collectionsList.map { collection =>
-                @collections.tile(collection, routes.Spaces.getSpace(UUID(space)), "col-lg-4 col-md-4 col-sm-4", false)
+            @collections.tile(collection, routes.Spaces.getSpace(UUID(space)), Some(space), "col-lg-4 col-md-4 col-sm-4", false)
         }
         </div>
     </div>
