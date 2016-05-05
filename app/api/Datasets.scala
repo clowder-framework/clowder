@@ -24,6 +24,7 @@ import play.api.libs.json.Json._
 import play.api.mvc.AnyContent
 import services._
 import _root_.util.{JSONLD, License}
+import views.html.dataset
 import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.mutable.ListBuffer
 import org.apache.commons.io.input.CountingInputStream
@@ -1933,7 +1934,6 @@ class  Datasets @Inject()(
   }
 
   private def getDatasetInfoAsJson(dataset : Dataset) : JsValue = {
-    val datasetSpaces = for (space <- dataset.spaces) yield spaces.get(space).getOrElse("")
     val rightsHolder = {
       val licenseType = dataset.licenseData.m_licenseType
       if (licenseType == "license1") {
@@ -1946,9 +1946,16 @@ class  Datasets @Inject()(
         "None"
       }
     }
+    val spaceIds = dataset.spaces
+    val spaceNames = for (
+      spaceId <- spaceIds;
+      if (!spaces.get(spaceId).get.equals(None))
+    ) yield {
+      spaces.get(spaceId).get.name
+    }
 
     val licenseInfo = Json.obj("licenseText"->dataset.licenseData.m_licenseText,"rightsHolder"->rightsHolder)
-    Json.obj("name"->dataset.name,"author"->dataset.author.email.getOrElse(""),"description"->dataset.description, "spaces"->datasetSpaces.mkString(","),"lastModified"->dataset.lastModifiedDate.toString,"license"->licenseInfo)
+    Json.obj("name"->dataset.name,"author"->dataset.author.email,"description"->dataset.description, "spaces"->spaceNames.mkString(","),"lastModified"->dataset.lastModifiedDate.toString,"license"->licenseInfo)
   }
 
   private def addDatasetInfoToZip(folderName: String, dataset: models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
@@ -1972,7 +1979,7 @@ class  Datasets @Inject()(
 
     }
     val licenseInfo = Json.obj("licenseText"->file.licenseData.m_licenseText,"rightsHolder"->rightsHolder)
-    Json.obj("author" -> file.author.email.getOrElse(""), "uploadDate" -> file.uploadDate.toString,"contentType"->file.contentType,"description"->file.description,"license"->licenseInfo)
+    Json.obj("author" -> file.author.email, "uploadDate" -> file.uploadDate.toString,"contentType"->file.contentType,"description"->file.description,"license"->licenseInfo)
   }
 
   private def addFileInfoToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
