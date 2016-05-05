@@ -1,4 +1,4 @@
-@(runningExtractors: List[String], selectedExtractors: List[String], space: String)(implicit user: Option[models.User])
+@(runningExtractors: List[String], selectedExtractors: List[String], space: UUID)(implicit user: Option[models.User])
 
 @import helper._
 
@@ -12,7 +12,7 @@
         <h1> Update Extractors </h1>
     </div>
     
-	@form(action = routes.Spaces.updateExtractors, 'id->"formOne", 'enctype -> "multipart/form-data", 'class -> "form-horizontal"  ){
+	@form(action = routes.Spaces.updateExtractors(space), 'id->"formOne", 'enctype -> "multipart/form-data", 'class -> "form-horizontal"  ){
 	   	<!--  Pass the space id to the controller -->                        
   		<input type="hidden" name="space_id" value="@space">
   	

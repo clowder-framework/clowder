@@ -153,6 +153,7 @@ object Permission extends Enumeration {
     checkPermission(user, permission, Some(resourceRef))
   }
 
+
   def checkPermission(user: Option[User], permission: Permission, resourceRef: Option[ResourceRef] = None): Boolean = {
     (user, configuration(play.api.Play.current).getString("permissions").getOrElse("public"), resourceRef) match {
       case (Some(u), "public", Some(r)) => {
