@@ -1944,7 +1944,7 @@ class  Datasets @Inject()(
   }
 
   private def getFileInfoAsJson(file : models.File) : JsValue = {
-    val licenseInfo = Json.obj("licenseText"->file.licenseData.m_licenseText,"licenseType"->file.licenseData.m_licenseType,"rightsHolder"-> file.licenseData.m_rightsHolder)
+    val licenseInfo = Json.obj("licenseText"->file.licenseData.m_licenseText,"licenseType"->file.licenseData.m_licenseType)
     Json.obj("author" -> file.author.email.getOrElse(""), "uploadDate" -> file.uploadDate.toString,"contentType"->file.contentType,"description"->file.description,"license"->licenseInfo)
   }
 
