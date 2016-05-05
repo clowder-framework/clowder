@@ -1934,7 +1934,21 @@ class  Datasets @Inject()(
 
   private def getDatasetInfoAsJson(dataset : Dataset) : JsValue = {
     val datasetSpaces = for (space <- dataset.spaces) yield spaces.get(space).getOrElse("")
-    Json.obj("name"->dataset.name,"author"->dataset.author.email.getOrElse(""),"description"->dataset.description, "spaces"->datasetSpaces.mkString(","),"lastModified"->dataset.lastModifiedDate.toString)
+    val rightsHolder = {
+      val licenseType = dataset.licenseData.m_licenseType
+      if (licenseType == "license1") {
+        dataset.author.fullName
+      } else if (licenseType == "license2") {
+        "Creative Commons"
+      } else if (licenseType == "license3") {
+        "Public Domain Dedication"
+      } else {
+        "None"
+      }
+    }
+
+    val licenseInfo = Json.obj("licenseText"->dataset.licenseData.m_licenseText,"rightsHolder"->rightsHolder)
+    Json.obj("name"->dataset.name,"author"->dataset.author.email.getOrElse(""),"description"->dataset.description, "spaces"->datasetSpaces.mkString(","),"lastModified"->dataset.lastModifiedDate.toString,"license"->licenseInfo)
   }
 
   private def addDatasetInfoToZip(folderName: String, dataset: models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
