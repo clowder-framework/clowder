@@ -525,6 +525,7 @@ POST           /api/datasets/:parentDatasetId/newFolder                         
 # ----------------------------------------------------------------------
 
 GET             /vocabularies/new                                                       @controllers.Vocabularies.newVocabulary(space : Option[String])
+POST            /vocabularies/submit                                                    @controllers.Vocabularies.submit()
 
 # ----------------------------------------------------------------------
 # PREVIEWS ENDPOINT
@@ -700,7 +701,7 @@ DELETE         /spaces/curations/:id/folders/:curationFolderId                  
 GET            /spaces/curations/:id/updatedFilesAndFolders                             @controllers.CurationObjects.getUpdatedFilesAndFolders(id: UUID, curationFolderId: String, limit: Int, pageIndex:Int)
 
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()
-GET            /getEvents
+GET            /getEvents                                                               @controllers.Events.getEvents(index: Int)
 
 # ----------------------------------------------------------------------
 # VOCABULARIES API

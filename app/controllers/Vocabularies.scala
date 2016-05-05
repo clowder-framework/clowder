@@ -272,17 +272,17 @@ class Vocabularies @Inject()(vocabularies : VocabularyService, datasets: Dataset
    * page with the appropriate error to be displayed.
    *
    */
-  def submit() = PermissionAction(Permission.CreateCollection)(parse.multipartFormData) { implicit request =>
+  def submit() = PermissionAction(Permission.CreateVocabulary)(parse.multipartFormData) { implicit request =>
       Logger.debug("------- in Collections.submit ---------")
       val colName = request.body.asFormUrlEncoded.getOrElse("name", null)
+      val colKeys = request.body.asFormUrlEncoded.getOrElse("keys", null)
       val colDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
       val colSpace = request.body.asFormUrlEncoded.getOrElse("space", List.empty)
-      val colParentColId = request.body.asFormUrlEncoded.getOrElse("parentcolid",null)
 
       implicit val user = request.user
       user match {
         case Some(identity) => {
-          if (colName == null || colDesc == null || colSpace == null) {
+          if (colName == null || colKeys == null || colDesc == null || colSpace == null) {
             val spacesList = spaceService.list()
             var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
             for (aSpace <- spacesList) {
@@ -292,73 +292,43 @@ class Vocabularies @Inject()(vocabularies : VocabularyService, datasets: Dataset
             BadRequest(views.html.newCollection("Name, Description, or Space was missing during collection creation.", decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
           }
 
-          var parentCollectionIds = List.empty[String]
-          try {
-            parentCollectionIds = colParentColId(0).split(",").toList
-          }  catch {
-            case e : Exception => Logger.debug("error cannot split ")
-          }
-
-          var collection : Collection = null
+          var vocabulary: Vocabulary = null
           if (colSpace.isEmpty || colSpace(0) == "default" || colSpace(0) == "") {
-              collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, root_spaces = List.empty)
+            vocabulary = Vocabulary(name = colName(0).toString, keys = colKeys(0).split(',').toList, description = colDesc(0).split(',').toList, created = new Date, author = Some(identity))
           }
           else {
             val stringSpaces = colSpace(0).split(",").toList
-            val colSpaces: List[UUID] = stringSpaces.map(aSpace => if(aSpace != "") UUID(aSpace) else None).filter(_ != None).asInstanceOf[List[UUID]]
-            var root_spaces = List.empty[UUID]
-            if(parentCollectionIds.length == 0) {
-              root_spaces = colSpaces
-            }
-            collection = Collection(name = colName(0), description = colDesc(0), datasetCount = 0, created = new Date, author = identity, spaces = colSpaces, root_spaces = root_spaces)
+            val colSpaces: List[UUID] = stringSpaces.map(aSpace => if (aSpace != "") UUID(aSpace) else None).filter(_ != None).asInstanceOf[List[UUID]]
+            vocabulary = Vocabulary(name = colName(0).toString, keys = colKeys(0).split(',').toList, description = colDesc(0).split(',').toList, created = new Date, author = Some(identity))
           }
 
-          Logger.debug("Saving collection " + collection.name)
-          collections.insert(collection)
-          collection.spaces.map{
+          Logger.debug("Saving vocabulary " + vocabulary.name)
+          vocabularies.insert(vocabulary)
+          vocabulary.spaces.map {
             sp => spaceService.get(sp) match {
               case Some(s) => {
-                spaces.addCollection(collection.id, s.id)
-                collections.addToRootSpaces(collection.id, s.id)
-                events.addSourceEvent(request.user, collection.id, collection.name, s.id, s.name, "add_collection_space")
+                vocabularies.addToSpace(vocabulary.id, s.id)
+                //events.addSourceEvent(request.user, collection.id, collection.name, s.id, s.name, "add_collection_space")
               }
-              case None => Logger.error(s"space with id $sp on collection $collection.id doesn't exist.")
+              case None => Logger.error(s"space with id $sp on collection $vocabulary.id doesn't exist.")
             }
           }
 
           //index collection
-            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
-            List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
+          val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+          //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "vocabulary", vocabulary.id,
+          //List(("name",vocabulary.name), ("description", vocabulary.description), ("created",dateFormat.format(new Date()))))}
 
           //Add to Events Table
           val option_user = users.findByIdentity(identity)
-          events.addObjectEvent(option_user, collection.id, collection.name, "create_collection")
+          events.addObjectEvent(option_user, vocabulary.id, vocabulary.name, "create_vocabulary")
 
           // redirect to collection page
-          current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Collection","added",collection.id.toString,collection.name)}
-          if (colParentColId != null && colParentColId.size>0) {
-            try {
-              collections.get(UUID(colParentColId(0))) match {
-                case Some(parentCollection) => {
-                  collections.addSubCollection(UUID(colParentColId(0)), collection.id)
-                  Redirect(routes.Collections.collection(UUID(colParentColId(0))))
-                }
-                case None => {
-                  Logger.error("Unable to add collection to parent ")
-                  BadRequest(views.html.notFound("Parent collection does not exist."))
-                }
-              }
-
-            } catch {
-              case e : Exception => {
-                InternalServerError("error with parent collection id " + colParentColId)
-              }
-            }
-          } else {
-            Redirect(routes.Collections.collection(collection.id))
+          current.plugin[AdminsNotifierPlugin].foreach {
+            _.sendAdminsNotification(Utils.baseUrl(request), "Collection", "added", vocabulary.id.toString, vocabulary.name)
           }
-	      }
+          BadRequest("not finished yet")
+        }
 	      case None => Redirect(routes.Collections.list()).flashing("error" -> "You are not authorized to create new collections.")
       }
   }
