@@ -38,6 +38,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val datasetsCount = datasets.count()
     val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.user.fold(false)(_.superAdminMode))
     val filesCount = files.count()
+    val filesBytes = files.bytes()
     val collectionsCount = collections.count()
     val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.user.fold(false)(_.superAdminMode))
     val spacesCount = spaces.count()
@@ -144,7 +145,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser, datasetcommentMap, decodedCollections.toList, spacesUser, true, followers, followedUsers.take(3),
        followedFiles.take(3), followedDatasets.take(3), followedCollections.take(3),followedSpaces.take(3), Some(true)))
       }
-      case _ => Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess,
+      case _ => Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, filesBytes, collectionsCount, collectionsCountAccess,
         spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
     }
   }
@@ -155,13 +156,14 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     val datasetsCount = datasets.count()
     val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.user.fold(false)(_.superAdminMode))
     val filesCount = files.count()
+    val filesBytes = files.bytes()
     val collectionsCount = collections.count()
     val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.user.fold(false)(_.superAdminMode))
     val spacesCount = spaces.count()
     val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.user.fold(false)(_.superAdminMode))
     val usersCount = users.count()
 
-    Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess,
+    Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, filesBytes, collectionsCount, collectionsCountAccess,
         spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
   }
 
