@@ -19,10 +19,10 @@ import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 
 @Singleton
-class Vocabularies @Inject()(vocabularies: VocabularyService, datasets: DatasetService, collections: CollectionService, previewsService: PreviewService,
+class Vocabularies @Inject()(vocabularies : VocabularyService, datasets: DatasetService, collections: CollectionService, previewsService: PreviewService,
                              spaceService: SpaceService, users: UserService, events: EventService) extends SecuredController {
 
-  def newVocabulary(space: Option[String]) = PermissionAction(Permission.CreateVocabulary) { implicit request =>
+  def newVocabulary(space: Option[String]) = PermissionAction(Permission.CreateCollection) { implicit request =>
     implicit val user = request.user
     val spacesList = user.get.spaceandrole.map(_.spaceId).flatMap(spaceService.get(_))
     var decodedSpaceList = new ListBuffer[models.ProjectSpace]()
@@ -36,31 +36,25 @@ class Vocabularies @Inject()(vocabularies: VocabularyService, datasets: DatasetS
     space match {
       case Some(spaceId) => {
         spaceService.get(UUID(spaceId)) match {
-          case Some(s) => Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, Some(spaceId)))
-          case None => Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
+          case Some(s) => Ok(views.html.newVocabulary(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, Some(spaceId)))
+          case None => Ok(views.html.newVocabulary(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
         }
       }
-      case None =>  Ok(views.html.newCollection(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
+      case None =>  Ok(views.html.newVocabulary(null, decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
     }
 
   }
 
-  def newCollectionWithParent(parentCollectionId: Option[String]) = PermissionAction(Permission.CreateCollection) { implicit request =>
+  def newCollectionWithParent(parentCollectionId: UUID) = PermissionAction(Permission.AddResourceToCollection, Some(ResourceRef(ResourceRef.collection, parentCollectionId))) { implicit request =>
     implicit val user = request.user
+    collections.get(parentCollectionId) match {
+      case Some(parentCollection) => {
 
-    parentCollectionId match {
-      case Some(currentParentCollectionId) =>{
-        collections.get(UUID(currentParentCollectionId)) match {
-          case Some(parentCollection) => {
-
-            Ok(views.html.newCollectionWithParent(null, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None,Some(currentParentCollectionId),Some(parentCollection.name)))
-          }
-          case None => Ok(toJson("newCollectionWithParent, no collection matches parentCollectionId"))
-        }
-
+        Ok(views.html.newCollectionWithParent(null, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None, Some(parentCollectionId.toString()), Some(parentCollection.name)))
       }
-      case None => Ok(toJson("newCollectionWithParent, no parentCollectionId provided"))
+      case None => Ok(toJson("newCollectionWithParent, no collection matches parentCollectionId"))
     }
+
   }
 
   /**
@@ -165,9 +159,9 @@ class Vocabularies @Inject()(vocabularies: VocabularyService, datasets: DatasetS
           }
         }
         if (date != "") {
-          collections.listUser(date, nextPage, limit, request.user, request.superAdmin, p)
+          collections.listUser(date, nextPage, limit, request.user, request.user.fold(false)(_.superAdminMode), p)
         } else {
-          collections.listUser(limit, request.user, request.superAdmin, p)
+          collections.listUser(limit, request.user, request.user.fold(false)(_.superAdminMode), p)
         }
       }
       case None => {
@@ -182,9 +176,9 @@ class Vocabularies @Inject()(vocabularies: VocabularyService, datasets: DatasetS
           }
           case None => {
             if (date != "") {
-              collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
+              collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode))
             } else {
-              collections.listAccess(limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
+              collections.listAccess(limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode))
             }
 
           }
@@ -196,11 +190,11 @@ class Vocabularies @Inject()(vocabularies: VocabularyService, datasets: DatasetS
     val prev = if (collectionList.nonEmpty && date != "") {
       val first = Formatters.iso8601(collectionList.head.created)
       val c = person match {
-        case Some(p) => collections.listUser(first, nextPage=false, 1, request.user, request.superAdmin, p)
+        case Some(p) => collections.listUser(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
             case Some(s) => collections.listSpace(first, nextPage = false, 1, s)
-            case None => collections.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
+            case None => collections.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode))
           }
         }
       }
@@ -217,11 +211,11 @@ class Vocabularies @Inject()(vocabularies: VocabularyService, datasets: DatasetS
     val next = if (collectionList.nonEmpty) {
       val last = Formatters.iso8601(collectionList.last.created)
       val ds = person match {
-        case Some(p) => collections.listUser(last, nextPage=true, 1, request.user, request.superAdmin, p)
+        case Some(p) => collections.listUser(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
             case Some(s) => collections.listSpace(last, nextPage = true, 1, s)
-            case None => collections.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)
+            case None => collections.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode))
           }
         }
       }
@@ -562,7 +556,7 @@ class Vocabularies @Inject()(vocabularies: VocabularyService, datasets: DatasetS
   /**
    * Show all users with access to a collection (identified by its id)
    */
-  def users(id: UUID) = PermissionAction(Permission.ViewCollection) { implicit request =>
+  def users(id: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, id))) { implicit request =>
     implicit val user = request.user
 
     collections.get(id) match {
@@ -614,7 +608,7 @@ class Vocabularies @Inject()(vocabularies: VocabularyService, datasets: DatasetS
 
   }
 
-  def previews(collection_id: UUID) = PermissionAction(Permission.EditCollection) { implicit request =>
+  def previews(collection_id: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, collection_id))) { implicit request =>
       collections.get(collection_id) match {
         case Some(collection) => {
           val previewsByCol = previewsService.findByCollectionId(collection_id)
@@ -648,10 +642,10 @@ class Vocabularies @Inject()(vocabularies: VocabularyService, datasets: DatasetS
           }
         }
         if (date != "") {
-          (collections.listUser(date, nextPage, limit, request.user, request.superAdmin, p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+          (collections.listUser(date, nextPage, limit, request.user, request.user.fold(false)(_.superAdminMode), p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
           //collections.listChildCollections(UUID(parentCollectionId))
         } else {
-          (collections.listUser(limit, request.user, request.superAdmin, p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+          (collections.listUser(limit, request.user, request.user.fold(false)(_.superAdminMode), p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
           //collections.listChildCollections(UUID(parentCollectionId))
         }
       }
@@ -669,9 +663,9 @@ class Vocabularies @Inject()(vocabularies: VocabularyService, datasets: DatasetS
           }
           case None => {
             if (date != "") {
-              (collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+              (collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode))).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
             } else {
-              (collections.listAccess(limit, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+              (collections.listAccess(limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode))).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
             }
 
           }
@@ -687,11 +681,11 @@ class Vocabularies @Inject()(vocabularies: VocabularyService, datasets: DatasetS
     val prev = if (collectionList.nonEmpty && date != "") {
       val first = Formatters.iso8601(collectionList.head.created)
       val c = person match {
-        case Some(p) => (collections.listUser(first, nextPage=false, 1, request.user, request.superAdmin, p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+        case Some(p) => (collections.listUser(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
         case None => {
           space match {
             case Some(s) => (collections.listSpace(first, nextPage = false, 1, s)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
-            case None => (collections.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+            case None => (collections.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode))).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
           }
         }
       }
@@ -708,11 +702,11 @@ class Vocabularies @Inject()(vocabularies: VocabularyService, datasets: DatasetS
     val next = if (collectionList.nonEmpty) {
       val last = Formatters.iso8601(collectionList.last.created)
       val ds = person match {
-        case Some(p) => (collections.listUser(last, nextPage=true, 1, request.user, request.superAdmin, p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+        case Some(p) => (collections.listUser(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
         case None => {
           space match {
             case Some(s) => (collections.listSpace(last, nextPage = true, 1, s)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
-            case None => (collections.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewCollection), request.user, request.superAdmin)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+            case None => (collections.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode))).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
           }
         }
       }
@@ -759,7 +753,7 @@ class Vocabularies @Inject()(vocabularies: VocabularyService, datasets: DatasetS
     Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title, owner, when, date))
   }
 
-   private def removeFromSpaceAllowed(collectionId : UUID, spaceId : UUID) : Boolean = {
+  private def removeFromSpaceAllowed(collectionId : UUID, spaceId : UUID) : Boolean = {
     return !(collections.hasParentInSpace(collectionId, spaceId))
   }
 
