@@ -44,22 +44,16 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
   }
 
-  def newCollectionWithParent(parentCollectionId: Option[String]) = PermissionAction(Permission.CreateCollection) { implicit request =>
+  def newCollectionWithParent(parentCollectionId: UUID) = PermissionAction(Permission.AddResourceToCollection, Some(ResourceRef(ResourceRef.collection, parentCollectionId))) { implicit request =>
     implicit val user = request.user
+    collections.get(parentCollectionId) match {
+      case Some(parentCollection) => {
 
-    parentCollectionId match {
-      case Some(currentParentCollectionId) =>{
-        collections.get(UUID(currentParentCollectionId)) match {
-          case Some(parentCollection) => {
-
-            Ok(views.html.newCollectionWithParent(null, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None,Some(currentParentCollectionId),Some(parentCollection.name)))
-          }
-          case None => Ok(toJson("newCollectionWithParent, no collection matches parentCollectionId"))
-        }
-
+        Ok(views.html.newCollectionWithParent(null, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None, Some(parentCollectionId.toString()), Some(parentCollection.name)))
       }
-      case None => Ok(toJson("newCollectionWithParent, no parentCollectionId provided"))
+      case None => Ok(toJson("newCollectionWithParent, no collection matches parentCollectionId"))
     }
+
   }
 
   /**
@@ -561,7 +555,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * Show all users with access to a collection (identified by its id)
    */
-  def users(id: UUID) = PermissionAction(Permission.ViewCollection) { implicit request =>
+  def users(id: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, id))) { implicit request =>
     implicit val user = request.user
 
     collections.get(id) match {
@@ -613,7 +607,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
   }
 
-  def previews(collection_id: UUID) = PermissionAction(Permission.EditCollection) { implicit request =>
+  def previews(collection_id: UUID) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, collection_id))) { implicit request =>
       collections.get(collection_id) match {
         case Some(collection) => {
           val previewsByCol = previewsService.findByCollectionId(collection_id)
@@ -758,7 +752,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title, owner, when, date))
   }
 
-   private def removeFromSpaceAllowed(collectionId : UUID, spaceId : UUID) : Boolean = {
+  private def removeFromSpaceAllowed(collectionId : UUID, spaceId : UUID) : Boolean = {
     return !(collections.hasParentInSpace(collectionId, spaceId))
   }
 

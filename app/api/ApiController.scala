@@ -43,6 +43,7 @@ trait ApiController extends Controller {
       userRequest.user match {
         case Some(u) if !u.active => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) if u.superAdminMode || Permission.checkPrivateServer(userRequest.user) => block(userRequest)
+        case None if Permission.checkPrivateServer(userRequest.user) => block(userRequest)
         case _ => Future.successful(Unauthorized("Not authorized"))
       }
     }
@@ -55,7 +56,7 @@ trait ApiController extends Controller {
       userRequest.user match {
         case Some(u) if !u.active => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) => block(userRequest)
-        case _ => Future.successful(Unauthorized("Not authorized"))
+        case None => Future.successful(Unauthorized("Not authorized"))
       }
     }
   }
@@ -79,6 +80,7 @@ trait ApiController extends Controller {
       userRequest.user match {
         case Some(u) if !u.active => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) if u.superAdminMode || Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
+        case None if Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
         case _ => Future.successful(Unauthorized("Not authorized"))
       }
     }

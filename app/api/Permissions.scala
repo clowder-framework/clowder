@@ -145,6 +145,7 @@ object Permission extends Enumeration {
     checkPermission(user, permission, Some(resourceRef))
   }
 
+
   def checkPermission(user: Option[User], permission: Permission, resourceRef: Option[ResourceRef] = None): Boolean = {
     (user, configuration(play.api.Play.current).getString("permissions").getOrElse("public"), resourceRef) match {
       case (Some(u), "public", Some(r)) => {
@@ -359,6 +360,10 @@ object Permission extends Enumeration {
         }
       }
 
+      case ResourceRef(ResourceRef.thumbnail, id) => {
+        true
+      }
+
       case ResourceRef(resType, id) => {
         Logger.error("Resource type not recognized " + resType)
         false
@@ -368,6 +373,7 @@ object Permission extends Enumeration {
 
   def getUserByIdentity(identity: User): Option[User] = users.findByIdentity(identity)
 
+  /** on a private server this will return true iff user logged in, on public server this will always be true */
   def checkPrivateServer(user: Option[User]): Boolean = {
     configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" || user.isDefined
   }

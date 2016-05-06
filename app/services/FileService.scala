@@ -17,6 +17,11 @@ trait FileService {
   def count(): Long
 
   /**
+    * The number of bytes stored
+    */
+  def bytes(): Long
+
+  /**
    * Save a file from an input stream.
    */
   def save(inputStream: InputStream, filename: String, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File]

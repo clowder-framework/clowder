@@ -74,8 +74,8 @@ class Files @Inject() (
         //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
         val previewsWithPreviewer = {
           val pvf = for (
-            p <- previewers; pv <- previewsFromDB;
-            if (!p.collection);
+            p <- previewers; pv <- previewsFromDB
+            if (!p.collection)
             if (!file.showPreviews.equals("None")) && (p.contentType.contains(pv.contentType))
           ) yield {
               val tabtitle: String = pv.title.getOrElse("")
@@ -85,8 +85,8 @@ class Files @Inject() (
             Map(file -> pvf)
           } else {
             val ff = for (
-              p <- previewers;
-              if (!p.collection);
+              p <- previewers
+              if (!p.collection)
               if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))
             ) yield {
               if (file.licenseData.isDownloadAllowed(user)) {
@@ -742,7 +742,7 @@ def uploadExtract() =
    *  Uses Polyglot service to convert file to a new format and download to user's computer.
    *  
    */                            
-  def downloadAsFormat(id: UUID, outputFormat: String) = PermissionAction(Permission.ViewFile, Some(new ResourceRef(ResourceRef.file, id))).async { implicit request =>
+  def downloadAsFormat(id: UUID, outputFormat: String) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
       current.plugin[PolyglotPlugin] match {
         case Some(plugin) => {
           if (UUID.isValid(id.stringify)) {
@@ -824,7 +824,7 @@ def uploadExtract() =
       }
   }
 
-  def thumbnail(id: UUID) = PermissionAction(Permission.ViewFile) { implicit request =>
+  def thumbnail(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.thumbnail, id))) { implicit request =>
     thumbnails.getBlob(id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
         request.headers.get(RANGE) match {
@@ -861,7 +861,7 @@ def uploadExtract() =
 	        }
       }
       case None => {
-        Logger.error("Error getting thumbnail" + id)
+        Logger.error("Error getting thumbnail " + id)
         NotFound
       }      
     }
@@ -997,10 +997,10 @@ def uploadExtract() =
         var nameOfFile = f.filename
         var flags = ""
         if (nameOfFile.toLowerCase().endsWith(".ptm")) {
-          var thirdSeparatorIndex = nameOfFile.indexOf("__")
+          val thirdSeparatorIndex = nameOfFile.indexOf("__")
           if (thirdSeparatorIndex >= 0) {
-            var firstSeparatorIndex = nameOfFile.indexOf("_")
-            var secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
+            val firstSeparatorIndex = nameOfFile.indexOf("_")
+            val secondSeparatorIndex = nameOfFile.indexOf("_", firstSeparatorIndex + 1)
             flags = flags + "+numberofIterations_" + nameOfFile.substring(0, firstSeparatorIndex) + "+heightFactor_" + nameOfFile.substring(firstSeparatorIndex + 1, secondSeparatorIndex) + "+ptm3dDetail_" + nameOfFile.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
             nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
           }
@@ -1094,7 +1094,7 @@ def uploadExtract() =
   }
 
 
-  def uploaddnd(dataset_id: UUID) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
+  def uploaddnd(dataset_id: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
     request.user match {
       case Some(identity) => {
         datasets.get(dataset_id) match {
@@ -1256,12 +1256,12 @@ def uploadExtract() =
     }
   }
 
-  def metadataSearch() = PermissionAction(Permission.ViewFile) { implicit request =>
+  def metadataSearch() = PermissionAction(Permission.ViewMetadata) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.fileMetadataSearch()) 
   }
 
-  def generalMetadataSearch()  = PermissionAction(Permission.ViewFile) { implicit request =>
+  def generalMetadataSearch()  = PermissionAction(Permission.ViewMetadata) { implicit request =>
     implicit val user = request.user
   	Ok(views.html.fileGeneralMetadataSearch()) 
   }
@@ -1269,7 +1269,7 @@ def uploadExtract() =
   /**
    * File by section.
    */
-  def fileBySection(section_id: UUID) = PermissionAction(Permission.ViewFile) {
+  def fileBySection(section_id: UUID) = PermissionAction(Permission.ViewSection, Some(ResourceRef(ResourceRef.section, section_id))) {
     implicit request =>
       sections.get(section_id) match {
         case Some(section) => {
