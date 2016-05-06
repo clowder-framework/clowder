@@ -299,7 +299,7 @@ class Vocabularies @Inject()(vocabularies : VocabularyService, datasets: Dataset
           else {
             val stringSpaces = colSpace(0).split(",").toList
             val colSpaces: List[UUID] = stringSpaces.map(aSpace => if (aSpace != "") UUID(aSpace) else None).filter(_ != None).asInstanceOf[List[UUID]]
-            vocabulary = Vocabulary(name = colName(0).toString, keys = colKeys(0).split(',').toList, description = colDesc(0).split(',').toList, created = new Date, author = Some(identity))
+            vocabulary = Vocabulary(name = colName(0).toString, keys = colKeys(0).split(',').toList, description = colDesc(0).split(',').toList, created = new Date, author = Some(identity),spaces = colSpaces)
           }
 
           Logger.debug("Saving vocabulary " + vocabulary.name)
