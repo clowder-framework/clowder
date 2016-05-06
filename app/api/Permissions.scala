@@ -360,6 +360,10 @@ object Permission extends Enumeration {
         }
       }
 
+      case ResourceRef(ResourceRef.thumbnail, id) => {
+        true
+      }
+
       case ResourceRef(resType, id) => {
         Logger.error("Resource type not recognized " + resType)
         false

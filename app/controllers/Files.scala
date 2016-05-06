@@ -824,7 +824,7 @@ def uploadExtract() =
       }
   }
 
-  def thumbnail(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+  def thumbnail(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.thumbnail, id))) { implicit request =>
     thumbnails.getBlob(id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
         request.headers.get(RANGE) match {
@@ -861,7 +861,7 @@ def uploadExtract() =
 	        }
       }
       case None => {
-        Logger.error("Error getting thumbnail" + id)
+        Logger.error("Error getting thumbnail " + id)
         NotFound
       }      
     }
