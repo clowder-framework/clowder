@@ -317,7 +317,7 @@ class Vocabularies @Inject()(vocabularies : VocabularyService, datasets: Dataset
           //index collection
           val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
           //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "vocabulary", vocabulary.id,
-          //List(("name",vocabulary.name), ("description", vocabulary.description), ("created",dateFormat.format(new Date()))))}
+          //List(("name",vocabulary.name), ("description", vocabulary.description), ("created",dateFormat.format(new Date())))}
 
           //Add to Events Table
           val option_user = users.findByIdentity(identity)
@@ -327,134 +327,24 @@ class Vocabularies @Inject()(vocabularies : VocabularyService, datasets: Dataset
           current.plugin[AdminsNotifierPlugin].foreach {
             _.sendAdminsNotification(Utils.baseUrl(request), "Collection", "added", vocabulary.id.toString, vocabulary.name)
           }
-          BadRequest("not finished yet")
+          Ok("not finished yet")
         }
 	      case None => Redirect(routes.Collections.list()).flashing("error" -> "You are not authorized to create new collections.")
       }
   }
 
   /**
-   * Collection.
+   * Vocabulary.
    */
-  def collection(id: UUID, limit: Int) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, id))) {
-    implicit request =>
-      Logger.debug(s"Showing collection $id")
-      implicit val user = request.user
+  def vocabulary(id: UUID) = PermissionAction(Permission.ViewVocabulary, Some(ResourceRef(ResourceRef.vocabulary, id))){implicit request =>
+    implicit val user = request.user
 
-      collections.get(id) match {
-        case Some(collection) => {
-          Logger.debug(s"Found collection $id")
-          // only show previewers that have a matching preview object associated with collection
-          Logger.debug("Num previewers " + Previewers.findCollectionPreviewers.size)
-
-          //Decode the encoded items
-          val dCollection = Utils.decodeCollectionElements(collection)
-
-          for (p <- Previewers.findCollectionPreviewers) Logger.debug("Previewer " + p)
-          val filteredPreviewers = for (
-            previewer <- Previewers.findCollectionPreviewers;
-            preview <- previewsService.findByCollectionId(id);
-            if (previewer.collection);
-            if (previewer.supportedPreviews.contains(preview.preview_type.get))
-          ) yield {
-            previewer
-          }
-          Logger.debug("Num previewers " + filteredPreviewers.size)
-          filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
-
-          //Decode the datasets so that their free text will display correctly in the view
-          val datasetsInside = datasets.listCollection(id.stringify)
-          val datasetIdsToUse = datasetsInside.slice(0, limit)
-          val decodedDatasetsInside = ListBuffer.empty[models.Dataset]
-          for (aDataset <- datasetIdsToUse) {
-            val dDataset = Utils.decodeDatasetElements(aDataset)
-            decodedDatasetsInside += dDataset
-          }
-
-          val commentMap = datasetsInside.map { dataset =>
-            var allComments = comments.findCommentsByDatasetId(dataset.id)
-            dataset.files.map { file =>
-              allComments ++= comments.findCommentsByFileId(file)
-              sections.findByFileId(file).map { section =>
-                allComments ++= comments.findCommentsBySectionId(section.id)
-              }
-            }
-            dataset.id -> allComments.size
-          }.toMap
-
-          val child_collections_ids = dCollection.child_collection_ids.slice(0, limit)
-          val decodedChildCollections = ListBuffer.empty[models.Collection]
-          for (child_collection_id <- child_collections_ids) {
-            collections.get(child_collection_id) match {
-              case Some(child_collection) => {
-                val decodedChild = Utils.decodeCollectionElements(child_collection)
-                decodedChildCollections += decodedChild
-              } case None => {
-                Logger.debug("No child collection found for " + child_collection_id)
-              }
-
-            }
-          }
-
-          val parent_collection_ids = dCollection.parent_collection_ids
-          val decodedParentCollections = ListBuffer.empty[models.Collection]
-          for (parent_collection_id <- parent_collection_ids){
-            collections.get(parent_collection_id) match {
-              case Some(parent_collection) => {
-                val decodedParent = Utils.decodeCollectionElements(parent_collection)
-                decodedParentCollections += decodedParent
-              } case None => {
-                Logger.debug("No parent collection found for" + parent_collection_id)
-              }
-
-            }
-          }
-
-          var collectionSpaces: List[ProjectSpace] = List.empty[ProjectSpace]
-          var collectionSpaces_canRemove : Map[ProjectSpace,Boolean] = Map.empty
-          collection.spaces.map{
-            sp=> spaceService.get(sp) match {
-              case Some(s) => {
-                collectionSpaces = s :: collectionSpaces
-                var removeFromSpace = removeFromSpaceAllowed(dCollection.id,s.id)
-                collectionSpaces_canRemove += (Utils.decodeSpaceElements(s) -> removeFromSpace)
-              }
-              case None => Logger.error(s"space with id $sp on collection $id doesn't exist.")
-            }
-          }
-
-          val prevd = -1
-          val nextd = if(datasetsInside.length > limit) {
-            1
-          } else {
-            -1
-          }
-          val prevcc = -1
-          val nextcc = if(dCollection.child_collection_ids.length > limit) {
-            1
-          } else {
-            -1
-          }
-
-          val decodedSpaces: List[ProjectSpace] = collectionSpaces.map{aSpace => Utils.decodeSpaceElements(aSpace)}
-
-          var decodedSpaces_canRemove : Map[ProjectSpace, Boolean] = Map.empty
-          for (collectionSpace <- collectionSpaces){
-            val decodedSpace = Utils.decodeSpaceElements(collectionSpace)
-            val removeFromSpace = removeFromSpaceAllowed(dCollection.id,collectionSpace.id)
-            decodedSpaces_canRemove = decodedSpaces_canRemove + (decodedSpace -> removeFromSpace)
-          }
-
-          Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList,
-            Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap,Some(collectionSpaces_canRemove),
-            prevd,nextd, prevcc, nextcc, limit))
-
-        }
-        case None => {
-          Logger.error("Error getting collection " + id)
-          BadRequest(views.html.notFound("Collection does not exist."))
-        }
+    vocabularies.get(id) match {
+      case Some(vocabulary)=> {
+        Ok("found vocabulary")
       }
+      case None=> BadRequest("No such vocabulary")
+    }
   }
 
   def getUpdatedDatasets(id: UUID, index: Int, limit: Int) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, id))) { implicit request =>

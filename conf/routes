@@ -526,6 +526,7 @@ POST           /api/datasets/:parentDatasetId/newFolder                         
 
 GET             /vocabularies/new                                                       @controllers.Vocabularies.newVocabulary(space : Option[String])
 POST            /vocabularies/submit                                                    @controllers.Vocabularies.submit()
+GET             /vocabularies/:id                                                       @controllers.Vocabularies.vocabulary(id : UUID)
 
 # ----------------------------------------------------------------------
 # PREVIEWS ENDPOINT

@@ -17,7 +17,8 @@ function createVocabulary() {
 
 	//Update the input we are adding to the form programmatically
 	var name = $('#name');
-    var keys = $('#name');
+    var keys = $('#keys');
+    console.log(keys)
     var desc = $('#description');
     var space = $('#spaceid').find(":selected").val();
     var spaceList = [];
@@ -33,7 +34,7 @@ function createVocabulary() {
     	error = true;
     }
     if (!keys.val() && isKeysRequired) {
-        $('#descerror').show();
+        $('#keyerror').show();
         error = true;
     }
     if (!desc.val() && isDescRequired) {
@@ -46,7 +47,9 @@ function createVocabulary() {
 
     var encName = htmlEncode(name.val());
 	var encDescription = htmlEncode(desc.val());
+    var encKeys = htmlEncode(keys.val());
 	$('#hiddenname').val(encName);
+    $('#hiddenkeys').val(encKeys)
     $('#hiddendescription').val(encDescription);
     $('#hiddenspace').val(spaceList);
 
