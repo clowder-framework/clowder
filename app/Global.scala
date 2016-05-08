@@ -3,6 +3,7 @@ import play.api.{GlobalSettings, Application}
 import play.api.Logger
 import play.filters.gzip.GzipFilter
 import play.libs.Akka
+import securesocial.core.SecureSocial
 import services.{UserService, DI, AppConfiguration}
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -67,6 +68,7 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
   }
 
   private lazy val injector = services.DI.injector
+  private lazy val users: UserService =  DI.injector.getInstance(classOf[UserService])
 
   /** Used for dynamic controller dispatcher **/
   override def getControllerInstance[A](clazz: Class[A]) = {
@@ -77,19 +79,20 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
     val sw = new StringWriter()
     val pw = new PrintWriter(sw)
     ex.printStackTrace(pw)
+    implicit val user = users.findByIdentity(SecureSocial.currentUser(request).get) //////
+
     Future(InternalServerError(
-      views.html.errorPage(request, sw.toString.replace("\n", "   "))
-    ))
+      views.html.errorPage(request, sw.toString.replace("\n", "   "))(user)))
   }
 
   override def onHandlerNotFound(request: RequestHeader) = {
-
+    implicit val user = users.findByIdentity(SecureSocial.currentUser(request).get)
     Future(NotFound(
-      views.html.errorPage(request, "Not found")
-    ))
+      views.html.errorPage(request, "Not found")(user)))
   }
 
   override def onBadRequest(request: RequestHeader, error: String) = {
-    Future(BadRequest(views.html.errorPage(request, error)))
+    implicit val user = users.findByIdentity(SecureSocial.currentUser(request).get)
+    Future(BadRequest(views.html.errorPage(request, error)(user)))
   }
 }
