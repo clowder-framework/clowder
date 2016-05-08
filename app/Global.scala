@@ -3,6 +3,7 @@ import play.api.{GlobalSettings, Application}
 import play.api.Logger
 import play.filters.gzip.GzipFilter
 import play.libs.Akka
+import securesocial.core.SecureSocial
 import services.{UserService, DI, AppConfiguration}
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -77,9 +78,13 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
     val sw = new StringWriter()
     val pw = new PrintWriter(sw)
     ex.printStackTrace(pw)
+    Logger.debug(SecureSocial.currentUser(request).get.getClass.toString)
+    val users: UserService =  DI.injector.getInstance(classOf[UserService])
+
+    implicit val user = users.findByIdentity(SecureSocial.currentUser(request).get)
+
     Future(InternalServerError(
-      views.html.errorPage(request, sw.toString.replace("\n", "   "))
-    ))
+      views.html.errorPage(request, sw.toString.replace("\n", "   "))(user)))
   }
 
   override def onHandlerNotFound(request: RequestHeader) = {
