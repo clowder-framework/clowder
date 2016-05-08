@@ -79,20 +79,30 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
     val sw = new StringWriter()
     val pw = new PrintWriter(sw)
     ex.printStackTrace(pw)
-    implicit val user = users.findByIdentity(SecureSocial.currentUser(request).get) //////
+    implicit val user = SecureSocial.currentUser(request) match{
+      case Some(identity) =>  users.findByIdentity(identity)
+      case None => None
+    }
+      users.findByIdentity(SecureSocial.currentUser(request).get)
 
     Future(InternalServerError(
       views.html.errorPage(request, sw.toString.replace("\n", "   "))(user)))
   }
 
   override def onHandlerNotFound(request: RequestHeader) = {
-    implicit val user = users.findByIdentity(SecureSocial.currentUser(request).get)
+    implicit val user = SecureSocial.currentUser(request) match{
+      case Some(identity) =>  users.findByIdentity(identity)
+      case None => None
+    }
     Future(NotFound(
       views.html.errorPage(request, "Not found")(user)))
   }
 
   override def onBadRequest(request: RequestHeader, error: String) = {
-    implicit val user = users.findByIdentity(SecureSocial.currentUser(request).get)
+    implicit val user = SecureSocial.currentUser(request) match{
+      case Some(identity) =>  users.findByIdentity(identity)
+      case None => None
+    }
     Future(BadRequest(views.html.errorPage(request, error)(user)))
   }
 }
