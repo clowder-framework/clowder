@@ -597,7 +597,8 @@ def uploadExtract() =
 	                            "name" -> toJson(nameOfFile),
 	                            "size" -> toJson(uploadedFile.ref.file.length()),
 	                            "url" -> toJson(routes.Files.file(f.id).absoluteURL(false)),
-	                            "deleteUrl" -> toJson(api.routes.Files.removeFile(f.id).absoluteURL(false)),
+	                            "deleteUrl" -> toJson(api.routes.Files.removeFile(f.id).absoluteURL(
+                                play.Play.application().configuration().getBoolean("application.secure", true))),
 	                            "deleteType" -> toJson("POST")
 	                        )
 	                    )
