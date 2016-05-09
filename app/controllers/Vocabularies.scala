@@ -289,7 +289,7 @@ class Vocabularies @Inject()(vocabularies : VocabularyService, datasets: Dataset
               decodedSpaceList += Utils.decodeSpaceElements(aSpace)
             }
             //This case shouldn't happen as it is validated on the client.
-            BadRequest(views.html.newCollection("Name, Description, or Space was missing during collection creation.", decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
+            BadRequest(views.html.newVocabulary("Name, Description, or Space was missing during vocabulary creation.", decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
           }
 
           var vocabulary: Vocabulary = null
