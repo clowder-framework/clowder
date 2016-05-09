@@ -590,15 +590,15 @@ def uploadExtract() =
 	            
 	            //Correctly set the updated URLs and data that is needed for the interface to correctly 
 	            //update the display after a successful upload.
+              val https = controllers.Utils.https(request)
 	            val retMap = Map("files" ->
 	                Seq(
 	                    toJson(
 	                        Map(
 	                            "name" -> toJson(nameOfFile),
 	                            "size" -> toJson(uploadedFile.ref.file.length()),
-	                            "url" -> toJson(routes.Files.file(f.id).absoluteURL(false)),
-	                            "deleteUrl" -> toJson(api.routes.Files.removeFile(f.id).absoluteURL(
-                                play.Play.application().configuration().getBoolean("application.secure", true))),
+	                            "url" -> toJson(routes.Files.file(f.id).absoluteURL(https)),
+	                            "deleteUrl" -> toJson(api.routes.Files.removeFile(f.id).absoluteURL(https)),
 	                            "deleteType" -> toJson("POST")
 	                        )
 	                    )
