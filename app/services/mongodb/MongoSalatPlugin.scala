@@ -364,6 +364,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //Update all object_name & source_name in events
     updateMongo("update-events-name", updateEventObjectName)
+
+    updateMongo("update-user-spaces", removeDeletedSpacesFromUser)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1018,8 +1020,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   private def addRootMapToCollections() {
     collection("collections").foreach{ c =>
       val parents = c.getAsOrElse[MongoDBList]("parent_collection_ids", MongoDBList.empty)
-
-
       val spaces = c.getAsOrElse[MongoDBList]("spaces", MongoDBList.empty)
       val parentCollections = collection("collections").find(MongoDBObject("_id" -> MongoDBObject("$in" -> parents)))
       var parentSpaces = MongoDBList.empty
@@ -1074,6 +1074,25 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           }
           case _ => {}
         }
+      }
+    }
+  }
+
+  private def removeDeletedSpacesFromUser() {
+    collection("social.users").foreach{ user =>
+      val roles = user.getAsOrElse[MongoDBList]("spaceandrole", MongoDBList.empty)
+      val newRoles = MongoDBList.empty
+      roles.foreach{ role =>
+        val resp = collection("spaces.projects").find(MongoDBObject("_id" -> role.asInstanceOf[BasicDBObject].get("spaceId")))
+        if(resp.size > 0) {
+          newRoles += role
+        }
+      }
+      user.put("spaceandrole", newRoles)
+      try{
+        collection("social.users").save(user, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update spaces for user with id:" + user.getAsOrElse("_id", new ObjectId()).toString())
       }
     }
   }
