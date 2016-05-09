@@ -518,8 +518,8 @@
             });
 
             request.done(function (response, textStatus, jqXHR) {
-                $("#moreevent").append(response);
                 eventCount = eventCount + 1;
+                $("#moreevent").append(response);
             });
 
             request.fail(function (jqXHR, textStatus, errorThrown){
