@@ -1,4 +1,4 @@
-@(datasetsList: List[Dataset], space: String)(implicit user: Option[models.User])
+@(datasetsList: List[Dataset], space: String, userSelections: List[String])(implicit user: Option[models.User])
 
 @import api.Permission
 
@@ -17,8 +17,11 @@
     <div class="col-md-12">
         <div id="masonry-datasets">
         @datasetsList.map { dataset =>
-          @datasets.tile(dataset, Some(space), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space)))
-
+            @if(userSelections.indexOf(dataset.id.toString()) != -1) {
+                @datasets.tile(dataset, Some(space), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space)), true)
+            } else {
+                @datasets.tile(dataset, Some(space), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space)), false)
+            }
         }
         </div>
     </div>

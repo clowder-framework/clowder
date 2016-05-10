@@ -1,4 +1,4 @@
-@(datasets: List[models.Dataset], space: String)(implicit user: Option[models.User])
+@(datasets: List[models.Dataset], space: String, userSelections: List[String])(implicit user: Option[models.User])
 
 @import api.Permission
 <h3>Datasets</h3>
@@ -9,5 +9,5 @@
         <p> There are no datasets associated with this space. </p>
     }
 } else {
-    @spaces.datasetsGrid(datasets, space)
+    @spaces.datasetsGrid(datasets, space, userSelections)
 }

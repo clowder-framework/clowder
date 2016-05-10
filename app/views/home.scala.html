@@ -1,6 +1,7 @@
 @(displayedName: String,  newsfeed: List[models.Event], profile:User, datasetsList: List[Dataset],  dscomments: Map[UUID, Int], collectionsList:List[Collection], spacesList: List[ProjectSpace],
-         deletePermission: Boolean,  followers: List[(UUID, String, String, String)], followedUsers: List[(UUID, String, String, String)], followedFiles: List[(UUID, String, String)],
-        followedDatasets: List[(UUID, String, String)], followedCollections: List[(UUID, String, String)], followedSpaces: List[(UUID, String, String)], ownProfile: Option[Boolean])(implicit user: Option[models.User])
+        deletePermission: Boolean,  followers: List[(UUID, String, String, String)], followedUsers: List[(UUID, String, String, String)], followedFiles: List[(UUID, String, String)],
+        followedDatasets: List[(UUID, String, String)], followedCollections: List[(UUID, String, String)],
+        followedSpaces: List[(UUID, String, String)], ownProfile: Option[Boolean], userSelections: List[String])(implicit user: Option[models.User])
 
 
 @main(displayedName) {
@@ -34,10 +35,13 @@
             </div>
             <div class="row" id="masonry-datasets">
                 @datasetsList.map { dataset =>
-                    @datasets.tile(dataset, None, dscomments, "col-lg-6 col-md-6 col-sm-6", false, false, routes.Application.index())
+                    @if(userSelections.indexOf(dataset.id.toString()) != -1) {
+                        @datasets.tile(dataset, None, dscomments, "col-lg-6 col-md-6 col-sm-6", false, false, routes.Application.index(), true)
+                    } else {
+                        @datasets.tile(dataset, None, dscomments, "col-lg-6 col-md-6 col-sm-6", false, false, routes.Application.index(), false)
+                    }
                 }
-                </div>
-
+            </div>
             @if(datasetsList.size < 1) {
                 <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
                     <div>This area will show all datasets you've created.</div>
@@ -529,6 +533,7 @@
         }
     </script>
     <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/select.js")" type="text/javascript"></script>
     @*******
     *if(user.isDefined) {
     *    @carousel(files)

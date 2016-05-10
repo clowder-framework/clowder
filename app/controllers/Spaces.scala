@@ -3,10 +3,11 @@ package controllers
 import java.net.URL
 import java.util.{Calendar, Date}
 import javax.inject.Inject
+
 import api.Permission
 import api.Permission._
 import models._
-import play.api.{Play, Logger}
+import play.api.{Logger, Play}
 import play.api.data.Forms._
 import play.api.data.{Form, Forms}
 import play.api.libs.json.Json
@@ -15,7 +16,9 @@ import securesocial.core.providers.{Token, UsernamePasswordProvider}
 import org.joda.time.DateTime
 import play.api.i18n.Messages
 import services.AppConfiguration
-import util.{Mail, Formatters}
+import util.{Formatters, Mail}
+
+import scala.collection.immutable.List
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 /**
@@ -38,7 +41,7 @@ case class spaceInviteData(
   message: Option[String])
 
 class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventService, curationService: CurationService,
-  extractors: ExtractorService) extends SecuredController {
+  extractors: ExtractorService, selections: SelectionService) extends SecuredController {
 
   /**
    * New/Edit project space form bindings.
@@ -177,7 +180,13 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 	        }
 	        //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace
 
-	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, userRoleMap))
+          Logger.debug("User selections" + user)
+          val userSelections: List[String] =
+            if(user.isDefined) selections.get(user.get.identityId.userId).map(_.id.stringify)
+            else List.empty[String]
+          Logger.debug("User selection " + userSelections)
+
+	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, userRoleMap, userSelections))
       }
       case None => BadRequest(views.html.notFound("Space does not exist."))
     }

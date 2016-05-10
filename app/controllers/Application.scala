@@ -7,9 +7,10 @@ import api.Permission._
 import play.api.{Logger, Routes}
 import play.api.mvc.Action
 import services._
-import models.{UUID, User, Event}
+import models.{Event, UUID, User}
 import play.api.Logger
 
+import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -18,7 +19,7 @@ import scala.collection.mutable.ListBuffer
 @Singleton
 class Application @Inject() (files: FileService, collections: CollectionService, datasets: DatasetService,
                              spaces: SpaceService, events: EventService, comments: CommentService,
-                             sections: SectionService, users: UserService) extends SecuredController {
+                             sections: SectionService, users: UserService, selections: SelectionService) extends SecuredController {
   /**
    * Redirect any url's that have a trailing /
    *
@@ -142,8 +143,13 @@ class Application @Inject() (files: FileService, collections: CollectionService,
             }
           }
         }
+        Logger.debug("User selections" + user)
+        val userSelections: List[String] =
+          if(user.isDefined) selections.get(user.get.identityId.userId).map(_.id.stringify)
+          else List.empty[String]
+        Logger.debug("User selection " + userSelections)
         Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser, datasetcommentMap, decodedCollections.toList, spacesUser, true, followers, followedUsers.take(3),
-       followedFiles.take(3), followedDatasets.take(3), followedCollections.take(3),followedSpaces.take(3), Some(true)))
+       followedFiles.take(3), followedDatasets.take(3), followedCollections.take(3), followedSpaces.take(3), Some(true), userSelections))
       }
       case _ => Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, filesBytes, collectionsCount, collectionsCountAccess,
         spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))

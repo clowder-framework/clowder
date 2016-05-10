@@ -160,8 +160,14 @@ class Datasets @Inject()(
             Some(mode)
           }
 
+        Logger.debug("User selections" + user)
+        val userSelections: List[String] =
+          if(user.isDefined) selections.get(user.get.identityId.userId).map(_.id.stringify)
+          else List.empty[String]
+        Logger.debug("User selection " + userSelections)
+
         //Pass the viewMode into the view
-        Ok(views.html.users.followingDatasets(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, None, title, None))
+        Ok(views.html.users.followingDatasets(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, None, title, None, userSelections))
       }
       case None => InternalServerError("No User found")
     }

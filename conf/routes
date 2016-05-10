@@ -617,6 +617,13 @@ DELETE         /api/comment/:id/removeComment                                   
 POST           /api/comment/:id/editComment                                             @api.Comments.editComment(id: UUID)
 
 # ----------------------------------------------------------------------
+# SELECTIONS API
+# ----------------------------------------------------------------------
+GET            /selected                                                                @controllers.Selected.get
+POST           /api/selected                                                            @api.Selected.add
+POST           /api/selected/remove                                                     @api.Selected.remove
+
+# ----------------------------------------------------------------------
 # RELATIONS API
 # ----------------------------------------------------------------------
 GET            /api/relations                                                           @api.Relations.list()

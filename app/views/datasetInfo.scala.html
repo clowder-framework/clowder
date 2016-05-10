@@ -2,13 +2,6 @@
 
 <div id="dataset_@d.id" class="draggable ui-widget-content">
 	<a href="@(routes.Datasets.dataset(d.id))">@d.name</a>
-		@d.files.map { f =>
-		  @f.previews.map { p =>
-			@if(p.contentType.equals("image/jpeg")){
-			<img src="@api.routes.Previews.download(p.id)" class="img-polaroid" height="100px"></img>
-			}
-		  }
-		}
 	<div class="removeButtonWrapper">
 		<button id="deselect_@d.id">x</button>
 	</div>

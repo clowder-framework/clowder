@@ -17,7 +17,7 @@ import models.UUID
  */
 class Selected @Inject()(selections: SelectionService) extends Controller with ApiController {
 
-  def add() = SecuredAction(authorization = WithPermission(Permission.AddSelection))  { implicit request =>
+  def add() = AuthenticatedAction(parse.json) { implicit request =>
     Logger.debug("Requesting Selected.add" + request.body)
     request.body.\("dataset").asOpt[String] match {
 	    case Some(dataset) => {
@@ -36,7 +36,7 @@ class Selected @Inject()(selections: SelectionService) extends Controller with A
     }
   }
   
-  def remove() = SecuredAction(authorization = WithPermission(Permission.RemoveSelection))  { implicit request =>
+  def remove() = AuthenticatedAction(parse.json) { implicit request =>
     Logger.debug("Requesting Selected.remove" + request.body)
     request.body.\("dataset").asOpt[String] match {
 	    case Some(dataset) => {
