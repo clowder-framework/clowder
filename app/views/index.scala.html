@@ -1,4 +1,4 @@
-@(files: List[models.File], datasetsCount: Long, datasetsCountAccess: Long, filesCount: Long,
+@(files: List[models.File], datasetsCount: Long, datasetsCountAccess: Long, filesCount: Long, filesBytes: Long,
         collectionsCount: Long, collectionsCountAccess: Long, spacesCount: Long, spacesCountAccess: Long, usersCount: Long,
         displayedName: String, welcomeMessage: String)(implicit user: Option[models.User])
 
@@ -29,13 +29,15 @@
                       <li class="list-group-item">
                           Files <span class="badge pull-right">@filesCount</span>
                       </li>
-                      <li class="list-group-item">
+                      <li class="list-group-item" title="Total number of raw bytes stored.">
+                          Bytes <span class="badge pull-right">@_root_.util.FileUtils.humanReadableByteCount(filesBytes)</span>
+                      </li>
+                      <li class="list-group-item" title="Total number users signed up for this server.">
                           @if(user.isDefined) {
                               <a href="@routes.Users.getUsers()"> Users <span class="badge pull-right">@usersCount</span></a>
                           }else {
                              Users <span class="badge pull-right">@usersCount</span>
                           }
-
                       </li>
                   </ul>
               </div>
