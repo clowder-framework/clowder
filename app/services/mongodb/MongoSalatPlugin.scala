@@ -366,6 +366,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("update-events-name", updateEventObjectName)
 
     updateMongo("update-user-spaces", removeDeletedSpacesFromUser)
+
+    updateMongo("update-counts-spaces", updateCountsInSpaces)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1094,6 +1096,22 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       } catch {
         case e: BSONException => Logger.error("Unable to update spaces for user with id:" + user.getAsOrElse("_id", new ObjectId()).toString())
       }
+    }
+  }
+
+  private def updateCountsInSpaces(){
+    collection("spaces.projects").foreach{ space =>
+      val spaceId = space.getAsOrElse("_id", new ObjectId()).toString()
+      val collections = collection("collections").find(MongoDBObject("root_spaces" -> MongoDBObject("$in" -> MongoDBList(new ObjectId(spaceId)))))
+      val datasets = collection("datasets").find(MongoDBObject("spaces" -> MongoDBObject("$in" -> MongoDBList(new ObjectId(spaceId)))))
+      space.put("datasetCount", datasets.length)
+      space.put("collectionCount", collections.length)
+      try{
+        collection("spaces.projects").save(space, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update the counts for space with id: " + spaceId)
+      }
+
     }
   }
 }
