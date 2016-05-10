@@ -488,7 +488,7 @@ class MongoDBCollectionService @Inject() (
     spaceService.decrementCollectionCounter(collectionId, spaceId, 1)
   }
 
-  private def syncUpRootSpaces(collectionId: UUID, initialParents: List[UUID]): Unit ={
+  def syncUpRootSpaces(collectionId: UUID, initialParents: List[UUID]): Unit ={
     get(collectionId) match {
       case Some(collection) => {
         val parentSpaces = ListBuffer.empty[UUID]
@@ -500,8 +500,9 @@ class MongoDBCollectionService @Inject() (
         }
         collection.spaces.foreach { space =>
           if(!(parentSpaces contains space)) {
-            if(!(initialParents contains space))
-            addToRootSpaces(collection.id, space)
+            if(!(initialParents contains space)) {
+              addToRootSpaces(collection.id, space)
+            }
           } else {
             if(collection.root_spaces contains space) {
               removeFromRootSpaces(collection.id, space)
