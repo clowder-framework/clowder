@@ -347,7 +347,8 @@ def extract(host, port, key, file, wait):
 	metadata = requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/metadata?key=' + key).json()
 	metadata["technicalmetadata"] = requests.get('http://' + host + ':' + port + '/api/files/' + file_id + '/technicalmetadatajson?key=' + key).json()
 	metadata = json.dumps(metadata)
-
+    delete_status = requests.delete('http://' + host + ':' + port + '/api/files/' + file_id + key).json()
+    
 	return metadata
 
 def timeToString(t):
