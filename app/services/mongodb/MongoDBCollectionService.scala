@@ -488,7 +488,7 @@ class MongoDBCollectionService @Inject() (
     spaceService.decrementCollectionCounter(collectionId, spaceId, 1)
   }
 
-  private def syncUpRootSpaces(collectionId: UUID): Unit ={
+  private def syncUpRootSpaces(collectionId: UUID, initialParents: List[UUID]): Unit ={
     get(collectionId) match {
       case Some(collection) => {
         val parentSpaces = ListBuffer.empty[UUID]
@@ -500,6 +500,7 @@ class MongoDBCollectionService @Inject() (
         }
         collection.spaces.foreach { space =>
           if(!(parentSpaces contains space)) {
+            if(!(initialParents contains space))
             addToRootSpaces(collection.id, space)
           } else {
             if(collection.root_spaces contains space) {
@@ -755,7 +756,7 @@ class MongoDBCollectionService @Inject() (
               //remove collection from the list of parent collection for sub collection
               Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)), $pull("parent_collection_ids" -> Some(new ObjectId(collectionId.stringify))), false, false, WriteConcern.Safe)
               //Check if any of the remaining spaces come from a parent or not. If not, add it to the root_spaces
-              syncUpRootSpaces(sub_collection.id)
+              syncUpRootSpaces(sub_collection.id, sub_collection.spaces)
 
               Logger.info("Removing subcollection from collection completed")
             }
@@ -797,7 +798,7 @@ class MongoDBCollectionService @Inject() (
                   }
                 }
               }
-              syncUpRootSpaces(sub_collection.id)
+              syncUpRootSpaces(sub_collection.id, sub_collection.spaces)
               index(collection.id)
               Collection.findOneById(new ObjectId(subCollectionId.stringify)) match {
                 case Some(sub_collection) => {
