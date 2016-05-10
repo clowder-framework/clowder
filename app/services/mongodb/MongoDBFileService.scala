@@ -63,6 +63,15 @@ class MongoDBFileService @Inject() (
     FileDAO.count(MongoDBObject())
   }
 
+  def bytes(): Long = {
+    val results = FileDAO.dao.collection.aggregate(MongoDBObject("$group" ->
+      MongoDBObject("_id" -> "size", "total" -> MongoDBObject("$sum" -> "$length"))))
+    results.results.find(x => x.containsField("total")) match {
+      case Some(x) => x.getAsOrElse[Long]("total", 0L)
+      case None => 0L
+    }
+  }
+
   def save(file: File): Unit = {
     FileDAO.save(file)
   }

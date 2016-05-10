@@ -13,7 +13,7 @@ import java.util.Date
   */
 class Folders @Inject()(datasets: DatasetService, folders: FolderService, events: EventService) extends SecuredController{
 
-  def addFiles(id: UUID, folderId: String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def addFiles(id: UUID, folderId: String) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {

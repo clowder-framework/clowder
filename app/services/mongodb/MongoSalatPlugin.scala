@@ -359,8 +359,13 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     updateMongo("update-collection-counter-in-space", fixCollectionCounterInSpaces)
 
+    // rename admin to serverAdmin to make clear what type of admin they are
+    updateMongo("rename-admin-serverAdmin", renameAdminServerAdmin)
+
     //Update all object_name & source_name in events
     updateMongo("update-events-name", updateEventObjectName)
+
+    updateMongo("update-user-spaces", removeDeletedSpacesFromUser)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1015,8 +1020,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   private def addRootMapToCollections() {
     collection("collections").foreach{ c =>
       val parents = c.getAsOrElse[MongoDBList]("parent_collection_ids", MongoDBList.empty)
-
-
       val spaces = c.getAsOrElse[MongoDBList]("spaces", MongoDBList.empty)
       val parentCollections = collection("collections").find(MongoDBObject("_id" -> MongoDBObject("$in" -> parents)))
       var parentSpaces = MongoDBList.empty
@@ -1055,6 +1058,12 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
+  private def renameAdminServerAdmin() {
+    val q = MongoDBObject()
+    val o = MongoDBObject("$rename" -> MongoDBObject("admin" -> "serverAdmin"))
+    collection("social.users").update(q, o, multi=true, concern=WriteConcern.Safe)
+  }
+
   private def updateEventObjectName(): Unit = {
     for (coll <- List[String]("collections", "spaces.projects", "datasets", "uploads.files", "curationObjects")){
       collection(coll).foreach { ds =>
@@ -1069,4 +1078,22 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
+  private def removeDeletedSpacesFromUser() {
+    collection("social.users").foreach{ user =>
+      val roles = user.getAsOrElse[MongoDBList]("spaceandrole", MongoDBList.empty)
+      val newRoles = MongoDBList.empty
+      roles.foreach{ role =>
+        val resp = collection("spaces.projects").find(MongoDBObject("_id" -> role.asInstanceOf[BasicDBObject].get("spaceId")))
+        if(resp.size > 0) {
+          newRoles += role
+        }
+      }
+      user.put("spaceandrole", newRoles)
+      try{
+        collection("social.users").save(user, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update spaces for user with id:" + user.getAsOrElse("_id", new ObjectId()).toString())
+      }
+    }
+  }
 }

@@ -237,20 +237,28 @@ class MongoDBSpaceService @Inject() (
   def update(space: ProjectSpace): Unit = {
     // Although we current don't use this function to update space's name, this part is added for consistency
     get(space.id) match {
-      case Some(s) if space.name != s.name => {
-        events.updateObjectName(space.id, space.name)
+      case Some(s) => {
+        if (space.name != s.name) {
+          events.updateObjectName(space.id, space.name)
+        }
       }
+      case None =>
     }
     ProjectSpaceDAO.save(space)
   }
 
   def delete(id: UUID): Unit = {
-    // only curation objects in this space are removed, since dataset & collection doesn't need to belong to a space.
+    // only curation objects in this space are removed, since dataset & collection don't need to belong to a space.
     get(id) match {
       case Some(s) => {
         s.curationObjects.map(c => curations.remove(c))
         for(follower <- s.followers) {
           users.unfollowResource(follower, ResourceRef(ResourceRef.space, id))
+        }
+        //Remove all users from the space.
+        val spaceUsers = getUsersInSpace(id)
+        for(usr <- spaceUsers){
+          removeUser(usr.id, id)
         }
       }
 
@@ -475,7 +483,7 @@ class MongoDBSpaceService @Inject() (
    *
    */
   def getUsersInSpace(spaceId: UUID): List[User] = {
-      var retList = users.listUsersInSpace(spaceId)
+      val retList = users.listUsersInSpace(spaceId)
       retList
   }
 
@@ -486,7 +494,7 @@ class MongoDBSpaceService @Inject() (
    *
    */
   def getRoleForUserInSpace(spaceId: UUID, userId: UUID): Option[Role] = {
-      var retRole = users.getUserRoleInSpace(userId, spaceId)
+      val retRole = users.getUserRoleInSpace(userId, spaceId)
       retRole
   }
 

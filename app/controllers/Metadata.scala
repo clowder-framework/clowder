@@ -50,7 +50,7 @@ class Metadata @Inject() (
     }
   }
 
-  def search() = PermissionAction(Permission.ViewDataset) { implicit request =>
+  def search() = PermissionAction(Permission.ViewMetadata) { implicit request =>
     implicit val user = request.user
     Ok(views.html.metadatald.search())
   }
