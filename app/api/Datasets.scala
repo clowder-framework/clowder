@@ -1946,12 +1946,12 @@ class  Datasets @Inject()(
         "None"
       }
     }
-    val spaceIds = dataset.spaces
+
     val spaceNames = for (
-      spaceId <- spaceIds;
-      if (!spaces.get(spaceId).get.equals(None))
+      spaceId <- dataset.spaces;
+      space <- spaces.get(spaceId)
     ) yield {
-      spaces.get(spaceId).get.name
+      space.name
     }
 
     val licenseInfo = Json.obj("licenseText"->dataset.licenseData.m_licenseText,"rightsHolder"->rightsHolder)
