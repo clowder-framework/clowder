@@ -34,8 +34,8 @@
 		<!-- left column -->
 		<div class="col-md-8">
 			<div class="row">
-				<div class="col-xs-12">
-					<h1 id ="collectiontitle">@Html(collection.name)</h1>
+				<div class="col-xs-12" id="coll-title">
+					<h1 id ="collectiontitle" class="inline">@Html(collection.name)</h1>
 					@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
 						<h3 id="h-edit-title" class="hiddencomplete">
 							<a id="edit-title" href="javascript:updateTitle()" edit="Click to edit title">
@@ -51,7 +51,7 @@
 						<li>Created by <a href= "@routes.Profile.viewProfile(collection.author.email)"> @collection.author.fullName </a></li>
 						<li>Created on @collection.created.format("MMM dd, yyyy")</li>
 					</ul>
-					<div id="aboutdesc"><p id="collection_desc"  class="inline">@Html(collection.description)</p>
+					<div id="aboutdesc" class="col-xs-12 box-white-space"><p id="collection_desc"  class="inline">@if(collection.description.length > 0) { @Html(collection.description)} else {Add a description}</p>
 						@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
 							<a class="hiddencomplete" id="edit-description" href="javascript:updateDescription()" title ="Click to edit description">
 								<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
@@ -145,7 +145,7 @@
 						<div class="col-xs-4 valign-link">
 							@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
 								<a id="create_childcollection"
-								href="@routes.Collections.newCollectionWithParent(Some(collection.id.toString()))"
+								href="@routes.Collections.newCollectionWithParent(collection.id)"
 								class="btn btn-link pull-right" title="Create Child Collection">
 									<span class="glyphicon glyphicon-ok"></span> Create Child Collection</a>
 							}
@@ -259,7 +259,9 @@
 		$(".edit_desc").append('<br/>');
 		$(".edit_desc").append('<button id = "update_desc" class = "btn btn-sm btn-primary" onclick = "saveDescription()"> <span class="glyphicon glyphicon-send"></span>  Save </button>');
 		$(".edit_desc").append('<button id = "cancel_desc" class = "btn btn-default btn-sm edit-tab" onclick = "cancelDescription()"> <span class="glyphicon glyphicon-remove"></span>  Cancel </button>');
-		$('#desc_input').val(cur_description.replace(new RegExp("<br>", "g"), "\n"));
+		if(cur_description.indexOf("Add a description") != 0) {
+			$('#desc_input').val(cur_description.replace(new RegExp("<br>", "g"), "\n"));
+		}
 		$('#collection_desc').text("");
 		$('#edit-description').css("display", "none");
 		$('#edit-description').addClass("hiddencomplete");
@@ -283,6 +285,7 @@
 			$('#edit-description').removeClass("inline");
 			$('#collection_desc').css("display", "inline");
 			$('#collection_desc').mouseleave();
+			notify("Collection description updated successfully", "success", false, 2000);
 		});
 
 		request.fail(function(jqXHR, textStatus, errorThrown) {
