@@ -7,7 +7,7 @@
             <h1>Metadata for dataset <a href="@routes.Datasets.dataset(dataset.id)">@Html(dataset.name)</a></h1>
         </div>
         <div class="col-md-2">
-            <a href="@api.routes.Datasets.getMetadataJsonLD(dataset.id)" class="pull-right" title="JSON-LD">
+            <a href="@api.routes.Datasets.getMetadataJsonLD(dataset.id)" class="pull-right" title="JSON-LD" target="_blank">
                 <img src="@routes.Assets.at("images/json-ld.png")"/>
             </a>
         </div>

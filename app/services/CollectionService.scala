@@ -80,6 +80,7 @@ trait CollectionService {
    */
   def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[Collection]
 
+  def updateAuthorFullName(userId: UUID, fullName: String)
   /**
    * Get collection.
    */
@@ -192,5 +193,11 @@ trait CollectionService {
 
   def removeFromRootSpaces(collectionId: UUID, spaceId: UUID)
 
+  def syncUpRootSpaces(collectionId: UUID, initialParents: List[UUID])
+
+  /**
+    * Index collection, if no id provided, index all collections.
+    */
+  def index(id: Option[UUID])
 
 }

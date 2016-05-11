@@ -3,6 +3,10 @@
 function clearFields() {
     $('#name').val("");
     $('#description').val("");
+    $('.creators .creator-delete a').click();
+    $('.creators .control-group input').each(function (index) {
+        $(this).val("");
+    });
 }
 
 //Call on Create button click. Move to create a curation object as specified after validating input fields
@@ -36,7 +40,17 @@ function createCuration() {
         $('#spaceerror').show();
         error = true;
     }
+    var creators = [];
+    $('.creators .control-group input').each(function (index) {
+        if($(this).val().trim() != "") {
+            creators.push($(this).val().trim());
+        }
+    });
 
+    if(creators.length == 0) {
+        $('#creatorerror').show();
+        error = true
+    }
 
     if (error) {
         return false;
@@ -46,6 +60,7 @@ function createCuration() {
     var encDescription = htmlEncode(desc.val());
     $('#hiddenname').val(encName);
     $('#hiddendescription').val(encDescription);
+    $('#hiddencreators').val(creators);
 
     document.getElementById('curationcreate').setAttribute('action', 'spaces/'+spaceId +'/submit');
 
@@ -90,7 +105,17 @@ function updateCuration(id) {
         $('#spaceerror').show();
         error = true;
     }
+    var creators = [];
+    $('.creators .control-group input').each(function (index) {
+        if($(this).val().trim() != "") {
+            creators.push($(this).val().trim());
+        }
+    });
 
+    if(creators.length == 0) {
+        $('#creatorerror').show();
+        error = true
+    }
 
     if (error) {
         return false;
@@ -100,6 +125,7 @@ function updateCuration(id) {
     var encDescription = htmlEncode(desc.val());
     $('#hiddenname').val(encName);
     $('#hiddendescription').val(encDescription);
+    $('#hiddencreators').val(creators);
     //document.getElementById('curationcreate').removeAttribute('action');
     document.getElementById('curationcreate').setAttribute('action', 'spaces/'+spaceId+'/update');
 

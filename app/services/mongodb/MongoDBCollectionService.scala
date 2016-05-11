@@ -30,7 +30,11 @@ import play.api.Play._
  *
  */
 @Singleton
-class MongoDBCollectionService @Inject() (datasets: DatasetService, userService: UserService, spaceService: SpaceService)  extends CollectionService {
+class MongoDBCollectionService @Inject() (
+  datasets: DatasetService,
+  userService: UserService,
+  spaceService: SpaceService,
+  events:EventService)  extends CollectionService {
   /**
    * Count all collections
    */
@@ -169,7 +173,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
           if (permissions.contains(Permission.ViewCollection)) {
             orlist += MongoDBObject("public" -> true)
           }
-          orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author.identityId.userId" -> u.identityId.userId)
+          orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
           val permissionsString = permissions.map(_.toString)
           val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(permissionsString).nonEmpty)
           if (okspaces.nonEmpty) {
@@ -192,7 +196,13 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
             if (permissions.contains(Permission.AddResourceToCollection)) {
               MongoDBObject()
             } else {
-              MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject( "$size" -> 0)))
+              val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
+              orlist += MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject( "$size" -> 0)))
+              user match {
+                case Some(u) => orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
+                case None =>
+              }
+              $or(orlist.map(_.asDBObject))
             }
           }
         }
@@ -366,7 +376,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   def listInsideDataset(datasetId: UUID, user: Option[User], showAll: Boolean): List[Collection] = {
     Dataset.findOneById(new ObjectId(datasetId.stringify)) match {
       case Some(dataset) => {
-        val list = for (collection <- listAccess(0, Set[Permission](Permission.ViewCollection), user, showAll); if (isInDataset(dataset, collection))) yield collection
+        val list = for (collection <- listAccess(0, Set[Permission](Permission.ViewCollection, Permission.AddResourceToCollection), user, showAll); if (isInDataset(dataset, collection))) yield collection
         return list.reverse
       }
       case None => {
@@ -478,7 +488,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     spaceService.decrementCollectionCounter(collectionId, spaceId, 1)
   }
 
-  private def syncUpRootSpaces(collectionId: UUID): Unit ={
+  def syncUpRootSpaces(collectionId: UUID, initialParents: List[UUID]): Unit ={
     get(collectionId) match {
       case Some(collection) => {
         val parentSpaces = ListBuffer.empty[UUID]
@@ -490,7 +500,9 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
         }
         collection.spaces.foreach { space =>
           if(!(parentSpaces contains space)) {
-            addToRootSpaces(collection.id, space)
+            if(!(initialParents contains space)) {
+              addToRootSpaces(collection.id, space)
+            }
           } else {
             if(collection.root_spaces contains space) {
               removeFromRootSpaces(collection.id, space)
@@ -656,6 +668,12 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     }
   }
 
+  def index(id: Option[UUID]) = {
+    id match {
+      case Some(collectionId) => index(collectionId)
+      case None => Collection.dao.find(MongoDBObject()).foreach(c => index(c.id))
+    }
+  }
 
   def index(id: UUID) {
     Collection.findOneById(new ObjectId(id.stringify)) match {
@@ -696,6 +714,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   }
 
    def updateName(collectionId: UUID, name: String){
+     events.updateObjectName(collectionId, name)
      val result = Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
      $set("name" -> name), false, false, WriteConcern.Safe)
    }
@@ -703,6 +722,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   def updateDescription(collectionId: UUID, description: String){
     val result = Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
       $set("description" -> description), false, false, WriteConcern.Safe)
+  }
+
+  def updateAuthorFullName(userId: UUID, fullName: String) {
+    Collection.update(MongoDBObject("author._id" -> new ObjectId(userId.stringify)),
+      $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
   }
 
   /**
@@ -733,7 +757,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
               //remove collection from the list of parent collection for sub collection
               Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)), $pull("parent_collection_ids" -> Some(new ObjectId(collectionId.stringify))), false, false, WriteConcern.Safe)
               //Check if any of the remaining spaces come from a parent or not. If not, add it to the root_spaces
-              syncUpRootSpaces(sub_collection.id)
+              syncUpRootSpaces(sub_collection.id, sub_collection.spaces)
 
               Logger.info("Removing subcollection from collection completed")
             }
@@ -775,7 +799,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
                   }
                 }
               }
-              syncUpRootSpaces(sub_collection.id)
+              syncUpRootSpaces(sub_collection.id, sub_collection.spaces)
               index(collection.id)
               Collection.findOneById(new ObjectId(subCollectionId.stringify)) match {
                 case Some(sub_collection) => {
@@ -853,7 +877,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
                     return true
                   }
                 }
-                case None =>
+                case None => return false
               }
             }
           }

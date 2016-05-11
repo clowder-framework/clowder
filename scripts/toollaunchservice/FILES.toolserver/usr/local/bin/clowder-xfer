@@ -7,8 +7,8 @@ echo $*
 # $3 clowder access key
 # $4 destination directory path
 
-echo curl --connect-timeout 10 -o $4/data/dataset.zip $1?key=$3
-curl --connect-timeout 10 -o $4/data/dataset.zip $1?key=$3 > $4/data/xfer-out 2>&1
+echo curl --connect-timeout 10 -o $4/data/dataset.zip -L $1?key=$3
+curl --connect-timeout 10 -o $4/data/dataset.zip -L $1?key=$3 > $4/data/transfer-log_$2 2>&1
 chmod -R 777 $4
 mkdir $4/data/$2
 unzip -o $4/data/dataset.zip -d $4/data/$2

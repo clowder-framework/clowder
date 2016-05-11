@@ -2,22 +2,29 @@ package api
 
 import javax.inject.Inject
 
+import com.wordnik.swagger.annotations.ApiOperation
 import models.{ClowderUser, UUID}
 import org.apache.commons.lang3.StringEscapeUtils
+import play.api.libs.concurrent.Akka
 import play.api.mvc.Controller
 import play.api.Play.current
 import play.api.libs.json.Json.toJson
 import play.api.templates.Html
-import services.{UserService, ElasticsearchPlugin, AppConfiguration}
+import services._
 import services.mongodb.MongoSalatPlugin
 import play.api.Logger
 import util.Mail
+import scala.concurrent.duration._
+import play.api.libs.concurrent.Execution.Implicits._
+
 
 /**
  * Admin endpoints for JSON API.
- *
  */
-class Admin @Inject()(userService: UserService) extends Controller with ApiController {
+class Admin @Inject()(userService: UserService,
+                      datasets:DatasetService,
+                      collections:CollectionService,
+                      files:FileService) extends Controller with ApiController {
 
   /**
    * DANGER: deletes all data, keep users.
@@ -95,7 +102,7 @@ class Admin @Inject()(userService: UserService) extends Controller with ApiContr
         userService.findById(UUID(id)) match {
           case Some(u:ClowderUser) => {
             if (u.active) {
-              userService.update(u.copy(active=false, admin=false))
+              userService.update(u.copy(active=false, serverAdmin=false))
               val subject = s"[${AppConfiguration.getDisplayName}] account deactivated"
               val body = views.html.emails.userActivated(u, active=false)(request)
               util.Mail.sendEmail(subject, request.user, u, body)
@@ -109,8 +116,8 @@ class Admin @Inject()(userService: UserService) extends Controller with ApiContr
       list.foreach(id =>
         userService.findById(UUID(id)) match {
           case Some(u:ClowderUser) if u.active => {
-            if (!u.admin) {
-              userService.update(u.copy(admin=true))
+            if (!u.serverAdmin) {
+              userService.update(u.copy(serverAdmin=true))
               val subject = s"[${AppConfiguration.getDisplayName}] admin access granted"
               val body = views.html.emails.userAdmin(u, admin=true)(request)
               util.Mail.sendEmail(subject, request.user, u, body)
@@ -124,8 +131,8 @@ class Admin @Inject()(userService: UserService) extends Controller with ApiContr
       list.foreach(id =>
         userService.findById(UUID(id)) match {
           case Some(u:ClowderUser) if u.active => {
-            if (u.admin) {
-              userService.update(u.copy(admin=false))
+            if (u.serverAdmin) {
+              userService.update(u.copy(serverAdmin=false))
               val subject = s"[${AppConfiguration.getDisplayName}] admin access revoked"
               val body = views.html.emails.userAdmin(u, admin=true)(request)
               util.Mail.sendEmail(subject, request.user, u, body)
@@ -136,5 +143,19 @@ class Admin @Inject()(userService: UserService) extends Controller with ApiContr
       )
     )
     Ok(toJson(Map("status" -> "success")))
+  }
+
+
+  @ApiOperation(value = "reindex all resources in elasticsearch",
+    notes = "",
+    responseClass = "None", httpMethod = "POST")
+  def reindex = ServerAdminAction { implicit request =>
+    Akka.system.scheduler.scheduleOnce(1 seconds) {
+      current.plugin[ElasticsearchPlugin].map(_.deleteAll)
+      collections.index(None)
+      datasets.index(None)
+      files.index(None)
+    }
+    Ok(toJson(Map("status" -> "Success")))
   }
 }

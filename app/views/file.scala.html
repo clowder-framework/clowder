@@ -1,5 +1,5 @@
 @(file: models.File, id: String, comments: List[Comment],
-  previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]],
+  previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long, String)]],
   sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset], folders: List[Folder],
   mds: List[models.Metadata],
   rdfExported: Boolean,
@@ -14,7 +14,7 @@
 
 
 @* (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length) *@
-@showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long), filename: String, contentType: String) = {
+@showPreview(id: String, p: (java.lang.String, String, String, String, java.lang.String, String, Long, String), filename: String, contentType: String) = {
 	<script>
 		Configuration.tab = "#previewer_@id";
 		Configuration.url = "@p._5";
@@ -151,15 +151,13 @@
 	<div class="row">
 		<div class="col-md-8 col-right-border">
 			<div id="prf-file-name" class="text-left inline">
+				<h1 id="file-name-title" class="inline">@Html(file.filename)</h1>
 				@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
-					<h1 id="file-name-title" class="inline" style="cursor:pointer" title="Click to edit file name.">@Html(file.filename)</h1>
 					<div id="h-edit-file" class="hiddencomplete">
 						<a id ="edit-file" href="javascript:updateFileName()" title="Click to edit file name.">
 							<span class ="glyphicon glyphicon-edit" aria-hidden ="true"></span>
 						</a>
 					</div>
-				} else {
-					<h1 id="file-name-title" class="inline">@Html(file.filename)</h1>
 				}
 			</div>
 			<h4>in
@@ -200,7 +198,12 @@
 			  		<div class="tabbable">
 						<ul class="nav nav-pills" id="myTab_@(f.id.toString)">
 							@for(i <- pvs.indices) {
-					    		<li class=""><a href="#previewer_@(f.id.toString)_@i" data-toggle="tab">@pvs(i)._2</a></li>
+								<!-- Use preview.title as tab title if defined; otherwise use previewer name. -->
+								@if(pvs(i)._8 != "") {
+									<li class=""><a href="#previewer_@(f.id.toString)_@i" data-toggle="tab">@pvs(i)._8</a></li>
+								} else {
+									<li class=""><a href="#previewer_@(f.id.toString)_@i" data-toggle="tab">@pvs(i)._2</a></li>
+								}
 			  				}
 						</ul>
 						<div class="tab-content"  id="previewsContent_@(f.id.toString)">						    						    
@@ -249,23 +252,22 @@
             } <!-- end of    if(!outputFormats.isEmpty)-->              
           </div> <!-- end of class btn-group -->
                 @if(user.isDefined) {
-                <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->                
-                    @if(user.get.id.equals(file.author.id)){
+                <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+					@if(user.get.id.equals(file.author.id) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
                         <span class="align-right">
 							@if(datasets.length > 0) {
-				            <button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(datasets.head.id))')" class="btn btn-link" title="Delete">
-						    <span class="glyphicon glyphicon-trash"></span> Delete</button>
+				            	<button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(datasets.head.id))')" class="btn btn-link" title="Delete the file">
+						    	<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							} else {
-								<button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(folders.head.parentDatasetId))#folderId=@folders.head.id')" class="btn btn-link" title="Delete">
+								<button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(folders.head.parentDatasetId))#folderId=@folders.head.id')" class="btn btn-link" title="Delete the file">
 									<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							}
 
 					    </span>
 					} else {
-					    <span class="align-right">
-                            <button disabled id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Application.index())')" class="btn btn-link" title="Delete">
-                            <span class="glyphicon glyphicon-trash"></span> Delete</button>
-                        </span>
+						<span class="align-right" title="No permission to delete the file">
+							<button disabled class="btn btn-link"><span class="glyphicon glyphicon-trash"></span> Delete</button>
+						</span>
 					}
 
                     @if(!file.followers.contains(user.get.id)) {
@@ -521,13 +523,8 @@
 
 			<div class="border-top">
 				<div class="row">
-					<div class="col-md-10">
+					<div class="col-md-12">
 						<h4>Metadata</h4>
-					</div>
-					<div class="col-md-2">
-						<a href="@api.routes.Files.getMetadataJsonLD(file.id)" class="pull-right" title="JSON-LD">
-							<img src="@routes.Assets.at("images/json-ld.png")"/>
-						</a>
 					</div>
 				</div>
 				<div class="row">
@@ -568,11 +565,6 @@
             </div>
 
 			<script language="javascript">
-					var fileName = $('#file-name-title').text();
-					$('#file-name-title').click(function(){
-						updateFileName();
-					});
-
 					function updateFileName() {
 						fileName = $('#file-name-title').text();
 						$('<div class="inline file_name_div h3"> </div>').insertAfter($('#prf-file-name'));
@@ -781,16 +773,29 @@
                     }
                   }
               </ul>
-              <form class="form-inline requiresLogin requiresLoginCommunity">
-                <div class="input-group input-group-sm col-md-8">
-                  <input type="text" maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" id="tagField" class="form-control">
-                  <span class="input-group-btn">
-                        <button class="btn btn-default btn-large" id="tagB" title="Add Tag">
-                            <span class="glyphicon glyphicon-tag"></span>
-                        </button>
-                  </span>                  
-                </div>
-              </form>
+				@if(Permission.checkPermission(Permission.AddTag, ResourceRef(ResourceRef.file, file.id))) {
+					<form class="form-inline">
+						<div class="input-group input-group-sm col-md-8">
+							<input type="text" maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" id="tagField" class="form-control">
+							<span class="input-group-btn">
+								<button class="btn btn-default btn-large" id="tagB" title="Add Tag">
+									<span class="glyphicon glyphicon-tag"></span>
+								</button>
+							</span>
+						</div>
+					</form>
+				} else {
+					<form class="form-inline">
+						<div class="input-group input-group-sm col-md-8">
+							<input disabled type="text" maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" id="tagField" class="form-control">
+							<span class="input-group-btn">
+								<button class="btn btn-default btn-large" id="tagB" title="Add Tag">
+									<span class="glyphicon glyphicon-tag"></span>
+								</button>
+							</span>
+						</div>
+					</form>
+				}
               <script language="javascript">
                 window["userDefined"] = false;
               </script>
@@ -901,12 +906,7 @@
                 });
                 
               });
-            </script>           
-            @if(!user.isDefined) {
-              <script language="javascript">
-                $(".requiresLogin").css("display","none");
-              </script>
-            }
+            </script>
             </div>
 
 
@@ -916,20 +916,6 @@
     </div> @* End of small right hand side column *@
 
 	</div>
-
-	@if(!user.isDefined) {
-        <script language="javascript">
-            $(".requiresLogin").css("display","none");
-        </script>
-    }
-
-    @if(user.isDefined) {
-        @if(!user.get.id.equals(file.author.id)){
-            <script language="javascript">
-                $(".requiresLogin:not(.requiresLoginCommunity)").css("display","none");
-            </script>
-        }
-    }
 
 }}
 

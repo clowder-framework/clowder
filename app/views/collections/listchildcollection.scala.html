@@ -5,7 +5,9 @@
         <div class="row">
             <div class="col-md-2 col-sm-2 col-lg-2">
                 @if(!collection.thumbnail_id.isEmpty){
-                    <img class="fit-in-space" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)">
+                    <a href="@(routes.Collections.collection(collection.id))">
+                        <img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)">
+                    </a>
                 }
             </div>
             <div class="col-md-10 col-sm-10 col-lg-10">
@@ -20,11 +22,13 @@
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                     @if( user.get.id.equals(collection.author.id) || Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
-                                        <button onclick="removeChildCollectionFromParent('@(parent.id)','@(collection.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Detach the Child Collection">
-                                            <span class="glyphicon glyphicon-remove"></span> Remove from @parent.name</button>
+                                        <button onclick="confirmRemoveResourceFromResource('collection','@(parent.id)','collection','@(collection.id)','@(collection.name)',true,'@(redirect)')"
+                                        class="btn btn-link" title="Remove the child collection from the collection @parent.name">
+                                            <span class="glyphicon glyphicon-remove"></span> Remove</button>
                                     } else {
-                                        <button disabled onclick="removeChildCollectionFromParent('@(parent.id)','@(collection.id)','@redirect')" class="btn btn-link" style="text-align:right" title="Detach the Child Collection">
-                                            <span class="glyphicon glyphicon-remove"></span> Remove from @parent.name</button>
+                                        <div class="inline" title="No permission to delete the child collection">
+                                            <button class="btn btn-link btn-sm disabled"><span class="glyphicon glyphicon-remove"></span> Remove</button>
+                                        </div>
                                     }
                                 }
                             </li>

@@ -106,7 +106,6 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
     PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
         request.body.file("File").map { f =>
           try {
-            Logger.debug("Uploading file " + f.filename)
             Logger.debug("########Uploading Preview----" + f.filename)
             // store file
             //change stored preview type for zoom.it previews to avoid messup with uploaded XML metadata files
@@ -134,7 +133,13 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
 
               previews.setIIPReferences(id, iipURL, iipImage, iipKey)
             }
-            Logger.debug("Preview id "+id.toString)
+
+            // Check whether a title for the preview was sent
+            request.body.dataParts.get("title") match {
+              case Some(t: List[String]) => previews.setTitle(id, t.head)
+              case None => {}
+            }
+
             Ok(toJson(Map("id" -> id.stringify)))
           } finally {
             f.ref.clean()
@@ -148,7 +153,6 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    * Upload preview metadata.
    *
    */
-
   def uploadMetadata(id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.preview, id)))(parse.json) { implicit request =>
         Logger.debug(request.body.toString)
         request.body match {
@@ -173,7 +177,10 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
    */
   def getMetadata(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.preview, id))) { implicit request =>
         previews.get(id) match {
-          case Some(preview) => Ok(toJson(Map("id" -> preview.id.toString, "contentType" -> preview.contentType)))
+          case Some(preview) => {
+            val title = preview.title.orNull
+            Ok(toJson(Map("id" -> preview.id.toString, "contentType" -> preview.contentType, "title" -> title)))
+          }
           case None => Logger.error("Preview metadata not found " + id); InternalServerError
         }
     }
@@ -308,6 +315,32 @@ class Previews @Inject()(previews: PreviewService, tiles: TileService) extends A
           case None => BadRequest(toJson("Preview not found " + preview_id))
         }
     }
+
+  /**
+    * Update the title field of a preview to change what is displayed on preview tab
+    * @param preview_id UUID of preview to change
+    */
+  @ApiOperation(value = "Update displayed title of preview",
+    notes = "Change the title of the preview that is displayed when viewing the associated file. String must be passed as 'title' parameter in request.",
+    responseClass = "None", httpMethod = "POST")
+  def setTitle(preview_id: UUID) = PermissionAction(Permission.AddFile, Some(ResourceRef(ResourceRef.preview, preview_id)))(parse.json) { implicit request =>
+    request.body match {
+      case JsObject(fields) => {
+        previews.get(preview_id) match {
+          case Some(preview) => {
+            (request.body \ "title").asOpt[String] match {
+              case Some(t) => {
+                previews.setTitle(preview_id, t.replace("\"",""))
+                Ok(toJson(Map("status" -> "success")))
+              }
+              case None => BadRequest(toJson("Preview not found"))
+            }
+          }
+        }
+      }
+      case _ => Logger.error("Expected a JSObject"); BadRequest(toJson("Expected a JSObject"))
+    }
+  }
 
   def jsonAnnotation(annotation: ThreeDAnnotation): JsValue = {
     toJson(Map("x_coord" -> annotation.x_coord.toString, "y_coord" -> annotation.y_coord.toString, "z_coord" -> annotation.z_coord.toString, "description" -> annotation.description))
