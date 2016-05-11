@@ -1981,8 +1981,6 @@ class  Datasets @Inject()(
     Json.obj("id" -> file.id, "filename" -> file.filename, "author" -> file.author.email, "uploadDate" -> file.uploadDate.toString,"contentType"->file.contentType,"description"->file.description,"license"->licenseInfo)
   }
 
-  //rm -rf foo; curl -s -u kooper@illinois.edu:hello123 -o foo.zip http://localhost:9000/api/datasets/564ab12ae4b0bb3d1214c87d/download?bagit=1 && unzip -q -d foo foo.zip
-
   private def addFileInfoToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "/_info.json"))
     val fileInfo = getFileInfoAsJson(file)
