@@ -183,10 +183,10 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     resourceRef.resourceType match {
       case ResourceRef.space => Some(collection("spaces.projects"))
       case ResourceRef.dataset => Some(collection("datasets"))
-      case ResourceRef.file => Some(collection("uploads.files"))
+      case ResourceRef.file => Some(collection("uploads"))
       //case ResourceRef.relation => Some(collection("hello"))
-      case ResourceRef.preview => Some(collection("previews.files"))
-      case ResourceRef.thumbnail => Some(collection("thumbnails.files"))
+      case ResourceRef.preview => Some(collection("previews"))
+      case ResourceRef.thumbnail => Some(collection("thumbnails"))
       case ResourceRef.collection => Some(collection("collections"))
       case ResourceRef.user => Some(collection("social.users"))
       case ResourceRef.comment => Some(collection("comments"))
