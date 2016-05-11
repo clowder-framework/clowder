@@ -1414,7 +1414,16 @@ class Files @Inject()(
       files.get(id) match {
         case Some(file) => {
           events.addObjectEvent(request.user, file.id, file.filename, "delete_file")
-           //this stmt has to be before files.removeFile
+          // notify rabbitmq
+          current.plugin[RabbitmqPlugin].foreach { p =>
+            val clowderurl = Utils.baseUrl(request)
+            datasets.findByFileId(file.id).foreach{ds =>
+              val dtkey = s"${p.exchange}.dataset.file.removed"
+              p.extract(ExtractorMessage(file.id, file.id, clowderurl, dtkey, Map.empty, file.length.toString, ds.id, ""))
+            }
+          }
+
+          //this stmt has to be before files.removeFile
           Logger.debug("Deleting file from indexes" + file.filename)
           current.plugin[VersusPlugin].foreach {        
             _.removeFromIndexes(id)        

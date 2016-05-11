@@ -696,7 +696,7 @@ object FileUtils {
     dataset.foreach{ds =>
       current.plugin[RabbitmqPlugin].foreach { p =>
         val dtkey = s"${p.exchange}.dataset.file.added"
-        p.extract(ExtractorMessage(ds.id, ds.id, clowderurl, dtkey, Map.empty, file.length.toString, ds.id, ""))
+        p.extract(ExtractorMessage(file.id, file.id, clowderurl, dtkey, Map.empty, file.length.toString, ds.id, ""))
       }
 
       // index dataset
