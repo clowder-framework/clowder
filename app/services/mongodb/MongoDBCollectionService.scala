@@ -414,11 +414,13 @@ class MongoDBCollectionService @Inject() (
                 //TODO check if the dataset is alread in the space
                 spaceService.get(spaceId) match {
                   case Some(space) => {
-                    if (space.)
+                    spaceService.addDataset(datasetId, spaceId)
                   }
-                  case None =>
+                  case None => {
+                    Logger.debug("No space found for space " + spaceId)
+                  }
                 }
-                spaceService.addDataset(datasetId, spaceId)
+
 
               }
 
