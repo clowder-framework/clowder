@@ -16,7 +16,7 @@
                 <div class ="row">
                     <div class="col-md-6 col-sm-6 col-lg-6">
                         <ul class="list-unstyled">
-                            <li>Created by <a href= "@routes.Profile.viewProfile(dataset.author.email)"> @dataset.author.fullName </a></li>
+                            <li>Created by <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
                             <li>@Html(dataset.description)</li>
                             <li>@dataset.created.format("MMM dd, yyyy")</li>
 
