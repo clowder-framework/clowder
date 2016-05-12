@@ -152,7 +152,9 @@ function getFiles(id) {
             totalSize += this.length;
         });
 
-        var formatAll = response.cf.map(f => f.contentType.valueOf());
+        var formatAll = response.cf.map(function(f) {
+            f.contentType.valueOf();
+        });
         var formats = [];
         $.each(formatAll, function(i, el){
             if($.inArray(el, formats) === -1) formats.push(el);

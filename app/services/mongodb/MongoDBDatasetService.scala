@@ -1094,6 +1094,9 @@ class MongoDBDatasetService @Inject() (
         for (follower <- dataset.followers) {
           userService.unfollowDataset(follower, id)
         }
+        for(space <- dataset.spaces) {
+          spaces.removeDataset(dataset.id, space)
+        }
         metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
         Dataset.remove(MongoDBObject("_id" -> new ObjectId(dataset.id.stringify)))
       }
