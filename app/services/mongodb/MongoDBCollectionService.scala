@@ -408,6 +408,20 @@ class MongoDBCollectionService @Inject() (
               datasets.addCollection(dataset.id, collection.id)
               datasets.index(dataset.id)
               index(collection.id)
+              //add collection spaces to dataset
+              //TODO - todd n
+              for (spaceId <- collection.spaces){
+                //TODO check if the dataset is alread in the space
+                spaceService.get(spaceId) match {
+                  case Some(space) => {
+                    if (space.)
+                  }
+                  case None =>
+                }
+                spaceService.addDataset(datasetId, spaceId)
+
+              }
+
 
               if(collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){
                   Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)),
