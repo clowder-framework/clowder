@@ -285,7 +285,7 @@ class MongoDBSpaceService @Inject() (
               if (!child_collection.spaces.contains(space)){
                 addCollection(childCollectionId, space)
               }
-
+              collections.syncUpRootSpaces(child_collection.id, child_collection.spaces)
             }
             case None => {
               log.error("No collection found for " + childCollectionId)

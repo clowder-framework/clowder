@@ -663,7 +663,7 @@
 						<a class="btn btn-link btn-sm clipboard" data-copy="@file.sha512" title="Copy SHA to clipboard"><span class="glyphicon glyphicon-edit"></span> copy</a></td></tr>
 
 					<tr><td><b>Uploaded&nbsp;on:</b></td><td>@file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
-                    <tr><td><b>Uploaded&nbsp;by:</b></td><td> <a href = "@routes.Profile.viewProfile(file.author.email)"> @file.author.fullName</a></td></tr>
+                    <tr><td><b>Uploaded&nbsp;by:</b></td><td> <a href = "@routes.Profile.viewProfileUUID(file.author.id)"> @file.author.fullName</a></td></tr>
                 </table>
             </div>
 

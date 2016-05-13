@@ -48,7 +48,7 @@
 			<div class="row">
 				<div class="col-xs-12">
 					<ul class="list-unstyled">
-						<li>Created by <a href= "@routes.Profile.viewProfile(collection.author.email)"> @collection.author.fullName </a></li>
+						<li>Created by <a href= "@routes.Profile.viewProfileUUID(collection.author.id)"> @collection.author.fullName </a></li>
 						<li>Created on @collection.created.format("MMM dd, yyyy")</li>
 					</ul>
 					<div id="aboutdesc" class="col-xs-12 box-white-space"><p id="collection_desc"  class="inline">@if(collection.description.length > 0) { @Html(collection.description)} else {Add a description}</p>
