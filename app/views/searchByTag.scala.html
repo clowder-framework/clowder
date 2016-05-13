@@ -1,20 +1,23 @@
-@(tag: String, items: List[AnyRef], prev: String, next: String, limit: Int, mode: Option[String])(implicit user: Option[models.User])
+@(tag: String, items: List[AnyRef], prev: String, next: String, limit: Int, mode: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import _root_.util.Formatters.ellipsize
 
 @main("Tagged Items") {
 	@util.masonry()
-	<script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
-	<script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/deleteUtils.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/spaceModify.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
 
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-lg-12 col-md-12 col-sm-12">
             <h1>Tag: @tag</h1>
         </div>
     </div>
     <div class="row">
-        <div class="col-md-10"></div>
-        <div class="col-md-2">
+        <div class="col-lg-10 col-md-10 col-sm-10"></div>
+        <div class="col-lg-2 col-md-2 col-sm-2">
             <div class="btn-group btn-group-sm pull-right">
                 <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
                 <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
@@ -81,10 +84,18 @@
 
     @* Show as grid *@
     <div class="row hidden" id="tile-view">
-        <div class="col-md-12">
+        <div class="col-lg-12 col-md-12 col-sm-12">
             <div id="masonry">
             @items.map { item =>
-                @metadatald.tile(item)
+                @item match {
+                    case dataset: models.Dataset => {
+                        @datasets.tile(dataset,None,Map.empty[UUID,Int],"col-lg-3 col-md-3 col-sm-3",false,false,routes.Datasets.dataset(dataset.id,None))
+
+                    }
+                    case file: models.File => {
+                        @files.tile(file,"col-lg-3 col-md-3 col-sm-3",routes.Files.file(file.id),false)
+                    }
+                 }
             }
             </div>
         </div>
@@ -92,15 +103,23 @@
 
     @* Show as list *@
     <div class="row hidden" id="list-view">
-        <div class="col-md-12">
+        <div class="col-lg-12 col-md-12 col-sm-12">
         @items.map { item =>
-            @metadatald.listitem(item)
+            @item match {
+                case dataset: models.Dataset => {
+                    @datasets.listitem(dataset,None,Map.empty[UUID, Int],routes.Datasets.dataset(dataset.id,None))
+
+                }
+                case file: models.File => {
+                    @files.listitem(file,Map.empty[UUID,Int],routes.Files.file(file.id),None)
+                }
+            }
         }
         </div>
     </div>
 
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-lg-12 col-md-12 col-sm-12">
             <ul class="pager">
                 @if(prev != "") {
                     <li class="previous"><a class="btn btn-link" id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span> Previous</a></li>
