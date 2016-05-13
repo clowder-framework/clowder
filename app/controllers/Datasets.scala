@@ -570,10 +570,7 @@ class Datasets @Inject()(
 
     user match {
       case Some(identity) => {
-        var nameOfFile : String = null
-        request.body.file("files[]").map { f =>
-          nameOfFile = f.filename
-        }
+
         //The reference for the new dataset
         datasets.get(UUID(dsId(0))) match {
           case Some(dataset) => {

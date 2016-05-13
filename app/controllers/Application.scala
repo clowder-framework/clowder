@@ -53,7 +53,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
       }
       case Some(clowderUser) if clowderUser.active => {
         newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20)))
-        .sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
+        .sorted(Ordering.by((_: Event).created).reverse).take(20)
         val datasetsUser = datasets.listUser(4, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
         val datasetcommentMap = datasetsUser.map { dataset =>
           var allComments = comments.findCommentsByDatasetId(dataset.id)

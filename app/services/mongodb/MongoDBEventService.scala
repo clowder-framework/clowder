@@ -23,7 +23,7 @@ class MongoDBEventService extends EventService {
   }
 
   def addEvent(event: Event) = {
-    Event.insert(event);
+    Event.insert(event)
   }
 
   def addUserEvent(user: Option[User], action_type: String) = {
@@ -31,6 +31,7 @@ class MongoDBEventService extends EventService {
       case Some(modeluser) => {
         Event.insert(new Event(modeluser.getMiniUser, None, None, None, None, None, action_type, new Date()))
       }
+      case None =>
     }
   }
 
@@ -38,8 +39,13 @@ class MongoDBEventService extends EventService {
     if (object_name.toString() != "undefined"){
       user match {
         case Some(modeluser) => {
-          Event.insert(new Event(modeluser.getMiniUser, None, Option(object_id), Option(object_name), None, None, action_type, new Date())) 
+          action_type match{
+            case "add_file" => Event.find(MongoDBObject("object_id" -> new ObjectId(object_id.stringify), "event_type"-> "add_file"))
+//            case "add_file_folder" =>
+            case _ =>  Event.insert(new Event(modeluser.getMiniUser, None, Option(object_id), Option(object_name), None, None, action_type, new Date()))
+          }
         }
+        case None =>
       }
     }
   }
@@ -57,6 +63,7 @@ class MongoDBEventService extends EventService {
       case Some(modeluser) => {
         Event.insert(new Event(modeluser.getMiniUser, Option(targetuser.getMiniUser), Option(object_id), Option(object_name), None, None, action_type, new Date()))
       }
+      case None =>
     }
   }
 
