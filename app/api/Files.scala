@@ -362,7 +362,7 @@ class Files @Inject()(
   @ApiOperation(value = "Upload a file to a specific dataset",
     notes = "Uploads the file, then links it with the dataset. Returns file id as JSON object, or ids with filenames if multiple files are sent. ID can be used to work on the file using the API. Uploaded file can be an XML metadata file to be added to the dataset.",
     responseClass = "None", httpMethod = "POST")
-  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
+  def uploadToDataset(dataset_id: UUID, showPreviews: String="DatasetLevel", originalZipFile: String = "", flagsFromPrevious: String = "") = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
     datasets.get(dataset_id) match {
       case Some(dataset) => {
         val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious)
