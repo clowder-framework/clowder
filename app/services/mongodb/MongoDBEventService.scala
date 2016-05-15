@@ -29,7 +29,7 @@ class MongoDBEventService extends EventService {
   def addUserEvent(user: Option[User], action_type: String) = {
     user match {
       case Some(modeluser) => {
-        Event.insert(new Event(modeluser.getMiniUser, None, None, None, None, None, action_type, new Date()))
+        Event.insert(Event(user = modeluser.getMiniUser, event_type = action_type, created = new Date()))
       }
       case None =>
     }
@@ -40,7 +40,19 @@ class MongoDBEventService extends EventService {
       user match {
         case Some(modeluser) => {
           action_type match{
-            case "add_file" => Event.find(MongoDBObject("object_id" -> new ObjectId(object_id.stringify), "event_type"-> "add_file"))
+            case "add_file" => val addFileEvent = Event.find(MongoDBObject("object_id" -> new ObjectId(object_id.stringify),
+              "event_type"-> "add_file", "user._id"->new ObjectId(modeluser.id.toString())))
+              .toList.sorted(Ordering.by((_: Event).created)).reverse
+              //
+              if (addFileEvent.size > 0 && new Date().getDate() - addFileEvent.head.created.getDate == 0) {
+//                Logger.debug(addFileEvent.head.toString)
+//                Logger.debug(((new Date()) - addFileEvent.head.created.getDate()).toString)
+
+                Event.save(addFileEvent.head.copy(event_type = action_type))
+
+              } else {
+                Event.insert(new Event(modeluser.getMiniUser, None, Option(object_id), Option(object_name), None, None, action_type, new Date()))
+              }
 //            case "add_file_folder" =>
             case _ =>  Event.insert(new Event(modeluser.getMiniUser, None, Option(object_id), Option(object_name), None, None, action_type, new Date()))
           }
@@ -55,6 +67,7 @@ class MongoDBEventService extends EventService {
       case Some(modeluser) => {
         Event.insert(new Event(modeluser.getMiniUser, None, Option(object_id), Option(object_name), Option(source_id), Option(source_name), action_type, new Date())) 
       }
+      case None =>
     }
   }
 
