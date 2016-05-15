@@ -12,12 +12,20 @@ function uploadFileToExistingDataset(data) {
     return true;
 }
 
-function checkZeroFiles() {
+function checkZeroFiles(id, inFolder) {
 	var numFiles = $('#fileupload').fileupload('option').getNumberOfFiles();	
-	if (numFiles == 0) {
+	if (numFiles === 0) {
         notify("No files have been added to the upload queue. Please select files to upload", "warning", true, 5000);
 		return false;
-	}	
+	} else {
+		$("#hiddenmt").attr("value", true);
+		var request = jsRoutes.api.Events.addFileEvent(id, inFolder, numFiles).ajax({
+			type: 'POST'
+		});
+		request.done(function (response, textStatus, jqXHR) {
+			console.log("save multiple file events");
+		});
+	}
 }
 
 //Clear all selected items

@@ -16,6 +16,7 @@ import services._
 import util.{Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
 import scala.collection.mutable.{ListBuffer, Map => MutableMap}
+import scala.util.matching.Regex
 
 /**
  * A dataset is a collection of files and streams.
@@ -535,6 +536,11 @@ class Datasets @Inject()(
     val dsDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
     val dsLevel = request.body.asFormUrlEncoded.getOrElse("datasetLevel", null)
     val dsId = request.body.asFormUrlEncoded.getOrElse("datasetid", null)
+    val multipleFile = request.body.asFormUrlEncoded.getOrElse("multiple", null) match {
+      case null => true
+      case m =>  m(0)  == "true"
+    }
+
 
     if (dsName == null || dsDesc == null) {
       //Changed to return appropriate data and message to the upload interface
@@ -617,7 +623,7 @@ class Datasets @Inject()(
                     }
                     if(fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") || fileType.equals("multi/files-ptm-zipped") ){
                       if(fileType.equals("multi/files-ptm-zipped")){
-                        fileType = "multi/files-zipped";
+                        fileType = "multi/files-zipped"
                       }
 
                       val thirdSeparatorIndex = nameOfFile.indexOf("__")
@@ -644,19 +650,24 @@ class Datasets @Inject()(
                     case Some(fId) =>  {
                       folders.get(UUID(fId)) match {
                         case Some(folder) => {
-
-                          events.addObjectEvent(request.user, dataset.id, dataset.name, "add_file_folder")
+                         if(!multipleFile) {
+                            events.addObjectEvent(request.user, dataset.id, dataset.name, "add_file_folder")
+                          }
                           folders.addFile(folder.id, f.id)
                         }
                         case None => {
                           //TODO: Add the file to dataset or don't do anything?
-                          events.addObjectEvent(request.user, dataset.id, dataset.name, "add_file")
+                          if(!multipleFile) {
+                            events.addObjectEvent(request.user, dataset.id, dataset.name, "add_file")
+                          }
                           datasets.addFile(dataset.id, f)
                         }
                       }
                     }
                     case None => {
-                      events.addObjectEvent(request.user, dataset.id, dataset.name, "add_file")
+                      if(!multipleFile) {
+                        events.addObjectEvent(request.user, dataset.id, dataset.name, "add_file")
+                      }
                       datasets.addFile(dataset.id, f)
                     }
                   }
