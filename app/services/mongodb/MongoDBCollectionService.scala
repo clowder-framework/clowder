@@ -193,7 +193,7 @@ class MongoDBCollectionService @Inject() (
         space match {
           case Some(s) => MongoDBObject()
           case None => {
-            if (permissions.contains(Permission.AddResourceToCollection)) {
+            if (!permissions.contains(Permission.AddResourceToCollection)) {
               MongoDBObject()
             } else {
               val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
