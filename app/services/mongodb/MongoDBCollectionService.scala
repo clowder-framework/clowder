@@ -158,11 +158,19 @@ class MongoDBCollectionService @Inject() (
    * Monster function, does all the work. Will create a filters and sorts based on the given parameters
    */
   private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]):(DBObject, DBObject) = {
-    // filter =
-    // - owner   == show collections owned by owner that user can see
-    // - space   == show all collections in space
-    // - access  == show all collections the user can see
-    // - default == public only
+
+    // In /Collections page you should see:
+    //  a) Parent Collections in a space you belong to ( root_collections.length > 0 and you belong to the space).
+    //  b) Parent Collections that you created (owner = you and root_collections.length = 0).
+    // You should not see:
+    //  a) Child collections of the spaces you belong to (root_collections.length == 0)
+    //  b) Child collections of parents that are not in a space and you created
+    //  c) Parent or child collections in spaces you don’t have access to.
+    //Within a space page you should see:
+    //  Parent collections within that space. (root_spaces includes spaceId)
+    //On the home page you should see parent and child collections you have created wether or not they are part of a space
+    //On the dropdown in the dataset page ‘Add dataset to collection’ you should see parent and child collections you have access to via a space or that you created.
+
     // create access filter
     val filterAccess = if (showAll || (configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewCollection))) {
       MongoDBObject()
