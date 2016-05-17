@@ -3,7 +3,7 @@ package services
 import models.{UUID, TempFile}
 
 /**
- * Created by lmarini on 2/24/14.
+ * Service to manipulate tempfiles.
  */
 trait TempFileService {
 

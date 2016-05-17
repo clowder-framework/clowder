@@ -9,7 +9,6 @@ import com.novus.salat.dao.SalatMongoCursor
 /**
  * Service definition to interact with Events database.
  *
- * @author Varun Kethineedi
  */
  
 trait EventService {
@@ -41,6 +40,11 @@ trait EventService {
 	 */
 	 def addSourceEvent(user: Option[User], object_id: UUID, object_name: String, source_id: UUID, source_name: String, action_type: String)
 
+	/**
+	 * Event  where 2 user interacts with 1 object, etc request event
+	 */
+	def addRequestEvent(user: Option[User], targetuser: User, object_id: UUID, object_name: String,  action_type: String)
+
 	 /**
 	 * Gets limit number of events from users, collections, datasets, and files and compliles them into 1 list
 	 */
@@ -68,6 +72,26 @@ trait EventService {
 	 */
 	def getLatestNEventsOfType(n: Int, event_type: Option[String]): List[Event]
 
+	/**
+	 * Get the request event and loginuser is targetuser
+	 */
+	def getRequestEvents( targetuser: Option[User], limit: Option[Integer]): List[Event]
+
+	/**
+		* Get the events by creator
+		*/
+	def getEventsByUser( user: User, limit: Option[Integer]): List[Event]
+
+
+	/**
+		* Update the object name
+		*/
+	def updateObjectName(id:UUID, name:String)
+
+	/**
+		* Update user fullname
+    */
+	def updateAuthorFullName(userId: UUID, fullName: String)
 }
 
 

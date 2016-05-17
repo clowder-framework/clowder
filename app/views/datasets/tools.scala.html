@@ -1,0 +1,188 @@
+@(instances: List[UUID], instanceMap: scala.collection.mutable.Map[UUID, services.ToolInstance], datasetID: UUID, datasetName: String)(implicit user: Option[models.User])
+
+@import api.Permission
+
+<div class="row border-top bottom-padding">
+  <div class="col-md-12">
+    <h4>Analysis Environment Instances</h4>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-12">
+    <div id="toolsList">
+      @instances.map { instanceID =>
+        <div id="col_@instanceID" class="row bottom-padding">
+          <div class="col-md-10">
+            <div>
+              @{
+                // Create entry for each ToolInstance that this dataset has been uploaded to
+                var htmlStr = ""
+                instanceMap.get(instanceID) match {
+                  case Some(inst) => {
+                    if (inst.url == "") {
+                      htmlStr += inst.name+" (not yet ready)</br>"
+                      htmlStr += inst.id
+                    }
+                    else htmlStr += "<a href="+inst.url+" target='_blank'>"+inst.name+"</a>"
+
+                    htmlStr += "</br>"
+                    if (inst.uploadHistory.keys.toList.length == 1)
+                      htmlStr += "1 dataset uploaded"
+                    else
+                      htmlStr += inst.uploadHistory.keys.toList.length.toString + " datasets uploaded"
+                  }
+                  case None => {}
+                }
+                Html(htmlStr)
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<div class="row bottom-padding">
+  <div class="col-md-12">
+    <a class="btn btn-link" onclick="refreshToolSidebar()">
+      <span class="glyphicon glyphicon-refresh"></span>&nbsp;Refresh List
+    </a>
+    <a class="btn btn-link" href="toolManager">
+      <span class="glyphicon glyphicon-log-in"></span>&nbsp;Environment Manager
+    </a>
+  </div>
+
+  <div class="col-md-12">
+    <h4>Launch new instance with dataset</h4>
+    <div class="form-inline">
+      <div class="input-group input-group-sm col-md-8">
+        <input type="text" id="newToolNameField" class="form-control add-resource" placeholder="Enter instance name" value="@{
+            user match {
+              case Some(u) => u.fullName + "'s instance"
+              case None => "My instance"}}">
+        <select id="launchNewToolInstance" class="form-control add-resource"></select>
+        <span class="input-group-btn">
+          <a href="#" onclick="launchToolRequest()" class="btn btn-default btn-large" id="launchtoolBtn" title="Launch New Environment">
+            <span class="glyphicon glyphicon-plus"></span> Launch
+          </a>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-12">
+    <h4>Upload dataset to existing instance</h4>
+    <div class="form-inline">
+      <div class="input-group input-group-sm col-md-8">
+        <select id="addToExistingToolInstance" class="form-control add-resource">
+        </select>
+        <span class="input-group-btn">
+          <a href="#" onclick="launchUploadRequest()" class="btn btn-default btn-large" id="addToolSessionBtn" title="Upload Dataset to Environment">
+            <span class="glyphicon glyphicon-plus"></span> Upload
+          </a>
+        </span>
+      </div>
+      <div id="addToExistingInstanceFooter"></div>
+    </div>
+  </div>
+</div>
+
+<script language="javascript">
+  $("#launchNewToolInstance").select2({
+    theme: "bootstrap",
+    placeholder: "Select analysis environment",
+    allowClear: false,
+    ajax: {
+      url: function() {
+        return jsRoutes.controllers.Datasets.getLaunchableTools().url;
+      },
+      processResults: function(data) {
+        var results = {
+          results: Object.keys(data).map(function(key) {
+            return {
+              text: data[key]["name"],
+              id: key
+            }
+          })};
+        return results
+      }
+    }
+  });
+
+  $("#addToExistingToolInstance").select2({
+    theme: "bootstrap",
+    placeholder: "Select an instance",
+    allowClear: true,
+    ajax: {
+      url: function() {
+        return jsRoutes.controllers.Datasets.getInstances().url;
+      },
+      processResults: function(data) {
+        var existingInstances = []
+        for (var instanceID in data) {
+          existingInstances.push({
+            text: data[instanceID],
+            id: instanceID.toString()
+          })
+        }
+        return {results: existingInstances}
+      }
+    }
+  }).on("change", function(e) {
+    @instances.map { instanceID =>
+      if (e.currentTarget.value == "@instanceID.toString") {
+          notify("The current dataset has previously been uploaded to this instance. " +
+          "Uploading it again will overwrite any duplicate filenames.", "warning")
+      }
+    }
+  });
+
+  function launchToolRequest() {
+    // Send request to ToolManagerPlugin to launch a ToolInstance and upload current dataset.
+    var instanceName = $('#newToolNameField').val()
+    var toolType = $('#launchNewToolInstance').val()
+
+    if (instanceName == undefined || toolType == undefined) {
+      notify("Please select a name and environment for the new instance.", "error")
+    }
+    else {
+      var request = new XMLHttpRequest();
+      request.onreadystatechange = function() {
+        if (request.readyState == 4 && request.status == 200) {
+          var sessionId = request.response
+          console.log("launchToolRequest OK. sessionId created: "+ sessionId)
+          refreshToolSidebar();
+        }
+        else if (request.readyState == 4 && (request.status != 200))
+          console.log("launchToolRequest came back with "+request.status.toString());
+      }
+
+      request.open("GET", jsRoutes.controllers.Datasets.launchTool(instanceName, toolType, "@datasetID", "@datasetName").url, true);
+      request.send();
+    }
+  }
+
+  function launchUploadRequest() {
+    // Send request to ToolManagerPlugin to upload current dataset to existing ToolInstance.
+    var instanceID = $('#addToExistingToolInstance').val()
+
+    if (instanceID == undefined) {
+      notify("Please select a target instance for uploading the dataset.", "error")
+    }
+    else {
+      var request = new XMLHttpRequest();
+      request.onreadystatechange = function() {
+        if (request.readyState == 4 && request.status == 200) {
+          refreshToolSidebar();
+        }
+        else if (request.readyState == 4 && (request.status != 200))
+          console.log("launchUploadRequest came back with "+request.status.toString());
+      }
+
+      request.open("GET", jsRoutes.controllers.Datasets.uploadDatasetToTool(instanceID, "@datasetID", "@datasetName").url, true);
+      request.send();
+    }
+  }
+</script>

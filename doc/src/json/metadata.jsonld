@@ -1,0 +1,79 @@
+[
+    {
+        "@context": [
+            "http://clowder.ncsa.illinois.edu/clowder/contexts/metadata.jsonld",
+            {
+                "extractor_id": {
+                    "@id": "http://dts.ncsa.illinois.edu/api/extractor/id",
+                    "@type": "@id"
+                },
+                "score": "http://www.vision.caltech.edu/Image_Datasets/Caltech101/score",
+                "category": "http://www.vision.caltech.edu/Image_Datasets/Caltech101/category"
+            }],
+        "agent": {
+            "@type": "cat:extractor",
+            "extractor_id": "http://dts.ncsa.illinois.edu/api/extractors/ncsa.cv.caltech101"
+        },
+        "content": {
+            "score": [
+                "-0.275160"
+            ],
+            "category": [
+                "wrench"
+            ]
+        }
+    },
+    {
+        "@context": [
+            "http://clowder.ncsa.illinois.edu/clowder/contexts/metadata.jsonld",
+            "http://dts.ncsa.illinois.edu/api/extractors/ncsa.cv.caltech101/metadata.jsonld"
+        ],
+        "agent": {
+            "@type": "cat:extractor",
+            "extractor_id": "http://dts.ncsa.illinois.edu/api/extractors/ncsa.cv.caltech101"
+        },
+        "content": {
+            "score": [
+                "-0.275160"
+            ],
+            "category": [
+                "wrench"
+            ]
+        }
+    },
+    {
+        "@context": [
+            "http://clowder.ncsa.illinois.edu/clowder/contexts/metadata.jsonld",
+            {
+                "dc": "http://purl.org/dc/terms/"
+            }],
+        "agent": {
+            "@type": "cat:user",
+            "user_id": "http://dts.ncsa.illinois.edu/api/users/52f1749ad6c40e37d0fe2ee7"
+        },
+        "content": {
+            "dc:abstract": [
+                "This is the abstract"
+            ],
+            "dc:alternative": [
+                "This is the alternate title"
+            ]
+        }
+    },
+    {
+        "@context": [
+            "http://clowder.ncsa.illinois.edu/clowder/contexts/metadata.jsonld",
+            {
+                "abstract": "http://purl.org/dc/terms/abstract",
+                "alternative": "http://purl.org/dc/terms/alternative"
+            }],
+        "agent": {
+            "@type": "http://dbpedia.org/ontology/MusicalArtist",
+            "user_id": "http://dbpedia.org/resource/John_Lennon"
+        },
+        "source": "http://dbpedia.org/resource/random_fact",
+        "content": {
+            "abstract": "Imagine there's no countries"
+        }
+    }
+]

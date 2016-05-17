@@ -1,11 +1,11 @@
 package services.mongodb
 
+import play.api.mvc.Request
 import services._
 import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
 import _root_.util.{Parsers, License}
-import com.novus.salat._
 
 import scala.collection.mutable.ListBuffer
 import Transformation.LidoToCidocConvertion
@@ -29,15 +29,13 @@ import play.api.libs.json.JsObject
 import java.util.Date
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
-import play.api.Play.current
+import play.api.Play._
 import com.mongodb.casbah.Imports._
-import securesocial.core.Identity
 
 
 /**
  * Use mongo for both metadata and blobs.
- * 
- * @author Luigi Marini
+ *
  *
  */
 @Singleton
@@ -51,7 +49,10 @@ class MongoDBFileService @Inject() (
   threeD: ThreeDService,
   sparql: RdfSPARQLService,
   storage: ByteStorageService,
-  userService: UserService) extends FileService {
+  userService: UserService,
+  folders: FolderService,
+  metadatas: MetadataService,
+  events: EventService) extends FileService {
 
   object MustBreak extends Exception {}
 
@@ -60,6 +61,19 @@ class MongoDBFileService @Inject() (
    */
   def count(): Long = {
     FileDAO.count(MongoDBObject())
+  }
+
+  def bytes(): Long = {
+    val results = FileDAO.dao.collection.aggregate(MongoDBObject("$group" ->
+      MongoDBObject("_id" -> "size", "total" -> MongoDBObject("$sum" -> "$length"))))
+    results.results.find(x => x.containsField("total")) match {
+      case Some(x) => x.getAsOrElse[Long]("total", 0L)
+      case None => 0L
+    }
+  }
+
+  def save(file: File): Unit = {
+    FileDAO.save(file)
   }
 
   /**
@@ -157,18 +171,32 @@ class MongoDBFileService @Inject() (
   /**
    * Save blob.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File] = {
-    val extra = Map("showPreviews" -> showPreviews,
-                    "author" -> SocialUserDAO.toDBObject(author),
-                    "licenseData" -> grater[LicenseData].asDBObject(License.fromAppConfig()))
-    MongoUtils.writeBlob[File](inputStream, filename, contentType, extra, "uploads", "medici2.mongodb.storeFiles").flatMap(id => get(id))
+  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File] = {
+    ByteStorageService.save(inputStream, FileDAO.COLLECTION) match {
+      case Some(x) => {
+
+        val file = File(UUID.generate(), x._1, filename, author, new Date(), util.FileUtils.getContentType(filename, contentType), x._4, x._3, x._2, showPreviews = showPreviews, licenseData = License.fromAppConfig())
+        FileDAO.save(file)
+        Some(file)
+      }
+      case None => None
+    }
   }
 
   /**
    * Get blob.
    */
   def getBytes(id: UUID): Option[(InputStream, String, String, Long)] = {
-    MongoUtils.readBlob(id, "uploads", "medici2.mongodb.storeFiles")
+    get(id).flatMap { x =>
+      ByteStorageService.load(x.loader, x.loader_id, FileDAO.COLLECTION).map((_, x.filename, x.contentType, x.length))
+    }
+  }
+
+  def index(id: Option[UUID]) = {
+    id match {
+      case Some(fileId) => index(fileId)
+      case None => FileDAO.find(MongoDBObject()).foreach(f => index(f.id))
+    }
   }
 
   def index(id: UUID) {
@@ -221,12 +249,44 @@ class MongoDBFileService @Inject() (
   }
 
   /**
+    * Directly insert a file into the db (even with a local path)
+    */
+  def insert(file: File): Option[String] = {
+    FileDAO.insert(file).map(_.toString)
+  }
+
+  /**
    * Return a list of tags and counts found in sections
    */
-  def getTags(): Map[String, Long] = {
-    val x = FileDAO.dao.collection.aggregate(MongoDBObject("$unwind" -> "$tags"),
-      MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
-    x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+  def getTags(user: Option[User]): Map[String, Long] = {
+    if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public"){
+      val x = FileDAO.dao.collection.aggregate(MongoDBObject("$unwind" -> "$tags"),
+        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
+      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+    } else {
+      val x = FileDAO.dao.collection.aggregate(MongoDBObject("$match"-> buildTagFilter(user)), MongoDBObject("$unwind" -> "$tags"),
+        MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
+      x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
+    }
+  }
+
+
+  private def buildTagFilter(user: Option[User]): MongoDBObject = {
+    val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
+
+    user match {
+      case Some(u) => {
+        orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
+        //Get all datasets you have access to.
+        val datasetsList= datasets.listUser(u)
+        val foldersList = folders.findByParentDatasetIds(datasetsList.map(x=> x.id))
+        val fileIds = datasetsList.map(x=> x.files) ++ foldersList.map(x=> x.files)
+        orlist += ("_id" $in fileIds.flatten.map(x=> new ObjectId(x.stringify)))
+      }
+      case None => Map.empty
+    }
+
+    $or(orlist.map(_.asDBObject))
   }
 
   def modifyRDFOfMetadataChangedFiles() {
@@ -237,7 +297,7 @@ class MongoDBFileService @Inject() (
   }
 
 
-  def modifyRDFUserMetadata(id: UUID, mappingNumber: String = "1") = {
+  def modifyRDFUserMetadata(id: UUID, mappingNumber: String = "1") = { implicit request: Request[Any] =>
     sparql.removeFileFromGraphs(id, "rdfCommunityGraphName")
     get(id) match {
       case Some(file) => {
@@ -309,8 +369,8 @@ class MongoDBFileService @Inject() (
 
             if (isInRootNodes) {
               val theResource = rdfDescriptions(i).substring(rdfDescriptions(i).indexOf("\"") + 1, rdfDescriptions(i).indexOf("\"", rdfDescriptions(i).indexOf("\"") + 1))
-              val theHost = "http://" + play.Play.application().configuration().getString("hostIp").replaceAll("/$", "") + ":" + play.Play.application().configuration().getString("http.port")
-              var connection = "<rdf:Description rdf:about=\"" + theHost + "/api/files/" + id
+              // TODO RK : need to make sure we know if it is https
+              var connection = "<rdf:Description rdf:about=\"" + api.routes.Files.get(id).absoluteURL(false)
               connection = connection + "\"><P129_is_about xmlns=\"http://www.cidoc-crm.org/rdfs/cidoc_crm_v5.0.2.rdfs#\" rdf:resource=\"" + theResource
               connection = connection + "\"/></rdf:Description>"
               fileWriter.write(connection)
@@ -394,7 +454,7 @@ class MongoDBFileService @Inject() (
     val doc = JSON.parse(Json.stringify(metadata)).asInstanceOf[DBObject]
     FileDAO.findOneById(new ObjectId(fileId.stringify)) match {
       case None => None
-      case Some(file) => {        
+      case Some(file) => {
         FileDAO.update(MongoDBObject("_id" -> new ObjectId(fileId.stringify), "metadata.extractor_id" -> extractor_id), $set("metadata.$" -> doc), false, false, WriteConcern.Safe)
       }
     }
@@ -429,7 +489,7 @@ class MongoDBFileService @Inject() (
 
   def isInDataset(file: File, dataset: Dataset): Boolean = {
     for(dsFile <- dataset.files){
-      if(dsFile.id == file.id)
+      if(dsFile == file.id)
         return true
     }
     return false
@@ -534,13 +594,13 @@ class MongoDBFileService @Inject() (
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("xmlMetadata" -> md), false, false, WriteConcern.Safe)
   }
 
-
-  def findByTag(tag: String): List[File] = {
-    FileDAO.find(MongoDBObject("tags.name" -> tag)).toList
+  def findByTag(tag: String, user: Option[User]): List[File] = {
+    FileDAO.find(buildTagFilter(user) ++ MongoDBObject("tags.name" -> tag)).toList
   }
 
-  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean): List[File] = {
-    val filter = if (start == "") {
+  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean, user: Option[User]): List[File] = {
+
+    var filter = if (start == "") {
       MongoDBObject("tags.name" -> tag)
     } else {
       if (reverse) {
@@ -548,6 +608,9 @@ class MongoDBFileService @Inject() (
       } else {
         MongoDBObject("tags.name" -> tag) ++ ("uploadDate" $lte Parsers.fromISO8601(start))
       }
+    }
+    if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")) {
+      filter = buildTagFilter(user) ++ filter
     }
     val order = if (reverse) {
       MongoDBObject("uploadDate" -> 1, "filename" -> 1)
@@ -564,8 +627,10 @@ class MongoDBFileService @Inject() (
   /**
    * Implementation of updateLicenseing defined in services/FileService.scala.
    */
-  def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String) {      
-      val licenseData = models.LicenseData(m_licenseType = licenseType, m_rightsHolder = rightsHolder, m_licenseText = licenseText, m_licenseUrl = licenseUrl, m_allowDownload = allowDownload.toBoolean)
+  def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String,
+    allowDownload: String) {
+      val licenseData = models.LicenseData(m_licenseType = licenseType, m_rightsHolder = rightsHolder,
+        m_licenseText = licenseText, m_licenseUrl = licenseUrl, m_allowDownload = allowDownload.toBoolean)
       val result = FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), 
           $set("licenseData" -> LicenseData.toDBObject(licenseData)), 
           false, false, WriteConcern.Safe);      
@@ -578,38 +643,52 @@ class MongoDBFileService @Inject() (
     val file = get(id).get
     val existingTags = file.tags.filter(x => userIdStr == x.userId && eid == x.extractor_id).map(_.name)
     val createdDate = new Date
+    val maxTagLength = play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)
     tags.foreach(tag => {
+      val shortTag = if (tag.length > maxTagLength) {
+        Logger.error("Tag is truncated to " + maxTagLength + " chars : " + tag)
+        tag.substring(0, maxTagLength)
+      } else {
+        tag
+      }
       // Only add tags with new values.
-      if (!existingTags.contains(tag)) {
-        val tagObj = models.Tag(name = tag, userId = userIdStr, extractor_id = eid, created = createdDate)
+      if (!existingTags.contains(shortTag)) {
+        val tagObj = models.Tag(name = shortTag, userId = userIdStr, extractor_id = eid, created = createdDate)
         FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })
   }
 
   def removeAllTags(id: UUID) {
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("tags" -> List()), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("tags" -> List()), false, false,
+      WriteConcern.Safe)
   }
   // ---------- Tags related code ends ------------------
 
   def comment(id: UUID, comment: Comment) {
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("comments" -> Comment.toDBObject(comment)), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("comments" -> Comment.toDBObject(comment)),
+      false, false, WriteConcern.Safe)
   }
   
   def setIntermediate(id: UUID){
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("isIntermediate" -> Some(true)), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("isIntermediate" -> Some(true)), false, false,
+      WriteConcern.Safe)
   }
 
   def renameFile(id: UUID, newName: String){
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("filename" -> newName), false, false, WriteConcern.Safe)
+    events.updateObjectName(id, newName)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("filename" -> newName), false, false,
+      WriteConcern.Safe)
   }
 
   def setContentType(id: UUID, newType: String){
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("contentType" -> newType), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("contentType" -> newType), false, false,
+      WriteConcern.Safe)
   }
 
   def setUserMetadataWasModified(id: UUID, wasModified: Boolean){
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadataWasModified" -> Some(wasModified)), false, false, WriteConcern.Safe)
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadataWasModified" -> Some(wasModified)),
+      false, false, WriteConcern.Safe)
   }
 
   def removeFile(id: UUID){
@@ -628,7 +707,7 @@ class MongoDBFileService @Inject() (
                 datasets.newThumbnail(fileDataset.id)
                 
                 	for(collectionId <- fileDataset.collections){
-		                          collections.get(new UUID(collectionId)) match{
+		                          collections.get(collectionId) match{
 		                            case Some(collection) =>{		                              
 		                            	if(!collection.thumbnail_id.isEmpty){	                            	  
 		                            		if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
@@ -642,6 +721,10 @@ class MongoDBFileService @Inject() (
 		        }
             }
                      
+          }
+          val fileFolders = folders.findByFileId(file.id)
+          for(fileFolder <- fileFolders) {
+            folders.removeFile(fileFolder.id, file.id)
           }
           for(section <- sections.findByFileId(file.id)){
             sections.removeSection(section)
@@ -660,10 +743,12 @@ class MongoDBFileService @Inject() (
           }
           if(!file.thumbnail_id.isEmpty)
             thumbnails.remove(UUID(file.thumbnail_id.get))
+          metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
         }
 
         // finally delete the actual file
-        MongoUtils.removeBlob(id, "uploads", "medici2.mongodb.storeFiles")
+        ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
+        FileDAO.remove(file)
       }
       case None => Logger.debug("File not found")
     }
@@ -872,52 +957,48 @@ class MongoDBFileService @Inject() (
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(fileId.stringify)),
       $set("thumbnail_id" -> thumbnailId.stringify), false, false, WriteConcern.Safe)
   }
-  
-  def setNotesHTML(id: UUID, html: String) {
-	    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("notesHTML" -> Some(html)), false, false, WriteConcern.Safe)    
-  }
-  
-  def dumpAllFileMetadata(): List[String] = {    
+
+  def dumpAllFileMetadata(): List[String] = {
 		    Logger.debug("Dumping metadata of all files.")
-		    
+
 		    val fileSep = System.getProperty("file.separator")
 		    val lineSep = System.getProperty("line.separator")
 		    var fileMdDumpDir = play.api.Play.configuration.getString("filedump.dir").getOrElse("")
 			if(!fileMdDumpDir.endsWith(fileSep))
 				fileMdDumpDir = fileMdDumpDir + fileSep
-			var fileMdDumpMoveDir = play.api.Play.configuration.getString("filedumpmove.dir").getOrElse("")	
+			var fileMdDumpMoveDir = play.api.Play.configuration.getString("filedumpmove.dir").getOrElse("")
 			if(fileMdDumpMoveDir.equals("")){
-				Logger.warn("Will not move dumped files metadata to staging directory. No staging directory set.")	  
+				Logger.warn("Will not move dumped files metadata to staging directory. No staging directory set.")
 			}
 			else{
 			    if(!fileMdDumpMoveDir.endsWith(fileSep))
 				  fileMdDumpMoveDir = fileMdDumpMoveDir + fileSep
 			}
-		    
-			var unsuccessfulDumps: ListBuffer[String] = ListBuffer.empty 	
-				
+
+			var unsuccessfulDumps: ListBuffer[String] = ListBuffer.empty
+
 			for(file <- FileDAO.findAll){
 			  try{
 				  val fileId = file.id.toString
-				  
+
 				  val fileTechnicalMetadata = getTechnicalMetadataJSON(file.id)
 				  val fileUserMetadata = getUserMetadataJSON(file.id)
 				  if(fileTechnicalMetadata != "{}" || fileUserMetadata != "{}"){
-				    
+
 				    val filenameNoExtension = file.filename.substring(0, file.filename.lastIndexOf("."))
 				    val filePathInDirs = fileId.charAt(fileId.length()-3)+ fileSep + fileId.charAt(fileId.length()-2)+fileId.charAt(fileId.length()-1)+ fileSep + fileId + fileSep + filenameNoExtension + "__metadata.txt"
 				    val mdFile = new java.io.File(fileMdDumpDir + filePathInDirs)
 				    mdFile.getParentFile().mkdirs()
-				    
+
 				    val fileWriter =  new BufferedWriter(new FileWriter(mdFile))
 					fileWriter.write(fileTechnicalMetadata + lineSep + lineSep + fileUserMetadata)
 					fileWriter.close()
-					
+
 					if(!fileMdDumpMoveDir.equals("")){
 					  try{
 						  val mdMoveFile = new java.io.File(fileMdDumpMoveDir + filePathInDirs)
 					      mdMoveFile.getParentFile().mkdirs()
-					      
+
 						  if(mdFile.renameTo(mdMoveFile)){
 			            	Logger.info("File metadata dumped and moved to staging directory successfully.")
 						  }else{
@@ -929,7 +1010,7 @@ class MongoDBFileService @Inject() (
 						  Logger.error("Unable to stage dumped metadata of file with id "+badFileId+": "+ex.printStackTrace())
 						  unsuccessfulDumps += badFileId
 					  }}
-					}		    
+					}
 				  }
 
 			  }catch {case ex:Exception =>{
@@ -938,7 +1019,7 @@ class MongoDBFileService @Inject() (
 			    unsuccessfulDumps += badFileId
 			  }}
 			}
-		    
+
 		    return unsuccessfulDumps.toList
 
 	}
@@ -953,15 +1034,27 @@ class MongoDBFileService @Inject() (
                     $pull("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
   }
 
-}
+  def updateDescription(id: UUID, description: String) {
+    val result = FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $set("description" -> description),
+      false, false, WriteConcern.Safe)
 
-object FileDAO extends ModelCompanion[File, ObjectId] {
-  val dao = current.plugin[MongoSalatPlugin] match {
-    case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[File, ObjectId](collection = x.collection("uploads.files")) {}
+  }
+
+  def updateAuthorFullName(userId: UUID, fullName: String) {
+    FileDAO.update(MongoDBObject("author._id" -> new ObjectId(userId.stringify)),
+      $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
   }
 }
 
+object FileDAO extends ModelCompanion[File, ObjectId] {
+  val COLLECTION = "uploads"
+
+  val dao = current.plugin[MongoSalatPlugin] match {
+    case None => throw new RuntimeException("No MongoSalatPlugin");
+    case Some(x) => new SalatDAO[File, ObjectId](collection = x.collection(COLLECTION)) {}
+  }
+}
 
 object VersusDAO extends ModelCompanion[Versus,ObjectId]{
     val dao = current.plugin[MongoSalatPlugin] match {

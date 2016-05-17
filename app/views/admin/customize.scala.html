@@ -1,0 +1,140 @@
+@(theme: String, displayName: String, welcomeMessage: String, googleAnalytics: String, userAgreement: String)(implicit user: Option[models.User])
+@main("Customize") {
+    <div class="page-header">
+        <h1>Customize</h1>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            This page allows you to change the look and feel of Clowder. You can change the theme used,
+            common icons used as well as change the name, welcome message and other items show on every
+            page.
+        </div>
+    </div>
+    <br/>
+
+    <form role="form-horizontal">
+        <legend>Change look and feel</legend>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="themeSelect">Select a Theme</label>
+                    <select id="themeSelect" class="form-control">
+                    @for(t <- services.AppConfiguration.themes) {
+                        <option value="@t">@t.replaceAll(".min.css", "")</option>
+                    }
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <legend>Welcome text</legend>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="displayNameField">Display name</label>
+                    <input class="form-control" id="displayNameField" name="displayNameField" maxlength="20" type="text" value="@(displayName)">
+                    <span id="displayNameField_error" style="display:none;">Must have a display name</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="welcomingField">Welcoming message</label>
+                    <textarea class="form-control" name="welcomingField" id="welcomingField" rows="4" style="resize: none">@(welcomeMessage)</textarea>
+                </div>
+            </div>
+        </div>
+
+        <legend>User Agreement</legend>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="userAgreement">User Agreement</label>
+                    <textarea class="form-control" name="userAgreement" id="userAgreement" rows="4" style="resize: none" placeholder="Plain text or HTML. Or leave blank and it will not be required.">@(userAgreement)</textarea>
+                </div>
+            </div>
+        </div>
+
+        <legend>Tracking</legend>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="googleAnalytics">Google Analytics Code</label>
+                    <input class="form-control" id="googleAnalytics" name="googleAnalytics" type="text" value="@(googleAnalytics)"></input>
+                </div>
+            </div>
+        </div>
+
+
+        <legend>Logos</legend>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="GLOBALfaviconOpt">Favicon used</label>
+                    @logoSelect("GLOBAL", "favicon", Some("images/favicon.png"), None)
+                </div>
+                <div class="form-group">
+                    <label for="GLOBALlogoOpt">Site Logo</label>
+                    @logoSelect("GLOBAL", "logo", None, Some("Show display name"))
+                </div>
+            </div>
+        </div>
+
+        <br/>
+        <button class="btn btn-primary" onclick="return submitForm();"><span class="glyphicon glyphicon-saved"></span> Submit</button>
+        <br/>
+    </form>
+    <br/>
+
+    <script src="@routes.Assets.at("javascripts/maxlength.min.js")"></script>
+
+    <script language="javascript">
+        $(function() {
+            $("#themeSelect").val('@theme');
+
+            $('#displayNameField').maxlength({
+                alwaysShow: true,
+                threshold: 10,
+                validate: true,
+                placement: 'top'
+            });
+        });
+
+        function submitForm() {
+            var displayName = $("#displayNameField").val().trim();
+            if (displayName == "") {
+                $("#displayNameField_error").css("display","inline");
+                return false;
+            } else {
+                $("#displayNameField_error").css("display","none");
+            }
+            var welcomeMessage = $("#welcomingField").val().trim();
+            var theme = $("#themeSelect").val().trim();
+            var googleAnalytics = $("#googleAnalytics").val().trim();
+            var userAgreement = $("#userAgreement").val().trim();
+
+            $.ajax({
+                url:  "@api.routes.Admin.submitAppearance",
+                data: JSON.stringify({
+                    displayName: displayName,
+                    welcomeMessage: welcomeMessage,
+                    theme: theme,
+                    googleAnalytics: googleAnalytics,
+                    userAgreement: userAgreement
+                }),
+                type: "POST",
+                contentType: "application/json"
+            }).done(function() {
+                uploadGLOBALlogoFile(function() {
+                    uploadGLOBALfaviconFile(function() {
+                        location.reload();
+                    });
+                });
+            }).fail(function(jqXHR) {
+                console.error("The following error occured: " + jqXHR.responseText);
+                notify("The application preferences was not updated", "error");
+            });
+
+            return false;
+        }
+    </script>
+}

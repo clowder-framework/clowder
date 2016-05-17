@@ -17,7 +17,7 @@ $tasks_per_x = array();
 
 //Connect to mongo
 $m = new MongoClient();
-$db = $m->{"test"};
+$db = $m->{"clowder"};
 $collection = $db->{"dtsrequests"};
 
 //Bin the start times of the tasks

@@ -72,9 +72,10 @@ class DTSExtractionsAPIAppSpec extends PlaySpec with OneServerPerSuite with Give
         var br = new BufferedReader(new InputStreamReader(responseContent))
         val fileIdJson = br.readLine
         fileIdJson must include("id")
-        info("Response recieved from the Server : " + fileIdJson)
+        info("Response received from the Server : " + fileIdJson)
 
         val jsfileId = Json.parse(fileIdJson).\("id")
+
         val sfileId = Json.stringify(jsfileId)
         val id = sfileId.substring(1, sfileId.length - 1)
         info("Obtained fileId from the response: " + id)

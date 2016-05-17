@@ -1,6 +1,5 @@
-@(host: String, protocol: String)
+@(baseurl: String)
 
-var protocol = '@protocol:';
 var key = 'r1ek3rs';
 
 /**
@@ -10,17 +9,17 @@ var key = 'r1ek3rs';
  */
 var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
   // debug: true, // use debug to bust the cache on your resources
-  css: [protocol+'//@host/assets/stylesheets/dtsstylediv.css',
-  protocol+'//@host/assets/javascripts/DTSbookmarklet/css/bootstrap.bd.css',
-  protocol+'//@host/assets/javascripts/DTSbookmarklet/css/bootstrap-theme.bd.css'
+  css: ['@baseurl/assets/stylesheets/dtsstylediv.css',
+  '@baseurl/assets/javascripts/DTSbookmarklet/css/bootstrap.bd.css',
+  '@baseurl/assets/javascripts/DTSbookmarklet/css/bootstrap-theme.bd.css'
   ],
-  js: [protocol+'//@host/assets/javascripts/DTSbookmarklet/js/lunr.js',
-  protocol+'//@host/assets/javascripts/DTSbookmarklet/js/bootstrap.min.js',
-  protocol+'//@host/assets/javascripts/handlebars-v1.3.0.js',
-  protocol+'//@host/assets/javascripts/handlebars-loader.js',
+  js: ['@baseurl/assets/javascripts/DTSbookmarklet/js/lunr.js',
+  '@baseurl/assets/javascripts/DTSbookmarklet/js/bootstrap.min.js',
+  '@baseurl/assets/javascripts/handlebars-v1.3.0.js',
+  '@baseurl/assets/javascripts/handlebars-loader.js',
   '//ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/jquery-ui.min.js'
   ],
-  //jqpath: '@host/assets/javascripts/jquery-1.10.2.js', // defaults to google cdn-hosted jquery
+  //jqpath: '@baseurl/assets/javascripts/jquery-1.10.2.js', // defaults to google cdn-hosted jquery
   ready: function(base) { // use base to expose a public method
 
     base.init = function() {
@@ -48,8 +47,8 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
       });
 
       // compile modal template and add it to page
-      var modalTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/modal');
-      var html = modalTemplate({base_url : protocol+"//@host/assets/javascripts/DTSbookmarklet"});
+      var modalTemplate = Handlebars.getTemplate('@baseurl/assets/javascripts/DTSbookmarklet/modal');
+      var html = modalTemplate({base_url : "@baseurl/assets/javascripts/DTSbookmarklet"});
       jQuery(document.body).append(html);
 
       jQuery("#DTSquery").keyup(function(event){
@@ -64,7 +63,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
       function checkfetch(fileid, g) {
         console.log('-----[checkfetch-- ', fileid, ' --]-----');
         jQuery.ajax({
-          url : protocol+"//@host/api/extractions/" + fileid + "/metadata?key=" + key,
+          url : "@baseurl/api/extractions/" + fileid + "/metadata?key=" + key,
           accepts : "application/json",
           success : function(data){
             indexResults(data, g)
@@ -129,7 +128,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
     function getMetadataAboutFile(fileInfo, tagsArr) {
       console.log("Getting metadata about file " + fileInfo.id);
       jQuery.ajax({
-        url : protocol+"//@host/api/files/" + fileInfo.id + "/technicalmetadatajson?key=" + key,
+        url : "@baseurl/api/files/" + fileInfo.id + "/technicalmetadatajson?key=" + key,
         accepts : "application/json",
         success : function(data){
           console.log("fileInfo " + data);
@@ -234,7 +233,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
         fd['fileurl'] = imgurl;
         var request = jQuery.ajax({
           type : "POST",
-          url : protocol+"//@host/api/extractions/upload_url?key=" + key,
+          url : "@baseurl/api/extractions/upload_url?key=" + key,
           accepts : "application/json",
           processData : false,
           contentType : "application/json",
@@ -270,14 +269,14 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
 
               console.log(original);
 
-              var rowTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/row');
+              var rowTemplate = Handlebars.getTemplate('@baseurl/assets/javascripts/DTSbookmarklet/row');
               // make copy to get rendered size
               var image = new Image();
               image.src = original.src;
               // create html
               var html = rowTemplate({ src : imgdocs[searchResults[i].ref].url, width: image.width, height: image.height, 
                                        description: original.alt, 
-                                       linkback: protocol+"//@host/files/" + imgdocs[searchResults[i].ref].id});
+                                       linkback: "@baseurl/files/" + imgdocs[searchResults[i].ref].id});
               // add to table
               jQuery('#DTSSearchResults tbody').append(html);
             }
@@ -369,9 +368,9 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
 
         // upload all images
         for (i=0; i<images.length; i++) {
-          // console.log(jQuery(images[i]).prop('src') + " != " + protocol + "//@host/assets/javascripts/DTSbookmarklet/browndog-small.png");
-          if (jQuery(images[i]).prop('src') != (protocol + "//@host/assets/javascripts/DTSbookmarklet/browndog-small.png")) {
-            var rowTemplate = Handlebars.getTemplate(protocol+'//@host/assets/javascripts/DTSbookmarklet/row');
+          // console.log(jQuery(images[i]).prop('src') + " != " + "@baseurl/assets/javascripts/DTSbookmarklet/browndog-small.png");
+          if (jQuery(images[i]).prop('src') != ("@baseurl/assets/javascripts/DTSbookmarklet/browndog-small.png")) {
+            var rowTemplate = Handlebars.getTemplate('@baseurl/assets/javascripts/DTSbookmarklet/row');
             // make copy to get rendered size
             var image = new Image();
             image.src = images[i].src;
@@ -399,12 +398,12 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
 
         // upload all images
         for (i=0; i<imagesSrc.length; i++) {
-          console.log("CHECK " + imagesSrc[i].url + " != " + protocol + "//@host/assets/javascripts/DTSbookmarklet/browndog-small.png");
-          if (imagesSrc[i].url != protocol + "//@host/assets/javascripts/DTSbookmarklet/browndog-small.png") {
+          console.log("CHECK " + imagesSrc[i].url + " != " + "@baseurl/assets/javascripts/DTSbookmarklet/browndog-small.png");
+          if (imagesSrc[i].url != "@baseurl/assets/javascripts/DTSbookmarklet/browndog-small.png") {
             console.log("Uploading image " + imagesSrc[i].url + " " + imagesSrc[i].src);
             startUpload(imagesSrc[i].url, imagesSrc[i].src);
           } else {
-            console.log("Skipping image: " + imagesSrc[i].url + " != " + protocol + "//@host/assets/javascripts/DTSbookmarklet/browndog-small.png");
+            console.log("Skipping image: " + imagesSrc[i].url + " != " + "@baseurl/assets/javascripts/DTSbookmarklet/browndog-small.png");
             numImages -= 1;
           }
         }
@@ -481,7 +480,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
         //jQuery.get(protocol + dap + '/dap/images/poweredby-transparent.gif');
 
         var graphic = jQuery('<img>')
-          .attr('src', protocol + '//@host/assets/javascripts/DTSbookmarklet/browndog-small-transparent.gif')
+          .attr('src', '@baseurl/assets/javascripts/DTSbookmarklet/browndog-small-transparent.gif')
           .attr('width', '25')
           .attr('id', 'graphic')
           .css('position', 'absolute')
@@ -504,7 +503,7 @@ var DTSBookmarklet = DTSBookmarklet || (DTSBookmarklet = new Bookmarklet({
 
           //Add powered by graphic
           graphic = jQuery('<img>')
-            .attr('src', protocol + '//@host/assets/javascripts/DTSbookmarklet/poweredby-transparent.gif')
+            .attr('src', '@baseurl/assets/javascripts/DTSbookmarklet/poweredby-transparent.gif')
             .attr('width', '100');
 
           var link = jQuery('<a/>')

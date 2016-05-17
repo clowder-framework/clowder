@@ -40,7 +40,7 @@ Configuration.hostIp = "@play.Play.application().configuration().getString("host
 			<input type="radio" name="indexType" value="both" 			onchange="toggleCheckbox()">			Search within everything (whole files and sections)
 	    </fieldset>
         <div class="form-actions">
-          <input type="submit" class="btn btn-primary" value="Search"/>
+			<button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-search"></span> Search</button>
         </div>
 	  }
 			
@@ -191,7 +191,7 @@ Configuration.hostIp = "@play.Play.application().configuration().getString("host
 	      <output id="list"></output>
 	 
 	  <div class="form-actions">
-          <input type="submit" class="btn btn-primary" id="submit-button-id" value="Search"/>           
+		  <button type="submit" class="btn btn-default" id="submit-button-id"><span class="glyphicon glyphicon-search"></span> Search</button>
         </div>
 	 
 	  
@@ -205,8 +205,8 @@ Configuration.hostIp = "@play.Play.application().configuration().getString("host
 		</fieldset>	
 		<br>
 		<br>
-	   <div style="text-align: center;">			
-       <input type="submit" class="btn btn-primary" value="Search" />
+	   <div style="text-align: center;">
+		   <button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-search"></span> Search</button>
        </div>
        <br>
        <br>       

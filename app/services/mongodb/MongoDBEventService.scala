@@ -2,6 +2,7 @@ package services.mongodb
 
 import models._
 import java.util.Date
+import org.bson.types.ObjectId
 import services.EventService
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
@@ -12,7 +13,7 @@ import com.mongodb.casbah.Imports._
 import com.novus.salat.dao.SalatMongoCursor
 
 /**
- * @author Varun Kethineedi
+  * Use MongoDB for storing events.
  */
 class MongoDBEventService extends EventService {
 
@@ -28,7 +29,7 @@ class MongoDBEventService extends EventService {
   def addUserEvent(user: Option[User], action_type: String) = {
     user match {
       case Some(modeluser) => {
-        Event.insert(new Event(modeluser.getMiniUser, None, None, None, None, action_type, new Date()))
+        Event.insert(new Event(modeluser.getMiniUser, None, None, None, None, None, action_type, new Date()))
       }
     }
   }
@@ -37,7 +38,7 @@ class MongoDBEventService extends EventService {
     if (object_name.toString() != "undefined"){
       user match {
         case Some(modeluser) => {
-          Event.insert(new Event(modeluser.getMiniUser, Option(object_id), Option(object_name), None, None, action_type, new Date())) 
+          Event.insert(new Event(modeluser.getMiniUser, None, Option(object_id), Option(object_name), None, None, action_type, new Date())) 
         }
       }
     }
@@ -46,7 +47,15 @@ class MongoDBEventService extends EventService {
   def addSourceEvent(user: Option[User], object_id: UUID, object_name: String, source_id: UUID, source_name: String, action_type: String) = {
     user match {
       case Some(modeluser) => {
-        Event.insert(new Event(modeluser.getMiniUser, Option(object_id), Option(object_name), Option(source_id), Option(source_name), action_type, new Date())) 
+        Event.insert(new Event(modeluser.getMiniUser, None, Option(object_id), Option(object_name), Option(source_id), Option(source_name), action_type, new Date())) 
+      }
+    }
+  }
+
+  def addRequestEvent(user: Option[User], targetuser: User, object_id: UUID, object_name: String,  action_type: String) = {
+    user match {
+      case Some(modeluser) => {
+        Event.insert(new Event(modeluser.getMiniUser, Option(targetuser.getMiniUser), Option(object_id), Option(object_name), None, None, action_type, new Date()))
       }
     }
   }
@@ -63,7 +72,7 @@ class MongoDBEventService extends EventService {
     var eventsList = List.concat(userEvents, objectsEvents)
     eventsList = List.concat(eventsList, sourceEvents)
 
-    eventsList = eventsList.sortBy(_.created)
+    eventsList = eventsList.sortBy(_.created).reverse
     eventsList = eventsList.distinct
     eventsList = eventsList.filter(_.created.after(time))
 
@@ -84,7 +93,7 @@ class MongoDBEventService extends EventService {
     var eventsList = List.concat(userEvents, objectsEvents)
     eventsList = List.concat(eventsList, sourceEvents)
 
-    eventsList = eventsList.sortBy(_.created)
+    eventsList = eventsList.sortBy(_.created).reverse
     eventsList = eventsList.distinct
 
     limit match {
@@ -129,6 +138,49 @@ class MongoDBEventService extends EventService {
       }
     }
 
+  }
+   def getRequestEvents(targetuser: Option[User], limit: Option[Integer]): List[Event] = {
+     targetuser match {
+       case Some(modeluser) => {
+         val eventList = Event.find(
+           MongoDBObject(
+             "targetuser._id" -> new ObjectId(modeluser.id.stringify)
+           )
+         ).toList
+
+           Logger.info("find " + eventList.size + " request")
+          limit match {
+            case Some(x) => eventList.take(x)
+            case None => eventList
+          }
+        }
+       case None => List()
+     }
+   }
+
+  def getEventsByUser( user: User, limit: Option[Integer]): List[Event] ={
+    val eventList = (Event.find(MongoDBObject(
+      "user._id"-> new ObjectId(user.id.toString()))).toList  :::
+      Event.find(MongoDBObject(
+      "object_id"-> new ObjectId(user.id.toString()))).toList)
+        .distinct.sorted(Ordering.by((_: Event).created).reverse)
+
+    limit match {
+      case Some(x) => eventList.take(x)
+      case None => eventList
+    }
+  }
+
+  def updateObjectName(id:UUID, name:String) = {
+    Event.dao.update(MongoDBObject("object_id" -> new ObjectId(id.stringify)), $set("object_name" -> name), multi = true)
+    Event.dao.update(MongoDBObject("source_id" -> new ObjectId(id.stringify)), $set("source_name" -> name), multi = true)
+  }
+
+  def updateAuthorFullName(userId: UUID, fullName: String) {
+    Event.update(MongoDBObject("user._id" -> new ObjectId(userId.stringify)),
+      $set("user.fullName" -> fullName), false, true, WriteConcern.Safe)
+    Event.update(MongoDBObject("targetuser._id" -> new ObjectId(userId.stringify)),
+      $set("targetuser.fullName" -> fullName), false, true, WriteConcern.Safe)
   }
 
 }

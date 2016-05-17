@@ -1,0 +1,23 @@
+<script src="@routes.Assets.at("javascripts/lib/masonry.pkgd.min.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/lib/imagesloaded.pkgd.min.js")" type="text/javascript"></script>
+
+<script type="text/javascript">
+  function activate() {
+        // initialize Masonry
+        var $container = $('.masonry').masonry();
+        // layout Masonry again after all images have loaded
+        imagesLoaded( '#masonry', function() {
+            $container.masonry({
+            itemSelector: '.post-box',
+            columnWidth: '.post-box',
+            transitionDuration: 4
+            });
+        });
+    }
+    $(document).ready(function () {
+        activate();
+    });
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        activate();
+    })
+</script>

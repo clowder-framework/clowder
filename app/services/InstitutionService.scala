@@ -3,7 +3,6 @@ package services
 /**
  * Service definition to interact with institutions database.
  *
- * @author Will Hennessy
  */
 trait InstitutionService {
 

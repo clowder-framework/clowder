@@ -1,16 +1,13 @@
 package services
 
-
 import java.io.InputStream
-import models.{UUID, Dataset, File, Comment}
-import securesocial.core.Identity
+import models._
 import com.mongodb.casbah.Imports._
 import play.api.libs.json.{JsObject, JsArray, JsValue}
 
 /**
  * Generic file service to store blobs of files and metadata about them.
  *
- * @author Luigi Marini
  *
  */
 trait FileService {
@@ -20,9 +17,19 @@ trait FileService {
   def count(): Long
 
   /**
+    * The number of bytes stored
+    */
+  def bytes(): Long
+
+  /**
    * Save a file from an input stream.
    */
-  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: Identity, showPreviews: String = "DatasetLevel"): Option[File]
+  def save(inputStream: InputStream, filename: String, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File]
+
+  /**
+   * Save a file object
+   */
+  def save(file: File): Unit
 
   /**
    * Get the input stream of a file given a file id.
@@ -84,13 +91,20 @@ trait FileService {
    * First file in chronological order.
    */
   def first(): Option[File]
+
+  def index(id: Option[UUID])
   
   def index(id: UUID)
 
   /**
+   * Directly insert file into database, for example if the file path is local.
+   */
+  def insert(file: File): Option[String]
+
+  /**
    * Return a list of tags and counts found in sections
    */
-  def getTags(): Map[String, Long]
+  def getTags(user: Option[User]): Map[String, Long]
 
   /**
    * Update thumbnail used to represent this dataset.
@@ -130,11 +144,11 @@ trait FileService {
 
   def addUserMetadata(id: UUID, json: String)
 
-  def addXMLMetadata(id: UUID, json: String)
+  def addXMLMetadata(id: UUID, json: String)  
 
-  def findByTag(tag: String): List[File]
+  def findByTag(tag: String, user: Option[User]): List[File]
 
-  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean): List[File]
+  def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean, user: Option[User]): List[File]
 
   def findIntermediates(): List[File]
 
@@ -176,8 +190,6 @@ trait FileService {
    */
   def updateLicense(id: UUID, licenseType: String, rightsHolder: String, licenseText: String, licenseUrl: String, allowDownload: String)
 
-  def setNotesHTML(id: UUID, notesHTML: String)
-
   /**
    * Add follower to a file.
    */
@@ -192,5 +204,9 @@ trait FileService {
    * Update technical metadata
    */
   def updateMetadata(fileId: UUID, metadata: JsValue, extractor_id: String)
+
+  def updateDescription(fileId : UUID, description : String)
+
+  def updateAuthorFullName(userId: UUID, fullName: String)
 
 }

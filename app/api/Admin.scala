@@ -1,74 +1,161 @@
 package api
 
+import javax.inject.Inject
+
+import com.wordnik.swagger.annotations.ApiOperation
+import models.{ClowderUser, UUID}
+import org.apache.commons.lang3.StringEscapeUtils
+import play.api.libs.concurrent.Akka
 import play.api.mvc.Controller
 import play.api.Play.current
 import play.api.libs.json.Json.toJson
-import services.{AppConfiguration, AppConfigurationService}
+import play.api.templates.Html
+import services._
 import services.mongodb.MongoSalatPlugin
 import play.api.Logger
+import util.Mail
+import scala.concurrent.duration._
+import play.api.libs.concurrent.Execution.Implicits._
+
 
 /**
  * Admin endpoints for JSON API.
- *
- * @author Luigi Marini
  */
-object Admin extends Controller with ApiController {
+class Admin @Inject()(userService: UserService,
+                      datasets:DatasetService,
+                      collections:CollectionService,
+                      files:FileService) extends Controller with ApiController {
 
   /**
    * DANGER: deletes all data, keep users.
    */
-  def deleteAllData = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Admin)) { request =>
-    current.plugin[MongoSalatPlugin].map(_.dropAllData())
+  def deleteAllData(resetAll: Boolean) = ServerAdminAction { implicit request =>
+    current.plugin[MongoSalatPlugin].map(_.dropAllData(resetAll))
+    current.plugin[ElasticsearchPlugin].map(_.deleteAll)
+
     Ok(toJson("done"))
   }
-  
-  
-  def removeAdmin = SecuredAction(authorization=WithPermission(Permission.Admin)) { request =>    
-    Logger.debug("Removing admin")
 
-    request.user match {
-      case Some(user) => {
-        if(user.email.nonEmpty && AppConfiguration.checkAdmin(user.email.get)) {
-          (request.body \ "email").asOpt[String].map { email =>
-            AppConfiguration.checkAdmin(email) match {
-              case true => {
-                Logger.debug("Removing admin with email " + email)
-                AppConfiguration.removeAdmin(email)
-
-                Ok(toJson(Map("status" -> "success")))
-              }
-              case false => {
-                Logger.info("Identified admin does not exist.")
-                Ok(toJson(Map("status" -> "notmodified")))
-              }
-            }
-          }.getOrElse {
-            BadRequest(toJson("Missing parameter [email]"))
-          }
-        } else {
-          Unauthorized("Not authorized")
-        }
-      }
-      case None => Unauthorized("Not authorized")
+  def submitAppearance = ServerAdminAction(parse.json) { implicit request =>
+    (request.body \ "theme").asOpt[String] match {
+      case Some(theme) => AppConfiguration.setTheme(theme)
     }
-  }
-  
-  
-  def submitAppearance = SecuredAction(parse.json, authorization=WithPermission(Permission.Admin)) { request =>
     (request.body \ "displayName").asOpt[String] match {
       case Some(displayName) => AppConfiguration.setDisplayName(displayName)
     }
     (request.body \ "welcomeMessage").asOpt[String] match {
       case Some(welcomeMessage) => AppConfiguration.setWelcomeMessage(welcomeMessage)
     }
+    (request.body \ "googleAnalytics").asOpt[String] match {
+      case Some(s) => AppConfiguration.setGoogleAnalytics(s)
+    }
+    (request.body \ "userAgreement").asOpt[String] match {
+      case Some(userAgreement) => AppConfiguration.setUserAgreement(userAgreement)
+    }
+    Ok(toJson(Map("status" -> "success")))
+  }
+
+  def sensorsConfig = ServerAdminAction(parse.json) { implicit request =>
     (request.body \ "sensors").asOpt[String] match {
       case Some(sensors) => AppConfiguration.setSensorsTitle(sensors)
     }
     (request.body \ "sensor").asOpt[String] match {
       case Some(sensor) => AppConfiguration.setSensorTitle(sensor)
     }
+    (request.body \ "parameters").asOpt[String] match {
+      case Some(parameters) => AppConfiguration.setParametersTitle(parameters)
+    }
+    (request.body \ "parameter").asOpt[String] match {
+      case Some(parameter) => AppConfiguration.setParameterTitle(parameter)
+    }
     Ok(toJson(Map("status" -> "success")))
   }
 
-}
+  def mail = UserAction(false)(parse.json) { implicit request =>
+    val body = StringEscapeUtils.escapeHtml4((request.body \ "body").asOpt[String].getOrElse("no text"))
+    val subj = (request.body \ "subject").asOpt[String].getOrElse("no subject")
 
+    val htmlbody = "<html><body><p>" + body + "</p>" + views.html.emails.footer() + "</body></html>"
+
+    Mail.sendEmailAdmins(subj, request.user, Html(htmlbody))
+    Ok(toJson(Map("status" -> "success")))
+  }
+
+  def users = ServerAdminAction(parse.json) { implicit request =>
+    (request.body \ "active").asOpt[List[String]].foreach(list =>
+      list.foreach(id =>
+        userService.findById(UUID(id)) match {
+          case Some(u:ClowderUser) => {
+            if (!u.active) {
+              userService.update(u.copy(active=true))
+              val subject = s"[${AppConfiguration.getDisplayName}] account activated"
+              val body = views.html.emails.userActivated(u, active=true)(request)
+              util.Mail.sendEmail(subject, request.user, u, body)
+            }
+          }
+          case _ => Logger.error(s"Could not update user with id=${id}")
+        }
+      )
+    )
+    (request.body \ "inactive").asOpt[List[String]].foreach(list =>
+      list.foreach(id =>
+        userService.findById(UUID(id)) match {
+          case Some(u:ClowderUser) => {
+            if (u.active) {
+              userService.update(u.copy(active=false, serverAdmin=false))
+              val subject = s"[${AppConfiguration.getDisplayName}] account deactivated"
+              val body = views.html.emails.userActivated(u, active=false)(request)
+              util.Mail.sendEmail(subject, request.user, u, body)
+            }
+          }
+          case _ => Logger.error(s"Could not update user with id=${id}")
+        }
+      )
+    )
+    (request.body \ "admin").asOpt[List[String]].foreach(list =>
+      list.foreach(id =>
+        userService.findById(UUID(id)) match {
+          case Some(u:ClowderUser) if u.active => {
+            if (!u.serverAdmin) {
+              userService.update(u.copy(serverAdmin=true))
+              val subject = s"[${AppConfiguration.getDisplayName}] admin access granted"
+              val body = views.html.emails.userAdmin(u, admin=true)(request)
+              util.Mail.sendEmail(subject, request.user, u, body)
+            }
+          }
+          case _ => Logger.error(s"Could not update user with id=${id}")
+        }
+      )
+    )
+    (request.body \ "unadmin").asOpt[List[String]].foreach(list =>
+      list.foreach(id =>
+        userService.findById(UUID(id)) match {
+          case Some(u:ClowderUser) if u.active => {
+            if (u.serverAdmin) {
+              userService.update(u.copy(serverAdmin=false))
+              val subject = s"[${AppConfiguration.getDisplayName}] admin access revoked"
+              val body = views.html.emails.userAdmin(u, admin=true)(request)
+              util.Mail.sendEmail(subject, request.user, u, body)
+            }
+          }
+          case _ => Logger.error(s"Could not update user with id=${id}")
+        }
+      )
+    )
+    Ok(toJson(Map("status" -> "success")))
+  }
+
+
+  @ApiOperation(value = "reindex all resources in elasticsearch",
+    notes = "",
+    responseClass = "None", httpMethod = "POST")
+  def reindex = ServerAdminAction { implicit request =>
+    Akka.system.scheduler.scheduleOnce(1 seconds) {
+      current.plugin[ElasticsearchPlugin].map(_.deleteAll)
+      collections.index(None)
+      datasets.index(None)
+      files.index(None)
+    }
+    Ok(toJson(Map("status" -> "Success")))
+  }
+}

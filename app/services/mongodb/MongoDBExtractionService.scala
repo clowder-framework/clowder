@@ -14,7 +14,7 @@ import models.WebPageResource
 import com.mongodb.casbah.Imports._
 
 /**
- * Created by lmarini on 2/21/14.
+ * Use MongoDB to store extractions
  */
 class MongoDBExtractionService extends ExtractionService {
 

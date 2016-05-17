@@ -1,6 +1,8 @@
 @(events: List[models.Event])(implicit user: Option[models.User] = None)
 @import _root_.util.Formatters
 <h1> Clowder Email Digest </h1>
+
+Following is a list of events at @services.AppConfiguration.getDisplayName
       @for(event <- events) {
           <div class="panel panel-default">
               <div class="panel-body">

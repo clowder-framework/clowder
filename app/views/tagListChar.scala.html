@@ -1,6 +1,11 @@
 @(tagMap: Map[Char, Map[String, Long]])(implicit user: Option[models.User])
 
 @main("Tag list") {
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Tags</h1>
+        </div>
+    </div>
     @if(tagMap.isEmpty) {
         <div class="row">
             <div id="tagList" class="col-md-12" style="text-align: justify">
@@ -36,5 +41,6 @@
                 }
             }
         }
+        <div id="tag_end" class="row" style="height: 60px;"></div>
     }
 }

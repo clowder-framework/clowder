@@ -7,7 +7,6 @@ import java.util.Date
 /**
  * Track information about individual extractions.
  *
- * Created by lmarini on 2/21/14.
  */
 trait ExtractionService {
 

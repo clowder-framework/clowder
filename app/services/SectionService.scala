@@ -2,9 +2,11 @@ package services
 
 import models.{UUID, Section, Comment}
 import play.api.libs.json.JsValue
+import scala.collection.mutable.ArrayBuffer
+import models.User
 
 /**
- * Created by lmarini on 2/17/14.
+ * Service to manipulate sections
  */
 trait SectionService {
 
@@ -18,7 +20,7 @@ trait SectionService {
 
   def findByFileId(fileId: UUID): List[Section]
 
-  def findByTag(tag: String): List[Section]
+  def findByTag(tag: String, user: Option[User]): List[Section]
 
   def removeAllTags(id: UUID)
 
@@ -33,10 +35,15 @@ trait SectionService {
   /**
    * Return a list of tags and counts found in sections
    */
-  def getTags(): Map[String, Long]
+  def getTags(user: Option[User]): Map[String, Long]
 
   /**
    * Update thumbnail used to represent this section.
    */
   def updateThumbnail(sectionId: UUID, thumbnailId: UUID)
+
+  /**
+   * Get the list of spaces that the section (section --> file --> dataset(s) --> [collection(s)] --> space(s)) belongs to
+   */
+  def getParentSpaces(querySectionId: UUID): ArrayBuffer[UUID]
 }

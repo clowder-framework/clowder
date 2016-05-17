@@ -12,7 +12,8 @@
                 var previews=file['previews'];
                 for (var j=0; j<previews.length; ++j) {
                     var preview=previews[j];
-                    if(preview['p_id'] == "Thumbnail") {
+                    if(preview['p_id'] == "Thumbnail" && preview['pv_route'] != "null") {
+                        console.log(preview);
                         $("<link/>", {
                             rel: "stylesheet",
                             type: "text/css",

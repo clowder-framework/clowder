@@ -3,7 +3,6 @@ package models
 /**
  * Feature vectors used for multimedia indexing.
  *
- * @author Luigi Marini
  */
 case class MultimediaFeatures(
   id: UUID = UUID.generate,
@@ -14,4 +13,11 @@ case class MultimediaFeatures(
 case class Feature(
   representation: String,
   descriptor: List[Double])
+
+case class MultimediaDistance(
+  source_section: UUID,
+  target_section: UUID,
+  representation: String,
+  distance: Double,
+  target_spaces: List[UUID])
 

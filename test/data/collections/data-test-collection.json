@@ -1,4 +1,5 @@
 {
     "description" : "Collection 1 Tests Description",
-    "name" : "Collection 1 Test Suite"
+    "name" : "Collection 1 Test Suite",
+    "space" : "default"
 }

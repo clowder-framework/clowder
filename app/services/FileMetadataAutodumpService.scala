@@ -8,8 +8,6 @@ import play.api.libs.concurrent.Execution.Implicits._
 /**
  * File metadata automatic dump service.
  *
- * @author Constantinos Sophocleous
- *
  */
 class FileMetadataAutodumpService (application: Application) extends Plugin {
 

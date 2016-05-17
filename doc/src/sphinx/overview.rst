@@ -1,28 +1,32 @@
 Overview
 ============
 
-Medici is designed to support any data format and multiple research domains and contains three major extension points:
-preprocessing, processing and previewing. Information in Medici is organized using the following data model:
+Let's get the ugly truth out of the way, why don't we?
 
-.. image:: _static/datamodel.jpg
+What is it good for?
+--------------------
 
-When new data is added to the system, whether it is via the web interface or through the RESTful API, preprocessing is
-off-loaded to extraction services in charge of extracting appropriate data and metadata. The extraction services attempt
-to extract information and run preprocessing steps based on the type of the data just uploaded. Extracted information
-is then written back to the repository using appropriate API endpoints.
+* You want to have your web interface close to the data
+* You want to customize how you preview, store, curate the data
+* You have a lot of data but cannot afford cloud storage solutions
 
-.. image:: _static/extraction.jpg
+What is it bad for?
+-------------------
 
-For example, in the case of images, a preprocessing step takes care of creating the previews of the image, but also of
-extracting EXIF and GPS metadata from the image. If GPS information is available, the web client shows the location of
-the dataset on a map embedded in the page. By making the clients and preprocessing steps independent the system can
-grow and adapt to different user communities and research domains.
+* If you just want to store small files that don't require a lot of curation a cloud storage solution might be a better fit
 
-Medici uses a variety of technologies to accomplish its goals. The overall architecture of a typical deployment looks
-as follows:
 
-.. image:: _static/architecture.jpg
+The ugly?
+---------
 
-The web application and individual extractors comprise most of the custom Medici code and the core of the system.
-Most of the other blocks in the diagram are external services Medici depends on. The next section covers how to
-setup a typical stack.
+* It's research software, use at your own risk
+* A 1.0 version has not been released yet
+
+Data Model
+------------
+
+Clowder is designed to support any data format and multiple research domains and contains three major extension points:
+preprocessing, processing and previewing.
+
+.. image:: _static/dataset.png
+

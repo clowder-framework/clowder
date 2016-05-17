@@ -3,7 +3,6 @@ package services
 /**
  * Service definition to interact with projects database.
  *
- * @author Will Hennessy
  */
 trait ProjectService {
 
