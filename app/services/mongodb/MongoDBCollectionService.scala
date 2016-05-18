@@ -204,22 +204,23 @@ class MongoDBCollectionService @Inject() (
             if (permissions.contains(Permission.AddResourceToCollection)) {
               MongoDBObject()
             } else {
-              val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
 
               user match {
                 case Some(u) => {
+                  val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
                   orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(u.id.stringify)) ++ MongoDBObject("parent_collection_ids" -> List.empty)
                   val permissionsString = permissions.map(_.toString)
                   val orlistB = collection.mutable.ListBuffer.empty[MongoDBObject]
                   val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(permissionsString).nonEmpty)
                   if (okspaces.nonEmpty) {
                     orlistB += ("spaces" $in okspaces.map(x => new ObjectId(x.spaceId.stringify)))
+                    orlist += (MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject( "$size" -> 0))) ++ $or(orlistB.map(_.asDBObject)))
                   }
-                  orlist += (MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject( "$size" -> 0))) ++ $or(orlistB.map(_.asDBObject)))
+                  $or(orlist.map(_.asDBObject))
                 }
-                case None =>
+                case None => MongoDBObject()
               }
-              $or(orlist.map(_.asDBObject))
+
             }
           }
         }
