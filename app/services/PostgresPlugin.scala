@@ -56,8 +56,8 @@ class PostgresPlugin(application: Application) extends Plugin {
     !application.configuration.getString("postgresplugin").filter(_ == "disabled").isDefined
   }
 
-  def addDatapoint(start: java.util.Date, end: Option[java.util.Date], geoType: String, data: String, lat: Double, lon: Double, alt: Double, stream_id: String) {
-    val ps = conn.prepareStatement("INSERT INTO datapoints(start_time, end_time, stream_id, data, geog, created) VALUES(?, ?, ?, CAST(? AS jsonb), ST_SetSRID(ST_MakePoint(?, ?, ?), 4326), NOW());")
+  def addDatapoint(start: java.util.Date, end: Option[java.util.Date], geoType: String, data: String, lat: Double, lon: Double, alt: Double, stream_id: String): Option[String] = {
+    val ps = conn.prepareStatement("INSERT INTO datapoints(start_time, end_time, stream_id, data, geog, created) VALUES(?, ?, ?, CAST(? AS jsonb), ST_SetSRID(ST_MakePoint(?, ?, ?), 4326), NOW());", Statement.RETURN_GENERATED_KEYS)
     ps.setTimestamp(1, new Timestamp(start.getTime))
     if (end.isDefined) ps.setTimestamp(2, new Timestamp(end.get.getTime))
     else ps.setDate(2, null)
@@ -67,7 +67,14 @@ class PostgresPlugin(application: Application) extends Plugin {
     ps.setDouble(6, lat)
     ps.setDouble(7, alt)
     ps.executeUpdate()
+    val rs = ps.getGeneratedKeys
+    var datapointID = ""
+    if (rs.next()) {
+      datapointID = rs.getInt(1).toString
+    }
+    rs.close()
     ps.close()
+    getDatapoint(datapointID)
   }
 
   def createSensor(name: String, geoType: String, lat: Double, lon: Double, alt: Double, metadata: String): Option[String] = {
@@ -647,7 +654,7 @@ class PostgresPlugin(application: Application) extends Plugin {
   def getDatapoint(id: String): Option[String] = {
     var data = ""
     val query = "SELECT row_to_json(t,true) As my_datapoint FROM " +
-      "(SELECT gid As id, to_char(created AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS created, to_char(start_time AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS start_time, to_char(end_time AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id:text FROM datapoints WHERE gid=?) As t;"
+      "(SELECT gid As id, to_char(created AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS created, to_char(start_time AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS start_time, to_char(end_time AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS end_time, data As properties, 'Feature' As type, ST_AsGeoJson(1, geog, 15, 0)::json As geometry, stream_id::text FROM datapoints WHERE gid=?) As t;"
     val st = conn.prepareStatement(query)
     st.setInt(1, id.toInt)
     Logger.debug("Datapoints get statement: " + st)

@@ -324,12 +324,16 @@ object Geostreams extends ApiController {
             val start_timestamp = new Timestamp(formatter.parse(start_time).getTime())
             val end_timestamp = if (end_time.isDefined) Some(new Timestamp(formatter.parse(end_time.get).getTime())) else None
             if (longlat.length == 3) {
-              plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), longlat(2), streamId)
+              plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), longlat(2), streamId) match {
+                case Some(d) => jsonp(d, request)
+                case None => jsonp(Json.obj("status"->"error"), request)
+              }
             } else {
-              plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), 0.0, streamId)
+              plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), 0.0, streamId) match {
+                case Some(d) => jsonp(d, request)
+                case None => jsonp(Json.obj("status" -> "error"), request)
+              }
             }
-            cacheInvalidate(None, None)
-            jsonp(toJson("success"), request)
           }
           case None => pluginNotEnabled
         }
