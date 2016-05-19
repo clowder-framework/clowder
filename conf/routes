@@ -105,7 +105,7 @@ GET            /datasets/createStep2                                            
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
 GET            /datasets/generalMetadataSearch                                          @controllers.Datasets.generalMetadataSearch
 GET            /datasets/following                                                      @controllers.Datasets.followingDatasets(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
-GET            /datasets/toolManager                                                    @controllers.ToolManager.toolManager
+GET            /toolManager                                                             @controllers.ToolManager.toolManager
 GET            /datasets/refreshToolList                                                @controllers.ToolManager.refreshToolSidebar(datasetid: UUID, datasetName: String)
 GET            /datasets/launchableTools                                                @controllers.ToolManager.getLaunchableTools
 GET            /datasets/uploadToTool                                                   @controllers.ToolManager.uploadDatasetToTool(instanceID: UUID, datasetID: UUID, datasetName: String)

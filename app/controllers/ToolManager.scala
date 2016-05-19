@@ -1,42 +1,21 @@
 package controllers
 
-import java.io.FileInputStream
-import java.text.SimpleDateFormat
-import java.util.Date
 import javax.inject.Inject
 import api.Permission
 import api.Permission.Permission
-import fileutils.FilesUtils
 import models._
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json._
 import services._
-import util.{Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
 import scala.collection.mutable.{ListBuffer, Map => MutableMap}
 
 /**
   * A dataset is a collection of files and streams.
   */
-class ToolManager @Inject()(
-                          datasets: DatasetService,
-                          files: FileService,
-                          collections: CollectionService,
-                          comments: CommentService,
-                          sections: SectionService,
-                          extractions: ExtractionService,
-                          dtsrequests:ExtractionRequestsService,
-                          sparql: RdfSPARQLService,
-                          users: UserService,
-                          previewService: PreviewService,
-                          spaceService: SpaceService,
-                          curationService: CurationService,
-                          relations: RelationService,
-                          folders: FolderService,
-                          metadata: MetadataService,
-                          events: EventService) extends SecuredController {
+class ToolManager @Inject()() extends SecuredController {
 
   object ActivityFound extends Exception {}
 
