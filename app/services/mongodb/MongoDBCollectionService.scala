@@ -198,30 +198,38 @@ class MongoDBCollectionService @Inject() (
     val filterOwner = owner match {
       case Some(o) =>  MongoDBObject("author._id" -> new ObjectId(o.id.stringify))
       case None => {
-        space match {
-          case Some(s) => MongoDBObject()
-          case None => {
-            if (permissions.contains(Permission.AddResourceToCollection)) {
-              MongoDBObject()
-            } else {
+          space match {
+            case Some(s) => MongoDBObject()
+            case None => {
+              if (showAll || (configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewCollection))) {
+                val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
+                orlist += MongoDBObject("parent_collection_ids" -> List.empty)
+                orlist += MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject("$size" -> 0)))
+                $or(orlist.map(_.asDBObject))
+              } else {
+                if (permissions.contains(Permission.AddResourceToCollection)) {
+                  MongoDBObject()
+                } else {
 
-              user match {
-                case Some(u) => {
-                  val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
-                  orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(u.id.stringify)) ++ MongoDBObject("parent_collection_ids" -> List.empty)
-                  val permissionsString = permissions.map(_.toString)
-                  val orlistB = collection.mutable.ListBuffer.empty[MongoDBObject]
-                  val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(permissionsString).nonEmpty)
-                  if (okspaces.nonEmpty) {
-                    orlistB += ("spaces" $in okspaces.map(x => new ObjectId(x.spaceId.stringify)))
-                    orlist += (MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject( "$size" -> 0))) ++ $or(orlistB.map(_.asDBObject)))
+                  user match {
+                    case Some(u) => {
+                      val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
+                      orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(u.id.stringify)) ++ MongoDBObject("parent_collection_ids" -> List.empty)
+                      val permissionsString = permissions.map(_.toString)
+                      val orlistB = collection.mutable.ListBuffer.empty[MongoDBObject]
+                      val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(permissionsString).nonEmpty)
+                      if (okspaces.nonEmpty) {
+                        orlistB += ("spaces" $in okspaces.map(x => new ObjectId(x.spaceId.stringify)))
+                        orlist += (MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject("$size" -> 0))) ++ $or(orlistB.map(_.asDBObject)))
+                      }
+                      $or(orlist.map(_.asDBObject))
+                    }
+                    case None => MongoDBObject()
                   }
-                  $or(orlist.map(_.asDBObject))
+
                 }
-                case None => MongoDBObject()
               }
 
-            }
           }
         }
       }
@@ -506,7 +514,7 @@ class MongoDBCollectionService @Inject() (
     spaceService.decrementCollectionCounter(collectionId, spaceId, 1)
   }
 
-  def syncUpRootSpaces(collectionId: UUID, initialParents: List[UUID]): Unit ={
+  def syncUpRootSpaces(collectionId: UUID, initialRootSpaces: List[UUID]): Unit ={
     get(collectionId) match {
       case Some(collection) => {
         val parentSpaces = ListBuffer.empty[UUID]
@@ -518,7 +526,7 @@ class MongoDBCollectionService @Inject() (
         }
         collection.spaces.foreach { space =>
           if(!(parentSpaces contains space)) {
-            if(!(initialParents contains space)) {
+            if(!(initialRootSpaces contains space)) {
               addToRootSpaces(collection.id, space)
             }
           } else {
@@ -775,7 +783,7 @@ class MongoDBCollectionService @Inject() (
               //remove collection from the list of parent collection for sub collection
               Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)), $pull("parent_collection_ids" -> Some(new ObjectId(collectionId.stringify))), false, false, WriteConcern.Safe)
               //Check if any of the remaining spaces come from a parent or not. If not, add it to the root_spaces
-              syncUpRootSpaces(sub_collection.id, sub_collection.spaces)
+              syncUpRootSpaces(sub_collection.id, sub_collection.root_spaces)
 
               Logger.info("Removing subcollection from collection completed")
             }
@@ -817,7 +825,7 @@ class MongoDBCollectionService @Inject() (
                   }
                 }
               }
-              syncUpRootSpaces(sub_collection.id, sub_collection.spaces)
+              syncUpRootSpaces(sub_collection.id, sub_collection.root_spaces)
               index(collection.id)
               Collection.findOneById(new ObjectId(subCollectionId.stringify)) match {
                 case Some(sub_collection) => {
