@@ -17,9 +17,6 @@ import scala.collection.mutable.{ListBuffer, Map => MutableMap}
   */
 class ToolManager @Inject()() extends SecuredController {
 
-  object ActivityFound extends Exception {}
-
-
   /**
     * With permission, prepare Tool Manager page with list of currently running tool instances.
     */
