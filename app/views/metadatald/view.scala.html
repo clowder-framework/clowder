@@ -113,9 +113,9 @@
     }
 
     @printHeader(agent: Agent, date: java.util.Date, resourceId: UUID, i: Integer) = {
-        @agent.operation by @agent.typeOfAgent
+        @agent.operation by
         @if(agent.url.isDefined) {
-            <a id='@resourceId.toString()@i.toString' href="javascript:void(0)"
+            <a id='@resourceId.toString()@i.toString' href="@routes.Profile.viewProfileUUID(agent.id)"
             onmouseover="getAgentContext('@resourceId.toString()@i.toString','@agent.id');"
             onmouseout="leaveAgentContext('@resourceId.toString()@i.toString');">@agent.displayName</a>
         } else {
@@ -242,9 +242,9 @@
 
             request.done(function (response, textStatus, jqXHR) {
                 var fields = response;
-                //console.log(fields);
+                //console.log(fields['fullName']);
                 $("#"+aid).popover({
-                    content:JSON.stringify(fields),
+                    content:fields['email'],
                     trigger:'hover',
                     placement:'top',
                     template: '<div class="popover" role="tooltip" style="max-width:600px;word-break:break-all"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>'
