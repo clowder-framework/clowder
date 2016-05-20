@@ -23,7 +23,7 @@
                                         <span class="glyphicon glyphicon-minus"></span>
                                     </a>
                                     <!-- only with context and user (not extractor) generated -->
-                                    @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") > 0) {
+                                    @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
                                         <!-- ids don't like spaces, you can use regex for removing different characters in metadata names (key) as well -->
                                         @defining(contextId.get + key.replaceAll("[() ]","") + resourceId.toString() + i.toString) { mid =>
                                             <a id='@mid' href="javascript:void(0)"
@@ -49,7 +49,7 @@
                                     <a class="collapse-icon">
                                         <span class="glyphicon glyphicon-minus"></span>
                                     </a>
-                                    @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") > 0) {
+                                    @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
                                         @defining(contextId.get + key.replaceAll("[() ]","") + resourceId.toString() + i.toString) { mid =>
                                             <a id='@mid' href="javascript:void(0)"
                                             onmouseover="getMetadataContext('@mid','@contextId.get','@key');"
@@ -71,7 +71,7 @@
                             }
                             case _ => {
                                 <li class="md-block">
-                                @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") > 0) {
+                                @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
                                     @defining(contextId.get + key.replaceAll("[() ]","") + resourceId.toString() + i.toString) { mid =>
                                         <a id='@mid' href="javascript:void(0)"
                                             onmouseover="getMetadataContext('@mid','@contextId.get','@key');"
@@ -114,12 +114,24 @@
 
     @printHeader(agent: Agent, date: java.util.Date, resourceId: UUID, i: Integer) = {
         @agent.operation by
-        @if(agent.url.isDefined) {
-            <a id='@resourceId.toString()@i.toString' href="@routes.Profile.viewProfileUUID(agent.id)"
-            onmouseover="getAgentContext('@resourceId.toString()@i.toString','@agent.id');"
-            onmouseout="leaveAgentContext('@resourceId.toString()@i.toString');">@agent.displayName</a>
+        @if(!Option(agent.displayName).getOrElse("").isEmpty) {
+            @if(agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
+                <a id='@resourceId.toString()@i.toString' href="@routes.Profile.viewProfileUUID(agent.id)"
+                onmouseover="getAgentContext('@resourceId.toString()@i.toString','@agent.id');"
+                onmouseout="leaveAgentContext('@resourceId.toString()@i.toString');">@agent.displayName</a>
+            } else {
+                @if(!agent.url.isDefined) {
+                    <a href="@agent.url" target="_blank">@agent.displayName</a>
+                } else {
+                    @agent.displayName
+                }
+            }
         } else {
-            @agent.displayName
+            @if(agent.url.isDefined) {
+                <a href="@agent.url" target="_blank">@agent.url</a>
+            } else {
+                unknown
+            }
         }
         on @dateFormatter(date)
     }
