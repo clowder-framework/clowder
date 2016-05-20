@@ -114,7 +114,7 @@
 
     @printHeader(agent: Agent, date: java.util.Date, resourceId: UUID, i: Integer) = {
         @agent.operation by
-        @if(!Option(agent.displayName).getOrElse("").isEmpty) {
+        @if(agent.displayName.length > 0) {
             @if(agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
                 <a id='@resourceId.toString()@i.toString' href="@routes.Profile.viewProfileUUID(agent.id)"
                 onmouseover="getAgentContext('@resourceId.toString()@i.toString','@agent.id');"
