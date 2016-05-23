@@ -570,12 +570,24 @@ class  Datasets @Inject()(
 
   @ApiOperation(value="Retrieve available metadata definitions for a dataset. It is an aggregation of the metadata that a space belongs to.",
     responseClass="None", httpMethod="GET")
-  def getMetadataDefinitions(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def getMetadataDefinitions(id: UUID, currentSpace: Option[String]) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
         val metadataDefinitions = collection.mutable.HashSet[models.MetadataDefinition]()
-        dataset.spaces.foreach { spaceId =>
+        var spacesToCheck = List.empty[UUID]
+        currentSpace match {
+          case Some(spaceId) => {
+            spaces.get(UUID(spaceId)) match {
+              case Some(space) => spacesToCheck = List(space.id)
+              case None => dataset.spaces
+            }
+          }
+          case None => {
+            spacesToCheck = dataset.spaces
+          }
+        }
+        spacesToCheck.foreach { spaceId =>
           spaces.get(spaceId) match {
             case Some(space) => metadataService.getDefinitions(Some(space.id)).foreach{definition => metadataDefinitions += definition}
             case None =>

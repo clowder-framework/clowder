@@ -168,7 +168,11 @@ line-height: 1.5;
     }
     var url = jsRoutes.api.Metadata.getDefinitions();
     if("@resType" == "dataset") {
-        url = jsRoutes.api.Datasets.getMetadataDefinitions("@id");
+        if(spaceId == "") {
+            url = jsRoutes.api.Datasets.getMetadataDefinitions("@id");
+        } else {
+            url = jsRoutes.api.Datasets.getMetadataDefinitions("@id", spaceId);
+        }
     } else if ("@resType" == "file") {
         url = jsRoutes.api.Files.getMetadataDefinitions("@id");
     } else if ("@resType" == "curationObject") {

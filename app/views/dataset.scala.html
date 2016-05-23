@@ -19,6 +19,9 @@
 @import scala.collection.mutable.{Map => MutableMap}
 
 @main(dataset.name) {
+    <script type="text/javascript">
+        var spaceId = "@currentSpace";
+    </script>
 	<div class="row">
 		<!-- left column -->
 		<div class="col-md-8 col-right-border">
@@ -208,6 +211,7 @@
         var pageIndex = 0;
         var folderId;
         var cur_title;
+
         function updateTitle() {
             cur_title = $('#datasettitle').text();
             $('<span class="inline edit_title_div"> </span>').insertAfter($('#datasettitle'));

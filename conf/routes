@@ -492,7 +492,7 @@ DELETE         /api/datasets/:ds_id/:file_id                                    
 GET            /api/datasets/getRDFURLsForDataset/:id                                   @api.Datasets.getRDFURLsForDataset(id: UUID)
 GET            /api/datasets/rdfUserMetadata/:id                                        @api.Datasets.getRDFUserMetadata(id: UUID, mappingNum: String ?= "1")
 POST           /api/datasets/:id/remove                                                 @api.Datasets.deleteDataset(id: UUID)
-GET            /api/datasets/:id/metadata                                               @api.Datasets.getMetadataDefinitions(id: UUID)
+GET            /api/datasets/:id/metadata                                               @api.Datasets.getMetadataDefinitions(id: UUID, space: Option[String] ?= None)
 POST           /api/datasets/:id/metadata                                               @api.Datasets.addMetadata(id: UUID)
 POST           /api/datasets/:id/usermetadata                                           @api.Datasets.addUserMetadata(id: UUID)
 GET            /api/datasets/:id/technicalmetadatajson                                  @api.Datasets.getTechnicalMetadataJSON(id: UUID)
