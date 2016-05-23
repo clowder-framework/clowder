@@ -6,6 +6,7 @@ import api.Permission
 import models.{ResourceRef, UUID}
 import services._
 
+
 /**
  * View JSON-LD metadata for all resources.
  */
@@ -54,4 +55,11 @@ class Metadata @Inject() (
     implicit val user = request.user
     Ok(views.html.metadatald.search())
   }
+
+  def getMetadataBySpace(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+    implicit val user = request.user
+    val metadataResults = metadata.getDefinitions(Some(id))
+    Ok(views.html.manageMetadataDefinitions(metadataResults.toList, Some(id)))
+  }
+
 }

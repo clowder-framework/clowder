@@ -166,9 +166,18 @@ line-height: 1.5;
 
         }
     }
-
+    var url = jsRoutes.api.Metadata.getDefinitions();
+    if("@resType" == "dataset") {
+        url = jsRoutes.api.Datasets.getMetadataDefinitions("@id");
+    } else if ("@resType" == "file") {
+        url = jsRoutes.api.Files.getMetadataDefinitions("@id");
+    } else if ("@resType" == "curationObject") {
+        url = jsRoutes.api.CurationObjects.getMetadataDefinitions("@id");
+    } else if ("@resType" == "curationFile") {
+        url = jsRoutes.api.CurationObjects.getMetadataDefinitionsByFile("@id");
+    }
     // get metadata definitions
-    var request = jsRoutes.api.Metadata.getDefinitions().ajax({
+    var request = url.ajax({
         type: 'GET',
         contentType: "application/json"
     });

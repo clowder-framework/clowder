@@ -567,6 +567,29 @@ class  Datasets @Inject()(
         }
     }
 
+
+  @ApiOperation(value="Retrieve available metadata definitions for a dataset. It is an aggregation of the metadata that a space belongs to.",
+    responseClass="None", httpMethod="GET")
+  def getMetadataDefinitions(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    implicit val user = request.user
+    datasets.get(id) match {
+      case Some(dataset) => {
+        val metadataDefinitions = collection.mutable.HashSet[models.MetadataDefinition]()
+        dataset.spaces.foreach { spaceId =>
+          spaces.get(spaceId) match {
+            case Some(space) => metadataService.getDefinitions(Some(space.id)).foreach{definition => metadataDefinitions += definition}
+            case None =>
+          }
+        }
+        if(dataset.spaces.length == 0) {
+          metadataService.getDefinitions().foreach{definition => metadataDefinitions += definition}
+        }
+        Ok(toJson(metadataDefinitions.toList))
+      }
+      case None => BadRequest(toJson("The requested dataset does not exist"))
+    }
+  }
+
  @ApiOperation(value = "Retrieve metadata as JSON-LD",
       notes = "Get metadata of the file object as JSON-LD.",
       responseClass = "None", httpMethod = "GET")

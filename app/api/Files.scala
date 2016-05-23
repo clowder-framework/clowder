@@ -54,6 +54,8 @@ class Files @Inject()(
   contextService: ContextLDService,
   thumbnails: ThumbnailService,
   events: EventService,
+  folders: FolderService,
+  spaces: SpaceService,
   userService: UserService) extends ApiController {
 
   @ApiOperation(value = "Retrieve physical file object metadata",
@@ -64,7 +66,7 @@ class Files @Inject()(
     files.get(id) match {
       case Some(file) => Ok(jsonFile(file))
       case None => {
-        Logger.error("Error getting file" + id);
+        Logger.error("Error getting file" + id)
         InternalServerError
       }
     }
@@ -204,7 +206,42 @@ class Files @Inject()(
           }
         }
     }
+  @ApiOperation(value ="Get metadata definitions available for a file",
+    notes="The metadata definitions come from the spaces that the dataset the file is part of. Directly or within a folder",
+  responseClass= "None", httpMethod = "GET")
+  def getMetadataDefinitions(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+  implicit val user = request.user
+    files.get(id) match {
+      case Some(file) => {
+        val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
+        val foldersContainingFile = folders.findByFileId(file.id).sortBy(_.name)
+        val datasetSpaces = collection.mutable.HashSet[models.UUID]()
+        datasetsContainingFile.foreach{ dataset =>
+          dataset.spaces.foreach{space => datasetSpaces += space}
+        }
 
+        foldersContainingFile.foreach{ folder =>
+          datasets.get(folder.parentDatasetId) match {
+            case Some(dataset) => dataset.spaces.foreach{space => datasetSpaces += space}
+            case None =>
+          }
+        }
+
+        val metadataDefinitions = collection.mutable.HashSet[models.MetadataDefinition]()
+        datasetSpaces.foreach{ spaceId =>
+          spaces.get(spaceId) match {
+            case Some(space) => metadataService.getDefinitions(Some(space.id)).foreach{definition => metadataDefinitions += definition}
+            case None =>
+          }
+        }
+        if (metadataDefinitions.size == 0) {
+          metadataService.getDefinitions().foreach{definition => metadataDefinitions += definition}
+        }
+        Ok(toJson(metadataDefinitions.toList))
+      }
+      case None => BadRequest(toJson("The requested file does not exist"))
+    }
+  }
   /**
    * Add metadata to file.
    */

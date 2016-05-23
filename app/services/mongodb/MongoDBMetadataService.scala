@@ -127,7 +127,11 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
 
   /** Vocabulary definitions for user fields **/
   def getDefinitions(spaceId: Option[UUID] = None): List[MetadataDefinition] = {
-    MetadataDefinitionDAO.findAll().toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )
+    spaceId match {
+      case None => MetadataDefinitionDAO.find(MongoDBObject("spaceId" -> null)).toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )
+      case Some(s) => MetadataDefinitionDAO.find(MongoDBObject("spaceId" -> new ObjectId(s.stringify))).toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )
+    }
+
   }
 
   def getDefinition(id: UUID): Option[MetadataDefinition] = {
@@ -144,10 +148,16 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri)) match {
       case Some(md) => {
         if (update) {
-          Logger.debug("Updating existing vocabulary definition: " + definition)
-          // make sure to use the same id as the old value
-          val writeResult = MetadataDefinitionDAO.update(MongoDBObject("json.uri" -> uri), definition.copy(id=md.id),
-            false, false, WriteConcern.Normal)
+          if(md.spaceId == definition.spaceId) {
+            Logger.debug("Updating existing vocabulary definition: " + definition)
+            // make sure to use the same id as the old value
+            val writeResult = MetadataDefinitionDAO.update(MongoDBObject("json.uri" -> uri), definition.copy(id=md.id),
+              false, false, WriteConcern.Normal)
+          } else {
+            Logger.debug("Adding existing vocabulary definition to a different space" + definition)
+            MetadataDefinitionDAO.save(definition)
+          }
+
         } else {
           Logger.debug("Leaving existing vocabulary definition unchanged: " + definition)
         }

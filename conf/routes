@@ -150,6 +150,7 @@ GET            /spaces/:id/users                                                
 GET            /spaces/:id/extractors                                                   @controllers.Spaces.selectExtractors(id: UUID)
 POST           /spaces/:id/extractors                                                   @controllers.Spaces.updateExtractors(id: UUID)
 POST           /spaces/:id/invite                                                       @controllers.Spaces.inviteToSpace(id: UUID)
+GET            /spaces/:id/metadata                                                     @controllers.Metadata.getMetadataBySpace(id: UUID)
 POST           /spaces/submit                                                           @controllers.Spaces.submit
 
 # ----------------------------------------------------------------------
@@ -301,7 +302,7 @@ GET            /api/metadata/definitions                                        
 GET            /api/metadata/definitions/:id                                            @api.Metadata.getDefinition(id: UUID)
 GET            /api/metadata/url/*in_url                                                @api.Metadata.getUrl(in_url: String)
 PUT            /api/metadata/definitions/:id                                            @api.Metadata.editDefinition(id:UUID)
-POST           /api/metadata/definitions                                                @api.Metadata.addDefinition
+POST           /api/metadata/definitions                                                @api.Metadata.addDefinition()
 DELETE         /admin/metadata/definitions/:id                                          @api.Metadata.deleteDefinition(id: UUID)
 
 
@@ -342,6 +343,7 @@ GET            /api/files/:id/blob                                              
 POST           /api/files/:id/remove                                                    @api.Files.removeFile(id: UUID)
 GET            /api/files/:id/metadata                                                  @api.Files.get(id: UUID)
 POST           /api/files/:id/metadata                                                  @api.Files.addMetadata(id: UUID)
+GET            /api/files/:id/metadataDefinitions                                       @api.Files.getMetadataDefinitions(id: UUID)
 POST           /api/files/:id/updateMetadata                                            @api.Files.updateMetadata(id: UUID, extractor_id: String)
 POST           /api/files/:id/versus_metadata                                           @api.Files.addVersusMetadata(id:UUID)
 GET            /api/files/:id/versus_metadata                                           @api.Files.getVersusMetadataJSON(id:UUID)
@@ -428,7 +430,7 @@ POST           /api/spaces/:spaceId/addDatasetToSpace/:datasetId                
 POST           /api/spaces/:spaceId/addCollectionToSpace/:collectionId                  @api.Spaces.addCollectionToSpace(spaceId: UUID, collectionId: UUID)
 POST           /api/spaces/:id/follow                                                   @api.Spaces.follow(id: UUID)
 POST           /api/spaces/:id/unfollow                                                 @api.Spaces.unfollow(id: UUID)
-
+POST           /api/spaces/:id/metadata                                                 @api.Metadata.addDefinitionToSpace(id: String)
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT
 # ----------------------------------------------------------------------
@@ -490,6 +492,7 @@ DELETE         /api/datasets/:ds_id/:file_id                                    
 GET            /api/datasets/getRDFURLsForDataset/:id                                   @api.Datasets.getRDFURLsForDataset(id: UUID)
 GET            /api/datasets/rdfUserMetadata/:id                                        @api.Datasets.getRDFUserMetadata(id: UUID, mappingNum: String ?= "1")
 POST           /api/datasets/:id/remove                                                 @api.Datasets.deleteDataset(id: UUID)
+GET            /api/datasets/:id/metadata                                               @api.Datasets.getMetadataDefinitions(id: UUID)
 POST           /api/datasets/:id/metadata                                               @api.Datasets.addMetadata(id: UUID)
 POST           /api/datasets/:id/usermetadata                                           @api.Datasets.addUserMetadata(id: UUID)
 GET            /api/datasets/:id/technicalmetadatajson                                  @api.Datasets.getTechnicalMetadataJSON(id: UUID)
@@ -692,6 +695,7 @@ GET            /spaces/curations/:id/getStatusFromRepository                    
 DELETE         /spaces/curations/:id/files/:curationFileId                              @api.CurationObjects.deleteCurationFile(id:UUID, parentId: UUID, curationFileId: UUID)
 DELETE         /spaces/curations/:id/folders/:curationFolderId                          @api.CurationObjects.deleteCurationFolder(id:UUID, parentId: UUID, curationFolderId: UUID)
 GET            /spaces/curations/:id/updatedFilesAndFolders                             @controllers.CurationObjects.getUpdatedFilesAndFolders(id: UUID, curationFolderId: String, limit: Int, pageIndex:Int)
-
+GET            /spaces/curations/:id/getMetadataDefinitionsByFile                       @api.CurationObjects.getMetadataDefinitionsByFile(id: UUID)
+GET            /spaces/curations/:id/metadataDefinitions                                @api.CurationObjects.getMetadataDefinitions(id: UUID)
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()
 GET            /getEvents                                                               @controllers.Events.getEvents(index: Int)

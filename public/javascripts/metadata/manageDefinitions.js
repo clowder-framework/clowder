@@ -1,4 +1,8 @@
-function addDefinition(data, pageURL){
+function addDefinition(data, pageURL, spaceId){
+  var url = jsRoutes.api.Metadata.addDefinition()
+  if(spaceId != "") {
+    url = jsRoutes.api.Metadata.addDefinitionToSpace(spaceId);
+  }
   if($(".definitionAction").text().indexOf( "Edit") > -1) {
     var id = $('.definitionAction').attr('id');
     var request = jsRoutes.api.Metadata.editDefinition(id).ajax({
@@ -18,7 +22,7 @@ function addDefinition(data, pageURL){
     });
   }
   else {
-    var request = jsRoutes.api.Metadata.addDefinition().ajax({
+    var request = url.ajax({
       type: 'POST',
       data: JSON.stringify(data),
       contentType: "application/json"
@@ -39,7 +43,7 @@ function addDefinition(data, pageURL){
 function editDefinition(id, json, element) {
   reset();
   $(".definitionAction").text("Edit");
-  $(".definitionActionButton").text("Save");
+  $(".definitionActionButton").text(" Save");
   $(".glyphicon-plus").attr("class", "glyphicon glyphicon-send");
   $(".definitionAction").attr("id",id);
   json = JSON.parse(json);

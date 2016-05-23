@@ -10,7 +10,7 @@ import play.api.Logger
 import play.api.libs.json.Json._
 import play.api.libs.json._
 import play.api.libs.ws.WS
-import play.api.mvc.Action
+import play.api.mvc.Result
 import services._
 
 import scala.concurrent.Future
@@ -25,7 +25,8 @@ class Metadata @Inject()(
   userService: UserService,
   datasets: DatasetService,
   files: FileService,
-  curations:CurationService) extends ApiController {
+  curations:CurationService,
+  spaceService: SpaceService) extends ApiController {
   
   def search() = PermissionAction(Permission.ViewDataset)(parse.json) { implicit request =>
     Logger.debug("Searching metadata")
@@ -61,6 +62,26 @@ class Metadata @Inject()(
       Ok(toJson(vocabularies))
   }
 
+  def getDefinitionsByDataset(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    implicit val user = request.user
+    datasets.get(id) match {
+      case Some(dataset) => {
+        val metadataDefinitions = collection.mutable.HashSet[models.MetadataDefinition]()
+        dataset.spaces.foreach { spaceId =>
+          spaceService.get(spaceId) match {
+            case Some(space) => metadataService.getDefinitions(Some(space.id)).foreach{definition => metadataDefinitions += definition}
+            case None =>
+          }
+        }
+        if(dataset.spaces.length == 0) {
+          metadataService.getDefinitions().foreach{definition => metadataDefinitions += definition}
+        }
+        Ok(toJson(metadataDefinitions.toList))
+      }
+      case None => BadRequest(toJson("The request dataset does not exist"))
+    }
+  }
+
   def getDefinition(id: UUID) = PermissionAction(Permission.AddMetadata).async { implicit request =>
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
     val foo = for {
@@ -87,6 +108,25 @@ class Metadata @Inject()(
     }
   }
 
+  def addDefinitionToSpace(spaceId: String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, UUID(spaceId)))) (parse.json){ implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(user) => {
+        val body = request.body
+        if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
+          val uri = (body \ "uri").as[String]
+          spaceService.get(UUID(spaceId)) match {
+            case Some(space) => addDefinitionHelper(uri, body, Some(space.id))
+            case None => BadRequest("The space does not exist")
+          }
+        } else {
+          BadRequest(toJson("Invalid resource Type"))
+        }
+      }
+      case None => BadRequest(toJson("Invalid user"))
+    }
+  }
+
   def addDefinition() = PermissionAction(Permission.AddMetadata)(parse.json) {
     implicit request =>
       request.user match {
@@ -94,26 +134,61 @@ class Metadata @Inject()(
           val body = request.body
           if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
             val uri = (body \ "uri").as[String]
-            metadataService.getDefinitionByUri(uri) match {
-              case Some(metadata) => BadRequest(toJson("Metadata definition with same uri exists."))
-              case None => {
-                val definition = MetadataDefinition(json = body)
-                metadataService.addDefinition(definition)
-                Ok(JsObject(Seq("status" -> JsString("ok"))))
-              }
-            }
-
+            addDefinitionHelper(uri, body, None)
           } else {
-            BadRequest(toJson("Invalid resource type"))
+            BadRequest(toJson("Invalid Resource type"))
           }
-
         }
         case None => BadRequest(toJson("Invalid user"))
       }
   }
 
+//  def addDefinition(spaceId: Option[String]) = PermissionAction(Permission.AddMetadata)(parse.json) {
+//    implicit request =>
+//      request.user match {
+//        case Some(user) => {
+//          val body = request.body
+//          if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
+//            val uri = (body \ "uri").as[String]
+//            spaceId match {
+//              case Some(s) => {
+//                spaceService.get(UUID(s)) match {
+//                  case Some(space) => {
+//                    if(Permission.checkPermission(user, Permission.EditSpace, ResourceRef(ResourceRef.space, space.id)) ) {
+//                      addDefinitionHelper(uri, body, Some(space.id))
+//                    } else {
+//                      BadRequest(toJson("You don't have permission to Edit space with id: " + space.id.stringify))
+//                    }
+//                  }
+//                  case None => BadRequest(toJson("The space doesn't exist"))
+//                }
+//              }
+//              case None => {
+//                addDefinitionHelper(uri, body, None)
+//              }
+//            }
+//
+//          } else {
+//            BadRequest(toJson("Invalid resource type"))
+//          }
+//
+//        }
+//        case None => BadRequest(toJson("Invalid user"))
+//      }
+//  }
 
-  def editDefinition(id:UUID) = ServerAdminAction (parse.json) {
+  def addDefinitionHelper(uri: String, body: JsValue, spaceId: Option[UUID]): Result = {
+    metadataService.getDefinitionByUri(uri) match {
+      case Some(metadata) => BadRequest(toJson("Metadata definition with same uri exists."))
+      case None => {
+        val definition = MetadataDefinition(json = body, spaceId = spaceId)
+        metadataService.addDefinition(definition)
+        Ok(JsObject(Seq("status" -> JsString("ok"))))
+      }
+    }
+  }
+
+  def editDefinition(id:UUID, spaceId: Option[UUID] = None) = ServerAdminAction (parse.json) {
     implicit request =>
       request.user match {
         case Some(user) => {
@@ -152,7 +227,7 @@ class Metadata @Inject()(
     }
   }
 
-  def addUserMetadata() = PermissionAction(Permission.AddMetadata)(parse.json) {
+  def addUserMetadata(spaceId: Option[UUID] = None) = PermissionAction(Permission.AddMetadata)(parse.json) {
     implicit request =>
       request.user match {
         case Some(user) => {

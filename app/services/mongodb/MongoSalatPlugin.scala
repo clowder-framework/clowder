@@ -368,6 +368,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("update-user-spaces", removeDeletedSpacesFromUser)
 
     updateMongo("update-counts-spaces", updateCountsInSpaces)
+
+    // Duplicate all clowder instance metadata to all existing spaces
+    updateMongo("add-metadata-per-space", addMetadataPerSpace)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1100,6 +1103,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   }
 
   private def updateCountsInSpaces(){
+
     collection("spaces.projects").foreach{ space =>
       val spaceId = space.getAsOrElse("_id", new ObjectId()).toString()
       val collections = collection("collections").find(MongoDBObject("root_spaces" -> MongoDBObject("$in" -> MongoDBList(new ObjectId(spaceId)))))
@@ -1112,6 +1116,30 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         case e: BSONException => Logger.error("Unable to update the counts for space with id: " + spaceId)
       }
 
+    }
+  }
+
+  private def addMetadataPerSpace(){
+    val metadataService: MetadataService = DI.injector.getInstance(classOf[MetadataService])
+
+    collection("spaces.projects").foreach{ space =>
+      val metadatas = collection("metadata.definitions").find(MongoDBObject("spaceId" -> null))
+      val spaceId = space.getAsOrElse("_id", new ObjectId())
+      metadatas.foreach{ metadata =>
+
+        val json = metadata.getAsOrElse("json", new BasicDBObject())
+        val md = new BasicDBObject()
+        md.put("_id", new ObjectId())
+        md.put("spaceId", spaceId)
+        md.put("json", json)
+        try {
+          collection("metadata.definitions").insert(md, WriteConcern.Safe)
+        } catch {
+          case e: BSONException => Logger.error("Unable to add the metadata definition for space with id: " + spaceId)
+        }
+//        val metadataDef = models.MetadataDefinition(spaceId = Some(UUID(spaceId)), json = Json.toJson(json))
+//        metadataService.addDefinition(metadataDef)
+      }
     }
   }
 }
