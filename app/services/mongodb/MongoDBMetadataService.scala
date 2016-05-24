@@ -142,6 +142,10 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri))
   }
 
+  def removeDefinitionsBySpace(spaceId: UUID) = {
+    MetadataDefinitionDAO.remove(MongoDBObject("spaceId" -> new ObjectId(spaceId.stringify)))
+  }
+
   /** Add vocabulary definitions, leaving it unchanged if the update argument is set to false **/
   def addDefinition(definition: MetadataDefinition, update: Boolean = true): Unit = {
     val uri = (definition.json \ "uri").as[String]

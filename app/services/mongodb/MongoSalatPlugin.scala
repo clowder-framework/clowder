@@ -1137,8 +1137,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         } catch {
           case e: BSONException => Logger.error("Unable to add the metadata definition for space with id: " + spaceId)
         }
-//        val metadataDef = models.MetadataDefinition(spaceId = Some(UUID(spaceId)), json = Json.toJson(json))
-//        metadataService.addDefinition(metadataDef)
       }
     }
   }

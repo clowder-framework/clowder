@@ -41,6 +41,9 @@ trait MetadataService {
   /** Get vocabulary based on uri **/
   def getDefinitionByUri(uri:String):Option[MetadataDefinition]
 
+  /** Remove all metadata definitions related to a space**/
+  def removeDefinitionsBySpace(spaceId: UUID)
+
   /** Add vocabulary definitions, leaving it unchanged if the update argument is set to false, defaults to update **/
   def addDefinition(definition: MetadataDefinition, update: Boolean = true)
 

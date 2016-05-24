@@ -580,7 +580,7 @@ class  Datasets @Inject()(
           case Some(spaceId) => {
             spaces.get(UUID(spaceId)) match {
               case Some(space) => spacesToCheck = List(space.id)
-              case None => dataset.spaces
+              case None => spacesToCheck = dataset.spaces
             }
           }
           case None => {
@@ -596,7 +596,7 @@ class  Datasets @Inject()(
         if(dataset.spaces.length == 0) {
           metadataService.getDefinitions().foreach{definition => metadataDefinitions += definition}
         }
-        Ok(toJson(metadataDefinitions.toList))
+        Ok(toJson(metadataDefinitions.toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )))
       }
       case None => BadRequest(toJson("The requested dataset does not exist"))
     }

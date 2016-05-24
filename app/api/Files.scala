@@ -237,7 +237,7 @@ class Files @Inject()(
         if (metadataDefinitions.size == 0) {
           metadataService.getDefinitions().foreach{definition => metadataDefinitions += definition}
         }
-        Ok(toJson(metadataDefinitions.toList))
+        Ok(toJson(metadataDefinitions.toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )))
       }
       case None => BadRequest(toJson("The requested file does not exist"))
     }
