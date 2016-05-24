@@ -6,8 +6,7 @@
  * Used by multimedia search to pass information
  * between controller and viewer.
  * Specifically, used by VersusPlugin, Search, ContentBasedSearchResultsVideo3
- * 
- * @author Inna Zharnitsky
+ *
  *
  */
 package models

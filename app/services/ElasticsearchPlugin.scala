@@ -21,11 +21,6 @@ import org.elasticsearch.action.admin.indices.create.CreateIndexRequest
 /**
  * Elasticsearch plugin.
  *
- * @author Luigi Marini
- * @author Smruti Padhy
- * @author Rob Kooper
- * @authhor Constantinos Sophocleous
- *
  */
 class ElasticsearchPlugin(application: Application) extends Plugin {
   val comments: CommentService = DI.injector.getInstance(classOf[CommentService])
@@ -33,18 +28,15 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
   var client: Option[TransportClient] = None
-  
+  val nameOfCluster = play.api.Play.configuration.getString("elasticsearchSettings.clusterName").getOrElse("clowder")
+  val serverAddress = play.api.Play.configuration.getString("elasticsearchSettings.serverAddress").getOrElse("localhost")
+  val serverPort = play.api.Play.configuration.getInt("elasticsearchSettings.serverPort").getOrElse(9300)
 
   override def onStart() {
     Logger.debug("Elasticsearchplugin started but not yet connected to Elasticsearch")
-
   }
 
   def connect(): Boolean = {
-    val configuration = play.api.Play.configuration
-    var nameOfCluster = configuration.getString("elasticsearchSettings.clusterName").getOrElse("medici")
-    var serverAddress = configuration.getString("elasticsearchSettings.serverAddress").getOrElse("localhost")
-    var serverPort = configuration.getInt("elasticsearchSettings.serverPort").getOrElse(9300)
     if (client.isDefined) {
       Logger.debug("Already Connected to Elasticsearch")
       return true
@@ -167,6 +159,19 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     }
   }
 
+  /** delete all indices */
+  def deleteAll {
+    connect
+    client match {
+      case Some(x) => {
+        val response = x.admin().indices().prepareDelete("_all").get()
+        if (!response.isAcknowledged())
+          Logger.error("Did not delete all data from elasticsearch.")
+      }
+      case None => Logger.error("Could not call index because we are not connected.")
+    }
+  }
+
   def delete(index: String, docType: String, id: String) {
     connect
     client match {
@@ -189,7 +194,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     var dsCollsId = ""
     var dsCollsName = ""
 
-    for (dataset <- collection.datasets) {
+    for (dataset <- datasets.listCollection(collection.id.stringify)) {
       if (recursive) {
         index(dataset, recursive)
       }
@@ -241,21 +246,29 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     var fileDsId = ""
     var fileDsName = ""
-    for (file <- dataset.files) {
-      if (recursive) {
-        index(file)
+    for (fileId <- dataset.files) {
+      files.get(fileId) match {
+        case Some(f) => {
+          if (recursive) {
+            index(f)
+          }
+          fileDsId = fileDsId + f.id.stringify + "  "
+          fileDsName = fileDsName + f.filename + "  "
+        }
+        case None => Logger.error(s"Error getting file $fileId")
+
       }
-      fileDsId = fileDsId + file.id.stringify + "  "
-      fileDsName = fileDsName + file.filename + "  "
     }
 
     var dsCollsId = ""
     var dsCollsName = ""
 
-    for (collection <- collections.listInsideDataset(dataset.id)) {
-      dsCollsId = dsCollsId + collection.id.stringify + " %%% "
-      dsCollsName = dsCollsName + collection.name + " %%% "
-    }
+    dataset.collections.foreach(c => {
+      collections.get(c).foreach(collection => {
+        dsCollsId = dsCollsId + collection.id.stringify + " %%% "
+        dsCollsName = dsCollsName + collection.name + " %%% "
+      })
+    })
 
     val formatter = new SimpleDateFormat("dd/MM/yyyy")
 

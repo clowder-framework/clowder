@@ -54,6 +54,13 @@ class MongoDBRelationService extends RelationService {
       )).toList.map(_.target.id)
   }
 
+  def findRelationships(sourceId: String, sourceType: ResourceType.Value, targetType: ResourceType.Value): List[Relation] = {
+    RelationDAO.find(
+      MongoDBObject("source._id" -> sourceId,
+        "source.resourceType" -> sourceType.toString, "target.resourceType" -> targetType.toString
+      )).toList
+  }
+
   object RelationDAO extends ModelCompanion[Relation, ObjectId] {
     val dao = current.plugin[MongoSalatPlugin] match {
       case None => throw new RuntimeException("No MongoSalatPlugin");

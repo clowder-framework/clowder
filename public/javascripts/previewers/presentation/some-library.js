@@ -14,16 +14,13 @@
 	  });	  
   }
   
-  var hostAddress = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
-  var pathJs = hostAddress + Configuration.jsPath + "/";
-  
   var useTab = Configuration.tab;
   var referenceUrl = Configuration.url;
   var confId = Configuration.id;
   
   var s = document.createElement("script");
   s.type = "text/javascript";
-  s.src = pathJs + "popcorn-complete.js";
+  s.src = Configuration.previewer + "/../../popcorn-complete.js";
   $(useTab).append(s);
   
   $.ajax({
@@ -40,14 +37,14 @@
 	    	     "</video>"
 	    	  );
 	    	  $(useTab).append("<br/>");
-	    	  $(useTab).append("<a class='btn btn-default' href='" + jsRoutes.api.Previews.download(videosIds[0]).url + "'>Download merged high-quality video.</a>");
+	    	  $(useTab).append("<a class='btn btn-link' href='" + jsRoutes.api.Previews.download(videosIds[0]).url + "'><span class='glyphicon glyphicon-download-alt'></span> Download merged high-quality video.</a>");
 	    	 },
 	    	 error: function(jqXHR, textStatus, errorThrown) { 
 	    	        alert("Status: " + textStatus); alert("Error: " + errorThrown); 
 	    	    },
 	    dataType: 'text'
 	});
-  
+
 
 }(jQuery, Configuration));
 

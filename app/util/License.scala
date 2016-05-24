@@ -6,7 +6,6 @@ import play.api.Play._
 /**
  * Helper class to create the correct license data objects
  *
- * @author Rob Kooper
  */
 object License {
   def fromAppConfig(): LicenseData = {

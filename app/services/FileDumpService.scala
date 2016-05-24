@@ -8,8 +8,6 @@ import org.apache.commons.io.FileUtils
 /**
  * File dump service.
  *
- * @author Constantinos Sophocleous
- *
  */
 class FileDumpService(application: Application) extends Plugin {
 

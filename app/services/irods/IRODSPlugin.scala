@@ -13,9 +13,7 @@ import org.irods.jargon.core.exception.JargonException
  * name. 
  * 
  * Setup iRODS connection using Jargon.
- * 
- * @author Chris Navarro <cmnavarr@illinois.edu>
- * @author Michal Ondrejcek <ondrejce@illinois.edu>
+ *
  * @date 2014-08-18
  * 
  */

@@ -18,7 +18,6 @@ import com.ning.http.client.Realm.AuthScheme
 /**
  * Polyglot Plugin
  *
- * @author Inna Zharnitsky 
  */
 class PolyglotPlugin(application: Application) extends Plugin {
 

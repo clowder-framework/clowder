@@ -19,7 +19,6 @@ import models.UUID
 /**
  * Service allowing exporting of community-generated and XML-uploaded metadata of files and datasets as RDF.
  *
- * @author Constantinos Sophocleous
  *
  */
 class RDFExportService (application: Application) extends Plugin {
@@ -158,7 +157,7 @@ class RDFExportService (application: Application) extends Plugin {
 	        var list = for (currPreview <- rdfPreviewList) yield Json.toJson(hostUrl + api.routes.Previews.download(currPreview.id))
 	        
 	        for(file <- dataset.files){
-	           val filePreviewsList = previews.findByFileId(file.id)
+	           val filePreviewsList = previews.findByFileId(file)
 	           var fileRdfPreviewList = List.empty[models.Preview]
 	           for(currPreview <- filePreviewsList){
 		           if(currPreview.contentType.equals("application/rdf+xml")){

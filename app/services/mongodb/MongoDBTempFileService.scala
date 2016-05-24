@@ -13,7 +13,7 @@ import play.api.Play.current
 
 
 /**
- * Created by lmarini on 2/24/14.
+ * Use Mongodb to store tempfiles.
  */
 @Singleton
 class MongoDBTempFileService extends TempFileService {
@@ -36,7 +36,7 @@ class MongoDBTempFileService extends TempFileService {
 object TempFileDAO extends ModelCompanion[TempFile, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[TempFile, ObjectId](collection = x.collection("uploadquery.files")) {}
+    case Some(x) => new SalatDAO[TempFile, ObjectId](collection = x.collection("uploadquery")) {}
   }
 }
 

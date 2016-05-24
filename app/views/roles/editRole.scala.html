@@ -1,0 +1,37 @@
+@(newRoleForm: Form[controllers.roleFormData], permissionsMap: Map[String, Boolean])(implicit user: Option[models.User])
+
+@import helper._
+@import views.html.bootstrap3._
+@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f)}
+
+@main("Update Role") {
+    <div class="page-header">
+        <h1>Edit Role</h1>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            @if(newRoleForm.hasGlobalErrors) {
+                <ul>
+                @for(error <- newRoleForm.globalErrors) {
+                    <li>@error.message</li>
+                }
+                </ul>
+            }
+
+            @form(action = routes.Admin.updateRole(), 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
+                <fieldset id="nameDescrFieldSet">
+                    @inputText(newRoleForm("name"), '_label -> "Name")
+                    @textarea(newRoleForm("description"), '_label -> "Description")
+                    @checkboxes(newRoleForm("permissions"), label = "Permissions", checkboxMap = permissionsMap, help ="Select the permissions you want to add to this role" )
+                    @defining(newRoleForm("id")) { id =>
+                      <input type="hidden" name="id" id ="id" value ="@id.value" >
+                    }
+                </fieldset>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" name = "submitValue"><span class="glyphicon glyphicon-send"></span> Update</button>
+                </div>
+            }
+
+        </div>
+    </div>
+}

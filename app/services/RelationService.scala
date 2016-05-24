@@ -16,4 +16,6 @@ trait RelationService {
   def delete(id: UUID)
 
   def findTargets(sourceId: String, sourceType: ResourceType.Value, targetType: ResourceType.Value): List[String]
+
+  def findRelationships(sourceId: String, sourceType: ResourceType.Value, targetType: ResourceType.Value): List[Relation]
 }

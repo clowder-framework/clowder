@@ -1,15 +1,15 @@
 package services
 
-import api.RequestWithUser
+import api.UserRequest
 import play.api.libs.json.JsValue
 import models.UUID
 
 /**
- * Created by lmarini on 1/17/14.
+ * Service to manipulate tags
  */
 abstract class TagService {
-  def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: RequestWithUser[JsValue]): (Boolean, String)
-  def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: RequestWithUser[JsValue]): (Boolean, String)
+  def addTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): (Boolean, String)
+  def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): (Boolean, String)
 }
 
 // Used in checking error conditions for tags, the checkErrorsForTag(...) method below

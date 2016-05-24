@@ -16,15 +16,26 @@ object ResourceRef {
     }
 
     def writes(s: Symbol): JsValue = {
-      JsString(s.toString)
+      JsString(s.toString())
     }
 
   }
 
   implicit val ResourceRefFormat = Json.format[ResourceRef]
 
+  val space = 'space
   val dataset = 'dataset
   val file = 'file
+  val folder = 'folder
+  val relation = 'relation
+  val preview = 'preview
+  val thumbnail = 'thumbnail
   val collection = 'collection
   val user = 'user
+  val comment = 'comment
+  val section = 'section
+  val curationObject = 'curationObject
+  val curationFolder = 'curationFolder
+  val curationFile = 'curationFile
+  val metadata = 'metadata
 }

@@ -1,12 +1,23 @@
-@()(implicit user: Option[models.User])
-
+@(msg: String, id: String, resourceType: String)(implicit user: Option[models.User])
 @main("Not authorized") {
-	<div class="page-header">
-		<h1>Not authorized</h1>
-	</div>
 	<div class="row">
-		<div class="col-md-12">
-			You are not authorized to proceed with your request.
+		<div class="col-sm-12 col-md-12 col-lg-12 text-center">
+			<h2>
+				@if(msg != null){
+					@msg
+				}else{
+					You are not authorized to proceed with your request
+				}
+			</h2>
 		</div>
+			@if(user.isDefined && (id != null && !id.isEmpty)) {
+				@if( resourceType != null && resourceType.compareTo("space") ==0 ){
+					<div class="col-sm-12 col-md-12 col-lg-12 text-center">
+					<a class="btn btn-default btn-margins accordion-toggle collapsed"
+						href="@(routes.Spaces.addRequest(UUID(id)))"><span class="glyphicon glyphicon-envelope"></span>
+							Request access</a>
+					</div>
+				}
+			}
 	</div>
 }

@@ -1,65 +1,199 @@
-/**
- *
- */
 package controllers
 
-import api.{Permission, RequestWithUser, WithPermission}
-import models.{User, UUID}
-import play.api.mvc.{Action, BodyParser, Controller, Result, Results}
-import securesocial.core.{Authenticator, Authorization, UserService, SecureSocial}
+import api.Permission.Permission
+import api.{Permission, UserRequest}
+import models.{ClowderUser, RequestResource, ResourceRef, User}
+import play.api.mvc._
+import play.api.templates.Html
+import securesocial.core.{Authenticator, SecureSocial, UserService}
+import services._
+
+import scala.concurrent.Future
 
 /**
- * Enforce authentication and authorization.
- * 
- * @author Luigi Marini
- * @author Rob Kooper
+ * Action builders check permissions in controller calls. When creating a new endpoint, pick one of the actions defined below.
+ *
+ * All functions will always resolve the usr and place the user in the request.user.
+ *
+ * UserAction: call the wrapped code, no checks are done
+ * AuthenticatedAction: call the wrapped code iff the user is logged in.
+ * ServerAdminAction: call the wrapped code iff the user is a server admin.
+ * PermissionAction: call the wrapped code iff the user has the right permission on the reference object.
  *
  */
 trait SecuredController extends Controller {
-  def SecuredAction[A](p: BodyParser[A] = parse.anyContent, authorization: Authorization = WithPermission(Permission.Public), resourceId: Option[UUID] = None)(f: RequestWithUser[A] => Result) = Action(p) {
-    implicit request => {
-      // Only check secure social, no other auth methods are allowed
-      val result = for (
-        authenticator <- SecureSocial.authenticatorFromRequest;
-        identity <- UserService.find(authenticator.identityId) match {
-          case Some(x: User) => Some(x)
-          case _ => None
-        }
-      ) yield {
-          //This block if an identity has been found  
-          Authenticator.save(authenticator.touch)
-          authorization match {
-            case auth: WithPermission => {
-              if (auth.isAuthorized(identity, resourceId)) {
-                f(RequestWithUser(Some(identity), request))
-              } else {
-            		//User logged in but does not have permission
-            		Results.Redirect(routes.RedirectUtility.incorrectPermissions("You do not have the permissions that are required in order to view that location."))
-            	}
-            }
-            case _ =>  {
-              //User logged in, but it's a controller that has a different authorization?
-              Results.Redirect(routes.Authentication.notAuthorized)
-            }
-          }
-        }
+  /** get user if logged in */
+  def UserAction(needActive: Boolean) = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      val userRequest = getUser(request)
+      userRequest.user match {
+        case Some(u) if needActive && !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case _ => block(userRequest)
+      }
+    }
+  }
 
-      // return Result, or check anonymous permissions
-      result.getOrElse {
-        authorization match {
-          case auth: WithPermission => {
-            if (auth.isAuthorized(None, resourceId)) {
-              f(RequestWithUser(None, request))
+  /**
+   * Use when you want to require the user to be logged in on a private server or the server is public.
+   */
+  def PrivateServerAction = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      val userRequest = getUser(request)
+      userRequest.user match {
+        case Some(u) if !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case Some(u) if u.superAdminMode || Permission.checkPrivateServer(userRequest.user) => block(userRequest)
+        case None if Permission.checkPrivateServer(userRequest.user) => block(userRequest)
+        case _ => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
+          .flashing("error" -> "You must be logged in to access this page."))
+      }
+    }
+  }
+
+  /** call code iff user is logged in */
+  def AuthenticatedAction = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      val userRequest = getUser(request)
+      userRequest.user match {
+        case Some(u) if !u.active => Future.successful(Unauthorized("Account is not activated"))
+        case Some(u) => block(userRequest)
+        case None => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
+          .flashing("error" -> "You must be logged in to access this page."))
+      }
+    }
+  }
+
+  /** call code if user is a server admin */
+  def ServerAdminAction = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      val userRequest = getUser(request)
+      userRequest.user match {
+        case Some(u) if !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case Some(u) if u.superAdminMode || Permission.checkServerAdmin(userRequest.user) => block(userRequest)
+        case _ => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
+          .flashing("error" -> "You must be logged in as an administrator to access this page."))
+      }
+    }
+  }
+
+  /** call code if user has right permission for resource */
+  def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None) = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      val userRequest = getUser(request)
+      userRequest.user match {
+        case Some(u) if !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case Some(u) if u.superAdminMode || Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
+        case Some(u) => notAuthorizedMessage(userRequest.user, resourceRef)
+        case None if Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
+        case None => Future.successful(Results.Redirect(routes.Error.authenticationRequiredMessage("You must be logged in to perform that action.", userRequest.uri )))
+      }
+    }
+  }
+
+  private def notAuthorizedMessage(user: Option[User], resourceRef: Option[ResourceRef]): Future[SimpleResult] = {
+    val messageNoPermission = "You are not authorized to access "
+
+    resourceRef match {
+      case None => Future.successful(Results.Redirect(routes.Error.notAuthorized("Unknown resource", "Unknown id", "no resource")))
+
+      case Some(ResourceRef(ResourceRef.file, id)) => {
+        val files: FileService = DI.injector.getInstance(classOf[FileService])
+        files.get(id) match {
+          case None => Future.successful(BadRequest(views.html.notFound("File does not exist.")(user)))
+          case Some(file) => Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission + "file \"" + file.filename + "\"", id.toString, "file")))
+        }
+      }
+
+      case Some(ResourceRef(ResourceRef.dataset, id)) => {
+        val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
+        datasets.get(id) match {
+          case None => Future.successful(BadRequest(views.html.notFound("Dataset does not exist.")(user)))
+          case Some(dataset) => Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission
+            + "dataset \"" + dataset.name + "\"", id.toString, "dataset")))
+        }
+      }
+
+      case Some(ResourceRef(ResourceRef.collection, id)) => {
+        val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
+        collections.get(id) match {
+          case None => Future.successful(BadRequest(views.html.notFound("Collection does not exist.")(user)))
+          case Some(collection) => Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission
+            + "collection \"" + collection.name + "\"", id.toString, "collection")))
+        }
+      }
+
+      case Some(ResourceRef(ResourceRef.space, id)) => {
+        val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
+        spaces.get(id) match {
+          case None => Future.successful(BadRequest(views.html.notFound("Space does not exist.")(user)))
+          case Some(space) => {
+            if (user.isDefined && space.requests.contains(RequestResource(user.get.id))) {
+              Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission + "space \""
+                + space.name + "\". \nAuthorization request is pending", "", "space")))
             } else {
-              Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("Authorization is required to access that location. Please login to proceed.", request.uri))
+              Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission + "space \""
+                + space.name + "\"", id.toString, "space")))
             }
-          }
-          case _ => {              
-              //The case where it's a controller that has a different authorization?
-              Results.Redirect(routes.RedirectUtility.authenticationRequiredMessage("Authentication is required to access that location. Please login to proceed.", request.uri))
           }
         }
       }
+
+      case Some(ResourceRef(ResourceRef.curationObject, id)) =>{
+        val curations: CurationService = DI.injector.getInstance(classOf[CurationService])
+        curations.get(id) match {
+          case None =>  Future.successful(BadRequest(views.html.notFound("Curation Object does not exist.")(user)))
+          case Some(curation) => Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission
+            + "curation object \"" + curation.name + "\"", id.toString(), "curation")))
+        }
+      }
+
+      case Some(ResourceRef(ResourceRef.section, id)) =>{
+        val sections: SectionService = DI.injector.getInstance(classOf[SectionService])
+        sections.get(id) match {
+          case None => Future.successful(BadRequest(views.html.notFound("Section does not exist.")(user)))
+          case Some(section) => Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission
+            + " section \"" + section.id + "\"", id.toString(), "section")))
+        }
+      }
+
+      case Some(ResourceRef(resType, id)) => {
+        Future.successful(Results.Redirect(routes.Error.notAuthorized("error resource", id.toString(), resType.toString())))
+      }
     }
+  }
+
+  /**
+   * Disable a route without having to comment out the entry in the routes file. Useful for when we want to keep the
+   * code around but we don't want users to have access to it.
+   */
+  def DisabledAction = new ActionBuilder[UserRequest] {
+    def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
+      Future.successful(Results.Redirect(routes.Error.notAuthorized("", null, null)))
+    }
+  }
+
+  /** Return user based on request object */
+  def getUser[A](request: Request[A]): UserRequest[A] = {
+    // controllers will check for user in the following order:
+    // 1) secure social
+    // 2) anonymous access
+
+    val superAdmin = request.cookies.get("superAdmin").exists(_.value.toBoolean)
+
+    // 1) secure social, this allows the web app to make calls to the API and use the secure social user
+    for (
+      authenticator <- SecureSocial.authenticatorFromRequest(request);
+      identity <- UserService.find(authenticator.identityId)
+    ) yield {
+      Authenticator.save(authenticator.touch)
+      val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity) match {
+        case Some(u: ClowderUser) if Permission.checkServerAdmin(Some(u)) => Some(u.copy(superAdminMode=superAdmin))
+        case Some(u) => Some(u)
+        case None => None
+      }
+      return UserRequest(user, request)
+    }
+
+    // 2) anonymous access
+    UserRequest(None, request)
   }
 }

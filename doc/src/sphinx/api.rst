@@ -1,7 +1,7 @@
 Using the API
 =============
 
-The RESTFul application programming interface is the best way to interact with Medici programmatically. Much of the web
+The RESTFul application programming interface is the best way to interact with Clowder programmatically. Much of the web
 frontend and the extractors use this same API to interact with the system.
 
 Following is a brief description of all the available endpoints. For more information take a look at the source under

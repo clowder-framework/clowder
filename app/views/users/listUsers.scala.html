@@ -1,0 +1,35 @@
+@(listUsers: List[(UUID, String, String, String)], prev: String, next: String, limit: Int)(implicit user: Option[models.User])
+
+@main("Users") {
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Users</h1>
+        </div>
+    </div>
+    <div class="row">
+    @for(userInfo <- listUsers) {
+        @users.tile(userInfo, "col-lg-2 col-md-2 col-sm-3 col-xs-4", true)
+    }
+
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <ul class="pager">
+                    <!-- The following items have to be links due to the way the list items render them. Ideally, they should be buttons. -->
+                @if(prev != "") {
+                    <li class="previous"><a id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
+                }
+                @if(next != "") {
+                    <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next<span class="glyphicon glyphicon-chevron-right"></span></a></li>
+                }
+            </ul>
+        </div>
+    </div>
+    <script type="text/javascript" language="javascript">
+        $(document).ready(function() {
+           $('#nextlink').attr('href', "@(routes.Users.getUsers("a", next, limit))");
+	       $('#prevlink').attr('href', "@(routes.Users.getUsers("b", prev, limit))");
+        });
+    </script>
+}
+

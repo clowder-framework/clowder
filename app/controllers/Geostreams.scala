@@ -3,24 +3,26 @@
  */
 package controllers
 
+import javax.inject.Inject
+
 import play.api.Play._
 import play.api.mvc.Controller
-import api.WithPermission
 import api.Permission
-import services.PostgresPlugin
+import services.{MetadataService, PostgresPlugin}
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.Logger
 
 /**
  * View/Add/Remove Geostreams
  */
-object Geostreams extends Controller with SecuredController {
+class Geostreams @Inject() (
+  metadata: MetadataService) extends Controller with SecuredController {
 
   var plugin = current.plugin[PostgresPlugin]
 
   val pluginNotEnabled = InternalServerError("Geostreaming plugin not enabled")
 
-  def list() = SecuredAction(authorization=WithPermission(Permission.ListSensors)) { implicit request =>
+  def list() = PermissionAction(Permission.ViewSensor) { implicit request =>
     implicit val user = request.user
     plugin match {
       case Some(db) => {
@@ -39,7 +41,7 @@ object Geostreams extends Controller with SecuredController {
     }
   }
 
-  def map() = SecuredAction(authorization=WithPermission(Permission.ListSensors)) { implicit request =>
+  def map() = PermissionAction(Permission.ViewSensor) { implicit request =>
     implicit val user = request.user
     plugin match {
       case Some(db) => {
@@ -58,7 +60,7 @@ object Geostreams extends Controller with SecuredController {
     }
   }
 
-  def newSensor() = SecuredAction(authorization=WithPermission(Permission.CreateSensors)) { implicit request =>
+  def newSensor() = PermissionAction(Permission.CreateSensor) { implicit request =>
     implicit val user = request.user
     plugin match {
       case Some(db) => Ok(views.html.geostreams.create())
@@ -66,7 +68,7 @@ object Geostreams extends Controller with SecuredController {
     }
   }
 
-  def edit(id: String)= SecuredAction(authorization=WithPermission(Permission.CreateSensors)) { implicit request =>
+  def edit(id: String)= PermissionAction(Permission.CreateSensor) { implicit request =>
     implicit val user = request.user
     plugin match {
       case Some(db) => {
@@ -81,13 +83,14 @@ object Geostreams extends Controller with SecuredController {
             List()
           }
         }
+        val definitions = metadata.getDefinitions()
         Logger.debug(list.toString)
         val streams = list.map { stream =>
           // val stream_id = (stream \ "stream_id").toString
           Json.parse(db.getStream((stream \ "stream_id").toString).getOrElse("{}"))
         }
 
-        Ok(views.html.geostreams.edit(sensor, streams))
+        Ok(views.html.geostreams.edit(sensor, streams, definitions))
       }
       case None => pluginNotEnabled
     }
