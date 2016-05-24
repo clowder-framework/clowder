@@ -108,14 +108,14 @@ class Metadata @Inject()(
     }
   }
 
-  def addDefinitionToSpace(spaceId: String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, UUID(spaceId)))) (parse.json){ implicit request =>
+  def addDefinitionToSpace(spaceId: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId))) (parse.json){ implicit request =>
     implicit val user = request.user
     user match {
       case Some(user) => {
         val body = request.body
         if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
           val uri = (body \ "uri").as[String]
-          spaceService.get(UUID(spaceId)) match {
+          spaceService.get(spaceId) match {
             case Some(space) => addDefinitionHelper(uri, body, Some(space.id))
             case None => BadRequest("The space does not exist")
           }
@@ -142,40 +142,6 @@ class Metadata @Inject()(
         case None => BadRequest(toJson("Invalid user"))
       }
   }
-
-//  def addDefinition(spaceId: Option[String]) = PermissionAction(Permission.AddMetadata)(parse.json) {
-//    implicit request =>
-//      request.user match {
-//        case Some(user) => {
-//          val body = request.body
-//          if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
-//            val uri = (body \ "uri").as[String]
-//            spaceId match {
-//              case Some(s) => {
-//                spaceService.get(UUID(s)) match {
-//                  case Some(space) => {
-//                    if(Permission.checkPermission(user, Permission.EditSpace, ResourceRef(ResourceRef.space, space.id)) ) {
-//                      addDefinitionHelper(uri, body, Some(space.id))
-//                    } else {
-//                      BadRequest(toJson("You don't have permission to Edit space with id: " + space.id.stringify))
-//                    }
-//                  }
-//                  case None => BadRequest(toJson("The space doesn't exist"))
-//                }
-//              }
-//              case None => {
-//                addDefinitionHelper(uri, body, None)
-//              }
-//            }
-//
-//          } else {
-//            BadRequest(toJson("Invalid resource type"))
-//          }
-//
-//        }
-//        case None => BadRequest(toJson("Invalid user"))
-//      }
-//  }
 
   def addDefinitionHelper(uri: String, body: JsValue, spaceId: Option[UUID]): Result = {
     metadataService.getDefinitionByUri(uri) match {
