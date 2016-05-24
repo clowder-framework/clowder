@@ -13,7 +13,9 @@ import services._
 class Metadata @Inject() (
   files: FileService,
   datasets: DatasetService,
-  metadata: MetadataService, contextLDService: ContextLDService) extends SecuredController {
+  spaces: SpaceService,
+  metadata: MetadataService,
+  contextLDService: ContextLDService) extends SecuredController {
 
   def view(id: UUID) = PermissionAction(Permission.ViewMetadata) { implicit request =>
     implicit val user = request.user
@@ -58,8 +60,14 @@ class Metadata @Inject() (
 
   def getMetadataBySpace(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
-    val metadataResults = metadata.getDefinitions(Some(id))
-    Ok(views.html.manageMetadataDefinitions(metadataResults.toList, Some(id)))
+    spaces.get(id) match {
+      case Some(space) => {
+        val metadataResults = metadata.getDefinitions(Some(id))
+        Ok(views.html.manageMetadataDefinitions(metadataResults.toList, Some(id), Some(space.name)))
+      }
+      case None => BadRequest("The requested space does not exist. Space Id: " + id)
+    }
+
   }
 
 }
