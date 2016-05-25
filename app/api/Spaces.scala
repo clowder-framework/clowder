@@ -193,13 +193,18 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   @ApiOperation(value = "Remove a collection from a space",
     notes = "",
     responseClass = "None", httpMethod = "POST")
-  def removeCollection(spaceId: UUID, collectionId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+  def removeCollection(spaceId: UUID, collectionId: UUID, removeDatasets : Boolean) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     (spaces.get(spaceId), collectionService.get(collectionId)) match {
       case (Some(s), Some(c)) => {
         if(c.root_spaces contains s.id) {
           spaces.removeCollection(collectionId, spaceId)
           collectionService.removeFromRootSpaces(collectionId, spaceId)
-          updateSubCollections(spaceId, collectionId)
+          if (removeDatasets){
+            updateSubCollectionsAndDatasets(spaceId, collectionId)
+          } else {
+            updateSubCollections(spaceId, collectionId)
+          }
+
           //todd n
           //update datasets if we are removing them from space
           events.addSourceEvent(request.user,  c.id, c.name, s.id, s.name,"remove_collection_space")
@@ -239,10 +244,10 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
 
         for (dataset <- datasetsInCollection){
           if (!datasetBelongsToOtherCollectionInSpace(dataset.id, collectionId, spaceId, collectionDescendants.toList)){
-            removeDataset(spaceId, dataset.id)
+            spaces.removeDataset(dataset.id,spaceId)
           }
         }
-        
+
         for (descendant <- collectionDescendants){
           val rootCollectionSpaces = collectionService.getRootSpaceIds(descendant.id)
           for (space <- descendant.spaces) {
