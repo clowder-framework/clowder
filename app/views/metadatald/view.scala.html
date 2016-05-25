@@ -11,7 +11,7 @@
         formatter.format(date)
     }
 
-    @printContent(content: JsValue, contextId: Option[UUID], contextURL: Option[URL]) = {
+    @printContent(agent: Agent, content: JsValue, contextId: Option[UUID], contextURL: Option[URL], resourceId: UUID, i: Integer) = {
         @content match {
             case o: JsObject => {
                 <ul>
@@ -22,16 +22,23 @@
                                     <a class="collapse-icon">
                                         <span class="glyphicon glyphicon-minus"></span>
                                     </a>
-                                    @if(contextId.isDefined) {
+                                    <!-- only with context and user (not extractor) generated -->
+                                    @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
                                         <!-- ids don't like spaces, you can use regex for removing different characters in metadata names (key) as well -->
-                                        <a id='@contextId.get@key.replaceAll("[() ]","")' href="javascript:void(0)" onmouseover="getMetadataContext('@contextId.get@key.replaceAll("[() ]","")','@contextId.get','@key');" onmouseout="leaveMetadataContext('@contextId.get@key.replaceAll("[() ]","")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
+                                        @defining(contextId.get + key.replaceAll("[() ]","") + resourceId.toString() + i.toString) { mid =>
+                                            <a id='@mid' href="javascript:void(0)"
+                                                onmouseover="getMetadataContext('@mid','@contextId.get','@key');"
+                                                onmouseout="leaveMetadataContext('@mid');">
+                                            <strong>@key:</strong></a> @printContent(agent,value,contextId,contextURL,resourceId,i)
+                                        }
                                     } else {
                                         @contextURL match {
                                             case Some(u) => {
-                                                <a href="@u.toString" target="_blank" title="Show context reference"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
+                                                <a href="@u.toString" target="_blank" title="Show context reference"><strong>@key:</strong></a>
+                                                @printContent(agent, value,contextId,contextURL,resourceId,i)
                                             }
                                             case None => {
-                                                <strong>@key:</strong> @printContent(value,contextId,contextURL)
+                                                <strong>@key:</strong> @printContent(agent,value,contextId,contextURL,resourceId,i)
                                             }
                                         }
                                     }
@@ -42,15 +49,21 @@
                                     <a class="collapse-icon">
                                         <span class="glyphicon glyphicon-minus"></span>
                                     </a>
-                                    @if(contextId.isDefined) {
-                                        <a id='@contextId.get@key.replaceAll("[() ]","")' href="javascript:void(0)" onmouseover="getMetadataContext('@contextId.get@key.replaceAll("[() ]","")','@contextId.get','@key');" onmouseout="leaveMetadataContext('@contextId.get@key.replaceAll("[() ]","")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
+                                    @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
+                                        @defining(contextId.get + key.replaceAll("[() ]","") + resourceId.toString() + i.toString) { mid =>
+                                            <a id='@mid' href="javascript:void(0)"
+                                            onmouseover="getMetadataContext('@mid','@contextId.get','@key');"
+                                            onmouseout="leaveMetadataContext('@mid');">
+                                                <strong>@key:</strong></a> @printContent(agent,value,contextId,contextURL,resourceId,i)
+                                        }
                                     } else {
                                         @contextURL match {
                                             case Some(u) => {
-                                                <a href="@u.toString" target="_blank" title="Show context reference"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
+                                                <a href="@u.toString" target="_blank" title="Show context reference"><strong>@key:</strong></a>
+                                                @printContent(agent,value,contextId,contextURL,resourceId,i)
                                             }
                                             case None => {
-                                                <strong>@key:</strong> @printContent(value,contextId,contextURL)
+                                                <strong>@key:</strong> @printContent(agent,value,contextId,contextURL,resourceId,i)
                                             }
                                         }
                                     }
@@ -58,14 +71,20 @@
                             }
                             case _ => {
                                 <li class="md-block">
-                                @if(contextId.isDefined) {
-                                    <a id='@contextId.get@key.replaceAll("[() ]","")' href="javascript:void(0)" onmouseover="getMetadataContext('@contextId.get@key.replaceAll("[() ]","")','@contextId.get','@key');" onmouseout="leaveMetadataContext('@contextId.get@key.replaceAll("[() ]","")');"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
+                                @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
+                                    @defining(contextId.get + key.replaceAll("[() ]","") + resourceId.toString() + i.toString) { mid =>
+                                        <a id='@mid' href="javascript:void(0)"
+                                            onmouseover="getMetadataContext('@mid','@contextId.get','@key');"
+                                            onmouseout="leaveMetadataContext('@mid');">
+                                        <strong>@key:</strong></a> @printContent(agent,value,contextId,contextURL,resourceId,i)
+                                    }
                                 } else {
                                     @contextURL match {
                                         case Some(u) => {
-                                            <a href="@u.toString" target="_blank" title="Show context reference"><strong>@key:</strong></a> @printContent(value,contextId,contextURL)
+                                            <a href="@u.toString" target="_blank" title="Show context reference"><strong>@key:</strong></a>
+                                            @printContent(agent,value,contextId,contextURL,resourceId,i)
                                         }
-                                        case None => {<strong>@key:</strong> @printContent(value,contextId,contextURL)}
+                                        case None => {<strong>@key:</strong> @printContent(agent,value,contextId,contextURL,resourceId,i)}
                                     }
                                 }
                                 </li>
@@ -78,7 +97,7 @@
             case a: JsArray => {
                 <ul>
                 @for((value, i) <- a.value.zipWithIndex) {
-                    <li class="md-block">@printContent(value,contextId,contextURL)</li>
+                    <li class="md-block">@printContent(agent,value,contextId,contextURL,resourceId,i)</li>
                 }
                 </ul>
             }
@@ -93,12 +112,26 @@
         }
     }
 
-    @printHeader(agent: Agent, date: java.util.Date, i: Integer) = {
+    @printHeader(agent: Agent, date: java.util.Date, resourceId: UUID, i: Integer) = {
         @agent.operation by
-        @if(agent.url.isDefined) {
-            <a id='agent@i' href="javascript:void(0)" onmouseover="getAgentContext('agent@i','@agent.id');" onmouseout="leaveAgentContext('agent@i');">@agent.displayName</a>
+        @if(agent.displayName.length > 0) {
+            @if(agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
+                <a id='@resourceId.toString()@i.toString' href="@routes.Profile.viewProfileUUID(agent.id)"
+                onmouseover="getAgentContext('@resourceId.toString()@i.toString','@agent.id');"
+                onmouseout="leaveAgentContext('@resourceId.toString()@i.toString');">@agent.displayName</a>
+            } else {
+                @if(!agent.url.isDefined) {
+                    <a href="@agent.url" target="_blank">@agent.displayName</a>
+                } else {
+                    @agent.displayName
+                }
+            }
         } else {
-            @agent.displayName
+            @if(agent.url.isDefined) {
+                <a href="@agent.url" target="_blank">@agent.url</a>
+            } else {
+                unknown
+            }
         }
         on @dateFormatter(date)
     }
@@ -113,7 +146,7 @@
                     <span class="panel-icon glyphicon glyphicon-minus"></span>
                 </a>
                 <span>
-                    @printHeader(m.creator, m.createdAt, i)
+                    @printHeader(m.creator, m.createdAt, m.attachedTo.id, i)
                 </span>
                 @if(toDelete && Permission.checkPermission(Permission.DeleteMetadata, ResourceRef(ResourceRef.metadata, m.id))) {
                         <a id="@m.id" title="Delete this metadata" class="btn btn-link delete-icon">
@@ -124,7 +157,7 @@
             <div id="collapse_@i" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading_@i">
                 <div class="panel-body">
                     <div class="tree">
-                        @printContent(m.content, m.contextId, m.contextURL)
+                        @printContent(m.creator, m.content, m.contextId, m.contextURL, m.attachedTo.id, i)
                     </div>
                 </div>
             </div>
@@ -221,9 +254,9 @@
 
             request.done(function (response, textStatus, jqXHR) {
                 var fields = response;
-                //console.log(fields[fields);
+                //console.log(fields['fullName']);
                 $("#"+aid).popover({
-                    content:JSON.stringify(fields),
+                    content:fields['email'],
                     trigger:'hover',
                     placement:'top',
                     template: '<div class="popover" role="tooltip" style="max-width:600px;word-break:break-all"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>'
