@@ -278,6 +278,14 @@ class MongoDBSpaceService @Inject() (
     collections.addToSpace(collection, space)
     collections.get(collection) match {
       case Some(current_collection) => {
+
+        val datasetsInCollection = datasets.listCollection(current_collection.id.stringify)
+        for (dataset <- datasetsInCollection){
+          if (!dataset.spaces.contains(space)){
+            addDataset(dataset.id,space)
+          }
+        }
+
         val childCollectionIds = current_collection.child_collection_ids
         for (childCollectionId <- childCollectionIds){
           collections.get(childCollectionId) match {
