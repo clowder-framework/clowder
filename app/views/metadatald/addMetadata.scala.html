@@ -167,14 +167,22 @@ line-height: 1.5;
         }
     }
     var url = jsRoutes.api.Metadata.getDefinitions();
+    var showSpaceInfo = false;
     if("@resType" == "dataset") {
         if(spaceId == "") {
             url = jsRoutes.api.Datasets.getMetadataDefinitions("@id");
+            showSpaceInfo = true;
         } else {
             url = jsRoutes.api.Datasets.getMetadataDefinitions("@id", spaceId);
         }
     } else if ("@resType" == "file") {
-        url = jsRoutes.api.Files.getMetadataDefinitions("@id");
+        if(spaceId == "") {
+            showSpaceInfo = true;
+            url = jsRoutes.api.Files.getMetadataDefinitions("@id");
+        } else {
+            url = jsRoutes.api.Files.getMetadataDefinitions("@id", spaceId);
+        }
+
     } else if ("@resType" == "curationObject") {
         url = jsRoutes.api.CurationObjects.getMetadataDefinitions("@id");
     } else if ("@resType" == "curationFile") {
@@ -223,7 +231,7 @@ line-height: 1.5;
                 var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/")" + template_map[field_type]);
                 var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type});
                 var footerHtml = "";
-                if(typeof space_id !== 'undefined' && !(@resType.startsWith("curation"))) {
+                if(typeof space_id !== 'undefined' && showSpaceInfo) {
                     var request2 = jsRoutes.api.Spaces.get(space_id).ajax({
                         type: 'GET',
                         contentType: "application/json"

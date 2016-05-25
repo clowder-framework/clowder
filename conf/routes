@@ -82,7 +82,7 @@ GET            /files/new                                                       
 GET            /files/metadataSearch                                                    @controllers.Files.metadataSearch
 GET            /files/generalMetadataSearch                                             @controllers.Files.generalMetadataSearch
 GET            /files/following                                                         @controllers.Files.followingFiles(index: Int ?= 0, size: Int ?= 12, mode: String ?= "")
-GET            /files/:id                                                               @controllers.Files.file(id: UUID)
+GET            /files/:id                                                               @controllers.Files.file(id: UUID, dataset: Option[String] ?= None, space: Option[String] ?= None, folder: Option[String] ?= None)
 GET            /files/:id/blob                                                          @controllers.Files.download(id: UUID)
 GET            /files/:id/download/:format                                              @controllers.Files.downloadAsFormat(id: UUID, format: String)
 #GET           /queries/:id/blob				                                        @controllers.Files.downloadquery(id: UUID)
@@ -113,7 +113,7 @@ GET            /datasets/getInstances                                           
 GET            /datasets/removeInstance                                                 @controllers.Datasets.removeInstance(toolType: String, instanceID: UUID)
 GET            /datasets/launchTool                                                     @controllers.Datasets.launchTool(sessionName: String, ttype: String, datasetId: UUID, datasetName: String)
 GET            /datasets/:id                                                            @controllers.Datasets.dataset(id: UUID, space:Option[String] ?= None, limit: Int ?= 20)
-POST           /datasets/:datasetId/updatedFilesAndFolders                              @controllers.Datasets.getUpdatedFilesAndFolders(datasetId: UUID, limit: Int ?= 20, pageIndex: Int ?= 0)
+POST           /datasets/:datasetId/updatedFilesAndFolders                              @controllers.Datasets.getUpdatedFilesAndFolders(datasetId: UUID, limit: Int ?= 20, pageIndex: Int ?= 0, space: Option[String]?= None)
 GET            /datasets/:id/users                                                      @controllers.Datasets.users(id: UUID)
 GET            /datasets_by_section/:id                                                 @controllers.Datasets.datasetBySection(id: UUID)
 POST           /dataset/submit                                                          @controllers.Datasets.submit(folderId: Option[String] ?= None)
@@ -343,7 +343,7 @@ GET            /api/files/:id/blob                                              
 POST           /api/files/:id/remove                                                    @api.Files.removeFile(id: UUID)
 GET            /api/files/:id/metadata                                                  @api.Files.get(id: UUID)
 POST           /api/files/:id/metadata                                                  @api.Files.addMetadata(id: UUID)
-GET            /api/files/:id/metadataDefinitions                                       @api.Files.getMetadataDefinitions(id: UUID)
+GET            /api/files/:id/metadataDefinitions                                       @api.Files.getMetadataDefinitions(id: UUID, space: Option[String] ?= None)
 POST           /api/files/:id/updateMetadata                                            @api.Files.updateMetadata(id: UUID, extractor_id: String)
 POST           /api/files/:id/versus_metadata                                           @api.Files.addVersusMetadata(id:UUID)
 GET            /api/files/:id/versus_metadata                                           @api.Files.getVersusMetadataJSON(id:UUID)

@@ -209,26 +209,40 @@ class Files @Inject()(
   @ApiOperation(value ="Get metadata definitions available for a file",
     notes="The metadata definitions come from the spaces that the dataset the file is part of. Directly or within a folder",
   responseClass= "None", httpMethod = "GET")
-  def getMetadataDefinitions(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+  def getMetadataDefinitions(id: UUID, space: Option[String]) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
   implicit val user = request.user
     files.get(id) match {
       case Some(file) => {
-        val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
-        val foldersContainingFile = folders.findByFileId(file.id).sortBy(_.name)
-        val datasetSpaces = collection.mutable.HashSet[models.UUID]()
-        datasetsContainingFile.foreach{ dataset =>
-          dataset.spaces.foreach{space => datasetSpaces += space}
-        }
+        val spacesToCheck = collection.mutable.HashSet[models.UUID]()
+        space match {
+          case Some(spaceId) => {
+            spaces.get(UUID(spaceId)) match {
+              case Some(space) => {
+                spacesToCheck += space.id
+              }
+              case None =>
+            }
+          }
+          case None => {
+            val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
+            val foldersContainingFile = folders.findByFileId(file.id).sortBy(_.name)
 
-        foldersContainingFile.foreach{ folder =>
-          datasets.get(folder.parentDatasetId) match {
-            case Some(dataset) => dataset.spaces.foreach{space => datasetSpaces += space}
-            case None =>
+            datasetsContainingFile.foreach{ dataset =>
+              dataset.spaces.foreach{space => spacesToCheck += space}
+            }
+
+            foldersContainingFile.foreach{ folder =>
+              datasets.get(folder.parentDatasetId) match {
+                case Some(dataset) => dataset.spaces.foreach{space => spacesToCheck += space}
+                case None =>
+              }
+
+            }
           }
         }
 
         val metadataDefinitions = collection.mutable.HashSet[models.MetadataDefinition]()
-        datasetSpaces.foreach{ spaceId =>
+        spacesToCheck.foreach{ spaceId =>
           spaces.get(spaceId) match {
             case Some(space) => metadataService.getDefinitions(Some(space.id)).foreach{definition => metadataDefinitions += definition}
             case None =>
@@ -242,6 +256,8 @@ class Files @Inject()(
       case None => BadRequest(toJson("The requested file does not exist"))
     }
   }
+
+
   /**
    * Add metadata to file.
    */

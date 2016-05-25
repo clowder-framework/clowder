@@ -443,7 +443,7 @@ class Datasets @Inject()(
     }
   }
 
-  def getUpdatedFilesAndFolders(datasetId: UUID, limit: Int, pageIndex: Int)  = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) (parse.json) { implicit request =>
+  def getUpdatedFilesAndFolders(datasetId: UUID, limit: Int, pageIndex: Int, space: Option[String])  = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) (parse.json) { implicit request =>
     implicit val user = request.user
     val filepageUpdate = if (pageIndex < 0) 0 else pageIndex
     datasets.get(datasetId) match {
@@ -477,7 +477,7 @@ class Datasets @Inject()(
                 }.toMap
                 val next = folder.files.length + folder.folders.length > limit * (filepageUpdate+1)
 
-                Ok(views.html.datasets.filesAndFolders(dataset, Some(folder.id.stringify), foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, fileComments)(request.user))
+                Ok(views.html.datasets.filesAndFolders(dataset, Some(folder.id.stringify), foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, fileComments, space)(request.user))
 
               }
               case None => InternalServerError(s"No folder with id $fId found")
@@ -499,7 +499,7 @@ class Datasets @Inject()(
 
             val folderHierarchy = new ListBuffer[Folder]()
             val next = dataset.files.length + dataset.folders.length > limit * (filepageUpdate+1)
-            Ok(views.html.datasets.filesAndFolders(dataset, None, foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, fileComments)(request.user))
+            Ok(views.html.datasets.filesAndFolders(dataset, None, foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, fileComments, space)(request.user))
           }
         }
       }
