@@ -45,7 +45,7 @@
         }
       </h4>
       <div id ='allMetadata_@(file.id)'>
-        <button class="btn btn-link" type="button">Show File metadata</button>
+        <button class="btn btn-link" type="button">Show curation file metadata</button>
         <div style="display:none;">
           <div class="row border-top">
             <div class="col-md-12">
@@ -76,11 +76,11 @@
                     $("#allMetadata_@(file.id.toString) > button").on('click', function(){
                         if($("#allMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
                             $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
-                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file metadata";
+                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide curation file metadata";
                         }
                         else{
                             $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
-                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file metadata";
+                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show curation file metadata";
                         }
                     });
 
