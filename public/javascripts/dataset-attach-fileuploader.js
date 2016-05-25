@@ -1,6 +1,5 @@
 // Functions and callback definitions that are used by the multi-file-uploader for adding files to dataset
-
-$(function () {	                	                 
+$(function () {
 	//Callback for any submit call, whether it is the overall one, or individual files, in the multi-file-uploader
     $('#fileupload').bind('fileuploadsubmit', function (e, data) {    	    	    	    	
     	return uploadFileToExistingDataset(data);    
@@ -19,7 +18,8 @@ function checkZeroFiles(id, inFolder) {
 		return false;
 	} else {
 		$("#hiddenmt").attr("value", true);
-		var request = jsRoutes.api.Events.addFileEvent(id, inFolder, numFiles).ajax({
+		var unprocessed = $('.template-upload').length;
+		var request = jsRoutes.api.Events.addFileEvent(id, inFolder, unprocessed).ajax({
 			type: 'POST'
 		});
 		request.done(function (response, textStatus, jqXHR) {
