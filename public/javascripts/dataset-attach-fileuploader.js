@@ -19,11 +19,13 @@ function checkZeroFiles(id, inFolder) {
 	} else {
 		$("#hiddenmt").attr("value", true);
 		var unprocessed = $('.template-upload').length;
-		var request = jsRoutes.api.Events.addFileEvent(id, inFolder, unprocessed).ajax({
+		var request = jsRoutes.api.Datasets.addFileEvent(id, inFolder, unprocessed).ajax({
 			type: 'POST'
 		});
 		request.done(function (response, textStatus, jqXHR) {
 			console.log("save multiple file events");
+			$("#hiddenmt").attr("value", false);
+
 		});
 	}
 }

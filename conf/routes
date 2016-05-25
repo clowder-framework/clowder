@@ -519,6 +519,8 @@ GET            /api/datasets/:id                                                
 DELETE         /api/datasets/:id                                                        @api.Datasets.deleteDataset(id: UUID)
 POST           /api/datasets/:id/detachdelete                                           @api.Datasets.detachAndDeleteDataset(id: UUID)
 POST           /api/datasets/:parentDatasetId/newFolder                                 @api.Folders.createFolder(parentDatasetId: UUID)
+POST           /dataset/:id/addFileEvent                                                @api.Datasets.addFileEvent(id:UUID, inFolder:Boolean, fileCount: Int )
+
 
 # ----------------------------------------------------------------------
 # PREVIEWS ENDPOINT
@@ -693,6 +695,5 @@ DELETE         /spaces/curations/:id/files/:curationFileId                      
 DELETE         /spaces/curations/:id/folders/:curationFolderId                          @api.CurationObjects.deleteCurationFolder(id:UUID, parentId: UUID, curationFolderId: UUID)
 GET            /spaces/curations/:id/updatedFilesAndFolders                             @controllers.CurationObjects.getUpdatedFilesAndFolders(id: UUID, curationFolderId: String, limit: Int, pageIndex:Int)
 
-POST           /dataset/:id/addFileEvent                                                @api.Events.addFileEvent(id:UUID, inFolder:Boolean, fileCount: Int )
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()
 GET            /getEvents                                                               @controllers.Events.getEvents(index: Int)
