@@ -13,7 +13,7 @@ import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
 import services.MetadataService
-import services.{ContextLDService, DatasetService, FileService, FolderService}
+import services.{ContextLDService, DatasetService, FileService, FolderService, ExtractorMessage, RabbitmqPlugin}
 
 /**
  * MongoDB Metadata Service Implementation
@@ -37,6 +37,12 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
           Logger.error(s"Could not increase counter for ${metadata.attachedTo}")
         }
       }
+    }
+    // send extractor message after attached to resource
+    val mdMap = Map("metadata"->metadata.content)
+    current.plugin[RabbitmqPlugin].foreach { p =>
+      val dtkey = s"${p.exchange}.${metadata.attachedTo.resourceType.name}.metadata.added"
+      p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, mdMap, "", metadata.attachedTo.id, ""))
     }
     UUID(mid.get.toString())
   }
