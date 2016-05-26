@@ -5,7 +5,7 @@ CLOWDER_BRANCH=${CLOWDER_BRANCH:-"CATS-CORE"}
 CLOWDER_BUILD=${CLOWDER_BUILD:-"latestSuccessful"}
 
 # change to folder where script is installed
-cd /home/ubuntu
+cd /home/clowder
 
 # fetch software
 if [[ ${CLOWDER_BUILD} == latest* ]]; then
@@ -13,7 +13,7 @@ if [[ ${CLOWDER_BUILD} == latest* ]]; then
 else
   BB="${CLOWDER_BRANCH}-${CLOWDER_BUILD}"
 fi
-URL="https://opensource.ncsa.illinois.edu/bamboo/browse/${BB}/artifact/JOB1/dist/"
+URL="https://opensource.ncsa.illinois.edu/bamboo/browse/${BB}/artifact/shared/dist/"
 /usr/bin/wget -q -e robots=off -A "clowder-*.zip" -nd -r -N -l1 ${URL}
 LATEST=$( /bin/ls -1rt clowder-*.zip | tail -1 )
 
@@ -48,7 +48,7 @@ if [ -s ${LATEST} ]; then
     fi
 
     # change permissions
-    /bin/chown -R ubuntu clowder
+    /bin/chown -R clowder clowder
 
     # run custom code pieces
     if [ -e update-clowder-custom.sh ]; then
