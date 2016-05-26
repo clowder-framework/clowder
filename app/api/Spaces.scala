@@ -205,8 +205,6 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
             updateSubCollections(spaceId, collectionId)
           }
 
-          //todd n
-          //update datasets if we are removing them from space
           events.addSourceEvent(request.user,  c.id, c.name, s.id, s.name,"remove_collection_space")
           Ok(toJson("success"))
         } else {
