@@ -56,7 +56,7 @@ function confirmRemoveTemplate(message,resourceFromType,resourceFromId,resourceT
     modalHTML += '<p>' + message + '</p>';
 
     if (resourceFromType == "space" && resourceType == "collection"){
-        modalHTML += '<p><input type="checkbox" name="remove-datasets" value="remove" checked> Remove datasets of this collection from space.</input></p></div>'
+        modalHTML += '<p><input type="checkbox" name="removedatasets" value="removedatasets" checked> Remove datasets of this collection from space.</input></p></div>'
     }
     else {
         modalHTML += '</div>';
@@ -64,7 +64,7 @@ function confirmRemoveTemplate(message,resourceFromType,resourceFromId,resourceT
 
     modalHTML += '<div class="modal-footer">';
     modalHTML += '<button type="button" class="btn btn-link" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> Cancel</button>';
-    modalHTML += '<a type="button" class="btn btn-primary" id="OKModalButton" href="javascript:RemoveTemplate(\''+resourceFromType+'\',\''+ resourceFromId+'\',\''+ resourceType+'\',\''+ resourceId+'\',\''+ isreload+'\',\''+ url+'\')"><span class="glyphicon glyphicon-ok"></span> OK</a>';
+    modalHTML += '<a type="button" class="btn btn-primary" id="OKModalButton" href="javascript:RemoveTemplate(\''+resourceFromType+'\',\''+ resourceFromId+'\',\''+ resourceType+'\',\''+ resourceId+'\',\''+ isreload+'\',\''+ url+'\',\''+removedatasets.val()+'\')"><span class="glyphicon glyphicon-ok"></span> OK</a>';
     modalHTML += '</div>';
     modalHTML += '</div>';
     modalHTML += '</div>';
@@ -107,10 +107,11 @@ function DeleteTemplate(resourceType, resourceId, isreload, url) {
     }
 }
 
-function RemoveTemplate(resourceFromType,resourceFromId,resourceType,resourceId,isreload,url) {
+function RemoveTemplate(resourceFromType,resourceFromId,resourceType,resourceId,isreload,url,removeDatasets) {
     //console.log(resourceFromType, resourceFromId, resourceType, resourceId, isreload, url);
     $('.modal').modal('hide');
     //console.log(url);
+    console.log(removeDatasets);
     if (resourceFromType == "collection") {
         if (resourceType == "collection") {
             removeChildCollectionFromParent(resourceFromId,resourceId,url);
