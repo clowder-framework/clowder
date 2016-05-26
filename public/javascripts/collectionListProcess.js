@@ -1,5 +1,10 @@
-function removeCollection(id, isreload, url){
-	var request = jsRoutes.api.Collections.removeCollection(id).ajax({
+function removeCollection(id, isreload, url, resourceFromType){
+	var url = jsRoutes.api.Collections.removeCollection(id)
+	if(resourceFromType == 'space'){
+		var removeDatasets = $('#removedatasets').val();
+		url = jsRoutes.api.Collections.removeCollection(id,removeDatasets )
+	}
+	var request = url.ajax({
 		type: 'DELETE'
 	});
 	request.done(function (response, textStatus, jqXHR){

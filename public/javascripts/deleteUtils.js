@@ -56,7 +56,7 @@ function confirmRemoveTemplate(message,resourceFromType,resourceFromId,resourceT
     modalHTML += '<p>' + message + '</p>';
 
     if (resourceFromType == "space" && resourceType == "collection"){
-        modalHTML += '<p><input type="checkbox" name="removedatasets" value="removedatasets" checked> Remove datasets of this collection from space.</input></p></div>'
+        modalHTML += '<p><input type="checkbox" name="removedatasets" id="removedatasets" checked> Remove datasets of this collection from space.</input></p></div>'
     }
     else {
         modalHTML += '</div>';
@@ -64,7 +64,7 @@ function confirmRemoveTemplate(message,resourceFromType,resourceFromId,resourceT
 
     modalHTML += '<div class="modal-footer">';
     modalHTML += '<button type="button" class="btn btn-link" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> Cancel</button>';
-    modalHTML += '<a type="button" class="btn btn-primary" id="OKModalButton" href="javascript:RemoveTemplate(\''+resourceFromType+'\',\''+ resourceFromId+'\',\''+ resourceType+'\',\''+ resourceId+'\',\''+ isreload+'\',\''+ url+'\',\''+removedatasets.val()+'\')"><span class="glyphicon glyphicon-ok"></span> OK</a>';
+    modalHTML += '<a type="button" class="btn btn-primary" id="OKModalButton" href="javascript:RemoveTemplate(\''+resourceFromType+'\',\''+ resourceFromId+'\',\''+ resourceType+'\',\''+ resourceId+'\',\''+ isreload+'\',\''+ url+'\',\''+resourceFromType+'\')"><span class="glyphicon glyphicon-ok"></span> OK</a>';
     modalHTML += '</div>';
     modalHTML += '</div>';
     modalHTML += '</div>';
@@ -83,22 +83,22 @@ function confirmRemoveResourceFromResourceEvent(resourceFromType, resourceFromId
 
 
 
-function DeleteTemplate(resourceType, resourceId, isreload, url) {
+function DeleteTemplate(resourceType, resourceId, isreload, url, resourceFromType) {
     $('.modal').modal('hide');
     if (resourceType == "file") {
         removeFile(resourceId,isreload, url);
     } else if (resourceType == "dataset") {
         removeDataset(resourceId, isreload, url);
     } else if (resourceType == "collection") {
-        removeCollection(resourceId, isreload, url);
+        removeCollection(resourceId, isreload, url, resourceFromType);
     } else if (resourceType == "space") {
         removeSpace(resourceId, isreload, url);
     } else if(resourceType == "folder" ) {
         //no redirect provided
         removeFolder(resourceId, isreload );
-    } else if(resourceType == "curation object" ) {
+    } else if(resourceType == "curation object") {
         removeCuration(resourceId, isreload, url);
-    } else if(resourceType == "curation file" ) {
+    } else if(resourceType == "curation file") {
         //no redirect provided
         removeCurationFile(resourceId, isreload, url);
     } else if(resourceType == "curation folder" ) {
