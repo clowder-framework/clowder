@@ -431,7 +431,11 @@ class MongoDBCollectionService @Inject() (
               datasets.addCollection(dataset.id, collection.id)
               datasets.index(dataset.id)
               index(collection.id)
-
+              for (collectionSpace <- collection.spaces){
+                if (!dataset.spaces.contains(collectionSpace)){
+                  spaceService.addDataset(dataset.id,collectionSpace)
+                }
+              }
               if(collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){
                   Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)),
                   $set("thumbnail_id" -> dataset.thumbnail_id.get), false, false, WriteConcern.Safe)
