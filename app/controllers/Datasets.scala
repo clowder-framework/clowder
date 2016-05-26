@@ -67,16 +67,26 @@ class Datasets @Inject()(
     val collectionSelected = collection match {
       case Some(c) => {
         collections.get(UUID(c)) match {
-          case Some(collection) =>  Some(collection)
+          case Some(collection) => {
+            for (colSpace <- collection.spaces){
+              spaceService.get(colSpace) match{
+                case Some(aSpace) => {
+                  if (Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, aSpace.id))) {
+                    decodedSpaceList += Utils.decodeSpaceElements(aSpace)
+                  }
+                }
+                case None => None
+              }
+            }
+            Some(collection)
+          }
           case None => None
         }
       }
-      case None => None
     }
 
     Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
       RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected))
-
   }
 
   def createStep2(id: UUID) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
