@@ -314,10 +314,11 @@ object Geostreams extends ApiController {
       }
     }
 
-  def addDatapoint()  = PermissionAction(Permission.DeleteGeoStream)(parse.json) { implicit request =>
+  def addDatapoint(invalidateCache: Boolean)  = PermissionAction(Permission.DeleteGeoStream)(parse.json) { implicit request =>
     Logger.debug("Adding datapoint: " + request.body)
     request.body.validate[(String, Option[String], String, List[Double], JsValue, String)].map {
       case (start_time, end_time, geoType, longlat, data, streamId) =>
+
         current.plugin[PostgresPlugin] match {
           case Some(plugin) => {
             val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
@@ -325,12 +326,22 @@ object Geostreams extends ApiController {
             val end_timestamp = if (end_time.isDefined) Some(new Timestamp(formatter.parse(end_time.get).getTime())) else None
             if (longlat.length == 3) {
               plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), longlat(2), streamId) match {
-                case Some(d) => jsonp(d, request)
+                case Some(d) => {
+                  if (invalidateCache) {
+                    cacheInvalidate(((Json.parse(d)) \ "sensor_id").asOpt[String], None)
+                  }
+                  jsonp(d, request)
+                }
                 case None => jsonp(Json.obj("status"->"error"), request)
               }
             } else {
               plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), 0.0, streamId) match {
-                case Some(d) => jsonp(d, request)
+                case Some(d) => {
+                  if (invalidateCache) {
+                    cacheInvalidate(((Json.parse(d)) \ "sensor_id").asOpt[String], None)
+                  }
+                  jsonp(d, request)
+                }
                 case None => jsonp(Json.obj("status" -> "error"), request)
               }
             }
