@@ -112,13 +112,15 @@
         }
     }
 
-    @printHeader(agent: Agent, date: java.util.Date, resourceId: UUID, i: Integer) = {
+    @printHeader(agent: Agent, date: java.util.Date, resourceId: UUID, mid: UUID, i: Integer) = {
         @agent.operation by
         @if(agent.displayName.length > 0) {
             @if(agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
-                <a id='@resourceId.toString()@i.toString' href="@routes.Profile.viewProfileUUID(agent.id)"
-                onmouseover="getAgentContext('@resourceId.toString()@i.toString','@agent.id');"
-                onmouseout="leaveAgentContext('@resourceId.toString()@i.toString');">@agent.displayName</a>
+                @defining(resourceId.toString() + mid.toString() + i.toString) { aid =>
+                    <a id='@aid' href="@routes.Profile.viewProfileUUID(agent.id)"
+                    onmouseover="getAgentContext('@aid','@agent.id');"
+                    onmouseout="leaveAgentContext('@aid');">@agent.displayName</a>
+                }
             } else {
                 @if(!agent.url.isDefined) {
                     <a href="@agent.url" target="_blank">@agent.displayName</a>
@@ -141,12 +143,12 @@
     }
     @for((m, i) <- metadata.zipWithIndex) {
         <div class="panel panel-default">
-            <div class="panel-heading" role="tab" id="heading_@i">
-                <a data-toggle="collapse" href="#collapse_@i" class="collapse-icon">
+            <div class="panel-heading" role="tab" id="heading_@m.id@i">
+                <a data-toggle="collapse" href="#collapse_@m.id@i" class="collapse-icon">
                     <span class="panel-icon glyphicon glyphicon-minus"></span>
                 </a>
                 <span>
-                    @printHeader(m.creator, m.createdAt, m.attachedTo.id, i)
+                    @printHeader(m.creator, m.createdAt, m.attachedTo.id, m.id, i)
                 </span>
                 @if(toDelete && Permission.checkPermission(Permission.DeleteMetadata, ResourceRef(ResourceRef.metadata, m.id))) {
                         <a id="@m.id" title="Delete this metadata" class="btn btn-link delete-icon">
@@ -154,7 +156,7 @@
                         </a>
                 }
             </div>
-            <div id="collapse_@i" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading_@i">
+            <div id="collapse_@m.id@i" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading_@m.id@i">
                 <div class="panel-body">
                     <div class="tree">
                         @printContent(m.creator, m.content, m.contextId, m.contextURL, m.attachedTo.id, i)
@@ -223,9 +225,13 @@
 
             request.done(function (response, textStatus, jqXHR) {
                 var fields = response;
-                //console.log(fields['@@context'][key]);
+                var context = "Context is not defined.";
+                if (fields['@@context']) {
+                    context = JSON.stringify(fields['@@context'][key]);
+                }
+                console.log(context);
                 $("#"+mid).popover({
-                    content:JSON.stringify(fields['@@context'][key]),
+                    content:context,
                     trigger:'hover',
                     placement:'top',
                     template: '<div class="popover" role="tooltip" style="max-width:600px;word-break:break-all"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>'
