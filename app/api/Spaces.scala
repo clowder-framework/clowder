@@ -85,7 +85,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   @ApiOperation(value = "List spaces the user can view",
     notes = "Retrieves information about spaces",
     responseClass = "None", httpMethod = "GET")
-  def list(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true) { implicit request =>
+  def list(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=false) { implicit request =>
     Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.ViewSpace), false, request.user, request.user.fold(false)(_.superAdminMode)).map(spaceToJson)))
   }
 

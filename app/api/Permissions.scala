@@ -170,7 +170,7 @@ object Permission extends Enumeration {
     resourceRef match {
       case ResourceRef(ResourceRef.file, id) => false
       case ResourceRef(ResourceRef.dataset, id) => false // TODO check if dataset is public datasets.get(r.id).isPublic()
-      case ResourceRef(ResourceRef.collection, id) => false
+      case ResourceRef(ResourceRef.collection, id) =>  true
       case ResourceRef(ResourceRef.space, id) => false
       case ResourceRef(ResourceRef.comment, id) => false
       case ResourceRef(ResourceRef.section, id) => false

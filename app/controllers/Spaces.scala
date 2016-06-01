@@ -540,7 +540,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
    /**
    * Show the list page
    */
-   def list(when: String, date: String, limit: Int, mode: String, owner: Option[String], showAll: Boolean) = PrivateServerAction { implicit request =>
+   def list(when: String, date: String, limit: Int, mode: String, owner: Option[String], showAll: Boolean) = UserAction(needActive=true) { implicit request =>
      implicit val user = request.user
 
      val nextPage = (when == "a")

@@ -161,6 +161,7 @@ class MongoDBCollectionService @Inject() (
   private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): List[Collection] = {
     val (filter, sort) = filteredQuery(date, nextPage, title, space, permissions, user, showAll, owner)
     //println("db.collections.find(" + MongoUtils.mongoQuery(filter) + ").sort(" + MongoUtils.mongoQuery(sort) + ")")
+    println(filter)
     if (date.isEmpty || nextPage) {
       Collection.find(filter).sort(sort).limit(limit).toList
     } else {
@@ -208,7 +209,7 @@ class MongoDBCollectionService @Inject() (
           }
           $or(orlist.map(_.asDBObject))
         }
-        case None => MongoDBObject()
+        case None => MongoDBObject("access" -> "public")
       }
     }
     val filterOwner = owner match {
@@ -243,7 +244,7 @@ class MongoDBCollectionService @Inject() (
                   }
                   $or(orlist.map(_.asDBObject))
                 }
-                case None => MongoDBObject()
+                case None => MongoDBObject("access" -> "public")
               }
             }
 

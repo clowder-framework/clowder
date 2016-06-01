@@ -273,7 +273,7 @@ class MongoDBDatasetService @Inject() (
           }
           $or(orlist.map(_.asDBObject))
         }
-        case None => MongoDBObject()
+        case None => MongoDBObject("access" -> "public")
       }
     }
     val filterOwner = owner match {
@@ -522,7 +522,7 @@ class MongoDBDatasetService @Inject() (
           }
 
         }
-        case None => orlist += MongoDBObject()
+        case None => orlist += MongoDBObject("access" -> "public" )
       }
     }
     else {

@@ -138,9 +138,8 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * List collections.
    */
-  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String]) = PrivateServerAction { implicit request =>
+  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String]) = UserAction(needActive=false) { implicit request =>
     implicit val user = request.user
-
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
     val collectionSpace = space.flatMap(o => spaceService.get(UUID(o)))

@@ -1,15 +1,12 @@
 package services.mongodb
 
-import java.text.SimpleDateFormat
-import java.util.Date
+
 import javax.inject.{Inject, Singleton}
 import api.Permission
-import api.Permission.Permission
 import api.Permission.Permission
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
-import com.mongodb.util.JSON
 import com.mongodb.DBObject
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import models._
@@ -17,10 +14,8 @@ import org.bson.types.ObjectId
 import play.api.Logger
 import play.{Logger => log}
 import play.api.Play._
-import securesocial.core.providers.Token
 import services._
 import MongoContext.context
-import util.Direction._
 import models.Collection
 import models.Dataset
 import models.Role
@@ -137,6 +132,7 @@ class MongoDBSpaceService @Inject() (
    */
   private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): List[ProjectSpace] = {
     val (filter, sort) = filteredQuery(date, nextPage, title, permissions, user, showAll, owner)
+    println(filter)
     if (date.isEmpty || nextPage) {
       ProjectSpaceDAO.find(filter).sort(sort).limit(limit).toList
     } else {
@@ -153,7 +149,7 @@ class MongoDBSpaceService @Inject() (
     // - space   == show all datasets in space
     // - access  == show all datasets the user can see
     // - default == public only
-    val public = MongoDBObject("public" -> true)
+    val public = MongoDBObject("access" -> "public")
     val filter = owner match {
       case Some(o) => {
         val author = MongoDBObject("creator" -> new ObjectId(o.id.stringify))
