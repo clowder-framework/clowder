@@ -368,6 +368,10 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("update-user-spaces", removeDeletedSpacesFromUser)
 
     updateMongo("update-counts-spaces", updateCountsInSpaces)
+
+    //add private (the default status) flag for each dataset/collection/space
+    updateMongo("add-private-flag", addPrivateFlag)
+
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1114,4 +1118,14 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     }
   }
+
+  private def addPrivateFlag(): Unit ={
+    for (coll <- List[String]("collections", "spaces.projects", "datasets")) {
+      val q = MongoDBObject()
+      val o = MongoDBObject("$set" -> MongoDBObject("access" -> "private"))
+      collection(coll).update(q ,o, multi=true)
+    }
+  }
+
+
 }

@@ -38,6 +38,15 @@
                     <ul class="list-unstyled">
                         <li>Created by <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
                         <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
+                        @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))){
+                            <li id="access">Accessibility:
+
+                                <label><input type="radio" name="access" id="access-private" value="private" >Private</label>
+                                    <label><input type="radio" name="access" id="access-public" value="public">Public</label>
+                        </li>
+                        } else {
+                            <li>Accessibility: @dataset.access</li>
+                        }
                     </ul>
                 </div>
                 <div class="col-md-6">
@@ -293,6 +302,12 @@
                 case None => { }
 
             }
+            if(@dataset.access.contains("private")){
+                document.getElementById('access-private').checked= true;
+            } else {
+                document.getElementById('access-public').checked= true;
+            }
+
         });
 
         function cancelTitle() {
@@ -506,6 +521,19 @@
          });
 
        }
+
+        $('input[type=radio][name="access"]').change(function() {
+            var name = '@dataset.name';
+            var id = '@dataset.id';
+            var access = $("input[name='access']:checked").val();
+            var msg = "Are you sure you want to set " + name + " to " +access+"?";
+            var modalHTML = confirmTemplate(msg, id, access);
+            var confirmModal = $(modalHTML);
+            confirmModal.modal();
+            confirmModal.modal("show");
+        });
+
+
 
     </script>
 }

@@ -104,3 +104,58 @@ function updateCollectionEditLink(collection_id, collection_name) {
     $('#collection_link').attr("href", jsRoutes.controllers.Collections.collection(collection_id).url).text(collection_name);
 }
 
+function updateAccessApi(id, access) {
+    $('.modal').modal('hide');
+    var request = jsRoutes.api.Collections.updateAccess(id, access).ajax({
+        type: 'PUT'
+    });
+
+    request.done(function(response, textStatus, jsXHR){
+        notify("Collection is set to "+ access, "success", false, 2000);
+    });
+    request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error("The following error occurred: " + textStatus, errorThrown);
+        var errMsg = "You must be logged in to see files and folders.";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("Error in getting more files and folders : " + errorThrown, "error");
+        }
+        if($("input[name='access']").val() === "public"){
+            document.getElementById('access-public').checked= true;
+        } else {
+            document.getElementById('access-private').checked= true;
+        }
+    });
+}
+
+function cancelChange(){
+    console.log("cancel");
+    $('.modal').modal('hide');
+    if($("input[name='access']").val() === "public"){
+        document.getElementById('access-public').checked= true;
+    } else {
+        document.getElementById('access-private').checked= true;
+    }
+}
+
+
+function confirmTemplate(message, resourceId, access) {
+    var modalHTML = '<div id="confirm-access" class="modal fade" role="dialog">';
+    modalHTML += '<div class="modal-dialog">';
+    modalHTML += '<div class="modal-content">';
+    modalHTML += '<div class="modal-header">';
+    modalHTML += '<button type="button" class="close" data-dismiss="modal">&times;</button>';
+    modalHTML += '<h4 class="modal-title">Confirm</h4>';
+    modalHTML += '</div>';
+    modalHTML += '<div class="modal-body">';
+    modalHTML += '<p>' + message + '</p>';
+    modalHTML += '</div>';
+    modalHTML += '<div class="modal-footer">';
+    modalHTML += '<a type="button" class="btn btn-link"  href="javascript:cancelChange()"><span class="glyphicon glyphicon-remove"></span> Cancel</a>';
+    modalHTML += '<a type="button" class="btn btn-primary"  href="javascript:updateAccessApi(\''+ resourceId+'\',\''+ access+'\')"><span class="glyphicon glyphicon-ok"></span> OK</a>';
+    modalHTML += '</div>';
+    modalHTML += '</div>';
+    modalHTML += '</div>';
+    modalHTML += '</div>';
+
+    return modalHTML;
+}

@@ -30,6 +30,7 @@ case class spaceFormData(
   spaceId:Option[UUID],
   resourceTimeToLive: Long,
   isTimeToLiveEnabled: Boolean,
+  access:String,
   submitButtonValue:String)
 
 case class spaceInviteData(
@@ -38,7 +39,7 @@ case class spaceInviteData(
   message: Option[String])
 
 class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventService, curationService: CurationService,
-  extractors: ExtractorService) extends SecuredController {
+  extractors: ExtractorService, datasets:DatasetService, collections:CollectionService) extends SecuredController {
 
   /**
    * New/Edit project space form bindings.
@@ -53,14 +54,15 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       "space_id" -> optional(Utils.CustomMappings.uuidType),
       "editTime" -> longNumber,
       "isTimeToLiveEnabled" -> boolean,
+      "access" -> nonEmptyText,
       "submitValue" -> text
     )
       (
-          (name, description, logoUrl, bannerUrl, homePages, space_id, editTime, isTimeToLiveEnabled, bvalue) => spaceFormData(name = name, description = description,
-             homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl, space_id, resourceTimeToLive = editTime, isTimeToLiveEnabled = isTimeToLiveEnabled, bvalue)
+          (name, description, logoUrl, bannerUrl, homePages, space_id, editTime, isTimeToLiveEnabled, access, bvalue) => spaceFormData(name = name, description = description,
+             homePage = homePages, logoURL = logoUrl, bannerURL = bannerUrl, space_id, resourceTimeToLive = editTime, isTimeToLiveEnabled = isTimeToLiveEnabled, access = access, bvalue)
         )
       (
-          (d:spaceFormData) => Some(d.name, d.description, d.logoURL, d.bannerURL, d.homePage, d.spaceId, d.resourceTimeToLive, d.isTimeToLiveEnabled, d.submitButtonValue)
+          (d:spaceFormData) => Some(d.name, d.description, d.logoURL, d.bannerURL, d.homePage, d.spaceId, d.resourceTimeToLive, d.isTimeToLiveEnabled, d.access, d.submitButtonValue)
         )
   )
 
@@ -140,8 +142,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
         case Some(s) => {
 	        val creator = users.findById(s.creator)
 	        var creatorActual: User = null
-	        val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(size))
-	        val datasetsInSpace = spaces.getDatasetsInSpace(Some(id.stringify), Some(size))
+	        val collectionsInSpace = collections.listSpace( size, id.stringify, user)
+	        val datasetsInSpace = datasets.listSpace( size, id.stringify, user)
 	        val usersInSpace = spaces.getUsersInSpace(id)
 	        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
 	        creator match {
@@ -192,7 +194,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       implicit val user = request.user
       spaces.get(id) match {
         case Some(s) => {
-          Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), s.resourceTimeToLive, s.isTimeToLiveEnabled, "Update")), Some(s.id)))}
+          Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), s.resourceTimeToLive, s.isTimeToLiveEnabled, s.access, "Update")), Some(s.id)))}
         case None =>  BadRequest(views.html.notFound("Space does not exist."))
       }
   }
@@ -464,7 +466,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                       case Some(existing_space) => {
                         if (Permission.checkPermission(user, Permission.EditSpace, Some(ResourceRef(ResourceRef.space, existing_space.id)))) {
                           val updated_space = existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
-                            homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
+                            homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled, access = formData.access)
                           spaces.update(updated_space)
                           val option_user = users.findByIdentity(identity)
                           events.addObjectEvent(option_user, updated_space.id, updated_space.name, "update_space_information")

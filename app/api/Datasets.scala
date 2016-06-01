@@ -2068,6 +2068,31 @@ class  Datasets @Inject()(
       }
     }
   }
+
+  @ApiOperation(value = "change the accessibility of dataset",
+    notes = "Downloads all files contained in a dataset.",
+    responseClass = "None", httpMethod = "PUT")
+  def updateAccess(id:UUID, access:String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(loggedInUser) => {
+        datasets.get(id) match {
+          case Some(dataset) => {
+            datasets.update(dataset.copy(access = access))
+            Ok(toJson(Map("status" -> "success")))
+          }
+          // If the dataset wasn't found by ID
+          case None => {
+            NotFound
+          }
+        }
+      }
+      // If the user doesn't have access to download these files
+      case None => {
+        Unauthorized
+      }
+    }
+  }
 }
 
 object ActivityFound extends Exception {}

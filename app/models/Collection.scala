@@ -20,6 +20,7 @@ case class Collection(
   root_spaces: List[UUID] = List.empty,
   metadataCount: Long = 0,
   childCollectionsCount: Integer = 0,
+  access: String = "private",
   @deprecated("use Metadata","since the use of jsonld") jsonldMetadata : List[Metadata]= List.empty)
 
 object Collection {

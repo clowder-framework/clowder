@@ -268,6 +268,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       var name: String = null
       var timeAsString: String = null
       var enabled: Boolean = false
+      var access: String = "private"
 
       var aResult: JsResult[String] = (request.body \ "description").validate[String]
 
@@ -319,14 +320,24 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         }
       }
 
-      Logger.debug(s"updateInformation for dataset with id  $spaceid. Args are $description, $name, $enabled, and $timeAsString")
+      (request.body \ "access").validate[String] match {
+        case b: JsSuccess[String] => {
+          access = b.get
+        }
+        case e: JsError => {
+          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          BadRequest(toJson("enabled data is missing from the updateSpace call."))
+        }
+      }
+
+      Logger.debug(s"updateInformation for space with id  $spaceid. Args are $description, $name, $enabled, $timeAsString and $access")
 
       //Generate the expiration time and the boolean flag
       val timeToLive = timeAsString.toInt * 60 * 60 * 1000L
       //val expireEnabled = enabledAsString.toBoolean
       Logger.debug("converted values are " + timeToLive + " and " + enabled)
 
-      spaces.updateSpaceConfiguration(spaceid, name, description, timeToLive, enabled)
+      spaces.updateSpaceConfiguration(spaceid, name, description, timeToLive, enabled, access)
       events.addObjectEvent(request.user, spaceid, name, "update_space_information")
       Ok(Json.obj("status" -> "success"))
     }

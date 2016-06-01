@@ -136,6 +136,7 @@ class Files @Inject() (
 
         //Decode the datasets so that their free text will display correctly in the view
         val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
+        val access =  (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasets.findByFileId(file.id) ).head.access
         val decodedDatasetsContaining = ListBuffer.empty[models.Dataset]
 
         for (aDataset <- datasetsContainingFile) {
@@ -164,14 +165,14 @@ class Files @Inject() (
               plugin.getOutputFormats(contentTypeEnding).map(outputFormats =>
                 Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                   extractorsActive, decodedDatasetsContaining.toList,foldersContainingFile,
-                  mds, isRDFExportEnabled, extractionsByFile, outputFormats)))
+                  mds, isRDFExportEnabled, extractionsByFile, outputFormats, access)))
             }
             case None =>
               Logger.debug("Polyglot plugin not found")
               //passing None as the last parameter (list of output formats)
               Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                 extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-                mds, isRDFExportEnabled, extractionsByFile, None)))
+                mds, isRDFExportEnabled, extractionsByFile, None, access)))
           }              
       }
           

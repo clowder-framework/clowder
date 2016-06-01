@@ -225,6 +225,7 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.file, id) => {
         for (clowderUser <- getUserByIdentity(user)) {
           datasets.findByFileId(id).foreach { dataset =>
+            if (dataset.access.contains("public") && READONLY.contains(permission)) return true
             dataset.spaces.map{
               spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
                 if(role.permissions.contains(permission.toString))
@@ -234,6 +235,7 @@ object Permission extends Enumeration {
           }
           folders.findByFileId(id).foreach { folder =>
             datasets.get(folder.parentDatasetId).foreach { dataset =>
+              if (dataset.access.contains("public") && READONLY.contains(permission)) return true
               dataset.spaces.map {
                 spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
                   if(role.permissions.contains(permission.toString))
@@ -249,6 +251,7 @@ object Permission extends Enumeration {
         datasets.get(id) match {
           case None => false
           case Some(dataset) => {
+            if (dataset.access.contains("public") && READONLY.contains(permission)) return true
             for (clowderUser <- getUserByIdentity(user)) {
               dataset.spaces.map {
                 spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
@@ -265,6 +268,7 @@ object Permission extends Enumeration {
         collections.get(id) match {
           case None => false
           case Some(collection) => {
+            if (collection.access.contains("public") && READONLY.contains(permission)) return true
             for (clowderUser <- getUserByIdentity(user)) {
               collection.spaces.map {
                 spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
@@ -281,6 +285,7 @@ object Permission extends Enumeration {
         spaces.get(id) match {
           case None => false
           case Some(space) => {
+            if (space.access.contains("public") && READONLY.contains(permission)) return true
             val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
                                                       role <- users.getUserRoleInSpace(clowderUser.id, space.id)
                                                       if role.permissions.contains(permission.toString)

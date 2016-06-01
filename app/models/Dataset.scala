@@ -30,7 +30,8 @@ case class Dataset(
   licenseData: LicenseData = new LicenseData(),
   spaces: List[UUID] = List.empty,
   lastModifiedDate: Date = new Date(),
-  followers: List[UUID] = List.empty)
+  followers: List[UUID] = List.empty,
+  access: String = "private")
 
 object Dataset {
   implicit val datasetWrites = new Writes[Dataset] {

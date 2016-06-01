@@ -441,7 +441,7 @@ class MongoDBSpaceService @Inject() (
    * Implementation of the SpaceService trait.
    *
    */
-  def updateSpaceConfiguration(spaceId: UUID, name: String, description: String, timeToLive: Long, expireEnabled: Boolean) {
+  def updateSpaceConfiguration(spaceId: UUID, name: String, description: String, timeToLive: Long, expireEnabled: Boolean, access:String) {
     get(spaceId) match {
       case Some(s) if name != s.name => {
         events.updateObjectName(spaceId, name)
@@ -449,7 +449,7 @@ class MongoDBSpaceService @Inject() (
       case _ => 
     }
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
-      $set("description" -> description, "name" -> name, "resourceTimeToLive" -> timeToLive, "isTimeToLiveEnabled" -> expireEnabled),
+      $set("description" -> description, "name" -> name, "resourceTimeToLive" -> timeToLive, "isTimeToLiveEnabled" -> expireEnabled, "access" -> access),
       false, false, WriteConcern.Safe)
   }
 

@@ -29,7 +29,8 @@ case class ProjectSpace (
   followers: List[UUID] = List.empty,
   curationObjects: List[UUID] = List.empty,
   invitations: List[(UUID, String)] = List.empty,
-  requests: List[RequestResource] = List.empty)
+  requests: List[RequestResource] = List.empty,
+  access: String = "private")
 
 
 case class UserSpace (

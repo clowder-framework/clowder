@@ -1,4 +1,4 @@
-@(links: List[java.net.URL])
+@(links: List[java.net.URL], access:String)
 
 <div class="row ds-section-sm border-top">
 <h3>External Links</h3>
@@ -11,4 +11,7 @@
     }
     </ul>
 }
+
+    <h3>Accessibility</h3>
+    @access
 </div>

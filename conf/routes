@@ -470,6 +470,7 @@ GET            /api/collections/:coll_id/getParentCollectionIds                 
 GET            /api/collections/:coll_id/getParentCollections                           @api.Collections.getParentCollections(coll_id: UUID)
 POST           /api/collections/:coll_id/addSubCollection/:sub_coll_id                  @api.Collections.attachSubCollection(coll_id: UUID, sub_coll_id: UUID)
 GET            /api/collections/:coll_id/removeFromSpaceAllowed/:space_id               @api.Collections.removeFromSpaceAllowed(coll_id: UUID, space_id: UUID)
+PUT            /api/collections/:id/access                                               @api.Collections.updateAccess(id:UUID, aceess:String ?="private")
 
 
 # ----------------------------------------------------------------------
@@ -519,6 +520,7 @@ GET            /api/datasets/:id                                                
 DELETE         /api/datasets/:id                                                        @api.Datasets.deleteDataset(id: UUID)
 POST           /api/datasets/:id/detachdelete                                           @api.Datasets.detachAndDeleteDataset(id: UUID)
 POST           /api/datasets/:parentDatasetId/newFolder                                 @api.Folders.createFolder(parentDatasetId: UUID)
+PUT            /api/datasets/:id/access                                                     @api.Datasets.updateAccess(id:UUID, aceess:String ?="private")
 
 # ----------------------------------------------------------------------
 # PREVIEWS ENDPOINT
