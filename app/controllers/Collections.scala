@@ -185,6 +185,8 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       }
     }
 
+    Logger.debug(collectionList.map(c => c.name+"     ").toString)
+
     // check to see if there is a prev page
     val prev = if (collectionList.nonEmpty && date != "") {
       val first = Formatters.iso8601(collectionList.head.created)

@@ -303,9 +303,9 @@
 
             }
             if(@dataset.access.contains("private")){
-                document.getElementById('access-private').checked= true;
+               $("input[value='private']").attr("checked", true);
             } else {
-                document.getElementById('access-public').checked= true;
+                $("input[value='public']").attr("checked", true);
             }
 
         });

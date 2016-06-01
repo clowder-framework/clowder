@@ -720,8 +720,16 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     implicit val user = request.user
     user match {
       case Some(loggedInUser) => {
-        collections.updateAccess(id, access)
-        Ok(toJson(Map("status" -> "success")))
+        collections.get(id) match {
+          case Some(c) => {
+            collections.updateAccess(id, access)
+            events.addObjectEvent(user, id, c.name, "update_collection_information")
+            Ok(toJson(Map("status" -> "success")))
+          }
+          case None => {
+            NotFound
+          }
+        }
       }
       // If the user doesn't have access to download these files
       case None => {

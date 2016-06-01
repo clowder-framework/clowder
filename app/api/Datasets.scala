@@ -2079,6 +2079,7 @@ class  Datasets @Inject()(
         datasets.get(id) match {
           case Some(dataset) => {
             datasets.update(dataset.copy(access = access))
+            events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
             Ok(toJson(Map("status" -> "success")))
           }
           // If the dataset wasn't found by ID
