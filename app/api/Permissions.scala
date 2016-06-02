@@ -154,7 +154,7 @@ object Permission extends Enumeration {
       }
       case (Some(u), "private", Some(r)) => checkPermission(u, permission, r)
       case (Some(_), _, None) => true
-      case (None, "private", Some(res)) => checkPrivatePermissions(permission, res)
+      case (None, "private", Some(res)) => checkAnonyPrivatePermissions(permission, res)
       case (None, "public", _) => READONLY.contains(permission)
       case (_, p, _) => {
         Logger.error("Invalid permission scheme " + p)
@@ -162,16 +162,16 @@ object Permission extends Enumeration {
       }
     }
   }
-
-  def checkPrivatePermissions(permission: Permission, resourceRef: ResourceRef): Boolean = {
+  //check the permisssion when permission = private & user is anonymous.
+  def checkAnonyPrivatePermissions(permission: Permission, resourceRef: ResourceRef): Boolean = {
     // if not readonly, don't let user in
     if (!READONLY.contains(permission)) return false
     // check specific resource
     resourceRef match {
-      case ResourceRef(ResourceRef.file, id) => false
-      case ResourceRef(ResourceRef.dataset, id) => false // TODO check if dataset is public datasets.get(r.id).isPublic()
-      case ResourceRef(ResourceRef.collection, id) =>  true
-      case ResourceRef(ResourceRef.space, id) => false
+      case ResourceRef(ResourceRef.file, id) => (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasets.findByFileId(id) ).head.access.contains("public")
+      case ResourceRef(ResourceRef.dataset, id) => datasets.get(id).exists(d=>d.access.contains("public")) // TODO check if dataset is public datasets.get(r.id).isPublic()
+      case ResourceRef(ResourceRef.collection, id) =>  collections.get(id).exists(c=>c.access.contains("public"))
+      case ResourceRef(ResourceRef.space, id) => spaces.get(id).exists(c=>c.access.contains("public"))
       case ResourceRef(ResourceRef.comment, id) => false
       case ResourceRef(ResourceRef.section, id) => false
       case ResourceRef(ResourceRef.preview, id) => false
