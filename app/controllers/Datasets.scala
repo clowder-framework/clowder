@@ -188,9 +188,9 @@ class Datasets @Inject()(
           }
         }
         if (date != "") {
-          datasets.listUser(date, nextPage, limit, request.user, request.superAdmin, p)
+          datasets.listUser(date, nextPage, limit, request.user, request.user.fold(false)(_.superAdminMode), p)
         } else {
-          datasets.listUser(limit, request.user, request.superAdmin, p)
+          datasets.listUser(limit, request.user, request.user.fold(false)(_.superAdminMode), p)
         }
       }
       case None => {
@@ -205,9 +205,9 @@ class Datasets @Inject()(
           }
           case None => {
             if (date != "") {
-              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
+              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
             } else {
-              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
+              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
             }
 
           }
@@ -219,11 +219,11 @@ class Datasets @Inject()(
     val prev = if (datasetList.nonEmpty && date != "") {
       val first = Formatters.iso8601(datasetList.head.created)
       val ds = person match {
-        case Some(p) => datasets.listUser(first, nextPage=false, 1, request.user, request.superAdmin, p)
+        case Some(p) => datasets.listUser(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
             case Some(s) => datasets.listSpace(first, nextPage = false, 1, s)
-            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
+            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
           }
         }
       }
@@ -240,11 +240,11 @@ class Datasets @Inject()(
     val next = if (datasetList.nonEmpty) {
       val last = Formatters.iso8601(datasetList.last.created)
       val ds = person match {
-        case Some(p) => datasets.listUser(last, nextPage=true, 1, request.user, request.superAdmin, p)
+        case Some(p) => datasets.listUser(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
             case Some(s) => datasets.listSpace(last, nextPage=true, 1, s)
-            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
+            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
           }
         }
       }
@@ -294,33 +294,32 @@ class Datasets @Inject()(
 
   def addViewer(id: UUID, user: Option[User]) = {
       user match{
-            case Some(viewer) => {
-              implicit val email = viewer.email
-              email match {
-                case Some(addr) => {
-                  implicit val modeluser = users.findByEmail(addr.toString())
-                  modeluser match {
-                    case Some(muser) => {
-                       muser.viewed match {
-                        case Some(viewList) =>{
-                          users.addUserDatasetView(addr, id)
-                        }
-                        case None => {
-                          val newList: List[UUID] = List(id)
-                          users.createNewListInUser(addr, "viewed", newList)
-                        }
-                      }
+        case Some(viewer) => {
+          implicit val email = viewer.email
+          email match {
+            case Some(addr) => {
+              implicit val modeluser = users.findByEmail(addr.toString())
+              modeluser match {
+                case Some(muser) => {
+                   muser.viewed match {
+                    case Some(viewList) =>{
+                      users.addUserDatasetView(addr, id)
+                    }
+                    case None => {
+                      val newList: List[UUID] = List(id)
+                      users.createNewListInUser(addr, "viewed", newList)
+                    }
                   }
-                  case None => {
-                    Ok("NOT WORKS")
-                  }
-                 }
-                }
               }
+              case None => {
+                Ok("NOT WORKS")
+              }
+             }
             }
-
-
           }
+        }
+
+      }
   }
 
   /**
@@ -346,7 +345,7 @@ class Datasets @Inject()(
 
           val m = metadata.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
 
-          val collectionsInside = collections.listInsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
+          val collectionsInside = collections.listInsideDataset(id, request.user, request.user.fold(false)(_.superAdminMode)).sortBy(_.name)
           var decodedCollectionsInside = new ListBuffer[models.Collection]()
           var filesTags = TreeSet.empty[String]
 
@@ -508,11 +507,10 @@ class Datasets @Inject()(
     }
   }
 
-
   /**
    * Dataset by section.
    */
-  def datasetBySection(section_id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.section, section_id))) { implicit request =>
+  def datasetBySection(section_id: UUID) = PermissionAction(Permission.ViewSection, Some(ResourceRef(ResourceRef.section, section_id))) { implicit request =>
       sections.get(section_id) match {
         case Some(section) => {
           datasets.findOneByFileId(section.file_id) match {
@@ -796,7 +794,8 @@ class Datasets @Inject()(
       case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
     }
   }
-  def users(id: UUID) = PermissionAction(Permission.ViewDataset) { implicit request =>
+
+  def users(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
 
     datasets.get(id) match {
@@ -848,12 +847,12 @@ class Datasets @Inject()(
 
   }
 
-  def metadataSearch() = PermissionAction(Permission.ViewDataset) { implicit request =>
+  def metadataSearch() = PermissionAction(Permission.ViewMetadata) { implicit request =>
       implicit val user = request.user
       Ok(views.html.metadataSearch())
   }
 
-  def generalMetadataSearch() = PermissionAction(Permission.ViewDataset) { implicit request =>
+  def generalMetadataSearch() = PermissionAction(Permission.ViewMetadata) { implicit request =>
       implicit val user = request.user
       Ok(views.html.generalMetadataSearch())
   }
@@ -880,6 +879,7 @@ class Datasets @Inject()(
 
   /**
     * Construct the sidebar listing active tools relevant to the given datasetId
+ *
     * @param datasetId UUID of dataset that is currently displayed
     */
   def refreshToolSidebar(datasetId: UUID, datasetName: String) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>

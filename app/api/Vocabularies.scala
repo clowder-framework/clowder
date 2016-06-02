@@ -97,13 +97,13 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
           case Some(keys) => {
             val name = (request.body\"name").asOpt[String].getOrElse("")
             val description = (request.body \ "description").asOpt[String].getOrElse("")
-            t = Vocabulary(author = Some(identity), created = new Date(),name = name,keys = keys.split(",").toList , description = description.split(',').toList, isPublic = isPublic)
+            t = Vocabulary(author = Some(identity), created = new Date(),name = name,keys = keys.split(",").toList , description = description.split(',').toList,isPublic = isPublic)
 
             vocabularyService.insert(t) match {
               case Some(id) => {
                 Ok(toJson(Map("id" -> id)))
               }
-              case None => BadRequest("could not create vocbabulry")
+              case None => BadRequest("could not create or save vocabulary")
             }
 
           }
@@ -236,7 +236,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
 
 
   def jsonVocabulary(vocabulary : Vocabulary): JsValue = {
-    toJson(Map("id" -> vocabulary.id.toString, "name" -> vocabulary.name, "keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic"->vocabulary.isPublic.toString))
+    toJson(Map("id" -> vocabulary.id.toString, "name" -> vocabulary.name, "keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic"->vocabulary.isPublic.toString, "spaces"->vocabulary.spaces.mkString(",")))
   }
 
 }
