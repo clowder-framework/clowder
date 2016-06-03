@@ -2,6 +2,7 @@
          deletePermission: Boolean,  followers: List[(UUID, String, String, String)], followedUsers: List[(UUID, String, String, String)], followedFiles: List[(UUID, String, String)],
         followedDatasets: List[(UUID, String, String)], followedCollections: List[(UUID, String, String)], followedSpaces: List[(UUID, String, String)], ownProfile: Option[Boolean])(implicit user: Option[models.User])
 
+@import _root_.util.Formatters
 
 @main(displayedName) {
     <script src="@routes.Assets.at("javascripts/collectionListProcess.js")" type="text/javascript"></script>
@@ -124,7 +125,7 @@
                 </div>
                 <div class="row" id ="masonry-collections">
                 @collectionsList.map { collection =>
-                    @collections.tile(collection, routes.Application.index(), "col-xs-3", false)
+                    @collections.tile(collection, routes.Application.index(), None, "col-xs-3", false)
                 }
                 </div>
                 @if(collectionsList.size < 1) {
