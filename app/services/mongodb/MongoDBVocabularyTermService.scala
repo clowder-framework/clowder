@@ -12,7 +12,7 @@ import javax.inject.{Singleton, Inject}
 
 
 import com.mongodb.casbah.WriteConcern
-import services.{VocabularyService, UserService}
+import services.{VocabularyTermService, VocabularyService, UserService}
 import play.api.Play._
 import scala.util.{Success, Try}
 
@@ -20,28 +20,28 @@ import scala.util.{Success, Try}
   * Created by todd_n on 2/9/16.
   */
 @Singleton
-class MongoDBVocabularyService @Inject() (userService: UserService) extends VocabularyService {
+class MongoDBVocabularyTermService @Inject() (userService: UserService) extends VocabularyTermService {
 
   def count(): Long = {
-    Vocabulary.count(MongoDBObject())
+    VocabularyTerm.count(MongoDBObject())
   }
 
-  def insert(vocabulary: Vocabulary): Option[String] = {
-    Vocabulary.insert(vocabulary).map(_.toString)
+  def insert(vocabularyTerm: VocabularyTerm): Option[String] = {
+    VocabularyTerm.insert(vocabularyTerm).map(_.toString)
   }
 
-  def listAll(): List[Vocabulary] = {
-    Vocabulary.findAll().toList
+  def listAll(): List[VocabularyTerm] = {
+    VocabularyTerm.findAll().toList
   }
 
-  def get(id: UUID): Option[Vocabulary] = {
-    Vocabulary.findOneById(new ObjectId(id.stringify))
+  def get(id: UUID): Option[VocabularyTerm] = {
+    VocabularyTerm.findOneById(new ObjectId(id.stringify))
   }
 
   def delete(id: UUID) = Try {
-    Vocabulary.findOneById(new ObjectId(id.stringify)) match {
-      case Some(vocab) => {
-        Vocabulary.remove(MongoDBObject("_id" -> new ObjectId(vocab.id.stringify)))
+    VocabularyTerm.findOneById(new ObjectId(id.stringify)) match {
+      case Some(vocabterm) => {
+        VocabularyTerm.remove(MongoDBObject("_id" -> new ObjectId(vocabterm.id.stringify)))
         Success
       }
       case None => Success
@@ -52,6 +52,6 @@ class MongoDBVocabularyService @Inject() (userService: UserService) extends Voca
 object VocabularyTerm extends ModelCompanion[VocabularyTerm, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
-    case Some(x) => new SalatDAO[Vocabulary, ObjectId](collection = x.collection("vocabularyterms")) {}
+    case Some(x) => new SalatDAO[VocabularyTerm, ObjectId](collection = x.collection("vocabularyterms")) {}
   }
 }
