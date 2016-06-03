@@ -1,7 +1,6 @@
 package models
 
 import java.util.Date
-
 import play.api.libs.json.{Json, JsValue, Writes}
 import securesocial.core.Identity
 
@@ -21,7 +20,12 @@ case class VocabularyTerm(
 object VocabularyTerm{
   implicit val vocabularyTermWrites = new Writes[VocabularyTerm] {
     def writes(vocabularyTerm : VocabularyTerm) : JsValue = {
-      Json.obj("id" -> vocabularyTerm.id.toString,"key"->vocabularyTerm.key,"default_value"->vocabularyTerm.default_value.getOrElse(""))
+      val default = if (vocabularyTerm.default_value.isEmpty){
+        ""
+      } else {
+        vocabularyTerm.default_value.get
+      }
+      Json.obj("id" -> vocabularyTerm.id.toString,"key"->vocabularyTerm.key,"default_value"->default)
     }
   }
 }
