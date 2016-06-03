@@ -364,6 +364,10 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //Update all object_name & source_name in events
     updateMongo("update-events-name", updateEventObjectName)
+
+    updateMongo("update-user-spaces", removeDeletedSpacesFromUser)
+
+    updateMongo("update-counts-spaces", updateCountsInSpaces)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1018,8 +1022,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   private def addRootMapToCollections() {
     collection("collections").foreach{ c =>
       val parents = c.getAsOrElse[MongoDBList]("parent_collection_ids", MongoDBList.empty)
-
-
       val spaces = c.getAsOrElse[MongoDBList]("spaces", MongoDBList.empty)
       val parentCollections = collection("collections").find(MongoDBObject("_id" -> MongoDBObject("$in" -> parents)))
       var parentSpaces = MongoDBList.empty
@@ -1075,6 +1077,41 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           case _ => {}
         }
       }
+    }
+  }
+
+  private def removeDeletedSpacesFromUser() {
+    collection("social.users").foreach{ user =>
+      val roles = user.getAsOrElse[MongoDBList]("spaceandrole", MongoDBList.empty)
+      val newRoles = MongoDBList.empty
+      roles.foreach{ role =>
+        val resp = collection("spaces.projects").find(MongoDBObject("_id" -> role.asInstanceOf[BasicDBObject].get("spaceId")))
+        if(resp.size > 0) {
+          newRoles += role
+        }
+      }
+      user.put("spaceandrole", newRoles)
+      try{
+        collection("social.users").save(user, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update spaces for user with id:" + user.getAsOrElse("_id", new ObjectId()).toString())
+      }
+    }
+  }
+
+  private def updateCountsInSpaces(){
+    collection("spaces.projects").foreach{ space =>
+      val spaceId = space.getAsOrElse("_id", new ObjectId()).toString()
+      val collections = collection("collections").find(MongoDBObject("root_spaces" -> MongoDBObject("$in" -> MongoDBList(new ObjectId(spaceId)))))
+      val datasets = collection("datasets").find(MongoDBObject("spaces" -> MongoDBObject("$in" -> MongoDBList(new ObjectId(spaceId)))))
+      space.put("datasetCount", datasets.length)
+      space.put("collectionCount", collections.length)
+      try{
+        collection("spaces.projects").save(space, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update the counts for space with id: " + spaceId)
+      }
+
     }
   }
 }

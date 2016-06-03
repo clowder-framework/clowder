@@ -196,11 +196,16 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   def removeCollection(spaceId: UUID, collectionId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     (spaces.get(spaceId), collectionService.get(collectionId)) match {
       case (Some(s), Some(c)) => {
-        spaces.removeCollection(collectionId, spaceId)
-        collectionService.removeFromRootSpaces(collectionId, spaceId)
-        updateSubCollections(spaceId, collectionId)
-        events.addSourceEvent(request.user,  c.id, c.name, s.id, s.name,"remove_collection_space")
-        Ok(toJson("success"))
+        if(c.root_spaces contains s.id) {
+          spaces.removeCollection(collectionId, spaceId)
+          collectionService.removeFromRootSpaces(collectionId, spaceId)
+          updateSubCollections(spaceId, collectionId)
+          events.addSourceEvent(request.user,  c.id, c.name, s.id, s.name,"remove_collection_space")
+          Ok(toJson("success"))
+        } else {
+          BadRequest("Space is not part of root spaces")
+        }
+
       }
       case (_, _) => NotFound
     }

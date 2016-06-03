@@ -1,6 +1,6 @@
 # clowder server
 clowder:
-  image: ncsa/clowder:local
+  image: ncsa/clowder:develop
 #  environment:
 #    CLOWDER_ADMIN: "joe@aol.com"
 #    TOOLMANAGER_URI: "http://192.168.99.100:8080"

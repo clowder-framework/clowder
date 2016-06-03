@@ -193,6 +193,8 @@ trait CollectionService {
 
   def removeFromRootSpaces(collectionId: UUID, spaceId: UUID)
 
+  def syncUpRootSpaces(collectionId: UUID, initialParents: List[UUID])
+
   /**
     * Index collection, if no id provided, index all collections.
     */
