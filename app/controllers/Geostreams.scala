@@ -3,17 +3,20 @@
  */
 package controllers
 
+import javax.inject.Inject
+
 import play.api.Play._
 import play.api.mvc.Controller
 import api.Permission
-import services.PostgresPlugin
+import services.{MetadataService, PostgresPlugin}
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.Logger
 
 /**
  * View/Add/Remove Geostreams
  */
-object Geostreams extends Controller with SecuredController {
+class Geostreams @Inject() (
+  metadata: MetadataService) extends Controller with SecuredController {
 
   var plugin = current.plugin[PostgresPlugin]
 
@@ -80,13 +83,14 @@ object Geostreams extends Controller with SecuredController {
             List()
           }
         }
+        val definitions = metadata.getDefinitions()
         Logger.debug(list.toString)
         val streams = list.map { stream =>
           // val stream_id = (stream \ "stream_id").toString
           Json.parse(db.getStream((stream \ "stream_id").toString).getOrElse("{}"))
         }
 
-        Ok(views.html.geostreams.edit(sensor, streams))
+        Ok(views.html.geostreams.edit(sensor, streams, definitions))
       }
       case None => pluginNotEnabled
     }

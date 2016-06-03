@@ -9,12 +9,12 @@
             <div class="media">
                 <a class="pull-left" href="#">
                     <div class="thumbnail">
-                        <img class="avatar" src='@c.author.avatarUrl.getOrElse("")'>
+                        <img class="avatar" src='@c.author.avatarURL'>
                     </div>
                 </a>
                 <div class="media-body">
                     <div class="comment-header">
-                        <a href="@routes.Profile.viewProfile(c.author.email)">@c.author.fullName</a>
+                        <a href="@routes.Profile.viewProfileUUID(c.author.id)">@c.author.fullName</a>
                         <span>•</span>
                         <span>@c.posted.format("MMM dd, yyyy HH:mm:ss")</span>
                     </div>

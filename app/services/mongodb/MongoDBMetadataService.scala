@@ -2,6 +2,7 @@ package services.mongodb
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.util.JSON
 import play.api.Logger
+import play.api.Play._
 import models._
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
@@ -12,13 +13,13 @@ import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
 import services.MetadataService
-import services.ContextLDService
+import services.{ContextLDService, DatasetService, FileService, FolderService}
 
 /**
  * MongoDB Metadata Service Implementation
  */
 @Singleton
-class MongoDBMetadataService @Inject() (contextService: ContextLDService) extends MetadataService {
+class MongoDBMetadataService @Inject() (contextService: ContextLDService, datasets: DatasetService, files: FileService, folders: FolderService) extends MetadataService {
 
   /**
    * Add metadata to the metadata collection and attach to a section /file/dataset/collection
@@ -69,7 +70,8 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
   /**
    * Update metadata
    * TODO: implement
-   * @param metadataId
+    *
+    * @param metadataId
    * @param json
    */
   def updateMetadata(metadataId: UUID, json: JsValue) = {}
@@ -77,7 +79,12 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
   /** Remove metadata, if this metadata does exit, nothing is executed */
   def removeMetadata(id: UUID) = {
     getMetadataById(id) match {
-      case Some(md) =>    MetadataDAO.remove(md, WriteConcern.Safe)
+      case Some(md) =>
+        if( getMetadataBycontextId(md.contextId.getOrElse(new UUID(""))).length  == 1) {
+          contextService.removeContext(md.contextId.getOrElse(new UUID("")))
+        }
+        MetadataDAO.remove(md, WriteConcern.Safe)
+        //update metadata count for resource
         current.plugin[MongoSalatPlugin] match {
           case None => throw new RuntimeException("No MongoSalatPlugin")
           case Some(x) => x.collection(md.attachedTo) match {
@@ -90,6 +97,10 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
           }
         }
     }
+  }
+
+  def getMetadataBycontextId(contextId: UUID) : List[Metadata] = {
+    MetadataDAO.find(MongoDBObject("contextId" -> new ObjectId(contextId.toString()))).toList
   }
 
   def removeMetadataByAttachTo(resourceRef: ResourceRef) = {
@@ -160,8 +171,6 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
 
   /**
     * Search by metadata. Uses mongodb query structure.
-    * @param query
-    * @return
     */
   def search(query: JsValue): List[ResourceRef] = {
     val doc = JSON.parse(Json.stringify(query)).asInstanceOf[DBObject]
@@ -169,17 +178,36 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService) extend
     resources
   }
 
-  def search(key: String, value: String, count: Int): List[ResourceRef] = {
+  def search(key: String, value: String, count: Int, user: Option[User]): List[ResourceRef] = {
     val field = "content." + key.trim
     val trimOr = value.trim().replaceAll(" ", "|")
     // for some reason "/"+value+"/i" doesn't work because it gets translate to
     // { "content.Abstract" : { "$regex" : "/test/i"}}
     val regexp = (s"""(?i)$trimOr""").r
     val doc = MongoDBObject(field -> regexp)
-    val resources: List[ResourceRef] = MetadataDAO.find(doc).limit(count).map(_.attachedTo).toList
+    var filter = doc
+    if (!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")) {
+      user match {
+        case Some(u) => {
+          val datasetsList = datasets.listUser(u)
+          val foldersList = folders.findByParentDatasetIds(datasetsList.map(x => x.id))
+          val fileIds = datasetsList.map(x => x.files) ++ foldersList.map(x => x.files)
+          val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
+          datasetsList.map { x => orlist += MongoDBObject("attachedTo.resourceType" -> "dataset") ++ MongoDBObject("attachedTo._id" -> new ObjectId(x.id.stringify)) }
+          fileIds.flatten.map { x => orlist += MongoDBObject("attachedTo.resourceType" -> "file") ++ MongoDBObject("attachedTo._id" -> new ObjectId(x.stringify)) }
+          filter = $or(orlist.map(_.asDBObject)) ++ doc
+        }
+        case None => List.empty
+      }
+    }
+    val resources: List[ResourceRef] = MetadataDAO.find( filter).limit(count).map(_.attachedTo).toList
     resources
   }
 
+  def updateAuthorFullName(userId: UUID, fullName: String) {
+    MetadataDAO.update(MongoDBObject("creator._id" -> new ObjectId(userId.stringify), "creator.typeOfAgent" -> "cat:user"),
+      $set("creator.user.fullName" -> fullName, "creator.fullName" -> fullName), false, true, WriteConcern.Safe)
+  }
 }
 
 object MetadataDAO extends ModelCompanion[Metadata, ObjectId] {

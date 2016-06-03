@@ -33,7 +33,7 @@
     <div class="col-md-12">
         <!-- If the user can add tags to the dataset, the form is enabled, otherwise the form is present but disabled to provide consistent UE. -->
         @if(Permission.checkPermission(Permission.AddTag, ResourceRef(ResourceRef.dataset, dataset.id))) {
-            <form class="form-inline requiresLogin requiresLoginCommunity">
+            <form class="form-inline">
                 <div class="input-group input-group-sm">
                     <input maxlength="@play.api.Play.configuration.getInt("clowder.tagLength").getOrElse(100)" type="text" id="tagField" class="form-control add-resource">
                     <span class="input-group-btn">
@@ -44,7 +44,7 @@
                 </div>
             </form>
         } else {
-            <form class="form-inline requiresLogin requiresLoginCommunity">
+            <form class="form-inline">
                 <div class="input-group input-group-sm">
                     <input disabled type="text" id="tagField" class="form-control add-resource">
                     <span class="input-group-btn">
@@ -197,17 +197,3 @@
 
     });
 </script>
-
-@if(user.isEmpty) {
-    <script language="javascript">
-        $(".requiresLogin").css("display","none");
-    </script>
-}
-
-@if(user.isDefined) {
-    @if(!user.get.identityId.userId.equals(dataset.author.identityId.userId)){
-        <script language="javascript">
-            $(".requiresLogin:not(.requiresLoginCommunity)").css("display","none");
-        </script>
-    }
-}

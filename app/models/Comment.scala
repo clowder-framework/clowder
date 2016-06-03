@@ -1,7 +1,6 @@
 package models
 
 import java.util.Date
-import securesocial.core.Identity
 import com.novus.salat.annotations.raw.Ignore
 
 /**
@@ -12,7 +11,7 @@ import com.novus.salat.annotations.raw.Ignore
  *
  */
 case class Comment(
-  author: Identity,
+  author: MiniUser,
   text: String,
   comment_id: Option[UUID] = None,
   dataset_id: Option[UUID] = None,

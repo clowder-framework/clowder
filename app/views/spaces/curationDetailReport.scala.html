@@ -1,4 +1,4 @@
-@(curationObject: models.CurationObject, mmResponse: models.MatchMakerResponse, repository: String)(implicit user: Option[models.User] )
+@(curationObject: models.CurationObject, mmResponse: models.MatchMakerResponse, repository: String, properties: Map[String, List[String]],  userPreferences:  Map[String,List[String]])(implicit user: Option[models.User] )
 @main("Submit to Repository") {
     <div class="row">
         <div class="col-md-12">
@@ -24,7 +24,24 @@
     </div>
     <div class="row">
         <div class="col-md-3">
-            @spaces.curation_summary(curationObject, "Submit to Repository", false)
+            @spaces.curationSummary(curationObject, false)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <h4>Preferences</h4>
+                    @for((prop, value) <- properties) {
+                        <h5>@prop</h5>
+                        @for(cur<-value) {
+                            @if((userPreferences.contains(prop.replace(" ", "_")) && userPreferences(prop.replace(" ", "_")).contains(cur))) {
+                                <input type="checkbox" name="@prop" value="@cur" checked> @cur <br/>
+
+                            } else {
+                                <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
+                            }
+
+                        }
+                    }
+                </div>
+            </div>
         </div>
         <div class="col-md-9">
             <h3>@mmResponse.repositoryName</h3>
@@ -33,10 +50,38 @@
                 <ul class="indent_20 list-unstyled">
                     @for(rule <- mmResponse.per_rule_score) {
                         <li>@rule.rule_name </li>
-                        @if(rule.Score == 0) {
-                            <li><span class="red">@rule.Message</span> <a href="@routes.CurationObjects.getCurationObject(curationObject.id)"> Edit Metadata</a> <br/> </li>
+                        @if(rule.Score < 0) {
+                            <li><span class="red">@rule.Message</span>
+                                @if(rule.rule_name.toLowerCase().contains("metadata".toLowerCase())) {
+                                    <a href="@routes.CurationObjects.getCurationObject(curationObject.id)">
+                                        Edit metadata</a> <br/>
+                                } else { @if(rule.rule_name.toLowerCase().contains("organization".toLowerCase()) || rule.rule_name.toLowerCase().contains("rights holder".toLowerCase())){
+
+                                    <a href="@routes.Profile.viewProfileUUID(curationObject.author.id)">
+                                        Edit profile</a> <br/>
+                                } else { @if(rule.rule_name.toLowerCase().contains("data types".toLowerCase())){
+
+                                    <a href="@routes.CurationObjects.getCurationObject(curationObject.id)">
+                                        Delete unacceptable files</a> <br/>
+                                } else { @if(rule.rule_name.toLowerCase().contains("collection depth".toLowerCase())){
+
+                                    <a href="@routes.CurationObjects.getCurationObject(curationObject.id)">
+                                        Delete folders</a> <br/>
+                                } else { @if(rule.rule_name.toLowerCase().contains("size".toLowerCase())){
+
+                                    <a href="@routes.CurationObjects.getCurationObject(curationObject.id)">
+                                        Delete files</a> <br/>
+                                }
+
+
+                                }}}}
+                            </li>
                         } else {
-                            <li><span class="green">All Requirements are satisfied.</span></li>
+                            @if(rule.Score == 0) {
+                                <li><span class="yellow">This info is not required </span></li>
+                            } else {
+                                <li><span class="green">All Requirements are satisfied.</span></li>
+                            }
                         }
                     }
                 </ul>

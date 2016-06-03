@@ -10,11 +10,12 @@ import fileutils.FilesUtils
 import models._
 import play.api.Logger
 import play.api.Play.current
+import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json._
 import services._
 import util.{Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ListBuffer, Map => MutableMap}
 
 /**
  * A dataset is a collection of files and streams.
@@ -187,9 +188,9 @@ class Datasets @Inject()(
           }
         }
         if (date != "") {
-          datasets.listUser(date, nextPage, limit, request.user, request.superAdmin, p)
+          datasets.listUser(date, nextPage, limit, request.user, request.user.fold(false)(_.superAdminMode), p)
         } else {
-          datasets.listUser(limit, request.user, request.superAdmin, p)
+          datasets.listUser(limit, request.user, request.user.fold(false)(_.superAdminMode), p)
         }
       }
       case None => {
@@ -204,9 +205,9 @@ class Datasets @Inject()(
           }
           case None => {
             if (date != "") {
-              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
+              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
             } else {
-              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
+              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
             }
 
           }
@@ -218,11 +219,11 @@ class Datasets @Inject()(
     val prev = if (datasetList.nonEmpty && date != "") {
       val first = Formatters.iso8601(datasetList.head.created)
       val ds = person match {
-        case Some(p) => datasets.listUser(first, nextPage=false, 1, request.user, request.superAdmin, p)
+        case Some(p) => datasets.listUser(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
             case Some(s) => datasets.listSpace(first, nextPage = false, 1, s)
-            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
+            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
           }
         }
       }
@@ -239,11 +240,11 @@ class Datasets @Inject()(
     val next = if (datasetList.nonEmpty) {
       val last = Formatters.iso8601(datasetList.last.created)
       val ds = person match {
-        case Some(p) => datasets.listUser(last, nextPage=true, 1, request.user, request.superAdmin, p)
+        case Some(p) => datasets.listUser(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
             case Some(s) => datasets.listSpace(last, nextPage=true, 1, s)
-            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.superAdmin)
+            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
           }
         }
       }
@@ -293,33 +294,32 @@ class Datasets @Inject()(
 
   def addViewer(id: UUID, user: Option[User]) = {
       user match{
-            case Some(viewer) => {
-              implicit val email = viewer.email
-              email match {
-                case Some(addr) => {
-                  implicit val modeluser = users.findByEmail(addr.toString())
-                  modeluser match {
-                    case Some(muser) => {
-                       muser.viewed match {
-                        case Some(viewList) =>{
-                          users.addUserDatasetView(addr, id)
-                        }
-                        case None => {
-                          val newList: List[UUID] = List(id)
-                          users.createNewListInUser(addr, "viewed", newList)
-                        }
-                      }
+        case Some(viewer) => {
+          implicit val email = viewer.email
+          email match {
+            case Some(addr) => {
+              implicit val modeluser = users.findByEmail(addr.toString())
+              modeluser match {
+                case Some(muser) => {
+                   muser.viewed match {
+                    case Some(viewList) =>{
+                      users.addUserDatasetView(addr, id)
+                    }
+                    case None => {
+                      val newList: List[UUID] = List(id)
+                      users.createNewListInUser(addr, "viewed", newList)
+                    }
                   }
-                  case None => {
-                    Ok("NOT WORKS")
-                  }
-                 }
-                }
               }
+              case None => {
+                Ok("NOT WORKS")
+              }
+             }
             }
-
-
           }
+        }
+
+      }
   }
 
   /**
@@ -333,9 +333,9 @@ class Datasets @Inject()(
         case Some(dataset) => {
 
           // get files info sorted by date
-          val filesInDataset = dataset.files.map(f => files.get(f) match {
-            case Some(file) => file
-            case None => Logger.debug(s"Unable to find file $f")
+          val filesInDataset = dataset.files.flatMap(f => files.get(f) match {
+            case Some(file) => Some(file)
+            case None => Logger.debug(s"Unable to find file $f"); None
           }).asInstanceOf[List[File]].sortBy(_.uploadDate)
 
           var datasetWithFiles = dataset.copy(files = filesInDataset.map(_.id))
@@ -345,7 +345,7 @@ class Datasets @Inject()(
 
           val m = metadata.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
 
-          val collectionsInside = collections.listInsideDataset(id, request.user, request.superAdmin).sortBy(_.name)
+          val collectionsInside = collections.listInsideDataset(id, request.user, request.user.fold(false)(_.superAdminMode)).sortBy(_.name)
           var decodedCollectionsInside = new ListBuffer[models.Collection]()
           var filesTags = TreeSet.empty[String]
 
@@ -425,9 +425,16 @@ class Datasets @Inject()(
           val curObjectsPermission: List[CurationObject] = curationService.getCurationObjectByDatasetId(dataset.id).filter(curation => Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id)))
           val curPubObjects: List[CurationObject] = curObjectsPublished ::: curObjectsPermission
 
+          var showDownload: Boolean = dataset.files.length > 0
+          if(!showDownload) {
+            val foldersList = folders.findByParentDatasetId(dataset.id)
+            foldersList.map{ folder =>
+              if(folder.files.length > 0) { showDownload = true}
+            }
+          }
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
             decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove),fileList,
-            filesTags, toPublish, curPubObjects, currentSpace, limit))
+            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload))
         }
         case None => {
           Logger.error("Error getting dataset" + id)
@@ -500,11 +507,10 @@ class Datasets @Inject()(
     }
   }
 
-
   /**
    * Dataset by section.
    */
-  def datasetBySection(section_id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.section, section_id))) { implicit request =>
+  def datasetBySection(section_id: UUID) = PermissionAction(Permission.ViewSection, Some(ResourceRef(ResourceRef.section, section_id))) { implicit request =>
       sections.get(section_id) match {
         case Some(section) => {
           datasets.findOneByFileId(section.file_id) match {
@@ -717,14 +723,15 @@ class Datasets @Inject()(
 
                   //Correctly set the updated URLs and data that is needed for the interface to correctly
                   //update the display after a successful upload.
+                  val https = controllers.Utils.https(request)
                   val retMap = Map("files" ->
                     Seq(
                       toJson(
                         Map(
                           "name" -> toJson(nameOfFile),
                           "size" -> toJson(uploadedFile.ref.file.length()),
-                          "url" -> toJson(routes.Files.file(f.id).absoluteURL(false)),
-                          "deleteUrl" -> toJson(api.routes.Files.removeFile(f.id).absoluteURL(false)),
+                          "url" -> toJson(routes.Files.file(f.id).absoluteURL(https)),
+                          "deleteUrl" ->  toJson(api.routes.Files.removeFile(f.id).absoluteURL(https)),
                           "deleteType" -> toJson("POST")
                         )
                       )
@@ -788,7 +795,8 @@ class Datasets @Inject()(
       case None => Redirect(routes.Datasets.list()).flashing("error" -> "You are not authorized to create new datasets.")
     }
   }
-  def users(id: UUID) = PermissionAction(Permission.ViewDataset) { implicit request =>
+
+  def users(id: UUID) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
 
     datasets.get(id) match {
@@ -830,7 +838,7 @@ class Datasets @Inject()(
         for(k <- userListSpaceRoleTupleMap.keys) userListSpaceRoleTupleMap += ( k -> userListSpaceRoleTupleMap(k).distinct.sortBy(_._1.toLowerCase) )
 
         if(userList.nonEmpty) {
-          val currUserIsAuthor = user.get.identityId.userId.equals(dataset.author.identityId.userId)
+          val currUserIsAuthor = user.get.id.equals(dataset.author.id)
           Ok(views.html.datasets.users(dataset, userListSpaceRoleTupleMap, currUserIsAuthor, userList))
         }
         else Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No users found for dataset $id.")
@@ -840,13 +848,149 @@ class Datasets @Inject()(
 
   }
 
-  def metadataSearch() = PermissionAction(Permission.ViewDataset) { implicit request =>
+  def metadataSearch() = PermissionAction(Permission.ViewMetadata) { implicit request =>
       implicit val user = request.user
       Ok(views.html.metadataSearch())
   }
 
-  def generalMetadataSearch() = PermissionAction(Permission.ViewDataset) { implicit request =>
+  def generalMetadataSearch() = PermissionAction(Permission.ViewMetadata) { implicit request =>
       implicit val user = request.user
       Ok(views.html.generalMetadataSearch())
   }
+
+
+  // TOOL MANAGER METHODS ----------------------------------------------------------------
+  /**
+    * With permission, prepare Tool Manager page with list of currently running tool instances.
+    */
+  def toolManager() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    var instanceMap = MutableMap[UUID, ToolInstance]()
+    var toolList: JsObject = JsObject(Seq[(String, JsValue)]())
+    // Get mapping of instanceIDs to URLs API has returned
+    current.plugin[ToolManagerPlugin].map( mgr => {
+      mgr.refreshActiveInstanceListFromServer()
+      toolList = mgr.toolList
+      instanceMap = mgr.instanceMap
+    })
+
+    Ok(views.html.datasets.toolManager(toolList, instanceMap.keys.toList, instanceMap))
+  }
+
+  /**
+    * Construct the sidebar listing active tools relevant to the given datasetId
+ *
+    * @param datasetId UUID of dataset that is currently displayed
+    */
+  def refreshToolSidebar(datasetId: UUID, datasetName: String) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    // Get mapping of instanceIDs to returned URLs
+    var instanceMap = MutableMap[UUID, ToolInstance]()
+    // Get mapping of instanceID -> ToolInstance if datasetID is in uploadHistory
+    current.plugin[ToolManagerPlugin].map( mgr => instanceMap = mgr.getInstancesWithDataset(datasetId))
+    Ok(views.html.datasets.tools(instanceMap.keys.toList, instanceMap, datasetId, datasetName))
+  }
+
+  /**
+    * Send request to ToolManagerPlugin to launch a new tool instance and upload datasetID.
+    */
+  def launchTool(instanceName: String, tooltype: String, datasetId: UUID, datasetName: String) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    val hostURL = request.headers.get("Host").getOrElse("")
+    val userId: Option[UUID] = user match {
+      case Some(u) => Some(u.id)
+      case None => None
+    }
+
+    current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        val instanceID = mgr.launchTool(hostURL, instanceName, tooltype, datasetId, datasetName, userId)
+        Ok(instanceID.toString)
+      }
+      case None => BadRequest("No ToolManagerPlugin found.")
+    }
+  }
+
+  /**
+    * Fetch list of launchable tools from Plugin.
+    */
+  def getLaunchableTools() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        val tools = mgr.getLaunchableTools()
+        Ok(tools)
+      }
+      case None => BadRequest("No ToolManagerPlugin found.")
+    }
+  }
+
+  /**
+    * Upload a dataset to an existing tool instance. Does not check for or prevent against duplication.
+    */
+  def uploadDatasetToTool(instanceID: UUID, datasetID: UUID, datasetName: String) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    val hostURL = request.headers.get("Host").getOrElse("")
+    val userId: Option[UUID] = user match {
+      case Some(u) => Some(u.id)
+      case None => None
+    }
+
+    current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        mgr.uploadDatasetToInstance(hostURL, instanceID, datasetID, datasetName, userId)
+        Ok("request sent")
+      }
+      case None => BadRequest("No ToolManagerPlugin found.")
+    }
+  }
+
+  /**
+    * Get full list of running instances from Plugin.
+    */
+  def getInstances() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        val instances = mgr.getInstances()
+        Ok(toJson(instances.toMap))
+      }
+      case None => BadRequest("No ToolManagerPlugin found.")
+    }
+  }
+
+  /**
+    * Get remote URL of running instance, if available.
+    */
+  def getInstanceURL(instanceID: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    val url = current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => mgr.checkForInstanceURL(instanceID)
+      case None => ""
+    }
+    Ok(url)
+  }
+
+  /**
+    * Send request to server to destroy instance, and remove from Plugin.
+    */
+  def removeInstance(toolPath: String, instanceID: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
+    implicit val user = request.user
+
+    current.plugin[ToolManagerPlugin] match {
+      case Some(mgr) => {
+        mgr.removeInstance(toolPath, instanceID)
+        Ok(instanceID.toString)
+      }
+      case None => BadRequest("No ToolManagerPlugin found.")
+    }
+  }
+  // END TOOL MANAGER METHODS ---------------------------------------------------------------
 }

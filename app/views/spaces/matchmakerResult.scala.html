@@ -24,14 +24,14 @@
     </div>
     <div class="row">
         <div class="col-md-3">
-            @spaces.curation_summary( curationObject, "Matchmaker", false)
+            @spaces.curationSummary( curationObject, false)
             <div class="panel panel-default">
                 <div class="panel-body">
                     <h4>Preferences</h4>
                     @for((prop, value) <- properties) {
                         <h5>@prop</h5>
                            @for(cur<-value) {
-                                @if(userPreferences.contains(prop.replace(" ", "_")) && userPreferences(prop.replace(" ", "_")).contains(cur)) {
+                                @if((userPreferences.contains(prop.replace(" ", "_")) && userPreferences(prop.replace(" ", "_")).contains(cur)) || cur == "Testing-Only") {
                                     <input type="checkbox" name="@prop" value="@cur" checked> @cur <br/>
 
                                 } else {
@@ -77,7 +77,7 @@
     <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
     <script>
 
-        Handlebars.registerHelper('lessthan', function(lvalue, rvalue, options) {
+        Handlebars.registerHelper('nomorethan', function(lvalue, rvalue, options) {
             if (arguments.length < 3)
                 throw new Error("Handlebars Helper equal needs 2 parameters");
             if( lvalue>rvalue ) {
@@ -86,6 +86,22 @@
                 return options.fn(this);
             }
         });
+        Handlebars.registerHelper('ifCond', function(v1, v2, options) {
+            if(v1 == v2) {
+                return options.fn(this);
+            }
+            return options.inverse(this);
+        });
+
+        Handlebars.registerHelper('contains', function(string, sub_string, options){
+            if(string.toLowerCase().indexOf(sub_string.toLowerCase()) >=0) {
+                return options.fn(this);
+            } else {
+                return options.inverse(this);
+            }
+
+        });
+
         var repositoryTemplate = Handlebars.getTemplate('@routes.Assets.at("templates/spaces/mmrepository")');
         @for(curRepository <- mmResponse) {
             var rules = [];
@@ -93,11 +109,11 @@
                 rules.push({rule_name: "@rule.rule_name", score: "@rule.Score", message: "@rule.Message"});
             }
             @if(curationObject.repository.isDefined && curationObject.repository.get.compareTo(curRepository.orgidentifier) == 0) {
-                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", repositoryName: new Handlebars.SafeString("@curRepository.repositoryName"), orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules,  selected: true});
+                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", href_profile: "@routes.Profile.viewProfileUUID(curationObject.author.id)", repositoryName: new Handlebars.SafeString("@curRepository.repositoryName"), orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules,  selected: true});
                 $('#mmresults').append(html);
             } else {
 
-                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", repositoryName: new Handlebars.SafeString("@curRepository.repositoryName"),  orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules, selected: false});
+                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", href_profile: "@routes.Profile.viewProfileUUID(curationObject.author.id)", repositoryName: new Handlebars.SafeString("@curRepository.repositoryName"),  orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules, selected: false});
                 $('#mmresults').append(html);
             }
         }

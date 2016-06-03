@@ -21,6 +21,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
                              sections: SectionService, users: UserService) extends SecuredController {
   /**
    * Redirect any url's that have a trailing /
+   *
    * @param path the path minus the slash
    * @return moved permanently to path without /
    */
@@ -35,23 +36,25 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   	implicit val user = request.user
   	val latestFiles = files.latest(5)
     val datasetsCount = datasets.count()
-    val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.superAdmin)
+    val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.user.fold(false)(_.superAdminMode))
     val filesCount = files.count()
+    val filesBytes = files.bytes()
     val collectionsCount = collections.count()
-    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.superAdmin)
+    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.user.fold(false)(_.superAdminMode))
     val spacesCount = spaces.count()
-    val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.superAdmin)
+    val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.user.fold(false)(_.superAdminMode))
     val usersCount = users.count()
     //newsfeedEvents is the combination of followedEntities and requestevents, then take the most recent 20 of them.
-    var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)).sorted(Ordering.by((_: Event).created).reverse))
-    newsfeedEvents =  (newsfeedEvents ::: events.getRequestEvents(user, Some(20)))
-      .sorted(Ordering.by((_: Event).created).reverse).take(20)
+    var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)))
+    newsfeedEvents =  newsfeedEvents ::: events.getRequestEvents(user, Some(20))
     user match {
       case Some(clowderUser) if !clowderUser.active => {
         Redirect(routes.Error.notActivated())
       }
       case Some(clowderUser) if clowderUser.active => {
-        val datasetsUser = datasets.listUser(12, Some(clowderUser), request.superAdmin, clowderUser)
+        newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20)))
+        .sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
+        val datasetsUser = datasets.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
         val datasetcommentMap = datasetsUser.map { dataset =>
           var allComments = comments.findCommentsByDatasetId(dataset.id)
           dataset.files.map { file =>
@@ -62,8 +65,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
           }
           dataset.id -> allComments.size
         }.toMap
-        val collectionList = collections.listUser(12, Some(clowderUser), request.superAdmin, clowderUser)
-        var collectionsWithThumbnails = collectionList.map {c =>
+        val collectionList = collections.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
+        val collectionsWithThumbnails = collectionList.map {c =>
           if (c.thumbnail_id.isDefined) {
             c
           } else {
@@ -78,13 +81,13 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         for (aCollection <- collectionsWithThumbnails) {
           decodedCollections += Utils.decodeCollectionElements(aCollection)
         }
-        val spacesUser = spaces.listUser(12, Some(clowderUser),request.superAdmin, clowderUser)
+        val spacesUser = spaces.listUser(12, Some(clowderUser),request.user.fold(false)(_.superAdminMode), clowderUser)
         var followers: List[(UUID, String, String, String)] = List.empty
         for (followerID <- clowderUser.followers.take(3)) {
-          var userFollower = users.findById(followerID)
+          val userFollower = users.findById(followerID)
           userFollower match {
             case Some(uFollower) => {
-              var ufEmail = uFollower.email.getOrElse("")
+              val ufEmail = uFollower.email.getOrElse("")
               followers = followers.++(List((uFollower.id, uFollower.fullName, ufEmail, uFollower.getAvatarUrl())))
             }
             case None =>
@@ -142,7 +145,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser, datasetcommentMap, decodedCollections.toList, spacesUser, true, followers, followedUsers.take(3),
        followedFiles.take(3), followedDatasets.take(3), followedCollections.take(3),followedSpaces.take(3), Some(true)))
       }
-      case _ => Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess,
+      case _ => Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, filesBytes, collectionsCount, collectionsCountAccess,
         spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
     }
   }
@@ -151,15 +154,16 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     implicit val user = request.user
     val latestFiles = files.latest(5)
     val datasetsCount = datasets.count()
-    val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.superAdmin)
+    val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.user.fold(false)(_.superAdminMode))
     val filesCount = files.count()
+    val filesBytes = files.bytes()
     val collectionsCount = collections.count()
-    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.superAdmin)
+    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.user.fold(false)(_.superAdminMode))
     val spacesCount = spaces.count()
-    val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.superAdmin)
+    val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.user.fold(false)(_.superAdminMode))
     val usersCount = users.count()
 
-    Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, collectionsCount, collectionsCountAccess,
+    Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, filesBytes, collectionsCount, collectionsCountAccess,
         spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
   }
 
@@ -219,6 +223,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         routes.javascript.Collections.getUpdatedChildCollections,
         routes.javascript.Profile.viewProfileUUID,
         routes.javascript.Assets.at,
+        api.routes.javascript.Admin.reindex,
         api.routes.javascript.Comments.comment,
         api.routes.javascript.Comments.removeComment,
         api.routes.javascript.Comments.editComment,
@@ -280,6 +285,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Sections.removeAllTags,
         api.routes.javascript.Geostreams.searchSensors,
         api.routes.javascript.Geostreams.searchStreams,
+        api.routes.javascript.Geostreams.getSensor,
+        api.routes.javascript.Geostreams.getStream,
         api.routes.javascript.Geostreams.getSensorStreams,
         api.routes.javascript.Geostreams.searchDatapoints,
         api.routes.javascript.Geostreams.deleteSensor,
@@ -314,20 +321,26 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Spaces.follow,
         api.routes.javascript.Spaces.unfollow,
         api.routes.javascript.Users.getUser,
+        api.routes.javascript.Users.findById,
         api.routes.javascript.Users.follow,
         api.routes.javascript.Users.unfollow,
+        api.routes.javascript.Users.updateName,
         api.routes.javascript.Relations.findTargets,
         api.routes.javascript.Relations.add,
         api.routes.javascript.Relations.delete,
         api.routes.javascript.Projects.addproject,
         api.routes.javascript.Institutions.addinstitution,
-        api.routes.javascript.Users.getUser,
         api.routes.javascript.CurationObjects.getCurationObjectOre,
         api.routes.javascript.CurationObjects.findMatchmakingRepositories,
         api.routes.javascript.CurationObjects.retractCurationObject,
         api.routes.javascript.CurationObjects.getCurationFiles,
         api.routes.javascript.CurationObjects.deleteCurationFile,
         api.routes.javascript.CurationObjects.deleteCurationFolder,
+        api.routes.javascript.CurationObjects.savePublishedObject,
+        api.routes.javascript.ContextLD.addContext,
+        api.routes.javascript.ContextLD.getContextByName,
+        api.routes.javascript.ContextLD.removeById,
+        api.routes.javascript.ContextLD.getContextById,
         api.routes.javascript.Metadata.addUserMetadata,
         api.routes.javascript.Metadata.searchByKeyValue,
         api.routes.javascript.Metadata.getDefinitions,
@@ -345,6 +358,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.Datasets.dataset,
         controllers.routes.javascript.Datasets.newDataset,
         controllers.routes.javascript.Datasets.createStep2,
+        controllers.routes.javascript.Datasets.launchTool,
+        controllers.routes.javascript.Datasets.getLaunchableTools,
+        controllers.routes.javascript.Datasets.uploadDatasetToTool,
+        controllers.routes.javascript.Datasets.getInstances,
+        controllers.routes.javascript.Datasets.refreshToolSidebar,
+        controllers.routes.javascript.Datasets.removeInstance,
         controllers.routes.javascript.Folders.createFolder,
         controllers.routes.javascript.Datasets.getUpdatedFilesAndFolders,
         controllers.routes.javascript.Collections.collection,
@@ -360,8 +379,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.CurationObjects.sendToRepository,
         controllers.routes.javascript.CurationObjects.compareToRepository,
         controllers.routes.javascript.CurationObjects.deleteCuration,
-        controllers.routes.javascript.CurationObjects.savePublishedObject,
-        controllers.routes.javascript.CurationObjects.getStatusFromRepository
+        controllers.routes.javascript.CurationObjects.getStatusFromRepository,
+        controllers.routes.javascript.Events.getEvents
       )
     ).as(JSON) 
   }

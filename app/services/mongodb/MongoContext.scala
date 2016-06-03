@@ -250,6 +250,9 @@ object MongoContext {
     }
   }
 
+  implicit def dbObjectToString(dbObject: DBObject): String = {
+    dbObject.toString.replaceAll("\\{\\s*\"\\$oid\"\\s*:\\s*(\"[^\"]+\")\\}", "ObjectId($1)").replaceAll("\\{\\s*\"\\$date\"\\s*:\\s*(\"[^\"]+\")\\}", "new Date($1)")
+  }
 }
 
 

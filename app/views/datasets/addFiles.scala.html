@@ -28,14 +28,14 @@
             <ul class="list-unstyled">
                 @folder match {
                     case Some(f) => {
-                        <li> Folder <a href="@routes.Datasets.dataset(dataset.id)#folderId=@f.id">@f.name</a></li>
+                        <li> Folder <a href="@routes.Datasets.dataset(dataset.id)#folderId=@f.id">@f.displayName</a></li>
                         <li>Parent Dataset <a href="@routes.Datasets.dataset(dataset.id)">@dataset.name</a></li>
                     }
 
                     case None => {<li>Dataset <a href="@routes.Datasets.dataset(dataset.id)">@dataset.name</a></li>}
                 }
 
-                <li>Created by <a href= "@routes.Profile.viewProfile(dataset.author.email)"> @dataset.author.fullName </a></li>
+                <li>Created by <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
                 <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
             </ul>
         </div>

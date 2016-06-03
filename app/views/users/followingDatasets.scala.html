@@ -101,7 +101,7 @@
     <div class="row hidden" id="list-view">
         <div class="col-md-12">
         @datasetsList.map { dataset =>
-          @datasets.listitem(dataset, comments, routes.Datasets.followingDatasets(prev+1, limit, ""))
+            @datasets.listitem(dataset, None, comments, routes.Datasets.followingDatasets(prev+1, limit, ""))
         }
         </div>
     </div>

@@ -26,6 +26,7 @@ object Permission extends Enumeration {
     DeleteDataset,
     EditDataset,
     AddResourceToDataset,
+    ExecuteOnDataset,
 
     // collections
     ViewCollection,
@@ -101,24 +102,24 @@ object Permission extends Enumeration {
 
   /** Returns true if the user is listed as a server admin */
 	def checkServerAdmin(user: Option[User]): Boolean = {
-		user.exists(u => u.email.nonEmpty && u.active && AppConfiguration.checkAdmin(u.email.get))
+		user.exists(u => u.active && u.serverAdmin)
 	}
 
   /** Returns true if the user is the owner of the resource, this function is used in the code for checkPermission as well. */
   def checkOwner(user: Option[User], resourceRef: ResourceRef): Boolean = {
-    user.exists(checkOwner(_, resourceRef))
+    user.exists(u => u.superAdminMode || checkOwner(u, resourceRef))
   }
 
   /** Returns true if the user is the owner of the resource, this function is used in the code for checkPermission as well. */
   def checkOwner(user: User, resourceRef: ResourceRef): Boolean = {
     resourceRef match {
-      case ResourceRef(ResourceRef.file, id) => files.get(id).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
-      case ResourceRef(ResourceRef.collection, id) => collections.get(id).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
-      case ResourceRef(ResourceRef.dataset, id) => datasets.get(id).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
+      case ResourceRef(ResourceRef.file, id) => files.get(id).exists(x => users.findById(x.author.id).exists(_.id == user.id))
+      case ResourceRef(ResourceRef.collection, id) => collections.get(id).exists(x => users.findById(x.author.id).exists(_.id == user.id))
+      case ResourceRef(ResourceRef.dataset, id) => datasets.get(id).exists(x => users.findById(x.author.id).exists(_.id == user.id))
       case ResourceRef(ResourceRef.space, id) => spaces.get(id).exists(_.creator == user.id)
-      case ResourceRef(ResourceRef.comment, id) => comments.get(id).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
-      case ResourceRef(ResourceRef.curationObject, id) => curations.get(id).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
-      case ResourceRef(ResourceRef.curationFile, id) => curations.getCurationFiles(List(id)).exists(x => users.findByIdentity(x.author).exists(_.id == user.id))
+      case ResourceRef(ResourceRef.comment, id) => comments.get(id).exists(x => users.findById(x.author.id).exists(_.id == user.id))
+      case ResourceRef(ResourceRef.curationObject, id) => curations.get(id).exists(x => users.findById(x.author.id).exists(_.id == user.id))
+      case ResourceRef(ResourceRef.curationFile, id) => curations.getCurationFiles(List(id)).exists(x => users.findById(x.author.id).exists(_.id == user.id))
       case ResourceRef(ResourceRef.metadata, id) => metadatas.getMetadataById(id).exists(_.creator.id == user.id)
       case ResourceRef(_, _) => false
     }
@@ -143,6 +144,7 @@ object Permission extends Enumeration {
   def checkPermission(user: Option[User], permission: Permission, resourceRef: ResourceRef): Boolean = {
     checkPermission(user, permission, Some(resourceRef))
   }
+
 
   def checkPermission(user: Option[User], permission: Permission, resourceRef: Option[ResourceRef] = None): Boolean = {
     (user, configuration(play.api.Play.current).getString("permissions").getOrElse("public"), resourceRef) match {
@@ -183,6 +185,7 @@ object Permission extends Enumeration {
   def checkPermission(user: User, permission: Permission, resourceRef: ResourceRef): Boolean = {
     // check if user is owner, in that case they can do what they want.
     if (checkOwner(users.findByIdentity(user), resourceRef)) return true
+    if (user.superAdminMode) return true
 
     resourceRef match {
       case ResourceRef(ResourceRef.preview, id) => {
@@ -339,6 +342,28 @@ object Permission extends Enumeration {
         }
       }
 
+      case ResourceRef(ResourceRef.user, id) => {
+        users.get(id) match {
+          case Some(u) => {
+            if (id == user.id) {
+              true
+            } else {
+              u.spaceandrole.map { space_role =>
+                if (space_role.role.permissions.contains(permission.toString)) {
+                  true
+                }
+              }
+              false
+            }
+          }
+          case None => false
+        }
+      }
+
+      case ResourceRef(ResourceRef.thumbnail, id) => {
+        true
+      }
+
       case ResourceRef(resType, id) => {
         Logger.error("Resource type not recognized " + resType)
         false
@@ -348,6 +373,7 @@ object Permission extends Enumeration {
 
   def getUserByIdentity(identity: User): Option[User] = users.findByIdentity(identity)
 
+  /** on a private server this will return true iff user logged in, on public server this will always be true */
   def checkPrivateServer(user: Option[User]): Boolean = {
     configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" || user.isDefined
   }
@@ -356,4 +382,4 @@ object Permission extends Enumeration {
 /**
  * A request that adds the User for the current call
  */
-case class UserRequest[A](user: Option[User], superAdmin: Boolean = false, request: Request[A]) extends WrappedRequest[A](request)
+case class UserRequest[A](user: Option[User], request: Request[A]) extends WrappedRequest[A](request)

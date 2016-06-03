@@ -19,7 +19,6 @@ import scala.util.Try
 import services._
 import javax.inject.{Singleton, Inject}
 import scala.util.Failure
-import scala.Some
 import scala.util.Success
 import MongoContext.context
 import play.api.Play._
@@ -31,7 +30,11 @@ import play.api.Play._
  *
  */
 @Singleton
-class MongoDBCollectionService @Inject() (datasets: DatasetService, userService: UserService, spaceService: SpaceService)  extends CollectionService {
+class MongoDBCollectionService @Inject() (
+  datasets: DatasetService,
+  userService: UserService,
+  spaceService: SpaceService,
+  events:EventService)  extends CollectionService {
   /**
    * Count all collections
    */
@@ -40,7 +43,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   }
 
   /**
-   * Return the count of collections in a space, this does not check for permissions
+   * Return the count of root collections in a space, this does not check for permissions
    */
   def countSpace(space: String): Long = {
     count(None, false,  None, Some(space), Set[Permission](Permission.ViewCollection), None, showAll=true, None)
@@ -155,11 +158,19 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
    * Monster function, does all the work. Will create a filters and sorts based on the given parameters
    */
   private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]):(DBObject, DBObject) = {
-    // filter =
-    // - owner   == show collections owned by owner that user can see
-    // - space   == show all collections in space
-    // - access  == show all collections the user can see
-    // - default == public only
+
+    // In /Collections page you should see:
+    //  a) Parent Collections in a space you belong to ( root_collections.length > 0 and you belong to the space).
+    //  b) Parent Collections that you created (owner = you and root_collections.length = 0).
+    // You should not see:
+    //  a) Child collections of the spaces you belong to (root_collections.length == 0)
+    //  b) Child collections of parents that are not in a space and you created
+    //  c) Parent or child collections in spaces you don’t have access to.
+    //Within a space page you should see:
+    //  Parent collections within that space. (root_spaces includes spaceId)
+    //On the home page you should see parent and child collections you have created wether or not they are part of a space
+    //On the dropdown in the dataset page ‘Add dataset to collection’ you should see parent and child collections you have access to via a space or that you created.
+
     // create access filter
     val filterAccess = if (showAll || (configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewCollection))) {
       MongoDBObject()
@@ -170,7 +181,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
           if (permissions.contains(Permission.ViewCollection)) {
             orlist += MongoDBObject("public" -> true)
           }
-          orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author.identityId.userId" -> u.identityId.userId)
+          orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
           val permissionsString = permissions.map(_.toString)
           val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(permissionsString).nonEmpty)
           if (okspaces.nonEmpty) {
@@ -185,17 +196,50 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
       }
     }
     val filterOwner = owner match {
-      case Some(o) => MongoDBObject("author.identityId.userId" -> o.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> o.identityId.providerId)
-      case None => MongoDBObject()
+      case Some(o) =>  MongoDBObject("author._id" -> new ObjectId(o.id.stringify))
+      case None => {
+        space match {
+          case Some(s) => MongoDBObject()
+          case None => {
+            if (permissions.contains(Permission.AddResourceToCollection)) {
+              MongoDBObject()
+            }
+            else if (showAll || (configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewCollection))) {
+              val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
+              orlist += MongoDBObject("parent_collection_ids" -> List.empty)
+              orlist += MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject("$size" -> 0)))
+              $or(orlist.map(_.asDBObject))
+            } else {
+              user match {
+                case Some(u) => {
+                  val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
+                  orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(u.id.stringify)) ++ MongoDBObject("parent_collection_ids" -> List.empty)
+                  val permissionsString = permissions.map(_.toString)
+                  val orlistB = collection.mutable.ListBuffer.empty[MongoDBObject]
+                  val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(permissionsString).nonEmpty)
+                  if (okspaces.nonEmpty) {
+                    orlistB += ("spaces" $in okspaces.map(x => new ObjectId(x.spaceId.stringify)))
+                    orlist += (MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject("$size" -> 0))) ++ $or(orlistB.map(_.asDBObject)))
+                  }
+                  $or(orlist.map(_.asDBObject))
+                }
+                case None => MongoDBObject()
+              }
+            }
+
+          }
+        }
+      }
     }
     val filterSpace = space match {
-      case Some(s) => MongoDBObject("spaces" -> new ObjectId(s))
+      case Some(s) => MongoDBObject("root_spaces" -> new ObjectId(s))
       case None => MongoDBObject()
     }
     val filterTitle = titleSearch match {
       case Some(title) =>  MongoDBObject("name" -> ("(?i)" + title).r)
       case None => MongoDBObject()
     }
+
     val filterDate = date match {
       case Some(d) => {
         if (nextPage) {
@@ -355,7 +399,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   def listInsideDataset(datasetId: UUID, user: Option[User], showAll: Boolean): List[Collection] = {
     Dataset.findOneById(new ObjectId(datasetId.stringify)) match {
       case Some(dataset) => {
-        val list = for (collection <- listAccess(0, Set[Permission](Permission.ViewCollection), user, showAll); if (isInDataset(dataset, collection))) yield collection
+        val list = for (collection <- listAccess(0, Set[Permission](Permission.ViewCollection, Permission.AddResourceToCollection), user, showAll); if (isInDataset(dataset, collection))) yield collection
         return list.reverse
       }
       case None => {
@@ -429,11 +473,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     var rootCollections = ListBuffer.empty[Collection]
     Collection.findOneById(new ObjectId(collectionId.stringify)) match {
       case Some(collection) => {
-        var parentCollectionIds = collection.parent_collection_ids
+        val parentCollectionIds = collection.parent_collection_ids
         for (parentCollectionId <- parentCollectionIds){
           Collection.findOneById(new ObjectId(parentCollectionId.stringify))  match {
             case Some(parentCollection) => {
-              if (parentCollection.root_flag == true) {
+              if (hasRoot(parentCollection)) {
                 rootCollections += parentCollection
               } else {
                 rootCollections = rootCollections++( getRootCollections(parentCollectionId))
@@ -447,10 +491,58 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     return rootCollections
   }
 
+  def hasRoot(collection: Collection): Boolean = {
+    collection.root_spaces.length > 0
+  }
+
+  def addToRootSpaces(collectionId: UUID, spaceId: UUID): Unit = {
+    Collection.update(
+      MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+      $addToSet("root_spaces" -> Some(new ObjectId(spaceId.stringify))),
+      false, false)
+    spaceService.incrementCollectionCounter(collectionId, spaceId, 1)
+  }
+
+  def removeFromRootSpaces(collectionId: UUID, spaceId: UUID)= {
+    Collection.update(
+      MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
+      $pull("root_spaces" -> Some(new ObjectId(spaceId.stringify))),
+      false, false)
+    spaceService.decrementCollectionCounter(collectionId, spaceId, 1)
+  }
+
+  def syncUpRootSpaces(collectionId: UUID, initialRootSpaces: List[UUID]): Unit ={
+    get(collectionId) match {
+      case Some(collection) => {
+        val parentSpaces = ListBuffer.empty[UUID]
+        collection.parent_collection_ids.foreach{ parentId =>
+          get(parentId) match {
+            case Some(parent) => parent.spaces.foreach{ space => parentSpaces += space}
+            case None =>
+          }
+        }
+        collection.spaces.foreach { space =>
+          if(!(parentSpaces contains space)) {
+            if(!(initialRootSpaces contains space)) {
+              addToRootSpaces(collection.id, space)
+            }
+          } else {
+            if(collection.root_spaces contains space) {
+              removeFromRootSpaces(collection.id, space)
+            }
+          }
+
+        }
+      }
+      case None =>
+    }
+
+  }
+
   def getRootSpaceIds(collectionId: UUID) : ListBuffer[UUID] = {
     var rootSpaceIds = ListBuffer.empty[UUID]
 
-    var rootCollectionIds =  getRootCollections(collectionId).toList
+    val rootCollectionIds =  getRootCollections(collectionId).toList
 
     for (rootCollectionId <- rootCollectionIds){
       Collection.findOneById(new ObjectId(rootCollectionId.id.stringify)) match {
@@ -541,9 +633,21 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
           spaceService.removeCollection(collection.id,space)
         }
 
+        for(space <- collection.root_spaces) {
+          spaceService.decrementCollectionCounter(collectionId, space, 1)
+        }
+
         for(follower <- collection.followers) {
           userService.unfollowCollection(follower, collectionId)
         }
+        for(subCollection <- collection.child_collection_ids) {
+          removeSubCollection(collectionId, subCollection)
+        }
+
+        for(parentCollection <- collection.parent_collection_ids) {
+          removeParentCollectionId(parentCollection, collection, true)
+        }
+
         Collection.remove(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)))
 
         current.plugin[ElasticsearchPlugin].foreach {
@@ -590,6 +694,12 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     }
   }
 
+  def index(id: Option[UUID]) = {
+    id match {
+      case Some(collectionId) => index(collectionId)
+      case None => Collection.dao.find(MongoDBObject()).foreach(c => index(c.id))
+    }
+  }
 
   def index(id: UUID) {
     Collection.findOneById(new ObjectId(id.stringify)) match {
@@ -630,6 +740,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   }
 
    def updateName(collectionId: UUID, name: String){
+     events.updateObjectName(collectionId, name)
      val result = Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
      $set("name" -> name), false, false, WriteConcern.Safe)
    }
@@ -637,6 +748,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
   def updateDescription(collectionId: UUID, description: String){
     val result = Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
       $set("description" -> description), false, false, WriteConcern.Safe)
+  }
+
+  def updateAuthorFullName(userId: UUID, fullName: String) {
+    Collection.update(MongoDBObject("author._id" -> new ObjectId(userId.stringify)),
+      $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
   }
 
   /**
@@ -666,6 +782,9 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
               Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)), $inc("childCollectionsCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
               //remove collection from the list of parent collection for sub collection
               Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)), $pull("parent_collection_ids" -> Some(new ObjectId(collectionId.stringify))), false, false, WriteConcern.Safe)
+              //Check if any of the remaining spaces come from a parent or not. If not, add it to the root_spaces
+              syncUpRootSpaces(sub_collection.id, sub_collection.root_spaces)
+
               Logger.info("Removing subcollection from collection completed")
             }
             else{
@@ -687,8 +806,6 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     }
   }
 
-
-
   def addSubCollection(collectionId :UUID, subCollectionId: UUID) = Try{
     Collection.findOneById(new ObjectId(collectionId.stringify)) match {
       case Some(collection) => {
@@ -697,23 +814,24 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
             if (!isSubCollectionIdInCollection(subCollectionId,collection)){
               addSubCollectionId(subCollectionId,collection)
               addParentCollectionId(subCollectionId,collectionId)
-              var parentSpaceIds = collection.spaces
-              for (parentSpaceId <- parentSpaceIds){
-                if (!sub_collection.spaces.contains(parentSpaceId)){
+              val parentSpaceIds = collection.spaces
+              for (parentSpaceId <- parentSpaceIds) {
+                if (!sub_collection.spaces.contains(parentSpaceId)) {
                   spaceService.get(parentSpaceId) match {
                     case Some(parentSpace) => {
-                      spaceService.addCollection(subCollectionId,parentSpaceId)
+                      spaceService.addCollection(subCollectionId, parentSpaceId)
                     }
                     case None => Logger.error("No space found for " + parentSpaceId)
                   }
                 }
               }
+              syncUpRootSpaces(sub_collection.id, sub_collection.root_spaces)
               index(collection.id)
               Collection.findOneById(new ObjectId(subCollectionId.stringify)) match {
                 case Some(sub_collection) => {
                   index(sub_collection.id)
                 } case None =>
-                  Logger.error("Error getting subcollection" + subCollectionId);
+                  Logger.error("Error getting subcollection" + subCollectionId)
                   Failure
               }
             }
@@ -721,12 +839,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
           case None => Logger.error("Error getting subcollection")
         }
       } case None => {
-        Logger.error("Error getting collection" + collectionId);
+        Logger.error("Error getting collection" + collectionId)
         Failure
       }
     }
   }
-
 
   def addSubCollectionId(subCollectionId: UUID, collection: Collection) = Try {
     Collection.update(MongoDBObject("_id" -> new ObjectId((collection.id).stringify)), $addToSet("child_collection_ids" -> Some(new ObjectId(subCollectionId.stringify))), false, false, WriteConcern.Safe)
@@ -745,6 +862,7 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     Collection.update(MongoDBObject("_id" -> new ObjectId((collection.id).stringify)),
       $pull("parent_collection_ids" -> Some(new ObjectId(parentCollectionId.stringify))),
       false, false)
+    Collection.update(MongoDBObject("_id" -> new ObjectId(parentCollectionId.stringify)), $inc("childCollectionsCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
 
   }
 
@@ -752,9 +870,6 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
     Collection.update(MongoDBObject("_id" -> new ObjectId(subCollectionId.stringify)), $addToSet("parent_collection_ids" -> Some(new ObjectId(parentCollectionId.stringify))), false, false, WriteConcern.Safe)
   }
 
-  def setRootFlag(collectionId : UUID, isRoot : Boolean) = Try {
-    Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),$set("root_flag" -> isRoot), false, false, WriteConcern.Safe )
-  }
 
   def getSelfAndAncestors(collectionId : UUID) : List[Collection] = {
     var selfAndAncestors : ListBuffer[models.Collection] = ListBuffer.empty[models.Collection]
@@ -766,11 +881,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
             case Some(parent_collection) => {
               selfAndAncestors = selfAndAncestors ++ getSelfAndAncestors(parentCollectionId)
             }
-
+            case None =>
           }
         }
       }
-
+      case None =>
     }
     return selfAndAncestors.toList
 
@@ -788,9 +903,11 @@ class MongoDBCollectionService @Inject() (datasets: DatasetService, userService:
                     return true
                   }
                 }
+                case None => return false
               }
             }
           }
+          case None =>
         }
       }
     }

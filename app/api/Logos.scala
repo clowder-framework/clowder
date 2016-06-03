@@ -117,10 +117,7 @@ class Logos @Inject()(logos: LogoService) extends ApiController {
       case (_, Right(x), _) => x
       case (_, _, Right(x)) => x
       case (Some(f), Left(p), Left(n)) => {
-        var ct = f.contentType.getOrElse(play.api.http.ContentTypes.BINARY)
-        if (ct == play.api.http.ContentTypes.BINARY) {
-          ct = play.api.libs.MimeTypes.forFileName(f.filename).getOrElse(play.api.http.ContentTypes.BINARY)
-        }
+        val ct = util.FileUtils.getContentType(f.filename, f.contentType)
         logos.save(new FileInputStream(f.ref.file), p, n, showText, Some(ct), user) match {
           case Some(logo) => {
             // delete old images
