@@ -86,12 +86,18 @@ object Permission extends Enumeration {
     DeleteVocabulary,
     EditVocabulary,
 
+    //VocabularyTerms
+    ViewVocabularyTerm,
+    CreateVocabularyTerm,
+    DeleteVocabularyTerm,
+    EditVocabularyTerm,
+
     // users
     ViewUser,
     EditUser = Value
 
   val READONLY = Set[Permission](ViewCollection, ViewComments, ViewDataset, ViewFile, ViewGeoStream, ViewMetadata,
-    ViewSection, ViewSpace, ViewTags, ViewUser, ViewVocabulary)
+    ViewSection, ViewSpace, ViewTags, ViewUser, ViewVocabulary, ViewVocabularyTerm)
 
   lazy val files: FileService = DI.injector.getInstance(classOf[FileService])
   lazy val previews: PreviewService = DI.injector.getInstance(classOf[PreviewService])
@@ -106,6 +112,7 @@ object Permission extends Enumeration {
   lazy val sections: SectionService = DI.injector.getInstance(classOf[SectionService])
   lazy val metadatas: MetadataService = DI.injector.getInstance(classOf[MetadataService])
   lazy val vocabularies: VocabularyService = DI.injector.getInstance(classOf[VocabularyService])
+  lazy val vocabularyterms: VocabularyTermService = DI.injector.getInstance(classOf[VocabularyTermService])
 
   /** Returns true if the user is listed as a server admin */
 	def checkServerAdmin(user: Option[User]): Boolean = {
@@ -184,6 +191,7 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.section, id) => false
       case ResourceRef(ResourceRef.preview, id) => false
       case ResourceRef(ResourceRef.vocabulary,id) => false
+      case ResourceRef(ResourceRef.vocabularyterm,id) => false
       case ResourceRef(resType, id) => {
         Logger.error("Unrecognized resource type " + resType)
         false
@@ -209,7 +217,10 @@ object Permission extends Enumeration {
             } else if (p.collection_id.isDefined) {
               checkPermission(user, permission, ResourceRef(ResourceRef.collection, p.collection_id.get))
             } else if (p.vocabulary_id.isDefined) {
-              checkPermission(user,permission, ResourceRef(ResourceRef.vocabulary, p.vocabulary_id.get))
+              checkPermission(user, permission, ResourceRef(ResourceRef.vocabulary, p.vocabulary_id.get))
+            } else if (p.vocabularyterm_id.isDefined) {
+                checkPermission(user, permission, ResourceRef(ResourceRef.vocabularyterm, p.vocabularyterm_id.get))
+
             } else  {
               true
             }
@@ -307,6 +318,22 @@ object Permission extends Enumeration {
             for (clowderUser <- getUserByIdentity(user)) {
               vocab.spaces.map {
                 vocabId => for (role <- users.getUserRoleInSpace(clowderUser.id, vocabId)) {
+                  if (role.permissions.contains(permission.toString))
+                    return true
+                }
+              }
+            }
+            false
+          }
+        }
+      }
+      case ResourceRef(ResourceRef.vocabularyterm, id) => {
+        vocabularyterms.get(id) match {
+          case None => false
+          case Some(vocabterm) => {
+            for (clowderUser <- getUserByIdentity(user)) {
+              vocabterm.spaces.map {
+                vocabTermId => for (role <- users.getUserRoleInSpace(clowderUser.id, vocabTermId)) {
                   if (role.permissions.contains(permission.toString))
                     return true
                 }

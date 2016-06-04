@@ -13,7 +13,8 @@ case class VocabularyTerm(
   created : Date = new Date(),
   key : String,
   units : Option[String],
-  default_value : Option[String]
+  default_value : Option[String],
+  spaces : List[UUID]
   )
 
 
