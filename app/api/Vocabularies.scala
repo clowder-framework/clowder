@@ -15,6 +15,7 @@ import services.{SpaceService, VocabularyService, UserService}
 
 import scala.collection.immutable.List
 import scala.util.Success
+import scala.util.parsing.json.JSONArray
 
 /**
   * Created by todd_n on 2/9/16.
@@ -98,6 +99,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
             val name = (request.body\"name").asOpt[String].getOrElse("")
             val description = (request.body \ "description").asOpt[String].getOrElse("")
             //parse a list of vocabterm from the json here
+            val terms = (request.body \ "terms").asOpt[JsArray].getOrElse(None)
             t = Vocabulary(author = Some(identity), created = new Date(),name = name,keys = keys.split(",").toList , description = description.split(',').toList,isPublic = isPublic)
 
             vocabularyService.insert(t) match {

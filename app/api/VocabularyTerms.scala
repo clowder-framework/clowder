@@ -33,6 +33,12 @@ class VocabularyTerms @Inject()(vocabularyTermService: VocabularyTermService, us
     responseClass = "None", httpMethod = "POST")
   def createVocabTermFromJson = AuthenticatedAction (parse.json) { implicit request =>
     val user = request.user
+    user match {
+      case Some(identity) => {
+        Ok("")
+      }
+      case None => Ok("")
+    }
   }
 
 
