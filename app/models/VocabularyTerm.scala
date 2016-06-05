@@ -14,19 +14,14 @@ case class VocabularyTerm(
   key : String,
   units : Option[String],
   default_value : Option[String],
-  spaces : List[UUID]
+  spaces : List[UUID] = List.empty
   )
 
 
 object VocabularyTerm{
   implicit val vocabularyTermWrites = new Writes[VocabularyTerm] {
     def writes(vocabularyTerm : VocabularyTerm) : JsValue = {
-      val default = if (vocabularyTerm.default_value.isEmpty){
-        ""
-      } else {
-        vocabularyTerm.default_value.get
-      }
-      Json.obj("id" -> vocabularyTerm.id.toString,"key"->vocabularyTerm.key,"default_value"->default)
+      Json.obj("id" -> vocabularyTerm.id.toString,"key"->vocabularyTerm.key)
     }
   }
 }

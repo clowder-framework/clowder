@@ -720,3 +720,10 @@ GET         /api/vocabularies/:name/getByNameAuthor                             
 
 POST        /api/vocabularies/:vocab_id/addToSpace/:space_id                            @api.Vocabularies.addToSpace(vocab_id: UUID, space_id : UUID)
 POST        /api/vocabuliaries/:vocab_id/removeFromSpace/:space_id                      @api.Vocabularies.removeFromSpace(vocab_id: UUID, space_id : UUID)
+
+# ----------------------------------------------------------------------
+# VOCABULARYTERMS API
+# ----------------------------------------------------------------------
+
+GET         /api/vocabterms/list                                                        @api.VocabularyTerms.list()
+GET         /api/vocabterms/:id                                                         @api.VocabularyTerms.get(id : UUID)

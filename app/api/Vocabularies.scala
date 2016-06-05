@@ -4,7 +4,7 @@ import java.util.Date
 import javax.inject.{Inject, Singleton}
 
 import com.wordnik.swagger.annotations.{ApiOperation, Api}
-import models.{ResourceRef, UUID, Vocabulary}
+import models.{VocabularyTerm, ResourceRef, UUID, Vocabulary}
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.json._
@@ -28,7 +28,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
   def get(id: UUID) = PermissionAction(Permission.ViewVocabulary, Some(ResourceRef(ResourceRef.vocabulary, id))) { implicit request =>
     vocabularyService.get(id) match {
       case Some(vocab) => Ok(jsonVocabulary(vocab))
-      case None => BadRequest(toJson("collection not found"))
+      case None => BadRequest(toJson("vocabulary not found"))
     }
   }
 
@@ -97,6 +97,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
           case Some(keys) => {
             val name = (request.body\"name").asOpt[String].getOrElse("")
             val description = (request.body \ "description").asOpt[String].getOrElse("")
+            //parse a list of vocabterm from the json here
             t = Vocabulary(author = Some(identity), created = new Date(),name = name,keys = keys.split(",").toList , description = description.split(',').toList,isPublic = isPublic)
 
             vocabularyService.insert(t) match {
