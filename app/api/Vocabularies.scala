@@ -4,6 +4,7 @@ import java.util.Date
 import javax.inject.{Inject, Singleton}
 
 import com.wordnik.swagger.annotations.{ApiOperation, Api}
+import controllers.Utils
 import models.{VocabularyTerm, ResourceRef, UUID, Vocabulary}
 import play.api.Logger
 import play.api.libs.json.JsValue
@@ -257,20 +258,10 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
 
 
   def jsonVocabulary(vocabulary : Vocabulary): JsValue = {
-    var vocab_terms : ListBuffer[JsValue] = ListBuffer.empty
-    for (term <- vocabulary.terms){
-      vocabularyTermService.get(term) match {
-        case Some(vocab_term) => {
 
-          vocab_terms+=(Json.toJson(vocab_term))
-        }
-        case None => Logger.error("no term with that id")
-      }
-    }
+    var terms = (vocabulary.terms).map( t => vocabularyTermService.get(t) )
 
-    var asJsonVocabTerms = toJson(vocab_terms)
-
-    toJson(Map("id"-> vocabulary.id.toString, "name" -> vocabulary.name ,"terms"->vocab_terms.mkString(","),"keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic"->vocabulary.isPublic.toString, "spaces"->vocabulary.spaces.mkString(",")))
+    toJson(Map("id"-> vocabulary.id.toString, "name" -> vocabulary.name ,"terms"->terms.toString,"keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic"->vocabulary.isPublic.toString, "spaces"->vocabulary.spaces.mkString(",")))
   }
 
   def jsonVocabularyTerm(vocabularyTerm : VocabularyTerm) : JsValue = {
