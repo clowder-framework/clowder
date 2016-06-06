@@ -12,20 +12,19 @@ function uploadFileToExistingDataset(data) {
 }
 
 function checkZeroFiles(id, inFolder) {
-	var numFiles = $('#fileupload').fileupload('option').getNumberOfFiles();	
+    //the number of un-uploaded files
+	var numFiles = $('.template-upload').length;	
 	if (numFiles === 0) {
         notify("No files have been added to the upload queue. Please select files to upload", "warning", true, 5000);
 		return false;
 	} else {
 		$("#hiddenmt").attr("value", true);
-		var unprocessed = $('.template-upload').length;
-		var request = jsRoutes.api.Datasets.addFileEvent(id, inFolder, unprocessed).ajax({
+		var request = jsRoutes.api.Datasets.addFileEvent(id, inFolder, numFiles).ajax({
 			type: 'POST'
 		});
 		request.done(function (response, textStatus, jqXHR) {
 			console.log("save multiple file events");
 			$("#hiddenmt").attr("value", false);
-
 		});
 	}
 }
