@@ -32,7 +32,7 @@ case class Dataset(
   lastModifiedDate: Date = new Date(),
   followers: List[UUID] = List.empty,
   status: String = "trial"// dataset has four status: trial, default, private and public. yet editors of the dataset
-  // can only see the default, private and public, where trial equals to default. viewers can only see private and
+  // can only see the default, private and public, where trial equals to private. viewers can only see private and
   // public, where trial and default equals to private/public of its space
 ){
   def isPublic:Boolean = status.contains("public")
