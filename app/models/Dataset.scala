@@ -31,7 +31,14 @@ case class Dataset(
   spaces: List[UUID] = List.empty,
   lastModifiedDate: Date = new Date(),
   followers: List[UUID] = List.empty,
-  access: String = "private")
+  status: String = "trial"// dataset has four status: trial, default, private and public. yet editors of the dataset
+  // can only see the default, private and public, where trial equals to default. viewers can only see private and
+  // public, where trial and default equals to private/public of its space
+){
+  def isPublic:Boolean = status.contains("public")
+  def isTrial:Boolean = status.contains("trial")
+  def inSpace:Boolean = spaces.size > 0
+}
 
 object Dataset {
   implicit val datasetWrites = new Writes[Dataset] {

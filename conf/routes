@@ -428,6 +428,7 @@ POST           /api/spaces/:spaceId/addDatasetToSpace/:datasetId                
 POST           /api/spaces/:spaceId/addCollectionToSpace/:collectionId                  @api.Spaces.addCollectionToSpace(spaceId: UUID, collectionId: UUID)
 POST           /api/spaces/:id/follow                                                   @api.Spaces.follow(id: UUID)
 POST           /api/spaces/:id/unfollow                                                 @api.Spaces.unfollow(id: UUID)
+PUT            /api/spaces/:id/verify                                                   @api.Spaces.verifySpace(id:UUID)
 
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT
@@ -470,8 +471,6 @@ GET            /api/collections/:coll_id/getParentCollectionIds                 
 GET            /api/collections/:coll_id/getParentCollections                           @api.Collections.getParentCollections(coll_id: UUID)
 POST           /api/collections/:coll_id/addSubCollection/:sub_coll_id                  @api.Collections.attachSubCollection(coll_id: UUID, sub_coll_id: UUID)
 GET            /api/collections/:coll_id/removeFromSpaceAllowed/:space_id               @api.Collections.removeFromSpaceAllowed(coll_id: UUID, space_id: UUID)
-PUT            /api/collections/:id/access                                               @api.Collections.updateAccess(id:UUID, aceess:String ?="private")
-
 
 # ----------------------------------------------------------------------
 # DATASETS ENDPOINT

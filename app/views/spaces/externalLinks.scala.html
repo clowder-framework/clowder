@@ -1,4 +1,6 @@
-@(links: List[java.net.URL], access:String)
+@(links: List[java.net.URL], space:models.ProjectSpace)(implicit user: Option[models.User])
+
+@import api.Permission
 
 <div class="row ds-section-sm border-top">
 <h3>External Links</h3>
@@ -11,7 +13,36 @@
     }
     </ul>
 }
-
+@if(space.isTrial){
+    <div id="verify">
+    <p>New Project Spaces are in trial mode, allowing you to take advantage of all SEAD functionality except publishing and making your data public.
+        A SEAD team member will verify your Project Space shortly to make these additional capabilities possible.</p>
+    @if(api.Permission.checkServerAdmin(user)){
+        <button class="btn btn-link btn-sm" title="Verify this space">
+            <span class="glyphicon glyphicon-ok" onlick="javascript:verify('space.id')"></span> Verify</button>
+    }
+    </div>
+} else {
     <h3>Accessibility</h3>
-    @access
+    @space.status
+}
+
 </div>
+    <script>
+        function verify(id){
+            var request = jsRoutes.api.Spaces.verifySpace(id).ajax({
+                type: 'PUT'
+            });
+
+            request.done(function(response, textStatus, jsXHR){
+                $("#verify").hide();
+                notify("Sapce is verified and set to private", "success", false, 2000);
+            });
+            request.fail(function (jqXHR, textStatus, errorThrown){
+                console.error("The following error occurred: " + textStatus, errorThrown);
+                var errMsg = "You must be logged in to see files and folders.";
+                if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+                    notify("Error in getting more files and folders : " + errorThrown, "error");
+                });
+        }
+    </script>

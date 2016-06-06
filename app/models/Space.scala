@@ -30,7 +30,12 @@ case class ProjectSpace (
   curationObjects: List[UUID] = List.empty,
   invitations: List[(UUID, String)] = List.empty,
   requests: List[RequestResource] = List.empty,
-  access: String = "private")
+  status: String = "trial"  // space has three status: trial, private and public. yet users can only see the
+  // accessibility of the space, where trial equals to private
+){
+  def isPublic:Boolean = status.contains("public")
+  def isTrial:Boolean = status.contains("trial")
+}
 
 
 case class UserSpace (

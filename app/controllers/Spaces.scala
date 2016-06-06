@@ -194,7 +194,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       implicit val user = request.user
       spaces.get(id) match {
         case Some(s) => {
-          Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), s.resourceTimeToLive, s.isTimeToLiveEnabled, s.access, "Update")), Some(s.id)))}
+          Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), s.resourceTimeToLive, s.isTimeToLiveEnabled, s.status, "Update")), Some(s.id)))}
         case None =>  BadRequest(views.html.notFound("Space does not exist."))
       }
   }
@@ -465,8 +465,14 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                     spaces.get(formData.spaceId.get) match {
                       case Some(existing_space) => {
                         if (Permission.checkPermission(user, Permission.EditSpace, Some(ResourceRef(ResourceRef.space, existing_space.id)))) {
-                          val updated_space = existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
-                            homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled, access = formData.access)
+                          //status is not update if the user doesn't have permission. no error logged
+                          //TODO: update the permission
+                          val updated_space = Permission.checkPermission(user, Permission.EditSpace, Some(ResourceRef(ResourceRef.space, existing_space.id))) match {
+                            case true =>  existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
+                              homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled, status = formData.access)
+                            case false => existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
+                              homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
+                          }
                           spaces.update(updated_space)
                           val option_user = users.findByIdentity(identity)
                           events.addObjectEvent(option_user, updated_space.id, updated_space.name, "update_space_information")

@@ -2077,14 +2077,14 @@ class  Datasets @Inject()(
     user match {
       case Some(loggedInUser) => {
         datasets.get(id) match {
-          case Some(dataset) => {
-            datasets.update(dataset.copy(access = access))
+          case Some(dataset) if !dataset.status.contains("trial") => {
+            datasets.update(dataset.copy(status = access))
             events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
             Ok(toJson(Map("status" -> "success")))
           }
           // If the dataset wasn't found by ID
-          case None => {
-            NotFound
+          case _ => {
+            InternalServerError("Update Accessibility failed")
           }
         }
       }

@@ -48,7 +48,7 @@
         </div>
         <div class="col-md-4 col-lg-4 col-sm-4 space-col-right">
             @spaces.otherActions(space, userRoleMap)
-            @spaces.externalLinks(space.homePage, space.access)
+            @spaces.externalLinks(space.homePage, space)
             @if(play.api.Play.configuration.getBoolean("enable_expiration").getOrElse(false)) {
                 @spaces.spaceConfiguration(space)
             }

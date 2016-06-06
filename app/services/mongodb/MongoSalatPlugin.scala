@@ -370,7 +370,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("update-counts-spaces", updateCountsInSpaces)
 
     //add private (the default status) flag for each dataset/collection/space
-    updateMongo("add-private-flag", addPrivateFlag)
+    updateMongo("add-trial-flag", addTrialFlag)
 
   }
 
@@ -1119,10 +1119,10 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
-  private def addPrivateFlag(): Unit ={
-    for (coll <- List[String]("collections", "spaces.projects", "datasets")) {
+  private def addTrialFlag(): Unit ={
+    for (coll <- List[String]("spaces.projects", "datasets")) {
       val q = MongoDBObject()
-      val o = MongoDBObject("$set" -> MongoDBObject("access" -> "private"))
+      val o = MongoDBObject("$set" -> MongoDBObject("status" -> "trial"))
       collection(coll).update(q ,o, multi=true)
     }
   }

@@ -557,4 +557,30 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       }
     }
   }
+
+  @ApiOperation(value = "change the accessibility of dataset",
+    notes = "Downloads all files contained in a dataset.",
+    responseClass = "None", httpMethod = "PUT")
+  def verifySpace(id:UUID) = ServerAdminAction { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(loggedInUser) => {
+        spaces.get(id) match {
+          case Some(s) if s.isTrial => {
+            spaces.update(s.copy(status = "private"))
+
+            Ok(toJson(Map("status" -> "success")))
+          }
+          // If the dataset wasn't found by ID
+          case _ => {
+            InternalServerError("Verify space failed")
+          }
+        }
+      }
+      // If the user doesn't have access to download these files
+      case None => {
+        Unauthorized
+      }
+    }
+  }
 }
