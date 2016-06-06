@@ -18,7 +18,7 @@ case class VocabularyTerm(
   )
 
 
-object VocabularyTerm{
+object VocabularyTerm {
   implicit val vocabularyTermWrites = new Writes[VocabularyTerm] {
     def writes(vocabularyTerm : VocabularyTerm) : JsValue = {
       Json.obj("id" -> vocabularyTerm.id.toString,"key"->vocabularyTerm.key)

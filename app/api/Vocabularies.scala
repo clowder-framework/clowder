@@ -4,7 +4,6 @@ import java.util.Date
 import javax.inject.{Inject, Singleton}
 
 import com.wordnik.swagger.annotations.{ApiOperation, Api}
-import controllers.Utils
 import models.{VocabularyTerm, ResourceRef, UUID, Vocabulary}
 import play.api.Logger
 import play.api.libs.json.JsValue
@@ -256,27 +255,42 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     }
   }
 
+  def getVocabularyTerms(vocabulary : Vocabulary) : List[VocabularyTerm] = {
+    var vocab_terms : ListBuffer[VocabularyTerm] = ListBuffer.empty
+    for (term <- vocabulary.terms){
+      var current_term = vocabularyTermService.get(term) match {
+        case Some(vocab_term) => {
+          vocab_terms += vocab_term
+        }
+      }
+    }
+    vocab_terms.toList
+  }
+
+
+  def getVocabularyTermsJsValue(vocabulary : Vocabulary) : List[JsValue] = {
+    var vocab_terms : ListBuffer[JsValue] = ListBuffer.empty
+    for (term <- vocabulary.terms){
+      var current_term = vocabularyTermService.get(term) match {
+        case Some(vocab_term) => {
+          vocab_terms += Json.toJson(vocab_term)
+        }
+      }
+    }
+    vocab_terms.toList
+  }
+
+
 
   def jsonVocabulary(vocabulary : Vocabulary): JsValue = {
 
-    var vocab_terms : ListBuffer[JsValue] = ListBuffer.empty
-    for (term <- vocabulary.terms){
-      vocabularyTermService.get(term) match {
-        case Some(vocab_term) => {
+    var terms  = getVocabularyTerms(vocabulary)
 
-          vocab_terms+=(jsonVocabularyTerm(vocab_term))
-        }
-        case None => Logger.error("no term with that id")
-      }
-    }
-
-    var terms = (vocabulary.terms).map( t => (vocabularyTermService.get(t) ))
-
-    toJson(Map("id"-> vocabulary.id.toString, "name" -> vocabulary.name ,"terms"->terms.toString,"keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic"->vocabulary.isPublic.toString, "spaces"->vocabulary.spaces.mkString(",")))
+    var json_terms = getVocabularyTermsJsValue(vocabulary)
+    //user JsonObj
+    Json.obj("id"->vocabulary.id.stringify,"name"->vocabulary.name,"terms"->terms)
+    //toJson(Map("id"-> vocabulary.id.toString, "name" -> vocabulary.name ,"terms"->terms,"keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic"->vocabulary.isPublic.toString, "spaces"->vocabulary.spaces.mkString(",")))
   }
 
-  def jsonVocabularyTerm(vocabularyTerm : VocabularyTerm) : JsValue = {
-    toJson(Map("key"->vocabularyTerm.key,"default_value"->vocabularyTerm.default_value.get))
-  }
 
 }
