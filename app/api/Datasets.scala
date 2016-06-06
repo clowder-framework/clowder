@@ -599,7 +599,7 @@ class  Datasets @Inject()(
             }
           }
           if (!foundEntry) {
-            result = List(Json.parse("{}"))
+            result = List()
           }
         }
 
