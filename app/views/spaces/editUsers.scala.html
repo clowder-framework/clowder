@@ -1,4 +1,4 @@
-@(space: ProjectSpace, creator: Option[User], userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String])(implicit user: Option[models.User])
+@(space: ProjectSpace, creator: Option[User], userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String], roleDescription:Map[String, String])(implicit user: Option[models.User])
 
 @import api.Permission
 @import play.api.libs.json._
@@ -20,6 +20,7 @@
         <div id="user-list">
             @for(roleLevel <- roleList){
                 <h4>@roleLevel</h4>
+                <p>@roleDescription(roleLevel)</p>
                 @defining(roleLevel.replaceAll("\\s+", "")) { currRole =>
 
                     <ul id='@currRole.concat("-current")'>
