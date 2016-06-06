@@ -1114,4 +1114,12 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     }
   }
+
+  private def addPrivateFlag(): Unit ={
+    for (coll <- List[String]( "spaces.projects", "datasets")) {
+      val q = MongoDBObject()
+      val o = MongoDBObject("$set" -> MongoDBObject("status" -> "trail"))
+      collection(coll).update(q ,o, multi=true)
+    }
+  }
 }
