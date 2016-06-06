@@ -259,7 +259,18 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
 
   def jsonVocabulary(vocabulary : Vocabulary): JsValue = {
 
-    var terms = (vocabulary.terms).map( t => vocabularyTermService.get(t) )
+    var vocab_terms : ListBuffer[JsValue] = ListBuffer.empty
+    for (term <- vocabulary.terms){
+      vocabularyTermService.get(term) match {
+        case Some(vocab_term) => {
+
+          vocab_terms+=(jsonVocabularyTerm(vocab_term))
+        }
+        case None => Logger.error("no term with that id")
+      }
+    }
+
+    var terms = (vocabulary.terms).map( t => (vocabularyTermService.get(t) ))
 
     toJson(Map("id"-> vocabulary.id.toString, "name" -> vocabulary.name ,"terms"->terms.toString,"keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic"->vocabulary.isPublic.toString, "spaces"->vocabulary.spaces.mkString(",")))
   }
