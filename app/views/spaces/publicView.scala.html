@@ -1,0 +1,30 @@
+@(space: ProjectSpace)(implicit user: Option[models.User])
+@import play.api.Play.current
+@import api.Permission
+
+@main(space.name) {
+  @if( space.bannerURL.isDefined || space.logoURL.isDefined){
+    <div class="row">
+      @if(space.bannerURL.isDefined) {
+        <div class="space-banner nopadding col-md-12 col-lg-12 col-sm-12" style="background-image:url('@(space.bannerURL)');">
+        } else {
+        <div class="col-md-12 col-lg-12 col-sm-12">
+        }
+      @if(space.logoURL.isDefined) {
+        <img class="space-banner-logo pull-left" src="@(space.logoURL)" alt="Thumbnail of @(space.name)">
+        }
+    </div>
+    </div>
+    }
+
+  <div class="row space-head vertical-align">
+    <div class="col-md-12 col-lg-12 col-sm-12">
+      <h1 id="spacenamedisplay">@space.name</h1>
+      <p><span id="spacedescdisplay">@space.description</span></p>
+      @spaces.externalLinks(space.homePage)
+
+    </div>
+  </div>
+
+  @spaces.requestAuthorization(space)
+}
