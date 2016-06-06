@@ -308,35 +308,17 @@ class Files @Inject()(
   @ApiOperation(value = "Retrieve metadata as JSON-LD",
       notes = "Get metadata of the file object as JSON-LD.",
       responseClass = "None", httpMethod = "GET")
-  def getMetadataJsonLD(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+  def getMetadataJsonLD(id: UUID, extFilter: String) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     files.get(id) match {
       case Some(file) => {
-        // Check for extractor filter
-        var params = request.queryString.map { case (k,v) => k -> v.mkString }
-        val extFilter = params.get("extractor").getOrElse("")
-
         //get metadata and also fetch context information
-        val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+        var listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
           .map(JSONLD.jsonMetadataWithContext(_))
 
-        var result = listOfMetadata
-        // Filter extractor if parameter is provided
-        var foundEntry = false
-        if (extFilter != "") {
-          Logger.debug("filtering metadata only to agent "+extFilter)
-          for (entry <- listOfMetadata) {
-            val exName = (entry \ "agent" \ "name").toString.replace("\"", "")
-            if (exName.endsWith(extFilter)) {
-              foundEntry = true
-              result = List(entry)
-            }
-          }
-          if (!foundEntry) {
-            result = List()
-          }
-        }
+        // Check for extractor filter
+        listOfMetadata = listOfMetadata.filter(md => (md \ "agent" \ "name").toString.replace("\"", "").endsWith(extFilter))
 
-        Ok(toJson(result))
+        Ok(toJson(listOfMetadata))
       }
       case None => {
         Logger.error("Error getting file  " + id);
