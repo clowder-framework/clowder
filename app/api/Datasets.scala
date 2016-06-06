@@ -578,10 +578,27 @@ class  Datasets @Inject()(
   def getMetadataJsonLD(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
+        // Check for extractor filter
+        var params = request.queryString.map { case (k,v) => k -> v.mkString }
+        val extFilter = params.get("extractor").getOrElse("")
+
         //get metadata and also fetch context information
         val listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
           .map(JSONLD.jsonMetadataWithContext(_))
-        Ok(toJson(listOfMetadata))
+
+        var result = listOfMetadata
+        // Filter extractor if parameter is provided
+        if (extFilter != "") {
+          for (entry <- listOfMetadata) {
+            val exName = (entry \ "agent" \ "name").toString.replace("\"", "")
+            if (exName.endsWith(extFilter)) {
+              Logger.debug("filtering metadata only to agent "+extFilter)
+              result = List(entry)
+            }
+          }
+        }
+
+        Ok(toJson(result))
       }
       case None => {
         Logger.error("Error getting dataset  " + id);
