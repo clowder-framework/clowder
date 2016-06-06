@@ -321,13 +321,18 @@ class Files @Inject()(
 
         var result = listOfMetadata
         // Filter extractor if parameter is provided
+        var foundEntry = false
         if (extFilter != "") {
+          Logger.debug("filtering metadata only to agent "+extFilter)
           for (entry <- listOfMetadata) {
             val exName = (entry \ "agent" \ "name").toString.replace("\"", "")
             if (exName.endsWith(extFilter)) {
-              Logger.debug("filtering metadata only to agent "+extFilter)
+              foundEntry = true
               result = List(entry)
             }
+          }
+          if (!foundEntry) {
+            result = List(Json.parse("{}"))
           }
         }
 
