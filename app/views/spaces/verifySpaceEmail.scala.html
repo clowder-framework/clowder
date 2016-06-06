@@ -1,0 +1,14 @@
+@(spaceid: String, spaceName: String, member: String)(implicit request: RequestHeader)
+@import securesocial.core.IdentityProvider
+<html>
+  <body>
+
+    <p>Hello @member,</p>
+
+    <p>Congratulations, your SEAD Project Space <a href="@routes.Spaces.getSpace(UUID(spaceid)).absoluteURL(IdentityProvider.sslEnabled)">@spaceName</a> has been verified!
+    Your team now has access to the full suite of SEAD functionality, including publishing and making your data public. </p>
+
+    <p>Please SEAD if you have questions or feedback.</p>
+
+  </body>
+</html>

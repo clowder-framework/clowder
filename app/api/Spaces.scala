@@ -24,7 +24,7 @@ import scala.util.Try
  */
 @Api(value = "/spaces", listingPath = "/api-docs.json/spaces", description = "Spaces are groupings of collections and datasets.")
 class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetService: DatasetService,
-  collectionService: CollectionService, events: EventService) extends ApiController {
+  collectionService: CollectionService, events: EventService, datasets: DatasetService) extends ApiController {
 
   @ApiOperation(value = "Create a space",
     notes = "",
@@ -568,10 +568,14 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         spaces.get(id) match {
           case Some(s) if s.isTrial => {
             spaces.update(s.copy(status = "private"))
-
+            datasets.listSpace(0, s.id.toString()).map(d => datasets.update(d.copy(status = "default")))
+            userService.listUsersInSpace(s.id).map { member =>
+              val theHtml = views.html.spaces.verifySpaceEmail(s.id.stringify, s.name, member.getMiniUser.fullName)
+              Mail.sendEmail("Space Status update", request.user, member, theHtml)
+            }
             Ok(toJson(Map("status" -> "success")))
           }
-          // If the dataset wasn't found by ID
+          // If the space wasn't found by ID
           case _ => {
             InternalServerError("Verify space failed")
           }

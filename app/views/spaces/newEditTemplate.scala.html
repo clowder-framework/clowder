@@ -46,6 +46,7 @@
           }
           @helper.inputText(myForm("editTime"), 'class -> "form-control", '_label -> "Time to live (hours):")
           @*do not add class = form-control for this radio button*@
+
           @helper.inputRadioGroup(myForm("access"),
             options = options("private"->"Private","public"->"Public"),
             '_label -> "Accessibility")
@@ -60,6 +61,12 @@
   </div>
 
   <script language="javascript">
+  $(document).ready(function() {
+    if(typeof $("input[name='access']:checked").val() === "undefined" || $("input[name='access']:checked").val() === "trial"){
+      $('#access').closest(".control-group").hide();
+      $('#access').append('<input type="radio" id="access_trial" name="access" value="trial" checked>')
+    }
+  });
   // as fields are added, they get the same default homePages[0] name For automatic binding the names need to
   // be homePages[0], homePages[1],.. etc. This function renumbers all the fields appropriately even if a field in the
   // middle of the list is deleted.

@@ -50,15 +50,6 @@
 					<ul class="list-unstyled">
 						<li>Created by <a href= "@routes.Profile.viewProfileUUID(collection.author.id)"> @collection.author.fullName </a></li>
 						<li>Created on @collection.created.format("MMM dd, yyyy")</li>
-						@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
-							<li id="access">Accessibility:
-
-								<label><input type="radio" name="access" id="access-private" value="private" >Private</label>
-								<label><input type="radio" name="access" id="access-public" value="public">Public</label>
-							</li>
-						} else {
-							<li>Accessibility: @collection.access</li>
-						}
 					</ul>
 					<div id="aboutdesc" class="col-xs-12 box-white-space"><p id="collection_desc"  class="inline">@if(collection.description.length > 0) { @Html(collection.description)} else {Add a description}</p>
 						@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
@@ -336,13 +327,6 @@
                     $('#edit-description').addClass("hiddencomplete");
                  });
 		}
-		if(@collection.access.contains("private")){
-			$("input[value='private']").attr('checked', true);
-		} else {
-			$("input[value='public']").attr('checked', true);
-		}
-
-
 	});
 
 	function updateDatasets(page) {
@@ -378,19 +362,6 @@
 			}
 		})
 	}
-
-	$('input[type=radio][name="access"]').change(function() {
-		var name = '@collection.name';
-		var id = '@collection.id';
-		var access = $("input[name='access']:checked").val();
-		var msg = "Are you sure you want to set " + name + " to " +access+"?";
-		var modalHTML = confirmTemplate(msg, id, access);
-		var confirmModal = $(modalHTML);
-		confirmModal.modal();
-		confirmModal.modal("show");
-	});
-
-
 
 </script>
 <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>

@@ -204,15 +204,19 @@ class  Datasets @Inject()(
             case None | Some(List("default"))=>
               d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig())
             case Some(space) =>
-              var spaceList: List[UUID] = List.empty;
+              var status = "trial"
+              var spaceList: List[UUID] = List.empty
               space.map {
                 aSpace => if (spaces.get(UUID(aSpace)).isDefined) {
                   spaceList = UUID(aSpace) :: spaceList
+                  if( !spaces.get(UUID(aSpace)).get.isTrial) {
+                    status = "default"
+                  }
                 } else {
                   BadRequest(toJson("Bad space = " + aSpace))
                 }
               }
-              d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig(), spaces = spaceList)
+              d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig(), spaces = spaceList, status = status)
            }
         }
         case None => InternalServerError("User Not found")

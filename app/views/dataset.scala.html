@@ -38,14 +38,18 @@
                     <ul class="list-unstyled">
                         <li>Created by <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
                         <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
-                        @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))){
-                            <li id="access">Accessibility:
-
-                                <label><input type="radio" name="access" id="access-private" value="private" >Private</label>
-                                    <label><input type="radio" name="access" id="access-public" value="public">Public</label>
-                        </li>
+                        @if(dataset.isTrial){
+                            <li>Accessibility: Private</li>
                         } else {
-                            <li>Accessibility: @dataset.access</li>
+                            @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))){
+                                <li id="access">Accessibility:
+                                    <label><input type="radio" name="access" id="access-default" value="default" >Default</label>
+                                    <label><input type="radio" name="access" id="access-private" value="private" >Private</label>
+                                    <label><input type="radio" name="access" id="access-public" value="public">Public</label>
+                                </li>
+                            } else {
+                                    <li>Accessibility: @dataset.status</li>
+                            }
                         }
                     </ul>
                 </div>
@@ -302,11 +306,9 @@
                 case None => { }
 
             }
-            if(@dataset.access.contains("private")){
-               $("input[value='private']").attr("checked", true);
-            } else {
-                $("input[value='public']").attr("checked", true);
-            }
+
+            $("input[value='@dataset.status']").attr("checked", true);
+
 
         });
 

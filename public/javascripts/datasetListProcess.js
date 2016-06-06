@@ -92,11 +92,8 @@ function updateAccessApi(id, access) {
 function cancelChange(){
 	console.log("cancel");
 	$('.modal').modal('hide');
-	if($("input[name='access']").val() === "public"){
-		document.getElementById('access-public').checked= true;
-	} else {
-		document.getElementById('access-private').checked= true;
-	}
+	var status = $("input[name='access']").val();
+		document.getElementById('access-'+status).checked= true;
 }
 
 

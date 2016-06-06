@@ -713,30 +713,5 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     }
   }
 
-  @ApiOperation(value = "change the accessibility of collection",
-    notes = "Downloads all files contained in a collection.",
-    responseClass = "None", httpMethod = "PUT")
-  def updateAccess(id:UUID, access:String) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, id))) { implicit request =>
-    implicit val user = request.user
-    user match {
-      case Some(loggedInUser) => {
-        collections.get(id) match {
-          case Some(c) => {
-            collections.updateAccess(id, access)
-            events.addObjectEvent(user, id, c.name, "update_collection_information")
-            Ok(toJson(Map("status" -> "success")))
-          }
-          case None => {
-            NotFound
-          }
-        }
-      }
-      // If the user doesn't have access to download these files
-      case None => {
-        Unauthorized
-      }
-    }
-  }
-
 }
 

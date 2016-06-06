@@ -465,14 +465,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                     spaces.get(formData.spaceId.get) match {
                       case Some(existing_space) => {
                         if (Permission.checkPermission(user, Permission.EditSpace, Some(ResourceRef(ResourceRef.space, existing_space.id)))) {
-                          //status is not update if the user doesn't have permission. no error logged
-                          //TODO: update the permission
-                          val updated_space = Permission.checkPermission(user, Permission.EditSpace, Some(ResourceRef(ResourceRef.space, existing_space.id))) match {
-                            case true =>  existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
+                          val updated_space = existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
                               homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled, status = formData.access)
-                            case false => existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
-                              homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
-                          }
+
                           spaces.update(updated_space)
                           val option_user = users.findByIdentity(identity)
                           events.addObjectEvent(option_user, updated_space.id, updated_space.name, "update_space_information")
