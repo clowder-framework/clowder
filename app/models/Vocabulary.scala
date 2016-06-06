@@ -18,7 +18,7 @@ case class Vocabulary (
   description : List[String] = List.empty,
   spaces : List[UUID] = List.empty,
   isPublic : Boolean = false,
-  terms : List[VocabularyTerm] = List.empty)
+  terms : List[UUID] = List.empty)
 
 
 object Vocabulary{

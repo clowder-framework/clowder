@@ -81,6 +81,13 @@ class MongoDBVocabularyService @Inject() (userService: UserService) extends Voca
       Vocabulary.findAll.toList.filter((v: Vocabulary )=> (desc.toSet[String].subsetOf(v.description.toSet[String])))
     }
   }
+
+  def addVocabularyTerm(vocabId: UUID, vocabTermId : UUID) = Try {
+    val result = Vocabulary.update(
+      MongoDBObject("_id" -> new ObjectId(vocabId.stringify)),
+      $addToSet("terms" -> Some(new ObjectId(vocabTermId.stringify))),
+      false, false)
+  }
 }
 
 object Vocabulary extends ModelCompanion[Vocabulary, ObjectId] {

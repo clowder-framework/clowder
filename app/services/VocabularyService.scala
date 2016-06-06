@@ -34,4 +34,6 @@ trait VocabularyService {
 
   def findByDescription(desc : List[String], containsAll : Boolean) : List[Vocabulary]
 
+  def addVocabularyTerm(vocabId: UUID, vocabTermId : UUID) : Try[Unit]
+
 }

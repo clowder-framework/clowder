@@ -8,20 +8,21 @@ import models.{VocabularyTerm, ResourceRef, UUID, Vocabulary}
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.json._
-import play.api.libs.json.{JsObject, JsValue}
+import play.api.libs.json.{JsObject, JsValue,JsArray}
 import play.api.libs.json.Json.toJson
 import play.api.mvc.BodyParsers.parse
-import services.{SpaceService, VocabularyService, UserService}
+import services.{VocabularyTermService, SpaceService, VocabularyService, UserService}
 
 import scala.collection.immutable.List
+import scala.collection.mutable.ListBuffer
 import scala.util.Success
-import scala.util.parsing.json.JSONArray
+
 
 /**
   * Created by todd_n on 2/9/16.
   */
 @Singleton
-class Vocabularies @Inject() (vocabularyService: VocabularyService, userService : UserService, spaces: SpaceService) extends ApiController {
+class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTermService : VocabularyTermService, userService : UserService, spaces: SpaceService) extends ApiController {
 
   @ApiOperation(value = "Get vocabulary",
     notes = "This will check for Permission.ViewVocabulary",
@@ -99,8 +100,25 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
             val name = (request.body\"name").asOpt[String].getOrElse("")
             val description = (request.body \ "description").asOpt[String].getOrElse("")
             //parse a list of vocabterm from the json here
-            val terms = (request.body \ "terms").asOpt[JsArray].getOrElse(None)
-            t = Vocabulary(author = Some(identity), created = new Date(),name = name,keys = keys.split(",").toList , description = description.split(',').toList,isPublic = isPublic)
+            val request_terms = (request.body \ "terms").asOpt[List[JsValue]].getOrElse(List.empty)
+            var terms : ListBuffer[UUID] = ListBuffer.empty
+
+            for (each_term <- request_terms){
+              var key = (each_term\ "key").asOpt[String].getOrElse("")
+              var units = (each_term \ "units").asOpt[String]
+              var default_value = (each_term \"default_value").asOpt[String]
+              var current_vocabterm : VocabularyTerm = VocabularyTerm(key = key, author = Option(identity), created = new Date(), units = units, default_value = default_value)
+
+              vocabularyTermService.insert(current_vocabterm) match {
+                case Some(id) => {
+                  Logger.info("Vocabulary Term inserted")
+                  terms+=(UUID(id))
+                }
+                case None => Logger.error("Could not insert vocabulary term")
+              }
+            }
+
+            t = Vocabulary(author  = Some(identity), created = new Date(),name = name,keys = keys.split(",").toList , description = description.split(',').toList,isPublic = isPublic, terms = terms.toList)
 
             vocabularyService.insert(t) match {
               case Some(id) => {
@@ -239,7 +257,24 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, userService 
 
 
   def jsonVocabulary(vocabulary : Vocabulary): JsValue = {
-    toJson(Map("id" -> vocabulary.id.toString, "name" -> vocabulary.name, "keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic"->vocabulary.isPublic.toString, "spaces"->vocabulary.spaces.mkString(",")))
+    var vocab_terms : ListBuffer[JsValue] = ListBuffer.empty
+    for (term <- vocabulary.terms){
+      vocabularyTermService.get(term) match {
+        case Some(vocab_term) => {
+
+          vocab_terms+=(Json.toJson(vocab_term))
+        }
+        case None => Logger.error("no term with that id")
+      }
+    }
+
+    var asJsonVocabTerms = toJson(vocab_terms)
+
+    toJson(Map("id"-> vocabulary.id.toString, "name" -> vocabulary.name ,"terms"->vocab_terms.mkString(","),"keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic"->vocabulary.isPublic.toString, "spaces"->vocabulary.spaces.mkString(",")))
+  }
+
+  def jsonVocabularyTerm(vocabularyTerm : VocabularyTerm) : JsValue = {
+    toJson(Map("key"->vocabularyTerm.key,"default_value"->vocabularyTerm.default_value.get))
   }
 
 }
