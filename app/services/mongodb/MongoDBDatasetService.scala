@@ -222,9 +222,8 @@ class MongoDBDatasetService @Inject() (
           if (permissions.contains(Permission.ViewDataset)) {
             orlist += MongoDBObject("public" -> true)
           }
-          if (user == owner) {
-            orlist += MongoDBObject("spaces" -> List.empty)
-          }
+          orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
+
           val permissionsString = permissions.map(_.toString)
           val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(permissionsString).nonEmpty)
           if (okspaces.nonEmpty) {
