@@ -84,7 +84,19 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     responseClass = "None", httpMethod = "GET")
   def list() = PrivateServerAction { implicit request =>
     val vocabs = vocabularyService.listAll()
-    Ok(toJson(vocabs))
+
+    val vocab_jsons : ListBuffer[JsValue] = ListBuffer.empty
+    for (voc <- vocabs){
+      try {
+        val j = jsonVocabulary(voc)
+        vocab_jsons += j
+        Logger.info("found one")
+      } catch {
+        case e : Exception => Logger.error("did not work")
+      }
+    }
+
+    Ok(toJson(vocab_jsons))
   }
 
   @ApiOperation(value = "Create a vocabulary object",
@@ -257,39 +269,40 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
 
   def getVocabularyTerms(vocabulary : Vocabulary) : List[VocabularyTerm] = {
     var vocab_terms : ListBuffer[VocabularyTerm] = ListBuffer.empty
-    for (term <- vocabulary.terms){
-      var current_term = vocabularyTermService.get(term) match {
-        case Some(vocab_term) => {
-          vocab_terms += vocab_term
+    if (!vocabulary.terms.isEmpty){
+      for (term <- vocabulary.terms){
+        var current_term = vocabularyTermService.get(term) match {
+          case Some(vocab_term) => {
+            vocab_terms += vocab_term
+          }
         }
       }
     }
+
     vocab_terms.toList
   }
 
 
   def getVocabularyTermsJsValue(vocabulary : Vocabulary) : List[JsValue] = {
     var vocab_terms : ListBuffer[JsValue] = ListBuffer.empty
-    for (term <- vocabulary.terms){
-      var current_term = vocabularyTermService.get(term) match {
-        case Some(vocab_term) => {
-          vocab_terms += Json.toJson(vocab_term)
+    if (!vocabulary.terms.isEmpty){
+      for (term <- vocabulary.terms){
+        var current_term = vocabularyTermService.get(term) match {
+          case Some(vocab_term) => {
+            vocab_terms += Json.toJson(vocab_term)
+          }
         }
       }
     }
+
     vocab_terms.toList
   }
 
 
 
   def jsonVocabulary(vocabulary : Vocabulary): JsValue = {
-
-    var terms  = getVocabularyTerms(vocabulary)
-
-    var json_terms = getVocabularyTermsJsValue(vocabulary)
-    //user JsonObj
-    Json.obj("id"->vocabulary.id.stringify,"name"->vocabulary.name,"terms"->terms)
-    //toJson(Map("id"-> vocabulary.id.toString, "name" -> vocabulary.name ,"terms"->terms,"keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic"->vocabulary.isPublic.toString, "spaces"->vocabulary.spaces.mkString(",")))
+    val terms  = getVocabularyTerms(vocabulary)
+    Json.obj("id"->vocabulary.id.stringify,"name"->vocabulary.name,"terms"->terms,"keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic"->vocabulary.isPublic.toString, "spaces"->vocabulary.spaces.mkString(","))
   }
 
 
