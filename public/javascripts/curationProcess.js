@@ -151,10 +151,6 @@ function getFiles(id) {
         $.each(response.cf, function (i, el) {
             totalSize += this.length;
         });
-        //console.log(response.cf.type);
-        //var formatAll = response.cf.map(function(f) {
-        //    f.contentType.valueOf();
-        //});
         var formatAll = [];
         $.each(response.cf, function (i, el) {
             formatAll.push( this.contentType.valueOf());
