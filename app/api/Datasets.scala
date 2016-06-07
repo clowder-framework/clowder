@@ -573,8 +573,8 @@ class  Datasets @Inject()(
     }
 
  @ApiOperation(value = "Retrieve metadata as JSON-LD",
-      notes = "Get metadata of the file object as JSON-LD.",
-      responseClass = "None", httpMethod = "GET")
+    notes = "Get metadata of the dataset object as JSON-LD.",
+    responseClass = "None", httpMethod = "GET")
   def getMetadataJsonLD(id: UUID, extFilter: String) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
@@ -586,6 +586,22 @@ class  Datasets @Inject()(
         listOfMetadata = listOfMetadata.filter(md => (md \ "agent" \ "name").toString.replace("\"", "").endsWith(extFilter))
 
         Ok(toJson(listOfMetadata))
+      }
+      case None => {
+        Logger.error("Error getting dataset  " + id);
+        InternalServerError
+      }
+    }
+  }
+
+  @ApiOperation(value = "Remove JSON-LD metadata, filtered by extractor if necessary",
+    notes = "Remove JSON-LD metadata from dataset object",
+    responseClass = "None", httpMethod = "GET")
+  def removeMetadataJsonLD(id: UUID, extFilter: String) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    datasets.get(id) match {
+      case Some(dataset) => {
+        metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.dataset, id), extFilter)
+        Ok
       }
       case None => {
         Logger.error("Error getting dataset  " + id);

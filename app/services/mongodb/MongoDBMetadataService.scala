@@ -109,6 +109,14 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     //not providing metaData count modification here since we assume this is to delete the metadata's host
   }
 
+  /** Remove metadata by attached ID and extractor name**/
+  def removeMetadataByAttachToAndExtractor(resourceRef: ResourceRef, extractorName: String) = {
+    val regex = ".*"+extractorName.toString
+    MetadataDAO.remove(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
+      "attachedTo._id" -> new ObjectId(resourceRef.id.stringify),
+      "creator.extractorId" -> (regex.r)), WriteConcern.Safe)
+  }
+
 
   /** Get metadata context if available  **/
   def getMetadataContext(metadataId: UUID): Option[JsValue] = {

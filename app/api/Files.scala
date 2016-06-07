@@ -327,6 +327,22 @@ class Files @Inject()(
     }
   }
 
+  @ApiOperation(value = "Remove JSON-LD metadata, filtered by extractor if necessary",
+    notes = "Remove JSON-LD metadata from file object",
+    responseClass = "None", httpMethod = "GET")
+  def removeMetadataJsonLD(id: UUID, extFilter: String) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+    datasets.get(id) match {
+      case Some(dataset) => {
+        metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.file, id), extFilter)
+        Ok
+      }
+      case None => {
+        Logger.error("Error getting file  " + id);
+        InternalServerError
+      }
+    }
+  }
+
   /**
    * Add Versus metadata to file: use by Versus Extractor
    * REST enpoint:POST api/files/:id/versus_metadata
