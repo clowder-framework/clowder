@@ -13,8 +13,7 @@ function unfollowCallback() {
 
 $(document).ready(function() {
 	var followButtonList = $("[id=followButton]");
-	followButtonList.click( function(event) {
-		event.preventDefault();
+	followButtonList.click(function() {
 		var index = followButtonList.index(this);
 		var followButton = followButtonList.eq(index);
 		console.log(followButton);
