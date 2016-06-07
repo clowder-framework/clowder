@@ -13,7 +13,7 @@ function unfollowCallback() {
 
 $(document).ready(function() {
 	var followButtonList = $("[id=followButton]");
-	followButtonList.click(function() {
+	followButtonList.on('click', function() {
 		var index = followButtonList.index(this);
 		var followButton = followButtonList.eq(index);
 		console.log(followButton);
@@ -46,7 +46,6 @@ $(document).ready(function() {
 				  if( typeof removeIndicator !== 'undefined' && removeIndicator) {
 					  $('#'+followButton.attr('objectid')+'-tile').remove();
 					  $('#'+followButton.attr('objectid')+'-listitem').remove();
-					  activate();
 				  }
     	          unfollowCallback();
     	        })
