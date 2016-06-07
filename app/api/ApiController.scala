@@ -8,7 +8,7 @@ import play.api.mvc._
 import models.User
 import securesocial.core.providers.UsernamePasswordProvider
 import securesocial.core.{Authenticator, SecureSocial, UserService}
-import services.DI
+import services.{AppConfiguration, DI}
 
 import scala.concurrent.Future
 
@@ -30,6 +30,8 @@ trait ApiController extends Controller {
       val userRequest = getUser(request)
       if (needActive && userRequest.user.exists(!_.active)) {
         Future.successful(Unauthorized("Account is not activated"))
+      } else if(userRequest.user.exists(u => !AppConfiguration.acceptedTermsOfServices(u.acceptedTermsOfServices))) {
+        Future.successful(Unauthorized("Terms of Services not accepted"))
       } else {
         block(userRequest)
       }
@@ -44,6 +46,8 @@ trait ApiController extends Controller {
       val userRequest = getUser(request)
       if (userRequest.user.exists(!_.active)) {
         Future.successful(Unauthorized("Account is not activated"))
+      } else if(userRequest.user.exists(u => !AppConfiguration.acceptedTermsOfServices(u.acceptedTermsOfServices))) {
+        Future.successful(Unauthorized("Terms of Services not accepted"))
       } else if (Permission.checkPrivateServer(userRequest.user) || userRequest.superAdmin) {
         block(userRequest)
       } else {
@@ -58,6 +62,8 @@ trait ApiController extends Controller {
       val userRequest = getUser(request)
       if (userRequest.user.exists(!_.active)) {
         Future.successful(Unauthorized("Account is not activated"))
+      } else if(userRequest.user.exists(u => !AppConfiguration.acceptedTermsOfServices(u.acceptedTermsOfServices))) {
+        Future.successful(Unauthorized("Terms of Services not accepted"))
       } else if (userRequest.user.isDefined || userRequest.superAdmin) {
         block(userRequest)
       } else {
@@ -72,6 +78,8 @@ trait ApiController extends Controller {
       val userRequest = getUser(request)
       if (userRequest.user.exists(!_.active)) {
         Future.successful(Unauthorized("Account is not activated"))
+      } else if(userRequest.user.exists(u => !AppConfiguration.acceptedTermsOfServices(u.acceptedTermsOfServices))) {
+        Future.successful(Unauthorized("Terms of Services not accepted"))
       } else if (Permission.checkServerAdmin(userRequest.user) || userRequest.superAdmin) {
         block(userRequest)
       } else {
@@ -86,6 +94,8 @@ trait ApiController extends Controller {
       val userRequest = getUser(request)
       if (userRequest.user.exists(!_.active)) {
         Future.successful(Unauthorized("Account is not activated"))
+      } else if(userRequest.user.exists(u => !AppConfiguration.acceptedTermsOfServices(u.acceptedTermsOfServices))) {
+        Future.successful(Unauthorized("Terms of Services not accepted"))
       } else if (Permission.checkPermission(userRequest.user, permission, resourceRef) || userRequest.superAdmin) {
         block(userRequest)
       } else {

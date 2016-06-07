@@ -317,7 +317,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     //Whenever a root flag is not set, mark it as true.
     updateMongo("add-collection-root-map", addRootMapToCollections)
 
+    // update the number of collections in a space
     updateMongo("update-collection-counter-in-space", fixCollectionCounterInSpaces)
+
+    // instead of user agreeent we now have a temrms of services
+    updateMongo("switch-user-agreement-to-terms-of-services", switchToTermsOfServices)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1010,5 +1014,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       }
 
     }
+  }
+
+  private def switchToTermsOfServices(): Unit = {
+    collection("app.configuration").update(MongoDBObject("key" -> "userAgreement.message"), $set(("key", "tos.text")))
   }
 }

@@ -1,9 +1,10 @@
 package api
 
+import java.util.Date
 import javax.inject.Inject
 
 import com.wordnik.swagger.annotations.ApiOperation
-import models.{ClowderUser, UUID}
+import models.{ClowderUser, Event, UUID}
 import org.apache.commons.lang3.StringEscapeUtils
 import play.api.libs.concurrent.Akka
 import play.api.mvc.Controller
@@ -14,8 +15,10 @@ import services._
 import services.mongodb.MongoSalatPlugin
 import play.api.Logger
 import util.Mail
+
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.{JsString, JsUndefined, JsValue}
 
 
 /**
@@ -24,7 +27,8 @@ import play.api.libs.concurrent.Execution.Implicits._
 class Admin @Inject()(userService: UserService,
                       datasets:DatasetService,
                       collections:CollectionService,
-                      files:FileService) extends Controller with ApiController {
+                      files:FileService,
+                      events:EventService) extends Controller with ApiController {
 
   /**
    * DANGER: deletes all data, keep users.
@@ -49,9 +53,6 @@ class Admin @Inject()(userService: UserService,
     (request.body \ "googleAnalytics").asOpt[String] match {
       case Some(s) => AppConfiguration.setGoogleAnalytics(s)
     }
-    (request.body \ "userAgreement").asOpt[String] match {
-      case Some(userAgreement) => AppConfiguration.setUserAgreement(userAgreement)
-    }
     Ok(toJson(Map("status" -> "success")))
   }
 
@@ -69,6 +70,34 @@ class Admin @Inject()(userService: UserService,
       case Some(parameter) => AppConfiguration.setParameterTitle(parameter)
     }
     Ok(toJson(Map("status" -> "success")))
+  }
+
+  def updateConfiguration = ServerAdminAction(parse.json) { implicit request =>
+    getValueString(request.body, "theme").foreach(AppConfiguration.setTheme(_))
+    getValueString(request.body, "displayName").foreach(AppConfiguration.setDisplayName(_))
+    getValueString(request.body, "welcomeMessage").foreach(AppConfiguration.setWelcomeMessage(_))
+    getValueString(request.body, "googleAnalytics").foreach(AppConfiguration.setGoogleAnalytics(_))
+    getValueString(request.body, "sensors").foreach(AppConfiguration.setSensorsTitle(_))
+    getValueString(request.body, "sensor").foreach(AppConfiguration.setSensorTitle(_))
+    getValueString(request.body, "parameters").foreach(AppConfiguration.setParametersTitle(_))
+    getValueString(request.body, "parameter").foreach(AppConfiguration.setParameterTitle(_))
+    getValueString(request.body, "tosText").foreach{ tos =>
+      events.addEvent(Event(request.user.get, event_type="tos_update"))
+      AppConfiguration.setTermsOfServicesText(tos)
+    }
+    getValueString(request.body, "tosHtml") match {
+      case Some(s) => AppConfiguration.setTermOfServicesHtml(s.toLowerCase == "true")
+      case None => AppConfiguration.setTermOfServicesHtml(false)
+    }
+    Ok(toJson(Map("status" -> "success")))
+  }
+
+  private def getValueString(body: JsValue, key: String): Option[String] = {
+    body \ key match {
+      case x: JsUndefined => None
+      case x: JsString => Some(x.value)
+      case x: JsValue => Some(x.toString)
+    }
   }
 
   def mail = UserAction(false)(parse.json) { implicit request =>

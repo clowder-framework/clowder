@@ -30,6 +30,9 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
     val users: UserService = DI.injector.getInstance(classOf[UserService])
 
+    // set the default ToS version
+    AppConfiguration.setDefaultTermsOfServicesVersion()
+
     // add all new admins
     users.updateAdmins()
 

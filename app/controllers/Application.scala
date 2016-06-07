@@ -174,6 +174,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     }
   }
 
+  /** Show the Terms of Services */
+  def tos(redirect: Option[String]) = UserAction(needActive = false) { implicit request =>
+    implicit val user = request.user
+    Ok(views.html.tos(redirect))
+  }
+
   def options(path:String) = UserAction(needActive = false) { implicit request =>
     Logger.info("---controller: PreFlight Information---")
     Ok("")

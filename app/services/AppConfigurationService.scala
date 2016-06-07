@@ -1,5 +1,9 @@
 package services
 
+import java.text.SimpleDateFormat
+import java.util.Date
+
+import org.apache.commons.io.IOUtils
 import util.ResourceLister
 
 /**
@@ -105,14 +109,6 @@ object AppConfiguration {
 
   // ----------------------------------------------------------------------
 
-  /** Set the user agreement */
-  def setUserAgreement(userAgreement: String) = appConfig.setProperty("userAgreement.message", userAgreement)
-
-  /** Get the user agreement */
-  def getUserAgreement: String = appConfig.getProperty("userAgreement.message", "")
-
-  // ----------------------------------------------------------------------
-
   /** Set the Sensors title */
   def setSensorsTitle(sensorsTitle: String) = appConfig.setProperty("sensors.title", sensorsTitle)
 
@@ -143,4 +139,69 @@ object AppConfiguration {
   def getParameterTitle: String = appConfig.getProperty("parameter.title", "Parameter")
 
   // ----------------------------------------------------------------------
+  // Terms of Services
+  // ----------------------------------------------------------------------
+  lazy val defaultToSDate = new SimpleDateFormat("yyyy-MM-dd").parse("2016-06-06")
+
+  /** Set the Terms of Services */
+  def setTermsOfServicesText(tos: String) = {
+    if (tos == "") {
+      setTermsOfServicesVersionDate(defaultToSDate)
+    } else {
+      setTermsOfServicesVersionDate(new Date())
+    }
+    appConfig.setProperty("tos.text", tos)
+  }
+
+  def setDefaultTermsOfServicesVersion() = {
+    if (isDefaultTermsOfServices && getTermsOfServicesVersionDate != defaultToSDate) {
+      setTermsOfServicesVersionDate(defaultToSDate)
+    }
+  }
+
+  /** Get the Terms of Services */
+  def getTermsOfServicesTextRaw: String = appConfig.getProperty("tos.text", "")
+
+  def getTermsOfServicesText: String = {
+    val tos = appConfig.getProperty("tos.text", "") match {
+      case "" => {
+        play.api.Play.current.resourceAsStream("/public/tos.txt") match {
+          case Some(inp) => {
+            IOUtils.toString(inp, "UTF-8")
+          }
+          case None => "missing Terms of Services"
+        }
+      }
+      case x:String => x
+      case _ => "missing Terms of Services"
+    }
+    tos.replace("@@NAME", getDisplayName)
+  }
+
+  def isTermOfServicesHtml: Boolean = {
+    appConfig.getProperty("tos.html") == Some(true)
+  }
+
+  def setTermOfServicesHtml(html: Boolean) = appConfig.setProperty("tos.html", Boolean.box(html))
+
+  def isDefaultTermsOfServices: Boolean = appConfig.getProperty("tos.text", "") == ""
+
+  def acceptedTermsOfServices(date: Option[Date]) = date.exists(_.after(getTermsOfServicesVersionDate))
+
+  /** Set the version of the Terms of Services and returns the version */
+  def setTermsOfServicesVersionDate(date: Date) = {
+    DI.injector.getInstance(classOf[UserService]).newTermsOfServices()
+    appConfig.setProperty("tos.version", date)
+  }
+
+  /** get the version of the Terms of Services */
+  def getTermsOfServicesVersionDate: Date = appConfig.getProperty("tos.version", new Date())
+
+  def getTermsOfServicesVersionString: String = {
+    if (isDefaultTermsOfServices) {
+      new SimpleDateFormat("yyyy-MM-dd").format(appConfig.getProperty("tos.version", new Date()))
+    } else {
+      appConfig.getProperty("tos.version", new Date()).toString
+    }
+  }
 }

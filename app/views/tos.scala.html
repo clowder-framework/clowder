@@ -1,0 +1,27 @@
+@(redirect: Option[String])(implicit user: Option[models.User] = None, request: RequestHeader)
+
+@import services.AppConfiguration
+
+@main("Terms of Service") {
+    
+    <h2>@AppConfiguration.getDisplayName Terms of Service</h2>
+
+    <p>Version: @AppConfiguration.getTermsOfServicesVersionString</p>
+    @if(user.exists(_.acceptedTermsOfServices.isDefined)) {
+        <p>Accepted: @user.map(_.acceptedTermsOfServices)</p>
+    }
+
+    <br/>
+    @if(AppConfiguration.isDefaultTermsOfServices || AppConfiguration.isTermOfServicesHtml) {
+        @Html(AppConfiguration.getTermsOfServicesText)
+    } else {
+        @Html(HtmlFormat.escape(AppConfiguration.getTermsOfServicesText).toString.replace("\n", "<br />"))
+    }
+    <br/>
+    <br/>
+
+    @if(redirect.isDefined) {
+        <a href="@routes.Users.acceptTermsOfServices(redirect).url" class="btn btn-primary"><span class="glyphicon glyphicon-ok"></span> Accept</a>
+    }
+    <p></p>
+}

@@ -15,6 +15,7 @@ GET            /*path/                                                          
 
 GET            /                                                                        @controllers.Application.index
 GET            /about                                                                   @controllers.Application.about
+GET            /tos                                                                     @controllers.Application.tos(redirect: Option[String] ?= None)
 GET            /email                                                                   @controllers.Application.email(subject: String ?= "")
 
 # ----------------------------------------------------------------------
@@ -29,6 +30,7 @@ GET            /assets/*file                                                    
 # USERS
 # ----------------------------------------------------------------------
 GET            /users                                                                   @controllers.Users.getUsers(when: String ?= "", id: String ?= "", limit: Int ?=24)
+GET            /users/acceptTermsOfServices                                             @controllers.Users.acceptTermsOfServices(redirect: Option[String] ?= None)
 
 # ----------------------------------------------------------------------
 # PROFILE
@@ -226,6 +228,7 @@ GET            /not-authorized                                                  
 # ADMIN PAGES
 # ----------------------------------------------------------------------
 GET            /admin/customize                                                         @controllers.Admin.customize
+GET            /admin/tos                                                               @controllers.Admin.tos
 GET            /admin/users                                                             @controllers.Admin.users
 GET            /admin/indexAdmin                                                        @controllers.Admin.adminIndex
 GET            /admin/reindexFiles                                                      @controllers.Admin.reindexFiles
@@ -275,6 +278,7 @@ POST           /api/sensors/config                                              
 DELETE         /api/delete-data                                                         @api.Admin.deleteAllData(resetAll: Boolean ?= false)
 POST           /api/changeAppearance                                                    @api.Admin.submitAppearance
 POST           /api/reindex                                                             @api.Admin.reindex
+POST           /api/admin/configuration                                                 @api.Admin.updateConfiguration
 
 #----------------------------------------------------------------------
 # JSON-LD METADATA

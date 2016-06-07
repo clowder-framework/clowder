@@ -103,6 +103,9 @@
     rejected  @(event.targetuser.getOrElse(User.anonymous.getMiniUser).fullName)'s  request to
     @linkForObject("space", event.object_id, event.object_name)
   }
+  case "tos_update" => {
+    updated the <a href="@routes.Application.tos()">Terms of Services</a>
+  }
   case _ => {
     @defining(event.event_type.split("_")) { event_type_split =>
       @event_type_split.length match {

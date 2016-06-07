@@ -4,7 +4,6 @@ import api.Permission.Permission
 import api.{Permission, UserRequest}
 import models.{User, RequestResource, ResourceRef}
 import play.api.mvc._
-import play.api.templates.Html
 import securesocial.core.{Authenticator, SecureSocial, UserService}
 import services._
 import scala.concurrent.Future
@@ -27,6 +26,12 @@ trait SecuredController extends Controller {
       val userRequest = getUser(request)
       if (needActive && !userRequest.user.exists(_.active)) {
         Future.successful(Results.Redirect(routes.Error.notActivated()))
+      } else if(userRequest.user.exists(u => !AppConfiguration.acceptedTermsOfServices(u.acceptedTermsOfServices))) {
+        if (request.uri.startsWith(routes.Application.tos().url)) {
+          block(userRequest)
+        } else {
+          Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
+        }
       } else {
         block(userRequest)
       }
@@ -41,6 +46,8 @@ trait SecuredController extends Controller {
       val userRequest = getUser(request)
       if (userRequest.user.exists(!_.active)) {
         Future.successful(Results.Redirect(routes.Error.notActivated()))
+      } else if(userRequest.user.exists(u => !AppConfiguration.acceptedTermsOfServices(u.acceptedTermsOfServices))) {
+        Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
       } else if (Permission.checkPrivateServer(userRequest.user) || userRequest.superAdmin) {
         block(userRequest)
       } else {
@@ -56,6 +63,12 @@ trait SecuredController extends Controller {
       val userRequest = getUser(request)
       if (userRequest.user.exists(!_.active)) {
         Future.successful(Results.Redirect(routes.Error.notActivated()))
+      } else if(userRequest.user.exists(u => !AppConfiguration.acceptedTermsOfServices(u.acceptedTermsOfServices))) {
+        if (request.uri.startsWith(routes.Users.acceptTermsOfServices().url)) {
+          block(userRequest)
+        } else {
+          Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
+        }
       } else if (userRequest.user.isDefined || userRequest.superAdmin) {
         block(userRequest)
       } else {
@@ -71,6 +84,8 @@ trait SecuredController extends Controller {
       val userRequest = getUser(request)
       if (userRequest.user.exists(!_.active)) {
         Future.successful(Results.Redirect(routes.Error.notActivated()))
+      } else if(userRequest.user.exists(u => !AppConfiguration.acceptedTermsOfServices(u.acceptedTermsOfServices))) {
+        Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
       } else if (Permission.checkServerAdmin(userRequest.user) || userRequest.superAdmin) {
         block(userRequest)
       } else {
@@ -87,6 +102,8 @@ trait SecuredController extends Controller {
       val userRequest = getUser(request)
       if (userRequest.user.exists(!_.active)) {
         Future.successful(Results.Redirect(routes.Error.notActivated()))
+      } else if(userRequest.user.exists(u => !AppConfiguration.acceptedTermsOfServices(u.acceptedTermsOfServices))) {
+        Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
       } else {
         val p = Permission.checkPermission(userRequest.user, permission, resourceRef)
         if (p || userRequest.superAdmin) {

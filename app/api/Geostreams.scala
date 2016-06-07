@@ -1791,7 +1791,7 @@ object Geostreams extends ApiController {
     current.plugin[PostgresPlugin] match {
       case Some(plugin) => {
         Ok(Json.obj(
-          "userAgreement" -> Json.toJson(AppConfiguration.getUserAgreement),
+          "userAgreement" -> Json.toJson(AppConfiguration.getTermsOfServicesText),
           "sensorsTitle" -> Json.toJson(AppConfiguration.getSensorsTitle),
           "sensorTitle" -> Json.toJson(AppConfiguration.getSensorTitle),
           "parametersTitle" -> Json.toJson(AppConfiguration.getParametersTitle),
