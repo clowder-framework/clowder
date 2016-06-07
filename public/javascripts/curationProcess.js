@@ -159,8 +159,11 @@ function getFiles(id) {
         $.each(formatAll, function(i, el){
             if($.inArray(el, formats) === -1) formats.push(el);
         });
-
-        $( "#size" ).replaceWith( '<div id="size">Size: '+Math.round(totalSize /1024) +"KB</div>" );
+        if(totalSize < 1000000) {
+            $("#size").replaceWith('<div id="size">Size: ' + Math.round(totalSize / 1024) + "KB</div>");
+        } else {
+            $("#size").replaceWith('<div id="size">Size: ' + Math.round(totalSize / 1024 /1024) + "MB</div>");
+        }
         $( "#format" ).replaceWith('<div id="format">File Formats: '+formats.join(', ')+'</div>' );
 
     }).fail(function( ) {
