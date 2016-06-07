@@ -43,7 +43,7 @@ $(document).ready(function() {
     	          followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
     	          followButton.removeClass('btn-link');
     	          followButton.addClass('btn-link');
-				  if(removeIndicator) {
+				  if( typeof removeIndicator !== 'undefined' && removeIndicator) {
 					  $('#'+followButton.attr('objectid')+'-tile').remove();
 					  $('#'+followButton.attr('objectid')+'-listitem').remove();
 					  activate();
@@ -79,7 +79,7 @@ $(document).ready(function() {
     	          followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
     	          followButton.removeClass('btn-link');
     	          followButton.addClass('btn-link');
-				  if(removeIndicator) {
+				  if(typeof removeIndicator !== 'undefined' && removeIndicator) {
 					  $('#'+followButton.attr('objectid')+'-tile').remove();
 					  $('#'+followButton.attr('objectid')+'-listitem').remove();
 					  activate();
@@ -114,7 +114,7 @@ $(document).ready(function() {
     	          followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
     	          followButton.removeClass('btn-link');
     	          followButton.addClass('btn-link');
-				  if(removeIndicator) {
+				  if(typeof removeIndicator !== 'undefined' && removeIndicator) {
 					  $('#'+followButton.attr('objectid')+'-tile').remove();
 					  $('#'+followButton.attr('objectid')+'-listitem').remove();
 					  activate();
@@ -149,7 +149,7 @@ $(document).ready(function() {
     	          followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
     	          followButton.removeClass('btn-link');
     	          followButton.addClass('btn-link');
-				  if(removeIndicator) {
+				  if(typeof removeIndicator !== 'undefined' && removeIndicator) {
 					  $('#'+followButton.attr('objectid')+'-tile').remove();
 					  $('#'+followButton.attr('objectid')+'-listitem').remove();
 					  activate();
@@ -184,7 +184,7 @@ $(document).ready(function() {
 					followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
 					followButton.removeClass('btn-link');
 					followButton.addClass('btn-link');
-					if(removeIndicator) {
+					if(typeof removeIndicator !== 'undefined' && removeIndicator) {
 						$('#'+followButton.attr('objectid')+'-tile').remove();
 						$('#'+followButton.attr('objectid')+'-listitem').remove();
 						activate();
