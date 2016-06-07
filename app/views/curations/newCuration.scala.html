@@ -62,7 +62,7 @@
 
             @if(!spaces.isEmpty) {
                 <div class="form-group">
-                    <label id="spacelabel" for="space"> Create in space </label>
+                    <label id="spacelabel" for="space"> Create in @{play.Play.application().configuration().getString("spaceTitle").trim} </label>
                     <select  name="space" id="spaceid" class = "chosen-select">
                     @defaultspace match {
                         case Some(defaultspace) => {
@@ -74,7 +74,7 @@
                             }
                         }
                         case None => {
-                            <option selected disabled>Select the space</option>
+                            <option selected disabled>Select the @{play.Play.application().configuration().getString("spaceTitle").trim}</option>
                             @spaces.map { space =>
 
                                 <option value="@(space.id)">@(space.name)</option>
@@ -83,16 +83,16 @@
                         }
                     }
                     </select>
-                    <span class="error hiddencomplete" id="spaceerror"> Please select a space.</span><br>
+                    <span class="error hiddencomplete" id="spaceerror"> Please select a @{play.Play.application().configuration().getString("spaceTitle").trim}.</span><br>
                 </div>
 
             } else {
                 <div class="form-group">
-                    <label id="spacelabel" for="space"> Create in space </label>
+                    <label id="spacelabel" for="space"> Create in @{play.Play.application().configuration().getString("spaceTitle").trim} </label>
                     <select  name="space" id="spaceid" class = "chosen-select">
-                        No spaces available for creating Curation Object. Please add this dataset to a space first
+                        No @{play.Play.application().configuration().getString("spaceTitle").trim}s available for creating Curation Object. Please add this dataset to a @{play.Play.application().configuration().getString("spaceTitle").trim} first
                     </select>
-                    <span class="error hiddencomplete" id="spaceerror"> Please select a space.</span><br>
+                    <span class="error hiddencomplete" id="spaceerror"> Please select a @{play.Play.application().configuration().getString("spaceTitle").trim}.</span><br>
                 </div>
             }
             </fieldset>

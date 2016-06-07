@@ -4,9 +4,9 @@
     <div class="row bottom-padding">
         <div class="col-md-12">
         @if(resourceType == ResourceRef.collection) {
-            <h4>Spaces containing the collection</h4>
+            <h4>@{play.Play.application().configuration().getString("spaceTitle").trim}s containing the collection</h4>
         } else {
-            <h4>Spaces containing the dataset</h4>
+            <h4>@{play.Play.application().configuration().getString("spaceTitle").trim}s containing the dataset</h4>
         }
         </div>
     </div>
@@ -36,11 +36,11 @@
                                 @s.datasetCount datasets
                             }
                             @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
-                                | <button onclick="confirmRemoveResourceFromResourceEvent('space','@(s.id)','dataset','@(resourceId)',event)" class="btn btn-link btn-xs" title="Remove the dataset from the space">
+                                | <button onclick="confirmRemoveResourceFromResourceEvent('space','@(s.id)','dataset','@(resourceId)',event)" class="btn btn-link btn-xs" title="Remove the dataset from the @{play.Play.application().configuration().getString("spaceTitle").trim}">
                                     <span class="glyphicon glyphicon-remove"></span> Remove</button>
                             } else {
                                 |
-                                <div class="inline" title="No permission to remove from the space">
+                                <div class="inline" title="No permission to remove from the @{play.Play.application().configuration().getString("spaceTitle").trim}">
                                     <button class="btn btn-link btn-xs disabled"><span class="glyphicon glyphicon-remove"></span> Remove</button>
                                 </div>
                             }
@@ -57,11 +57,11 @@
                             **@
                             @if(v == true){
                                 @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
-                                    | <button onclick="confirmRemoveResourceFromResourceEvent('space','@(s.id)','collection','@(resourceId)',event)" class="btn btn-link btn-xs" title="Remove the collection from the space">
+                                    | <button onclick="confirmRemoveResourceFromResourceEvent('space','@(s.id)','collection','@(resourceId)',event)" class="btn btn-link btn-xs" title="Remove the collection from the @{play.Play.application().configuration().getString("spaceTitle").trim}">
                                         <span class="glyphicon glyphicon-remove"></span> Remove</button>
                                 } else {
                                     |
-                                    <div class="inline" title="No permission to remove from the space">
+                                    <div class="inline" title="No permission to remove from the @{play.Play.application().configuration().getString("spaceTitle").trim}">
                                         <button class="btn btn-link btn-xs disabled"><span class="glyphicon glyphicon-remove"></span> Remove</button>
                                     </div>
                                 }
@@ -100,13 +100,13 @@
 
                         @if(resourceType == ResourceRef.dataset) {
                             <span class="input-group-btn">
-                            <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add dataset to Space" onclick="addDatasetToSpace('@resourceId')">
+                            <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add dataset to @{play.Play.application().configuration().getString("spaceTitle").trim}" onclick="addDatasetToSpace('@resourceId')">
                                 <span class="glyphicon glyphicon-plus"></span> Add
                             </a>
                             </span>
                         } else {
                             <span class="input-group-btn">
-                            <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add collection to Space" onclick="addCollectionToSpace('@resourceId')">
+                            <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add collection to @{play.Play.application().configuration().getString("spaceTitle").trim}" onclick="addCollectionToSpace('@resourceId')">
                                 <span class="glyphicon glyphicon-plus"></span> Add
                             </a>
                             </span>
@@ -127,7 +127,7 @@
     <script language="javascript">
     $("#spaceAddSelect").select2({
         theme: "bootstrap",
-        placeholder: "Select a space",
+        placeholder: "Select a @{play.Play.application().configuration().getString("spaceTitle").trim}",
         allowClear: true,
         ajax: {
             url: function(params) {

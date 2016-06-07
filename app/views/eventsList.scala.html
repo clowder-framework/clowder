@@ -22,7 +22,7 @@
     // the default number of event index. means there is no event for this user.
     if(eventCount === 3){
       @if( newsfeed.size < 1) {
-      $("#moreeventbutton").replaceWith("<p>You can follow <a href=@routes.Users.getUsers()>users</a>, <a href=@routes.Spaces.list("")>spaces</a>,"
+      $("#moreeventbutton").replaceWith("<p>You can follow <a href=@routes.Users.getUsers()>users</a>, <a href=@routes.Spaces.list("")>@{play.Play.application().configuration().getString("spaceTitle").trim}s</a>,"
               + " <a href=@routes.Datasets.list("")>datasets</a> and <a href=@routes.Collections.list("")>collections</a>."
               + "Any updates on your followed instances will show here.</p>");
       } else  {

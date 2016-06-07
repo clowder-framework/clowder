@@ -7,7 +7,7 @@
                 <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
             </a></li>
             <li><a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-link btn-xs btn-margins">
-                <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
+                <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit @{play.Play.application().configuration().getString("spaceTitle").trim}
             </a></li>
             <li><a href="@routes.Spaces.selectExtractors(space.id)" class="btn btn-link btn-xs btn-margins">
                 <span class = "glyphicon glyphicon-fullscreen" aria-hidden="true"></span> Extractors
@@ -17,7 +17,7 @@
                 <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
             </a></li>
             <li><a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-link btn-xs disabled btn-margins">
-                <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
+                <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit @{play.Play.application().configuration().getString("spaceTitle").trim}
             </a></li>
             <li><a href="@routes.Spaces.selectExtractors(space.id)" class="btn btn-link btn-xs disabled btn-margins">
                 <span class = "glyphicon glyphicon-fullscreen" aria-hidden="true"></span> Extractors

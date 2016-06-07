@@ -14,7 +14,7 @@
     <div class="row">
         <div class="col-md-12">
             <p>A dataset is a container for files and metadata. Create one to upload data to the system.
-                You can keep your data private or share it with other spaces.</p>
+                You can keep your data private or share it with other @{play.Play.application().configuration().getString("spaceTitle").trim}s.</p>
             @if(collection.isDefined){
                 <p>This dataset will be added to collection <a href="@routes.Collections.collection(collection.get.id)">@collection.get.name</a></p>
             }
@@ -38,14 +38,14 @@
                 <span class="error hiddencomplete" id="descerror">This description is a required field</span>
             </div>
             <div class="form-group">
-                <label id="spacelabel" for="space">Share with spaces</label>
+                <label id="spacelabel" for="space">Share with @{play.Play.application().configuration().getString("spaceTitle").trim}s</label>
                 <select name="space" id="spaceid" class ="chosen-select" multiple>
                     @spaces.map { space =>
                         <option id="@(space.id)" value="@(space.id)">@(space.name)</option>
                     }
                     </select>
                 <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
-                    this dataset with members of one or more spaces. This is optional.</p>
+                    this dataset with members of one or more @{play.Play.application().configuration().getString("spaceTitle").trim}s. This is optional.</p>
             </div>
         </div>
     </div>
@@ -66,7 +66,7 @@
     <script language = "javascript">
         $(".chosen-select").chosen({
             width: "100%",
-            placeholder_text_multiple: "Spaces that will have access to the dataset (optional)"
+            placeholder_text_multiple: "@{play.Play.application().configuration().getString("spaceTitle").trim}s that will have access to the dataset (optional)"
         })
     </script>
 

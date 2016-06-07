@@ -17,8 +17,8 @@
               </div>
               <div class="panel-body">
                   <ul class="list-group">
-                      <li class="list-group-item" title="Access to @spacesCountAccess spaces">
-                          <a href="@routes.Spaces.list()">Project Spaces <span class="badge pull-right">@spacesCount</span></a>
+                      <li class="list-group-item" title="Access to @{spacesCountAccess} @{play.Play.application().configuration().getString("spaceTitle").trim}s">
+                          <a href="@routes.Spaces.list()">@{play.Play.application().configuration().getString("spaceTitle").trim} <span class="badge pull-right">@spacesCount</span></a>
                       </li>
                       <li class="list-group-item" title="Access to @collectionsCountAccess collections">
                           <a href="@routes.Collections.list("")">Collections <span class="badge pull-right">@collectionsCount</span></a>

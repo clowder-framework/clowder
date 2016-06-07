@@ -26,11 +26,11 @@
                 @if(user.isDefined) {
                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                     @if(Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id)) || user.get.identityId.userId.equals(space.creator)){
-                        <button onclick="confirmDeleteResource('space','@(space.id)','@(space.name.replace("'","&#39;"))',false, '@route')" class="btn btn-link" title="Delete the space but not its contents">
+                        <button onclick="confirmDeleteResource('space','@(space.id)','@(space.name.replace("'","&#39;"))',false, '@route')" class="btn btn-link" title="Delete the @{play.Play.application().configuration().getString("spaceTitle").trim} but not its contents">
                             <span class="glyphicon glyphicon-trash"></span>
                         </button>
                     } else {
-                        <div class="inline" title="Not enough permission to delete the space">
+                        <div class="inline" title="Not enough permission to delete the @{play.Play.application().configuration().getString("spaceTitle").trim}">
                             <button disabled class="btn btn-link"><span class="glyphicon glyphicon-trash"></span></button>
                         </div>
                     }

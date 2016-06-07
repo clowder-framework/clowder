@@ -48,7 +48,7 @@
             </td>
         </tr>        
         <tr>
-            <td style="width: 20%; vertical-align:top;" class="input-table-cell">Share with spaces (optional):</td>
+            <td style="width: 20%; vertical-align:top;" class="input-table-cell">Share with @{play.Play.application().configuration().getString("spaceTitle").trim}s (optional):</td>
             <td style="width: 35%; vertical-align:top;" class="input-table-cell" id="desccell">
                 <select name="space" id="spaceid" class = "form-control chosen-select" multiple style="width: 342px;">
                     @spaces.map { space =>
@@ -83,7 +83,7 @@
 <script language="javascript">
     $(".chosen-select").chosen({
         width: "100%",
-        placeholder_text_multiple: "Select spaces for this collection."
+        placeholder_text_multiple: "Select @{play.Play.application().configuration().getString("spaceTitle").trim}s for this collection."
     });
 </script>
 <script language = "javascript">
