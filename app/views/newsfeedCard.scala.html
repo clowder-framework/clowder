@@ -24,7 +24,14 @@
       <a href="@routes.Collections.collection(event.source_id.get)">@event.source_name.get</a>
     }
     case _ => {
-      @obj_type: @obj_name.get
+      @obj_name match {
+        case None => {
+          @obj_type
+        }
+        case Some(name) => {
+          @obj_type:@name
+        }
+      }
     }
   }
 }
@@ -127,7 +134,7 @@
         case 3 => {
           @defining(actionTextsForEvent(event_type_split(0))) { texts =>
             @if(event.event_type.indexOf("tag")>=0){
-              @texts(0) @linkForObject(event_type_split(1), event.object_id, Option("")) @texts(1) @linkForObject(event_type_split(2), event.object_id, event.object_name)
+              @texts(0) @linkForObject(event_type_split(1), None, None) @texts(1) @linkForObject(event_type_split(2), event.object_id, event.object_name)
             }else {
               @texts(0) @linkForObject(event_type_split(1), event.object_id, event.object_name) @texts(1) @linkForObject(event_type_split(2), event.source_id, event.source_name)
             }
