@@ -83,20 +83,8 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     notes = "This will check for Permission.ViewVocabulary",
     responseClass = "None", httpMethod = "GET")
   def list() = PrivateServerAction { implicit request =>
-    val vocabs = vocabularyService.listAll()
-
-    val vocab_jsons : ListBuffer[JsValue] = ListBuffer.empty
-    for (voc <- vocabs){
-      try {
-        val j = jsonVocabulary(voc)
-        vocab_jsons += j
-        Logger.info("found one")
-      } catch {
-        case e : Exception => Logger.error("did not work")
-      }
-    }
-
-    Ok(toJson(vocab_jsons))
+    val vocabs = vocabularyService.listAll().map( (v : Vocabulary) => jsonVocabulary(v))
+    Ok(toJson(vocabs))
   }
 
   @ApiOperation(value = "Create a vocabulary object",
