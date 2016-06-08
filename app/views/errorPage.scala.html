@@ -8,11 +8,11 @@
 
     </div>
     <div class="col-sm-12 col-md-12 col-lg-12 text-center">
-      <button class="btn btn-default"><span class="glyphicon glyphicon-envelope"></span> Submit Exception</button> <p id="success" hidden>Message sent.</p>
+      <button id="error-button" class="btn btn-default"><span class="glyphicon glyphicon-envelope"></span> Submit Exception</button> <p id="success" hidden>Message sent.</p>
     </div>
   </div>
   <script>
-    $('button').on('click', function(){
+    $('#error-button').on('click', function(){
                 var jsonData = JSON.stringify({"badRequest": '@re.toString', "exceptions":'@ex'});
                 var request = jsRoutes.api.Events.sendExceptionEmail().ajax({
                     data: jsonData,
