@@ -104,10 +104,10 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
             var terms : ListBuffer[UUID] = ListBuffer.empty
 
             for (each_term <- request_terms){
-              var key = (each_term\ "key").asOpt[String].getOrElse("")
-              var units = (each_term \ "units").asOpt[String]
-              var default_value = (each_term \"default_value").asOpt[String]
-              var current_vocabterm : VocabularyTerm = VocabularyTerm(key = key, author = Option(identity), created = new Date(), units = units, default_value = default_value)
+              val key = (each_term\ "key").asOpt[String].getOrElse("")
+              val units = (each_term \ "units").asOpt[String]
+              val default_value = (each_term \"default_value").asOpt[String]
+              val current_vocabterm : VocabularyTerm = VocabularyTerm(key = key, author = Option(identity), created = new Date(), units = units, default_value = default_value)
 
               vocabularyTermService.insert(current_vocabterm) match {
                 case Some(id) => {
