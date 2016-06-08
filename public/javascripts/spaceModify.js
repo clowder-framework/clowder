@@ -238,7 +238,7 @@ function updateUsersInSpace(spaceId) {
 
 function acceptSpaceRequest(spaceId, userId, userName){
     var role = $("#roleSelect-"+userId).val();
-    var request = jsRoutes.controllers.Spaces.acceptRequest(spaceId, userId, role).ajax({
+    var request = jsRoutes.api.Spaces.acceptRequest(spaceId, userId, role).ajax({
         type : 'POST'
     });
     request.done ( function ( response, textStatus, jqXHR ) {
@@ -259,12 +259,15 @@ function acceptSpaceRequest(spaceId, userId, userName){
     request.fail(function(jqXHR, textStatus, errorThrown) {
         console.error("The following error occured: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to accept request.";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("Accept request failed due to : " + errorThrown, "error");
+        }
     });
     return false;
 }
 
 function rejectSpaceRequest(id, user){
-    var request = jsRoutes.controllers.Spaces.rejectRequest(id, user).ajax({
+    var request = jsRoutes.api.Spaces.rejectRequest(id, user).ajax({
         type : 'POST'
     });
     request.done ( function ( response, textStatus, jqXHR ) {
@@ -278,7 +281,7 @@ function rejectSpaceRequest(id, user){
         console.error("The following error occured: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to reject request.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("The file was not removed from the dataset due to : " + errorThrown, "error");
+            notify("Reject request failed due to : " + errorThrown, "error");
         }
     });
     return false;

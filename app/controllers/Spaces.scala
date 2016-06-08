@@ -318,7 +318,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
    */
   def addRequest(id: UUID) = AuthenticatedAction { implicit request =>
     implicit val requestuser = request.user
-
+Logger.debug("in addrequest")
     requestuser match{
       case Some(user) =>  {
         spaces.get(id) match {
@@ -359,57 +359,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
     }
   }
 
-  /**
-   * accept authorization request with specific Role. Send email to request user.
-   */
-  def acceptRequest(id:UUID, requestuser:String, role:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
-    implicit val user = request.user
-    spaces.get(id) match {
-      case Some(s) => {
-        Logger.debug("request submitted in controllers.Space.acceptrequest ")
-        users.get(UUID(requestuser)) match {
-          case Some(requestUser) => {
-            events.addRequestEvent(user, requestUser, id, s.name, "acceptrequest_space")
-            spaces.removeRequest(id, requestUser.id)
-            users.findRoleByName(role) match {
-              case Some(r) => spaces.addUser(requestUser.id, r, id)
-              case _ => Logger.debug("Role not found" + role)
-            }
 
-            val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Accepted"
-            val recipient: String = requestUser.email.get.toString
-            val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "accepted your request and assigned you as " + role + " to")
-            Mail.sendEmail(subject, request.user, recipient, body)
-            Ok(Json.obj("status" -> "success"))
-          }
-          case None => InternalServerError("Request user not found")
-        }
-      }
-      case None => InternalServerError("Space not found")
-    }
-  }
-
-  def rejectRequest( id:UUID, requestuser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
-    implicit val user = request.user
-    spaces.get(id) match {
-      case Some(s) => {
-        Logger.debug("request submitted in controller.Space.rejectRequest")
-        users.get(UUID(requestuser)) match {
-          case Some(requestUser) => {
-            events.addRequestEvent(user, requestUser, id, spaces.get(id).get.name, "rejectrequest_space")
-            spaces.removeRequest(id, requestUser.id)
-            val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Rejected"
-            val recipient: String = requestUser.email.get.toString
-            val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "rejected your request to")
-            Mail.sendEmail(subject, request.user, recipient, body)
-            Ok(Json.obj("status" -> "success"))
-          }
-          case None => InternalServerError("Request user not found")
-        }
-      }
-      case None => InternalServerError("Space not found")
-    }
-  }
 
 
   /**
