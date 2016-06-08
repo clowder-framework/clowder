@@ -24,7 +24,7 @@
       @if( newsfeed.size < 1) {
       $("#moreeventbutton").replaceWith("<p>You can follow <a href=@routes.Users.getUsers()>users</a>, <a href=@routes.Spaces.list("")>@{play.Play.application().configuration().getString("spaceTitle").trim}s</a>,"
               + " <a href=@routes.Datasets.list("")>datasets</a> and <a href=@routes.Collections.list("")>collections</a>."
-              + "Any updates on your followed instances will show here.</p>");
+              + " Any updates on your followed instances will show here.</p>");
       } else  {
       @if( newsfeed.size < 20) { $("#moreeventbutton").replaceWith("<p>No more events.</p>");}
       }
