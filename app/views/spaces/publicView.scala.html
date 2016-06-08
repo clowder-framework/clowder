@@ -30,7 +30,25 @@
   }
   <div class="row">
     <div class="col-md-12 col-lg-12 col-sm-12">
-      <p>@space.collectionCount Collections   @space.datasetCount Datasets  @space.userCount Users</p>
+      <p>@space.collectionCount
+        @if(space.collectionCount > 1) {
+           Collections
+         }   else {
+           Collection
+         }
+        @space.datasetCount
+        @if(space.datasetCount > 1) {
+           Datasets
+        }   else {
+           Dataset
+        }
+        @space.userCount
+        @if(space.userCount > 1) {
+          Users
+        }   else {
+          User
+        }
+      </p>
     <p>@msg</p>
       @if(!msg.contains("pending")) {
         @spaces.requestAuthorization(space.id)
