@@ -10,14 +10,5 @@
 				}
 			</h2>
 		</div>
-			@if(user.isDefined && (id != null && !id.isEmpty)) {
-				@if( resourceType != null && resourceType.compareTo("space") ==0 ){
-					<div class="col-sm-12 col-md-12 col-lg-12 text-center">
-						<form action="@(routes.Spaces.addRequest(UUID(id)))" method="post">
-							<input type="submit" value="Request access" class="btn btn-default btn-margins accordion-toggle collapsed"/>
-						</form>
-					</div>
-				}
-			}
 	</div>
 }
