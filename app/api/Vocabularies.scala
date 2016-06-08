@@ -57,7 +57,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
 
     user match {
       case Some(identity) => {
-        val result = vocabularyService.getByName(name)
+        val result = vocabularyService.getByName(name).map((v : Vocabulary) => jsonVocabulary(v))
         Ok(toJson(result))
       }
       case None => BadRequest("No user matches that user")
@@ -273,16 +273,13 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
 
   def getVocabularyTermsJsValue(vocabulary : Vocabulary) : List[JsValue] = {
     var vocab_terms : ListBuffer[JsValue] = ListBuffer.empty
-    if (!vocabulary.terms.isEmpty){
-      for (term <- vocabulary.terms){
-        var current_term = vocabularyTermService.get(term) match {
-          case Some(vocab_term) => {
-            vocab_terms += Json.toJson(vocab_term)
-          }
+    for (term <- vocabulary.terms){
+      vocabularyTermService.get(term) match {
+        case Some(vocab_term) => {
+          vocab_terms += Json.toJson(vocab_term)
         }
       }
     }
-
     vocab_terms.toList
   }
 
@@ -290,7 +287,8 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
 
   def jsonVocabulary(vocabulary : Vocabulary): JsValue = {
     val terms  = getVocabularyTerms(vocabulary)
-    Json.obj("id"->vocabulary.id.stringify,"name"->vocabulary.name,"terms"->terms,"keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic"->vocabulary.isPublic.toString, "spaces"->vocabulary.spaces.mkString(","))
+    val author = vocabulary.author.get.identityId.userId
+    Json.obj("id"->vocabulary.id.stringify,"author"->author,"name"->vocabulary.name,"terms"->terms,"keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic"->vocabulary.isPublic.toString, "spaces"->vocabulary.spaces.mkString(","))
   }
 
 
