@@ -1,6 +1,4 @@
 @(space: ProjectSpace, msg: String)(implicit user: Option[models.User])
-@import play.api.Play.current
-@import api.Permission
 
 @main(space.name) {
   @if( space.bannerURL.isDefined || space.logoURL.isDefined){
@@ -32,6 +30,7 @@
   }
   <div class="row">
     <div class="col-md-12 col-lg-12 col-sm-12">
+      <p>@space.collectionCount Collections   @space.datasetCount Datasets  @space.userCount Users</p>
     <p>@msg</p>
       @if(!msg.contains("pending")) {
         @spaces.requestAuthorization(space.id)
