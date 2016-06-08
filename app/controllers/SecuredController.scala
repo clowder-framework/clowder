@@ -7,6 +7,8 @@ import play.api.mvc._
 import play.api.templates.Html
 import securesocial.core.{Authenticator, SecureSocial, UserService}
 import services._
+import securesocial.core.IdentityProvider
+import securesocial.core.providers.utils.RoutesHelper
 
 import scala.concurrent.Future
 
@@ -44,7 +46,8 @@ trait SecuredController extends Controller {
         case Some(u) if u.superAdminMode || Permission.checkPrivateServer(userRequest.user) => block(userRequest)
         case None if Permission.checkPrivateServer(userRequest.user) => block(userRequest)
         case _ => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
-          .flashing("error" -> "You must be logged in to access this page."))
+          .flashing("error" -> "You must be logged in to access this page.")
+          .withSession(request.session + (SecureSocial.OriginalUrlKey -> request.uri)))
       }
     }
   }
@@ -57,7 +60,8 @@ trait SecuredController extends Controller {
         case Some(u) if !u.active => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) => block(userRequest)
         case None => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
-          .flashing("error" -> "You must be logged in to access this page."))
+          .flashing("error" -> "You must be logged in to access this page.")
+          .withSession(request.session + (SecureSocial.OriginalUrlKey -> request.uri)))
       }
     }
   }
@@ -70,7 +74,8 @@ trait SecuredController extends Controller {
         case Some(u) if !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
         case Some(u) if u.superAdminMode || Permission.checkServerAdmin(userRequest.user) => block(userRequest)
         case _ => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
-          .flashing("error" -> "You must be logged in as an administrator to access this page."))
+          .flashing("error" -> "You must be logged in as an administrator to access this page.")
+          .withSession(request.session + (SecureSocial.OriginalUrlKey -> request.uri)))
       }
     }
   }
@@ -84,7 +89,9 @@ trait SecuredController extends Controller {
         case Some(u) if u.superAdminMode || Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
         case Some(u) => notAuthorizedMessage(userRequest.user, resourceRef)
         case None if Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
-        case None => Future.successful(Results.Redirect(routes.Error.authenticationRequiredMessage("You must be logged in to perform that action.", userRequest.uri )))
+        case None => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
+          .flashing("error" -> "You must be logged in to perform that action.")
+          .withSession(request.session + (SecureSocial.OriginalUrlKey -> request.uri)))
       }
     }
   }
