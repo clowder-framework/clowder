@@ -32,8 +32,8 @@ $(document).ready(function() {
     	          followCallback();
     	        })
     	        .fail(function(data) {
-    	          console.log(data);
-    	          console.log("Failed to follow");
+    	            console.log(data);
+					notify("Failed to follow.", "error");
     	        });
     	    } else {
     	      jsRoutes.api.Users.unfollow(jsObjectId).ajax({
@@ -51,8 +51,8 @@ $(document).ready(function() {
     	          unfollowCallback();
     	        })
     	        .fail(function(data) {
-    	          console.log(data);
-    	          console.log("Failed to unfollow");
+    	            console.log(data);
+					notify("Failed to unfollow.", "error");
     	        });
     	    }
 	}
@@ -68,8 +68,8 @@ $(document).ready(function() {
     	          followCallback();
     	        })
     	        .fail(function(data) {
-    	          console.log(data);
-    	          console.log("Failed to follow");
+    	            console.log(data);
+					notify("Failed to follow.", "error");
     	        });
     	    } else {
     	      jsRoutes.api.Files.unfollow(jsObjectId).ajax({
@@ -87,9 +87,9 @@ $(document).ready(function() {
     	          unfollowCallback();
     	        })
     	        .fail(function(data) {
-    	          console.log(data);
-    	          console.log("Failed to unfollow");
-    	        });
+					console.log(data);
+					notify("Failed to unfollow.", "error");
+				});
     	    }
     } else if(jsObjectType === "dataset") {
     	if (followButton.text( ).trim() === "Follow") {
@@ -103,8 +103,8 @@ $(document).ready(function() {
     	          followCallback();
     	        })
     	        .fail(function(data) {
-    	          console.log(data);
-    	          console.log("Failed to follow");
+    	            console.log(data);
+					notify("Failed to follow.", "error");
     	        });
     	    } else {
     	      jsRoutes.api.Datasets.unfollow(jsObjectId).ajax({
@@ -122,9 +122,9 @@ $(document).ready(function() {
     	          unfollowCallback();
     	        })
     	        .fail(function(data) {
-    	          console.log(data);
-    	          console.log("Failed to unfollow");
-    	        });
+    	            console.log(data);
+					notify("Failed to unfollow.", "error");
+				});
     	    }
     } else if(jsObjectType === "collection" ) {
     	if (followButton.text( ).trim() === "Follow") {
@@ -138,8 +138,8 @@ $(document).ready(function() {
     	          followCallback();
     	        })
     	        .fail(function(data) {
-    	          console.log(data);
-    	          console.log("Failed to follow");
+    	            console.log(data);
+					notify("Failed to follow.", "error");
     	        });
     	    } else {
     	      jsRoutes.api.Collections.unfollow(jsObjectId).ajax({
@@ -157,9 +157,9 @@ $(document).ready(function() {
     	          unfollowCallback();
     	        })
     	        .fail(function(data) {
-    	          console.log(data);
-    	          console.log("Failed to unfollow");
-    	        });
+    	            console.log(data);
+					notify("Failed to unfollow.", "error");
+				});
     	    }
 	} else if(jsObjectType === "space" ) {
 		if (followButton.text( ).trim() === "Follow") {
@@ -174,7 +174,7 @@ $(document).ready(function() {
 				})
 				.fail(function(data) {
 					console.log(data);
-					console.log("Failed to follow");
+					notify("Failed to follow.", "error");
 				});
 		} else {
 			jsRoutes.api.Spaces.unfollow(jsObjectId).ajax({
@@ -193,7 +193,7 @@ $(document).ready(function() {
 				})
 				.fail(function(data) {
 					console.log(data);
-					console.log("Failed to unfollow");
+					notify("Failed to unfollow.", "error");
 				});
 		}
 	}
