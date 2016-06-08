@@ -349,7 +349,7 @@ def extract(host, port, key, file, wait):
 	metadata = json.dumps(metadata)
 
 	#Delete test files
-    requests.delete('http://' + host + ':' + port + '/api/files/' + file_id +'?key='+ key)
+	requests.delete('http://' + host + ':' + port + '/api/files/' + file_id +'?key='+ key)
     
 	return metadata
 
