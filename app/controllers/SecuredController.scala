@@ -127,10 +127,10 @@ trait SecuredController extends Controller {
           case None => Future.successful(BadRequest(views.html.notFound("Space does not exist.")(user)))
           case Some(space) => {
             if (user.isDefined && space.requests.contains(RequestResource(user.get.id))) {
-              Future.successful(BadRequest(views.html.spaces.publicView(space, messageNoPermission + "space \""
+              Future.successful(Forbidden(views.html.spaces.publicView(space, messageNoPermission + "space \""
                 + space.name + "\". \nAuthorization request is pending")(user)))
             } else {
-              Future.successful(BadRequest(views.html.spaces.publicView(space,messageNoPermission + "space \""
+              Future.successful(Forbidden(views.html.spaces.publicView(space,messageNoPermission + "space \""
                 + space.name + "\"")(user)))
             }
           }
