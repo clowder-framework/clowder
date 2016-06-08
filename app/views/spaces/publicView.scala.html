@@ -1,4 +1,4 @@
-@(space: ProjectSpace)(implicit user: Option[models.User])
+@(space: ProjectSpace, msg: String)(implicit user: Option[models.User])
 @import play.api.Play.current
 @import api.Permission
 
@@ -17,14 +17,25 @@
     </div>
     }
 
-  <div class="row space-head vertical-align">
+  <div class="row">
     <div class="col-md-12 col-lg-12 col-sm-12">
       <h1 id="spacenamedisplay">@space.name</h1>
       <p><span id="spacedescdisplay">@space.description</span></p>
-      @spaces.externalLinks(space.homePage)
+
 
     </div>
   </div>
-
-  @spaces.requestAuthorization(space)
+  @if(space.homePage.length>0) {
+    @spaces.externalLinks(space.homePage)
+  } else {
+    <hr>
+  }
+  <div class="row">
+    <div class="col-md-12 col-lg-12 col-sm-12">
+    <p>@msg</p>
+      @if(!msg.contains("pending")) {
+        @spaces.requestAuthorization(space.id)
+      }
+      </div>
+  </div>
 }

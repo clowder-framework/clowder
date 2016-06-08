@@ -28,7 +28,7 @@
         }
         <li>@spaces.follow(space)</li>
         @if(!(userRoleMap contains user.get)) {
-            <li>@spaces.requestAuthorization(space)</li>
+            <li>@spaces.requestAuthorization(space.id)</li>
         }
     </ul>
 </div>

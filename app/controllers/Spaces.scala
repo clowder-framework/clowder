@@ -134,60 +134,53 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   /**
    * Space main page.
    */
-  def getSpace(id: UUID, size: Int, direction: String) = PrivateServerAction{ implicit request =>
-
+  def getSpace(id: UUID, size: Int, direction: String) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
-      case Some(s) => {
-        if (Permission.checkPermission(user, Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, id)))) {
-          val creator = users.findById(s.creator)
-          var creatorActual: User = null
-          val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(size))
-          val datasetsInSpace = spaces.getDatasetsInSpace(Some(id.stringify), Some(size))
-          val usersInSpace = spaces.getUsersInSpace(id)
-          var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
-          creator match {
-            case Some(theCreator) => {
-              inSpaceBuffer += theCreator
-              creatorActual = theCreator
-            }
-            case None => Logger.error(s" No creator for space $id found...")
-          }
+        case Some(s) => {
+	        val creator = users.findById(s.creator)
+	        var creatorActual: User = null
+	        val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(size))
+	        val datasetsInSpace = spaces.getDatasetsInSpace(Some(id.stringify), Some(size))
+	        val usersInSpace = spaces.getUsersInSpace(id)
+	        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
+	        creator match {
+	            case Some(theCreator) => {
+	            	inSpaceBuffer += theCreator
+	            	creatorActual = theCreator
+	            }
+	            case None => Logger.error(s" No creator for space $id found...")
+	        }
 
-          var userRoleMap: Map[User, String] = Map.empty
-          for (aUser <- inSpaceBuffer) {
-            var role = "What"
-            spaces.getRoleForUserInSpace(id, aUser.id) match {
-              case Some(aRole) => {
-                role = aRole.name
-              }
-              case None => {
-                //This case catches spaces that have been created before users and roles were assigned to them.
-                if (aUser == creatorActual) {
-                  role = "Admin"
-                  users.findRoleByName(role) match {
-                    case Some(realRole) => {
-                      spaces.addUser(aUser.id, realRole, id)
-                    }
-                    case None => Logger.debug("No Admin role found for some reason.")
-                  }
-                }
-              }
-            }
+	        var userRoleMap: Map[User, String] = Map.empty
+	        for (aUser <- inSpaceBuffer) {
+	            var role = "What"
+	            spaces.getRoleForUserInSpace(id, aUser.id) match {
+	                case Some(aRole) => {
+	                    role = aRole.name
+	                }
+	                case None => {
+	                    //This case catches spaces that have been created before users and roles were assigned to them.
+	                    if (aUser == creatorActual) {
+	                        role = "Admin"
+	                        users.findRoleByName(role) match {
+	                            case Some(realRole) => {
+	                                spaces.addUser(aUser.id, realRole, id)
+	                            }
+	                            case None => Logger.debug("No Admin role found for some reason.")
+	                        }
+	                    }
+	                }
+	            }
 
-            userRoleMap += (aUser -> role)
-          }
-          //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace
+	            userRoleMap += (aUser -> role)
+	        }
+	        //For testing. To fix back to normal, replace inSpaceBuffer.toList with usersInSpace
 
-          Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, userRoleMap))
-        }     else {
-
-          Ok(views.html.spaces.publicView(Utils.decodeSpaceElements(s)))
-        }
+	        Ok(views.html.spaces.space(Utils.decodeSpaceElements(s), collectionsInSpace, datasetsInSpace, userRoleMap))
       }
       case None => BadRequest(views.html.notFound("Space does not exist."))
     }
-
   }
 
   def newSpace() = AuthenticatedAction { implicit request =>
