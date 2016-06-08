@@ -11,7 +11,7 @@
   toPublish: Boolean,
   curationObjects: List[models.CurationObject],
   currentSpace: Option[String],
-  limit: Int)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  limit: Int, showDownload: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -36,7 +36,7 @@
                 </div>
                 <div class="col-md-6">
                     <ul class="list-unstyled">
-                        <li>Created by <a href= "@routes.Profile.viewProfile(dataset.author.email)"> @dataset.author.fullName </a></li>
+                        <li>Created by <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
                         <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
                     </ul>
                 </div>
@@ -73,10 +73,16 @@
                             <span class="glyphicon glyphicon-plus"></span> Add Files
                         </a>
                     }
-                    @if(dataset.files.length > 0 && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                        <a id='download-dataset-url' href="#"
+                    @if(showDownload && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        <a id='download-url' href="#"
                         onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id').url, '_blank');"
-                        class="btn btn-link btn-sm requiresLogin btn-margin-bottom" title="Download All Files as Zip" role="button">
+                        class="btn btn-link btn-sm btn-margin-bottom" title="Download All Files as Zip" role="button">
+                            <span class="glyphicon glyphicon-download-alt"></span>
+                            Download All Files
+                        </a>
+                    } else {
+                        <a id='download-url' href="#" disabled
+                        class="btn btn-link btn-sm btn-margin-bottom" title="There are no files in this dataset or you don't have permission to Download it" role="button">
                             <span class="glyphicon glyphicon-download-alt"></span>
                             Download All Files
                         </a>
@@ -89,7 +95,7 @@
                                 <span class="glyphicon glyphicon-globe"></span> Publish
                             </a>
                         } else {
-                            @if(dataset.spaces.size > 0) {
+                            @if(toPublish && dataset.spaces.size > 0) {
                                 <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-link btn-sm btn-margin-bottom">
                                     <span class="glyphicon glyphicon-globe"></span> Publish
                                 </a>
@@ -148,14 +154,6 @@
                         <div class="list-unstyled" id="reply_@dataset.id.toString"> @comment(comments)</div>
                     </div>
                     <div role="tabpanel" class="tab-pane fade" id="tab-metadata">
-                        <div class="row">
-                            <div class="col-md-10"></div>
-                            <div class="col-md-2">
-                                <a href="@api.routes.Datasets.getMetadataJsonLD(dataset.id)" class="pull-right" title="JSON-LD">
-                                    <img src="@routes.Assets.at("images/json-ld.png")"/>
-                                </a>
-                            </div>
-                        </div>
                         <div class="row">
                             <div class="col-md-12">
                                 @metadatald.addMetadata("dataset", dataset.id.toString, "metadata-content")

@@ -66,6 +66,40 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
       collection("sections").dropIndex("tags.name_text")
     }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("uploadDate_-1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("author.email_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("tags.name_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("uploads.files").dropIndex("filename_1_uploadDate_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("uploadDate_-1_file_id_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("uploadDate_-1_section_id_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("section_id_-1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("file_id_-1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("previews.files").dropIndex("filename_1_uploadDate_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("textures.files").dropIndex("file_id_1")
+    }
+    scala.util.control.Exception.ignoring(classOf[CommandFailureException]) {
+      collection("tiles.files").dropIndex("preview_id_1_filename_1_level_1")
+    }
+
 
     // create indices.
     Logger.debug("Ensuring indices exist")
@@ -77,7 +111,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("collections").ensureIndex(MongoDBObject("spaces" -> 1))
     collection("collections").ensureIndex(MongoDBObject("datasets._id" -> 1))
     collection("collections").ensureIndex(MongoDBObject("public" -> 1))
-    collection("collections").ensureIndex(MongoDBObject("author.identityId.userId" -> 1, "author.identityId.providerId" -> 1))
+    collection("collections").ensureIndex(MongoDBObject("author._id" -> 1))
 
     collection("datasets").ensureIndex(MongoDBObject("created" -> -1))
     collection("datasets").ensureIndex(MongoDBObject("tags" -> 1))
@@ -87,29 +121,35 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("datasets").ensureIndex(MongoDBObject("spaces" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("public" -> 1))
     collection("datasets").ensureIndex(MongoDBObject("name" -> 1))
-    collection("datasets").ensureIndex(MongoDBObject("author.identityId.userId" -> 1, "author.identityId.providerId" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("author._id" -> 1))
+    collection("datasets").ensureIndex(MongoDBObject("public" -> 1, "spaces" -> 1, "author._id" -> 1))
 
-    collection("uploads.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
-    collection("uploads.files").ensureIndex(MongoDBObject("author.email" -> 1))
-    collection("uploads.files").ensureIndex(MongoDBObject("tags.name" -> 1))
+    collection("folders").ensureIndex(MongoDBObject("parentDatasetId" -> 1))
+
+    collection("uploads").ensureIndex(MongoDBObject("uploadDate" -> -1))
+    collection("uploads").ensureIndex(MongoDBObject("author.email" -> 1))
+    collection("uploads").ensureIndex(MongoDBObject("tags.name" -> 1))
+    collection("uploads").ensureIndex(MongoDBObject("author._id"-> 1,  "_id"-> 1))
 
     collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
     
-    collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
-    collection("previews.files").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
-    collection("previews.files").ensureIndex(MongoDBObject("section_id" -> -1))
-    collection("previews.files").ensureIndex(MongoDBObject("file_id" -> -1))
+    collection("previews").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
+    collection("previews").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
+    collection("previews").ensureIndex(MongoDBObject("section_id" -> -1))
+    collection("previews").ensureIndex(MongoDBObject("file_id" -> -1))
 
-    collection("textures.files").ensureIndex(MongoDBObject("file_id" -> 1))
-    collection("tiles.files").ensureIndex(MongoDBObject("preview_id" -> 1, "filename" -> 1,"level" -> 1))
+    collection("textures").ensureIndex(MongoDBObject("file_id" -> 1))
+    collection("tiles").ensureIndex(MongoDBObject("preview_id" -> 1, "filename" -> 1,"level" -> 1))
     
     collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
     collection("sections").ensureIndex(MongoDBObject("file_id" -> -1))
     collection("sections").ensureIndex(MongoDBObject("tags.name" -> 1))
+    collection("sections").ensureIndex(MongoDBObject("file_id" -> 1, "author._id" -> 1))
 
     collection("metadata").ensureIndex(MongoDBObject("createdAt" -> -1))
     collection("metadata").ensureIndex(MongoDBObject("creator" -> 1))
-    collection("metadata").ensureIndex(MongoDBObject("attachTo" -> 1))
+    collection("metadata").ensureIndex(MongoDBObject("attachedTo" -> 1))
+    collection("metadata").ensureIndex(MongoDBObject("attachedTo.resourceType" ->1, "attachedTo._id" -> 1))
 
     collection("contextld").ensureIndex(MongoDBObject("contextName" -> 1))
 
@@ -319,6 +359,16 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // update the number of collections in a space
     updateMongo("update-collection-counter-in-space", fixCollectionCounterInSpaces)
+
+    // rename admin to serverAdmin to make clear what type of admin they are
+    updateMongo("rename-admin-serverAdmin", renameAdminServerAdmin)
+
+    //Update all object_name & source_name in events
+    updateMongo("update-events-name", updateEventObjectName)
+
+    updateMongo("update-user-spaces", removeDeletedSpacesFromUser)
+
+    updateMongo("update-counts-spaces", updateCountsInSpaces)
 
     // instead of user agreeent we now have a temrms of services
     updateMongo("switch-user-agreement-to-terms-of-services", switchToTermsOfServices)
@@ -976,8 +1026,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   private def addRootMapToCollections() {
     collection("collections").foreach{ c =>
       val parents = c.getAsOrElse[MongoDBList]("parent_collection_ids", MongoDBList.empty)
-
-
       val spaces = c.getAsOrElse[MongoDBList]("spaces", MongoDBList.empty)
       val parentCollections = collection("collections").find(MongoDBObject("_id" -> MongoDBObject("$in" -> parents)))
       var parentSpaces = MongoDBList.empty
@@ -1011,6 +1059,61 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         collection("spaces.projects").save(space, WriteConcern.Safe)
       } catch {
         case e: BSONException => Logger.error("Unable to update the collection count for space with id: " + spaceId.toString)
+      }
+
+    }
+  }
+
+  private def renameAdminServerAdmin() {
+    val q = MongoDBObject()
+    val o = MongoDBObject("$rename" -> MongoDBObject("admin" -> "serverAdmin"))
+    collection("social.users").update(q, o, multi=true, concern=WriteConcern.Safe)
+  }
+
+  private def updateEventObjectName(): Unit = {
+    for (coll <- List[String]("collections", "spaces.projects", "datasets", "uploads.files", "curationObjects")){
+      collection(coll).foreach { ds =>
+        (ds.getAs[ObjectId]("_id"), ds.getAs[String]("name")) match {
+          case (Some(id), Some(name)) => {
+            collection("events").update(MongoDBObject("object_id" -> new ObjectId(id.toString)), $set("object_name" -> name), multi = true)
+            collection("events").update(MongoDBObject("source_id" -> new ObjectId(id.toString)), $set("source_name" -> name), multi = true)
+          }
+          case _ => {}
+        }
+      }
+    }
+  }
+
+  private def removeDeletedSpacesFromUser() {
+    collection("social.users").foreach{ user =>
+      val roles = user.getAsOrElse[MongoDBList]("spaceandrole", MongoDBList.empty)
+      val newRoles = MongoDBList.empty
+      roles.foreach{ role =>
+        val resp = collection("spaces.projects").find(MongoDBObject("_id" -> role.asInstanceOf[BasicDBObject].get("spaceId")))
+        if(resp.size > 0) {
+          newRoles += role
+        }
+      }
+      user.put("spaceandrole", newRoles)
+      try{
+        collection("social.users").save(user, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update spaces for user with id:" + user.getAsOrElse("_id", new ObjectId()).toString())
+      }
+    }
+  }
+
+  private def updateCountsInSpaces(){
+    collection("spaces.projects").foreach{ space =>
+      val spaceId = space.getAsOrElse("_id", new ObjectId()).toString()
+      val collections = collection("collections").find(MongoDBObject("root_spaces" -> MongoDBObject("$in" -> MongoDBList(new ObjectId(spaceId)))))
+      val datasets = collection("datasets").find(MongoDBObject("spaces" -> MongoDBObject("$in" -> MongoDBList(new ObjectId(spaceId)))))
+      space.put("datasetCount", datasets.length)
+      space.put("collectionCount", collections.length)
+      try{
+        collection("spaces.projects").save(space, WriteConcern.Safe)
+      } catch {
+        case e: BSONException => Logger.error("Unable to update the counts for space with id: " + spaceId)
       }
 
     }

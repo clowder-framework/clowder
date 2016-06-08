@@ -43,6 +43,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
           datasetCount = 0, userCount = 0, metadata = List.empty)
         spaces.insert(c) match {
           case Some(id) => {
+            events.addObjectEvent(request.user, c.id, c.name, "create_space")
             Ok(toJson(Map("id" -> id)))
           }
           case None => Ok(toJson(Map("status" -> "error")))
@@ -60,6 +61,8 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     spaces.get(spaceId) match {
       case Some(space) => {
         spaces.delete(spaceId)
+
+        events.addObjectEvent(request.user , space.id, space.name, "delete_space")
         current.plugin[AdminsNotifierPlugin].foreach {
           _.sendAdminsNotification(Utils.baseUrl(request), "Space", "removed", space.id.stringify, space.name)
         }
@@ -83,18 +86,18 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     notes = "Retrieves information about spaces",
     responseClass = "None", httpMethod = "GET")
   def list(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true) { implicit request =>
-    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.ViewSpace), false, request.user, request.superAdmin).map(spaceToJson)))
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.ViewSpace), false, request.user, request.user.fold(false)(_.superAdminMode)).map(spaceToJson)))
   }
 
   @ApiOperation(value = "List spaces the user can add to",
     notes = "Retrieves a list of spaces that the user has permission to add to",
     responseClass = "None", httpMethod = "GET")
   def listCanEdit(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true) { implicit request =>
-    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.superAdmin).map(spaceToJson)))
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.user.fold(false)(_.superAdminMode)).map(spaceToJson)))
   }
 
   def listCanEditNotAlreadyIn(collectionId : UUID, title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true ){ implicit request =>
-    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.superAdmin).map(spaceToJson)))
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.user.fold(false)(_.superAdminMode)).map(spaceToJson)))
   }
 
   /**
@@ -153,6 +156,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
           } else {
             spaces.addCollection(collectionId, spaceId)
             collectionService.addToRootSpaces(collectionId, spaceId)
+            events.addSourceEvent(request.user,  c.id, c.name, s.id, s.name, "add_collection_space")
             spaces.get(spaceId) match {
               case Some(space) => {
                 Ok(Json.obj("collectionInSpace" -> space.collectionCount.toString))
@@ -178,6 +182,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
             Forbidden(toJson(s"You are not the owner of the dataset"))
           } else {
             spaces.addDataset(datasetId, spaceId)
+            events.addSourceEvent(request.user,  d.id, d.name, s.id, s.name, "add_dataset_space")
             Ok(Json.obj("datasetsInSpace" -> (s.datasetCount + 1).toString))
           }
         }
@@ -191,16 +196,22 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   def removeCollection(spaceId: UUID, collectionId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     (spaces.get(spaceId), collectionService.get(collectionId)) match {
       case (Some(s), Some(c)) => {
-        spaces.removeCollection(collectionId, spaceId)
-        collectionService.removeFromRootSpaces(collectionId, spaceId)
-        updateSubCollections(spaceId, collectionId)
-        Ok(toJson("success"))
+        if(c.root_spaces contains s.id) {
+          spaces.removeCollection(collectionId, spaceId)
+          collectionService.removeFromRootSpaces(collectionId, spaceId)
+          updateSubCollections(spaceId, collectionId)
+          events.addSourceEvent(request.user,  c.id, c.name, s.id, s.name,"remove_collection_space")
+          Ok(toJson("success"))
+        } else {
+          BadRequest("Space is not part of root spaces")
+        }
+
       }
       case (_, _) => NotFound
     }
   }
 
-  def updateSubCollections(spaceId: UUID, collectionId: UUID)  {
+  private def updateSubCollections(spaceId: UUID, collectionId: UUID)  {
     collectionService.get(collectionId) match {
       case Some(collection) => {
         val collectionDescendants = collectionService.getAllDescendants(collectionId)
@@ -225,6 +236,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     (spaces.get(spaceId), datasetService.get(datasetId)) match {
       case (Some(s), Some(d)) => {
         spaces.removeDataset(datasetId, spaceId)
+        events.addSourceEvent(request.user ,  d.id, d.name, s.id, s.name, "remove_dataset_space")
         Ok(toJson("success"))
       }
       case (_, _) => NotFound
@@ -315,6 +327,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       Logger.debug("converted values are " + timeToLive + " and " + enabled)
 
       spaces.updateSpaceConfiguration(spaceid, name, description, timeToLive, enabled)
+      events.addObjectEvent(request.user, spaceid, name, "update_space_information")
       Ok(Json.obj("status" -> "success"))
     }
     else {
@@ -425,13 +438,11 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
               if(space.userCount != spaces.getUsersInSpace(space.id).length){
                 spaces.updateUserCount(space.id, spaces.getUsersInSpace(space.id).length)
               }
+
+              Ok(Json.obj("status" -> "success"))
             }
-            case None => Logger.error("Errors: " + "Could not find space")
+            case None => BadRequest(toJson("Errors: Could not find space"))
           }
-
-
-
-          Ok(Json.obj("status" -> "success"))
         }
         case e: JsError => {
           Logger.error("Errors: " + JsError.toFlatJson(e).toString())
@@ -465,14 +476,14 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   @ApiOperation(value = "Follow space",
     notes = "Add user to space followers and add space to user followed spaces.",
     responseClass = "None", httpMethod = "POST")
-  def follow(id: UUID, name: String) = AuthenticatedAction { implicit request =>
+  def follow(id: UUID) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
     user match {
       case Some(loggedInUser) => {
         spaces.get(id) match {
-          case Some(file) => {
-            events.addObjectEvent(user, id, name, "follow_space")
+          case Some(space) => {
+            events.addObjectEvent(user, id, space.name, "follow_space")
             spaces.addFollower(id, loggedInUser.id)
             userService.followResource(loggedInUser.id, new ResourceRef(ResourceRef.space, id))
 
@@ -498,7 +509,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   @ApiOperation(value = "Unfollow space",
     notes = "Remove user from space followers and remove space from user followed spaces.",
     responseClass = "None", httpMethod = "POST")
-  def unfollow(id: UUID, name: String) = AuthenticatedAction { implicit request =>
+  def unfollow(id: UUID) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
     user match {

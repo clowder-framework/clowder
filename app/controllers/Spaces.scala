@@ -89,7 +89,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
         case Some(s) => {
           val runningExtractors: List[String] = extractors.getExtractorNames()
           val selectedExtractors: List[String] = spaces.getAllExtractors(id)
-          Ok(views.html.spaces.updateExtractors(runningExtractors, selectedExtractors, id.stringify))
+          Ok(views.html.spaces.updateExtractors(runningExtractors, selectedExtractors, id))
         }
         case None => InternalServerError("Space not found")      
     }
@@ -98,7 +98,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   /**
    * Processes POST request. Updates list of extractors associated with this space in mongo.
    */
-  def updateExtractors() = PermissionAction(Permission.EditSpace)(parse.multipartFormData) {
+  def updateExtractors(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id)))(parse.multipartFormData) {
     implicit request =>
       implicit val user = request.user
       //form contains space id and list of extractors.
@@ -130,10 +130,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
       }
   }
-  
-                      
-                      
-  
+
   /**
    * Space main page.
    */
@@ -152,7 +149,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 	            	inSpaceBuffer += theCreator
 	            	creatorActual = theCreator
 	            }
-	            case None => Logger.debug("-------- No creator for space found...")
+	            case None => Logger.error(s" No creator for space $id found...")
 	        }
 
 	        var userRoleMap: Map[User, String] = Map.empty
@@ -200,7 +197,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       }
   }
 
-  def manageUsers(id: UUID) = PermissionAction(Permission.EditUser, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+  def manageUsers(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
@@ -213,7 +210,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
             inSpaceBuffer += theCreator
             creatorActual = theCreator
           }
-          case None => Logger.debug("-------- No creator for space found...")
+          case None => Logger.error(s" No creator for space $id found...")
         }
 
         var externalUsers = users.list.to[ArrayBuffer]
@@ -319,52 +316,53 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   /**
    * Each user with EditSpace permission will see the request on index and receive an email.
    */
-   def addRequest(id: UUID) = AuthenticatedAction { implicit request =>
-      implicit val requestuser = request.user
+  def addRequest(id: UUID) = AuthenticatedAction { implicit request =>
+    implicit val requestuser = request.user
 
     requestuser match{
-      case Some(user) =>  {    spaces.get(id) match {
-        case Some(s) => {
-          // when permission is public, user can reach the authorization request button, so we check if the request is
-          // already inserted
-          if(s.requests.contains(RequestResource(user.id))) {
-            Ok(views.html.authorizationMessage("Your prior request is active, and pending"))
-          }else if (spaces.getRoleForUserInSpace(s.id, user.id) != None) {
-            Ok(views.html.authorizationMessage("You are already part of the space"))
-          } else{
-            Logger.debug("Request submitted in controller.Space.addRequest  ")
-            val subject: String = "Request for access from " + AppConfiguration.getDisplayName
-            val body = views.html.spaces.requestemail(user, id.toString, s.name)
+      case Some(user) =>  {
+        spaces.get(id) match {
+          case Some(s) => {
+            // when permission is public, user can reach the authorization request button, so we check if the request is
+            // already inserted
+            if(s.requests.contains(RequestResource(user.id))) {
+              Ok(views.html.authorizationMessage("Your prior request is active, and pending"))
+            }else if (spaces.getRoleForUserInSpace(s.id, user.id) != None) {
+              Ok(views.html.authorizationMessage("You are already part of the space"))
+            } else{
+              Logger.debug("Request submitted in controller.Space.addRequest  ")
+              val subject: String = "Request for access from " + AppConfiguration.getDisplayName
+              val body = views.html.spaces.requestemail(user, id.toString, s.name)
 
-            for (requestReceiver <- spaces.getUsersInSpace(s.id)) {
-              spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
-                case Some(aRole) => {
-                  if (aRole.permissions.contains("EditSpace")) {
-                    events.addRequestEvent(Some(user), requestReceiver, id, s.name, "postrequest_space")
+              for (requestReceiver <- spaces.getUsersInSpace(s.id)) {
+                spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
+                  case Some(aRole) => {
+                    if (aRole.permissions.contains("EditSpace")) {
+                      events.addRequestEvent(Some(user), requestReceiver, id, s.name, "postrequest_space")
 
-                    //sending emails to the space's Admin && Editor
-                    val recipient: String = requestReceiver.email.get.toString
-                    Mail.sendEmail(subject, request.user, recipient, body)
+                      //sending emails to the space's Admin && Editor
+                      val recipient: String = requestReceiver.email.get.toString
+                      Mail.sendEmail(subject, request.user, recipient, body)
+                    }
                   }
                 }
               }
+              spaces.addRequest(id, user.id, user.fullName)
+              Ok(views.html.authorizationMessage("Request submitted"))
             }
-            spaces.addRequest(id, user.id, user.fullName)
-            Ok(views.html.authorizationMessage("Request submitted"))
           }
+          case None => InternalServerError("Space not found")
         }
-        case None => InternalServerError("Space not found")
       }
-    }
 
-    case None => InternalServerError("User not found")
-       }
+      case None => InternalServerError("User not found")
     }
+  }
 
   /**
    * accept authorization request with specific Role. Send email to request user.
    */
-  def acceptRequest( id:UUID, requestuser:String, role:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+  def acceptRequest(id:UUID, requestuser:String, role:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
     implicit val user = request.user
     spaces.get(id) match {
       case Some(s) => {
@@ -431,26 +429,30 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                 spaceForm.bindFromRequest.fold(
                   errors => BadRequest(views.html.spaces.newSpace(errors)),
                   formData => {
-                    Logger.debug("Creating space " + formData.name)
-                    val newSpace = ProjectSpace(name = formData.name, description = formData.description,
-                                                created = new Date, creator = userId, homePage = formData.homePage,
-                                                logoURL = formData.logoURL, bannerURL = formData.bannerURL,
-                                                collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty,
-                                                resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
+                    if (Permission.checkPermission(user, Permission.CreateSpace)) {
+                      Logger.debug("Creating space " + formData.name)
+                      val newSpace = ProjectSpace(name = formData.name, description = formData.description,
+                        created = new Date, creator = userId, homePage = formData.homePage,
+                        logoURL = formData.logoURL, bannerURL = formData.bannerURL,
+                        collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty,
+                        resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
 
-                    // insert space
-                    spaces.insert(newSpace)
-                    val role = Role.Admin
-                    spaces.addUser(userId, role, newSpace.id)
-                    //TODO - Put Spaces in Elastic Search?
-                    // index collection
-                    // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-                    //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
-                    // Notify admins a new space is created
-                    //  List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
-                    //current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Space","added",space.id.toString,space.name)}
-                    // redirect to space page
-                     Redirect(routes.Spaces.getSpace(newSpace.id))
+                      // insert space
+                      spaces.insert(newSpace)
+                      val option_user = users.findByIdentity(identity)
+                      events.addObjectEvent(option_user, newSpace.id, newSpace.name, "create_space")
+                      val role = Role.Admin
+                      spaces.addUser(userId, role, newSpace.id)
+                      //TODO - Put Spaces in Elastic Search?
+                      // index collection
+                      // val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
+                      //current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
+                      // Notify admins a new space is created
+                      //  List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
+                      //current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Space","added",space.id.toString,space.name)}
+                      // redirect to space page
+                      Redirect(routes.Spaces.getSpace(newSpace.id))
+                    } else {  BadRequest("Unauthorized.") }
                   })
               }
               case ("Update") => {
@@ -464,6 +466,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                           val updated_space = existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
                             homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
                           spaces.update(updated_space)
+                          val option_user = users.findByIdentity(identity)
+                          events.addObjectEvent(option_user, updated_space.id, updated_space.name, "update_space_information")
                           Redirect(routes.Spaces.getSpace(existing_space.id))
                         } else {
                           Redirect(routes.Spaces.getSpace(existing_space.id)).flashing("error" -> "You are not authorized to edit this spaces")
@@ -614,7 +618,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       implicit val user  = request.user
       spaces.get(id) match {
         case Some(s) => {
-          val curationIds = s.curationObjects.slice(index*limit, (index+1)*limit)
+          val curationIds = s.curationObjects.reverse.slice(index*limit, (index+1)*limit)
           val curationDatasets: List[CurationObject] = curationIds.map{curObject => curationService.get(curObject)}.flatten
 
           val prev = index-1

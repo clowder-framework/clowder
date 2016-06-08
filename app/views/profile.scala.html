@@ -63,24 +63,7 @@
                 <div>
                     <h1>@profile.fullName</h1>
                 </div>
-                <div>
-                    <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
-                    @profile.identityId.providerId match {
-                        case "google" => {
-                            <a href="https://plus.google.com/@profile.identityId.userId">Google+ profile</a>
-                        }
-                        case "twitter" => {
-                            <a href="https://twitter.com/intent/user?user_id=@profile.identityId.userId">Twitter profile</a>
-                        }
-                        case "facebook" => {
-                            <a href="https://www.facebook.com/app_scoped_user_id/@profile.identityId.userId">facebook profile</a>
-                        }
-                        case _ => {
-                            @profile.identityId.userId
-                        }
-                    }
-                </div>
-            } else {
+           } else {
                 @if(ownProfile){
                     <div id="prf-first-name" class="text-left inline">
                         <h1 id="first-name-title" class="inline" style="cursor:pointer" title="Click to edit user's first name.">@Html(profile.firstName)</h1>
@@ -107,6 +90,29 @@
                     </div>
                 }
             }
+            <div>
+                @profile.identityId.providerId match {
+                    case "userpass" => {
+                        <a href="@routes.Profile.viewProfileUUID(profile.id)">Local profile</a>
+                    }
+                    case "google" => {
+                        <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
+                        <a href="https://plus.google.com/@profile.identityId.userId">Google+ profile</a>
+                    }
+                    case "twitter" => {
+                        <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
+                        <a href="https://twitter.com/intent/user?user_id=@profile.identityId.userId">Twitter profile</a>
+                    }
+                    case "facebook" => {
+                        <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
+                        <a href="https://www.facebook.com/app_scoped_user_id/@profile.identityId.userId">Facebook profile</a>
+                    }
+                    case provider => {
+                        <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
+                        @provider.capitalize profile : @profile.identityId.userId
+                    }
+                }
+            </div>
             @if(profile.email.isDefined) {
                 <div>@profile.email.get</div>
             }
@@ -141,7 +147,7 @@
     </div>
 
     <script language="javascript">
-        var profileMail = "@profile.email.get";
+        var profileMail = "@profile.email.getOrElse("")";
         var firstName = $('#first-name-title').text();
         $('#first-name-title').click(function(){
             updateFirstName();
@@ -184,20 +190,16 @@
             } else {
                 $('#first-name-error').hide();
             }
-            var name = $('#first_name_input').val();
-            firstName = name;
-
-            var request = jsRoutes.api.Users.updateUserField(profileMail,"firstName",htmlEncode(name)).ajax({
+            var name = htmlEncode($('#first_name_input').val());
+            var request = jsRoutes.api.Users.updateName("@profile.id", name, lastName ).ajax({
                 type: 'POST'
             });
             request.done(function(response, textStatus, jqXHR) {
                 console.log("Success");
                 $('.first_name_div').remove();
-                $('#first-name-title').html(htmlEncode(name));
+                $('#first-name-title').html(name);
                 $('#first-name-div').mouseleave();
                 $('#h-edit-first').css("display", "");
-                // update the full name as well
-                saveFullName();
             });
             request.fail(function(jqXHR, textStatus, errorThrown) {
                 console.error("The following error occurred: " + textStatus, errorThrown);
@@ -217,9 +219,8 @@
             }
 
             var name = $('#last_name_input').val();
-            lastName = name;
 
-            var request = jsRoutes.api.Users.updateUserField(profileMail,"lastName",htmlEncode(name)).ajax({
+            var request = jsRoutes.api.Users.updateName("@profile.id", firstName, htmlEncode(name)).ajax({
                 type: 'POST'
             });
             request.done(function(response, textStatus, jqXHR) {
@@ -228,8 +229,6 @@
                 $('#last-name-title').html(htmlEncode(name));
                 $('#last-name-div').mouseleave();
                 $('#h-edit-last').css("display", "");
-                // update the full name as well
-                saveFullName();
             });
             request.fail(function(jqXHR, textStatus, errorThrown) {
                 console.error("The following error occurred: " + textStatus, errorThrown);
@@ -240,23 +239,6 @@
             });
         }
 
-        function saveFullName() {
-            var fullName = firstName + " " + lastName;
-            var requestFull = jsRoutes.api.Users.updateUserField(profileMail,"fullName",fullName).ajax({
-                type: 'POST'
-            });
-            requestFull.done(function(response, textStatus, jqXHR) {
-                //console.log("Success Full");
-                window.location.reload();
-            });
-            requestFull.fail(function(jqXHR, textStatus, errorThrown) {
-                console.error("The following error occurred: " + textStatus, errorThrown);
-                var errMsg = "Yoy must be logged in to update the full name.";
-                if(!checkErrorAndRedirect(jqXHR, errMsg)) {
-                    notify("The full name was not updated due to: "+ errorThrown, "error");
-                }
-            });
-        }
 
         function cancelFirstName() {
             $('#first-name-title').html(firstName);

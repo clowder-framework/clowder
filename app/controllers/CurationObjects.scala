@@ -117,7 +117,8 @@ class CurationObjects @Inject()(
               curations.insert(newCuration)
 
               dataset.folders.map(f => copyFolders(f, newCuration.id, "dataset",  newCuration.id))
-
+              metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
+                .map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id))))
               Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
             }
             else {
@@ -228,9 +229,14 @@ class CurationObjects @Inject()(
   def getCurationObject(curationId: UUID, limit: Int) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {    implicit request =>
     implicit val user = request.user
     curations.get(curationId) match {
-      case Some(c) => {
+      case Some(cOld) => {
+        // this update is not written into MongoDB, only for page view purpose
+        val c = datasets.get(cOld.datasets(0).id) match {
+          case Some(dataset) => cOld.copy(datasets = List(dataset))
+          // dataset is deleted
+          case None => cOld
+        }
         // metadata of curation files are getting from getUpdatedFilesAndFolders
-
         val m = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationObject, c.id))
         val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
         val fileByDataset = curations.getCurationFiles(curations.getAllCurationFileIds(c.id))
@@ -254,7 +260,11 @@ class CurationObjects @Inject()(
           case "None" =>{
             val foldersList = c.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => curations.getCurationFolder(f)).flatten
             val limitFileIds : List[UUID] = c.files.reverse.slice(limit * filepageUpdate - c.folders.length, limit * (filepageUpdate+1) - c.folders.length)
-            val limitFileList : List[CurationFile]=  curations.getCurationFiles( limitFileIds)
+            val limitFileList : List[CurationFile]=  curations.getCurationFiles( limitFileIds).map(cf =>
+              files.get(cf.fileId) match {
+                case Some(currentFile) => cf.copy( filename =currentFile.filename)
+                case None => cf
+              })
             val mCurationFile = c.files.map(f => metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f))).flatten
 
             val folderHierarchy = new ListBuffer[CurationFolder]()
@@ -267,7 +277,11 @@ class CurationObjects @Inject()(
               case Some (cf) => {
                 val foldersList = cf.folders.reverse.slice(limit * filepageUpdate, limit * (filepageUpdate+1)).map(f => curations.getCurationFolder(f)).flatten
                 val limitFileIds : List[UUID] = cf.files.reverse.slice(limit * filepageUpdate - cf.folders.length, limit * (filepageUpdate+1) - cf.folders.length)
-                val limitFileList : List[CurationFile]= curations.getCurationFiles(limitFileIds)
+                val limitFileList : List[CurationFile]= curations.getCurationFiles(limitFileIds).map(cf =>
+                  files.get(cf.fileId) match {
+                    case Some(currentFile) => cf.copy( filename =currentFile.filename)
+                    case None => cf
+                  })
                 val mCurationFile = limitFileIds.map(f => metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.curationFile, f))).flatten
                 var folderHierarchy = new ListBuffer[CurationFolder]()
                 folderHierarchy += cf
@@ -299,7 +313,8 @@ class CurationObjects @Inject()(
     implicit request =>
       implicit val user = request.user
           curations.get(curationId) match {
-            case Some(c) => {
+            case Some(cOld) => {
+              val c = cOld.copy( datasets = datasets.get(cOld.datasets(0).id).toList)
               val propertiesMap: Map[String, List[String]] = Map("Purpose" -> List("Testing-Only"))
               val mmResp = callMatchmaker(c, user)(request)
               user match {
@@ -385,9 +400,9 @@ class CurationObjects @Inject()(
     }
     if(metadataJson.contains("Abstract")) {
       val value = List(c.description) ++ metadataList.filter(_.label == "Abstract").map{item => item.content.as[String]}
-      metadataJson = metadataJson ++ Map("Abstract" -> Json.toJson(value))
+      aggregation = aggregation ++ Map("Abstract" -> Json.toJson(value))
     } else {
-      metadataJson = metadataJson ++ Map("Abstract" -> Json.toJson(c.description))
+      aggregation = aggregation ++ Map("Abstract" -> Json.toJson(c.description))
     }
     if(!metadataDefsMap.contains("Abstract")){
       metadataDefsMap("Abstract") = Json.toJson("http://purl.org/dc/terms/abstract")
@@ -477,7 +492,8 @@ class CurationObjects @Inject()(
       user match {
         case Some(usr) => {
           curations.get(curationId) match {
-            case Some(c) => {
+            case Some(cOld) => {
+              val c = cOld.copy( datasets = datasets.get(cOld.datasets(0).id).toList)
               val propertiesMap: Map[String, List[String]] = Map("Purpose" -> List("Testing-Only"))
               val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
               val repository = request.body.asFormUrlEncoded.getOrElse("repository", null)

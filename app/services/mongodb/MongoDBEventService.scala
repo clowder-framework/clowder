@@ -72,7 +72,7 @@ class MongoDBEventService extends EventService {
     var eventsList = List.concat(userEvents, objectsEvents)
     eventsList = List.concat(eventsList, sourceEvents)
 
-    eventsList = eventsList.sortBy(_.created)
+    eventsList = eventsList.sortBy(_.created).reverse
     eventsList = eventsList.distinct
     eventsList = eventsList.filter(_.created.after(time))
 
@@ -93,7 +93,7 @@ class MongoDBEventService extends EventService {
     var eventsList = List.concat(userEvents, objectsEvents)
     eventsList = List.concat(eventsList, sourceEvents)
 
-    eventsList = eventsList.sortBy(_.created)
+    eventsList = eventsList.sortBy(_.created).reverse
     eventsList = eventsList.distinct
 
     limit match {
@@ -144,7 +144,6 @@ class MongoDBEventService extends EventService {
        case Some(modeluser) => {
          val eventList = Event.find(
            MongoDBObject(
-             // "targetuser" -> MongoDBObject( "_id" -> new ObjectId(targetuser.id.stringify))
              "targetuser._id" -> new ObjectId(modeluser.id.stringify)
            )
          ).toList
@@ -164,12 +163,24 @@ class MongoDBEventService extends EventService {
       "user._id"-> new ObjectId(user.id.toString()))).toList  :::
       Event.find(MongoDBObject(
       "object_id"-> new ObjectId(user.id.toString()))).toList)
-        .sorted(Ordering.by((_: Event).created).reverse)
+        .distinct.sorted(Ordering.by((_: Event).created).reverse)
 
     limit match {
       case Some(x) => eventList.take(x)
       case None => eventList
     }
+  }
+
+  def updateObjectName(id:UUID, name:String) = {
+    Event.dao.update(MongoDBObject("object_id" -> new ObjectId(id.stringify)), $set("object_name" -> name), multi = true)
+    Event.dao.update(MongoDBObject("source_id" -> new ObjectId(id.stringify)), $set("source_name" -> name), multi = true)
+  }
+
+  def updateAuthorFullName(userId: UUID, fullName: String) {
+    Event.update(MongoDBObject("user._id" -> new ObjectId(userId.stringify)),
+      $set("user.fullName" -> fullName), false, true, WriteConcern.Safe)
+    Event.update(MongoDBObject("targetuser._id" -> new ObjectId(userId.stringify)),
+      $set("targetuser.fullName" -> fullName), false, true, WriteConcern.Safe)
   }
 
 }

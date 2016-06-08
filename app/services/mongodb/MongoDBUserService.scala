@@ -37,7 +37,12 @@ class MongoDBUserService @Inject() (
   files: FileService,
   datasets: DatasetService,
   collections: CollectionService,
-  spaces: SpaceService) extends services.UserService {
+  spaces: SpaceService,
+  comments: CommentService,
+  events: EventService,
+  folders: FolderService,
+  metadata: MetadataService,
+  curations: CurationService) extends services.UserService {
   // ----------------------------------------------------------------------
   // Code to implement the common CRUD services
   // ----------------------------------------------------------------------
@@ -55,11 +60,11 @@ class MongoDBUserService @Inject() (
       model.email match {
         case Some(e) if admins.contains(e) => {
           user.put("active", true)
-          user.put("admin", true)
+          user.put("serverAdmin", true)
         }
         case _ => {
           user.put("active", !register)
-          user.put("admin", false)
+          user.put("serverAdmin", false)
         }
       }
     } else {
@@ -82,12 +87,12 @@ class MongoDBUserService @Inject() (
 
   override def updateAdmins() {
     play.Play.application().configuration().getString("initialAdmins").trim.split("\\s*,\\s*").filter(_ != "").foreach{e =>
-      UserDAO.dao.update(MongoDBObject("email" -> e), $set("admin" -> true, "active" -> true), upsert=false, multi=true)
+      UserDAO.dao.update(MongoDBObject("email" -> e), $set("serverAdmin" -> true, "active" -> true), upsert=false, multi=true)
     }
   }
 
   override def getAdmins: List[User] = {
-    UserDAO.find(MongoDBObject("admin" -> true, "active" -> true)).toList
+    UserDAO.find(MongoDBObject("serverAdmin" -> true, "active" -> true)).toList
   }
 
   /**
@@ -203,8 +208,19 @@ class MongoDBUserService @Inject() (
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("profile" -> pson))
   }
 
-  override def updateUserField(email: String, field: String, fieldText: Any) {
-    UserDAO.dao.update(MongoDBObject("email" -> email), $set(field -> fieldText))
+  override def updateUserField(id: UUID, field: String, fieldText: Any) {
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify) ), $set(field -> fieldText))
+  }
+
+  override def updateUserFullName(id: UUID, name: String): Unit = {
+    collections.updateAuthorFullName(id, name)
+    comments.updateAuthorFullName(id, name)
+    curations.updateAuthorFullName(id, name)
+    datasets.updateAuthorFullName(id, name)
+    events.updateAuthorFullName(id, name)
+    files.updateAuthorFullName(id, name)
+    folders.updateAuthorFullName(id, name)
+    metadata.updateAuthorFullName(id, name)
   }
 
   override def addUserDatasetView(email: String, dataset: UUID) {
@@ -604,11 +620,11 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
       user.email match {
         case Some(e) if admins.contains(e) => {
           userobj.put("active", true)
-          userobj.put("admin", true)
+          userobj.put("serverAdmin", true)
         }
         case _ => {
           userobj.put("active", !register)
-          userobj.put("admin", false)
+          userobj.put("serverAdmin", false)
         }
       }
       if (user.authMethod == AuthenticationMethod.UserPassword) {

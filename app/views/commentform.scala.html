@@ -117,7 +117,7 @@ function postComment(id, resourceType) {
       post += "</div></a>";
       post += "<div class='media-body'>";
       post += "<div class=\"comment-header\">";
-      post += "<a href=\"@routes.Profile.viewProfile(user.get.email)\">@user.get.fullName</a>";
+      post += "<a href=\"@routes.Profile.viewProfileUUID(user.get.id)\">@user.get.fullName</a>";
       post += "<span>•</span>";
       post += "<span>" + formatted + "</span>";
       post += "</div>";

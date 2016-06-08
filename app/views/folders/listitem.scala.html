@@ -14,9 +14,7 @@
             <div class="col-md-10 col-sm-10 col-lg-10">
                 <div id="folder-title-@folder.id">
                     <h3 id ="@folder.id-name" class="inline">
-                        <a href="javascript:updatePageAndFolder(0, '@folder.id.stringify')">
-                            @folder.displayName
-                        </a>
+                        <a href="javascript:updatePageAndFolder(0, '@folder.id.stringify')">@folder.displayName</a>
                     </h3>
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))) {
                         <h3 id="h-edit-@folder.id" class="hiddencomplete">
@@ -35,11 +33,12 @@
                                 <span class="glyphicon glyphicon-file"></span> @folder.files.length
                                 @if(user.isDefined) {
                                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))){
-                                        <button onclick="confirmDeleteResource('folder','@(folder.id)','@(folder.displayName.replace("'","&#39;"))', '@parentDataset', '/')" class="btn btn-link" style="text-align:right" title="Delete">
+                                        <button onclick="confirmDeleteResource('folder','@(folder.id)','@(folder.displayName.replace("'","&#39;"))', '@parentDataset', '/')" class="btn btn-link" title="Delete folder">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     } else {
-                                        <button disabled onclick="" class="btn btn-link" style="text-align:right" title="Delete">
-                                            <span class="glyphicon glyphicon-trash"></span></button>
+                                        <div class="inline" title="No permission to delete the folder">
+                                            <button disabled class="btn btn-link"><span class="glyphicon glyphicon-trash"></span></button>
+                                        </div>
                                     }
                                 }
                             </li>

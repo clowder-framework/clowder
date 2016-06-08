@@ -105,7 +105,7 @@ class Users @Inject() (users: UserService) extends SecuredController {
     implicit val user = request.user
     user match {
       case Some(clowderUser) => {
-        var nextPage = (when == "a")
+        val nextPage = (when == "a")
         val dbusers: List[models.User] = if(id != "") {
           users.list(Some(id), nextPage, limit)
         } else {

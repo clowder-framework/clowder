@@ -338,14 +338,14 @@ def extract(host, port, key, file, wait):
 
 	#Poll until output is ready (optional)
 	while wait > 0:
-		status = requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/status').json()
+		status = requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/status?key=' + key).json()
 		if status['Status'] == 'Done': break
 		time.sleep(1)
 		wait -= 1
 
 	#Display extracted content (TODO: needs to be one endpoint!!!)
-	metadata = requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/metadata').json()
-	metadata["technicalmetadata"] = requests.get('http://' + host + ':' + port + '/api/files/' + file_id + '/technicalmetadatajson').json()
+	metadata = requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/metadata?key=' + key).json()
+	metadata["technicalmetadata"] = requests.get('http://' + host + ':' + port + '/api/files/' + file_id + '/technicalmetadatajson?key=' + key).json()
 	metadata = json.dumps(metadata)
 
 	return metadata

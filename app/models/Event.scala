@@ -9,9 +9,6 @@ import services.UserService
 import services.EventService
 import services.DI
 
-import securesocial.core.providers.utils.Mailer
-import com.typesafe.plugin._
-
 /**
  * Contains information about an user event
  *
@@ -91,21 +88,14 @@ object Events {
        case Some(id) => {
          users.findById(id) match {
            case Some(user) => {
-             user.email match {
-               case Some(email) => {
-                 job.lastJobTime match {
-                   case Some(date) => {
-                     events.getEventsByTime(user.followedEntities, date, None) match{
-                       case Nil => Logger.debug("No news specified for user " + user.fullName + " at " + date)
-                       case alist => sendDigestEmail(email, alist)
-                     }
-                   }
-                   case None =>
+             job.lastJobTime match {
+               case Some(date) => {
+                 events.getEventsByTime(user.followedEntities, date, None) match {
+                   case Nil => Logger.debug("No news specified for user " + user.fullName + " at " + date)
+                   case alist => sendDigestEmail(user, alist)
                  }
                }
-               case None => {
-                 Logger.warn("No email specified for user " + user.fullName)
-               }
+               case None => {}
              }
            }
          }
@@ -118,17 +108,11 @@ object Events {
     /**
     * Sends and creates a Digest Email
     */
-  def sendDigestEmail(email: String, events: List[Event]) = {
-    var eventsList = events.sorted(Ordering.by((_: Event).created).reverse)
+  def sendDigestEmail(user: User, events: List[Event]) = {
+    val eventsList = events.sorted(Ordering.by((_: Event).created).reverse)
     val body = views.html.emailEvents(eventsList)
-    val mail = use[MailerPlugin].email
 
-    mail.setSubject("Clowder Email Digest")
-    mail.setRecipient(email)
-    mail.setFrom(Mailer.fromAddress)
-    mail.send("", body.body)
-   
-    Logger.info("Email Sent")
+    util.Mail.sendEmail("Clowder Email Digest", None, user, body)
   }
 }
 

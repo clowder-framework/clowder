@@ -55,6 +55,11 @@ trait CurationService {
   def updateRepository(curationId: UUID, repository: String)
 
   /**
+    * Update author full name
+    */
+  def updateAuthorFullName(userId: UUID, fullName: String)
+
+  /**
    * Save external Identifier received from repository
    */
   def updateExternalIdentifier(curationId: UUID, externalIdentifier: URI)

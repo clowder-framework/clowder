@@ -26,6 +26,7 @@
     <script src="@routes.Assets.at("javascripts/main.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/select2.min.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/clipboard.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
     <script type="text/javascript" src="@routes.Application.javascriptRoutes"></script>
 
     <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
@@ -144,6 +145,11 @@
                                             }
                                             case None => {}
                                         }
+                                        @if(user.exists(_.superAdminMode)) {
+                                            <li><a href="javascript:toggelServerAdmin();">Drop SuperAdmin</a></li>
+                                        } else {
+                                            <li><a href="javascript:toggelServerAdmin();">Enable SuperAdmin</a></li>
+                                        }
 
                                     </ul>
                                 </li>
@@ -172,6 +178,12 @@
                     }
                 </ul>
             </div>
+    @if(user.exists(_.superAdminMode)) {
+        <div class="alert alert-warning" role="alert">
+            <span class="glyphicon glyphicon-warning-sign"></span>
+            You have temporary access to administrative functions. <a href="javascript:toggelServerAdmin();">Drop access</a> if you no longer require it.
+        </div>
+    }
     </div>
     </div>
     <div class="container">
@@ -204,5 +216,11 @@
     </script>
 }
 
+<script>
+    function toggelServerAdmin() {
+        $.cookie("superAdmin", $.cookie("superAdmin") != "true", { path: '/' });
+        location.reload();
+    }
+</script>
 </body>
 </html>
