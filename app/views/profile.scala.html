@@ -68,7 +68,7 @@
                     <div id="prf-first-name" class="text-left inline">
                         <h1 id="first-name-title" class="inline" style="cursor:pointer" title="Click to edit user's first name.">@Html(profile.firstName)</h1>
                         <div id="h-edit-first" class="hiddencomplete">
-                            <a id ="edit-first" href="javascript:updateFirstName()" title="Click to edit user's first name.">
+                            <a id ="edit-first" title="Click to edit user's first name.">
                                 <span class ="glyphicon glyphicon-edit"></span>
                             </a>
                         </div>
@@ -158,6 +158,7 @@
         });
         function updateFirstName() {
             firstName = $('#first-name-title').text();
+            console.log()firstName;
             cancelLastName();
             $('<div class="inline first_name_div h3"> </div>').insertAfter($('#prf-first-name'));
             $('.first_name_div').append('<input type="text" id="first_name_input" class="form-control" />');

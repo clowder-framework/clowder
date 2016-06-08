@@ -67,6 +67,22 @@ trait User extends Identity {
   def getMiniUser: MiniUser = {
     new MiniUser(id = id, fullName = fullName, avatarURL = getAvatarUrl(), email = email)
   }
+
+  override def toString: String = format(false)
+
+  def format(paren: Boolean): String = {
+    val x = (identityId.providerId, email) match {
+      case ("userpass", Some(email)) => s"""${fullName} <${email}> [Local]"""
+      case ("userpass", None) => s"""${fullName} [Local]"""
+      case (provider, Some(email)) => s"""${fullName} <${email}> [${provider.capitalize}]"""
+      case (provider, None) => s"""${fullName} [${provider.capitalize}]"""
+    }
+    if (paren) {
+      x.replaceAll("<", "(").replaceAll(">", ")")
+    } else {
+      x
+    }
+  }
 }
 
 object User {
