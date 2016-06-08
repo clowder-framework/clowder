@@ -1,8 +1,8 @@
 @(id: UUID)(implicit user: Option[models.User])
 
 @if(user.isDefined ) {
-    <form action="@(routes.Spaces.addRequest(id))" method="post">
-        <button type="submit" class="btn btn-default btn-xs btn-margins accordion-toggle collapsed btn-margins">Request Authorization</button>
-    </form>
+    <a class="btn btn-default btn-margins accordion-toggle collapsed"
+    href="@(routes.Spaces.addRequest(id))"><span class="glyphicon glyphicon-envelope"></span>
+        Request access</a>
 }
 
