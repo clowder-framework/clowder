@@ -31,16 +31,6 @@ trait CollectionService {
   def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Collection]
 
   /**
-    * Return a list of collections in a space
-    */
-  def listSpace(limit: Integer, space: String, user:Option[User]): List[Collection]
-
-  /**
-    * Return a list of collections in a space starting at a specific date
-    */
-  def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String, user: Option[User]): List[Collection]
-
-  /**
    * Return the count of collections the user has access to.
    */
   def countAccess(permisions: Set[Permission], user: Option[User], showAll: Boolean): Long
@@ -112,12 +102,12 @@ trait CollectionService {
   def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: Boolean = true): Try[Unit]
 
   /**
-   * Update name of the collection
+   * Update name of the dataset
    */
   def updateName(id: UUID, name: String)
 
   /**
-   * Update description of the collection
+   * Update description of the dataset
    */
   def updateDescription(id: UUID, description: String)
 
