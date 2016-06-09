@@ -196,7 +196,6 @@ class MongoDBCollectionService @Inject() (
           var orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
           if (permissions.contains(Permission.ViewCollection)) {
             orlist += MongoDBObject("public" -> true)
-            orlist += MongoDBObject("access" -> "public")
           }
           if(user == owner || owner.isEmpty) {
             orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
@@ -211,7 +210,7 @@ class MongoDBCollectionService @Inject() (
           }
           $or(orlist.map(_.asDBObject))
         }
-        case None => MongoDBObject("access" -> "public")
+        case None => MongoDBObject()
       }
     }
     val filterOwner = owner match {
@@ -232,9 +231,6 @@ class MongoDBCollectionService @Inject() (
               user match {
                 case Some(u) => {
                   val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
-                  if (permissions.contains(Permission.ViewCollection)) {
-                    orlist += MongoDBObject("access" -> "public")
-                  }
                   orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(u.id.stringify)) ++ MongoDBObject("parent_collection_ids" -> List.empty)
 
                   val permissionsString = permissions.map(_.toString)
@@ -246,7 +242,7 @@ class MongoDBCollectionService @Inject() (
                   }
                   $or(orlist.map(_.asDBObject))
                 }
-                case None => MongoDBObject("access" -> "public")
+                case None => MongoDBObject()
               }
             }
 
@@ -771,11 +767,6 @@ class MongoDBCollectionService @Inject() (
   def updateDescription(collectionId: UUID, description: String){
     val result = Collection.update(MongoDBObject("_id" -> new ObjectId(collectionId.stringify)),
       $set("description" -> description), false, false, WriteConcern.Safe)
-  }
-
-  def updateAccess(id: UUID, access: String): Unit ={
-    val result = Collection.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-      $set("access" -> access), false, false, WriteConcern.Safe)
   }
 
   def updateAuthorFullName(userId: UUID, fullName: String) {

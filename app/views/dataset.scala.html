@@ -41,7 +41,7 @@
                         @if(dataset.isTrial){
                             <li>Accessibility: Private</li>
                         } else {
-                            @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))){
+                            @if(Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))) {
                                 <li id="access">Accessibility:
                                     <label><input type="radio" name="access" id="access-default" value="default" >Default</label>
                                     <label><input type="radio" name="access" id="access-private" value="private" >Private</label>

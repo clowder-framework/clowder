@@ -149,7 +149,7 @@ class MongoDBSpaceService @Inject() (
     // - space   == show all datasets in space
     // - access  == show all datasets the user can see
     // - default == public only
-    val public = MongoDBObject("access" -> "public")
+    val public = MongoDBObject("status" -> "public")
     val filter = owner match {
       case Some(o) => {
         val author = MongoDBObject("creator" -> new ObjectId(o.id.stringify))
@@ -445,7 +445,7 @@ class MongoDBSpaceService @Inject() (
       case _ => 
     }
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
-      $set("description" -> description, "name" -> name, "resourceTimeToLive" -> timeToLive, "isTimeToLiveEnabled" -> expireEnabled, "access" -> access),
+      $set("description" -> description, "name" -> name, "resourceTimeToLive" -> timeToLive, "isTimeToLiveEnabled" -> expireEnabled, "status" -> access),
       false, false, WriteConcern.Safe)
   }
 

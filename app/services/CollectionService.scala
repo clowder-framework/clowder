@@ -122,11 +122,6 @@ trait CollectionService {
   def updateDescription(id: UUID, description: String)
 
   /**
-    * Update accessibility of the collection
-    */
-  def updateAccess(id: UUID, access: String)
-
-  /**
    * Delete collection and any reference of it
    */
   def delete(collectionId: UUID): Try[Unit]
