@@ -6,7 +6,7 @@
 
 @main("Space") {
   <div class="page-header">
-    <h1> @title</h1>
+    <h1>@title</h1>
   </div>
   <div class="row">
     <div class="col-md-12">
@@ -87,7 +87,8 @@
 
 
   var title = $('.page-header h1').text();
-  if(title.indexOf("Edit @{spaces.spaceTitle()}") > 0)
+  //console.log(title);
+  if(title.indexOf("Edit ") >= 0)
   {
     if(!$('.help-inline').text())
     {

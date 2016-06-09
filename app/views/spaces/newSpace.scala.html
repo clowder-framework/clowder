@@ -1,2 +1,4 @@
 @(myForm: Form[controllers.spaceFormData])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
-@newEditTemplate(myForm, title = "Create New " + spaces.spaceTitle(), submitButton = createButton(), None)
+@defining("Create New " + spaces.spaceTitle()) { spaceTitle =>
+    @newEditTemplate(myForm, title = spaceTitle, submitButton = createButton(), None)
+}
