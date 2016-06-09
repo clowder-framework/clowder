@@ -66,7 +66,7 @@
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li><a href="@routes.Spaces.list()">@{play.Play.application().configuration().getString("spaceTitle").trim}s</a></li>
+                    <li><a href="@routes.Spaces.list()">@{spaces.spaceTitle()}s</a></li>
                     <li><a href="@routes.Datasets.list("")">Datasets</a></li>
                     <li><a href="@routes.Collections.list("")">Collections</a></li>
                     @if(user.isDefined){

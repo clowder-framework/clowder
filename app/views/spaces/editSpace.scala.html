@@ -1,4 +1,2 @@
 @(myForm: Form[controllers.spaceFormData], spaceId: Option[UUID])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
-@defining("Edit " + play.Play.application().configuration().getString("spaceTitle").trim) { spaceTitle =>
-    @newEditTemplate(myForm, title = spaceTitle, submitButton = updateButton(), spaceId)
-}
+@newEditTemplate(myForm, title = "Edit " + spaces.spaceTitle(), submitButton = updateButton(), spaceId)

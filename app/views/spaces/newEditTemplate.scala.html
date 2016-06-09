@@ -87,7 +87,7 @@
 
 
   var title = $('.page-header h1').text();
-  if(title.indexOf("Edit @{play.Play.application().configuration().getString("spaceTitle").trim}") > 0)
+  if(title.indexOf("Edit @{spaces.spaceTitle()}") > 0)
   {
     if(!$('.help-inline').text())
     {

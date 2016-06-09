@@ -13,7 +13,7 @@
         <div class="col-md-6">
             <h1 class="featurette-heading">@profile.fullName</h1>
             <a href="@routes.Profile.viewProfileUUID(profile.id)" class="btn btn-link" title="Show profile"><span class="glyphicon glyphicon-user"></span> Profile</a>
-            <a href="@routes.Spaces.newSpace()" class="btn btn-link" title="Create a new space"><span class="glyphicon glyphicon-ok"></span> Create @play.Play.application().configuration().getString("spaceTitle").trim</a>
+            <a href="@routes.Spaces.newSpace()" class="btn btn-link" title="Create a new space"><span class="glyphicon glyphicon-ok"></span> Create @spaces.spaceTitle()</a>
             <a href="@routes.Datasets.newDataset(None, None)" class="btn btn-link" title="Create a new dataset"><span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
             <a href="@routes.Collections.newCollection(None)" class="btn btn-link" title="Create a new collection"><span class="glyphicon glyphicon-ok"></span> Create Collection</a>
             <h2> My Events </h2>
@@ -71,7 +71,7 @@
             }
             <div class="row top-padding">
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                    <h2> My @{play.Play.application().configuration().getString("spaceTitle").trim}s </h2>
+                    <h2> My @{spaces.spaceTitle()}s </h2>
                 </div>
                 <div class="margin-top-h col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <span class="pull-right">
@@ -86,9 +86,9 @@
             </div>
             @if(spacesList.size < 1) {
                 <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                    <div>This area will show all @{play.Play.application().configuration().getString("spaceTitle").trim}s you've created. </div>
+                    <div>This area will show all @{spaces.spaceTitle()}s you've created. </div>
 
-                    <div> <a class="btn-link" href="@routes.Spaces.newSpace()" title="Create a new @{play.Play.application().configuration().getString("spaceTitle").trim}">Create @{play.Play.application().configuration().getString("spaceTitle").trim}</a></div>
+                    <div> <a class="btn-link" href="@routes.Spaces.newSpace()" title="Create a new @{spaces.spaceTitle()}">Create @{spaces.spaceTitle()}</a></div>
                 </div>
             }
             <div class="row top-padding">
@@ -151,7 +151,7 @@
                             <h4 class="panel-title">
                                 <div class="row">
                                     <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                                        <a data-toggle="collapse" data-parent="#accordion" href="#collapseSpaces">@{play.Play.application().configuration().getString("spaceTitle").trim}s</a>
+                                        <a data-toggle="collapse" data-parent="#accordion" href="#collapseSpaces">@{spaces.spaceTitle()}s</a>
                                     </div>
                                     <div class=" col-lg-6 col-md-6 col-sm-6 col-xs-6">
                                         <span class="pull-right"> <a href="@routes.Spaces.followingSpaces(0, 12, "")">See More</a></span>

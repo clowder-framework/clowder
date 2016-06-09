@@ -1,4 +1,4 @@
-@(id: UUID, name:String, desc:String, defaultspace:Option[ProjectSpace], spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, isNew:Boolean, authors: List[String])(implicit user: Option[models.User])
+@(id: UUID, name:String, desc:String, defaultspace:Option[ProjectSpace], spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, isNew:Boolean, authors: List[String])(implicit user: Option[models.User])
 
 
 @main("Curation Object") {
@@ -60,22 +60,22 @@
                 </ul>
             </div>
 
-            @if(!spaces.isEmpty) {
+            @if(!spaceList.isEmpty) {
                 <div class="form-group">
-                    <label id="spacelabel" for="space"> Create in @{play.Play.application().configuration().getString("spaceTitle").trim} </label>
+                    <label id="spacelabel" for="space"> Create in @{spaces.spaceTitle()} </label>
                     <select  name="space" id="spaceid" class = "chosen-select">
                     @defaultspace match {
                         case Some(defaultspace) => {
                             <option value="@(defaultspace.id)">@(defaultspace.name)</option>
-                            @spaces.map { space =>
+                            @spaceList.map { space =>
                                 @if(space.id != defaultspace.id) {
                                     <option value="@(space.id)">@(space.name)</option>
                                 }
                             }
                         }
                         case None => {
-                            <option selected disabled>Select the @{play.Play.application().configuration().getString("spaceTitle").trim}</option>
-                            @spaces.map { space =>
+                            <option selected disabled>Select the @{spaces.spaceTitle()}</option>
+                            @spaceList.map { space =>
 
                                 <option value="@(space.id)">@(space.name)</option>
 
@@ -83,16 +83,16 @@
                         }
                     }
                     </select>
-                    <span class="error hiddencomplete" id="spaceerror"> Please select a @{play.Play.application().configuration().getString("spaceTitle").trim}.</span><br>
+                    <span class="error hiddencomplete" id="spaceerror"> Please select a @{spaces.spaceTitle()}.</span><br>
                 </div>
 
             } else {
                 <div class="form-group">
-                    <label id="spacelabel" for="space"> Create in @{play.Play.application().configuration().getString("spaceTitle").trim} </label>
+                    <label id="spacelabel" for="space"> Create in @{spaces.spaceTitle()} </label>
                     <select  name="space" id="spaceid" class = "chosen-select">
-                        No @{play.Play.application().configuration().getString("spaceTitle").trim}s available for creating Curation Object. Please add this dataset to a @{play.Play.application().configuration().getString("spaceTitle").trim} first
+                        No @{spaces.spaceTitle()}s available for creating Curation Object. Please add this dataset to a @{spaces.spaceTitle()} first
                     </select>
-                    <span class="error hiddencomplete" id="spaceerror"> Please select a @{play.Play.application().configuration().getString("spaceTitle").trim}.</span><br>
+                    <span class="error hiddencomplete" id="spaceerror"> Please select a @{spaces.spaceTitle()}.</span><br>
                 </div>
             }
             </fieldset>
@@ -109,7 +109,7 @@
     </div>
     <div class="row">
         <div class="col-md-12">
-            @if(!spaces.isEmpty) {
+            @if(!spaceList.isEmpty) {
                 @if(isNew) {
                     <button class="btn btn-primary btn-margins" title="Create the CO" onclick="return createCuration();">
                         <span class="glyphicon glyphicon-upload"></span> Create

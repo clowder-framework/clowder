@@ -30,10 +30,11 @@
                 @if(user.isDefined) {
                     @if(space.isDefined) {
                         @if(user.get.id.equals(dataset.author.id) || Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space,UUID(space.get)))) {
-                            <button onclick="confirmRemoveResourceFromResource('space','@(UUID(space.getOrElse("")))','dataset','@(dataset.id)','@(dataset.name.replace("'","&#39;"))',true,'@redirect.url')" class="btn btn-link" title="Remove the dataset from the @{play.Play.application().configuration().getString("spaceTitle").trim}">
+                            <button onclick="confirmRemoveResourceFromResource('space','@(UUID(space.getOrElse("")))','dataset','@(dataset.id)','@(dataset.name.replace("'","&#39;"))',true,'@redirect.url')"
+                            class="btn btn-link" title="Remove the dataset from the @{spaces.spaceTitle()}">
                                 <span class="glyphicon glyphicon-remove"></span></button>
                         } else {
-                            <div class="inline" title="No permission to remove the dataset from the @{play.Play.application().configuration().getString("spaceTitle").trim}">
+                            <div class="inline" title="No permission to remove the dataset from the @{spaces.spaceTitle()}">
                                 <button disabled class="btn btn-link"><span class="glyphicon glyphicon-remove"></span></button>
                             </div>
                         }
