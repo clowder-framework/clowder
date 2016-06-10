@@ -171,7 +171,7 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.file, id) => (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasets.findByFileId(id) ).head.status.contains("public")
       case ResourceRef(ResourceRef.dataset, id) => datasets.get(id).exists(d=>d.status.contains("public")) // TODO check if dataset is public datasets.get(r.id).isPublic()
       case ResourceRef(ResourceRef.collection, id) =>  false
-      case ResourceRef(ResourceRef.space, id) => spaces.get(id).exists(c=>c.status.contains("public"))
+      case ResourceRef(ResourceRef.space, id) => spaces.get(id).exists(s=>s.isPublic)
       case ResourceRef(ResourceRef.comment, id) => false
       case ResourceRef(ResourceRef.section, id) => false
       case ResourceRef(ResourceRef.preview, id) => false

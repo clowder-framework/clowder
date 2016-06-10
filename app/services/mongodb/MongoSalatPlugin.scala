@@ -1120,12 +1120,10 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   }
 
   private def addTrialFlag(): Unit ={
-    for (coll <- List[String]("spaces.projects", "datasets")) {
       val q = MongoDBObject()
-      val o = MongoDBObject("$set" -> MongoDBObject("status" -> "trial"))
-      collection(coll).update(q ,o, multi=true)
-    }
+      val s = MongoDBObject("$set" -> MongoDBObject("status" -> "trial"))
+      val d = MongoDBObject("$set" -> MongoDBObject("status" -> "private"))
+      collection("datasets").update(q ,d, multi=true)
+      collection("spaces.projects").update(q ,s, multi=true)
   }
-
-
 }

@@ -91,6 +91,8 @@ trait SecuredController extends Controller {
         case Some(u) if u.superAdminMode || Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
         case Some(u) => notAuthorizedMessage(userRequest.user, resourceRef)
         case None if Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
+        // Anonymous user access to a private space
+        case None if permission == Permission.ViewSpace => notAuthorizedMessage(userRequest.user, resourceRef)
         case None => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
           .flashing("error" -> "You must be logged in to perform that action.")
           .withSession(request.session + (SecureSocial.OriginalUrlKey -> request.uri)))
@@ -135,6 +137,7 @@ trait SecuredController extends Controller {
         spaces.get(id) match {
           case None => Future.successful(BadRequest(views.html.notFound("Space does not exist.")(user)))
           case Some(space) => {
+            //user has submit request
             if (user.isDefined && space.requests.contains(RequestResource(user.get.id))) {
               Future.successful(Forbidden(views.html.spaces.publicView(space, messageNoPermission + "space \""
                 + space.name + "\". \nAuthorization request is pending")(user)))

@@ -281,7 +281,7 @@ class MongoDBDatasetService @Inject() (
             MongoDBObject("status" -> "public")
             // orlist = dataset == default & in public spaces only
           } else {
-            MongoDBObject()
+            MongoDBObject("doesnotexist" -> true)
           }
       }
     }

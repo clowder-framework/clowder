@@ -30,28 +30,20 @@
   }
   <div class="row">
     <div class="col-md-12 col-lg-12 col-sm-12">
-      <p>@space.collectionCount
-        @if(space.collectionCount > 1) {
-           Collections
-         }   else {
-           Collection
-         }
-        @space.datasetCount
-        @if(space.datasetCount > 1) {
-           Datasets
-        }   else {
-           Dataset
-        }
-        @space.userCount
-        @if(space.userCount > 1) {
-          Users
-        }   else {
-          User
-        }
-      </p>
+      <h3>Project Space Stats</h3>
+      <p>Members: @space.userCount</p>
+      <p>Collections: @space.collectionCount</p>
+      <p>Datasets: @space.datasetCount</p>
+
     <p>@msg</p>
-      @if(!msg.contains("pending")) {
-        @spaces.requestAuthorization(space.id)
+      @if(user.isDefined ) {
+        @if(!msg.contains("pending")) {
+          @spaces.requestAuthorization(space.id)
+        }
+      }else {
+        <a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed btn-margins" href="@securesocial.controllers.routes.LoginPage.login">
+          <span class="glyphicon glyphicon-envelope"></span> Request Authorization
+        </a>
       }
       </div>
   </div>
