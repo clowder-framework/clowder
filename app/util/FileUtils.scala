@@ -5,7 +5,6 @@ import java.net.URL
 import java.util.Date
 
 import collection.JavaConversions._
-
 import api.UserRequest
 import controllers.Utils
 import fileutils.FilesUtils
@@ -13,7 +12,6 @@ import models._
 import org.apache.commons.codec.digest.DigestUtils
 import play.api.Logger
 import play.api.Play._
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.Files
 import play.api.libs.json._
 import play.api.mvc.MultipartFormData
@@ -21,7 +19,7 @@ import play.libs.Akka
 import services._
 
 import scala.collection.mutable
-import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 object FileUtils {
@@ -304,7 +302,8 @@ object FileUtils {
     associateDataset(file, dataset, folder, user)
 
     // process rest of file in background
-    Akka.system().scheduler.scheduleOnce(10 milliseconds) {
+    val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
+    Future {
       try {
         saveFile(file, f.ref.file, originalZipFile).foreach { fixedfile =>
           processFileBytes(fixedfile, f.ref.file, dataset)
@@ -314,7 +313,7 @@ object FileUtils {
       } finally {
         f.ref.clean()
       }
-    }
+    }(fileExecutionContext)
 
     Some(file)
   }
@@ -356,13 +355,14 @@ object FileUtils {
     associateDataset(file, fileds, folder, user)
 
     // process rest of file in background
-    Akka.system().scheduler.scheduleOnce(10 milliseconds) {
+    val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
+    Future {
       saveURL(file, url).foreach { fixedfile =>
         processFileBytes(fixedfile, new java.io.File(path), fileds)
         processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, fileds)
         processDataset(file, fileds, folder, clowderurl, user, index)
       }
-    }
+    }(fileExecutionContext)
 
     Some(file)
   }
@@ -411,13 +411,14 @@ object FileUtils {
       associateDataset(file, fileds, folder, user)
 
       // process rest of file in background
-      Akka.system().scheduler.scheduleOnce(10 milliseconds) {
+      val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
+      Future {
         savePath(file, path).foreach { fixedfile =>
           processFileBytes(fixedfile, new java.io.File(path), fileds)
           processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, fileds)
           processDataset(file, fileds, folder, clowderurl, user, index)
         }
-      }
+      }(fileExecutionContext)
 
       Some(file)
     } else {
