@@ -7,8 +7,12 @@
     <h2>@AppConfiguration.getDisplayName Terms of Service</h2>
 
     <p>Version: @AppConfiguration.getTermsOfServicesVersionString</p>
-    @if(user.exists(_.acceptedTermsOfServices.isDefined)) {
-        <p>Accepted: @user.map(_.acceptedTermsOfServices)</p>
+    @if(user.isDefined) {
+        @if(user.get.termsOfServices.exists(!_.accepted)) {
+            <p><strong>The Terms of Services have changed since you accepted them at @user.map(u => u.termsOfServices.map(_.acceptedDate))</strong></p>
+        } else {
+            <p>Accepted: @user.map(u => u.termsOfServices.map(_.acceptedDate))</p>
+        }
     }
 
     <br/>

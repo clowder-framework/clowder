@@ -1120,6 +1120,10 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   }
 
   private def switchToTermsOfServices(): Unit = {
+    val ua = collection("app.configuration").findOne(MongoDBObject("key" -> "userAgreement.message"))
+    if (ua.get("value").toString != "") {
+      collection("app.configuration").insert(MongoDBObject("key" -> "tos.date") ++ MongoDBObject("value" -> new Date()))
+    }
     collection("app.configuration").update(MongoDBObject("key" -> "userAgreement.message"), $set(("key", "tos.text")))
   }
 }

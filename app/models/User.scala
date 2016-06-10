@@ -24,7 +24,7 @@ trait User extends Identity {
   def viewed: Option[List[UUID]]
   def spaceandrole: List[UserSpaceAndRole]
   def repositoryPreferences: Map[String,Any]
-  def acceptedTermsOfServices: Option[Date]
+  def termsOfServices: Option[UserTermsOfServices]
 
   // One can only be superAdmin iff you are a serveradmin
   def superAdminMode: Boolean
@@ -81,7 +81,7 @@ object User {
     email=None,
     authMethod=AuthenticationMethod("SystemUser"),
     active=true,
-    acceptedTermsOfServices=Some(new Date()))
+    termsOfServices=Some(UserTermsOfServices(accepted=true, acceptedDate=new Date(), "")))
   implicit def userToMiniUser(x: User): MiniUser = x.getMiniUser
 }
 
@@ -133,7 +133,7 @@ case class ClowderUser(
   repositoryPreferences: Map[String,Any] = Map.empty,
 
   // terms of services
-  acceptedTermsOfServices: Option[Date] = None
+  termsOfServices: Option[UserTermsOfServices] = None
 
 ) extends User
 
@@ -157,3 +157,9 @@ case class Profile(
     }
   }
 }
+
+case class UserTermsOfServices(
+  accepted: Boolean = false,
+  acceptedDate: Date = null,
+  acceptedVersion: String = ""
+)

@@ -3,6 +3,7 @@ package services
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import models.UserTermsOfServices
 import org.apache.commons.io.IOUtils
 import util.ResourceLister
 
@@ -186,22 +187,24 @@ object AppConfiguration {
 
   def isDefaultTermsOfServices: Boolean = appConfig.getProperty("tos.text", "") == ""
 
-  def acceptedTermsOfServices(date: Option[Date]) = date.exists(_.after(getTermsOfServicesVersionDate))
+  def acceptedTermsOfServices(tos: Option[UserTermsOfServices]) = {
+    tos.exists(t => t.accepted && t.acceptedDate.after(getTermsOfServicesVersionDate))
+  }
 
   /** Set the version of the Terms of Services and returns the version */
   def setTermsOfServicesVersionDate(date: Date) = {
     DI.injector.getInstance(classOf[UserService]).newTermsOfServices()
-    appConfig.setProperty("tos.version", date)
+    appConfig.setProperty("tos.date", date)
   }
 
   /** get the version of the Terms of Services */
-  def getTermsOfServicesVersionDate: Date = appConfig.getProperty("tos.version", new Date())
+  def getTermsOfServicesVersionDate: Date = appConfig.getProperty("tos.date", new Date())
 
   def getTermsOfServicesVersionString: String = {
     if (isDefaultTermsOfServices) {
-      new SimpleDateFormat("yyyy-MM-dd").format(appConfig.getProperty("tos.version", new Date()))
+      new SimpleDateFormat("yyyy-MM-dd").format(appConfig.getProperty("tos.date", new Date()))
     } else {
-      appConfig.getProperty("tos.version", new Date()).toString
+      appConfig.getProperty("tos.date", new Date()).toString
     }
   }
 }

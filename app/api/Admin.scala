@@ -84,6 +84,7 @@ class Admin @Inject()(userService: UserService,
     getValueString(request.body, "tosText").foreach{ tos =>
       events.addEvent(Event(request.user.get, event_type="tos_update"))
       AppConfiguration.setTermsOfServicesText(tos)
+      request.user.foreach(u => userService.acceptTermsOfServices(u.id))
     }
     getValueString(request.body, "tosHtml") match {
       case Some(s) => AppConfiguration.setTermOfServicesHtml(s.toLowerCase == "true")

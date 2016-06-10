@@ -441,11 +441,11 @@ class MongoDBUserService @Inject() (
 
   override def acceptTermsOfServices(id: UUID): Unit = {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-      $set("acceptedTermsOfServices" -> new Date()))
+      $set("termsOfServices" -> MongoDBObject("accepted" -> true, "acceptedDate" -> new Date, "acceptedVersion" -> AppConfiguration.getTermsOfServicesVersionString)))
   }
 
   override def newTermsOfServices(): Unit = {
-    UserDAO.dao.update(MongoDBObject(), $unset("acceptedTermsOfServices"), multi=true)
+    UserDAO.dao.update(MongoDBObject("termsOfServices" -> MongoDBObject("$exists" -> 1)), $set("termsOfServices.accepted" -> false), multi=true)
   }
 
   override def followResource(followerId: UUID, resourceRef: ResourceRef) {
