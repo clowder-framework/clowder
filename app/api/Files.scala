@@ -351,8 +351,8 @@ class Files @Inject()(
     val uploadedFiles = FileUtils.uploadFilesMultipart(request, showPreviews=showPreviews, originalZipFile=originalZipFile, flagsFromPrevious=flagsFromPrevious)
     uploadedFiles.length match {
       case 0 => BadRequest("No files uploaded")
-      case 1 => Ok(toJson(Map("id" -> uploadedFiles.head.id)))
-      case _ => Ok(toJson(Map("ids" -> uploadedFiles.toList)))
+      case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
+      case _ => Ok(Json.obj("ids" -> uploadedFiles.toList))
     }
   }
 
@@ -368,8 +368,8 @@ class Files @Inject()(
         val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset), showPreviews = showPreviews, originalZipFile = originalZipFile, flagsFromPrevious = flagsFromPrevious)
         uploadedFiles.length match {
           case 0 => BadRequest("No files uploaded")
-          case 1 => Ok(toJson(Map("id" -> uploadedFiles.head.id)))
-          case _ => Ok(toJson(Map("ids" -> uploadedFiles.toList)))
+          case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
+          case _ => Ok(Json.obj("ids" -> uploadedFiles.toList))
         }
       }
       case None => {
@@ -386,8 +386,8 @@ class Files @Inject()(
       val uploadedFiles = FileUtils.uploadFilesMultipart(request, key="File", intermediateUpload=true, flagsFromPrevious=originalIdAndFlags)
       uploadedFiles.length match {
         case 0 => BadRequest("No files uploaded")
-        case 1 => Ok(toJson(Map("id" -> uploadedFiles.head.id)))
-        case _ => Ok(toJson(Map("ids" -> uploadedFiles.toList)))
+        case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
+        case _ => Ok(Json.obj("ids" -> uploadedFiles.toList))
       }
   }
 
