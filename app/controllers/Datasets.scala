@@ -215,8 +215,6 @@ class Datasets @Inject()(
       }
     }
 
-    Logger.debug(datasetList.map(d => d.name+"   ").toString)
-
     // check to see if there is a prev page
     val prev = if (datasetList.nonEmpty && date != "") {
       val first = Formatters.iso8601(datasetList.head.created)

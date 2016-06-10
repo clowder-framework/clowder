@@ -204,14 +204,15 @@ class  Datasets @Inject()(
             case None | Some(List("default"))=>
               d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig())
             case Some(space) =>
-              var status = "trial"
+              var status = "private"
               var spaceList: List[UUID] = List.empty
               space.map {
                 aSpace => if (spaces.get(UUID(aSpace)).isDefined) {
                   spaceList = UUID(aSpace) :: spaceList
-                  if( !spaces.get(UUID(aSpace)).get.isTrial) {
-                    status = "default"
-                  }
+                  //if the dataset should set differently when public or private spaces are selected
+//                  if( !spaces.get(UUID(aSpace)).get.isTrial) {
+//                    status = "default"
+//                  }
                 } else {
                   BadRequest(toJson("Bad space = " + aSpace))
                 }

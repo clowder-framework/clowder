@@ -286,7 +286,6 @@ class MongoDBDatasetService @Inject() (
           }
       }
     }
-    println( filterAccess.toString)
     val filterOwner = owner match {
       case Some(o) => MongoDBObject("author._id" -> new ObjectId(o.id.stringify))
       case None => MongoDBObject()

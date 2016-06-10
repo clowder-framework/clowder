@@ -136,7 +136,6 @@ class MongoDBSpaceService @Inject() (
    */
   private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): List[ProjectSpace] = {
     val (filter, sort) = filteredQuery(date, nextPage, title, permissions, user, showAll, owner)
-    println(filter)
     if (date.isEmpty || nextPage) {
       ProjectSpaceDAO.find(filter).sort(sort).limit(limit).toList
     } else {
