@@ -169,7 +169,7 @@ object Permission extends Enumeration {
     // check specific resource
     resourceRef match {
       case ResourceRef(ResourceRef.file, id) => (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasets.findByFileId(id) ).head.status.contains("public")
-      case ResourceRef(ResourceRef.dataset, id) => datasets.get(id).exists(d=>d.status.contains("public")) // TODO check if dataset is public datasets.get(r.id).isPublic()
+      case ResourceRef(ResourceRef.dataset, id) => datasets.get(id).exists(dataset => dataset.isPublic || dataset.status.contains("default") && dataset.spaces.map(sId => spaces.get(sId)).flatten.map(_.isPublic).reduce(_&&_)) // TODO check if dataset is public datasets.get(r.id).isPublic()
       case ResourceRef(ResourceRef.collection, id) =>  false
       case ResourceRef(ResourceRef.space, id) => spaces.get(id).exists(s=>s.isPublic)
       case ResourceRef(ResourceRef.comment, id) => false
@@ -225,7 +225,7 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.file, id) => {
         for (clowderUser <- getUserByIdentity(user)) {
           datasets.findByFileId(id).foreach { dataset =>
-            if ((dataset.isPublic || dataset.status.contains("default") && dataset.spaces.map(sId => spaces.get(sId)).flatten.map(_.isPublic).reduce(_&&_))
+            if ((dataset.isPublic || dataset.status.contains("default") && dataset.spaces.map(sId => spaces.get(sId)).flatten.map(_.isPublic).reduce(_||_))
               && READONLY.contains(permission)) return true
             dataset.spaces.map{
               spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
@@ -236,7 +236,7 @@ object Permission extends Enumeration {
           }
           folders.findByFileId(id).foreach { folder =>
             datasets.get(folder.parentDatasetId).foreach { dataset =>
-              if ((dataset.isPublic || dataset.status.contains("default") && dataset.spaces.map(sId => spaces.get(sId)).flatten.map(_.isPublic).reduce(_&&_))
+              if ((dataset.isPublic || dataset.status.contains("default") && dataset.spaces.map(sId => spaces.get(sId)).flatten.map(_.isPublic).reduce(_||_))
                 && READONLY.contains(permission)) return true
               dataset.spaces.map {
                 spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
@@ -253,7 +253,7 @@ object Permission extends Enumeration {
         datasets.get(id) match {
           case None => false
           case Some(dataset) => {
-            if ((dataset.isPublic || dataset.status.contains("default") && dataset.spaces.map(sId => spaces.get(sId)).flatten.map(_.isPublic).reduce(_&&_))
+            if ((dataset.isPublic || dataset.status.contains("default") && dataset.spaces.map(sId => spaces.get(sId)).flatten.map(_.isPublic).reduce(_||_))
               && READONLY.contains(permission)) return true
             for (clowderUser <- getUserByIdentity(user)) {
               dataset.spaces.map {
@@ -271,7 +271,7 @@ object Permission extends Enumeration {
         collections.get(id) match {
           case None => false
           case Some(collection) => {
-            if ((collection.spaces.map(sId => spaces.get(sId)).flatten.map(_.isPublic).reduce(_&&_))
+            if ((collection.spaces.map(sId => spaces.get(sId)).flatten.map(_.isPublic).reduce(_||_))
               && READONLY.contains(permission)) return true
 
               for (clowderUser <- getUserByIdentity(user)) {

@@ -118,6 +118,10 @@ class MongoDBSpaceService @Inject() (
     list(Some(date), nextPage, limit, Some(title), Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
   }
 
+  def listByStatus(status: String):List[ProjectSpace] = {
+    ProjectSpaceDAO.find(MongoDBObject("status" -> status)).toList
+  }
+
   /**
    * return count based on input
    */
@@ -609,7 +613,7 @@ class MongoDBSpaceService @Inject() (
   object ProjectSpaceDAO extends ModelCompanion[ProjectSpace, ObjectId] {
     val dao = current.plugin[MongoSalatPlugin] match {
       case None => throw new RuntimeException("No MongoSalatPlugin");
-  case Some(x) => new SalatDAO[ProjectSpace, ObjectId](collection = x.collection("spaces.projects")) {}
+      case Some(x) => new SalatDAO[ProjectSpace, ObjectId](collection = x.collection("spaces.projects")) {}
     }
   }
 

@@ -79,6 +79,11 @@ trait SpaceService {
     */
   def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace]
 
+  /**
+    * Return a list of spaces with specific status
+    */
+  def listByStatus(status: String):List[ProjectSpace]
+
   def addCollection(collection: UUID, space: UUID)
 
   def removeCollection(collection: UUID, space:UUID)
