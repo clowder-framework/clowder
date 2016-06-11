@@ -526,7 +526,19 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         collection("collections").findOneByID(ds_col.toString) match {
           case Some(col) => {
             val col_spaces = col.getOrElse[MongoDBList]("spaces", MongoDBList.empty)
-            //add space to dataset if it is not already in dataset
+            val ds_spaces = ds.getOrElse[MongoDBList]("spaces",MongoDBList.empty)
+            col_spaces.foreach { col_space =>
+              if (!ds_spaces.contains(col_space)){
+
+                collection("spaces").findOneByID(col_space.toString) match {
+                  case Some(space) => {
+                    //add this space to the ds.spaces
+                    //NOTE not sure how to do 
+                  }
+                  case Some => Logger.error("No space found for " + col_space)
+                }
+              }
+            }
           }
           case None => Logger.error("No collection for found " + ds_col)
         }
