@@ -533,7 +533,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                 collection("spaces").findOneByID(col_space.toString) match {
                   case Some(space) => {
                     //add this space to the ds.spaces
-                    //NOTE not sure how to do 
+                    //NOTE not sure how to do
                   }
                   case Some => Logger.error("No space found for " + col_space)
                 }
