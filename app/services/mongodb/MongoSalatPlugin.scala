@@ -294,6 +294,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   // CODE TO UPDATE THE DATABASE
   // ----------------------------------------------------------------------
   def updateDatabase() {
+    updateMongo("add-dataset-collection-spaces",addDatasetToCollectionSpaces)
+
     // migrate users to new model
     updateMongo("fixing-typehint-users", updateMongoChangeUserType)
 
@@ -521,12 +523,12 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
   private def addDatasetToCollectionSpaces() {
     collection("datasets").foreach { ds =>
-      val ds_collections = ds.getOrElse[MongoDBList]("collections", MongoDBList.empty)
+      val ds_collections = ds.getAsOrElse[MongoDBList]("collections", MongoDBList.empty)
       ds_collections.foreach { ds_col =>
         collection("collections").findOneByID(ds_col.toString) match {
           case Some(col) => {
-            val col_spaces = col.getOrElse[MongoDBList]("spaces", MongoDBList.empty)
-            val ds_spaces = ds.getOrElse[MongoDBList]("spaces",MongoDBList.empty)
+            val col_spaces = col.getAsOrElse[MongoDBList]("spaces", MongoDBList.empty)
+            val ds_spaces = ds.getAsOrElse[MongoDBList]("spaces",MongoDBList.empty)
             col_spaces.foreach { col_space =>
               if (!ds_spaces.contains(col_space)){
 
@@ -535,7 +537,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                     //add this space to the ds.spaces
                     //NOTE not sure how to do
                   }
-                  case Some => Logger.error("No space found for " + col_space)
+                  case None => Logger.error("No space found for " + col_space)
                 }
               }
             }
