@@ -37,7 +37,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
   @ApiOperation(value = "Get vocabularies by author",
     notes = "",
     responseClass = "None", httpMethod = "GET")
-  def getByAuthor() = PrivateServerAction  {implicit request =>
+  def getByAuthor() = PrivateServerAction { implicit request =>
     val user = request.user
 
     user match {
@@ -52,12 +52,12 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
   @ApiOperation(value = "Get vocabulary by name",
     notes = "",
     responseClass = "None", httpMethod = "GET")
-  def getByName(name: String) = PrivateServerAction  {implicit request =>
+  def getByName(name: String) = PrivateServerAction { implicit request =>
     val user = request.user
 
     user match {
       case Some(identity) => {
-        val result = vocabularyService.getByName(name).map((v : Vocabulary) => jsonVocabulary(v))
+        val result = vocabularyService.getByName(name).map((v: Vocabulary) => jsonVocabulary(v))
         Ok(toJson(result))
       }
       case None => BadRequest("No user matches that user")
@@ -67,7 +67,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
   @ApiOperation(value = "Get vocabulary by name and author",
     notes = "",
     responseClass = "None", httpMethod = "GET")
-  def getByNameAndAuthor(name: String) = PrivateServerAction  {implicit request =>
+  def getByNameAndAuthor(name: String) = PrivateServerAction { implicit request =>
     val user = request.user
 
     user match {
@@ -83,42 +83,42 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     notes = "This will check for Permission.ViewVocabulary",
     responseClass = "None", httpMethod = "GET")
   def list() = PrivateServerAction { implicit request =>
-    val vocabs = vocabularyService.listAll().map( (v : Vocabulary) => jsonVocabulary(v))
+    val vocabs = vocabularyService.listAll().map((v: Vocabulary) => jsonVocabulary(v))
     Ok(toJson(vocabs))
   }
 
   @ApiOperation(value = "Create a vocabulary object",
     notes = "",
     responseClass = "None", httpMethod = "POST")
-  def createVocabularyFromJson(isPublic : Boolean) = AuthenticatedAction (parse.json) { implicit request =>
+  def createVocabularyFromJson(isPublic: Boolean) = AuthenticatedAction(parse.json) { implicit request =>
     val user = request.user
-    var t : Vocabulary = null
+    var t: Vocabulary = null
     user match {
       case Some(identity) => {
         (request.body \ "keys").asOpt[String] match {
           case Some(keys) => {
-            val name = (request.body\"name").asOpt[String].getOrElse("")
+            val name = (request.body \ "name").asOpt[String].getOrElse("")
             val description = (request.body \ "description").asOpt[String].getOrElse("")
             //parse a list of vocabterm from the json here
             val request_terms = (request.body \ "terms").asOpt[List[JsValue]].getOrElse(List.empty)
-            var terms : ListBuffer[UUID] = ListBuffer.empty
+            var terms: ListBuffer[UUID] = ListBuffer.empty
 
-            for (each_term <- request_terms){
-              val key = (each_term\ "key").asOpt[String].getOrElse("")
+            for (each_term <- request_terms) {
+              val key = (each_term \ "key").asOpt[String].getOrElse("")
               val units = (each_term \ "units").asOpt[String]
-              val default_value = (each_term \"default_value").asOpt[String]
-              val current_vocabterm : VocabularyTerm = VocabularyTerm(key = key, author = Option(identity), created = new Date(), units = units, default_value = default_value)
+              val default_value = (each_term \ "default_value").asOpt[String]
+              val current_vocabterm: VocabularyTerm = VocabularyTerm(key = key, author = Option(identity), created = new Date(), units = units, default_value = default_value)
 
               vocabularyTermService.insert(current_vocabterm) match {
                 case Some(id) => {
                   Logger.info("Vocabulary Term inserted")
-                  terms+=(UUID(id))
+                  terms += (UUID(id))
                 }
                 case None => Logger.error("Could not insert vocabulary term")
               }
             }
 
-            t = Vocabulary(author  = Some(identity), created = new Date(),name = name,keys = keys.split(",").toList , description = description.split(',').toList,isPublic = isPublic, terms = terms.toList)
+            t = Vocabulary(author = Some(identity), created = new Date(), name = name, keys = keys.split(",").toList, description = description.split(',').toList, isPublic = isPublic, terms = terms.toList)
 
             vocabularyService.insert(t) match {
               case Some(id) => {
@@ -137,19 +137,18 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
   }
 
 
-  def createVocabularyFromForm() =  PermissionAction(Permission.CreateVocabulary) (parse.multipartFormData){ implicit request =>
+  def createVocabularyFromForm() = PermissionAction(Permission.CreateVocabulary)(parse.multipartFormData) { implicit request =>
     val user = request.user
-    var formName = request.body.asFormUrlEncoded.getOrElse("name", null)
-    var formKeys = request.body.asFormUrlEncoded.getOrElse("keys",null)
-    var formDescription = request.body.asFormUrlEncoded.getOrElse("description",null)
-    var formProject = request.body.asFormUrlEncoded.getOrElse("project",null)
+    val formName = request.body.asFormUrlEncoded.getOrElse("name", null)
+    val formKeys = request.body.asFormUrlEncoded.getOrElse("keys", null)
+    val formDescription = request.body.asFormUrlEncoded.getOrElse("description", null)
 
-    var name : String = ""
-    if (formName != null){
+    var name: String = ""
+    if (formName != null) {
       try {
         name = formName(0)
       } catch {
-        case e : Exception => Logger.debug("no name provided")
+        case e: Exception => Logger.debug("no name provided")
       }
     }
     var keys = List.empty[String]
@@ -160,7 +159,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     if (formDescription != null) {
       description = formDescription(0).split(',').toList
     }
-    var v : Vocabulary = null
+    var v: Vocabulary = null
 
     user match {
       case Some(identity) => {
@@ -183,7 +182,7 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
   @ApiOperation(value = "Delete vocabulary",
     notes = "",
     responseClass = "None", httpMethod = "POST")
-  def removeVocabulary(id: UUID) = PermissionAction(Permission.DeleteVocabulary, Some(ResourceRef(ResourceRef.vocabulary, id))){ implicit request =>
+  def removeVocabulary(id: UUID) = PermissionAction(Permission.DeleteVocabulary, Some(ResourceRef(ResourceRef.vocabulary, id))) { implicit request =>
     vocabularyService.get(id) match {
       case Some(vocab) => {
         vocabularyService.delete(vocab.id)
@@ -195,15 +194,15 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
   @ApiOperation(value = "Add vocabulary to space",
     notes = "",
     responseClass = "None", httpMethod = "POST")
-  def addToSpace(vocabId: UUID, spaceId : UUID) = PermissionAction(Permission.EditVocabulary, Some(ResourceRef(ResourceRef.vocabulary, vocabId))){ implicit request =>
+  def addToSpace(vocabId: UUID, spaceId: UUID) = PermissionAction(Permission.EditVocabulary, Some(ResourceRef(ResourceRef.vocabulary, vocabId))) { implicit request =>
     vocabularyService.get(vocabId) match {
       case Some(vocab) => {
         spaces.get(spaceId) match {
           case Some(space) => {
-            vocabularyService.addToSpace(vocabId,spaceId)
+            vocabularyService.addToSpace(vocabId, spaceId)
             vocabularyService.get(vocabId) match {
               case Some(vocab) => Ok(jsonVocabulary(vocab))
-              case None => BadRequest("could not add " + vocabId + " to space " + spaceId )
+              case None => BadRequest("could not add " + vocabId + " to space " + spaceId)
             }
           }
           case None => BadRequest("no space matches" + spaceId)
@@ -217,15 +216,15 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
   @ApiOperation(value = "Add vocabulary to space",
     notes = "",
     responseClass = "None", httpMethod = "POST")
-  def removeFromSpace(vocabId: UUID, spaceId : UUID) = PermissionAction(Permission.EditVocabulary, Some(ResourceRef(ResourceRef.vocabulary, vocabId))){ implicit request =>
+  def removeFromSpace(vocabId: UUID, spaceId: UUID) = PermissionAction(Permission.EditVocabulary, Some(ResourceRef(ResourceRef.vocabulary, vocabId))) { implicit request =>
     vocabularyService.get(vocabId) match {
       case Some(vocab) => {
         spaces.get(spaceId) match {
           case Some(space) => {
-            vocabularyService.removeFromSpace(vocabId,spaceId)
+            vocabularyService.removeFromSpace(vocabId, spaceId)
             vocabularyService.get(vocabId) match {
               case Some(vocab) => Ok(jsonVocabulary(vocab))
-              case None => BadRequest("could not remove " + vocabId + " from space " + spaceId )
+              case None => BadRequest("could not remove " + vocabId + " from space " + spaceId)
             }
           }
           case None => BadRequest("no space matches" + spaceId)
@@ -238,13 +237,13 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
   @ApiOperation(value = "List all vocabularies the user can view with description",
     notes = "This will check for Permission.ViewVocabulary",
     responseClass = "None", httpMethod = "POST")
-  def findByDescription(containsAll : Boolean) = PrivateServerAction (parse.json) {implicit request=>
+  def findByDescription(containsAll: Boolean) = PrivateServerAction(parse.json) { implicit request =>
     val user = request.user
-    val description = (request.body \"description").asOpt[String].getOrElse("").split(',').toList
+    val description = (request.body \ "description").asOpt[String].getOrElse("").split(',').toList
 
     user match {
       case Some(identity) => {
-        if (!description.isEmpty){
+        if (!description.isEmpty) {
           Ok(toJson(vocabularyService.findByDescription(description, containsAll)))
         }
         else {
@@ -255,10 +254,10 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     }
   }
 
-  def getVocabularyTerms(vocabulary : Vocabulary) : List[VocabularyTerm] = {
-    var vocab_terms : ListBuffer[VocabularyTerm] = ListBuffer.empty
-    if (!vocabulary.terms.isEmpty){
-      for (term <- vocabulary.terms){
+  def getVocabularyTerms(vocabulary: Vocabulary): List[VocabularyTerm] = {
+    var vocab_terms: ListBuffer[VocabularyTerm] = ListBuffer.empty
+    if (!vocabulary.terms.isEmpty) {
+      for (term <- vocabulary.terms) {
         var current_term = vocabularyTermService.get(term) match {
           case Some(vocab_term) => {
             vocab_terms += vocab_term
@@ -270,26 +269,10 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     vocab_terms.toList
   }
 
-
-  def getVocabularyTermsJsValue(vocabulary : Vocabulary) : List[JsValue] = {
-    var vocab_terms : ListBuffer[JsValue] = ListBuffer.empty
-    for (term <- vocabulary.terms){
-      vocabularyTermService.get(term) match {
-        case Some(vocab_term) => {
-          vocab_terms += Json.toJson(vocab_term)
-        }
-      }
-    }
-    vocab_terms.toList
-  }
-
-
-
-  def jsonVocabulary(vocabulary : Vocabulary): JsValue = {
-    val terms  = getVocabularyTerms(vocabulary)
+  def jsonVocabulary(vocabulary: Vocabulary): JsValue = {
+    val terms = getVocabularyTerms(vocabulary)
     val author = vocabulary.author.get.identityId.userId
-    Json.obj("id"->vocabulary.id.stringify,"author"->author,"name"->vocabulary.name,"terms"->terms,"keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic"->vocabulary.isPublic.toString, "spaces"->vocabulary.spaces.mkString(","))
+    Json.obj("id" -> vocabulary.id.stringify, "author" -> author, "name" -> vocabulary.name, "terms" -> terms, "keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic" -> vocabulary.isPublic.toString, "spaces" -> vocabulary.spaces.mkString(","))
   }
-
 
 }
