@@ -519,6 +519,23 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
+  private def addDatasetToCollectionSpaces() {
+    collection("datasets").foreach { ds =>
+      val ds_collections = ds.getOrElse[MongoDBList]("collections", MongoDBList.empty)
+      ds_collections.foreach { ds_col =>
+        collection("collections").findOneByID(ds_col.toString) match {
+          case Some(col) => {
+            val col_spaces = col.getOrElse[MongoDBList]("spaces", MongoDBList.empty)
+            //add space to dataset if it is not already in dataset
+          }
+          case None => Logger.error("No collection for found " + ds_col)
+        }
+      }
+    }
+
+  }
+
+
   /**
    * Replaces the files in the datasets from a copy of the files to just the file UUID's.
    */
