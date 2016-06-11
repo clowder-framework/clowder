@@ -249,25 +249,13 @@ object Permission extends Enumeration {
         datasets.get(id) match {
           case None => false
           case Some(dataset) => {
-            val all_spaces = collection.mutable.HashSet[models.UUID]()
-            dataset.spaces.map{
-              space => all_spaces += space
-            }
-            dataset.collections.map{
-              collectionId => collections.get(collectionId).foreach{
-                collection => collection.spaces.map{
-                  space => all_spaces += space
-                }
-              }
-            }
             for (clowderUser <- getUserByIdentity(user)) {
-              all_spaces.map {
+              dataset.spaces.map {
                 spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
                   if (role.permissions.contains(permission.toString))
                     return true
                 }
               }
-
             }
             false
           }
