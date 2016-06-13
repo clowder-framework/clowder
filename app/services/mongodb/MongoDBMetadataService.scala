@@ -14,6 +14,7 @@ import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
 import services.MetadataService
 import services.{ContextLDService, DatasetService, FileService, FolderService}
+import api.Permission
 
 /**
  * MongoDB Metadata Service Implementation
@@ -134,12 +135,39 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
 
   }
 
+  def getDefinitionsDistinctName(user: Option[User]): List[MetadataDefinition] = {
+    val filterAccess = if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public") {
+      MongoDBObject()
+    } else {
+      val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
+      //TODO: Add public space check.
+      user match {
+        case Some(u) => {
+          val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(Set(Permission.ViewMetadata.toString())).nonEmpty)
+          if(okspaces.nonEmpty) {
+            orlist += ("space" $in okspaces.map(x=> new ObjectId(x.spaceId.stringify)))
+          }
+          $or(orlist.map(_.asDBObject))
+        }
+        case None => MongoDBObject()
+      }
+    }
+    MetadataDefinitionDAO.find(filterAccess).toList.groupBy(_.json).map(_._2.head).toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )
+  }
+
   def getDefinition(id: UUID): Option[MetadataDefinition] = {
     MetadataDefinitionDAO.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)))
   }
 
   def getDefinitionByUri(uri:String):Option[MetadataDefinition] = {
     MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri))
+  }
+
+  def getDefinitionByUriAndSpace(uri: String, spaceId: Option[String]): Option[MetadataDefinition] = {
+    spaceId match {
+      case Some(s) => MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri, "spaceId" -> new ObjectId(s)))
+      case None => MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri, "spaceId" -> null) )
+    }
   }
 
   def removeDefinitionsBySpace(spaceId: UUID) = {

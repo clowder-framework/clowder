@@ -26,6 +26,7 @@ class Metadata @Inject()(
   datasets: DatasetService,
   files: FileService,
   curations:CurationService,
+  events: EventService,
   spaceService: SpaceService) extends ApiController {
   
   def search() = PermissionAction(Permission.ViewDataset)(parse.json) { implicit request =>
@@ -59,6 +60,13 @@ class Metadata @Inject()(
   def getDefinitions() = PermissionAction(Permission.ViewDataset) {
     implicit request =>
       val vocabularies = metadataService.getDefinitions()
+      Ok(toJson(vocabularies))
+  }
+
+  def getDefinitionsDistinctName() = PermissionAction(Permission.ViewDataset) {
+    implicit request =>
+      implicit val user = request.user
+      val vocabularies = metadataService.getDefinitionsDistinctName(user)
       Ok(toJson(vocabularies))
   }
 
@@ -111,12 +119,14 @@ class Metadata @Inject()(
   def addDefinitionToSpace(spaceId: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId))) (parse.json){ implicit request =>
     implicit val user = request.user
     user match {
-      case Some(user) => {
+      case Some(u) => {
         val body = request.body
         if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
           val uri = (body \ "uri").as[String]
           spaceService.get(spaceId) match {
-            case Some(space) => addDefinitionHelper(uri, body, Some(space.id))
+            case Some(space) => {
+              addDefinitionHelper(uri, body, Some(space.id), u, Some(space))
+            }
             case None => BadRequest("The space does not exist")
           }
         } else {
@@ -127,14 +137,14 @@ class Metadata @Inject()(
     }
   }
 
-  def addDefinition() = PermissionAction(Permission.AddMetadata)(parse.json) {
+  def addDefinition() = ServerAdminAction(parse.json) {
     implicit request =>
       request.user match {
         case Some(user) => {
           val body = request.body
           if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
             val uri = (body \ "uri").as[String]
-            addDefinitionHelper(uri, body, None)
+            addDefinitionHelper(uri, body, None, user, None)
           } else {
             BadRequest(toJson("Invalid Resource type"))
           }
@@ -143,29 +153,48 @@ class Metadata @Inject()(
       }
   }
 
-  def addDefinitionHelper(uri: String, body: JsValue, spaceId: Option[UUID]): Result = {
+  def addDefinitionHelper(uri: String, body: JsValue, spaceId: Option[UUID], user: User, space: Option[ProjectSpace]): Result = {
     metadataService.getDefinitionByUri(uri) match {
       case Some(metadata) => BadRequest(toJson("Metadata definition with same uri exists."))
       case None => {
         val definition = MetadataDefinition(json = body, spaceId = spaceId)
         metadataService.addDefinition(definition)
+        space match {
+          case Some(s) => {
+            events.addObjectEvent(Some(user), s.id, s.name, "added_metadata_space")
+          }
+          case None => {
+            events.addEvent(new Event(user.getMiniUser, None, None, None, None, None, "added_metadata_instance", new Date()))
+          }
+        }
         Ok(JsObject(Seq("status" -> JsString("ok"))))
       }
     }
   }
 
-  def editDefinition(id:UUID, spaceId: Option[UUID] = None) = ServerAdminAction (parse.json) {
+  def editDefinition(id:UUID, spaceId: Option[String]) = ServerAdminAction (parse.json) {
     implicit request =>
       request.user match {
         case Some(user) => {
           val body = request.body
           if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
             val uri = (body \ "uri").as[String]
-            metadataService.getDefinitionByUri(uri) match {
+            metadataService.getDefinitionByUriAndSpace(uri, spaceId) match {
               case Some(metadata)  => if( metadata.id != id) {
                 BadRequest(toJson("Metadata definition with same uri exists."))
               } else {
                 metadataService.editDefinition(id, body)
+                metadata.spaceId match {
+                  case Some(spaceId) => {
+                    spaceService.get(spaceId) match {
+                      case Some(s) => events.addObjectEvent(Some(user), s.id, s.name, "edit_metadata_space")
+                      case None =>
+                    }
+                  }
+                  case None => {
+                    events.addEvent(new Event(user.getMiniUser, None, None, None, None, None, "edit_metadata_instance", new Date()))
+                  }
+                }
                 Ok(JsObject(Seq("status" -> JsString("ok"))))
               }
               case None => {
@@ -183,17 +212,35 @@ class Metadata @Inject()(
   }
 
   def deleteDefinition(id: UUID) = ServerAdminAction { implicit request =>
-    metadataService.getDefinition(id) match {
-      case Some(md) => {
-        metadataService.deleteDefinition(id)
-        Ok(JsObject(Seq("status" -> JsString("ok"))))
-      }
+    implicit val user = request.user
+    user match {
+      case Some(user) => {
+        metadataService.getDefinition(id) match {
+          case Some(md) => {
+            metadataService.deleteDefinition(id)
 
-      case None => BadRequest(toJson("Invalid metadata definition"))
+            md.spaceId match {
+              case Some(spaceId) => {
+                spaceService.get(spaceId) match {
+                  case Some(s) => events.addObjectEvent(Some(user), s.id, s.name, "delete_metadata_space")
+                  case None =>
+                }
+              }
+              case None => {
+                events.addEvent(new Event(user.getMiniUser, None, None, None, None, None, "delete_metadata_instance", new Date()))
+              }
+            }
+            Ok(JsObject(Seq("status" -> JsString("ok"))))
+          }
+          case None => BadRequest(toJson("Invalid metadata definition"))
+          }
+
+      }
+      case None => BadRequest(toJson("Invalid user"))
     }
   }
 
-  def addUserMetadata(spaceId: Option[UUID] = None) = PermissionAction(Permission.AddMetadata)(parse.json) {
+  def addUserMetadata() = PermissionAction(Permission.AddMetadata)(parse.json) {
     implicit request =>
       request.user match {
         case Some(user) => {

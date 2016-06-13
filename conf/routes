@@ -221,6 +221,7 @@ POST           /password                                                        
 # ----------------------------------------------------------------------
 GET            /authenticate/:provider                                                  securesocial.controllers.ProviderController.authenticate(provider)
 POST           /authenticate/:provider                                                  securesocial.controllers.ProviderController.authenticateByPost(provider)
+
 GET            /not-authorized                                                          securesocial.controllers.ProviderController.notAuthorized
 
 # ----------------------------------------------------------------------
@@ -299,9 +300,10 @@ GET            /api/metadata/search                                             
 POST           /api/metadata/search                                                     @api.Metadata.search()
 
 GET            /api/metadata/definitions                                                @api.Metadata.getDefinitions()
+GET            /api/metadata/distinctdefinitions                                        @api.Metadata.getDefinitionsDistinctName()
 GET            /api/metadata/definitions/:id                                            @api.Metadata.getDefinition(id: UUID)
 GET            /api/metadata/url/*in_url                                                @api.Metadata.getUrl(in_url: String)
-PUT            /api/metadata/definitions/:id                                            @api.Metadata.editDefinition(id:UUID)
+PUT            /api/metadata/definitions/:id                                            @api.Metadata.editDefinition(id:UUID, spaceId: Option[String] ?= None)
 POST           /api/metadata/definitions                                                @api.Metadata.addDefinition()
 DELETE         /admin/metadata/definitions/:id                                          @api.Metadata.deleteDefinition(id: UUID)
 

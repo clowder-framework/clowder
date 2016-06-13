@@ -35,11 +35,17 @@ trait MetadataService {
   /** Vocabulary definitions for user fields **/
   def getDefinitions(spaceId: Option[UUID] = None): List[MetadataDefinition]
 
+  /** Vocabulary definitions with distinct names **/
+  def getDefinitionsDistinctName(user: Option[User] = None): List[MetadataDefinition]
+
   /** Get vocabulary based on id **/
   def getDefinition(id: UUID): Option[MetadataDefinition]
 
   /** Get vocabulary based on uri **/
   def getDefinitionByUri(uri:String):Option[MetadataDefinition]
+
+  /** Get vocabulary based on uri and space **/
+  def getDefinitionByUriAndSpace(uri: String, spaceId: Option[String]): Option[MetadataDefinition]
 
   /** Remove all metadata definitions related to a space**/
   def removeDefinitionsBySpace(spaceId: UUID)
