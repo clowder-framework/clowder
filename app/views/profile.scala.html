@@ -93,23 +93,23 @@
             <div>
                 @profile.identityId.providerId match {
                     case "userpass" => {
-                        <a href="@routes.Profile.viewProfileUUID(profile.id)">Local profile</a>
+                        Profile Source : Local Account
                     }
                     case "google" => {
-                        <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
-                        <a href="https://plus.google.com/@profile.identityId.userId">Google+ profile</a>
+                        Profile Source : <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
+                        <a href="https://plus.google.com/@profile.identityId.userId">Google+</a>
                     }
                     case "twitter" => {
-                        <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
-                        <a href="https://twitter.com/intent/user?user_id=@profile.identityId.userId">Twitter profile</a>
+                        Profile Source : <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
+                        <a href="https://twitter.com/intent/user?user_id=@profile.identityId.userId">Twitter</a>
                     }
                     case "facebook" => {
-                        <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
-                        <a href="https://www.facebook.com/app_scoped_user_id/@profile.identityId.userId">Facebook profile</a>
+                        Profile Source : <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
+                        <a href="https://www.facebook.com/app_scoped_user_id/@profile.identityId.userId">Facebook</a>
                     }
                     case provider => {
-                        <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
-                        @provider.capitalize profile : @profile.identityId.userId
+                        Profile Source : <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
+                        @provider.capitalize
                     }
                 }
             </div>
