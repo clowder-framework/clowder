@@ -253,10 +253,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
         //correct space.userCount according to usersInSpace.length
         spaces.updateUserCount(s.id,usersInSpace.length)
-        val roleDescription = Map("Admin" -> "Admins can edit or delete the project space, edit the user list, and edit and delete files, datasets, and collections as well as metadata and comments.",
-                                  "Editor" -> "Editors can do virtually everything the admin can do in the project space, except delete the project space or edit its name, logo, or description.",
-                                  "Viewer" -> "Viewers can view the content in the project space and download files, but they have no editing, deleting, or uploading capabilities in the project space.")
-
+        val roleDescription = users.listRoles() map (t => t.name -> t.description) toMap
 
         Ok(views.html.spaces.users(spaceInviteForm, Utils.decodeSpaceElements(s), creator, userRoleMap, externalUsers.toList, roleList.sorted, inviteBySpace, roleDescription))
       }
