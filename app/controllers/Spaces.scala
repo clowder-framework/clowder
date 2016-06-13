@@ -318,7 +318,6 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
    */
   def addRequest(id: UUID) = AuthenticatedAction { implicit request =>
     implicit val requestuser = request.user
-Logger.debug("in addrequest")
     requestuser match{
       case Some(user) =>  {
         spaces.get(id) match {
