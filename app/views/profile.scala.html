@@ -68,13 +68,13 @@
                     <div id="prf-first-name" class="text-left inline">
                         <h1 id="first-name-title" class="inline" style="cursor:pointer" title="Click to edit user's first name.">@Html(profile.firstName)</h1>
                         <div id="h-edit-first" class="hiddencomplete" title="Click to edit user's first name.">
-                            <span class ="glyphicon glyphicon-edit"></span>
+                            <a href="javascript:updateFirstName()"><span class ="glyphicon glyphicon-edit"></span></a>
                         </div>
                     </div>
                     <div id="prf-last-name" class="text-left inline edit-tab">
                         <h1 id="last-name-title" class="inline" style="cursor:pointer" title="Click to edit user's last name.">@Html(profile.lastName)</h1>
                         <div id="h-edit-last" class="hiddencomplete" title="Click to edit user's last name.">
-                            <span class ="glyphicon glyphicon-edit"></span>
+                            <a href="javascript:updateLastName()"><span class ="glyphicon glyphicon-edit"></span></a>
                         </div>
                     </div>
                 } else {
@@ -148,18 +148,15 @@
         var lastName = $('#last-name-title').text();
 
         $('#first-name-title').click(function(){
-            cancelLastName();
-            firstName = $('#first-name-title').text();
-            lastName = $('#last-name-title').text();
             updateFirstName();
         });
         $('#last-name-title').click(function(){
-            cancelFirstName();
-            firstName = $('#first-name-title').text();
-            lastName = $('#last-name-title').text();
             updateLastName();
         });
         function updateFirstName() {
+            cancelLastName();
+            firstName = $('#first-name-title').text();
+            lastName = $('#last-name-title').text();
             $('<div class="inline first_name_div h3"> </div>').insertAfter($('#prf-first-name'));
             $('.first_name_div').append('<input type="text" id="first_name_input" class="form-control" />');
             $('.first_name_div').append('<button class="btn btn-sm btn-primary edit-tab" onclick="saveFirstName()"> <span class="glyphicon glyphicon-send"></span> Save</button>');
@@ -171,6 +168,9 @@
             $('#h-edit-first').css("display", "none");
         }
         function updateLastName() {
+            cancelFirstName();
+            firstName = $('#first-name-title').text();
+            lastName = $('#last-name-title').text();
             $('<div class="inline last_name_div h3"></div>').insertAfter($('#prf-last-name'));
             $('.last_name_div').append('<input type="text" id="last_name_input" class="form-control" />');
             $('.last_name_div').append('<button class="btn btn-sm btn-primary edit-tab" onclick="saveLastName()"> <span class="glyphicon glyphicon-send"></span> Save</button>');
