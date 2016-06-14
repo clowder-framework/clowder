@@ -199,6 +199,7 @@
                 $('#first-name-title').html(name);
                 $('#first-name-div').mouseleave();
                 $('#h-edit-first').css("display", "");
+                firstName = $('#first-name-title').text();
             });
             request.fail(function(jqXHR, textStatus, errorThrown) {
                 console.error("The following error occurred: " + textStatus, errorThrown);
@@ -228,6 +229,7 @@
                 $('#last-name-title').html(htmlEncode(name));
                 $('#last-name-div').mouseleave();
                 $('#h-edit-last').css("display", "");
+                lastName = $('#last-name-title').text();
             });
             request.fail(function(jqXHR, textStatus, errorThrown) {
                 console.error("The following error occurred: " + textStatus, errorThrown);
@@ -237,7 +239,6 @@
                 }
             });
         }
-
 
         function cancelFirstName() {
             $('#first-name-title').html(firstName);
