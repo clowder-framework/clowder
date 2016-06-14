@@ -130,6 +130,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("uploads").ensureIndex(MongoDBObject("author.email" -> 1))
     collection("uploads").ensureIndex(MongoDBObject("tags.name" -> 1))
     collection("uploads").ensureIndex(MongoDBObject("author._id"-> 1,  "_id"-> 1))
+    collection("uploads").ensureIndex(MongoDBObject("status"-> 1))
 
     collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
     
@@ -372,6 +373,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("update-counts-spaces", updateCountsInSpaces)
 
     updateMongo("fix-metadata-count", fixMetadataCount)
+
+    // add status field to files
+    updateMongo("add-file-status", addFileStatus)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1143,5 +1147,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         }
       }
     }
+  }
+
+  private def addFileStatus(): Unit = {
+    collection("uploads").update(MongoDBObject(), $set("status" -> FileStatus.PROCESSED.toString), multi=true)
   }
 }

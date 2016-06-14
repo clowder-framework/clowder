@@ -294,7 +294,7 @@ object FileUtils {
     val file = File(UUID.generate(), "", f.filename, user, new Date(),
       FileUtils.getContentType(f.filename, f.contentType), f.ref.file.length(), "", "",
       isIntermediate = intermediateUpload, showPreviews = showPreviews,
-      licenseData = License.fromAppConfig())
+      licenseData = License.fromAppConfig(), status = FileStatus.CREATED.toString)
     files.save(file)
     Logger.info(s"created file ${file.id}")
 
@@ -307,8 +307,10 @@ object FileUtils {
       try {
         saveFile(file, f.ref.file, originalZipFile).foreach { fixedfile =>
           processFileBytes(fixedfile, f.ref.file, dataset)
+          files.setStatus(fixedfile.id, FileStatus.UPLOADED)
           processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, dataset)
           processDataset(file, dataset, folder, clowderurl, user, index)
+          files.setStatus(fixedfile.id, FileStatus.PROCESSED)
         }
       } finally {
         f.ref.clean()
@@ -335,7 +337,7 @@ object FileUtils {
     val file = File(UUID.generate(), path, filename, user, new Date(),
       FileUtils.getContentType(filename, None), -1, "", "",
       isIntermediate=intermediateUpload, showPreviews=showPreviews,
-      licenseData=License.fromAppConfig())
+      licenseData=License.fromAppConfig(), status = FileStatus.CREATED.toString)
     files.save(file)
 
     // extract metadata
@@ -359,8 +361,10 @@ object FileUtils {
     Future {
       saveURL(file, url).foreach { fixedfile =>
         processFileBytes(fixedfile, new java.io.File(path), fileds)
+        files.setStatus(fixedfile.id, FileStatus.UPLOADED)
         processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, fileds)
         processDataset(file, fileds, folder, clowderurl, user, index)
+        files.setStatus(fixedfile.id, FileStatus.PROCESSED)
       }
     }(fileExecutionContext)
 
@@ -392,7 +396,7 @@ object FileUtils {
       val file = File(UUID.generate(), path, filename, user, new Date(),
         FileUtils.getContentType(filename, None), length, "", loader,
         isIntermediate=intermediateUpload, showPreviews=showPreviews,
-        licenseData=License.fromAppConfig())
+        licenseData=License.fromAppConfig(), status = FileStatus.CREATED.toString)
       files.save(file)
 
       // extract metadata
@@ -415,8 +419,10 @@ object FileUtils {
       Future {
         savePath(file, path).foreach { fixedfile =>
           processFileBytes(fixedfile, new java.io.File(path), fileds)
+          files.setStatus(fixedfile.id, FileStatus.UPLOADED)
           processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, fileds)
           processDataset(file, fileds, folder, clowderurl, user, index)
+          files.setStatus(fixedfile.id, FileStatus.PROCESSED)
         }
       }(fileExecutionContext)
 
