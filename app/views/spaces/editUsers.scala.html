@@ -149,14 +149,13 @@
 
 
     var request = jsRoutes.api.Spaces.removeUser('@space.id', this.id).ajax({
-        type : 'GET',
-        contentType : "application/json"
+        type : 'POST'
     });
     request.done ( function ( response, textStatus, jqXHR ) {
         console.log("Successful remove user " + this.id);
     });
     request.fail(function(jqXHR) {
-        console.error("ERROR occurs ");
+        console.error("ERROR occurs when deleting user "+ this.id);
     });
     });
 </script>
@@ -165,3 +164,5 @@
     var roleArray = @Html(Json.stringify(Json.toJson(roleList)))
 </script>
 <script src="@routes.Assets.at("javascripts/spaceModify.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/errorRedirect.js")" language="javascript"></script>
+
