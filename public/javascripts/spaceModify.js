@@ -37,6 +37,10 @@ function addCollectionToSpace(id) {
         txt = txt + '</div>';
         $("#spacesList").append(txt);
         $("#spaceAddSelect").select2("val", "");
+        if(!isSharingEnabled) {
+            $("#add-to-space-widget").addClass("hidden");
+        }
+
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
@@ -57,6 +61,10 @@ function removeCollectionFromSpace(spaceId, id, event){
 
     request.done(function (response, textStatus, jqXHR){
         $('#col_'+spaceId).remove();
+        if(!isSharingEnabled){
+            $("#add-to-space-widget").removeClass("hidden");
+        }
+
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
@@ -85,6 +93,9 @@ function removeCollectionFromSpaceAndRedirect(spaceId, collectionId, isreload, u
             }
         else {
             $('#col_' + spaceId).remove();
+            if(!isSharingEnabled) {
+                $("#add-to-space-widget").removeClass("hidden");
+            }
         }
     });
 
@@ -127,6 +138,10 @@ function addDatasetToSpace(id) {
         txt = txt + '</div>';
         $("#spacesList").append(txt);
         $("#spaceAddSelect").select2("val", "");
+        if(!isSharingEnabled) {
+            $("#add-to-space-widget").addClass("hidden");
+        }
+
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
@@ -147,6 +162,9 @@ function removeDatasetFromSpace(spaceId, datasetId, event){
 
     request.done(function (response, textStatus, jqXHR){
         $('#col_'+spaceId).remove();
+        if(!isSharingEnabled) {
+            $("#add-to-space-widget").removeClass("hidden");
+        }
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
@@ -174,7 +192,11 @@ function removeDatasetFromSpaceAndRedirect(spaceId, datasetId, isreload, url){
             }
         else {
             $('#col_' + spaceId).remove();
+            if(!isSharingEnabled) {
+                $("#add-to-space-widget").removeClass("hidden");
+            }
         }
+
     });
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occured: " + textStatus, errorThrown);

@@ -164,12 +164,36 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
     Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.ViewCollection), false, request.user, request.user.fold(false)(_.superAdminMode))))
   }
-
   @ApiOperation(value = "List all collections the user can edit",
     notes = "This will check for Permission.AddResourceToCollection and Permission.EditCollection",
     responseClass = "None", httpMethod = "GET")
   def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
     Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.user.fold(false)(_.superAdminMode))))
+  }
+
+  def listCanAddToSpace(datasetId: UUID, title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+    implicit val user = request.user
+    var listAll = false
+    var collectionList: List[Collection] = List.empty
+    if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+      listAll = true
+    } else {
+      datasets.get(datasetId) match {
+        case Some(dataset) => {
+          if(dataset.spaces.length > 0) {
+            collectionList = collections.listInSpaceList(title, date, limit, dataset.spaces, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), user)
+          } else {
+            listAll = true
+          }
+
+        }
+        case None => Logger.debug("The dataset was not found")
+      }
+    }
+    if(listAll) {
+      collectionList = lisCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.user.fold(false)(_.superAdminMode))
+    }
+    Ok(toJson(collectionList))
   }
 
 
@@ -212,7 +236,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         else
           collections.listAccess(d, true, limit, permission, user, superAdmin)
       }
-      case (None, None) => {
+       case (None, None) => {
         if (mine)
           collections.listUser(limit, user, superAdmin, user.get)
         else

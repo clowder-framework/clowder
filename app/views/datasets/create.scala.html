@@ -38,14 +38,27 @@
                 <span class="error hiddencomplete" id="descerror">This description is a required field</span>
             </div>
             <div class="form-group">
-                <label id="spacelabel" for="space">Share with spaces</label>
-                <select name="space" id="spaceid" class ="chosen-select" multiple>
+                <label id="spacelabel" for="space">Share with
+                    @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                        spaces
+                     } else {
+                        a space
+                    }
+                </label>
+                <select name="space" id="spaceid" class ="chosen-select" @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined){multiple}>
                     @spaces.map { space =>
                         <option id="@(space.id)" value="@(space.id)">@(space.name)</option>
                     }
                     </select>
-                <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
-                    this dataset with members of one or more spaces. This is optional.</p>
+                @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                    //TODO: Update to use Michael's view for space/project space
+                    <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
+                        this dataset with members of one space. This is optional.</p>
+                } else {
+                    <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
+                        this dataset with members of one or more spaces. This is optional.</p>
+                }
+
             </div>
         </div>
     </div>
