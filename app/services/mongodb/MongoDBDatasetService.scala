@@ -22,7 +22,7 @@ import org.json.JSONObject
 import play.api.Logger
 import play.api.Play._
 import play.api.libs.json.Json._
-import play.api.libs.json.JsValue
+import play.api.libs.json.{Json, JsValue}
 import services._
 import services.mongodb.MongoContext.context
 
@@ -1142,6 +1142,15 @@ class MongoDBDatasetService @Inject() (
 
         val xmlMd = getXMLMetadataJSON(id)
         Logger.debug("xmlmd=" + xmlMd)
+
+        // Create mapping in JSON-LD metadata from extractor name -> contents
+        val metadataMap = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
+        var allMd = Map[String, JsValue]()
+        for (md <- metadataMap) {
+          allMd += (md.creator.displayName -> md.content)
+        }
+        val allMdStr = Json.toJson(allMd).toString()
+        Logger.debug("jsonldMd=" + allMdStr)
 
         var fileDsId = ""
         var fileDsName = ""
