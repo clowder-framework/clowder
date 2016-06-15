@@ -9,9 +9,9 @@
     <p>Version: @AppConfiguration.getTermsOfServicesVersionString</p>
     @if(user.isDefined) {
         @if(user.get.termsOfServices.exists(!_.accepted)) {
-            <p><strong>The Terms of Services have changed since you accepted them at @user.map(u => u.termsOfServices.map(_.acceptedDate))</strong></p>
+            <p><strong>The Terms of Services have changed since you accepted them on @user.map(u => u.termsOfServices.map(_.acceptedDate))</strong></p>
         } else {
-            <p>Accepted: @user.map(u => u.termsOfServices.map(_.acceptedDate))</p>
+            <p>You accepted these Terms of Services on @user.map(u => u.termsOfServices.map(_.acceptedDate))</p>
         }
     }
 
