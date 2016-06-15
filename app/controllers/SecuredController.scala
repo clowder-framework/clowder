@@ -4,7 +4,6 @@ import api.Permission.Permission
 import api.{Permission, UserRequest}
 import models.{ClowderUser, RequestResource, ResourceRef, User}
 import play.api.mvc._
-import play.api.templates.Html
 import securesocial.core.{Authenticator, SecureSocial, UserService}
 import services._
 import securesocial.core.IdentityProvider
@@ -30,6 +29,13 @@ trait SecuredController extends Controller {
       val userRequest = getUser(request)
       userRequest.user match {
         case Some(u) if needActive && !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => {
+          if (request.uri.startsWith(routes.Application.tos().url)) {
+            block(userRequest)
+          } else {
+            Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
+          }
+        }
         case _ => block(userRequest)
       }
     }
@@ -43,6 +49,7 @@ trait SecuredController extends Controller {
       val userRequest = getUser(request)
       userRequest.user match {
         case Some(u) if !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
         case Some(u) if u.superAdminMode || Permission.checkPrivateServer(userRequest.user) => block(userRequest)
         case None if Permission.checkPrivateServer(userRequest.user) => block(userRequest)
         case _ => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
@@ -58,6 +65,13 @@ trait SecuredController extends Controller {
       val userRequest = getUser(request)
       userRequest.user match {
         case Some(u) if !u.active => Future.successful(Unauthorized("Account is not activated"))
+        case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => {
+          if (request.uri.startsWith(routes.Users.acceptTermsOfServices().url)) {
+            block(userRequest)
+          } else {
+            Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
+          }
+        }
         case Some(u) => block(userRequest)
         case None => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
           .flashing("error" -> "You must be logged in to access this page.")
@@ -72,6 +86,7 @@ trait SecuredController extends Controller {
       val userRequest = getUser(request)
       userRequest.user match {
         case Some(u) if !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
         case Some(u) if u.superAdminMode || Permission.checkServerAdmin(userRequest.user) => block(userRequest)
         case _ => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
           .flashing("error" -> "You must be logged in as an administrator to access this page.")
@@ -86,6 +101,7 @@ trait SecuredController extends Controller {
       val userRequest = getUser(request)
       userRequest.user match {
         case Some(u) if !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
         case Some(u) if u.superAdminMode || Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
         case Some(u) => notAuthorizedMessage(userRequest.user, resourceRef)
         case None if Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
