@@ -23,6 +23,7 @@ import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.mvc.AnyContent
 import services._
+import _root_.util.{FileUtils, JSONLD, License}
 import _root_.util.{JSONLD, License}
 import views.html.dataset
 import scala.concurrent.{ExecutionContext, Future}
@@ -665,6 +666,45 @@ class  Datasets @Inject()(
       case None => Logger.error("Error getting dataset" + id); InternalServerError
     }
   }
+
+  @ApiOperation(value = "Upload files and attach to given dataset",
+    notes = "This will take a list of url or path objects that point to files that will be ingested and added to this dataset.",
+    responseClass = "None", httpMethod = "POST")
+  def uploadToDatasetFile(dataset_id: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
+    datasets.get(dataset_id) match {
+      case Some(dataset) => {
+        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset))
+        uploadedFiles.length match {
+          case 0 => BadRequest("No files uploaded")
+          case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
+          case _ => Ok(Json.obj("ids" -> uploadedFiles.toList))
+        }
+      }
+      case None => {
+        BadRequest(s"Dataset with id=${dataset_id} does not exist")
+      }
+    }
+  }
+
+  @ApiOperation(value = "Upload files and attach to given dataset",
+    notes = "This will take a form of file objects that are added to this dataset. This can also add metadata at the same time.",
+    responseClass = "None", httpMethod = "POST")
+  def uploadToDatasetJSON(dataset_id: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.json) { implicit request =>
+    datasets.get(dataset_id) match {
+      case Some(dataset) => {
+        val uploadedFiles = FileUtils.uploadFilesJSON(request, Some(dataset))
+        uploadedFiles.length match {
+          case 0 => BadRequest("No files uploaded")
+          case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
+          case _ => Ok(Json.obj("ids" -> uploadedFiles.toList))
+        }
+      }
+      case None => {
+        BadRequest(s"Dataset with id=${dataset_id} does not exist")
+      }
+    }
+  }
+
 
   private def getFilesWithinFolders(id: UUID): List[JsValue] = {
     val output = new ListBuffer[JsValue]()
@@ -1808,11 +1848,11 @@ class  Datasets @Inject()(
                 }
                 //file info
                 case (1,0) =>{
-                  if (count < inputFiles.size ){
-                    is = addFileInfoToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
-                    val md5 = MessageDigest.getInstance("MD5")
-                    md5Files.put(folderNameMap(inputFiles(count).id)+"/_info.json",md5)
-                    is = Some(new DigestInputStream(is.get, md5))
+                  is = addFileInfoToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  val md5 = MessageDigest.getInstance("MD5")
+                  md5Files.put(folderNameMap(inputFiles(count).id)+"/_info.json",md5)
+                  is = Some(new DigestInputStream(is.get, md5))
+                  if (count+1 < inputFiles.size ){
                     count +=1
                   } else {
                     count = 0
@@ -1821,11 +1861,11 @@ class  Datasets @Inject()(
                 }
                 //file metadata
                 case (1,1) =>{
-                  if (count < inputFiles.size ){
-                    is = addFileMetadataToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
-                    val md5 = MessageDigest.getInstance("MD5")
-                    md5Files.put(folderNameMap(inputFiles(count).id)+"/_metadata.json",md5)
-                    is = Some(new DigestInputStream(is.get, md5))
+                  is = addFileMetadataToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  val md5 = MessageDigest.getInstance("MD5")
+                  md5Files.put(folderNameMap(inputFiles(count).id)+"/_metadata.json",md5)
+                  is = Some(new DigestInputStream(is.get, md5))
+                  if (count+1 < inputFiles.size ){
                     count +=1
                   } else {
                     count = 0
@@ -1834,11 +1874,11 @@ class  Datasets @Inject()(
                 }
                 //files
                 case (1,2) => {
-                  if (count < inputFiles.size ){
-                    is = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
-                    val md5 = MessageDigest.getInstance("MD5")
-                    md5Files.put(folderNameMap(inputFiles(count).id)+"/"+inputFiles(count).filename,md5)
-                    is = Some(new DigestInputStream(is.get, md5))
+                  is = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  val md5 = MessageDigest.getInstance("MD5")
+                  md5Files.put(folderNameMap(inputFiles(count).id)+"/"+inputFiles(count).filename,md5)
+                  is = Some(new DigestInputStream(is.get, md5))
+                  if (count+1 < inputFiles.size ){
                     count +=1
                   } else {
                     if (bagit){

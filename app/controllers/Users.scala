@@ -88,6 +88,7 @@ class Users @Inject() (users: UserService) extends SecuredController {
               case Some(fuser) => {
                 followedUsers = followedUsers.++(List((fuser.id, fuser.fullName, fuser.email.getOrElse(""), fuser.getAvatarUrl())))
               }
+              case None =>
             }
         }
 
@@ -164,6 +165,7 @@ class Users @Inject() (users: UserService) extends SecuredController {
               val ufEmail = uFollower.email.getOrElse("")
               followers = followers.++(List((uFollower.id, uFollower.fullName, ufEmail, uFollower.getAvatarUrl())))
             }
+            case None =>
           }
         }
 

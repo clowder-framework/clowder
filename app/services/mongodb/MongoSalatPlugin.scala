@@ -130,6 +130,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("uploads").ensureIndex(MongoDBObject("author.email" -> 1))
     collection("uploads").ensureIndex(MongoDBObject("tags.name" -> 1))
     collection("uploads").ensureIndex(MongoDBObject("author._id"-> 1,  "_id"-> 1))
+    collection("uploads").ensureIndex(MongoDBObject("status"-> 1))
 
     collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
     
@@ -179,14 +180,16 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   /**
     * Based on the resourceRef return the mongo collection.
     */
-  def collection(resourceRef: ResourceRef): Option[MongoCollection] = {
-    resourceRef.resourceType match {
+  def collection(resourceRef: ResourceRef): Option[MongoCollection] = collection(resourceRef.resourceType)
+
+  def collection(resourceType: Symbol): Option[MongoCollection] = {
+    resourceType match {
       case ResourceRef.space => Some(collection("spaces.projects"))
       case ResourceRef.dataset => Some(collection("datasets"))
-      case ResourceRef.file => Some(collection("uploads.files"))
+      case ResourceRef.file => Some(collection("uploads"))
       //case ResourceRef.relation => Some(collection("hello"))
-      case ResourceRef.preview => Some(collection("previews.files"))
-      case ResourceRef.thumbnail => Some(collection("thumbnails.files"))
+      case ResourceRef.preview => Some(collection("previews"))
+      case ResourceRef.thumbnail => Some(collection("thumbnails"))
       case ResourceRef.collection => Some(collection("collections"))
       case ResourceRef.user => Some(collection("social.users"))
       case ResourceRef.comment => Some(collection("comments"))
@@ -194,12 +197,12 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       case ResourceRef.curationObject => Some(collection("curationObjects"))
       case ResourceRef.curationFile => Some(collection("curationFiles"))
       case _ => {
-        Logger.error(s"Can not map resource ${resourceRef.resourceType} to collection.")
+        Logger.error(s"Can not map resource ${resourceType} to collection.")
         None
       }
     }
   }
-  
+
   /**
    * Returns a GridFS for writing files, the files will be placed in
    * two collections that start with the prefix (&lt;prefix&gt;.fs and
@@ -372,6 +375,11 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // instead of user agreeent we now have a temrms of services
     updateMongo("switch-user-agreement-to-terms-of-services", switchToTermsOfServices)
+
+    updateMongo("fix-metadata-count", fixMetadataCount)
+
+    // add status field to files
+    updateMongo("add-file-status", addFileStatus)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1115,7 +1123,33 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       } catch {
         case e: BSONException => Logger.error("Unable to update the counts for space with id: " + spaceId)
       }
+    }
+  }
 
+  private def fixMetadataCount(): Unit = {
+    // set everbody metadata to 0
+    for (coll <- List[String]("collections", "curationObjects", "datasets", "uploads", "previews", "sections")) {
+      collection(coll).update(MongoDBObject(), $set("metadataCount" -> 0))
+    }
+
+    // aggregate all metadata and update all records
+    val results = collection("metadata").aggregate(MongoDBObject("$group" ->
+        MongoDBObject("_id" -> "$attachedTo", "count" -> MongoDBObject("$sum" -> 1L)))).results.filter(x => x.containsField("count"))
+    results.foreach{ x =>
+      x.getAs[DBObject]("_id").foreach{ key =>
+        (key.getAs[String]("resourceType"), key.getAs[ObjectId]("_id"), x.getAs[Long]("count")) match {
+          case (Some(rt), Some(id), Some(count)) => {
+            collection(Symbol(rt)).foreach{c =>
+              try{
+                c.update(MongoDBObject("_id" -> id), $set("metadataCount" -> count))
+              } catch {
+                case e: BSONException => Logger.error(s"Unable to update the metadata counts for ${rt} with id ${id} to ${count}")
+              }
+            }
+          }
+          case (_, _, _) => Logger.error(s" Error parsing data : ${x}")
+        }
+      }
     }
   }
 
@@ -1125,5 +1159,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       collection("app.configuration").insert(MongoDBObject("key" -> "tos.date") ++ MongoDBObject("value" -> new Date()))
     }
     collection("app.configuration").update(MongoDBObject("key" -> "userAgreement.message"), $set(("key", "tos.text")))
+  }
+
+  private def addFileStatus(): Unit = {
+    collection("uploads").update(MongoDBObject(), $set("status" -> FileStatus.PROCESSED.toString), multi=true)
   }
 }
