@@ -282,7 +282,6 @@ class  Datasets @Inject()(
   def attachMultipleFiles() = PermissionAction(Permission.AddResourceToDataset)(parse.json) { implicit request =>
       (request.body \ "datasetid").asOpt[String].map { dsId =>
           (request.body \ "existingfiles").asOpt[String].map { fileString =>
-                 Logger.debug("hjsrguergouyery")
                   var idArray = fileString.split(",").map(_.trim())
                   for (anId <- idArray) {
                       datasets.get(UUID(dsId)) match {

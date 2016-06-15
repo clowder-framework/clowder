@@ -532,12 +532,6 @@ class Datasets @Inject()(
   def submit(folderId: Option[String]) = PermissionAction(Permission.CreateDataset)(parse.multipartFormData) { implicit request =>
     implicit val user = request.user
     Logger.debug("------- in Datasets.submit ---------")
-    val dsName = request.body.asFormUrlEncoded.getOrElse("name", null)
-    val dsDesc = request.body.asFormUrlEncoded.getOrElse("description", null)
-    val dsLevel = request.body.asFormUrlEncoded.getOrElse("datasetLevel", null)
-    val dsId = request.body.asFormUrlEncoded.getOrElse("datasetid", null)
-
-
 
     val folder = folderId.flatMap(id => folders.get(UUID(id)))
     val retMap = request.body.asFormUrlEncoded.get("datasetid").flatMap(_.headOption) match {
