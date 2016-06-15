@@ -24,7 +24,14 @@
       <a href="@routes.Collections.collection(event.source_id.get)">@event.source_name.get</a>
     }
     case _ => {
-      @obj_type: @obj_name.get
+      @obj_name match {
+        case None => {
+          @obj_type
+        }
+        case Some(name) => {
+          @obj_type: @name
+        }
+      }
     }
   }
 }

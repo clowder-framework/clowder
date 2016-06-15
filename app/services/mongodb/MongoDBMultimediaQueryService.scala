@@ -174,6 +174,12 @@ def getFile(id: UUID): Option[TempFile] = {
       outer.close()
       Logger.debug("Done precomputing distances")
     }
+
+    Logger.debug("Started indexing precomputing distances")
+    // Create index for faster search
+    MultimediaDistanceDAO.dao.collection.createIndex(MongoDBObject("source_section"->1, "representation"->1,
+      "distance"->1, "target_spaces"->1))
+    Logger.debug("Completed indexing precomputing distances")
   }
 
   def computeDistances(source: MultimediaFeatures): Unit = {

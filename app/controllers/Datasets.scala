@@ -13,7 +13,7 @@ import play.api.Play.current
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json._
 import services._
-import util.{Formatters, RequiredFieldsConfig}
+import util.{FileUtils, Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
 import scala.collection.mutable.{ListBuffer, Map => MutableMap}
 import scala.util.matching.Regex
@@ -524,10 +524,10 @@ class Datasets @Inject()(
   }
 
   /**
-   * Controller flow that handles the new multi file uploader workflow for creating a new dataset. Requires name, description, 
+   * Controller flow that handles the new multi file uploader workflow for creating a new dataset. Requires name, description,
    * and id for the dataset. The interface should validate to ensure that these are present before reaching this point, but
-   * the checks are made here as well. 
-   * 
+   * the checks are made here as well.
+   *
    */
   def submit(folderId: Option[String]) = PermissionAction(Permission.CreateDataset)(parse.multipartFormData) { implicit request =>
     implicit val user = request.user

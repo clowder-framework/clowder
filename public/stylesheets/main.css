@@ -915,3 +915,22 @@ table.borderless tbody tr td, table.borderless tbody tr th {
     display: inline-block;
     margin-left: 10px;
 }
+
+.bigicon {
+    padding: 20px;
+    font-size: 55px;
+}
+
+.smallicon {
+    padding: 2px 5px 5px 20px;
+    font-size: 30px;
+}
+
+.smallthumbnail {
+    padding: 5px 5px 5px 20px;
+    width: 55px;
+}
+
+.valign-link {
+    padding-top: 20px;
+}

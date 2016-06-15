@@ -1,18 +1,22 @@
-import java.io.{StringWriter, PrintWriter}
-import play.api.{GlobalSettings, Application}
+import java.io.{PrintWriter, StringWriter}
+
+import play.api.{Application, GlobalSettings}
 import play.api.Logger
 import play.filters.gzip.GzipFilter
 import play.libs.Akka
 import securesocial.core.SecureSocial
-import services.{UserService, DI, AppConfiguration}
+import services.{AppConfiguration, DI, UserService}
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
 import models._
 import java.util.Calendar
+
 import play.api.mvc.{RequestHeader, WithFilters}
 import play.api.mvc.Results._
 import akka.actor.Cancellable
+import filters.CORSFilter
 import julienrf.play.jsonp.Jsonp
 
 /**

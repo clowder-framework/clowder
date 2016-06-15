@@ -11,7 +11,7 @@ import play.api.Play._
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import play.api.libs.json.Json.toJson
-import services.{EventService, AdminsNotifierPlugin, SpaceService, UserService, DatasetService, CollectionService}
+import services._
 import util.Mail
 import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
@@ -458,7 +458,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
 
 
   @ApiOperation(value = "Remove a user from a space", notes = "",
-    responseClass = "None", httpMethod = "GET")
+    responseClass = "None", httpMethod = "POST")
   def removeUser(spaceId: UUID, removeUser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     val user = request.user
     if(spaces.getRoleForUserInSpace(spaceId, UUID(removeUser)) != None){
@@ -544,6 +544,65 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       case None => {
         List.empty
       }
+    }
+  }
+
+
+  @ApiOperation(value = "Accept Request",
+    notes = "Accept user's request to the space and assign a specific Role, remove the request and send email to the request user",
+    responseClass = "None", httpMethod = "POST")
+  def acceptRequest(id:UUID, requestuser:String, role:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+    implicit val user = request.user
+    spaces.get(id) match {
+      case Some(s) => {
+        Logger.debug("request submitted in api.Space.acceptrequest ")
+        userService.get(UUID(requestuser)) match {
+          case Some(requestUser) => {
+            events.addRequestEvent(user, requestUser, id, s.name, "acceptrequest_space")
+            spaces.removeRequest(id, requestUser.id)
+            userService.findRoleByName(role) match {
+              case Some(r) => spaces.addUser(requestUser.id, r, id)
+              case _ => Logger.debug("Role not found" + role)
+            }
+            if(requestUser.email.isDefined) {
+              val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Accepted"
+              val recipient: String = requestUser.email.get.toString
+              val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "accepted your request and assigned you as " + role + " to")
+              Mail.sendEmail(subject, request.user, recipient, body)
+            }
+            Ok(Json.obj("status" -> "success"))
+          }
+          case None => InternalServerError("Request user not found")
+        }
+      }
+      case None => InternalServerError("Space not found")
+    }
+  }
+
+  @ApiOperation(value = "Reject Request",
+    notes = "Reject user's request to the space, remove the request and send email to the request user",
+    responseClass = "None", httpMethod = "POST")
+  def rejectRequest(id:UUID, requestuser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+    implicit val user = request.user
+    spaces.get(id) match {
+      case Some(s) => {
+        Logger.debug("request submitted in api.Space.rejectRequest")
+        userService.get(UUID(requestuser)) match {
+          case Some(requestUser) => {
+            events.addRequestEvent(user, requestUser, id, spaces.get(id).get.name, "rejectrequest_space")
+            spaces.removeRequest(id, requestUser.id)
+            if(requestUser.email.isDefined) {
+              val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Rejected"
+              val recipient: String = requestUser.email.get.toString
+              val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "rejected your request to")
+              Mail.sendEmail(subject, request.user, recipient, body)
+            }
+            Ok(Json.obj("status" -> "success"))
+          }
+          case None => InternalServerError("Request user not found")
+        }
+      }
+      case None => InternalServerError("Space not found")
     }
   }
 }

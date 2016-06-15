@@ -90,6 +90,6 @@ class Error extends SecuredController {
      */
     def notAuthorized(message: String, id: String, resourceType: String ) = UserAction(needActive = false) { implicit request =>
         implicit val user = request.user
-        Ok(views.html.notAuthorized(message, id, resourceType))
+        Forbidden(views.html.notAuthorized(message, id, resourceType))
     }
 }
