@@ -228,6 +228,15 @@ class MongoDBFileService @Inject() (
         val xmlMd = getXMLMetadataJSON(id)
         Logger.debug("xmlmd=" + xmlMd)
 
+        // Create mapping in JSON-LD metadata from extractor name -> contents
+        val metadataMap = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+        var allMd = Map[String, JsValue]()
+        for (md <- metadataMap) {
+          allMd += (md.creator.displayName -> md.content)
+        }
+        val allMdStr = Json.toJson(allMd).toString()
+        Logger.debug("jsonldMd=" + allMdStr)
+
         var fileDsId = ""
         var fileDsName = ""
 
@@ -240,7 +249,7 @@ class MongoDBFileService @Inject() (
 
         current.plugin[ElasticsearchPlugin].foreach {
           _.index("data", "file", id,
-            List(("filename", file.filename), ("contentType", file.contentType),("author",file.author.fullName),("uploadDate",formatter.format(file.uploadDate)),("datasetId",fileDsId),("datasetName",fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)))
+            List(("filename", file.filename), ("contentType", file.contentType),("author",file.author.fullName),("uploadDate",formatter.format(file.uploadDate)),("datasetId",fileDsId),("datasetName",fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd), ("metadata", allMdStr)))
         }
         
       }
