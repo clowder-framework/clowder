@@ -115,11 +115,11 @@
     )
   }
   case "acceptrequest_space" => {
-    accepted @(event.targetuser.getOrElse(User.anonymous.getMiniUser).fullName)'s request to
+    accepted @linkForObject("user", event.targetuser.map(_.id), event.targetuser.map(_.fullName))'s request to
     @linkForObject("space", event.object_id, event.object_name)
   }
   case "rejectrequest_space" => {
-    rejected  @(event.targetuser.getOrElse(User.anonymous.getMiniUser).fullName)'s  request to
+    rejected  @linkForObject("user", event.targetuser.map(_.id), event.targetuser.map(_.fullName))'s  request to
     @linkForObject("space", event.object_id, event.object_name)
   }
   case "tos_update" => {
