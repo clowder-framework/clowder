@@ -10,11 +10,12 @@
 <script src="@routes.Assets.at("javascripts/jquery.cookie.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/follow-button.js")" type="text/javascript"></script>
 
-    <div class="row">
-        <div class="col-md-12">
-            <h1>@Html(title.getOrElse("Datasets"))</h1>
-        </div>
-    </div>
+<div class="row">
+   <div class="col-md-12">
+       <h1>@Html(title.getOrElse("Datasets"))</h1>
+       <p>Create @Html(title.getOrElse("Datasets")) to upload and publish data. Further organize your data using and assigning metadata at both the file and dataset level.</p>
+   </div>
+</div>
 
 <div class="row">
     <div class="col-md-10">
