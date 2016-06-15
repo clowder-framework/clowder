@@ -113,7 +113,7 @@
 
                 }
                 case file: models.File => {
-                    @files.listitem(file,Map.empty[UUID,Int],routes.Files.file(file.id),None)
+                    @files.listitem(file,Map.empty[UUID,Int],routes.Files.file(file.id),None, None, None)
                 }
             }
         }

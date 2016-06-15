@@ -308,7 +308,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
   def getMetadataDefinitions() = ServerAdminAction { implicit request =>
     implicit val user = request.user
     val metadata = metadataService.getDefinitions()
-    Ok(views.html.manageMetadataDefinitions(metadata.toList))
+    Ok(views.html.manageMetadataDefinitions(metadata.toList, None, None))
   }
 
   val roleForm = Form(
