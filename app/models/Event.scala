@@ -15,7 +15,6 @@ import services.DI
  */
 
  case class Event(
-  id: UUID = UUID.generate,
  	user: MiniUser,
   targetuser : Option[MiniUser] = None,
  	object_id: Option[UUID] = None,
@@ -23,8 +22,7 @@ import services.DI
  	source_id: Option[UUID] = None,
  	source_name: Option[String] = None,
  	event_type: String,
- 	created: Date,
-  count: Option[Int] = Some(1)
+ 	created: Date
  )
 
 
