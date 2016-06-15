@@ -64,7 +64,7 @@ class Files @Inject() (
   /**
    * File info.
    */
-  def file(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
+  def file(id: UUID, dataset: Option[String], space: Option[String], folder: Option[String]) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
     implicit val user = request.user
     files.get(id) match {
       case Some(file) => {
@@ -164,14 +164,14 @@ class Files @Inject() (
               plugin.getOutputFormats(contentTypeEnding).map(outputFormats =>
                 Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                   extractorsActive, decodedDatasetsContaining.toList,foldersContainingFile,
-                  mds, isRDFExportEnabled, extractionsByFile, outputFormats)))
+                  mds, isRDFExportEnabled, extractionsByFile, outputFormats, space)))
             }
             case None =>
               Logger.debug("Polyglot plugin not found")
               //passing None as the last parameter (list of output formats)
               Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                 extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-                mds, isRDFExportEnabled, extractionsByFile, None)))
+                mds, isRDFExportEnabled, extractionsByFile, None, space)))
           }              
       }
           

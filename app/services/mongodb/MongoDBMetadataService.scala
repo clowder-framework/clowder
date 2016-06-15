@@ -14,6 +14,7 @@ import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
 import services.MetadataService
 import services.{ContextLDService, DatasetService, FileService, FolderService, ExtractorMessage, RabbitmqPlugin}
+import api.Permission
 
 /**
  * MongoDB Metadata Service Implementation
@@ -86,8 +87,10 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
   def removeMetadata(id: UUID) = {
     getMetadataById(id) match {
       case Some(md) =>
-        if( getMetadataBycontextId(md.contextId.getOrElse(new UUID(""))).length  == 1) {
-          contextService.removeContext(md.contextId.getOrElse(new UUID("")))
+        md.contextId.foreach{cid =>
+          if (getMetadataBycontextId(cid).length == 1) {
+            contextService.removeContext(cid)
+          }
         }
         MetadataDAO.remove(md, WriteConcern.Safe)
         //update metadata count for resource
@@ -133,7 +136,31 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
 
   /** Vocabulary definitions for user fields **/
   def getDefinitions(spaceId: Option[UUID] = None): List[MetadataDefinition] = {
-    MetadataDefinitionDAO.findAll().toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )
+    spaceId match {
+      case None => MetadataDefinitionDAO.find(MongoDBObject("spaceId" -> null)).toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )
+      case Some(s) => MetadataDefinitionDAO.find(MongoDBObject("spaceId" -> new ObjectId(s.stringify))).toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )
+    }
+
+  }
+
+  def getDefinitionsDistinctName(user: Option[User]): List[MetadataDefinition] = {
+    val filterAccess = if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public") {
+      MongoDBObject()
+    } else {
+      val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
+      //TODO: Add public space check.
+      user match {
+        case Some(u) => {
+          val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(Set(Permission.ViewMetadata.toString())).nonEmpty)
+          if(okspaces.nonEmpty) {
+            orlist += ("space" $in okspaces.map(x=> new ObjectId(x.spaceId.stringify)))
+          }
+          $or(orlist.map(_.asDBObject))
+        }
+        case None => MongoDBObject()
+      }
+    }
+    MetadataDefinitionDAO.find(filterAccess).toList.groupBy(_.json).map(_._2.head).toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )
   }
 
   def getDefinition(id: UUID): Option[MetadataDefinition] = {
@@ -144,16 +171,33 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri))
   }
 
+  def getDefinitionByUriAndSpace(uri: String, spaceId: Option[String]): Option[MetadataDefinition] = {
+    spaceId match {
+      case Some(s) => MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri, "spaceId" -> new ObjectId(s)))
+      case None => MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri, "spaceId" -> null) )
+    }
+  }
+
+  def removeDefinitionsBySpace(spaceId: UUID) = {
+    MetadataDefinitionDAO.remove(MongoDBObject("spaceId" -> new ObjectId(spaceId.stringify)))
+  }
+
   /** Add vocabulary definitions, leaving it unchanged if the update argument is set to false **/
   def addDefinition(definition: MetadataDefinition, update: Boolean = true): Unit = {
     val uri = (definition.json \ "uri").as[String]
     MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri)) match {
       case Some(md) => {
         if (update) {
-          Logger.debug("Updating existing vocabulary definition: " + definition)
-          // make sure to use the same id as the old value
-          val writeResult = MetadataDefinitionDAO.update(MongoDBObject("json.uri" -> uri), definition.copy(id=md.id),
-            false, false, WriteConcern.Normal)
+          if(md.spaceId == definition.spaceId) {
+            Logger.debug("Updating existing vocabulary definition: " + definition)
+            // make sure to use the same id as the old value
+            val writeResult = MetadataDefinitionDAO.update(MongoDBObject("json.uri" -> uri), definition.copy(id=md.id),
+              false, false, WriteConcern.Normal)
+          } else {
+            Logger.debug("Adding existing vocabulary definition to a different space" + definition)
+            MetadataDefinitionDAO.save(definition)
+          }
+
         } else {
           Logger.debug("Leaving existing vocabulary definition unchanged: " + definition)
         }

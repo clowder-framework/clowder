@@ -210,6 +210,7 @@ class MongoDBDatasetService @Inject() (
     // - access  == show all datasets the user can see
     // - default == public only
     val public = MongoDBObject("public" -> true)
+    //emptySapces should not be used in most cases since your dataset maybe in a space, then you are changed to viewer or kicked off.
     val emptySpaces = MongoDBObject("spaces" -> List.empty)
 
     // create access filter
@@ -222,8 +223,10 @@ class MongoDBDatasetService @Inject() (
           if (permissions.contains(Permission.ViewDataset)) {
             orlist += MongoDBObject("public" -> true)
           }
-          if (user == owner) {
-            orlist += MongoDBObject("spaces" -> List.empty)
+          //if you are viewing other user's datasets, return the ones you have permission. otherwise filterAccess should
+          // including your own datasets. the if condition here is mainly for efficiency.
+          if(user == owner || owner.isEmpty) {
+            orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
           }
           val permissionsString = permissions.map(_.toString)
           val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(permissionsString).nonEmpty)

@@ -3,7 +3,8 @@
   sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset], folders: List[Folder],
   mds: List[models.Metadata],
   rdfExported: Boolean,
-  extractionsStatus: List[Extraction], outputFormats: Option[List[String]])(implicit user: Option[models.User])
+  extractionsStatus: List[Extraction], outputFormats: Option[List[String]],
+		spaceId: Option[String])(implicit user: Option[models.User])
 
 @import helper._
 @import play.api.Play.current
@@ -69,6 +70,7 @@
     <script src="@routes.Assets.at("javascripts/sectionsListProcess.js")" type="text/javascript"></script>
 
 	<script>
+		var spaceId = "@spaceId";
     	var isPageLoaded = false;
     	var isx3dActive = false;
     	var Configuration = {};
@@ -160,22 +162,24 @@
 					</div>
 				}
 			</div>
-			<h4>in
 			@if(datasets.length > 0) {
-				@datasets.map {dataset =>
-					<span class="caption break-word">
-						<a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id'>@Html(dataset.name)</a>
-					</span>
-				}
+				<h4>in
+					@datasets.map {dataset =>
+						<span class="caption break-word">
+							<a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id'>@Html(dataset.name)</a>
+						</span>
+					}
+				</h4>
 			}
 			@if(folders.length > 0) {
+				<h4>in
 					@folders.map { folder =>
 						<span class="caption break-word">
 							<a href="@routes.Datasets.dataset(folder.parentDatasetId)#folderId=@folder.id">@folder.displayName</a>
 						</span>
 					}
+				</h4>
 			}
-			</h4>
 			<div class="col-md-12 box-white-space" id="aboutdesc">
 				<p id ="ds_description" class="inline">@if(file.description.length > 0) { @Html(file.description) } else {Add a description}</p>
 				@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
@@ -259,8 +263,10 @@
 				            	<button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(datasets.head.id))')" class="btn btn-link" title="Delete the file">
 						    	<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							} else {
-								<button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(folders.head.parentDatasetId))#folderId=@folders.head.id')" class="btn btn-link" title="Delete the file">
-									<span class="glyphicon glyphicon-trash"></span> Delete</button>
+								@if(folders.length > 0) {
+									<button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(folders.head.parentDatasetId))#folderId=@folders.head.id')" class="btn btn-link" title="Delete the file">
+										<span class="glyphicon glyphicon-trash"></span> Delete</button>
+								}
 							}
 
 					    </span>
@@ -664,6 +670,7 @@
 
 					<tr><td><b>Uploaded&nbsp;on:</b></td><td>@file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
                     <tr><td><b>Uploaded&nbsp;by:</b></td><td> <a href = "@routes.Profile.viewProfileUUID(file.author.id)"> @file.author.fullName</a></td></tr>
+					<tr><td><b>Status:</b></td><td>@file.status</td></tr>
                 </table>
             </div>
 
