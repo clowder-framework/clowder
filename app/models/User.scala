@@ -2,10 +2,12 @@ package models
 
 import play.api.Play.current
 import java.security.MessageDigest
+import java.util.Date
+
 import play.api.Play.configuration
 import play.api.libs.json.Json
-
 import securesocial.core._
+import services.AppConfiguration
 
 /**
  * Simple class to capture basic User Information. This is similar to Identity in securesocial
@@ -22,6 +24,7 @@ trait User extends Identity {
   def viewed: Option[List[UUID]]
   def spaceandrole: List[UserSpaceAndRole]
   def repositoryPreferences: Map[String,Any]
+  def termsOfServices: Option[UserTermsOfServices]
 
   // One can only be superAdmin iff you are a serveradmin
   def superAdminMode: Boolean
@@ -87,9 +90,13 @@ trait User extends Identity {
 object User {
   def anonymous = new ClowderUser(UUID("000000000000000000000000"),
     new IdentityId("anonymous", ""),
-    "Anonymous", "User", "Anonymous User",
-    None,
-    AuthenticationMethod.UserPassword, active=true)
+    firstName="Anonymous",
+    lastName="User",
+    fullName="Anonymous User",
+    email=None,
+    authMethod=AuthenticationMethod("SystemUser"),
+    active=true,
+    termsOfServices=Some(UserTermsOfServices(accepted=true, acceptedDate=new Date(), "")))
   implicit def userToMiniUser(x: User): MiniUser = x.getMiniUser
 }
 
@@ -138,7 +145,10 @@ case class ClowderUser(
   spaceandrole: List[UserSpaceAndRole] = List.empty,
 
   //staging area
-  repositoryPreferences: Map[String,Any] = Map.empty
+  repositoryPreferences: Map[String,Any] = Map.empty,
+
+  // terms of services
+  termsOfServices: Option[UserTermsOfServices] = None
 
 ) extends User
 
@@ -162,3 +172,9 @@ case class Profile(
     }
   }
 }
+
+case class UserTermsOfServices(
+  accepted: Boolean = false,
+  acceptedDate: Date = null,
+  acceptedVersion: String = ""
+)

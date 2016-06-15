@@ -53,7 +53,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
       }
       case Some(clowderUser) if clowderUser.active => {
         newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20)))
-        .sorted(Ordering.by((_: Event).created).reverse).take(20)
+        .sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
         val datasetsUser = datasets.listUser(4, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
         val datasetcommentMap = datasetsUser.map { dataset =>
           var allComments = comments.findCommentsByDatasetId(dataset.id)
@@ -176,6 +176,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     }
   }
 
+  /** Show the Terms of Services */
+  def tos(redirect: Option[String]) = UserAction(needActive = false) { implicit request =>
+    implicit val user = request.user
+    Ok(views.html.tos(redirect))
+  }
+
   def options(path:String) = UserAction(needActive = false) { implicit request =>
     Logger.info("---controller: PreFlight Information---")
     Ok("")
@@ -255,6 +261,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Datasets.download,
         api.routes.javascript.Datasets.getPreviews,
         api.routes.javascript.Datasets.addFileEvent,
+        api.routes.javascript.Datasets.getMetadataDefinitions,
         api.routes.javascript.Files.download,
         api.routes.javascript.Files.comment,
         api.routes.javascript.Files.getTags,
@@ -272,6 +279,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Files.filePreviewsList,
         api.routes.javascript.Files.updateMetadata,
         api.routes.javascript.Files.addMetadata,
+        api.routes.javascript.Files.getMetadataDefinitions,
         api.routes.javascript.Previews.upload,
         api.routes.javascript.Previews.uploadMetadata,
         api.routes.javascript.Previews.download,
@@ -340,6 +348,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.CurationObjects.deleteCurationFile,
         api.routes.javascript.CurationObjects.deleteCurationFolder,
         api.routes.javascript.CurationObjects.savePublishedObject,
+        api.routes.javascript.CurationObjects.getMetadataDefinitionsByFile,
+        api.routes.javascript.CurationObjects.getMetadataDefinitions,
         api.routes.javascript.ContextLD.addContext,
         api.routes.javascript.ContextLD.getContextByName,
         api.routes.javascript.ContextLD.removeById,
@@ -348,8 +358,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Metadata.searchByKeyValue,
         api.routes.javascript.Metadata.getDefinitions,
         api.routes.javascript.Metadata.getDefinition,
+        api.routes.javascript.Metadata.getDefinitionsDistinctName,
         api.routes.javascript.Metadata.getUrl,
         api.routes.javascript.Metadata.addDefinition,
+        api.routes.javascript.Metadata.addDefinitionToSpace,
         api.routes.javascript.Metadata.editDefinition,
         api.routes.javascript.Metadata.deleteDefinition,
         api.routes.javascript.Metadata.removeMetadata,

@@ -37,6 +37,7 @@ class MongoDBSpaceService @Inject() (
   datasets: DatasetService,
   users: UserService,
   curations: CurationService,
+  metadatas: MetadataService,
   events: EventService) extends SpaceService {
 
   def get(id: UUID): Option[ProjectSpace] = {
@@ -260,6 +261,7 @@ class MongoDBSpaceService @Inject() (
         for(usr <- spaceUsers){
           removeUser(usr.id, id)
         }
+        metadatas.removeDefinitionsBySpace(id)
       }
       case None =>
     }

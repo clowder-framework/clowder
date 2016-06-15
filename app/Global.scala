@@ -35,6 +35,9 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
 
     val users: UserService = DI.injector.getInstance(classOf[UserService])
 
+    // set the default ToS version
+    AppConfiguration.setDefaultTermsOfServicesVersion()
+
     // add all new admins
     users.updateAdmins()
 
@@ -87,8 +90,6 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
       case Some(identity) =>  users.findByIdentity(identity)
       case None => None
     }
-      users.findByIdentity(SecureSocial.currentUser(request).get)
-
     Future(InternalServerError(
       views.html.errorPage(request, sw.toString.replace("\n", "   "))(user)))
   }

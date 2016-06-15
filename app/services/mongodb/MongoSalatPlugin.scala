@@ -360,6 +360,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     //Whenever a root flag is not set, mark it as true.
     updateMongo("add-collection-root-map", addRootMapToCollections)
 
+    // update the number of collections in a space
     updateMongo("update-collection-counter-in-space", fixCollectionCounterInSpaces)
 
     // rename admin to serverAdmin to make clear what type of admin they are
@@ -372,10 +373,16 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     updateMongo("update-counts-spaces", updateCountsInSpaces)
 
+    // instead of user agreeent we now have a temrms of services
+    updateMongo("switch-user-agreement-to-terms-of-services", switchToTermsOfServices)
+
     updateMongo("fix-metadata-count", fixMetadataCount)
 
     // add status field to files
     updateMongo("add-file-status", addFileStatus)
+
+    // Duplicate all clowder instance metadata to all existing spaces
+    updateMongo("add-metadata-per-space", addMetadataPerSpace)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1108,6 +1115,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   }
 
   private def updateCountsInSpaces(){
+
     collection("spaces.projects").foreach{ space =>
       val spaceId = space.getAsOrElse("_id", new ObjectId()).toString()
       val collections = collection("collections").find(MongoDBObject("root_spaces" -> MongoDBObject("$in" -> MongoDBList(new ObjectId(spaceId)))))
@@ -1149,7 +1157,37 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
+  private def switchToTermsOfServices(): Unit = {
+    val ua = collection("app.configuration").findOne(MongoDBObject("key" -> "userAgreement.message"))
+    if (ua.get("value").toString != "") {
+      collection("app.configuration").insert(MongoDBObject("key" -> "tos.date") ++ MongoDBObject("value" -> new Date()))
+    }
+    collection("app.configuration").update(MongoDBObject("key" -> "userAgreement.message"), $set(("key", "tos.text")))
+  }
+
   private def addFileStatus(): Unit = {
     collection("uploads").update(MongoDBObject(), $set("status" -> FileStatus.PROCESSED.toString), multi=true)
+  }
+
+  private def addMetadataPerSpace(){
+    val metadataService: MetadataService = DI.injector.getInstance(classOf[MetadataService])
+
+    collection("spaces.projects").foreach{ space =>
+      val metadatas = collection("metadata.definitions").find(MongoDBObject("spaceId" -> null))
+      val spaceId = space.getAsOrElse("_id", new ObjectId())
+      metadatas.foreach{ metadata =>
+
+        val json = metadata.getAsOrElse("json", new BasicDBObject())
+        val md = new BasicDBObject()
+        md.put("_id", new ObjectId())
+        md.put("spaceId", spaceId)
+        md.put("json", json)
+        try {
+          collection("metadata.definitions").insert(md, WriteConcern.Safe)
+        } catch {
+          case e: BSONException => Logger.error("Unable to add the metadata definition for space with id: " + spaceId)
+        }
+      }
+    }
   }
 }
