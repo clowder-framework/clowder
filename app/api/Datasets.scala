@@ -1808,11 +1808,11 @@ class  Datasets @Inject()(
                 }
                 //file info
                 case (1,0) =>{
-                  if (count < inputFiles.size ){
-                    is = addFileInfoToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
-                    val md5 = MessageDigest.getInstance("MD5")
-                    md5Files.put(folderNameMap(inputFiles(count).id)+"/_info.json",md5)
-                    is = Some(new DigestInputStream(is.get, md5))
+                  is = addFileInfoToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  val md5 = MessageDigest.getInstance("MD5")
+                  md5Files.put(folderNameMap(inputFiles(count).id)+"/_info.json",md5)
+                  is = Some(new DigestInputStream(is.get, md5))
+                  if (count+1 < inputFiles.size ){
                     count +=1
                   } else {
                     count = 0
@@ -1821,11 +1821,11 @@ class  Datasets @Inject()(
                 }
                 //file metadata
                 case (1,1) =>{
-                  if (count < inputFiles.size ){
-                    is = addFileMetadataToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
-                    val md5 = MessageDigest.getInstance("MD5")
-                    md5Files.put(folderNameMap(inputFiles(count).id)+"/_metadata.json",md5)
-                    is = Some(new DigestInputStream(is.get, md5))
+                  is = addFileMetadataToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  val md5 = MessageDigest.getInstance("MD5")
+                  md5Files.put(folderNameMap(inputFiles(count).id)+"/_metadata.json",md5)
+                  is = Some(new DigestInputStream(is.get, md5))
+                  if (count+1 < inputFiles.size ){
                     count +=1
                   } else {
                     count = 0
@@ -1834,11 +1834,11 @@ class  Datasets @Inject()(
                 }
                 //files
                 case (1,2) => {
-                  if (count < inputFiles.size ){
-                    is = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
-                    val md5 = MessageDigest.getInstance("MD5")
-                    md5Files.put(folderNameMap(inputFiles(count).id)+"/"+inputFiles(count).filename,md5)
-                    is = Some(new DigestInputStream(is.get, md5))
+                  is = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  val md5 = MessageDigest.getInstance("MD5")
+                  md5Files.put(folderNameMap(inputFiles(count).id)+"/"+inputFiles(count).filename,md5)
+                  is = Some(new DigestInputStream(is.get, md5))
+                  if (count+1 < inputFiles.size ){
                     count +=1
                   } else {
                     if (bagit){
