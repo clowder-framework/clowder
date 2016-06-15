@@ -2,7 +2,9 @@ package api
 
 import java.io._
 import java.net.URL
-import java.util.Date
+import java.security.{DigestInputStream, MessageDigest}
+import java.text.SimpleDateFormat
+import java.util.{Calendar, Date}
 import api.Permission.Permission
 import com.wordnik.swagger.annotations.{ApiResponse, ApiResponses, Api, ApiOperation}
 import java.util.zip._
@@ -11,6 +13,7 @@ import com.wordnik.swagger.annotations.{Api, ApiOperation}
 import controllers.{Previewers, Utils}
 import jsonutils.JsonUtil
 import models.{File, _}
+import org.apache.commons.codec.binary.Hex
 import org.json.JSONObject
 import play.api.Logger
 import play.api.Play.{configuration, current}
@@ -20,9 +23,12 @@ import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.mvc.AnyContent
 import services._
+import _root_.util.{FileUtils, JSONLD, License}
 import _root_.util.{JSONLD, License}
+import views.html.dataset
 import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.mutable.ListBuffer
+import org.apache.commons.io.input.CountingInputStream
 
 /**
  * Dataset API.
@@ -261,14 +267,14 @@ class  Datasets @Inject()(
       }
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
-  
+
   /**
    * Create new dataset with no file required. However if there are comma separated file IDs passed in, add all of those as existing
    * files. This is to facilitate multi-file-uploader usage for new files, as well as to allow multiple existing files to be
    * added as part of dataset creation.
-   * 
+   *
    * A JSON document is the payload for this endpoint. Required elements are name and description. Optional element is existingfiles,
-   * which will be a comma separated String of existing file IDs to be added to the new dataset. 
+   * which will be a comma separated String of existing file IDs to be added to the new dataset.
    */
   @ApiOperation(value = "Attach multiple files to an existing dataset",
       notes = "Add multiple files, by ID, to a dataset that is already in the system. Requires file ids and dataset id.",
@@ -277,7 +283,7 @@ class  Datasets @Inject()(
       (request.body \ "datasetid").asOpt[String].map { dsId =>
           (request.body \ "existingfiles").asOpt[String].map { fileString =>
                   var idArray = fileString.split(",").map(_.trim())
-                  for (anId <- idArray) {                      
+                  for (anId <- idArray) {
                       datasets.get(UUID(dsId)) match {
 					      case Some(dataset) => {
 					          files.get(UUID(anId)) match {
@@ -295,7 +301,7 @@ class  Datasets @Inject()(
 				            Logger.error("Error getting dataset" + dsId)
 				            BadRequest(toJson(s"The given dataset id $dsId is not a valid ObjectId."))
 				        }
-				      }                      
+				      }
                   }
                   Ok(toJson(Map("id" -> dsId)))
               }.getOrElse(BadRequest(toJson("Missing parameter [existingfiles]")))
@@ -323,40 +329,40 @@ class  Datasets @Inject()(
         }
       }
   }
-  
+
   /**
    * Functionality broken out from attachExistingFile, in order to allow the core work of file attachment to be called from
    * multiple API endpoints.
-   * 
+   *
    * @param dsId A UUID that specifies the dataset that will be modified
    * @param fileId A UUID that specifies the file to attach to the dataset
    * @param dataset Reference to the model of the dataset that is specified
-   * @param file Reference to the model of the file that is specified   
+   * @param file Reference to the model of the file that is specified
    */
   def attachExistingFileHelper(dsId: UUID, fileId: UUID, dataset: Dataset, file: File, user: Option[User]) = {
       if (!files.isInDataset(file, dataset)) {
-            datasets.addFile(dsId, file)	 
-            events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "attach_file_dataset")        
+            datasets.addFile(dsId, file)
+            events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "attach_file_dataset")
             files.index(fileId)
             if (!file.xmlMetadata.isEmpty){
               datasets.index(dsId)
-            }	            
-   
+            }
+
             if(dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
                 datasets.updateThumbnail(dataset.id, UUID(file.thumbnail_id.get))
-                
+
                 for(collectionId <- dataset.collections){
                   collections.get(collectionId) match{
                     case Some(collection) =>{
-                    	if(collection.thumbnail_id.isEmpty){ 
+                    	if(collection.thumbnail_id.isEmpty){
                     		collections.updateThumbnail(collection.id, UUID(file.thumbnail_id.get))
                     	}
                     }
-                    case None=>Logger.debug(s"No collection found with id $collectionId") 
+                    case None=>Logger.debug(s"No collection found with id $collectionId")
               }
             }
         }
-        
+
         //add file to RDF triple store if triple store is used
         if (file.filename.endsWith(".xml")) {
           configuration.getString("userdfSPARQLStore").getOrElse("no") match {
@@ -410,27 +416,27 @@ class  Datasets @Inject()(
         }
       }
   }
-  
+
   /**
-   * Utility function to consolidate the utility portions of the detach file functionality 
+   * Utility function to consolidate the utility portions of the detach file functionality
    * so that it can be easily called from multiple API operations.
-   * 
+   *
    * @param datasetId The id of the dataset that a file is being detached from
    * @param fileId The id of the file to detach from the dataset
    * @param dataset The reference to the model of the dataset being operated on
-   * 
+   *
    */
-  def detachFileHelper(datasetId: UUID, fileId: UUID, dataset: models.Dataset, user: Option[User]) = {      
+  def detachFileHelper(datasetId: UUID, fileId: UUID, dataset: models.Dataset, user: Option[User]) = {
 	  files.get(fileId) match {
-		  case Some(file) => {		       
+		  case Some(file) => {
 			  if(files.isInDataset(file, dataset)){
 				  //remove file from dataset
 				  datasets.removeFile(dataset.id, file.id)
-          events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "detach_file_dataset") 
+          events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "detach_file_dataset")
 				  files.index(fileId)
 				  if (!file.xmlMetadata.isEmpty)
 					  datasets.index(datasetId)
-	
+
 				  Logger.debug("----- Removing a file from dataset completed")
 
 				  if(!dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
@@ -439,19 +445,19 @@ class  Datasets @Inject()(
 
 						  for(collectionId <- dataset.collections){
 							  collections.get(collectionId) match{
-							  case Some(collection) =>{		                              
+							  case Some(collection) =>{
 								  if(!collection.thumbnail_id.isEmpty){
 									  if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
 										  collections.createThumbnail(collection.id)
-									  }		                        
+									  }
 								  }
 							  }
 							  case None=>{}
 							  }
 						  }
-					  }		                        
+					  }
 				  }
-	
+
 				  //remove link between dataset and file from RDF triple store if triple store is used
 				  if (file.filename.endsWith(".xml")) {
 					  configuration.getString("userdfSPARQLStore").getOrElse("no") match {
@@ -469,7 +475,7 @@ class  Datasets @Inject()(
 		  }
 	  }
   }
-  
+
   //////////////////
 
   @ApiOperation(value = "List all datasets in a collection", notes = "Returns list of datasets and descriptions.", responseClass = "None", httpMethod = "GET")
@@ -633,7 +639,7 @@ class  Datasets @Inject()(
         events.addObjectEvent(user, id, dataset.name, "addMetadata_dataset")
       }
     }
-     
+
     datasets.index(id)
     configuration.getString("userdfSPARQLStore").getOrElse("no") match {
       case "yes" => datasets.setUserMetadataWasModified(id, true)
@@ -696,6 +702,45 @@ class  Datasets @Inject()(
     }
   }
 
+  @ApiOperation(value = "Upload files and attach to given dataset",
+    notes = "This will take a list of url or path objects that point to files that will be ingested and added to this dataset.",
+    responseClass = "None", httpMethod = "POST")
+  def uploadToDatasetFile(dataset_id: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
+    datasets.get(dataset_id) match {
+      case Some(dataset) => {
+        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset))
+        uploadedFiles.length match {
+          case 0 => BadRequest("No files uploaded")
+          case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
+          case _ => Ok(Json.obj("ids" -> uploadedFiles.toList))
+        }
+      }
+      case None => {
+        BadRequest(s"Dataset with id=${dataset_id} does not exist")
+      }
+    }
+  }
+
+  @ApiOperation(value = "Upload files and attach to given dataset",
+    notes = "This will take a form of file objects that are added to this dataset. This can also add metadata at the same time.",
+    responseClass = "None", httpMethod = "POST")
+  def uploadToDatasetJSON(dataset_id: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.json) { implicit request =>
+    datasets.get(dataset_id) match {
+      case Some(dataset) => {
+        val uploadedFiles = FileUtils.uploadFilesJSON(request, Some(dataset))
+        uploadedFiles.length match {
+          case 0 => BadRequest("No files uploaded")
+          case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
+          case _ => Ok(Json.obj("ids" -> uploadedFiles.toList))
+        }
+      }
+      case None => {
+        BadRequest(s"Dataset with id=${dataset_id} does not exist")
+      }
+    }
+  }
+
+
   private def getFilesWithinFolders(id: UUID): List[JsValue] = {
     val output = new ListBuffer[JsValue]()
     datasets.get(id) match {
@@ -720,38 +765,38 @@ class  Datasets @Inject()(
     toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType,
                "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
   }
-  
+
   //Update Dataset Information code starts
 
   /**
    * REST endpoint: POST: update the administrative information associated with a specific Dataset
-   * 
+   *
    *  Takes one arg, id:
-   *  
-   *  id, the UUID associated with this dataset 
-   *  
+   *
+   *  id, the UUID associated with this dataset
+   *
    *  The data contained in the request body will contain data to be updated associated by the following String key-value pairs:
-   *  
+   *
    *  description -> The text for the updated description for the dataset
    *  name -> The text for the updated name for this dataset
-   *  
+   *
    *  Currently description and owner are the only fields that can be modified, however this api is extensible enough to add other existing
-   *  fields, or new fields, in the future.  
-   *  
+   *  fields, or new fields, in the future.
+   *
    */
   @ApiOperation(value = "Update dataset administrative information",
       notes = "Takes one argument, a UUID of the dataset. Request body takes key-value pairs for name and description.",
       responseClass = "None", httpMethod = "POST")
   def updateInformation(id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
     implicit val user = request.user
-    if (UUID.isValid(id.stringify)) {          
+    if (UUID.isValid(id.stringify)) {
 
           //Set up the vars we are looking for
           var description: String = null;
           var name: String = null;
-          
+
           var aResult: JsResult[String] = (request.body \ "description").validate[String]
-          
+
           // Pattern matching
           aResult match {
               case s: JsSuccess[String] => {
@@ -760,11 +805,11 @@ class  Datasets @Inject()(
               case e: JsError => {
                 Logger.error("Errors: " + JsError.toFlatJson(e).toString())
                 BadRequest(toJson(s"description data is missing."))
-              }                            
+              }
           }
-          
+
           aResult = (request.body \ "name").validate[String]
-          
+
           // Pattern matching
           aResult match {
               case s: JsSuccess[String] => {
@@ -773,10 +818,10 @@ class  Datasets @Inject()(
               case e: JsError => {
                 Logger.error("Errors: " + JsError.toFlatJson(e).toString())
                 BadRequest(toJson(s"name data is missing."))
-              }                            
+              }
           }
           Logger.debug(s"updateInformation for dataset with id  $id. Args are $description and $name")
-          
+
           datasets.updateInformation(id, description, name)
           datasets.get(id) match {
             case Some(dataset) => {
@@ -784,7 +829,7 @@ class  Datasets @Inject()(
             }
           }
           Ok(Json.obj("status" -> "success"))
-      } 
+      }
       else {
         Logger.error(s"The given id $id is not a valid ObjectId.")
         BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
@@ -867,27 +912,27 @@ class  Datasets @Inject()(
     }
   }
   //End, Update Dataset Information code
-  
-  //Update License code 
+
+  //Update License code
   /**
    * REST endpoint: POST: update the license data associated with a specific Dataset
-   * 
+   *
    *  Takes one arg, id:
-   *  
-   *  id, the UUID associated with this dataset 
-   *  
+   *
+   *  id, the UUID associated with this dataset
+   *
    *  The data contained in the request body will be containe the following key-value pairs:
-   *  
+   *
    *  licenseType, currently:
-   *        license1 - corresponds to Limited 
+   *        license1 - corresponds to Limited
    *        license2 - corresponds to Creative Commons
    *        license3 - corresponds to Public Domain
-   *        
+   *
    *  rightsHolder, currently only required if licenseType is license1. Reflects the specific name of the organization or person that holds the rights
-   *   
+   *
    *  licenseText, currently tied to the licenseType
    *        license1 - Free text that a user can enter to describe the license
-   *        license2 - 1 of 6 options (or their abbreviations) that reflects the specific set of 
+   *        license2 - 1 of 6 options (or their abbreviations) that reflects the specific set of
    *        options associated with the Creative Commons license, these are:
    *            Attribution-NonCommercial-NoDerivs (by-nc-nd)
    *            Attribution-NoDerivs (by-nd)
@@ -896,10 +941,10 @@ class  Datasets @Inject()(
    *            Attribution-ShareAlike (by-sa)
    *            Attribution (by)
    *        license3 - Public Domain Dedication
-   *        
+   *
    *  licenseUrl, free text that a user can enter to go with the licenseText in the case of license1. Fixed URL's for the other 2 cases.
-   *  
-   *  allowDownload, true or false, whether the file or dataset can be downloaded. Only relevant for license1 type.  
+   *
+   *  allowDownload, true or false, whether the file or dataset can be downloaded. Only relevant for license1 type.
    */
   @ApiOperation(value = "Update license information to a dataset",
       notes = "Takes four arguments, all Strings. licenseType, rightsHolder, licenseText, licenseUrl",
@@ -913,21 +958,21 @@ class  Datasets @Inject()(
           var licenseText: String = null;
           var licenseUrl: String = null;
           var allowDownload: String = null;
-          
+
           var aResult: JsResult[String] = (request.body \ "licenseType").validate[String]
           // Pattern matching
           aResult match {
               case s: JsSuccess[String] => {
-                licenseType = s.get                
+                licenseType = s.get
               }
               case e: JsError => {
                 Logger.error("Errors: " + JsError.toFlatJson(e).toString())
                 BadRequest(toJson(s"licenseType data is missing."))
-              }                            
+              }
           }
-          
+
           aResult = (request.body \ "rightsHolder").validate[String]
-                  
+
           // Pattern matching
           aResult match {
               case s: JsSuccess[String] => {
@@ -935,17 +980,17 @@ class  Datasets @Inject()(
               }
               case e: JsError => {
                 Logger.error("Errors: " + JsError.toFlatJson(e).toString())
-                BadRequest(toJson(s"rightsHolder data is missing.")) 
-              }              
+                BadRequest(toJson(s"rightsHolder data is missing."))
+              }
           }
-          
+
           aResult = (request.body \ "licenseText").validate[String]
-          
+
           // Pattern matching
           aResult match {
-              case s: JsSuccess[String] => {                
+              case s: JsSuccess[String] => {
                 licenseText = s.get
-                
+
                 //Modify the abbreviations if they were sent in that way
                 if (licenseText == "by-nc-nd") {
                     licenseText = "Attribution-NonCommercial-NoDerivs"
@@ -969,14 +1014,14 @@ class  Datasets @Inject()(
               case e: JsError => {
                 Logger.error("Errors: " + JsError.toFlatJson(e).toString())
                 BadRequest(toJson(s"licenseText data is missing."))
-              }              
+              }
           }
-          
+
           aResult = (request.body \ "licenseUrl").validate[String]
-          
+
           // Pattern matching
           aResult match {
-              case s: JsSuccess[String] => {                
+              case s: JsSuccess[String] => {
                 licenseUrl = s.get
               }
               case e: JsError => {
@@ -984,32 +1029,32 @@ class  Datasets @Inject()(
                 BadRequest(toJson(s"licenseUrl data is missing."))
               }
           }
-          
+
           aResult = (request.body \ "allowDownload").validate[String]
-          
+
           // Pattern matching
           aResult match {
-              case s: JsSuccess[String] => {                
+              case s: JsSuccess[String] => {
                 allowDownload = s.get
               }
               case e: JsError => {
                 Logger.error("Errors: " + JsError.toFlatJson(e).toString())
                 BadRequest(toJson(s"allowDownload data is missing."))
               }
-          }          
-          
+          }
+
           Logger.debug(s"updateLicense for dataset with id  $id. Args are $licenseType, $rightsHolder, $licenseText, $licenseUrl, $allowDownload")
-          
+
           datasets.updateLicense(id, licenseType, rightsHolder, licenseText, licenseUrl, allowDownload)
           Ok(Json.obj("status" -> "success"))
-      } 
+      }
       else {
         Logger.error(s"The given id $id is not a valid ObjectId.")
         BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
       }
-  }  
+  }
   //End, Update License code
-  
+
   // ---------- Tags related code starts ------------------
   /**
    * REST endpoint: GET: get the tag data associated with this section.
@@ -1072,7 +1117,7 @@ class  Datasets @Inject()(
   def removeTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
       removeTagsHelper(TagCheck_Dataset, id, request)
   }
-  				
+
   /*
  *  Helper function to handle adding and removing tags for files/datasets/sections.
  *  Input parameters:
@@ -1258,7 +1303,7 @@ class  Datasets @Inject()(
         datasets.get(id) match {
           case Some(dataset) => {
             datasets.removeAllTags(id)
-            datasets.index(id) 
+            datasets.index(id)
 
             Ok(Json.obj("status" -> "success"))
           }
@@ -1423,7 +1468,7 @@ class  Datasets @Inject()(
               (f -> pvf)
             } else {
               val ff = for (p <- previewers; if (p.contentType.contains(f.contentType))) yield {
-                //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the 
+                //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the
                 //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
                 if (f.licenseData.isDownloadAllowed(request.user)) {
                     (f.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(f.id) + "/blob", f.contentType, f.length)
@@ -1443,22 +1488,22 @@ class  Datasets @Inject()(
       }
   }
 
-  //Detach and delete dataset code 
+  //Detach and delete dataset code
   /**
    * REST endpoint: DELETE: detach all files from a dataset and then delete the dataset
-   * 
+   *
    *  Takes one arg, id:
-   *  
+   *
    *  @param id, the UUID associated with the dataset to detach all files from and then delete.
-   *  
+   *
    */
-  @ApiOperation(value = "Detach and delete dataset", 
+  @ApiOperation(value = "Detach and delete dataset",
           notes = "Detaches all files before proceeding to perform the stanadard delete on the dataset.",
           responseClass = "None", httpMethod="DELETE")
   def detachAndDeleteDataset(id: UUID) = PermissionAction(Permission.DeleteDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
           datasets.get(id) match{
-              case Some(dataset) => {                  
-                  for (f <- dataset.files) {                      
+              case Some(dataset) => {
+                  for (f <- dataset.files) {
                     detachFileHelper(dataset.id, f, dataset, request.user)
                   }
             	  deleteDatasetHelper(dataset.id, request)
@@ -1467,16 +1512,16 @@ class  Datasets @Inject()(
               case None=> {
                   Ok(toJson(Map("status" -> "success")))
               }
-          }          
+          }
   }
-  
+
   /**
-   * Utility function to consolidate the utility portions of the delete dataset functionality 
+   * Utility function to consolidate the utility portions of the delete dataset functionality
    * so that it can be easily called from multiple API operations.
-   * 
+   *
    * @param id The id of the dataset that a file is being detached from
    * @param request The implicit request parameter which is part of the REST API call
-   * 
+   *
    */
   def deleteDatasetHelper(id: UUID, request: UserRequest[AnyContent]) = {
       datasets.get(id) match {
@@ -1492,17 +1537,17 @@ class  Datasets @Inject()(
           current.plugin[ElasticsearchPlugin].foreach {
         	  _.delete("data", "dataset", id.stringify)
           }
-          
+
           for(file <- dataset.files)
         	  files.index(file)
-                    
+
           current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Dataset","removed",dataset.id.stringify, dataset.name)}
           Ok(toJson(Map("status"->"success")))
         }
         case None => Ok(toJson(Map("status" -> "success")))
      }
   }
-  
+
   @ApiOperation(value = "Delete dataset",
       notes = "Cascading action (deletes all previews and metadata of the dataset and all files existing only in the deleted dataset).",
       responseClass = "None", httpMethod = "POST")
@@ -1555,7 +1600,7 @@ class  Datasets @Inject()(
 
     return xmlFile
   }
-  
+
   @ApiOperation(value = "Get URLs of dataset's RDF metadata exports",
       notes = "URLs of metadata exported as RDF from XML files contained in the dataset, as well as the URL used to export the dataset's user-generated metadata as RDF.",
       responseClass = "None", httpMethod = "GET")
@@ -1564,7 +1609,7 @@ class  Datasets @Inject()(
       case true =>{
 	    current.plugin[RDFExportService].get.getRDFURLsForDataset(id.toString)  match {
 	      case Some(listJson) => {
-	        Ok(listJson) 
+	        Ok(listJson)
 	      }
 	      case None => Logger.error(s"Error getting dataset $id"); InternalServerError
 	    }
@@ -1590,13 +1635,13 @@ class  Datasets @Inject()(
       }
   }
 
-  
+
   def getXMLMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id)  match {
       case Some(dataset) => {
         Ok(datasets.getXMLMetadataJSON(id))
       }
-      case None => {Logger.error("Error finding dataset" + id); InternalServerError}      
+      case None => {Logger.error("Error finding dataset" + id); InternalServerError}
     }
   }
 
@@ -1608,7 +1653,7 @@ class  Datasets @Inject()(
       case None => {
         Logger.error("Error finding dataset" + id);
         InternalServerError
-      }      
+      }
 
     }
   }
@@ -1717,30 +1762,34 @@ class  Datasets @Inject()(
 
 
   /**
-   * Enumerator to loop over all files in a dataset and return chunks for the result zip file that will be
-   * streamed to the client. The zip files are streamed and not stored on disk.
-   *
-   * @param dataset dataset from which to get teh files
-   * @param chunkSize chunk size in memory in which to buffer the stream
-   * @param compression java built in compression value. Use 0 for no compression.
-   * @return Enumerator to produce array of bytes from a zipped stream containing the bytes of each file
-   *         in the dataset
-   */
-  def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION)
-      (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
+    * Enumerator to loop over all files in a dataset and return chunks for the result zip file that will be
+    * streamed to the client. The zip files are streamed and not stored on disk.
+    *
+    * @param dataset dataset from which to get teh files
+    * @param chunkSize chunk size in memory in which to buffer the stream
+    * @param compression java built in compression value. Use 0 for no compression.
+    * @return Enumerator to produce array of bytes from a zipped stream containing the bytes of each file
+    *         in the dataset
+    */
+  def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean, user : User)
+                           (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
     implicit val pec = ec.prepare()
+    val dataFolder = if (bagit) "data/" else ""
     val folderNameMap = scala.collection.mutable.Map.empty[UUID, String]
     var inputFilesBuffer = new ListBuffer[File]()
-    dataset.files.map(f=>files.get(f) match {
+    dataset.files.foreach(f=>files.get(f) match {
       case Some(file) => {
         inputFilesBuffer += file
-        folderNameMap(file.id) = file.id.stringify
+        folderNameMap(file.id) = dataFolder + file.filename + "_" + file.id.stringify
       }
       case None => Logger.error(s"No file with id $f")
     })
 
-    folders.findByParentDatasetId(dataset.id).map {
-      folder => folder.files.map(f=> files.get(f) match {
+    val md5Files = scala.collection.mutable.HashMap.empty[String, MessageDigest] //for the files
+    val md5Bag = scala.collection.mutable.HashMap.empty[String, MessageDigest] //for the bag files
+
+    folders.findByParentDatasetId(dataset.id).foreach{
+      folder => folder.files.foreach(f=> files.get(f) match {
         case Some(file) => {
           inputFilesBuffer += file
           var name = folder.displayName
@@ -1754,22 +1803,51 @@ class  Datasets @Inject()(
               case None =>
             }
           }
-          folderNameMap(file.id) = name + "/" + file.id.stringify
+          folderNameMap(file.id) = dataFolder + name + "/" + file.filename + "_" + file.id.stringify
         }
         case None => Logger.error(s"No file with id $f")
       })
     }
     val inputFiles = inputFilesBuffer.toList
     // which file we are currently processing
-    var count = 0
+
     val byteArrayOutputStream = new ByteArrayOutputStream(chunkSize)
-    val zip = new ZipOutputStream((byteArrayOutputStream))
+    val zip = new ZipOutputStream(byteArrayOutputStream)
     // zip compression level
     zip.setLevel(compression)
-    var is: Option[InputStream] = None
-    if(inputFiles.length > 0) {
-      is = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
-    }
+
+    var totalBytes = 0L
+    var level = 0 //dataset,file, bag
+    var file_type = 0 //
+    var count = 0 //count for files
+
+    /*
+     * Explanation for the cases
+     *
+     * the level can be 0 (file) 1 (dataset) and 2 (bag).
+     *
+     * when the level is file, the file_type can be 0 (info) 1 (metadata) or 2 (the actual files)
+     *
+     * when the level is dataset, the file_type can be 0 (info) or 1 (metadata)
+     *
+     * when the level is bag, the file_type can be
+     *
+     * 0 - bagit.txt
+     * 1 - bag-info.txt
+     * 2 - manifest-md5.txt
+     * 3 - tagmanifest-md5.txt
+     *
+     * when the dataset is finished (in either mode) the level = -1 and file_type = -1 and
+     * the enumerator is finished
+     */
+
+    var is: Option[InputStream] = addDatasetInfoToZip(dataFolder,dataset,zip)
+    //digest input stream
+    val md5 = MessageDigest.getInstance("MD5")
+    md5Files.put(dataFolder+"_info.json",md5)
+    is = Some(new DigestInputStream(is.get,md5))
+    file_type = 1 //next is metadata
+
 
     Enumerator.generateM({
       is match {
@@ -1777,27 +1855,128 @@ class  Datasets @Inject()(
           val buffer = new Array[Byte](chunkSize)
           val bytesRead = scala.concurrent.blocking {
             inputStream.read(buffer)
+
           }
           val chunk = bytesRead match {
             case -1 => {
               // finished individual file
               zip.closeEntry()
               inputStream.close()
-              count = count + 1
-              // more files available
-              if (count < inputFiles.size) {
-                is = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
-              } else {
-                // close the zip file and exit
-                zip.close()
-                is = None
+
+              (level,file_type) match {
+                //dataset, info
+                case (0,0) => {
+                  is = addDatasetInfoToZip(dataFolder,dataset,zip)
+                  val md5 = MessageDigest.getInstance("MD5")
+                  md5Files.put("_info.json",md5)
+                  is = Some(new DigestInputStream(is.get, md5))
+                  file_type = file_type + 1
+                }
+                //dataset, metadata
+                case (0,1) => {
+                  is = addDatasetMetadataToZip(dataFolder,dataset,zip)
+                  val md5 = MessageDigest.getInstance("MD5")
+                  md5Files.put("_metadata.json",md5)
+                  is = Some(new DigestInputStream(is.get, md5))
+                  level = 1
+                  file_type = 0
+                }
+                //file info
+                case (1,0) =>{
+                  is = addFileInfoToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  val md5 = MessageDigest.getInstance("MD5")
+                  md5Files.put(folderNameMap(inputFiles(count).id)+"/_info.json",md5)
+                  is = Some(new DigestInputStream(is.get, md5))
+                  if (count+1 < inputFiles.size ){
+                    count +=1
+                  } else {
+                    count = 0
+                    file_type = 1
+                  }
+                }
+                //file metadata
+                case (1,1) =>{
+                  is = addFileMetadataToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  val md5 = MessageDigest.getInstance("MD5")
+                  md5Files.put(folderNameMap(inputFiles(count).id)+"/_metadata.json",md5)
+                  is = Some(new DigestInputStream(is.get, md5))
+                  if (count+1 < inputFiles.size ){
+                    count +=1
+                  } else {
+                    count = 0
+                    file_type = 2
+                  }
+                }
+                //files
+                case (1,2) => {
+                  is = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  val md5 = MessageDigest.getInstance("MD5")
+                  md5Files.put(folderNameMap(inputFiles(count).id)+"/"+inputFiles(count).filename,md5)
+                  is = Some(new DigestInputStream(is.get, md5))
+                  if (count+1 < inputFiles.size ){
+                    count +=1
+                  } else {
+                    if (bagit){
+                      count = 0
+                      level = 2
+                      file_type = 0
+                    } else {
+                      //done
+                      level = -1
+                      file_type = -1
+                    }
+
+                  }
+                }
+                //bagit.txt
+                case (2,0) => {
+                  is = addBagItTextToZip(totalBytes,folderNameMap.size,zip,dataset,user)
+                  val md5 = MessageDigest.getInstance("MD5")
+                  md5Bag.put("bagit.txt",md5)
+                  is = Some(new DigestInputStream(is.get, md5))
+                  file_type = 1
+                }
+                //bag-info.txt
+                case (2,1) => {
+                  is = addBagInfoToZip(zip)
+                  val md5 = MessageDigest.getInstance("MD5")
+                  md5Bag.put("bag-info.txt",md5)
+                  is = Some(new DigestInputStream(is.get, md5))
+                  file_type = 2
+                }
+                //manifest-md5.txt
+                case (2,2) => {
+                  is = addManifestMD5ToZip(md5Files.toMap[String,MessageDigest],zip)
+                  val md5 = MessageDigest.getInstance("MD5")
+                  md5Bag.put("manifest-md5.txt",md5)
+                  is = Some(new DigestInputStream(is.get, md5))
+                  file_type = 3
+                }
+                //tagmanifest-md5.txt
+                case (2,3) => {
+                  is = addTagManifestMD5ToZip(md5Bag.toMap[String,MessageDigest],zip)
+                  val md5 = MessageDigest.getInstance("MD5")
+                  md5Bag.put("tagmanifest-md5.txt",md5)
+                  is = Some(new DigestInputStream(is.get, md5))
+                  level = -1
+                  file_type = -1
+                }
+                //the end, or a bad case
+                case (_,_) => {
+                  zip.close()
+                  is = None
+                }
               }
+              //this is generated after all the matches
               Some(byteArrayOutputStream.toByteArray)
             }
             case read => {
               zip.write(buffer, 0, read)
               Some(byteArrayOutputStream.toByteArray)
             }
+          }
+          if (level < 2){
+            totalBytes += bytesRead
           }
           // reset temporary byte array
           byteArrayOutputStream.reset()
@@ -1810,14 +1989,7 @@ class  Datasets @Inject()(
     })(pec)
   }
 
-  /**
-   * Used by enumeratorFromDataset to add an entry to the zip file.
-   * Individual files are added to directories with id of file as the name to resolve naming conflicts.
-   *
-   * @param file file to be added to teh zip file
-   * @param zip zip output stream. One stream per dataset.
-   * @return input stream for input file
-   */
+
   private def addFileToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     files.getBytes(file.id) match {
       case Some((inputStream, filename, contentType, contentLength)) => {
@@ -1828,10 +2000,125 @@ class  Datasets @Inject()(
     }
   }
 
+  private def addFileMetadataToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry(folderName + "/_metadata.json"))
+    val fileMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file.id)).map(JSONLD.jsonMetadataWithContext(_))
+    val s : String = Json.prettyPrint(Json.toJson(fileMetadata))
+    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
+  }
+
+  private def getDatasetInfoAsJson(dataset : Dataset) : JsValue = {
+    val rightsHolder = {
+      val licenseType = dataset.licenseData.m_licenseType
+      if (licenseType == "license1") {
+        dataset.author.fullName
+      } else if (licenseType == "license2") {
+        "Creative Commons"
+      } else if (licenseType == "license3") {
+        "Public Domain Dedication"
+      } else {
+        "None"
+      }
+    }
+
+    val spaceNames = for (
+      spaceId <- dataset.spaces;
+      space <- spaces.get(spaceId)
+    ) yield {
+      space.name
+    }
+
+    val licenseInfo = Json.obj("licenseText"->dataset.licenseData.m_licenseText,"rightsHolder"->rightsHolder)
+    Json.obj("id"->dataset.id,"name"->dataset.name,"author"->dataset.author.email,"description"->dataset.description, "spaces"->spaceNames.mkString(","),"lastModified"->dataset.lastModifiedDate.toString,"license"->licenseInfo)
+  }
+
+  private def addDatasetInfoToZip(folderName: String, dataset: models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry(folderName + "/_info.json"))
+    val infoListMap = Json.prettyPrint(getDatasetInfoAsJson(dataset))
+    Some(new ByteArrayInputStream(infoListMap.getBytes("UTF-8")))
+  }
+
+  private def getFileInfoAsJson(file : models.File) : JsValue = {
+    val rightsHolder = {
+      val licenseType = file.licenseData.m_licenseType
+      if (licenseType == "license1") {
+        file.author.fullName
+      } else if (licenseType == "license2") {
+        "Creative Commons"
+      } else if (licenseType == "license3") {
+        "Public Domain Dedication"
+      } else {
+        "None"
+      }
+
+    }
+    val licenseInfo = Json.obj("licenseText"->file.licenseData.m_licenseText,"rightsHolder"->rightsHolder)
+    Json.obj("id" -> file.id, "filename" -> file.filename, "author" -> file.author.email, "uploadDate" -> file.uploadDate.toString,"contentType"->file.contentType,"description"->file.description,"license"->licenseInfo)
+  }
+
+  private def addFileInfoToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry(folderName + "/_info.json"))
+    val fileInfo = getFileInfoAsJson(file)
+    val s : String = Json.prettyPrint(fileInfo)
+    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
+  }
+
+  private def addDatasetMetadataToZip(folderName: String, dataset : models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry(folderName + "_dataset_metadata.json"))
+    val datasetMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
+      .map(JSONLD.jsonMetadataWithContext(_))
+    val s : String = Json.prettyPrint(Json.toJson(datasetMetadata))
+    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
+  }
+
+  private def addBagItTextToZip(totalbytes: Long, totalFiles: Long, zip: ZipOutputStream, dataset: models.Dataset, user: models.User) = {
+    zip.putNextEntry(new ZipEntry("bagit.txt"))
+    val softwareLine = "Bag-Software-Agent: clowder.ncsa.illinois.edu\n"
+    val baggingDate = "Bagging-Date: "+(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime)+"\n"
+    val baggingSize = "Bag-Size: " + _root_.util.FileUtils.humanReadableByteCount(totalbytes) + "\n"
+    val payLoadOxum = "Payload-Oxum: "+ totalbytes + "." + totalFiles +"\n"
+    val contactName = "Contact-Name: " + user.fullName+"\n"
+    val contactEmail = "Contact-Email: "+user.email.getOrElse("")+"\n"
+    val senderIdentifier="Internal-Sender-Identifier: "+dataset.id+"\n"
+    val senderDescription = "Internal-Sender-Description: "+dataset.description+"\n"
+    val s = softwareLine+baggingDate+baggingSize+payLoadOxum+contactName+contactEmail+senderIdentifier+senderDescription
+    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
+  }
+
+  private def addBagInfoToZip(zip : ZipOutputStream) : Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry("bag-info.txt"))
+    val s : String = "BagIt-Version: 0.97\n"+"Tag-File-Character-Encoding: UTF-8\n"
+    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
+  }
+
+  private def addManifestMD5ToZip(md5map : Map[String,MessageDigest] ,zip : ZipOutputStream) : Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry("manifest-md5.txt"))
+    var s : String = ""
+    md5map.foreach{
+      case (filePath,md) => {
+        val current = Hex.encodeHexString(md.digest())+" "+filePath+"\n"
+        s = s + current
+      }
+    }
+    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
+  }
+
+  private def addTagManifestMD5ToZip(md5map : Map[String,MessageDigest],zip : ZipOutputStream) : Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry("tagmanifest-md5.txt"))
+    var s : String = ""
+    md5map.foreach{
+      case (filePath,md) => {
+        val current = Hex.encodeHexString(md.digest())+" "+filePath+"\n"
+        s = s + current
+      }
+    }
+    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
+  }
+
   @ApiOperation(value = "Download dataset",
     notes = "Downloads all files contained in a dataset.",
     responseClass = "None", httpMethod = "GET")
-  def download(id: UUID, compression: Int) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def download(id: UUID, bagit: Boolean,compression: Int) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(loggedInUser) => {
@@ -1839,7 +2126,7 @@ class  Datasets @Inject()(
           case Some(dataset) => {
             // Use custom enumerator to create the zip file on the fly
             // Use a 1MB in memory byte array
-            Ok.chunked(enumeratorFromDataset(dataset, 1024*1024, compression)).withHeaders(
+            Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression,bagit,loggedInUser)).withHeaders(
               "Content-Type" -> "application/zip",
               "Content-Disposition" -> ("attachment; filename=" + dataset.name + ".zip")
             )

@@ -38,7 +38,7 @@ class Status @Inject()(spaces: SpaceService,
   def status = UserAction(needActive=false) { implicit request =>
 
     Ok(Json.obj("version" -> getVersionInfo,
-      "counts" -> getCounts,
+      "counts" -> getCounts(request.user),
       "plugins" -> getPlugins(request.user),
       "extractors" -> Json.toJson(extractors.getExtractorNames())))
   }
@@ -148,11 +148,16 @@ class Status @Inject()(spaces: SpaceService,
     Json.toJson(result.toMap[String, JsValue])
   }
 
-  def getCounts: JsValue = {
+  def getCounts(user: Option[User]): JsValue = {
+    val fileinfo = if (Permission.checkServerAdmin(user)) {
+      Json.toJson(files.statusCount().map{x => x._1.toString -> Json.toJson(x._2)})
+    } else {
+      Json.toJson(files.count())
+    }
     Json.obj("spaces" -> spaces.count(),
       "collections" -> collections.count(),
       "datasets" -> datasets.count(),
-      "files" -> files.count(),
+      "files" -> fileinfo,
       "users" -> users.count())
   }
 

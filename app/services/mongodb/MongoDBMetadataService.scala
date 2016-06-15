@@ -81,8 +81,10 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
   def removeMetadata(id: UUID) = {
     getMetadataById(id) match {
       case Some(md) =>
-        if( getMetadataBycontextId(md.contextId.getOrElse(new UUID(""))).length  == 1) {
-          contextService.removeContext(md.contextId.getOrElse(new UUID("")))
+        md.contextId.foreach{cid =>
+          if (getMetadataBycontextId(cid).length == 1) {
+            contextService.removeContext(cid)
+          }
         }
         MetadataDAO.remove(md, WriteConcern.Safe)
         //update metadata count for resource
