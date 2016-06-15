@@ -71,11 +71,10 @@ trait User extends Identity {
   override def toString: String = format(false)
 
   def format(paren: Boolean): String = {
-    val x = (identityId.providerId, email) match {
-      case ("userpass", Some(email)) => s"""${fullName} <${email}> [Local]"""
-      case ("userpass", None) => s"""${fullName} [Local]"""
-      case (provider, Some(email)) => s"""${fullName} <${email}> [${provider.capitalize}]"""
-      case (provider, None) => s"""${fullName} [${provider.capitalize}]"""
+    val e = email.fold(" ")(x => s""" <${x}> """)
+    val x = (identityId.providerId) match {
+      case ("userpass") => s"""${fullName}${e}[Local Account]"""
+      case (provider) => s"""${fullName}${e}[${provider.capitalize}]"""
     }
     if (paren) {
       x.replaceAll("<", "(").replaceAll(">", ")")
