@@ -380,6 +380,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // add status field to files
     updateMongo("add-file-status", addFileStatus)
+
+    // Duplicate all clowder instance metadata to all existing spaces
+    updateMongo("add-metadata-per-space", addMetadataPerSpace)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1112,6 +1115,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   }
 
   private def updateCountsInSpaces(){
+
     collection("spaces.projects").foreach{ space =>
       val spaceId = space.getAsOrElse("_id", new ObjectId()).toString()
       val collections = collection("collections").find(MongoDBObject("root_spaces" -> MongoDBObject("$in" -> MongoDBList(new ObjectId(spaceId)))))
@@ -1163,5 +1167,27 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
   private def addFileStatus(): Unit = {
     collection("uploads").update(MongoDBObject(), $set("status" -> FileStatus.PROCESSED.toString), multi=true)
+  }
+
+  private def addMetadataPerSpace(){
+    val metadataService: MetadataService = DI.injector.getInstance(classOf[MetadataService])
+
+    collection("spaces.projects").foreach{ space =>
+      val metadatas = collection("metadata.definitions").find(MongoDBObject("spaceId" -> null))
+      val spaceId = space.getAsOrElse("_id", new ObjectId())
+      metadatas.foreach{ metadata =>
+
+        val json = metadata.getAsOrElse("json", new BasicDBObject())
+        val md = new BasicDBObject()
+        md.put("_id", new ObjectId())
+        md.put("spaceId", spaceId)
+        md.put("json", json)
+        try {
+          collection("metadata.definitions").insert(md, WriteConcern.Safe)
+        } catch {
+          case e: BSONException => Logger.error("Unable to add the metadata definition for space with id: " + spaceId)
+        }
+      }
+    }
   }
 }

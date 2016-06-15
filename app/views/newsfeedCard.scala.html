@@ -1,4 +1,5 @@
 @(event: models.Event)(implicit user: Option[models.User] = None)
+@import services.AppConfiguration
 @linkForObject(obj_type: String, obj_id: Option[UUID], obj_name: Option[String]) = {
   @obj_type match {
     case "file" => {
@@ -123,6 +124,24 @@
   }
   case "tos_update" => {
     updated the <a href="@routes.Application.tos()">Terms of Services</a>
+  }
+  case "added_metadata_space" => {
+    added a new metadata definition to @linkForObject("space", event.object_id, event.object_name)
+  }
+  case "added_metadata_instance" => {
+    added a new metadata definition to @(AppConfiguration.getDisplayName)
+  }
+  case "edit_metadata_space" => {
+    edited a metadata definition for @linkForObject("space", event.object_id, event.object_name)
+  }
+  case "edit_metadata_instance" => {
+    edited a metadata definition for @(AppConfiguration.getDisplayName)
+  }
+  case "delete_metadata_space" => {
+    delete a metadata definition from @linkForObject("space", event.object_id, event.object_name)
+  }
+  case "delete_metadata_instance" => {
+    deleted a metadata definition from @(AppConfiguration.getDisplayName)
   }
   case _ => {
     @defining(event.event_type.split("_")) { event_type_split =>

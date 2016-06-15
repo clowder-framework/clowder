@@ -401,6 +401,13 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                       //  List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
                       //current.plugin[AdminsNotifierPlugin].foreach{_.sendAdminsNotification(Utils.baseUrl(request), "Space","added",space.id.toString,space.name)}
                       // redirect to space page
+
+                      //Add default metadata to metadata for the space.
+                      val clowder_metadata = metadatas.getDefinitions()
+                      clowder_metadata.foreach{ md=>
+                        val new_metadata = MetadataDefinition(spaceId = Some(newSpace.id), json= md.json)
+                        metadatas.addDefinition(new_metadata)
+                      }
                       Redirect(routes.Spaces.getSpace(newSpace.id))
                     } else {  BadRequest("Unauthorized.") }
                   })
