@@ -253,8 +253,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
         //correct space.userCount according to usersInSpace.length
         spaces.updateUserCount(s.id,usersInSpace.length)
+        val roleDescription = users.listRoles() map (t => t.name -> t.description) toMap
 
-        Ok(views.html.spaces.users(spaceInviteForm, Utils.decodeSpaceElements(s), creator, userRoleMap, externalUsers.toList, roleList.sorted, inviteBySpace))
+        Ok(views.html.spaces.users(spaceInviteForm, Utils.decodeSpaceElements(s), creator, userRoleMap, externalUsers.toList, roleList.sorted, inviteBySpace, roleDescription))
       }
       case None =>  BadRequest(views.html.notFound("Space does not exist."))
     }
