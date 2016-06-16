@@ -15,6 +15,7 @@
         <div class="col-md-12">
             <p>A dataset is a container for files and metadata. Create one to upload data to the system.
                 You can keep your data private or share it with other @{spaces.spaceTitle()}s.</p>
+
             @if(collection.isDefined){
                 <p>This dataset will be added to collection <a href="@routes.Collections.collection(collection.get.id)">@collection.get.name</a></p>
             }

@@ -14,19 +14,22 @@
   </script>
     <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
     <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
+
   <div class="page-header">
     <h1>Create New Collection</h1>
+        <p>Collections allow you to bring together multiple datasets and their associated files in an almost unlimited number of ways.
+            Share a collection to a Project Team to work with your team.
+            Permissions will be applied according to the Space's and Datasets' settings.
+        </p>
   </div>
   <div class="row">
-	<div class="col-md-12">
-	
-	<div>
-        <span id="status" class="success hiddencomplete alert alert-success" role="alert">A Status Message</span>     
-        @if(errorString != null){
-            <span class="error alert alert-danger" id="messageerror">@errorString</span>
-        }else{           
-            <span class="error hiddencomplete alert alert-danger" id="messageerror">An Error Message</span>
-        }
+    <div class="col-md-12">
+      <span id="status" class="success hiddencomplete alert alert-success" role="alert">A Status Message</span>
+      @if(errorString != null){
+        <span class="error alert alert-danger" id="messageerror">@errorString</span>
+      }else{
+        <span class="error hiddencomplete alert alert-danger" id="messageerror">An Error Message</span>
+      }
     </div>
     <!-- Basic required elements for creating a new collection. -->
     <table style="width: 100%; margin-bottom: 40px; margin-top: 40px;">
@@ -69,14 +72,14 @@
                 </button>
             </td>
         </tr>
-    </table>	
+    </table>
     <form id="collectioncreate" action='@routes.Collections.submit' method="POST" enctype="multipart/form-data">
-                    <!-- Redirect browsers with JavaScript disabled to the origin page -->
-                    <noscript>Javascript is required in order to use the uploader to create a new collection.</noscript>
+            <!-- Redirect browsers with JavaScript disabled to the origin page -->
+            <noscript>Javascript is required in order to use the uploader to create a new collection.</noscript>
                     
-                    <input type="hidden" name="name" id="hiddenname" value="not set">
-                    <input type="hidden" name="description" id="hiddendescription" value="not set">
-                    <input type="hidden" name="space" id="hiddenspace" value="not set">
+            <input type="hidden" name="name" id="hiddenname" value="not set">
+            <input type="hidden" name="description" id="hiddendescription" value="not set">
+            <input type="hidden" name="space" id="hiddenspace" value="not set">
     </form>
     </div>
   </div>

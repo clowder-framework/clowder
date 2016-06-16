@@ -29,8 +29,18 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     Ok(views.html.admin.customize(theme,
       AppConfiguration.getDisplayName,
       AppConfiguration.getWelcomeMessage,
-      AppConfiguration.getGoogleAnalytics,
-      AppConfiguration.getUserAgreement))
+      AppConfiguration.getGoogleAnalytics))
+  }
+
+  def tos = ServerAdminAction { implicit request =>
+    implicit val user = request.user
+    val tosText = AppConfiguration.getTermsOfServicesTextRaw
+    val tosHtml = if (AppConfiguration.isTermOfServicesHtml) {
+      "checked"
+    } else {
+      ""
+    }
+    Ok(views.html.admin.tos(tosText, tosHtml))
   }
 
   def adminIndex = ServerAdminAction { implicit request =>
@@ -308,7 +318,7 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
   def getMetadataDefinitions() = ServerAdminAction { implicit request =>
     implicit val user = request.user
     val metadata = metadataService.getDefinitions()
-    Ok(views.html.manageMetadataDefinitions(metadata.toList))
+    Ok(views.html.manageMetadataDefinitions(metadata.toList, None, None))
   }
 
   val roleForm = Form(

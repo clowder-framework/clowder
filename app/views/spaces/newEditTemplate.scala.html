@@ -7,6 +7,7 @@
 @main("Space") {
   <div class="page-header">
     <h1>@title</h1>
+    <p>Spaces are collaborative workspaces that contain people (with designated permissions), branding, and datasets.</p>
   </div>
   <div class="row">
     <div class="col-md-12">
@@ -38,7 +39,9 @@
             <div class="external-link-add"><a href="#">add</a></div>
           </div>
           @inputText(myForm("logoUrl"),'class -> "form-control", '_label-> "Logo URL")
+          Recommended image size is 100 x 100
           @inputText(myForm("bannerUrl"),'class -> "form-control", '_label-> "Banner URL")
+          Recommended image size is 1170 x 200
 
           @helper.inputRadioGroup(myForm("expiration"), options("expiretrue"->"On", "expirefalse"->"Off"), '_label -> "Expiration")
           @defining(myForm("isTimeToLiveEnabled")) { isTimeToLiveEnabled =>
