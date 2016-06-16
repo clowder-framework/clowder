@@ -2,23 +2,24 @@ package services.mongodb
 
 import com.mongodb.casbah.WriteConcern
 import java.util.Date
+
 import com.mongodb.DBObject
 import com.mongodb.util.JSON
 import com.novus.salat._
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import models._
 import org.bson.types.ObjectId
-import securesocial.core.Identity
+import securesocial.core.{AuthenticationMethod, Identity, _}
 import play.api.Application
 import play.api.Play.current
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.Imports._
 import models.Role
 import models.UserSpaceAndRole
+
 import scala.collection.mutable.ListBuffer
 import play.api.Logger
 import securesocial.core.providers.Token
-import securesocial.core._
 import services._
 import services.mongodb.MongoContext.context
 import _root_.util.Direction._
@@ -438,6 +439,14 @@ class MongoDBUserService @Inject() (
     }
   }
 
+  override def acceptTermsOfServices(id: UUID): Unit = {
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $set("termsOfServices" -> MongoDBObject("accepted" -> true, "acceptedDate" -> new Date, "acceptedVersion" -> AppConfiguration.getTermsOfServicesVersionString)))
+  }
+
+  override def newTermsOfServices(): Unit = {
+    UserDAO.dao.update(MongoDBObject("termsOfServices" -> MongoDBObject("$exists" -> 1)), $set("termsOfServices.accepted" -> false), multi=true)
+  }
 
   override def followResource(followerId: UUID, resourceRef: ResourceRef) {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(followerId.stringify)),
@@ -617,6 +626,9 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
           userobj.put("active", !register)
           userobj.put("serverAdmin", false)
         }
+      }
+      if (user.authMethod == AuthenticationMethod.UserPassword) {
+        userobj.put("acceptedTermsOfServices", new Date())
       }
     }
 

@@ -230,6 +230,7 @@ function updateUsersInSpace(spaceId) {
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occurred: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to update the users contained within a space.";
+        notify("Failed to update users in this space, due to:" + errorThrown, "error");
 
     });
 
@@ -238,9 +239,8 @@ function updateUsersInSpace(spaceId) {
 
 function acceptSpaceRequest(spaceId, userId, userName){
     var role = $("#roleSelect-"+userId).val();
-    var request = jsRoutes.controllers.Spaces.acceptRequest(spaceId, userId, role).ajax({
-        type : 'GET',
-        contentType : "application/json"
+    var request = jsRoutes.api.Spaces.acceptRequest(spaceId, userId, role).ajax({
+        type : 'POST'
     });
     request.done ( function ( response, textStatus, jqXHR ) {
         $("#request-tr-"+userId).remove();
@@ -260,14 +260,16 @@ function acceptSpaceRequest(spaceId, userId, userName){
     request.fail(function(jqXHR, textStatus, errorThrown) {
         console.error("The following error occured: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to accept request.";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("Accept request failed due to : " + errorThrown, "error");
+        }
     });
     return false;
 }
 
 function rejectSpaceRequest(id, user){
-    var request = jsRoutes.controllers.Spaces.rejectRequest(id, user).ajax({
-        type : 'GET',
-        contentType : "application/json"
+    var request = jsRoutes.api.Spaces.rejectRequest(id, user).ajax({
+        type : 'POST'
     });
     request.done ( function ( response, textStatus, jqXHR ) {
         $("#request-tr-"+user).remove();
@@ -279,6 +281,9 @@ function rejectSpaceRequest(id, user){
     request.fail(function(jqXHR, textStatus, errorThrown) {
         console.error("The following error occured: " + textStatus, errorThrown);
         var errMsg = "You must be logged in to reject request.";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("Reject request failed due to : " + errorThrown, "error");
+        }
     });
     return false;
 }

@@ -23,7 +23,7 @@ class MongoDBEventService extends EventService {
   }
 
   def addEvent(event: Event) = {
-    Event.insert(event);
+    Event.insert(event)
   }
 
   def addUserEvent(user: Option[User], action_type: String) = {

@@ -24,6 +24,12 @@
             <div><a href="@routes.Admin.createRole()" class="btn btn-primary"><span class="glyphicon glyphicon-ok"></span> Create New Role</a></div>
             @if(!roles.isEmpty) {
                 <table class="table">
+                    <colgroup>
+                        <col class="col-md-2">
+                        <col class="col-md-4">
+                        <col class="col-md-4">
+                        <col class="col-md-2">
+                    </colgroup>
                     <thead><tr><th>Name</th><th>Description</th><th>Permissions</th><th>Edit / Delete</th></tr></thead>
                     @for(role <- roles) {
                         <tr><td>@role.name</td><td>@role.description</td><td id="permission">
