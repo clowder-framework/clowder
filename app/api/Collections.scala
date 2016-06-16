@@ -234,13 +234,6 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     }
   }
 
-  def jsonCollection(collection: Collection): JsValue = {
-    toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description,
-      "created" -> collection.created.toString,"author"-> collection.author.toString, "root_flag" -> collections.hasRoot(collection).toString,
-      "child_collection_ids"-> collection.child_collection_ids.toString, "parent_collection_ids" -> collection.parent_collection_ids.toString,
-    "childCollectionsCount" -> collection.childCollectionsCount.toString, "datasetCount"-> collection.datasetCount.toString, "spaces" -> collection.spaces.toString))
-  }
-
   @ApiOperation(value = "Update a collection name",
   notes= "Takes one argument, a UUID of the collection. Request body takes a key-value pair for the name",
   responseClass = "None", httpMethod = "PUT")
@@ -309,6 +302,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       }
 
   }
+
   /**
    * Add preview to file.
    */
@@ -385,6 +379,21 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       }
   }
 
+  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
+    val followeeModel = collections.get(followeeUUID)
+    followeeModel match {
+      case Some(followeeModel) => {
+        val sourceFollowerIDs = followeeModel.followers
+        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
+        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
+      }
+      case None => {
+        List.empty
+      }
+    }
+  }
+
   @ApiOperation(value = "Unfollow collection.",
     notes = "Remove user from collection followers and remove collection from user followed collections.",
     responseClass = "None", httpMethod = "POST")
@@ -411,22 +420,6 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       }
   }
 
-  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
-    val followeeModel = collections.get(followeeUUID)
-    followeeModel match {
-      case Some(followeeModel) => {
-        val sourceFollowerIDs = followeeModel.followers
-        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
-        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
-        userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
-      }
-      case None => {
-        List.empty
-      }
-    }
-  }
-
-
   @ApiOperation(value = "Add subcollection to collection",
     notes = "",
     responseClass = "None", httpMethod = "POST")
@@ -447,8 +440,6 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
       case Failure(t) => InternalServerError
     }
   }
-
-
 
   @ApiOperation(value = "Create a collection with parent",
     notes = "",
@@ -548,7 +539,6 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     }
   }
 
-
   /**
     * Adds a Root flag for a collection in a space
     */
@@ -591,6 +581,13 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         BadRequest(toJson(s"The given collection id $collectionId is not a valid ObjectId."))
       }
     }
+  }
+
+  def jsonCollection(collection: Collection): JsValue = {
+    toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description,
+      "created" -> collection.created.toString,"author"-> collection.author.toString, "root_flag" -> collections.hasRoot(collection).toString,
+      "child_collection_ids"-> collection.child_collection_ids.toString, "parent_collection_ids" -> collection.parent_collection_ids.toString,
+    "childCollectionsCount" -> collection.childCollectionsCount.toString, "datasetCount"-> collection.datasetCount.toString, "spaces" -> collection.spaces.toString))
   }
 
   @ApiOperation(value = "Get all root collections",

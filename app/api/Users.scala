@@ -22,6 +22,48 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
      Ok(Json.toJson(users.list.map(userToJSON)))
   }
 
+  def userToJSON(user: User): JsValue = {
+    var profile: Map[String, JsValue] = Map.empty
+    if(user.profile.isDefined) {
+      if(user.profile.get.biography.isDefined) {
+        profile  = profile + ("biography" -> Json.toJson(user.profile.get.biography))
+      }
+      if(user.profile.get.institution.isDefined) {
+        profile = profile + ( "institution" -> Json.toJson(user.profile.get.institution))
+      }
+      if(user.profile.get.orcidID.isDefined) {
+        profile = profile + ("orcidId" -> Json.toJson(user.profile.get.orcidID))
+      }
+      if(user.profile.get.position.isDefined) {
+        profile = profile + ("position" -> Json.toJson(user.profile.get.position))
+      }
+      if(user.profile.get.institution.isDefined) {
+        profile = profile + ("institution" -> Json.toJson(user.profile.get.institution))
+      }
+
+    }
+    Json.obj(
+
+      "@context" -> Json.toJson(
+        Map(
+        "firstName" -> Json.toJson("http://schema.org/Person/givenName"),
+        "lastName" -> Json.toJson("http://schema.org/Person/familyName"),
+        "email" -> Json.toJson("http://schema.org/Person/email"),
+        "affiliation" -> Json.toJson("http://schema.org/Person/affiliation")
+        )
+      ),
+        "id" -> user.id.stringify,
+        "firstName" -> user.firstName,
+        "lastName" -> user.lastName,
+        "fullName" -> user.fullName,
+        "email" -> user.email,
+        "avatar" -> user.getAvatarUrl(),
+        "profile" -> Json.toJson(profile)
+    )
+
+
+  }
+  
   /**
    * Returns the user that is making the request. Used to verify authentication, as well as for user data access.
    */
@@ -49,8 +91,8 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
               Unauthorized("Not authenticated")
           }
       }
-  }  
-  
+  }
+
   /**
    * Returns a single user based on the id specified.
    */
@@ -128,6 +170,21 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
     }
   }
 
+  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
+    val followeeModel = users.findById(followeeUUID)
+    followeeModel match {
+      case Some(followeeModel) => {
+        val sourceFollowerIDs = followeeModel.followers
+        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
+        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        users.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
+      }
+      case None => {
+        List.empty
+      }
+    }
+  }
+
   @ApiOperation(value = "Unfollow a user",
     responseClass = "None", httpMethod = "POST")
   def unfollow(followeeUUID: UUID) = AuthenticatedAction { implicit request =>
@@ -144,62 +201,5 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
         Ok(Json.obj("status" -> "fail"))
       }
     }
-  }
-
-  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
-    val followeeModel = users.findById(followeeUUID)
-    followeeModel match {
-      case Some(followeeModel) => {
-        val sourceFollowerIDs = followeeModel.followers
-        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
-        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
-        users.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
-      }
-      case None => {
-        List.empty
-      }
-    }
-  }
-
-  def userToJSON(user: User): JsValue = {
-    var profile: Map[String, JsValue] = Map.empty
-    if(user.profile.isDefined) {
-      if(user.profile.get.biography.isDefined) {
-        profile  = profile + ("biography" -> Json.toJson(user.profile.get.biography))
-      }
-      if(user.profile.get.institution.isDefined) {
-        profile = profile + ( "institution" -> Json.toJson(user.profile.get.institution))
-      }
-      if(user.profile.get.orcidID.isDefined) {
-        profile = profile + ("orcidId" -> Json.toJson(user.profile.get.orcidID))
-      }
-      if(user.profile.get.position.isDefined) {
-        profile = profile + ("position" -> Json.toJson(user.profile.get.position))
-      }
-      if(user.profile.get.institution.isDefined) {
-        profile = profile + ("institution" -> Json.toJson(user.profile.get.institution))
-      }
-
-    }
-    Json.obj(
-
-      "@context" -> Json.toJson(
-        Map(
-        "firstName" -> Json.toJson("http://schema.org/Person/givenName"),
-        "lastName" -> Json.toJson("http://schema.org/Person/familyName"),
-        "email" -> Json.toJson("http://schema.org/Person/email"),
-        "affiliation" -> Json.toJson("http://schema.org/Person/affiliation")
-        )
-      ),
-        "id" -> user.id.stringify,
-        "firstName" -> user.firstName,
-        "lastName" -> user.lastName,
-        "fullName" -> user.fullName,
-        "email" -> user.email,
-        "avatar" -> user.getAvatarUrl(),
-        "profile" -> Json.toJson(profile)
-    )
-
-
   }
 }

@@ -68,6 +68,11 @@ class Files @Inject()(
     }
   }
 
+  def jsonFile(file: File): JsValue = {
+    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "filedescription" -> file.description, "content-type" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString,
+    		"authorId" -> file.author.id.stringify, "status" -> file.status))
+  }
+
   /**
    * List all files.
    */
@@ -95,18 +100,18 @@ class Files @Inject()(
     PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
       //Check the license type before doing anything.
       files.get(id) match {
-          case Some(file) => {    
+          case Some(file) => {
               if (file.licenseData.isDownloadAllowed(request.user)) {
-		        files.getBytes(id) match {            
+		        files.getBytes(id) match {
 		          case Some((inputStream, filename, contentType, contentLength)) => {
-		
+
 		            request.headers.get(RANGE) match {
 		              case Some(value) => {
 		                val range: (Long, Long) = value.substring("bytes=".length).split("-") match {
 		                  case x if x.length == 1 => (x.head.toLong, contentLength - 1)
 		                  case x => (x(0).toLong, x(1).toLong)
 		                }
-		
+
 		                range match {
 		                  case (start, end) =>
 		                    inputStream.skip(start)
@@ -202,6 +207,7 @@ class Files @Inject()(
           }
         }
     }
+
   @ApiOperation(value ="Get metadata definitions available for a file",
     notes="The metadata definitions come from the spaces that the dataset the file is part of. Directly or within a folder",
   responseClass= "None", httpMethod = "GET")
@@ -252,7 +258,6 @@ class Files @Inject()(
       case None => BadRequest(toJson("The requested file does not exist"))
     }
   }
-
 
   /**
    * Add metadata to file.
@@ -556,7 +561,7 @@ class Files @Inject()(
         case _ => Ok("received something else: " + request.body + '\n')
       }
   }
-
+  
   @ApiOperation(value = "Get the user-generated metadata of the selected file in an RDF file",
 	      notes = "",
 	      responseClass = "None", httpMethod = "GET")
@@ -574,7 +579,7 @@ class Files @Inject()(
     }
     case false=>{
       Ok("RDF export plugin not enabled")
-    }      
+    }
    }
   }
   
@@ -586,7 +591,7 @@ class Files @Inject()(
       case true =>{
 	    current.plugin[RDFExportService].get.getRDFURLsForFile(id.stringify)  match {
 	      case Some(listJson) => {
-	        Ok(listJson) 
+	        Ok(listJson)
 	      }
 	      case None => {Logger.error("Error getting file" + id); InternalServerError}
 	    }
@@ -596,7 +601,7 @@ class Files @Inject()(
       }
     }
   }
-  
+
   @ApiOperation(value = "Add user-generated metadata to file",
       notes = "Metadata in attached JSON object will describe the file's described resource, not the file object itself.",
       responseClass = "None", httpMethod = "POST")
@@ -618,20 +623,6 @@ class Files @Inject()(
         }
 
         Ok(toJson(Map("status" -> "success")))
-  }
-
-  def jsonFile(file: File): JsValue = {
-    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "filedescription" -> file.description, "content-type" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString,
-    		"authorId" -> file.author.id.stringify, "status" -> file.status))
-  }
-
-  def jsonFileWithThumbnail(file: File): JsValue = {
-    var fileThumbnail = "None"
-    if (!file.thumbnail_id.isEmpty)
-      fileThumbnail = file.thumbnail_id.toString().substring(5, file.thumbnail_id.toString().length - 1)
-
-    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType, "dateCreated" -> file.uploadDate.toString(), "thumbnail" -> fileThumbnail,
-    		"authorId" -> file.author.id.stringify, "status" -> file.status))
   }
 
   def toDBObject(fields: Seq[(String, JsValue)]): DBObject = {
@@ -695,7 +686,6 @@ class Files @Inject()(
       }
   }
 
-
   /**
    * Add 3D texture to file.
    */
@@ -750,8 +740,7 @@ class Files @Inject()(
         case None => BadRequest(toJson("File not found " + file_id))
       }
   }
-  
-  
+
   /**
    * Add thumbnail to query file.
    */
@@ -762,7 +751,7 @@ class Files @Inject()(
         case Some(file) => {
           thumbnails.get(thumbnail_id) match {
             case Some(thumbnail) => {
-              queries.updateThumbnail(query_id, thumbnail_id)  
+              queries.updateThumbnail(query_id, thumbnail_id)
               Ok(toJson(Map("status" -> "success")))
             }
             case None => {
@@ -778,7 +767,6 @@ class Files @Inject()(
       }
   }
   
-
   /**
    * Find geometry file for given 3D file and geometry filename.
    */
@@ -815,7 +803,7 @@ class Files @Inject()(
                     }
                   }
                   case None => {
-                    //IMPORTANT: Setting CONTENT_LENGTH header here introduces bug!                  
+                    //IMPORTANT: Setting CONTENT_LENGTH header here introduces bug!
                     Ok.chunked(Enumerator.fromStream(inputStream))
                       .withHeaders(CONTENT_TYPE -> contentType)
                       .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename=" + filename))
@@ -831,9 +819,6 @@ class Files @Inject()(
         }
     }
   
-  
-  
-
   /**
    * Find texture file for given 3D file and texture filename.
    */
@@ -886,7 +871,7 @@ class Files @Inject()(
           case None => Logger.error("Texture file not found"); InternalServerError
         }
     }
-
+  
   /**
     * REST endpoint: PUT: update or change the filename
     * args
@@ -928,26 +913,25 @@ class Files @Inject()(
       }
   }
 
-  //Update License code
   /**
    * REST endpoint: POST: update the license data associated with a specific File
-   * 
+   *
    *  Takes one arg, id:
-   *  
-   *  id, the UUID associated with this file 
-   *  
+   *
+   *  id, the UUID associated with this file
+   *
    *  The data contained in the request body will be containe the following key-value pairs:
-   *  
+   *
    *  licenseType, currently:
-   *        license1 - corresponds to Limited 
+   *        license1 - corresponds to Limited
    *        license2 - corresponds to Creative Commons
    *        license3 - corresponds to Public Domain
-   *        
+   *
    *  rightsHolder, currently only required if licenseType is license1. Reflects the specific name of the organization or person that holds the rights
-   *   
+   *
    *  licenseText, currently tied to the licenseType
    *        license1 - Free text that a user can enter to describe the license
-   *        license2 - 1 of 6 options (or their abbreviations) that reflects the specific set of 
+   *        license2 - 1 of 6 options (or their abbreviations) that reflects the specific set of
    *        options associated with the Creative Commons license, these are:
    *            Attribution-NonCommercial-NoDerivs (by-nc-nd)
    *            Attribution-NoDerivs (by-nd)
@@ -956,10 +940,10 @@ class Files @Inject()(
    *            Attribution-ShareAlike (by-sa)
    *            Attribution (by)
    *        license3 - Public Domain Dedication
-   *        
+   *
    *  licenseUrl, free text that a user can enter to go with the licenseText in the case of license1. Fixed URL's for the other 2 cases.
-   *  
-   *  allowDownload, true or false, whether the file or dataset can be downloaded. Only relevant for license1 type.  
+   *
+   *  allowDownload, true or false, whether the file or dataset can be downloaded. Only relevant for license1 type.
    */
   @ApiOperation(value = "Update License information to a dataset",
       notes = "Takes four arguments, all Strings. licenseType, rightsHolder, licenseText, licenseUrl",
@@ -973,9 +957,9 @@ class Files @Inject()(
           var licenseText: String = null;
           var licenseUrl: String = null;
           var allowDownload: String = null;
-          
+
           var aResult: JsResult[String] = (request.body \ "licenseType").validate[String]
-          
+
           // Pattern matching
           aResult match {
               case s: JsSuccess[String] => {
@@ -986,9 +970,9 @@ class Files @Inject()(
                 BadRequest(toJson(s"licenseType data is missing."))
               }
           }
-          
+
           aResult = (request.body \ "rightsHolder").validate[String]
-          
+
           // Pattern matching
           aResult match {
               case s: JsSuccess[String] => {
@@ -999,14 +983,14 @@ class Files @Inject()(
                 BadRequest(toJson(s"rightsHolder data is missing."))
               }
           }
-          
+
           aResult = (request.body \ "licenseText").validate[String]
-          
+
           // Pattern matching
           aResult match {
-              case s: JsSuccess[String] => {                
+              case s: JsSuccess[String] => {
                 licenseText = s.get
-                                
+
                 //Modify the abbreviations if they were sent in that way
                 if (licenseText == "by-nc-nd") {
                     licenseText = "Attribution-NonCommercial-NoDerivs"
@@ -1032,12 +1016,12 @@ class Files @Inject()(
                 BadRequest(toJson(s"licenseText data is missing."))
               }
           }
-          
+
           aResult = (request.body \ "licenseUrl").validate[String]
-          
+
           // Pattern matching
           aResult match {
-              case s: JsSuccess[String] => {                
+              case s: JsSuccess[String] => {
                 licenseUrl = s.get
               }
               case e: JsError => {
@@ -1045,36 +1029,33 @@ class Files @Inject()(
                 BadRequest(toJson(s"licenseUrl data is missing."))
               }
           }
-          
+
           aResult = (request.body \ "allowDownload").validate[String]
-          
+
           // Pattern matching
           aResult match {
-              case s: JsSuccess[String] => {                
+              case s: JsSuccess[String] => {
                 allowDownload = s.get
               }
               case e: JsError => {
                 Logger.error("Errors: " + JsError.toFlatJson(e).toString())
                 BadRequest(toJson(s"allowDownload data is missing."))
               }
-          }          
-          
+          }
+
           Logger.debug(s"updateLicense for file with id  $id. Args are $licenseType, $rightsHolder, $licenseText, $licenseUrl, $allowDownload")
-          
+
           files.updateLicense(id, licenseType, rightsHolder, licenseText, licenseUrl, allowDownload)
           Ok(Json.obj("status" -> "success"))
-      } 
+      }
       else {
         Logger.error(s"The given id $id is not a valid ObjectId.")
         BadRequest(toJson(s"The given id $id is not a valid ObjectId."))
       }
   }
-  
-  
-  
-  //End, Update License code
 
-  // ---------- Tags related code starts ------------------
+  //Update License code
+
   /**
    * REST endpoint: GET: gets the tag data associated with this file.
    */
@@ -1098,6 +1079,27 @@ class Files @Inject()(
         Logger.error("The given id " + id + " is not a valid ObjectId.")
         BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
       }
+  }
+  
+  
+  
+  //End, Update License code
+
+  // ---------- Tags related code starts ------------------
+
+    /**
+   * REST endpoint: POST: Adds tags to a file.
+   * Tag's (name, userId, extractor_id) tuple is used as a unique key.
+   * In other words, the same tag names but diff userId or extractor_id are considered as diff tags,
+   * so will be added.
+   */
+  @ApiOperation(value = "Adds tags to a file",
+      notes = "Tag's (name, userId, extractor_id) tuple is used as a unique key. In other words, the same tag names but diff userId or extractor_id are considered as diff tags, so will be added.  The tags are expected as a list of strings: List[String].  An example is:<br>    curl -H 'Content-Type: application/json' -d '{\"tags\":[\"namo\", \"amitabha\"], \"extractor_id\": \"curl\"}' \"http://localhost:9000/api/files/533c2389e4b02a14f0943356/tags?key=theKey\"",
+      responseClass = "None", httpMethod = "POST")
+  def addTags(id: UUID) = PermissionAction(Permission.AddTag, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
+      val theResponse = addTagsHelper(TagCheck_File, id, request)
+  	  files.index(id)
+  	  theResponse
   }
 
   /*
@@ -1135,6 +1137,22 @@ class Files @Inject()(
     }
   }
 
+  /**
+   * REST endpoint: POST: removes tags.
+   * Tag's (name, userId, extractor_id) tuple is used as a unique key.
+   * In other words, the same tag names but diff userId or extractor_id are considered as diff tags.
+   * Current implementation enforces the restriction which only allows the tags to be removed by
+   * the same user or extractor.
+   */
+  @ApiOperation(value = "Removes tags of a file",
+      notes = "Tag's (name, userId, extractor_id) tuple is unique key. Same tag names but diff userId or extractor_id are considered diff tags. Tags can only be removed by the same user or extractor.  The tags are expected as a list of strings: List[String].",
+      responseClass = "None", httpMethod = "POST")
+  def removeTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
+      val theResponse = removeTagsHelper(TagCheck_File, id, request)
+  	  files.index(id)
+  	  theResponse
+  }
+
   def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): SimpleResult = {
 
     val (not_found, error_str) = tags.removeTagsHelper(obj_type, id, request)
@@ -1154,37 +1172,6 @@ class Files @Inject()(
         BadRequest(toJson(error_str))
       }
     }
-  }
-
-    /**
-   * REST endpoint: POST: Adds tags to a file.
-   * Tag's (name, userId, extractor_id) tuple is used as a unique key.
-   * In other words, the same tag names but diff userId or extractor_id are considered as diff tags,
-   * so will be added.
-   */
-  @ApiOperation(value = "Adds tags to a file",
-      notes = "Tag's (name, userId, extractor_id) tuple is used as a unique key. In other words, the same tag names but diff userId or extractor_id are considered as diff tags, so will be added.  The tags are expected as a list of strings: List[String].  An example is:<br>    curl -H 'Content-Type: application/json' -d '{\"tags\":[\"namo\", \"amitabha\"], \"extractor_id\": \"curl\"}' \"http://localhost:9000/api/files/533c2389e4b02a14f0943356/tags?key=theKey\"",
-      responseClass = "None", httpMethod = "POST")
-  def addTags(id: UUID) = PermissionAction(Permission.AddTag, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
-      val theResponse = addTagsHelper(TagCheck_File, id, request)
-  	  files.index(id)
-  	  theResponse
-  }
-
-  /**
-   * REST endpoint: POST: removes tags.
-   * Tag's (name, userId, extractor_id) tuple is used as a unique key.
-   * In other words, the same tag names but diff userId or extractor_id are considered as diff tags.
-   * Current implementation enforces the restriction which only allows the tags to be removed by
-   * the same user or extractor.
-   */
-  @ApiOperation(value = "Removes tags of a file",
-      notes = "Tag's (name, userId, extractor_id) tuple is unique key. Same tag names but diff userId or extractor_id are considered diff tags. Tags can only be removed by the same user or extractor.  The tags are expected as a list of strings: List[String].",
-      responseClass = "None", httpMethod = "POST")
-  def removeTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
-      val theResponse = removeTagsHelper(TagCheck_File, id, request)
-  	  files.index(id)
-  	  theResponse
   }
 
   /**
@@ -1215,14 +1202,12 @@ class Files @Inject()(
       }
   }
 
-  // ---------- Tags related code ends ------------------
-  
   /**
-  * REST endpoint: GET  api/files/:id/extracted_metadata 
+  * REST endpoint: GET  api/files/:id/extracted_metadata
   * Returns metadata extracted so far for a file with id
-  * 
+  *
   */
-  @ApiOperation(value = "Provides metadata extracted for a file", notes = "", responseClass = "None", httpMethod = "GET")  
+  @ApiOperation(value = "Provides metadata extracted for a file", notes = "", responseClass = "None", httpMethod = "GET")
   def extract(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     Logger.info("Getting extract info for file with id " + id)
     if (UUID.isValid(id.stringify)) {
@@ -1238,18 +1223,20 @@ class Files @Inject()(
           Logger.debug("jpreviews: " + jpreviews.toString)
           Ok(Json.obj("file_id" -> id.toString, "filename" -> file.filename, "tags" -> jtags, "previews" -> jpreviews,"versus descriptors url"->vdescriptors))
         case None => {
-          val error_str = "The file with id " + id + " is not found." 
+          val error_str = "The file with id " + id + " is not found."
           Logger.error(error_str)
           NotFound(toJson(error_str))
         }
       }
     } else {
-      val error_str ="The given id " + id + " is not a valid ObjectId." 
+      val error_str ="The given id " + id + " is not a valid ObjectId."
       Logger.error(error_str)
       BadRequest(toJson(error_str))
     }
   }
 
+  // ---------- Tags related code ends ------------------
+  
   @ApiOperation(value = "Add comment to file", notes = "", responseClass = "None", httpMethod = "POST")
   def comment(id: UUID) = PermissionAction(Permission.AddComment, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
       request.user match {
@@ -1278,7 +1265,6 @@ class Files @Inject()(
       }
   }
 
-
   /**
    * Return whether a file is currently being processed.
    */
@@ -1302,6 +1288,48 @@ class Files @Inject()(
       }
   }
 
+  @ApiOperation(value = "Get file previews",
+      notes = "Return the currently existing previews of the selected file (full description, including paths to preview files, previewer names etc).",
+      responseClass = "None", httpMethod = "GET")
+  def getPreviews(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+        files.get(id) match {
+          case Some(file) => {
+
+            val previewsFromDB = previews.findByFileId(file.id)
+            val previewers = Previewers.findPreviewers
+            //Logger.info("Number of previews " + previews.length);
+            val files = List(file)
+            //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
+            val previewslist = for (f <- files; if (!f.showPreviews.equals("None"))) yield {
+              val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
+                (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
+              }
+              if (pvf.length > 0) {
+                (file -> pvf)
+              } else {
+                val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
+                    //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the
+                    //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
+                    if (f.licenseData.isDownloadAllowed(request.user)) {
+                        (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id) + "/blob", file.contentType, file.length)
+                    }
+                    else {
+                        (f.id.toString, p.id, p.path, p.main, "null", f.contentType, f.length)
+                    }
+                }
+                (file -> ff)
+              }
+            }
+
+            Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]]))
+          }
+          case None => {
+            Logger.error("Error getting file" + id);
+            InternalServerError
+          }
+        }
+
+    }
 
   def jsonPreviewsFiles(filesList: List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]): JsValue = {
     val list = for (filePrevs <- filesList) yield jsonPreviews(filePrevs._1, filePrevs._2)
@@ -1326,51 +1354,6 @@ class Files @Inject()(
         "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))
   }
   
-
-  @ApiOperation(value = "Get file previews",
-      notes = "Return the currently existing previews of the selected file (full description, including paths to preview files, previewer names etc).",
-      responseClass = "None", httpMethod = "GET")
-  def getPreviews(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
-        files.get(id) match {
-          case Some(file) => {
-
-            val previewsFromDB = previews.findByFileId(file.id)
-            val previewers = Previewers.findPreviewers
-            //Logger.info("Number of previews " + previews.length);
-            val files = List(file)
-            //NOTE Should the following code be unified somewhere since it is duplicated in Datasets and Files for both api and controllers
-            val previewslist = for (f <- files; if (!f.showPreviews.equals("None"))) yield {
-              val pvf = for (p <- previewers; pv <- previewsFromDB; if (p.contentType.contains(pv.contentType))) yield {
-                (pv.id.toString, p.id, p.path, p.main, api.routes.Previews.download(pv.id).toString, pv.contentType, pv.length)
-              }
-              if (pvf.length > 0) {
-                (file -> pvf)
-              } else {
-                val ff = for (p <- previewers; if (p.contentType.contains(file.contentType))) yield {
-                    //Change here. If the license allows the file to be downloaded by the current user, go ahead and use the 
-                    //file bytes as the preview, otherwise return the String null and handle it appropriately on the front end
-                    if (f.licenseData.isDownloadAllowed(request.user)) {
-                        (file.id.toString, p.id, p.path, p.main, controllers.routes.Files.file(file.id) + "/blob", file.contentType, file.length)
-                    }
-                    else {
-                        (f.id.toString, p.id, p.path, p.main, "null", f.contentType, f.length)
-                    }
-                }
-                (file -> ff)
-              }
-            }
-
-            Ok(jsonPreviewsFiles(previewslist.asInstanceOf[List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]]))
-          }
-          case None => {
-            Logger.error("Error getting file" + id);
-            InternalServerError
-          }
-        }
-
-    } 
-
-
     @ApiOperation(value = "Get metadata of the resource described by the file that were input as XML",
         notes = "",
         responseClass = "None", httpMethod = "GET")
@@ -1379,7 +1362,7 @@ class Files @Inject()(
         case Some(file) => {
           Ok(files.getXMLMetadataJSON(id))
         }
-        case None => {Logger.error("Error finding file" + id); InternalServerError}      
+        case None => {Logger.error("Error finding file" + id); InternalServerError}
       }
     }
 
@@ -1391,7 +1374,7 @@ class Files @Inject()(
         case Some(file) => {
           Ok(files.getUserMetadataJSON(id))
         }
-        case None => {Logger.error("Error finding file" + id); InternalServerError}      
+        case None => {Logger.error("Error finding file" + id); InternalServerError}
       }
     }
 
@@ -1459,7 +1442,6 @@ class Files @Inject()(
         }
     }
 
-
   @ApiOperation(value = "Delete file",
       notes = "Cascading action (removes file from any datasets containing it and deletes its previews, metadata and thumbnail).",
       responseClass = "None", httpMethod = "POST")
@@ -1478,8 +1460,8 @@ class Files @Inject()(
 
           //this stmt has to be before files.removeFile
           Logger.debug("Deleting file from indexes" + file.filename)
-          current.plugin[VersusPlugin].foreach {        
-            _.removeFromIndexes(id)        
+          current.plugin[VersusPlugin].foreach {
+            _.removeFromIndexes(id)
           }
           Logger.debug("Deleting file: " + file.filename)
           files.removeFile(id)
@@ -1504,7 +1486,6 @@ class Files @Inject()(
         case None => Ok(toJson(Map("status" -> "success")))
       }
   }
-
 
   @ApiOperation(value = "Update file description",
     notes = "Takes one argument, a UUID of the file. Request body takes key-value pair for the description",
@@ -1552,6 +1533,14 @@ class Files @Inject()(
       Ok(toJson(list))
   }
 
+  def jsonFileWithThumbnail(file: File): JsValue = {
+    var fileThumbnail = "None"
+    if (!file.thumbnail_id.isEmpty)
+      fileThumbnail = file.thumbnail_id.toString().substring(5, file.thumbnail_id.toString().length - 1)
+
+    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType, "dateCreated" -> file.uploadDate.toString(), "thumbnail" -> fileThumbnail,
+    		"authorId" -> file.author.id.stringify, "status" -> file.status))
+  }
 
   /**
    * List datasets satisfying a general metadata search tree.
@@ -1573,7 +1562,6 @@ class Files @Inject()(
       Logger.debug("thelist: " + toJson(list))
       Ok(toJson(list))
   }
-
 
   def index(id: UUID) {
     files.get(id) match {
@@ -1670,6 +1658,21 @@ class Files @Inject()(
       }
   }
 
+  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
+    val followeeModel = files.get(followeeUUID)
+    followeeModel match {
+      case Some(followeeModel) => {
+        val sourceFollowerIDs = followeeModel.followers
+        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
+        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
+      }
+      case None => {
+        List.empty
+      }
+    }
+  }
+
   @ApiOperation(value = "Unfollow file",
     notes = "Remove user from file followers and remove file from user followed files.",
     responseClass = "None", httpMethod = "POST")
@@ -1694,21 +1697,6 @@ class Files @Inject()(
           Unauthorized
         }
       }
-  }
-
-  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
-    val followeeModel = files.get(followeeUUID)
-    followeeModel match {
-      case Some(followeeModel) => {
-        val sourceFollowerIDs = followeeModel.followers
-        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
-        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
-        userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
-      }
-      case None => {
-        List.empty
-      }
-    }
   }
 
 }

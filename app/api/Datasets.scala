@@ -52,6 +52,9 @@ class  Datasets @Inject()(
   folders: FolderService,
   userService: UserService) extends ApiController {
 
+  // TODO: move helper methods to standalone service
+  val USERID_ANONYMOUS = "anonymous"
+
   @ApiOperation(value = "Get a specific dataset",
     notes = "This will return a sepcific dataset requested",
     responseClass = "None", multiValueResponse=true, httpMethod = "GET")
@@ -67,13 +70,6 @@ class  Datasets @Inject()(
     responseClass = "None", multiValueResponse=true, httpMethod = "GET")
   def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
     Ok(toJson(lisDatasets(title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))))
-  }
-
-  @ApiOperation(value = "List all datasets the user can edit",
-    notes = "This will check for Permission.AddResourceToDataset and Permission.EditDataset",
-    responseClass = "None", httpMethod = "GET")
-  def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(lisDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
   }
 
   /**
@@ -94,6 +90,13 @@ class  Datasets @Inject()(
         datasets.listAccess(limit, permission, user, superAdmin)
       }
     }
+  }
+
+  @ApiOperation(value = "List all datasets the user can edit",
+    notes = "This will check for Permission.AddResourceToDataset and Permission.EditDataset",
+    responseClass = "None", httpMethod = "GET")
+  def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+    Ok(toJson(lisDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
   }
 
   /**
@@ -269,6 +272,52 @@ class  Datasets @Inject()(
   }
 
   /**
+   * Functionality broken out from attachExistingFile, in order to allow the core work of file attachment to be called from
+   * multiple API endpoints.
+   *
+   * @param dsId A UUID that specifies the dataset that will be modified
+   * @param fileId A UUID that specifies the file to attach to the dataset
+   * @param dataset Reference to the model of the dataset that is specified
+   * @param file Reference to the model of the file that is specified
+   */
+  def attachExistingFileHelper(dsId: UUID, fileId: UUID, dataset: Dataset, file: File, user: Option[User]) = {
+      if (!files.isInDataset(file, dataset)) {
+            datasets.addFile(dsId, file)
+            events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "attach_file_dataset")
+            files.index(fileId)
+            if (!file.xmlMetadata.isEmpty){
+              datasets.index(dsId)
+            }
+
+            if(dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
+                datasets.updateThumbnail(dataset.id, UUID(file.thumbnail_id.get))
+
+                for(collectionId <- dataset.collections){
+                  collections.get(collectionId) match{
+                    case Some(collection) =>{
+                    	if(collection.thumbnail_id.isEmpty){
+                    		collections.updateThumbnail(collection.id, UUID(file.thumbnail_id.get))
+                    	}
+                    }
+                    case None=>Logger.debug(s"No collection found with id $collectionId")
+              }
+            }
+        }
+
+        //add file to RDF triple store if triple store is used
+        if (file.filename.endsWith(".xml")) {
+          configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+            case "yes" => rdfsparql.linkFileToDataset(fileId, dsId)
+            case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
+          }
+        }
+        Logger.info("Adding file to dataset completed")
+      } else {
+          Logger.info("File was already in dataset.")
+      }
+  }
+
+  /**
    * Create new dataset with no file required. However if there are comma separated file IDs passed in, add all of those as existing
    * files. This is to facilitate multi-file-uploader usage for new files, as well as to allow multiple existing files to be
    * added as part of dataset creation.
@@ -330,52 +379,6 @@ class  Datasets @Inject()(
       }
   }
 
-  /**
-   * Functionality broken out from attachExistingFile, in order to allow the core work of file attachment to be called from
-   * multiple API endpoints.
-   *
-   * @param dsId A UUID that specifies the dataset that will be modified
-   * @param fileId A UUID that specifies the file to attach to the dataset
-   * @param dataset Reference to the model of the dataset that is specified
-   * @param file Reference to the model of the file that is specified
-   */
-  def attachExistingFileHelper(dsId: UUID, fileId: UUID, dataset: Dataset, file: File, user: Option[User]) = {
-      if (!files.isInDataset(file, dataset)) {
-            datasets.addFile(dsId, file)
-            events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "attach_file_dataset")
-            files.index(fileId)
-            if (!file.xmlMetadata.isEmpty){
-              datasets.index(dsId)
-            }
-
-            if(dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
-                datasets.updateThumbnail(dataset.id, UUID(file.thumbnail_id.get))
-
-                for(collectionId <- dataset.collections){
-                  collections.get(collectionId) match{
-                    case Some(collection) =>{
-                    	if(collection.thumbnail_id.isEmpty){
-                    		collections.updateThumbnail(collection.id, UUID(file.thumbnail_id.get))
-                    	}
-                    }
-                    case None=>Logger.debug(s"No collection found with id $collectionId")
-              }
-            }
-        }
-
-        //add file to RDF triple store if triple store is used
-        if (file.filename.endsWith(".xml")) {
-          configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-            case "yes" => rdfsparql.linkFileToDataset(fileId, dsId)
-            case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
-          }
-        }
-        Logger.info("Adding file to dataset completed")
-      } else {
-          Logger.info("File was already in dataset.")
-      }
-  }
-
   @ApiOperation(value = "Attach existing file to dataset",
       notes = "If the file is an XML metadata file, the metadata are added to the dataset.",
       responseClass = "None", httpMethod = "POST")
@@ -415,65 +418,6 @@ class  Datasets @Inject()(
           }
         }
       }
-  }
-
-  /**
-   * Utility function to consolidate the utility portions of the detach file functionality
-   * so that it can be easily called from multiple API operations.
-   *
-   * @param datasetId The id of the dataset that a file is being detached from
-   * @param fileId The id of the file to detach from the dataset
-   * @param dataset The reference to the model of the dataset being operated on
-   *
-   */
-  def detachFileHelper(datasetId: UUID, fileId: UUID, dataset: models.Dataset, user: Option[User]) = {
-	  files.get(fileId) match {
-		  case Some(file) => {
-			  if(files.isInDataset(file, dataset)){
-				  //remove file from dataset
-				  datasets.removeFile(dataset.id, file.id)
-          events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "detach_file_dataset")
-				  files.index(fileId)
-				  if (!file.xmlMetadata.isEmpty)
-					  datasets.index(datasetId)
-
-				  Logger.debug("----- Removing a file from dataset completed")
-
-				  if(!dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
-					  if(dataset.thumbnail_id.get == file.thumbnail_id.get){
-						  datasets.createThumbnail(dataset.id)
-
-						  for(collectionId <- dataset.collections){
-							  collections.get(collectionId) match{
-							  case Some(collection) =>{
-								  if(!collection.thumbnail_id.isEmpty){
-									  if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
-										  collections.createThumbnail(collection.id)
-									  }
-								  }
-							  }
-							  case None=>{}
-							  }
-						  }
-					  }
-				  }
-
-				  //remove link between dataset and file from RDF triple store if triple store is used
-				  if (file.filename.endsWith(".xml")) {
-					  configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-						  case "yes" => rdfsparql.detachFileFromDataset(fileId, datasetId)
-						  case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
-					  }
-				  }
-			  }
-			  else  Logger.debug("----- File was already out of the dataset.")
-			  Ok(toJson(Map("status" -> "success")))
-		  }
-		  case None => {
-		       Logger.debug("----- detach helper NONE case")
-		       Ok(toJson(Map("status" -> "success")))
-		  }
-	  }
   }
 
   //////////////////
@@ -685,6 +629,11 @@ class  Datasets @Inject()(
     }
   }
 
+  def jsonFile(file: models.File): JsValue = {
+    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType,
+               "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
+  }
+
   @ApiOperation(value = "List files in dataset and within folders",
     notes = "Datasets and descriptions.",
     responseClass = "None", httpMethod = "GET")
@@ -700,6 +649,26 @@ class  Datasets @Inject()(
       }
       case None => Logger.error("Error getting dataset" + id); InternalServerError
     }
+  }
+
+  private def getFilesWithinFolders(id: UUID): List[JsValue] = {
+    val output = new ListBuffer[JsValue]()
+    datasets.get(id) match {
+      case Some(dataset) => {
+        val childFolders = folders.findByParentDatasetId(id)
+        childFolders.map {
+          folder =>
+            folder.files.map {
+              fileId => files.get(fileId) match {
+                case Some(file) => output += jsonFile(file)
+                case None => Logger.error(s"Error getting file $fileId")
+              }
+            }
+        }
+      }
+      case None => Logger.error(s"Error getting dataset $id")
+    }
+    output.toList.asInstanceOf[List[JsValue]]
   }
 
   @ApiOperation(value = "Upload files and attach to given dataset",
@@ -738,32 +707,6 @@ class  Datasets @Inject()(
         BadRequest(s"Dataset with id=${dataset_id} does not exist")
       }
     }
-  }
-
-
-  private def getFilesWithinFolders(id: UUID): List[JsValue] = {
-    val output = new ListBuffer[JsValue]()
-    datasets.get(id) match {
-      case Some(dataset) => {
-        val childFolders = folders.findByParentDatasetId(id)
-        childFolders.map {
-          folder =>
-            folder.files.map {
-              fileId => files.get(fileId) match {
-                case Some(file) => output += jsonFile(file)
-                case None => Logger.error(s"Error getting file $fileId")
-              }
-            }
-        }
-      }
-      case None => Logger.error(s"Error getting dataset $id")
-    }
-    output.toList.asInstanceOf[List[JsValue]]
-  }
-
-  def jsonFile(file: models.File): JsValue = {
-    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType,
-               "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
   }
 
   //Update Dataset Information code starts
@@ -1107,17 +1050,6 @@ class  Datasets @Inject()(
       addTagsHelper(TagCheck_Dataset, id, request)
   }
 
-  /**
-   * REST endpoint: POST: remove tags.
-   * Requires that the request body contains a "tags" field of List[String] type.
-   */
-  @ApiOperation(value = "Remove tags of dataset",
-      notes = "Requires that the request body contains a 'tags' field of List[String] type.",
-      responseClass = "None", httpMethod = "POST")
-  def removeTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
-      removeTagsHelper(TagCheck_Dataset, id, request)
-  }
-
   /*
  *  Helper function to handle adding and removing tags for files/datasets/sections.
  *  Input parameters:
@@ -1169,6 +1101,17 @@ class  Datasets @Inject()(
     }
   }
 
+  /**
+   * REST endpoint: POST: remove tags.
+   * Requires that the request body contains a "tags" field of List[String] type.
+   */
+  @ApiOperation(value = "Remove tags of dataset",
+      notes = "Requires that the request body contains a 'tags' field of List[String] type.",
+      responseClass = "None", httpMethod = "POST")
+  def removeTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
+      removeTagsHelper(TagCheck_Dataset, id, request)
+  }
+
   def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]) = {
     val tagCheck = checkErrorsForTag(obj_type, id, request)
 
@@ -1206,18 +1149,6 @@ class  Datasets @Inject()(
         BadRequest(toJson(error_str))
       }
     }
-  }
-
-  // TODO: move helper methods to standalone service
-  val USERID_ANONYMOUS = "anonymous"
-
-  // Helper class and function to check for error conditions for tags.
-  class TagCheck {
-    var error_str: String = ""
-    var not_found: Boolean = false
-    var userOpt: Option[String] = None
-    var extractorOpt: Option[String] = None
-    var tags: Option[List[String]] = None
   }
 
   /*
@@ -1320,8 +1251,6 @@ class  Datasets @Inject()(
       }
   }
 
-  // ---------- Tags related code ends ------------------
-
   @ApiOperation(value = "Add comment to dataset", notes = "", responseClass = "None", httpMethod = "POST")
   def comment(id: UUID) = PermissionAction(Permission.AddComment, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
       request.user match {
@@ -1368,6 +1297,8 @@ class  Datasets @Inject()(
       Logger.debug("thelist: " + toJson(list))
       Ok(toJson(list))
   }
+
+  // ---------- Tags related code ends ------------------
 
   /**
    * List datasets satisfying a general metadata search tree.
@@ -1424,32 +1355,6 @@ class  Datasets @Inject()(
       }
   }
 
-  // TODO make a case class to represent very long tuple below
-  def jsonPreviewsFiles(filesList: List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]): JsValue = {
-    val list = for (filePrevs <- filesList) yield jsonPreviews(filePrevs._1, filePrevs._2)
-    toJson(list)
-  }
-
-  // TODO make a case class to represent very long tuple below
-  def jsonPreviews(prvFile: models.File, prvs: Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]): JsValue = {
-    val list = for (prv <- prvs) yield jsonPreview(prv._1, prv._2, prv._3, prv._4, prv._5, prv._6, prv._7)
-    val listJson = toJson(list.toList)
-    toJson(Map[String, JsValue]("file_id" -> JsString(prvFile.id.toString), "previews" -> listJson))
-  }
-
-  def jsonPreview(pvId: String, pId: String, pPath: String, pMain: String, pvRoute: String, pvContentType: String, pvLength: Long): JsValue = {
-    if (pId.equals("X3d"))
-      toJson(Map("pv_id" -> pvId, "p_id" -> pId,
-                 "p_path" -> controllers.routes.Assets.at(pPath).toString,
-                 "p_main" -> pMain, "pv_route" -> pvRoute,
-                 "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString,
-                 "pv_annotationsEditPath" -> api.routes.Previews.editAnnotation(UUID(pvId)).toString,
-                 "pv_annotationsListPath" -> api.routes.Previews.listAnnotations(UUID(pvId)).toString,
-                 "pv_annotationsAttachPath" -> api.routes.Previews.attachAnnotation(UUID(pvId)).toString))
-    else
-      toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString, "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))
-  }
-
   @ApiOperation(value = "Get dataset previews",
       notes = "Return the currently existing previews of the selected dataset (full description, including paths to preview files, previewer names etc).",
       responseClass = "None", httpMethod = "GET")
@@ -1488,7 +1393,32 @@ class  Datasets @Inject()(
       }
   }
 
-  //Detach and delete dataset code
+  // TODO make a case class to represent very long tuple below
+  def jsonPreviewsFiles(filesList: List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]): JsValue = {
+    val list = for (filePrevs <- filesList) yield jsonPreviews(filePrevs._1, filePrevs._2)
+    toJson(list)
+  }
+
+  // TODO make a case class to represent very long tuple below
+  def jsonPreviews(prvFile: models.File, prvs: Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]): JsValue = {
+    val list = for (prv <- prvs) yield jsonPreview(prv._1, prv._2, prv._3, prv._4, prv._5, prv._6, prv._7)
+    val listJson = toJson(list.toList)
+    toJson(Map[String, JsValue]("file_id" -> JsString(prvFile.id.toString), "previews" -> listJson))
+  }
+
+  def jsonPreview(pvId: String, pId: String, pPath: String, pMain: String, pvRoute: String, pvContentType: String, pvLength: Long): JsValue = {
+    if (pId.equals("X3d"))
+      toJson(Map("pv_id" -> pvId, "p_id" -> pId,
+                 "p_path" -> controllers.routes.Assets.at(pPath).toString,
+                 "p_main" -> pMain, "pv_route" -> pvRoute,
+                 "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString,
+                 "pv_annotationsEditPath" -> api.routes.Previews.editAnnotation(UUID(pvId)).toString,
+                 "pv_annotationsListPath" -> api.routes.Previews.listAnnotations(UUID(pvId)).toString,
+                 "pv_annotationsAttachPath" -> api.routes.Previews.attachAnnotation(UUID(pvId)).toString))
+    else
+      toJson(Map("pv_id" -> pvId, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString, "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))
+  }
+
   /**
    * REST endpoint: DELETE: detach all files from a dataset and then delete the dataset
    *
@@ -1514,6 +1444,67 @@ class  Datasets @Inject()(
               }
           }
   }
+
+  /**
+   * Utility function to consolidate the utility portions of the detach file functionality
+   * so that it can be easily called from multiple API operations.
+   *
+   * @param datasetId The id of the dataset that a file is being detached from
+   * @param fileId The id of the file to detach from the dataset
+   * @param dataset The reference to the model of the dataset being operated on
+   *
+   */
+  def detachFileHelper(datasetId: UUID, fileId: UUID, dataset: models.Dataset, user: Option[User]) = {
+	  files.get(fileId) match {
+		  case Some(file) => {
+			  if(files.isInDataset(file, dataset)){
+				  //remove file from dataset
+				  datasets.removeFile(dataset.id, file.id)
+          events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "detach_file_dataset")
+				  files.index(fileId)
+				  if (!file.xmlMetadata.isEmpty)
+					  datasets.index(datasetId)
+
+				  Logger.debug("----- Removing a file from dataset completed")
+
+				  if(!dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
+					  if(dataset.thumbnail_id.get == file.thumbnail_id.get){
+						  datasets.createThumbnail(dataset.id)
+
+						  for(collectionId <- dataset.collections){
+							  collections.get(collectionId) match{
+							  case Some(collection) =>{
+								  if(!collection.thumbnail_id.isEmpty){
+									  if(collection.thumbnail_id.get == dataset.thumbnail_id.get){
+										  collections.createThumbnail(collection.id)
+									  }
+								  }
+							  }
+							  case None=>{}
+							  }
+						  }
+					  }
+				  }
+
+				  //remove link between dataset and file from RDF triple store if triple store is used
+				  if (file.filename.endsWith(".xml")) {
+					  configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+						  case "yes" => rdfsparql.detachFileFromDataset(fileId, datasetId)
+						  case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
+					  }
+				  }
+			  }
+			  else  Logger.debug("----- File was already out of the dataset.")
+			  Ok(toJson(Map("status" -> "success")))
+		  }
+		  case None => {
+		       Logger.debug("----- detach helper NONE case")
+		       Ok(toJson(Map("status" -> "success")))
+		  }
+	  }
+  }
+
+  //Detach and delete dataset code
 
   /**
    * Utility function to consolidate the utility portions of the delete dataset functionality
@@ -1635,7 +1626,6 @@ class  Datasets @Inject()(
       }
   }
 
-
   def getXMLMetadataJSON(id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id)  match {
       case Some(dataset) => {
@@ -1719,6 +1709,21 @@ class  Datasets @Inject()(
       }
   }
 
+  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
+    val followeeModel = datasets.get(followeeUUID)
+    followeeModel match {
+      case Some(followeeModel) => {
+        val sourceFollowerIDs = followeeModel.followers
+        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
+        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
+      }
+      case None => {
+        List.empty
+      }
+    }
+  }
+
   @ApiOperation(value = "Unfollow dataset.",
     notes = "Remove user from dataset followers and remove dataset from user followed datasets.",
     responseClass = "None", httpMethod = "POST")
@@ -1745,21 +1750,34 @@ class  Datasets @Inject()(
       }
   }
 
-  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
-    val followeeModel = datasets.get(followeeUUID)
-    followeeModel match {
-      case Some(followeeModel) => {
-        val sourceFollowerIDs = followeeModel.followers
-        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
-        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
-        userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
+  @ApiOperation(value = "Download dataset",
+    notes = "Downloads all files contained in a dataset.",
+    responseClass = "None", httpMethod = "GET")
+  def download(id: UUID, bagit: Boolean,compression: Int) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(loggedInUser) => {
+        datasets.get(id) match {
+          case Some(dataset) => {
+            // Use custom enumerator to create the zip file on the fly
+            // Use a 1MB in memory byte array
+            Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression,bagit,loggedInUser)).withHeaders(
+              "Content-Type" -> "application/zip",
+              "Content-Disposition" -> ("attachment; filename=" + dataset.name + ".zip")
+            )
+          }
+          // If the dataset wasn't found by ID
+          case None => {
+            NotFound
+          }
+        }
       }
+      // If the user doesn't have access to download these files
       case None => {
-        List.empty
+        Unauthorized
       }
     }
   }
-
 
   /**
     * Enumerator to loop over all files in a dataset and return chunks for the result zip file that will be
@@ -2007,6 +2025,12 @@ class  Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
+  private def addDatasetInfoToZip(folderName: String, dataset: models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
+    zip.putNextEntry(new ZipEntry(folderName + "/_info.json"))
+    val infoListMap = Json.prettyPrint(getDatasetInfoAsJson(dataset))
+    Some(new ByteArrayInputStream(infoListMap.getBytes("UTF-8")))
+  }
+
   private def getDatasetInfoAsJson(dataset : Dataset) : JsValue = {
     val rightsHolder = {
       val licenseType = dataset.licenseData.m_licenseType
@@ -2032,10 +2056,11 @@ class  Datasets @Inject()(
     Json.obj("id"->dataset.id,"name"->dataset.name,"author"->dataset.author.email,"description"->dataset.description, "spaces"->spaceNames.mkString(","),"lastModified"->dataset.lastModifiedDate.toString,"license"->licenseInfo)
   }
 
-  private def addDatasetInfoToZip(folderName: String, dataset: models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
+  private def addFileInfoToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
     zip.putNextEntry(new ZipEntry(folderName + "/_info.json"))
-    val infoListMap = Json.prettyPrint(getDatasetInfoAsJson(dataset))
-    Some(new ByteArrayInputStream(infoListMap.getBytes("UTF-8")))
+    val fileInfo = getFileInfoAsJson(file)
+    val s : String = Json.prettyPrint(fileInfo)
+    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
   private def getFileInfoAsJson(file : models.File) : JsValue = {
@@ -2054,13 +2079,6 @@ class  Datasets @Inject()(
     }
     val licenseInfo = Json.obj("licenseText"->file.licenseData.m_licenseText,"rightsHolder"->rightsHolder)
     Json.obj("id" -> file.id, "filename" -> file.filename, "author" -> file.author.email, "uploadDate" -> file.uploadDate.toString,"contentType"->file.contentType,"description"->file.description,"license"->licenseInfo)
-  }
-
-  private def addFileInfoToZip(folderName: String, file: models.File, zip: ZipOutputStream): Option[InputStream] = {
-    zip.putNextEntry(new ZipEntry(folderName + "/_info.json"))
-    val fileInfo = getFileInfoAsJson(file)
-    val s : String = Json.prettyPrint(fileInfo)
-    Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
   private def addDatasetMetadataToZip(folderName: String, dataset : models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
@@ -2115,33 +2133,13 @@ class  Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  @ApiOperation(value = "Download dataset",
-    notes = "Downloads all files contained in a dataset.",
-    responseClass = "None", httpMethod = "GET")
-  def download(id: UUID, bagit: Boolean,compression: Int) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
-    implicit val user = request.user
-    user match {
-      case Some(loggedInUser) => {
-        datasets.get(id) match {
-          case Some(dataset) => {
-            // Use custom enumerator to create the zip file on the fly
-            // Use a 1MB in memory byte array
-            Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression,bagit,loggedInUser)).withHeaders(
-              "Content-Type" -> "application/zip",
-              "Content-Disposition" -> ("attachment; filename=" + dataset.name + ".zip")
-            )
-          }
-          // If the dataset wasn't found by ID
-          case None => {
-            NotFound
-          }
-        }
-      }
-      // If the user doesn't have access to download these files
-      case None => {
-        Unauthorized
-      }
-    }
+  // Helper class and function to check for error conditions for tags.
+  class TagCheck {
+    var error_str: String = ""
+    var not_found: Boolean = false
+    var userOpt: Option[String] = None
+    var extractorOpt: Option[String] = None
+    var tags: Option[List[String]] = None
   }
 }
 

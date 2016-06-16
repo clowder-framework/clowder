@@ -42,16 +42,6 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     UUID(mid.get.toString())
   }
 
-  def getMetadataById(id: UUID): Option[Metadata] = {
-    MetadataDAO.findOneById(new ObjectId(id.stringify)) match {
-      case Some(metadata) => {
-        //TODO link to context based on context id
-        Some(metadata)
-      }
-      case None => None
-    }
-  }
-
   /** Get Metadata based on Id of an element (section/file/dataset/collection) */
   def getMetadataByAttachTo(resourceRef: ResourceRef): List[Metadata] = {
     val order = MongoDBObject("createdAt"-> -1)
@@ -106,12 +96,21 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     MetadataDAO.find(MongoDBObject("contextId" -> new ObjectId(contextId.toString()))).toList
   }
 
+  def getMetadataById(id: UUID): Option[Metadata] = {
+    MetadataDAO.findOneById(new ObjectId(id.stringify)) match {
+      case Some(metadata) => {
+        //TODO link to context based on context id
+        Some(metadata)
+      }
+      case None => None
+    }
+  }
+
   def removeMetadataByAttachTo(resourceRef: ResourceRef) = {
     MetadataDAO.remove(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
       "attachedTo._id" -> new ObjectId(resourceRef.id.stringify)), WriteConcern.Safe)
     //not providing metaData count modification here since we assume this is to delete the metadata's host
   }
-
 
   /** Get metadata context if available  **/
   def getMetadataContext(metadataId: UUID): Option[JsValue] = {

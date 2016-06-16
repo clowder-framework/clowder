@@ -142,6 +142,15 @@ object Geostreams extends ApiController {
       }
     }
 
+  /**
+   * Returns the request potentially as jsonp
+   * @param data Result to transform
+   * @param request request made to server
+   */
+  def jsonp(data:JsValue, request: Request[Any]): SimpleResult = {
+    jsonp(Enumerator(data.toString), request)
+  }
+
   def getSensorStreams(id: String) = PermissionAction(Permission.ViewGeoStream) { implicit request =>
       Logger.debug("Get sensor streams" + id)
       current.plugin[PostgresPlugin] match {
@@ -239,6 +248,32 @@ object Geostreams extends ApiController {
       }
     }
 
+  /**
+   * Returns the request potentially as jsonp
+   * @param data Result to transform
+   * @param request request made to server
+   */
+  def jsonp(data:String, request: Request[Any]): SimpleResult = {
+    jsonp(Enumerator(data), request)
+  }
+
+  /**
+   * Tries to transform a response into a JavaScript expression.
+   * @param data Result to transform
+   * @param request request made to server
+   */
+  def jsonp(data:Enumerator[String], request: Request[Any]) = {
+    val toByteArray: Enumeratee[String, Array[Byte]] = Enumeratee.map[String]{ s => s.getBytes }
+    request.getQueryString("callback") match {
+      case Some(callback) => Ok.chunked(Enumerator(s"$callback(") >>> data >>> Enumerator(");") &> toByteArray &> Gzip.gzip())
+        .withHeaders(("Content-Encoding", "gzip"))
+        .as(JAVASCRIPT)
+      case None => Ok.chunked(data &> toByteArray &> Gzip.gzip())
+        .withHeaders(("Content-Encoding", "gzip"))
+        .as(JSON)
+    }
+  }
+  
   def getStream(id: String) = PermissionAction(Permission.ViewGeoStream) { implicit request =>
       Logger.debug("Get stream " + id)
       current.plugin[PostgresPlugin] match {
@@ -273,7 +308,7 @@ object Geostreams extends ApiController {
       case None => pluginNotEnabled
     }
   }
-  
+
   @ApiOperation(value = "Delete Geostream Datapoint", notes = "Delete datapoint from geostream database.", responseClass = "None", httpMethod = "DELETE")
   def deleteDatapoint(id: String) = PermissionAction(Permission.DeleteGeoStream) { implicit request =>
     Logger.debug("Delete datapoint " + id)
@@ -331,6 +366,93 @@ object Geostreams extends ApiController {
         }
     }.recoverTotal {
       e => Logger.debug("Error parsing json: " + e); BadRequest("Detected error:" + JsError.toFlatJson(e))
+    }
+  }
+
+  /**
+   * Removes all files from the cache,
+   * or the files associated with either sensor_id or stream_id as query parameters.
+   * Specifying sensor_id and stream_id will only remove caching where both are present
+   */
+  def cacheInvalidate(sensor_id: Option[String] = None, stream_id: Option[String] = None) = {
+    play.api.Play.configuration.getString("geostream.cache") match {
+      case Some(x) => {
+        val existingFiles = new File(x).listFiles
+        val filesToRemove = collection.mutable.ListBuffer.empty[String]
+        val streams = new ListBuffer[String]()
+        val sensors = new ListBuffer[String]()
+        val errors = new ListBuffer[String]()
+
+        if (sensor_id.isDefined) {
+          sensors += sensor_id.get.toString
+          current.plugin[PostgresPlugin] match {
+            case Some(plugin) => {
+              plugin.getSensorStreams(sensor_id.get.toString) match {
+                case Some(d) => {
+                  val responseJson : JsValue = Json.parse(d)
+                  (responseJson \\ "stream_id").foreach(streams += _.toString)
+                }
+                case None => errors += "Sensor " + sensor_id.get.toString + " does not exist"
+              }
+            }
+            case None => pluginNotEnabled
+          }
+        }
+
+        if (stream_id.isDefined) {
+          streams += stream_id.get.toString
+          current.plugin[PostgresPlugin] match {
+            case Some(plugin) => {
+              plugin.getStream(stream_id.get.toString) match {
+                case Some(d) => {
+                  val responseJson : JsValue = Json.parse(d)
+                  (responseJson \\ "sensor_id").foreach(sensors += _.asInstanceOf[JsString].value.toString)
+                }
+                case None => errors += "Stream " + stream_id.get.toString + " does not exist"
+              }
+            }
+            case None => pluginNotEnabled
+          }
+        }
+
+        for (file <- existingFiles) {
+          val jsonFile = new File(file.getAbsolutePath + ".json")
+          if (jsonFile.exists()) {
+            val data = Json.parse(Source.fromFile(jsonFile).mkString)
+            (Parsers.parseString(data.\("sensor_id")), Parsers.parseString(data.\("stream_id"))) match {
+              case (sensor_value, stream_value) =>
+                if (sensor_id.isDefined && !stream_id.isDefined) {
+                  if (sensors.contains(sensor_value) || streams.contains(stream_value)) {
+                    filesToRemove += file.getAbsolutePath
+                    filesToRemove += jsonFile.getAbsolutePath
+                  }
+                }
+                if (!sensor_id.isDefined && stream_id.isDefined) {
+                  if (streams.contains(stream_value) || (sensors.contains(sensor_value) && stream_value.isEmpty)) {
+                    filesToRemove += file.getAbsolutePath
+                    filesToRemove += jsonFile.getAbsolutePath
+                  }
+                }
+              case _ => None
+            }
+          }
+        }
+
+        if (sensor_id.isEmpty && stream_id.isEmpty) {
+          for (f <- existingFiles) {
+            filesToRemove += f.getAbsolutePath
+          }
+        }
+        for (f <- filesToRemove) {
+          val file = new File(f)
+          if (!file.delete) {
+            errors += "Could not delete cache file: " + file.getAbsolutePath
+            Logger.error("Could not delete cache file " + file.getAbsolutePath)
+          }
+        }
+        (filesToRemove.toArray, errors.toArray)
+      }
+      case None => (Array.empty[String], Array.empty[String])
     }
   }
 
@@ -504,14 +626,6 @@ object Geostreams extends ApiController {
     Some(Json.obj("sensor_name" -> Parsers.parseString(sensorName), "properties" -> Json.toJson(result.toMap)))
   }
 
-  case class BinHelper(depth: Double,
-                       label: String,
-                       extras: JsObject,
-                       timeInfo: JsObject,
-                       doubles: collection.mutable.ListBuffer[Double] = collection.mutable.ListBuffer.empty[Double],
-                       strings: collection.mutable.HashSet[String] = collection.mutable.HashSet.empty[String],
-                       sources: collection.mutable.HashSet[String] = collection.mutable.HashSet.empty[String])
-
   def timeBins(time: String, startTime: DateTime, endTime: DateTime): Map[String, JsObject] = {
     val iso = ISODateTimeFormat.dateTime()
     val result = collection.mutable.HashMap.empty[String, JsObject]
@@ -577,7 +691,7 @@ object Geostreams extends ApiController {
               "date" -> iso.print(new DateTime(year, 11, 1, 12, 0, 0))))
           } else {
 	    result.put(year + " winter", Json.obj("year" -> year,
-              "date" -> iso.print(new DateTime(year, 2, 1, 12, 0, 0))))		
+              "date" -> iso.print(new DateTime(year, 2, 1, 12, 0, 0))))
 	  }
           counter = counter.plusMonths(3)
         }
@@ -636,6 +750,94 @@ object Geostreams extends ApiController {
     }
 
     result.toMap
+  }
+
+  def formatResult(data :Iterator[JsObject], format: String) = {
+    var status = 0
+    Enumerator.generateM(Future[Option[String]] {
+      status match {
+        case 0 => {
+          status = 1
+          if (format == "geojson") {
+            Some("{ \"type\": \"FeatureCollection\", \"features\": [")
+          } else {
+            Some("[")
+          }
+        }
+        case 1 => {
+          if (data.hasNext) {
+            val v = data.next().toString()
+            if (data.hasNext) {
+              Some(v + ",\n")
+            } else {
+              Some(v + "\n")
+            }
+          } else {
+            status = 2
+            if (format == "geojson") {
+              Some("] }")
+            } else {
+              Some("]")
+            }
+          }
+        }
+        case 2 => {
+          None
+        }
+      }
+    })
+  }
+
+  // ----------------------------------------------------------------------
+  // Calculations
+  // ----------------------------------------------------------------------
+
+  /**
+   * Write the file to cache, filename in cache is based on MD5(description).
+   * A second file with the same name but with extension .json is saved that
+   * will hold teh actual description.
+   *
+   * @param description json object describing the contents of the file.
+   * @param data the actual data that should be saved
+   * @return an enumerator that will save data as data is being enumerated.
+   */
+  def cacheWrite(description: JsObject, data:Enumerator[String]): Enumerator[String] = {
+    play.api.Play.configuration.getString("geostream.cache") match {
+      case Some(x) => {
+        val cacheFolder = new File(x)
+        if (cacheFolder.isDirectory || cacheFolder.mkdirs) {
+          val filename = MessageDigest.getInstance("MD5").digest(description.toString().getBytes).map("%02X".format(_)).mkString
+          new PrintStream(new File(cacheFolder, filename + ".json")).print(description.toString())
+          val writer = new PrintStream(new File(cacheFolder, filename))
+          val save: Enumeratee[String, String] = Enumeratee.map { s =>
+            writer.print(s)
+            s
+          }
+          data.through(save)
+        } else {
+          data
+        }
+      }
+      case None => data
+    }
+  }
+
+  /**
+   * Checks to see if a file with the MD5(description) exists, if so this
+   * will return a Enumerator of that file, otherwise it will return None.
+   */
+  def cacheFetch(description: JsObject) = {
+    play.api.Play.configuration.getString("geostream.cache") match {
+      case Some(x) => {
+        val filename = MessageDigest.getInstance("MD5").digest(description.toString().getBytes).map("%02X".format(_)).mkString
+        val cacheFile = new File(x, filename)
+        if (cacheFile.exists)
+          Some(Enumerator.fromFile(cacheFile))
+        else
+          None
+      }
+      case None => None
+    }
   }
 
   def searchDatapoints(operator: String, since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String, semi: Option[String]) =
@@ -705,43 +907,6 @@ object Geostreams extends ApiController {
     }
   }
 
-
-  def formatResult(data :Iterator[JsObject], format: String) = {
-    var status = 0
-    Enumerator.generateM(Future[Option[String]] {
-      status match {
-        case 0 => {
-          status = 1
-          if (format == "geojson") {
-            Some("{ \"type\": \"FeatureCollection\", \"features\": [")
-          } else {
-            Some("[")
-          }
-        }
-        case 1 => {
-          if (data.hasNext) {
-            val v = data.next().toString()
-            if (data.hasNext) {
-              Some(v + ",\n")
-            } else {
-              Some(v + "\n")
-            }
-          } else {
-            status = 2
-            if (format == "geojson") {
-              Some("] }")
-            } else {
-              Some("]")
-            }
-          }
-        }
-        case 2 => {
-          None
-        }
-      }
-    })
-  }
-
   def filterDataBySemi(obj: JsObject, semi: Option[String]): Boolean = {
     if (semi.isEmpty) return true
 
@@ -767,10 +932,6 @@ object Geostreams extends ApiController {
     // wrong time
     false
   }
-
-  // ----------------------------------------------------------------------
-  // Calculations
-  // ----------------------------------------------------------------------
 
   def calculate(operator: String, data: Iterator[JsObject], since: Option[String], until: Option[String], semiGroup: Boolean): Iterator[JsObject] = {
     if (operator == "") return data
@@ -1145,6 +1306,10 @@ object Geostreams extends ApiController {
     }
   }
 
+  // ----------------------------------------------------------------------
+  // CACHE RESULTS
+  // ----------------------------------------------------------------------
+
   /**
    * Compute the average values over an area. This will return a single object
    * that contains the average data for a point, as well as an array of
@@ -1317,75 +1482,6 @@ object Geostreams extends ApiController {
   }
 
   /**
-   * Returns the request potentially as jsonp
-   * @param data Result to transform
-   * @param request request made to server
-   */
-  def jsonp(data:String, request: Request[Any]): SimpleResult = {
-    jsonp(Enumerator(data), request)
-  }
-
-  /**
-   * Returns the request potentially as jsonp
-   * @param data Result to transform
-   * @param request request made to server
-   */
-  def jsonp(data:JsValue, request: Request[Any]): SimpleResult = {
-    jsonp(Enumerator(data.toString), request)
-  }
-
-  /**
-   * Tries to transform a response into a JavaScript expression.
-   * @param data Result to transform
-   * @param request request made to server
-   */
-  def jsonp(data:Enumerator[String], request: Request[Any]) = {
-    val toByteArray: Enumeratee[String, Array[Byte]] = Enumeratee.map[String]{ s => s.getBytes }
-    request.getQueryString("callback") match {
-      case Some(callback) => Ok.chunked(Enumerator(s"$callback(") >>> data >>> Enumerator(");") &> toByteArray &> Gzip.gzip())
-        .withHeaders(("Content-Encoding", "gzip"))
-        .as(JAVASCRIPT)
-      case None => Ok.chunked(data &> toByteArray &> Gzip.gzip())
-        .withHeaders(("Content-Encoding", "gzip"))
-        .as(JSON)
-    }
-  }
-
-  // ----------------------------------------------------------------------
-  // CACHE RESULTS
-  // ----------------------------------------------------------------------
-
-  /**
-   * Write the file to cache, filename in cache is based on MD5(description).
-   * A second file with the same name but with extension .json is saved that
-   * will hold teh actual description.
-   *
-   * @param description json object describing the contents of the file.
-   * @param data the actual data that should be saved
-   * @return an enumerator that will save data as data is being enumerated.
-   */
-  def cacheWrite(description: JsObject, data:Enumerator[String]): Enumerator[String] = {
-    play.api.Play.configuration.getString("geostream.cache") match {
-      case Some(x) => {
-        val cacheFolder = new File(x)
-        if (cacheFolder.isDirectory || cacheFolder.mkdirs) {
-          val filename = MessageDigest.getInstance("MD5").digest(description.toString().getBytes).map("%02X".format(_)).mkString
-          new PrintStream(new File(cacheFolder, filename + ".json")).print(description.toString())
-          val writer = new PrintStream(new File(cacheFolder, filename))
-          val save: Enumeratee[String, String] = Enumeratee.map { s =>
-            writer.print(s)
-            s
-          }
-          data.through(save)
-        } else {
-          data
-        }
-      }
-      case None => data
-    }
-  }
-
-  /**
    * Return a list of all files and their descriptions in the cache.
    */
   def cacheListAction() = PermissionAction(Permission.ViewGeoStream) { implicit request =>
@@ -1408,24 +1504,6 @@ object Geostreams extends ApiController {
       case None => {
         NotFound("Cache is not enabled")
       }
-    }
-  }
-
-  /**
-   * Checks to see if a file with the MD5(description) exists, if so this
-   * will return a Enumerator of that file, otherwise it will return None.
-   */
-  def cacheFetch(description: JsObject) = {
-    play.api.Play.configuration.getString("geostream.cache") match {
-      case Some(x) => {
-        val filename = MessageDigest.getInstance("MD5").digest(description.toString().getBytes).map("%02X".format(_)).mkString
-        val cacheFile = new File(x, filename)
-        if (cacheFile.exists)
-          Some(Enumerator.fromFile(cacheFile))
-        else
-          None
-      }
-      case None => None
     }
   }
 
@@ -1474,93 +1552,6 @@ object Geostreams extends ApiController {
   }
 
   /**
-   * Removes all files from the cache,
-   * or the files associated with either sensor_id or stream_id as query parameters.
-   * Specifying sensor_id and stream_id will only remove caching where both are present
-   */
-  def cacheInvalidate(sensor_id: Option[String] = None, stream_id: Option[String] = None) = {
-    play.api.Play.configuration.getString("geostream.cache") match {
-      case Some(x) => {
-        val existingFiles = new File(x).listFiles
-        val filesToRemove = collection.mutable.ListBuffer.empty[String]
-        val streams = new ListBuffer[String]()
-        val sensors = new ListBuffer[String]()
-        val errors = new ListBuffer[String]()
-
-        if (sensor_id.isDefined) {
-          sensors += sensor_id.get.toString
-          current.plugin[PostgresPlugin] match {
-            case Some(plugin) => {
-              plugin.getSensorStreams(sensor_id.get.toString) match {
-                case Some(d) => {
-                  val responseJson : JsValue = Json.parse(d)
-                  (responseJson \\ "stream_id").foreach(streams += _.toString)
-                }
-                case None => errors += "Sensor " + sensor_id.get.toString + " does not exist"
-              }
-            }
-            case None => pluginNotEnabled
-          }
-        }
-
-        if (stream_id.isDefined) {
-          streams += stream_id.get.toString
-          current.plugin[PostgresPlugin] match {
-            case Some(plugin) => {
-              plugin.getStream(stream_id.get.toString) match {
-                case Some(d) => {
-                  val responseJson : JsValue = Json.parse(d)
-                  (responseJson \\ "sensor_id").foreach(sensors += _.asInstanceOf[JsString].value.toString)
-                }
-                case None => errors += "Stream " + stream_id.get.toString + " does not exist"
-              }
-            }
-            case None => pluginNotEnabled
-          }
-        }
-
-        for (file <- existingFiles) {
-          val jsonFile = new File(file.getAbsolutePath + ".json")
-          if (jsonFile.exists()) {
-            val data = Json.parse(Source.fromFile(jsonFile).mkString)
-            (Parsers.parseString(data.\("sensor_id")), Parsers.parseString(data.\("stream_id"))) match {
-              case (sensor_value, stream_value) =>
-                if (sensor_id.isDefined && !stream_id.isDefined) {
-                  if (sensors.contains(sensor_value) || streams.contains(stream_value)) {
-                    filesToRemove += file.getAbsolutePath
-                    filesToRemove += jsonFile.getAbsolutePath
-                  }
-                }
-                if (!sensor_id.isDefined && stream_id.isDefined) {
-                  if (streams.contains(stream_value) || (sensors.contains(sensor_value) && stream_value.isEmpty)) {
-                    filesToRemove += file.getAbsolutePath
-                    filesToRemove += jsonFile.getAbsolutePath
-                  }
-                }
-              case _ => None
-            }
-          }
-        }
-
-        if (sensor_id.isEmpty && stream_id.isEmpty) {
-          for (f <- existingFiles) {
-            filesToRemove += f.getAbsolutePath
-          }
-        }
-        for (f <- filesToRemove) {
-          val file = new File(f)
-          if (!file.delete) {
-            errors += "Could not delete cache file: " + file.getAbsolutePath
-            Logger.error("Could not delete cache file " + file.getAbsolutePath)
-          }
-        }
-        (filesToRemove.toArray, errors.toArray)
-      }
-      case None => (Array.empty[String], Array.empty[String])
-    }
-  }
-
-  /**
    * Removes all files from the cache
    */
   def cacheInvalidateAction(sensor_id: Option[String] = None, stream_id: Option[String] = None) =  PermissionAction(Permission.DeleteGeoStream) { implicit request =>
@@ -1574,10 +1565,6 @@ object Geostreams extends ApiController {
       }
     }
   }
-
-  // ----------------------------------------------------------------------
-  // JSON -> CSV
-  // ----------------------------------------------------------------------
 
   /**
    * Returns the JSON formatted as CSV.
@@ -1618,6 +1605,10 @@ object Geostreams extends ApiController {
     })
   }
 
+  // ----------------------------------------------------------------------
+  // JSON -> CSV
+  // ----------------------------------------------------------------------
+
   /**
    * Helper function to create a new prefix based on the key, and current prefix
    */
@@ -1641,7 +1632,7 @@ object Geostreams extends ApiController {
     }
     result
   }
-  
+
   /**
    * Helper function to create list of headers
    */
@@ -1722,7 +1713,7 @@ object Geostreams extends ApiController {
       }
     })
   }
-
+  
   /**
    * Helper function to create the text that is printed as header
    */
@@ -1781,11 +1772,6 @@ object Geostreams extends ApiController {
     result.substring(1)
   }
 
-  /**
-   * Class to hold a json key, and any subkeys
-   */
-  case class Header(key: String, value: Either[String, ListBuffer[Header]])
-
   def getConfig = PermissionAction(Permission.ViewGeoStream) { implicit request =>
     Logger.debug("Getting config")
     current.plugin[PostgresPlugin] match {
@@ -1801,4 +1787,17 @@ object Geostreams extends ApiController {
       case None => pluginNotEnabled
     }
   }
+
+  case class BinHelper(depth: Double,
+                       label: String,
+                       extras: JsObject,
+                       timeInfo: JsObject,
+                       doubles: collection.mutable.ListBuffer[Double] = collection.mutable.ListBuffer.empty[Double],
+                       strings: collection.mutable.HashSet[String] = collection.mutable.HashSet.empty[String],
+                       sources: collection.mutable.HashSet[String] = collection.mutable.HashSet.empty[String])
+
+  /**
+   * Class to hold a json key, and any subkeys
+   */
+  case class Header(key: String, value: Either[String, ListBuffer[Header]])
 }

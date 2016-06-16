@@ -22,6 +22,15 @@ import scala.concurrent.Future
 @Singleton
 class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: UserService, metadataService: MetadataService) extends SecuredController {
 
+  val roleForm = Form(
+    mapping(
+      "id" -> optional(Utils.CustomMappings.uuidType),
+      "name" -> nonEmptyText,
+      "description" -> nonEmptyText,
+      "permissions" -> Forms.list(nonEmptyText)
+    )(roleFormData.apply)(roleFormData.unapply)
+  )
+
   def customize = ServerAdminAction { implicit request =>
     val theme = AppConfiguration.getTheme
     Logger.debug("Theme id " + theme)
@@ -298,14 +307,6 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     }
   }
 
-  private def getPermissionsMap(): scala.collection.immutable.Map[String, Boolean] = {
-    var permissionMap = SortedMap.empty[String, Boolean]
-    Permission.values.map {
-      permission => permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})", "$1 $2") -> false)
-    }
-    return permissionMap
-  }
-
   def listRoles() = ServerAdminAction { implicit request =>
     implicit val user = request.user
     user match {
@@ -321,15 +322,6 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     Ok(views.html.manageMetadataDefinitions(metadata.toList, None, None))
   }
 
-  val roleForm = Form(
-    mapping(
-      "id" -> optional(Utils.CustomMappings.uuidType),
-      "name" -> nonEmptyText,
-      "description" -> nonEmptyText,
-      "permissions" -> Forms.list(nonEmptyText)
-    )(roleFormData.apply)(roleFormData.unapply)
-  )
-
   def createRole() = ServerAdminAction { implicit request =>
     implicit val user = request.user
     user match {
@@ -337,6 +329,14 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
         Ok(views.html.roles.createRole(roleForm, getPermissionsMap()))
       }
     }
+  }
+
+  private def getPermissionsMap(): scala.collection.immutable.Map[String, Boolean] = {
+    var permissionMap = SortedMap.empty[String, Boolean]
+    Permission.values.map {
+      permission => permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})", "$1 $2") -> false)
+    }
+    return permissionMap
   }
 
   def viewDumpers() = ServerAdminAction { implicit request =>

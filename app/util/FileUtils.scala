@@ -23,8 +23,6 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 object FileUtils {
-  val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
-
   lazy val files: FileService = DI.injector.getInstance(classOf[FileService])
   lazy val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   lazy val dtsrequests:ExtractionRequestsService = DI.injector.getInstance(classOf[ExtractionRequestsService])
@@ -34,6 +32,7 @@ object FileUtils {
   lazy val events: EventService = DI.injector.getInstance(classOf[EventService])
   lazy val userService: UserService = DI.injector.getInstance(classOf[UserService])
   lazy val folders: FolderService = DI.injector.getInstance(classOf[FolderService])
+  val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
   /**
    * Given a number return a human readable count, unlike apache.commons this will not round down. This
@@ -222,6 +221,111 @@ object FileUtils {
   // }
   //
 
+  // process a single uploaded file
+  private def processFile(f: MultipartFormData.FilePart[Files.TemporaryFile], metadata: Option[Seq[String]],
+                          user: User, creator: Agent, clowderurl: String,
+                          dataset: Option[Dataset] = None, folder:Option[Folder] = None,
+                          key: String = "", index: Boolean = true,
+                          showPreviews: String = "DatasetLevel", originalZipFile: String = "",
+                          flagsFromPrevious: String = "", intermediateUpload: Boolean = false): Option[File] = {
+    val file = File(UUID.generate(), "", f.filename, user, new Date(),
+      FileUtils.getContentType(f.filename, f.contentType), f.ref.file.length(), "", "",
+      isIntermediate = intermediateUpload, showPreviews = showPreviews,
+      licenseData = License.fromAppConfig(), status = FileStatus.CREATED.toString)
+    files.save(file)
+    Logger.info(s"created file ${file.id}")
+
+    associateMetaData(creator, file, metadata)
+    associateDataset(file, dataset, folder, user)
+
+    // process rest of file in background
+    val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
+    Future {
+      try {
+        saveFile(file, f.ref.file, originalZipFile).foreach { fixedfile =>
+          processFileBytes(fixedfile, f.ref.file, dataset)
+          files.setStatus(fixedfile.id, FileStatus.UPLOADED)
+          processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, dataset)
+          processDataset(file, dataset, folder, clowderurl, user, index)
+          files.setStatus(fixedfile.id, FileStatus.PROCESSED)
+        }
+      } finally {
+        f.ref.clean()
+      }
+    }(fileExecutionContext)
+
+    Some(file)
+  }
+
+  /** stream the data from the uploaded path to final resting spot, this can be slow */
+  private def saveFile(file: File, path: java.io.File, originalZipFile: String): Option[File] = {
+    // If intermediate upload, get flags from originalIdAndFlags
+    var nameOfFile = file.filename
+    if (!file.isIntermediate) {
+      // Parse .ptm filenames into component flags
+      if (nameOfFile.toLowerCase().endsWith(".ptm")) {
+        val thirdSeparatorIndex = nameOfFile.indexOf("__")
+        if (thirdSeparatorIndex >= 0) {
+          nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
+        }
+      }
+      Logger.debug("Uploading file " + nameOfFile)
+    }
+
+    // fix up special case upload of zipfile
+    var fileType = file.contentType
+    if (fileType.contains("/zip") || fileType.contains("/x-zip") || file.filename.toLowerCase().endsWith(".zip")) {
+      fileType = FilesUtils.getMainFileTypeOfZipFile(path, file.filename, "file")
+      if (fileType.startsWith("ERROR: ")) {
+        Logger.error(fileType.substring(7))
+        fileType = file.contentType
+      } else if (fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") || fileType.equals("multi/files-ptm-zipped")) {
+        if (fileType.equals("multi/files-ptm-zipped")) {
+          fileType = "multi/files-zipped"
+        }
+
+        val thirdSeparatorIndex = file.filename.indexOf("__")
+        if (thirdSeparatorIndex >= 0) {
+          nameOfFile = file.filename.substring(thirdSeparatorIndex + 2)
+        }
+        files.setContentType(file.id, fileType)
+      }
+    }
+
+    // get the real user
+    val realUser = if (!originalZipFile.equals("")) {
+      files.get(new UUID(originalZipFile)) match {
+        case Some(originalFile) => userService.findById(originalFile.id).fold(file.author)(_.getMiniUser)
+        case None => file.author
+      }
+    } else {
+      file.author
+    }
+
+    // actually save the file
+    ByteStorageService.save(new FileInputStream(path), "uploads") match {
+      case Some((loader_id, loader, sha512, length)) => {
+        files.get(file.id) match {
+          case Some(f) => {
+            val fixedfile = f.copy(filename=nameOfFile, contentType=fileType, loader=loader, loader_id=loader_id, sha512=sha512, length=length, author=realUser)
+            files.save(fixedfile)
+            Logger.info("Uploading Completed")
+            Some(fixedfile)
+          }
+          case None => {
+            Logger.error("File was not found anymore")
+            None
+          }
+        }
+      }
+      case None => {
+        Logger.error("Could not save bytes, deleting file")
+        files.removeFile(file.id)
+        None
+      }
+    }
+  }
+
   def uploadFilesJSON(request: UserRequest[JsValue],
                         dataset: Option[Dataset] = None, folder:Option[Folder] = None,
                         key: String = "", index: Boolean = true,
@@ -282,93 +386,6 @@ object FileUtils {
     }
 
     uploadedFiles.toList
-  }
-
-  // process a single uploaded file
-  private def processFile(f: MultipartFormData.FilePart[Files.TemporaryFile], metadata: Option[Seq[String]],
-                          user: User, creator: Agent, clowderurl: String,
-                          dataset: Option[Dataset] = None, folder:Option[Folder] = None,
-                          key: String = "", index: Boolean = true,
-                          showPreviews: String = "DatasetLevel", originalZipFile: String = "",
-                          flagsFromPrevious: String = "", intermediateUpload: Boolean = false): Option[File] = {
-    val file = File(UUID.generate(), "", f.filename, user, new Date(),
-      FileUtils.getContentType(f.filename, f.contentType), f.ref.file.length(), "", "",
-      isIntermediate = intermediateUpload, showPreviews = showPreviews,
-      licenseData = License.fromAppConfig(), status = FileStatus.CREATED.toString)
-    files.save(file)
-    Logger.info(s"created file ${file.id}")
-
-    associateMetaData(creator, file, metadata)
-    associateDataset(file, dataset, folder, user)
-
-    // process rest of file in background
-    val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
-    Future {
-      try {
-        saveFile(file, f.ref.file, originalZipFile).foreach { fixedfile =>
-          processFileBytes(fixedfile, f.ref.file, dataset)
-          files.setStatus(fixedfile.id, FileStatus.UPLOADED)
-          processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, dataset)
-          processDataset(file, dataset, folder, clowderurl, user, index)
-          files.setStatus(fixedfile.id, FileStatus.PROCESSED)
-        }
-      } finally {
-        f.ref.clean()
-      }
-    }(fileExecutionContext)
-
-    Some(file)
-  }
-
-  // process a single URL
-  private def processURL(url: URL, jsv: JsValue, user: User, creator: Agent, clowderurl: String,
-                         dataset: Option[Dataset] = None, folder:Option[Folder] = None,
-                         key: String = "", index: Boolean = true,
-                         showPreviews: String = "DatasetLevel", originalZipFile: String = "",
-                         flagsFromPrevious: String = "", intermediateUpload: Boolean = false): Option[File] = {
-    val fileds = jsv \ "dataset" match {
-      case d: JsString if dataset.isEmpty => datasets.get(UUID(Parsers.parseString(d)))
-      case _ => dataset
-    }
-
-    // craete the file object
-    val path = url.getPath
-    val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
-    val file = File(UUID.generate(), path, filename, user, new Date(),
-      FileUtils.getContentType(filename, None), -1, "", "",
-      isIntermediate=intermediateUpload, showPreviews=showPreviews,
-      licenseData=License.fromAppConfig(), status = FileStatus.CREATED.toString)
-    files.save(file)
-
-    // extract metadata
-    // TODO should really be using content not just the objects
-//    val source = s"""{ "@context": { "source": "http://purl.org/dc/terms/source" }, "content": { "source": "${url.toString}" } }"""
-    val source = s"""{ "@context": { "source": "http://purl.org/dc/terms/source" }, "source": "${url.toString}" }"""
-    val metadata = jsv \ "md" match {
-      case x: JsUndefined => {
-        jsv \ "metadata" match {
-          case y: JsUndefined => Some(Seq(source))
-          case y => Some(Seq(Json.stringify(y), source))
-        }
-      }
-      case x => Some(Seq(Json.stringify(x), source))
-    }
-    associateMetaData(creator, file, metadata)
-    associateDataset(file, fileds, folder, user)
-
-    // process rest of file in background
-    val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
-    Future {
-      saveURL(file, url).foreach { fixedfile =>
-        processFileBytes(fixedfile, new java.io.File(path), fileds)
-        files.setStatus(fixedfile.id, FileStatus.UPLOADED)
-        processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, fileds)
-        processDataset(file, fileds, folder, clowderurl, user, index)
-        files.setStatus(fixedfile.id, FileStatus.PROCESSED)
-      }
-    }(fileExecutionContext)
-
-    Some(file)
   }
 
   // process a single local path
@@ -479,122 +496,6 @@ object FileUtils {
           events.addObjectEvent(Some(user), ds.id, ds.name, "add_file")
           datasets.addFile(ds.id, file)
         }
-      }
-    }
-  }
-
-  /** stream the data from the uploaded path to final resting spot, this can be slow */
-  private def saveFile(file: File, path: java.io.File, originalZipFile: String): Option[File] = {
-    // If intermediate upload, get flags from originalIdAndFlags
-    var nameOfFile = file.filename
-    if (!file.isIntermediate) {
-      // Parse .ptm filenames into component flags
-      if (nameOfFile.toLowerCase().endsWith(".ptm")) {
-        val thirdSeparatorIndex = nameOfFile.indexOf("__")
-        if (thirdSeparatorIndex >= 0) {
-          nameOfFile = nameOfFile.substring(thirdSeparatorIndex + 2)
-        }
-      }
-      Logger.debug("Uploading file " + nameOfFile)
-    }
-
-    // fix up special case upload of zipfile
-    var fileType = file.contentType
-    if (fileType.contains("/zip") || fileType.contains("/x-zip") || file.filename.toLowerCase().endsWith(".zip")) {
-      fileType = FilesUtils.getMainFileTypeOfZipFile(path, file.filename, "file")
-      if (fileType.startsWith("ERROR: ")) {
-        Logger.error(fileType.substring(7))
-        fileType = file.contentType
-      } else if (fileType.equals("imageset/ptmimages-zipped") || fileType.equals("imageset/ptmimages+zipped") || fileType.equals("multi/files-ptm-zipped")) {
-        if (fileType.equals("multi/files-ptm-zipped")) {
-          fileType = "multi/files-zipped"
-        }
-
-        val thirdSeparatorIndex = file.filename.indexOf("__")
-        if (thirdSeparatorIndex >= 0) {
-          nameOfFile = file.filename.substring(thirdSeparatorIndex + 2)
-        }
-        files.setContentType(file.id, fileType)
-      }
-    }
-
-    // get the real user
-    val realUser = if (!originalZipFile.equals("")) {
-      files.get(new UUID(originalZipFile)) match {
-        case Some(originalFile) => userService.findById(originalFile.id).fold(file.author)(_.getMiniUser)
-        case None => file.author
-      }
-    } else {
-      file.author
-    }
-
-    // actually save the file
-    ByteStorageService.save(new FileInputStream(path), "uploads") match {
-      case Some((loader_id, loader, sha512, length)) => {
-        files.get(file.id) match {
-          case Some(f) => {
-            val fixedfile = f.copy(filename=nameOfFile, contentType=fileType, loader=loader, loader_id=loader_id, sha512=sha512, length=length, author=realUser)
-            files.save(fixedfile)
-            Logger.info("Uploading Completed")
-            Some(fixedfile)
-          }
-          case None => {
-            Logger.error("File was not found anymore")
-            None
-          }
-        }
-      }
-      case None => {
-        Logger.error("Could not save bytes, deleting file")
-        files.removeFile(file.id)
-        None
-      }
-    }
-  }
-
-  /** Fix file object based on path file, no uploading just compute sha512 */
-  private def savePath(file: File, path: String): Option[File] = {
-    // Calculate SHA-512 hash
-    val filestream = new java.io.BufferedInputStream(new FileInputStream(path))
-    val sha512 = DigestUtils.sha512Hex(filestream)
-    filestream.close()
-    files.get(file.id) match {
-      case Some(f) => {
-        val fixedfile = f.copy(sha512 = sha512)
-        files.save(fixedfile)
-        Logger.info("Uploading Completed")
-        Some(fixedfile)
-      }
-      case None => {
-        Logger.error("File was not found anymore")
-        None
-      }
-    }
-  }
-
-  /** Fix file object based on path file, no uploading just compute sha512 */
-  private def saveURL(file: File, url: URL): Option[File] = {
-    // actually save the file
-    val conn = url.openConnection()
-    ByteStorageService.save(conn.getInputStream, "uploads") match {
-      case Some((loader_id, loader, sha512, length)) => {
-        files.get(file.id) match {
-          case Some(f) => {
-            val fixedfile = f.copy(contentType=conn.getContentType, loader=loader, loader_id=loader_id, sha512=sha512, length=length)
-            files.save(fixedfile)
-            Logger.info("Uploading Completed")
-            Some(fixedfile)
-          }
-          case None => {
-            Logger.error("File was not found anymore")
-            None
-          }
-        }
-      }
-      case None => {
-        Logger.error("Could not save bytes, deleting file")
-        files.removeFile(file.id)
-        None
       }
     }
   }
@@ -717,6 +618,104 @@ object FileUtils {
           sqarql.addFileToGraph(file.id)
           sqarql.linkFileToDataset(file.id, ds.id)
         }
+      }
+    }
+  }
+
+  /** Fix file object based on path file, no uploading just compute sha512 */
+  private def savePath(file: File, path: String): Option[File] = {
+    // Calculate SHA-512 hash
+    val filestream = new java.io.BufferedInputStream(new FileInputStream(path))
+    val sha512 = DigestUtils.sha512Hex(filestream)
+    filestream.close()
+    files.get(file.id) match {
+      case Some(f) => {
+        val fixedfile = f.copy(sha512 = sha512)
+        files.save(fixedfile)
+        Logger.info("Uploading Completed")
+        Some(fixedfile)
+      }
+      case None => {
+        Logger.error("File was not found anymore")
+        None
+      }
+    }
+  }
+
+  // process a single URL
+  private def processURL(url: URL, jsv: JsValue, user: User, creator: Agent, clowderurl: String,
+                         dataset: Option[Dataset] = None, folder:Option[Folder] = None,
+                         key: String = "", index: Boolean = true,
+                         showPreviews: String = "DatasetLevel", originalZipFile: String = "",
+                         flagsFromPrevious: String = "", intermediateUpload: Boolean = false): Option[File] = {
+    val fileds = jsv \ "dataset" match {
+      case d: JsString if dataset.isEmpty => datasets.get(UUID(Parsers.parseString(d)))
+      case _ => dataset
+    }
+
+    // craete the file object
+    val path = url.getPath
+    val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
+    val file = File(UUID.generate(), path, filename, user, new Date(),
+      FileUtils.getContentType(filename, None), -1, "", "",
+      isIntermediate=intermediateUpload, showPreviews=showPreviews,
+      licenseData=License.fromAppConfig(), status = FileStatus.CREATED.toString)
+    files.save(file)
+
+    // extract metadata
+    // TODO should really be using content not just the objects
+//    val source = s"""{ "@context": { "source": "http://purl.org/dc/terms/source" }, "content": { "source": "${url.toString}" } }"""
+    val source = s"""{ "@context": { "source": "http://purl.org/dc/terms/source" }, "source": "${url.toString}" }"""
+    val metadata = jsv \ "md" match {
+      case x: JsUndefined => {
+        jsv \ "metadata" match {
+          case y: JsUndefined => Some(Seq(source))
+          case y => Some(Seq(Json.stringify(y), source))
+        }
+      }
+      case x => Some(Seq(Json.stringify(x), source))
+    }
+    associateMetaData(creator, file, metadata)
+    associateDataset(file, fileds, folder, user)
+
+    // process rest of file in background
+    val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
+    Future {
+      saveURL(file, url).foreach { fixedfile =>
+        processFileBytes(fixedfile, new java.io.File(path), fileds)
+        files.setStatus(fixedfile.id, FileStatus.UPLOADED)
+        processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, fileds)
+        processDataset(file, fileds, folder, clowderurl, user, index)
+        files.setStatus(fixedfile.id, FileStatus.PROCESSED)
+      }
+    }(fileExecutionContext)
+
+    Some(file)
+  }
+
+  /** Fix file object based on path file, no uploading just compute sha512 */
+  private def saveURL(file: File, url: URL): Option[File] = {
+    // actually save the file
+    val conn = url.openConnection()
+    ByteStorageService.save(conn.getInputStream, "uploads") match {
+      case Some((loader_id, loader, sha512, length)) => {
+        files.get(file.id) match {
+          case Some(f) => {
+            val fixedfile = f.copy(contentType=conn.getContentType, loader=loader, loader_id=loader_id, sha512=sha512, length=length)
+            files.save(fixedfile)
+            Logger.info("Uploading Completed")
+            Some(fixedfile)
+          }
+          case None => {
+            Logger.error("File was not found anymore")
+            None
+          }
+        }
+      }
+      case None => {
+        Logger.error("Could not save bytes, deleting file")
+        files.removeFile(file.id)
+        None
       }
     }
   }

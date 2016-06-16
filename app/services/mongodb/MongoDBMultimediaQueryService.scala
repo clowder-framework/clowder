@@ -132,14 +132,6 @@ def getFile(id: UUID): Option[TempFile] = {
     MultimediaFeaturesDAO.save(multimediaFeature)
   }
 
-  def listAll(): SalatMongoCursor[MultimediaFeatures] = {
-    MultimediaFeaturesDAO.find(MongoDBObject())
-  }
-
-  def addMultimediaDistance(d: MultimediaDistance): Unit = {
-    MultimediaDistanceDAO.save(d)
-  }
-
   def searchMultimediaDistances(querySectionId: String, representation: String, limit: Int, userSpaceIDs: List[UUID]): List[MultimediaDistance] = {
 
     // Converting UUIDs to Object IDs
@@ -221,6 +213,14 @@ def getFile(id: UUID): Option[TempFile] = {
       }
     }
     inner.close()
+  }
+
+  def listAll(): SalatMongoCursor[MultimediaFeatures] = {
+    MultimediaFeaturesDAO.find(MongoDBObject())
+  }
+
+  def addMultimediaDistance(d: MultimediaDistance): Unit = {
+    MultimediaDistanceDAO.save(d)
   }
 
   def time[R](block: => R): R = {

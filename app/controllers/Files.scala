@@ -60,7 +60,15 @@ class Files @Inject() (
       "userid" -> nonEmptyText
     )(FileMD.apply)(FileMD.unapply)
   )  
-  
+  /**
+   * Upload form for extraction.
+   */
+  val extractForm = Form(
+    mapping(
+      "userid" -> nonEmptyText
+    )(FileMD.apply)(FileMD.unapply)
+  )
+
   /**
    * File info.
    */
@@ -146,14 +154,14 @@ class Files @Inject() (
           val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
           val extractionsByFile = extractions.findByFileId(id)
-          
-          //call Polyglot to get all possible output formats for this file's content type 
-          
+
+          //call Polyglot to get all possible output formats for this file's content type
+
 
           current.plugin[PolyglotPlugin] match {
             case Some(plugin) => {
               Logger.debug("Polyglot plugin found")
-              
+
               val fname = file.filename
               //use name of the file to get the extension (pdf or txt or jpg) to use an input type for Polyglot
               val lastDividerIndex = (fname.replace("/", ".").lastIndexOf(".")) + 1
@@ -172,9 +180,9 @@ class Files @Inject() (
               Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                 extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
                 mds, isRDFExportEnabled, extractionsByFile, None, space)))
-          }              
+          }
       }
-          
+
       case None => {
         val error_str = s"The file with id ${id} is not found."
         Logger.error(error_str)
@@ -235,6 +243,7 @@ class Files @Inject() (
       case None => InternalServerError("User not found")
     }
   }
+
   /**
    * List a specific number of files before or after a certain date.
    */
@@ -283,11 +292,11 @@ class Files @Inject() (
       }
       file.id -> allComments.size
     }.toMap
-    
+
     //Code to read the cookie data. On default calls, without a specific value for the mode, the cookie value is used.
-    //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar 
-    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14   
-    val viewMode: Option[String] = 
+    //Note that this cookie will, in the long run, pertain to all the major high-level views that have the similar
+    //modal behavior for viewing data. Currently the options are tile and list views. MMF - 12/14
+    val viewMode: Option[String] =
     if (mode == null || mode == "") {
       request.cookies.get("view-mode") match {
           case Some(cookie) => Some(cookie.value)
@@ -295,8 +304,8 @@ class Files @Inject() (
       }
     } else {
         Some(mode)
-    }                     
-      
+    }
+
     //Pass the viewMode into the view
     Ok(views.html.filesList(fileList, commentMap, prev, next, limit, viewMode, None))
   }
@@ -338,16 +347,6 @@ class Files @Inject() (
     Ok(views.html.upload(uploadForm))
   }
 
-  /**
-   * Upload form for extraction.
-   */
-  val extractForm = Form(
-    mapping(
-      "userid" -> nonEmptyText
-    )(FileMD.apply)(FileMD.unapply)
-  )
-
-  
   def extractFile = PermissionAction(Permission.AddFile) { implicit request =>
     implicit val user = request.user
     Ok(views.html.uploadExtract(extractForm))

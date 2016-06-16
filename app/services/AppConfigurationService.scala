@@ -57,15 +57,13 @@ trait AppConfigurationService {
  * Object to handle some common configuration options.
  */
 object AppConfiguration {
-  val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+  // ----------------------------------------------------------------------
+  // Terms of Services
+  // ----------------------------------------------------------------------
+  lazy val defaultToSDate = new SimpleDateFormat("yyyy-MM-dd").parse("2016-06-06")
 
   // ----------------------------------------------------------------------
-
-  /** Set the default theme */
-  def setTheme(theme: String) = {
-    if (themes.contains(theme))
-      appConfig.setProperty("theme", theme)
-  }
+  val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
   /** Get the default theme */
   def getTheme: String = {
@@ -77,19 +75,22 @@ object AppConfiguration {
     }
   }
 
+  /** Set the default theme */
+  def setTheme(theme: String) = {
+    if (themes.contains(theme))
+      appConfig.setProperty("theme", theme)
+  }
+
+  // ----------------------------------------------------------------------
+
   /** Get list of available themes */
   def themes: List[String] = {
     ResourceLister.listFiles("public.stylesheets.themes", ".*.css")
       .map(s => s.replaceAll(".*.themes.", ""))
   }
 
-  // ----------------------------------------------------------------------
-
   /** Set the display name (subtitle) */
   def setDisplayName(displayName: String) = appConfig.setProperty("display.name", displayName)
-
-  /** Get the display name (subtitle) */
-  def getDisplayName: String = appConfig.getProperty("display.name", "Clowder")
 
   // ----------------------------------------------------------------------
 
@@ -139,11 +140,6 @@ object AppConfiguration {
   /** Get the welcome message */
   def getParameterTitle: String = appConfig.getProperty("parameter.title", "Parameter")
 
-  // ----------------------------------------------------------------------
-  // Terms of Services
-  // ----------------------------------------------------------------------
-  lazy val defaultToSDate = new SimpleDateFormat("yyyy-MM-dd").parse("2016-06-06")
-
   /** Set the Terms of Services */
   def setTermsOfServicesText(tos: String) = {
     if (tos == "") {
@@ -152,6 +148,12 @@ object AppConfiguration {
       setTermsOfServicesVersionDate(new Date())
     }
     appConfig.setProperty("tos.text", tos)
+  }
+
+  /** Set the version of the Terms of Services and returns the version */
+  def setTermsOfServicesVersionDate(date: Date) = {
+    DI.injector.getInstance(classOf[UserService]).newTermsOfServices()
+    appConfig.setProperty("tos.date", date)
   }
 
   def setDefaultTermsOfServicesVersion() = {
@@ -179,22 +181,17 @@ object AppConfiguration {
     tos.replace("@@NAME", getDisplayName)
   }
 
+  /** Get the display name (subtitle) */
+  def getDisplayName: String = appConfig.getProperty("display.name", "Clowder")
+
   def isTermOfServicesHtml: Boolean = {
     appConfig.getProperty("tos.html") == Some(true)
   }
 
   def setTermOfServicesHtml(html: Boolean) = appConfig.setProperty("tos.html", Boolean.box(html))
 
-  def isDefaultTermsOfServices: Boolean = appConfig.getProperty("tos.text", "") == ""
-
   def acceptedTermsOfServices(tos: Option[UserTermsOfServices]) = {
     tos.exists(t => t.accepted && t.acceptedDate.after(getTermsOfServicesVersionDate))
-  }
-
-  /** Set the version of the Terms of Services and returns the version */
-  def setTermsOfServicesVersionDate(date: Date) = {
-    DI.injector.getInstance(classOf[UserService]).newTermsOfServices()
-    appConfig.setProperty("tos.date", date)
   }
 
   /** get the version of the Terms of Services */
@@ -207,4 +204,6 @@ object AppConfiguration {
       appConfig.getProperty("tos.date", new Date()).toString
     }
   }
+
+  def isDefaultTermsOfServices: Boolean = appConfig.getProperty("tos.text", "") == ""
 }

@@ -13,12 +13,7 @@ case class CORSFilter() extends Filter{
   import scala.concurrent._
   import ExecutionContext.Implicits.global
   lazy val allowedDomain = play.api.Play.current.configuration.getString("cors.allowed.domain")
-  def isPreFlight(r: RequestHeader) =(
-    r.method.toLowerCase.equals("options")
-      &&
-      r.headers.get("Access-Control-Request-Method").nonEmpty
-    )
- 
+
   def apply(f: (RequestHeader) => Future[SimpleResult])(request: RequestHeader): Future[SimpleResult] = {
     Logger.trace("[cors] filtering request to add cors")
     if (isPreFlight(request)) {
@@ -41,4 +36,10 @@ case class CORSFilter() extends Filter{
       )}
     }
   }
+ 
+  def isPreFlight(r: RequestHeader) =(
+    r.method.toLowerCase.equals("options")
+      &&
+      r.headers.get("Access-Control-Request-Method").nonEmpty
+    )
 }

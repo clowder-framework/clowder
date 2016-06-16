@@ -29,6 +29,17 @@ trait User extends Identity {
   // One can only be superAdmin iff you are a serveradmin
   def superAdminMode: Boolean
 
+  def getFollowedObjectList(objectType : String) : List[TypedID] = {
+    followedEntities.filter { x => x.objectType == objectType }
+  }
+
+  /**
+  * return MiniUser constructed from the user model
+  */
+  def getMiniUser: MiniUser = {
+    new MiniUser(id = id, fullName = fullName, avatarURL = getAvatarUrl(), email = email)
+  }
+
   /**
    * Get the avatar URL for this user's profile
    * If user has no avatar URL, this will return a unique URL based on
@@ -58,17 +69,6 @@ trait User extends Identity {
       .map("%02X".format(_))
       .mkString
       .toLowerCase
-  }
-
-  def getFollowedObjectList(objectType : String) : List[TypedID] = {
-    followedEntities.filter { x => x.objectType == objectType }  
-  }
-
-  /**
-  * return MiniUser constructed from the user model
-  */
-  def getMiniUser: MiniUser = {
-    new MiniUser(id = id, fullName = fullName, avatarURL = getAvatarUrl(), email = email)
   }
 
   override def toString: String = format(false)

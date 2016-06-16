@@ -25,9 +25,10 @@ import julienrf.play.jsonp.Jsonp
  * @author Luigi Marini
  */
 object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) with GlobalSettings {
+  private lazy val injector = services.DI.injector
+  private lazy val users: UserService =  DI.injector.getInstance(classOf[UserService])
   var extractorTimer: Cancellable = null
   var jobTimer: Cancellable = null
-
 
   override def onStart(app: Application) {
     ServerStartTime.startTime = Calendar.getInstance().getTime
@@ -73,9 +74,6 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
     jobTimer.cancel()
     Logger.info("Application shutdown")
   }
-
-  private lazy val injector = services.DI.injector
-  private lazy val users: UserService =  DI.injector.getInstance(classOf[UserService])
 
   /** Used for dynamic controller dispatcher **/
   override def getControllerInstance[A](clazz: Class[A]) = {
