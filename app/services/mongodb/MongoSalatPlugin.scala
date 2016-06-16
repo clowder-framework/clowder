@@ -27,7 +27,7 @@ import scala.collection.JavaConverters._
  * Mongo Salat service.
  */
 class MongoSalatPlugin(app: Application) extends Plugin {
-  lazy val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService]
+  lazy val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
   // URI to the mongodatabase, for example mongodb://127.0.0.1:27017/medici
   var mongoURI: MongoURI = null
   // hold the connection, if connection failed it will be tried to open next time
