@@ -523,14 +523,14 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("datasets").foreach { ds =>
       val ds_collections = ds.getAsOrElse[MongoDBList]("collections", MongoDBList.empty)
       ds_collections.foreach { ds_col =>
-        collection("collections").findOneByID(ds_col.toString) match {
+        collection("collections").findOneByID(new ObjectId(ds_col.toString)) match {
           case Some(col) => {
             val col_spaces = col.getAsOrElse[MongoDBList]("spaces", MongoDBList.empty)
             val ds_spaces = ds.getAsOrElse[MongoDBList]("spaces",MongoDBList.empty)
             col_spaces.foreach { col_space =>
               if (!ds_spaces.contains(col_space)){
 
-                collection("spaces").findOneByID(col_space.toString) match {
+                collection("spaces").findOneByID(new ObjectId(col_space.toString)) match {
                   case Some(space) => {
 
                     val q = MongoDBObject("_id" -> new ObjectId(ds._id.toString))
