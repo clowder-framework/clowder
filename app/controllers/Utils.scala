@@ -54,8 +54,10 @@ object Utils {
 
   def decodeVocabularyTermElements(vocabularyTerm : VocabularyTerm) = {
     val decodedKey = StringEscapeUtils.unescapeHtml(vocabularyTerm.key)
-    val decodedDefaultValue = StringEscapeUtils.unescapeHtml(vocabularyTerm.default_value.get)
-    vocabularyTerm.copy(key = decodedKey, default_value = Some(decodedDefaultValue))
+    val decodedDefaultValue = StringEscapeUtils.unescapeHtml(vocabularyTerm.default_value)
+    val decodedUnits = StringEscapeUtils.unescapeHtml(vocabularyTerm.units)
+    val decodedDescription = StringEscapeUtils.unescapeHtml(vocabularyTerm.description)
+    vocabularyTerm.copy(key = decodedKey, default_value = decodedDefaultValue)
   }
 
   /**

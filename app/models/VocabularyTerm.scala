@@ -12,8 +12,9 @@ case class VocabularyTerm(
   author : Option[Identity],
   created : Date = new Date(),
   key : String,
-  units : Option[String],
-  default_value : Option[String],
+  units : String = "",
+  default_value : String = "",
+  description : String = "",
   spaces : List[UUID] = List.empty
   )
 
@@ -21,7 +22,7 @@ case class VocabularyTerm(
 object VocabularyTerm {
   implicit val vocabularyTermWrites = new Writes[VocabularyTerm] {
     def writes(vocabularyTerm : VocabularyTerm) : JsValue = {
-      Json.obj("vocab_term_id" -> vocabularyTerm.id.toString,"key"->vocabularyTerm.key,"default_value"->vocabularyTerm.default_value.get)
+      Json.obj("vocab_term_id" -> vocabularyTerm.id.toString,"key"->vocabularyTerm.key,"default_value"->vocabularyTerm.default_value,"units"->vocabularyTerm.units,"description"->vocabularyTerm.description)
     }
   }
 }

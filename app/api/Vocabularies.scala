@@ -49,6 +49,21 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     }
   }
 
+  @ApiOperation(value = "Get vocabularies that are public",
+    notes = "",
+    responseClass = "None", httpMethod = "GET")
+  def getPublicVocabularies() = PrivateServerAction { implicit request =>
+    val user = request.user
+
+    user match {
+      case Some(identity) => {
+        val result = vocabularyService.listAll().filter( (v : Vocabulary) => (v.isPublic)).map((v : Vocabulary)=>jsonVocabulary(v))
+        Ok(toJson(result))
+      }
+      case None => BadRequest("No public vocabularies found")
+    }
+  }
+
   @ApiOperation(value = "Get vocabulary by name",
     notes = "",
     responseClass = "None", httpMethod = "GET")
@@ -59,6 +74,47 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
       case Some(identity) => {
         val result = vocabularyService.getByName(name).map((v: Vocabulary) => jsonVocabulary(v))
         Ok(toJson(result))
+      }
+      case None => BadRequest("No user matches that user")
+    }
+  }
+
+  def jsonVocabulary(vocabulary: Vocabulary): JsValue = {
+    val terms = getVocabularyTerms(vocabulary)
+    val author = vocabulary.author.get.identityId.userId
+    Json.obj("id" -> vocabulary.id.stringify, "author" -> author, "name" -> vocabulary.name, "terms" -> terms, "keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic" -> vocabulary.isPublic.toString, "spaces" -> vocabulary.spaces.mkString(","))
+  }
+
+  def getVocabularyTerms(vocabulary: Vocabulary): List[VocabularyTerm] = {
+    var vocab_terms: ListBuffer[VocabularyTerm] = ListBuffer.empty
+    if (!vocabulary.terms.isEmpty) {
+      for (term <- vocabulary.terms) {
+        var current_term = vocabularyTermService.get(term) match {
+          case Some(vocab_term) => {
+            vocab_terms += vocab_term
+          }
+        }
+      }
+    }
+
+    vocab_terms.toList
+  }
+
+  @ApiOperation(value = "Get vocabulary by name or description",
+    notes = "",
+    responseClass = "None", httpMethod = "GET")
+  def getByNameDescription(tag: String) = PrivateServerAction { implicit request =>
+    val user = request.user
+    var matching_vocabulary :  ListBuffer[JsValue] = ListBuffer.empty
+    user match {
+      case Some(identity) => {
+        val result_name = vocabularyService.getByName(tag)
+        val result_description = vocabularyService.findByDescription(List[String](tag),true)
+        val result = result_name ::: result_description
+        for (each <- result){
+          matching_vocabulary = matching_vocabulary += jsonVocabulary(each)
+        }
+        Ok(toJson(matching_vocabulary.toList))
       }
       case None => BadRequest("No user matches that user")
     }
@@ -105,9 +161,10 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
 
             for (each_term <- request_terms) {
               val key = (each_term \ "key").asOpt[String].getOrElse("")
-              val units = (each_term \ "units").asOpt[String]
-              val default_value = (each_term \ "default_value").asOpt[String]
-              val current_vocabterm: VocabularyTerm = VocabularyTerm(key = key, author = Option(identity), created = new Date(), units = units, default_value = default_value)
+              val units = (each_term \ "units").asOpt[String].getOrElse("")
+              val default_value = (each_term \ "default_value").asOpt[String].getOrElse("")
+              val description = (each_term \ "description").asOpt[String].getOrElse("")
+              val current_vocabterm: VocabularyTerm = VocabularyTerm(key = key, author = Option(identity), created = new Date(), units = units, default_value = default_value, description = description)
 
               vocabularyTermService.insert(current_vocabterm) match {
                 case Some(id) => {
@@ -135,7 +192,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
       case None => BadRequest("no user supplied")
     }
   }
-
 
   def createVocabularyFromForm() = PermissionAction(Permission.CreateVocabulary)(parse.multipartFormData) { implicit request =>
     val user = request.user
@@ -212,7 +268,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     }
   }
 
-
   @ApiOperation(value = "Add vocabulary to space",
     notes = "",
     responseClass = "None", httpMethod = "POST")
@@ -252,27 +307,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
       }
       case None => BadRequest(toJson("not found"))
     }
-  }
-
-  def getVocabularyTerms(vocabulary: Vocabulary): List[VocabularyTerm] = {
-    var vocab_terms: ListBuffer[VocabularyTerm] = ListBuffer.empty
-    if (!vocabulary.terms.isEmpty) {
-      for (term <- vocabulary.terms) {
-        var current_term = vocabularyTermService.get(term) match {
-          case Some(vocab_term) => {
-            vocab_terms += vocab_term
-          }
-        }
-      }
-    }
-
-    vocab_terms.toList
-  }
-
-  def jsonVocabulary(vocabulary: Vocabulary): JsValue = {
-    val terms = getVocabularyTerms(vocabulary)
-    val author = vocabulary.author.get.identityId.userId
-    Json.obj("id" -> vocabulary.id.stringify, "author" -> author, "name" -> vocabulary.name, "terms" -> terms, "keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic" -> vocabulary.isPublic.toString, "spaces" -> vocabulary.spaces.mkString(","))
   }
 
 }
