@@ -82,9 +82,11 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
                 case Some(dataset) => {
                   events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "attach_dataset_collection")
                 }
+                case None =>
               }
               datasetsInCollection = collection.datasetCount
             }
+            case None =>
           }
           //datasetsInCollection is the number of datasets in this collection
           Ok(Json.obj("datasetsInCollection" -> Json.toJson(datasetsInCollection) ))
@@ -129,8 +131,10 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             case Some(dataset) => {
               events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "remove_dataset_collection")
             }
+            case None =>
           }
         }
+        case None =>
       }
       Ok(toJson(Map("status" -> "success")))
     }

@@ -920,6 +920,7 @@ class MongoDBCollectionService @Inject() (
           case None =>
         }
       }
+      case None =>
     }
     return false
   }

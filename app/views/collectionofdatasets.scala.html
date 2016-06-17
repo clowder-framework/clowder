@@ -81,6 +81,10 @@
 								<button id="followButton" class="btn btn-link followButton btn-sm" objectId="@collection.id" objectName="@collection.name" objectType="collection"><span class="glyphicon glyphicon-star-empty"></span> Unfollow</button>
 							}
 						}
+						@if(user.isDefined && collectionSpaces_canRemove.isDefined && !collectionSpaces_canRemove.isEmpty){
+							<a href="@routes.Collections.users(collection.id)" class="btn btn-link">
+								<span class="glyphicon glyphicon-user"></span> Collaborators</a>
+						}
 						<hr/>
 					</div>
 				</div>
