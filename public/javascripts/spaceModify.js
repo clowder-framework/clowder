@@ -61,7 +61,7 @@ function removeCollectionFromSpace(spaceId, id, event){
 
     request.done(function (response, textStatus, jqXHR){
         $('#col_'+spaceId).remove();
-        if(!isSharingEnabled){
+        if(!isSharingEnabled && $('#spacesList .row').length == 0){
             $("#add-to-space-widget").removeClass("hidden");
         }
 
@@ -93,7 +93,7 @@ function removeCollectionFromSpaceAndRedirect(spaceId, collectionId, isreload, u
             }
         else {
             $('#col_' + spaceId).remove();
-            if(!isSharingEnabled) {
+            if(!isSharingEnabled && $('#spacesList .row').length == 0 ) {
                 $("#add-to-space-widget").removeClass("hidden");
             }
         }
@@ -140,6 +140,7 @@ function addDatasetToSpace(id) {
         $("#spaceAddSelect").select2("val", "");
         if(!isSharingEnabled) {
             $("#add-to-space-widget").addClass("hidden");
+            $('#dataset-users').removeClass("hidden");
         }
 
     });
@@ -162,8 +163,9 @@ function removeDatasetFromSpace(spaceId, datasetId, event){
 
     request.done(function (response, textStatus, jqXHR){
         $('#col_'+spaceId).remove();
-        if(!isSharingEnabled) {
+        if(!isSharingEnabled &&  $('#spacesList .row').length == 0) {
             $("#add-to-space-widget").removeClass("hidden");
+            $('#dataset-users').addClass("hidden");
         }
     });
 
@@ -192,8 +194,9 @@ function removeDatasetFromSpaceAndRedirect(spaceId, datasetId, isreload, url){
             }
         else {
             $('#col_' + spaceId).remove();
-            if(!isSharingEnabled) {
+            if(!isSharingEnabled && $('#spacesList .row').length == 0) {
                 $("#add-to-space-widget").removeClass("hidden");
+                $('#dataset-users').addClass("hidden");
             }
         }
 
