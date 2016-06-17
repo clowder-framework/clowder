@@ -370,6 +370,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Duplicate all clowder instance metadata to all existing spaces
     updateMongo("add-metadata-per-space", addMetadataPerSpace)
+
   }
 
   def updateTagLength() {
@@ -561,7 +562,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         }
       }
     }
-
+    updateCountsInSpaces()
   }
 
 
