@@ -13,8 +13,8 @@
     </div>
     <div class="row">
         <div class="col-md-12">
-            <p>A dataset is a container for files and metadata. Create one to upload data to the system.
-                You can keep your data private or share it with other @{spaces.spaceTitle()}s.</p>
+            <p>Datasets are the primary way to organize files. Share the dataset with a Project Space to work with your team.
+                Permissions will be applied according to your @{spaces.spaceTitle()}'s settings.</p>
 
             @if(collection.isDefined){
                 <p>This dataset will be added to collection <a href="@routes.Collections.collection(collection.get.id)">@collection.get.name</a></p>
@@ -67,7 +67,7 @@
     <script language = "javascript">
         $(".chosen-select").chosen({
             width: "100%",
-            placeholder_text_multiple: "@{spaces.spaceTitle()}s that will have access to the dataset (optional)"
+            placeholder_text_multiple: "(optional)"
         })
     </script>
 
