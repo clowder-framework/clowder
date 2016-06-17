@@ -26,10 +26,11 @@
         </div>
         <div class="col-md-6" id="resources-panel-container">
             <div class="row">
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                <div class="col-lg-9 col-md-9 col-sm-9 col-xs-9">
                     <h2> My Datasets </h2>
+                    <p>Create Datasets to upload and publish data. Further organize your data using folders and assign metadata at both the file and dataset level.</p>
                 </div>
-                <div class="margin-top-h  col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                <div class="margin-top-h  col-lg-3 col-md-3 col-sm-3 col-xs-3">
                     <span class="pull-right"> <a href="@routes.Datasets.list("","",12, None, "", Some(profile.id.stringify))">See More</a></span>
                 </div>
             </div>
@@ -47,10 +48,11 @@
                 </div>
             }
             <div class="row top-padding">
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                <div class="col-lg-9 col-md-9 col-sm-9 col-xs-9">
                     <h2> My Collections </h2>
+                    <p>Use Collections to bring together multiple datasets and their associated files in an almost unlimited number of ways.</p>
                 </div>
-                <div class="margin-top-h col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                <div class="margin-top-h col-lg-3 col-md-3 col-sm-3 col-xs-3">
                     <span class="pull-right">
                         <a href="@routes.Collections.list("","",12, None, "", Some(profile.id.stringify))">See More</a>
                     </span>
@@ -70,10 +72,11 @@
                 </div>
             }
             <div class="row top-padding">
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                <div class="col-lg-9 col-md-9 col-sm-9 col-xs-9">
                     <h2> My @{spaces.spaceTitle()}s </h2>
+                    <p>Use @{spaces.spaceTitle()}s to collaboratively work with your team to manage and annotate data.</p>
                 </div>
-                <div class="margin-top-h col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                <div class="margin-top-h col-lg-3 col-md-3 col-sm-3 col-xs-3">
                     <span class="pull-right">
                         <a href="@routes.Spaces.list("","",12, "", Some(profile.id.stringify))">See More</a>
                     </span>
@@ -92,24 +95,20 @@
                 </div>
             }
             <div class="row top-padding">
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                <div class="col-lg-9 col-md-9 col-sm-9 col-xs-9">
                     <h2> Followers</h2>
+                    @if(followers.size < 1) {
+                        <p>This area will show users that follow you. Ask other users to follow you <a class="btn-link" href="@routes.Profile.viewProfileUUID(profile.id)">here</a>.</p>
+                    }
                 </div>
-                <div class="margin-top-h col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                <div class="margin-top-h col-lg-3 col-md-3 col-sm-3 col-xs-3">
                     <span class="pull-right"> <a href="@routes.Users.getFollowers()">See More</a></span>
                 </div>
             </div>
             <div class="row">
-
                 @for(row <- followers) {
                     @users.tile(row, "col-lg-4 col-md-4 col-sm-4 col-xs-6", false)
                 }
-                @if(followers.size < 1) {
-                    <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                        This area will show users that follow you. Ask other users to follow you <a class="btn-link" href="@routes.Profile.viewProfileUUID(profile.id)">here</a>
-                    </div>
-                }
-
             </div>
 
             <div class="row top-padding">

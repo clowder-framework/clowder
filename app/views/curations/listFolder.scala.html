@@ -21,7 +21,7 @@
                 @if(user.isDefined && inCuration) {
                   @if(Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, parentCurationObject))){
                     <button id="folder-@folder.id" class="btn btn-link delete-folder" style="text-align:right" title="Delete"
-                    onclick="confirmDeleteResource('curation folder','@(folder.id)','@(folder.displayName.replace("'","&#39;"))', '@parentCurationObject', '@parentId')">
+                    onclick="confirmDeleteResource('curation folder','curation folder','@(folder.id)','@(folder.displayName.replace("'","&#39;"))', '@parentCurationObject', '@parentId')">
                       <span class="glyphicon glyphicon-trash"></span></button>
                   } else {
                     <button disabled class="btn btn-link" style="text-align:right" title="Delete">

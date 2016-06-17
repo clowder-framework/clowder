@@ -23,14 +23,15 @@
         <div class="col-md-12 col-lg-12 col-sm-12">
             <h1 id="spacenamedisplay">@space.name</h1>
             <p><span id="spacedescdisplay">@space.description</span></p>
-            <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-            @if(user.isDefined && Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
-                <button id="deleteButton" onclick="confirmDeleteResource('space','@(space.id)','@(space.name.replace("'","&#39;"))',true, '@(routes.Spaces.list(""))')"
-                    class="btn btn-link btn-sm" title="Delete the @{spaces.spaceTitle()} but not its contents">
+            @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
+                @if(user.isDefined && Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
+                    <button id="deleteButton" onclick="confirmDeleteResource('space','@(spaceTitle)','@(space.id)','@(space.name.replace("'","&#39;"))',true, '@(routes.Spaces.list(""))')"
+                        class="btn btn-link btn-sm" title="Delete the @spaceTitle but not its contents">
+                            <span class="glyphicon glyphicon-trash"></span> Delete</button>
+                } else {
+                    <button disabled id="deleteButton" class="btn btn-link btn-sm" title="Delete the @spaceTitle but not its contents">
                         <span class="glyphicon glyphicon-trash"></span> Delete</button>
-            } else {
-                <button disabled id="deleteButton" class="btn btn-link btn-sm" title="Delete the @{spaces.spaceTitle()} but not its contents">
-                        <span class="glyphicon glyphicon-trash"></span> Delete</button>
+                }
             }
             @if(user.isDefined && Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))){
                 <a id="create_dataset" href="@routes.Datasets.newDataset(Some(space.id.toString()), None)" class="btn btn-link" title="Create dataset">
