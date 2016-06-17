@@ -540,10 +540,10 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       ds_collections.foreach { ds_col =>
         collection("collections").findOneByID(new ObjectId(ds_col.toString)) match {
           case Some(col) => {
-            val col_spaces = col.getAsOrElse[MongoDBList]("spaces", MongoDBList.empty)
-            val ds_spaces = ds.getAsOrElse[MongoDBList]("spaces",MongoDBList.empty)
+            val col_spaces = col.getAsOrElse[List[ObjectId]]("spaces",List.empty[ObjectId])
+            val ds_spaces = ds.getAsOrElse[List[ObjectId]]("spaces",List.empty[ObjectId])
             col_spaces.foreach { col_space =>
-              if (!ds_spaces.contains(col_space)){
+              if (!ds_spaces.contains(new ObjectId(col_space.toString))){
 
                 collection("spaces").findOneByID(new ObjectId(col_space.toString)) match {
                   case Some(space) => {
