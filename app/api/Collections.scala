@@ -171,7 +171,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.user.fold(false)(_.superAdminMode))))
   }
 
-  def listCanAddToSpace(datasetId: UUID, title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+  def addDatasetToCollectionOptions(datasetId: UUID, title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
     implicit val user = request.user
     var listAll = false
     var collectionList: List[Collection] = List.empty
@@ -204,7 +204,23 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     val selfAndAncestors = collections.getSelfAndAncestors(UUID(currentCollectionId))
     val descendants = collections.getAllDescendants(UUID(currentCollectionId)).toList
     val allCollections = lisCollections(None, None, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.user.fold(false)(_.superAdminMode))
-    val possibleNewParents = allCollections.filter((c: Collection) => (!selfAndAncestors.contains(c) && !descendants.contains(c)))
+    val possibleNewParents = allCollections.filter((c: Collection) =>
+      if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+        (!selfAndAncestors.contains(c) && !descendants.contains(c))
+      } else {
+            collections.get(UUID(currentCollectionId)) match {
+              case Some(coll) => {
+                if(coll.spaces.length == 0) {
+                   (!selfAndAncestors.contains(c) && !descendants.contains(c))
+
+                } else {
+                   (!selfAndAncestors.contains(c) && !descendants.contains(c) && c.spaces.intersect(coll.spaces).length > 0)
+                }
+              }
+              case None => (!selfAndAncestors.contains(c) && !descendants.contains(c))
+            }
+      }
+    )
     Ok(toJson(possibleNewParents))
   }
 

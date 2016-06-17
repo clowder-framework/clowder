@@ -369,12 +369,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     updateMongo("update-counts-spaces", updateCountsInSpaces)
 
-    // When disabling sharing between spaces If a dataset or collection is in more than one space, remove from all spaces.
-    //If it is only in one spac, keep it in that space
-//    if(!play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined){
-//      updateMongo("disable-sharing-between-spaces", disableSharingBetweenSpaces)
-//    }
-//    updateMongo("enable-sharing-between-spaces", enableSharingBetweenSpaces
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1122,73 +1116,4 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
   }
 
-//  private def disableSharingBetweenSpaces() {
-//    collection("datasets").foreach { dataset =>
-//      val spaces = dataset.getAsOrElse[MongoDBList]("spaces", MongoDBList.empty)
-//      val datasetId = dataset.getAsOrElse("_id", new ObjectId()).toString()
-//      if(spaces.length > 1) {
-//        dataset.put("hidden_spaces", spaces)
-//        dataset.put("spaces", MongoDBList.empty)
-//        try {
-//          collection("datasets").save(dataset, WriteConcern.Safe)
-//        } catch {
-//          case e: BSONException => Logger.error("Unable to update spaces for dataset (sharing to no sharing) with id: "+ datasetId)
-//        }
-//      }
-//
-//    }
-//    collection("collections").foreach{ c =>
-//      val spaces = c.getAsOrElse[MongoDBList]("spaces", MongoDBList.empty)
-//      val root_spaces = c.getAsOrElse[MongoDBList]("root_spaces", MongoDBList.empty)
-//      val collectionId = c.getAsOrElse("_id", new ObjectId()).toString()
-//      if(spaces.length > 1) {
-//        c.put("hidden_spaces", spaces)
-//        c.put("hidden_root_spaces", root_spaces)
-//        c.put("spaces", MongoDBList.empty)
-//        c.put("root_spaces", MongoDBList.empty)
-//        try {
-//          collection("collections").save(c, WriteConcern.Safe)
-//        } catch {
-//          case e: BSONException => Logger.error("Unable to update spaces for collection (sharing to no sharing) with id: "+ collectionId)
-//        }
-//      }
-//
-//    }
-//    updateCountsInSpaces()
-//  }
-//
-//  private def enableSharingBetweenSpaces(): Unit = {
-//    collection("datasets").foreach { dataset =>
-//      val hidden_spaces = dataset.getAsOrElse("hidden_spaces", MongoDBList.empty)
-//      val id = dataset.getAsOrElse("_id", new ObjectId()).toString()
-//      if(hidden_spaces.length > 0) {
-//        dataset.put("spaces", hidden_spaces)
-//        dataset.put("hidden_spaces", MongoDBList.empty)
-//        try {
-//          collection("datasets").save(dataset, WriteConcern.Safe)
-//        } catch {
-//          case e: BSONException => Logger.error("Unable to update dataset (no sharing to sharing) with id: " + id)
-//        }
-//      }
-//
-//    }
-//    collection("collections").foreach{ c =>
-//      val hidden_spaces= c.getAsOrElse[MongoDBList]("hidden_spaces", MongoDBList.empty)
-//      val root_hidden_spaces = c.getAsOrElse[MongoDBList]("hidden_root_spaces", MongoDBList.empty)
-//      val id = c.getAsOrElse("_od", new ObjectId()).toString()
-//      if(hidden_spaces.length > 0) {
-//        c.put("spaces", hidden_spaces)
-//        c.put("root_spaces", root_hidden_spaces)
-//        c.put("hidden_spaces", MongoDBList.empty)
-//        c.put("hidden_root_spaces", MongoDBList.empty)
-//        try {
-//          collection("collections").save(c, WriteConcern.Safe)
-//        } catch {
-//          case e: BSONException => Logger.error("Unable to update collection (no sharing to sharing) with id: " + id)
-//        }
-//
-//      }
-//    }
-//    updateCountsInSpaces()
-//  }
 }
