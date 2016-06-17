@@ -131,7 +131,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("uploads").ensureIndex(MongoDBObject("status"-> 1))
 
     collection("uploadquery.files").ensureIndex(MongoDBObject("uploadDate" -> -1))
-    
+
     collection("previews").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
     collection("previews").ensureIndex(MongoDBObject("uploadDate" -> -1, "section_id" -> 1))
     collection("previews").ensureIndex(MongoDBObject("section_id" -> -1))
@@ -139,7 +139,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     collection("textures").ensureIndex(MongoDBObject("file_id" -> 1))
     collection("tiles").ensureIndex(MongoDBObject("preview_id" -> 1, "filename" -> 1,"level" -> 1))
-    
+
     collection("sections").ensureIndex(MongoDBObject("uploadDate" -> -1, "file_id" -> 1))
     collection("sections").ensureIndex(MongoDBObject("file_id" -> -1))
     collection("sections").ensureIndex(MongoDBObject("tags.name" -> 1))
@@ -540,15 +540,16 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       ds_collections.foreach { ds_col =>
         collection("collections").findOneByID(new ObjectId(ds_col.toString)) match {
           case Some(col) => {
-            val col_spaces = col.getAsOrElse[List[ObjectId]]("spaces",List.empty[ObjectId])
-            val ds_spaces = ds.getAsOrElse[List[ObjectId]]("spaces",List.empty[ObjectId])
+            val col_spaces = col.getAsOrElse[MongoDBList]("spaces",MongoDBList.empty)
+            val ds_spaces = ds.getAsOrElse[MongoDBList]("spaces",MongoDBList.empty)
             col_spaces.foreach { col_space =>
+              val col_space_id = col_space.toString
               if (!ds_spaces.contains(new ObjectId(col_space.toString))){
 
-                collection("spaces").findOneByID(new ObjectId(col_space.toString)) match {
+                collection("spaces.projects").findOneByID(new ObjectId(col_space.toString)) match {
                   case Some(space) => {
 
-                    val q = MongoDBObject("_id" -> new ObjectId(ds._id.toString))
+                    val q = MongoDBObject("_id" -> new ObjectId(ds._id.get.toString))
                     collection("datasets").update(q, $push("spaces" -> new ObjectId(col_space.toString)))
                   }
                   case None => Logger.error("No space found for " + col_space)
