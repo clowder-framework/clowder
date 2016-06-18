@@ -294,7 +294,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("fixing-taglength", updateTagLength)
 
     // remove datasets from collection
-    updateMongo("removed-datasets-collection", updateMongoRemoveDatasetCollection)
+    //updateMongo("removed-datasets-collection", updateMongoRemoveDatasetCollection)
 
     // replace collection id strings with UUID in datasets
     updateMongo("replace-dataset-collections-string-uuid", updateMongoCollectionsInDatasetStringToUUID)
@@ -555,6 +555,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                   }
                   case None => Logger.error("No space found for " + col_space)
                 }
+              } else {
+                Logger.info("dataset already in space")
               }
             }
           }
