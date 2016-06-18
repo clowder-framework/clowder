@@ -32,6 +32,7 @@ class MongoDBSpaceService @Inject() (
   datasets: DatasetService,
   users: UserService,
   curations: CurationService,
+  metadatas: MetadataService,
   events: EventService) extends SpaceService {
 
   def get(id: UUID): Option[ProjectSpace] = {
@@ -259,8 +260,9 @@ class MongoDBSpaceService @Inject() (
         for(usr <- spaceUsers){
           removeUser(usr.id, id)
         }
+        metadatas.removeDefinitionsBySpace(id)
       }
-
+      case None =>
     }
     ProjectSpaceDAO.removeById(new ObjectId(id.stringify))
   }
@@ -413,6 +415,7 @@ class MongoDBSpaceService @Inject() (
                     datasetOnlyInSpace match {
                         //We only want to set this as true, if it was None, if it was false, we don't want to indicate that ths=is is the only space the dataset is in.
                       case None => datasetOnlyInSpace = Some(true)
+                      case _ =>
                     }
                   }
                 }

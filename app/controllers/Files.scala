@@ -64,7 +64,7 @@ class Files @Inject() (
   /**
    * File info.
    */
-  def file(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
+  def file(id: UUID, dataset: Option[String], space: Option[String], folder: Option[String]) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
     implicit val user = request.user
     files.get(id) match {
       case Some(file) => {

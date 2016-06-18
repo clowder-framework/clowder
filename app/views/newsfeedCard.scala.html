@@ -1,4 +1,5 @@
 @(event: models.Event)(implicit user: Option[models.User] = None)
+@import services.AppConfiguration
 @linkForObject(obj_type: String, obj_id: Option[UUID], obj_name: Option[String]) = {
   @obj_type match {
     case "file" => {
@@ -24,7 +25,14 @@
       <a href="@routes.Collections.collection(event.source_id.get)">@event.source_name.get</a>
     }
     case _ => {
-      @obj_type: @obj_name.get
+      @obj_name match {
+        case None => {
+          @obj_type
+        }
+        case Some(name) => {
+          @obj_type: @name
+        }
+      }
     }
   }
 }
@@ -114,6 +122,27 @@
     rejected  @(event.targetuser.getOrElse(User.anonymous.getMiniUser).fullName)'s  request to
     @linkForObject("space", event.object_id, event.object_name)
   }
+  case "tos_update" => {
+    updated the <a href="@routes.Application.tos()">Terms of Services</a>
+  }
+  case "added_metadata_space" => {
+    added a new metadata definition to @linkForObject("space", event.object_id, event.object_name)
+  }
+  case "added_metadata_instance" => {
+    added a new metadata definition to @(AppConfiguration.getDisplayName)
+  }
+  case "edit_metadata_space" => {
+    edited a metadata definition for @linkForObject("space", event.object_id, event.object_name)
+  }
+  case "edit_metadata_instance" => {
+    edited a metadata definition for @(AppConfiguration.getDisplayName)
+  }
+  case "delete_metadata_space" => {
+    delete a metadata definition from @linkForObject("space", event.object_id, event.object_name)
+  }
+  case "delete_metadata_instance" => {
+    deleted a metadata definition from @(AppConfiguration.getDisplayName)
+  }
   case _ => {
     @defining(event.event_type.split("_")) { event_type_split =>
       @event_type_split.length match {
@@ -127,7 +156,7 @@
         case 3 => {
           @defining(actionTextsForEvent(event_type_split(0))) { texts =>
             @if(event.event_type.indexOf("tag")>=0){
-              @texts(0) @linkForObject(event_type_split(1), event.object_id, Option("")) @texts(1) @linkForObject(event_type_split(2), event.object_id, event.object_name)
+              @texts(0) @linkForObject(event_type_split(1), None, None) @texts(1) @linkForObject(event_type_split(2), event.object_id, event.object_name)
             }else {
               @texts(0) @linkForObject(event_type_split(1), event.object_id, event.object_name) @texts(1) @linkForObject(event_type_split(2), event.source_id, event.source_name)
             }
