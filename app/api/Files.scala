@@ -332,9 +332,9 @@ class Files @Inject()(
   @ApiOperation(value = "Remove JSON-LD metadata, filtered by extractor if necessary",
     notes = "Remove JSON-LD metadata from file object",
     responseClass = "None", httpMethod = "GET")
-  def removeMetadataJsonLD(id: UUID, extFilter: Option[String] ) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
-    datasets.get(id) match {
-      case Some(dataset) => {
+  def removeMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+    files.get(id) match {
+      case Some(file) => {
         metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.file, id), extFilter)
         Ok
       }
