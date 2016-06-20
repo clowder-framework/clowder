@@ -13,7 +13,7 @@ import play.api.Play.current
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json._
 import services._
-import util.{FileUtils, Formatters, RequiredFieldsConfig}
+import util.{License, FileUtils, Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
 import scala.collection.mutable.{ListBuffer, Map => MutableMap}
 
@@ -638,6 +638,47 @@ class Datasets @Inject()(
       implicit val user = request.user
       Ok(views.html.generalMetadataSearch())
   }
+
+  def copyDatasetToSpace(datasetId: UUID, spaceId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+    implicit val user = request.user
+    datasets.get(datasetId) match {
+      case Some(dataset) => {
+        spaceService.get(spaceId) match {
+          case Some(space) => {
+            val d = Dataset(name = dataset.name, description = dataset.description, created = new Date(), author = dataset.author, licenseData = dataset.licenseData, spaces = List(spaceId))
+
+            datasets.insert(d) match {
+              case Some(id) => {
+                spaceService.addDataset(d.id, spaceId)
+                relations.add(Relation(source = Node(datasetId.stringify, ResourceType.dataset), target = Node(d.id.stringify, ResourceType.dataset) ))
+                events.addSourceEvent(request.user, d.id, d.name, space.id, space.name, "add_dataset_space")
+                dataset.files.map { fileId =>
+                  files.get(fileId) match {
+                    case Some(file) => {
+                      val newFile = File(loader_id= file.loader_id, filename= file.filename, author = file.author,
+                        uploadDate= file.uploadDate, contentType = file.contentType, length = file.length, sha512 = file.sha512,
+                        loader= file.loader, showPreviews = file.showPreviews, previews = file.previews, thumbnail_id = file.thumbnail_id,
+                        description = file.description, licenseData= file.licenseData, status = file.status)
+                      files.save(newFile)
+                      datasets.addFile(UUID(id), newFile)
+                      relations.add(Relation(source= Node(file.id.stringify, ResourceType.file), target= Node(newFile.id.stringify, ResourceType.file)))
+                    }
+                    case None => Logger.error("Unable to copy file with id: " + fileId.stringify + " to dataset with id: " + id)
+                  }
+                }
+                Redirect(routes.Datasets.dataset(UUID(id)))
+              }
+              case None => Redirect(routes.Datasets.dataset(datasetId)).flashing("error" -> s"Unable to copy the dataset with id $datasetId to space with id: $spaceId")
+            }
+          }
+          case None => Redirect(routes.Datasets.dataset(datasetId)).flashing("error" -> s"No space found with id: $spaceId.")
+        }
+      }
+      case None => Redirect(routes.Datasets.dataset(datasetId)).flashing("error" -> "No dataset  found with id: $datasetId")
+    }
+  }
+
+
 
 
   // TOOL MANAGER METHODS ----------------------------------------------------------------

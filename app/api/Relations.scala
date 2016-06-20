@@ -32,11 +32,11 @@ class Relations @Inject()(relations: RelationService) extends ApiController {
 
   def add() = PermissionAction(Permission.CreateRelation)(parse.json) { implicit request =>
       // TODO get it to work with implicit formats
-      var sourceId= (request.body \ "source" \ "id").as[String]
-      var sourceType= ResourceType.withName((request.body \ "source" \ "resourceType").as[String])
-      var targetId= (request.body \ "target" \ "id").as[String]
-      var targetType= ResourceType.withName((request.body \ "target" \ "resourceType").as[String])
-      var res = relations.add(Relation(source = Node(sourceId, sourceType), target = Node(targetId, targetType)))
+      val sourceId= (request.body \ "source" \ "id").as[String]
+      val sourceType= ResourceType.withName((request.body \ "source" \ "resourceType").as[String])
+      val targetId= (request.body \ "target" \ "id").as[String]
+      val targetType= ResourceType.withName((request.body \ "target" \ "resourceType").as[String])
+      val res = relations.add(Relation(source = Node(sourceId, sourceType), target = Node(targetId, targetType)))
 
       res match {
         case Some(id) => Ok(Json.obj("status" ->"OK", "message" -> ("Relation '" + id + "' saved."), "id" -> id ))
