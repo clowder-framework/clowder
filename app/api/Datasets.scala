@@ -575,7 +575,7 @@ class  Datasets @Inject()(
  @ApiOperation(value = "Retrieve metadata as JSON-LD",
     notes = "Get metadata of the dataset object as JSON-LD.",
     responseClass = "None", httpMethod = "GET")
-  def getMetadataJsonLD(id: UUID, extFilter: String) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def getMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
         //get metadata and also fetch context information
@@ -583,7 +583,9 @@ class  Datasets @Inject()(
           .map(JSONLD.jsonMetadataWithContext(_))
 
         // Check for extractor filter
-        listOfMetadata = listOfMetadata.filter(md => (md \ "agent" \ "name").toString.replace("\"", "").endsWith(extFilter))
+        if (extFilter.isDefined) {
+          listOfMetadata = listOfMetadata.filter(md => (md \ "agent" \ "name").toString.replace("\"", "").endsWith(extFilter.get))
+        }
 
         Ok(toJson(listOfMetadata))
       }
@@ -597,7 +599,7 @@ class  Datasets @Inject()(
   @ApiOperation(value = "Remove JSON-LD metadata, filtered by extractor if necessary",
     notes = "Remove JSON-LD metadata from dataset object",
     responseClass = "None", httpMethod = "GET")
-  def removeMetadataJsonLD(id: UUID, extFilter: String) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def removeMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
         metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.dataset, id), extFilter)

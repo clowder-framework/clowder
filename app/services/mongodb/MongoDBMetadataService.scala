@@ -110,8 +110,9 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
   }
 
   /** Remove metadata by attached ID and extractor name**/
-  def removeMetadataByAttachToAndExtractor(resourceRef: ResourceRef, extractorName: String) = {
-    val regex = ".*"+extractorName.toString
+  def removeMetadataByAttachToAndExtractor(resourceRef: ResourceRef, extractorName: Option[String]) = {
+    val regex = ".*"+extractorName.getOrElse("")
+
     MetadataDAO.remove(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
       "attachedTo._id" -> new ObjectId(resourceRef.id.stringify),
       "creator.extractorId" -> (regex.r)), WriteConcern.Safe)

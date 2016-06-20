@@ -308,7 +308,7 @@ class Files @Inject()(
   @ApiOperation(value = "Retrieve metadata as JSON-LD",
       notes = "Get metadata of the file object as JSON-LD.",
       responseClass = "None", httpMethod = "GET")
-  def getMetadataJsonLD(id: UUID, extFilter: String) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+  def getMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     files.get(id) match {
       case Some(file) => {
         //get metadata and also fetch context information
@@ -316,7 +316,9 @@ class Files @Inject()(
           .map(JSONLD.jsonMetadataWithContext(_))
 
         // Check for extractor filter
-        listOfMetadata = listOfMetadata.filter(md => (md \ "agent" \ "name").toString.replace("\"", "").endsWith(extFilter))
+        if (extFilter.isDefined) {
+          listOfMetadata = listOfMetadata.filter(md => (md \ "agent" \ "name").toString.replace("\"", "").endsWith(extFilter.get))
+        }
 
         Ok(toJson(listOfMetadata))
       }
@@ -330,7 +332,7 @@ class Files @Inject()(
   @ApiOperation(value = "Remove JSON-LD metadata, filtered by extractor if necessary",
     notes = "Remove JSON-LD metadata from file object",
     responseClass = "None", httpMethod = "GET")
-  def removeMetadataJsonLD(id: UUID, extFilter: String) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
+  def removeMetadataJsonLD(id: UUID, extFilter: Option[String] ) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
         metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.file, id), extFilter)
