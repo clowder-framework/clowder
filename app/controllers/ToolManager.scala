@@ -1,21 +1,19 @@
 package controllers
 
-import javax.inject.Inject
 import api.Permission
-import api.Permission.Permission
-import models._
+import models.{UUID, ResourceRef}
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json._
-import services._
+import services.{ToolInstance, ToolManagerPlugin}
 import scala.collection.immutable._
-import scala.collection.mutable.{ListBuffer, Map => MutableMap}
+import scala.collection.mutable.{Map => MutableMap}
 
 /**
   * A dataset is a collection of files and streams.
   */
-class ToolManager @Inject()() extends SecuredController {
+class ToolManager extends SecuredController {
 
   /**
     * With permission, prepare Tool Manager page with list of currently running tool instances.
