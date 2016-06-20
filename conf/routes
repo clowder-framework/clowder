@@ -497,7 +497,6 @@ PUT            /api/datasets/:parentDatasetId/updateName/:folderId              
 DELETE         /api/datasets/:ds_id/:file_id                                            @api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound ?= "True")
 GET            /api/datasets/getRDFURLsForDataset/:id                                   @api.Datasets.getRDFURLsForDataset(id: UUID)
 GET            /api/datasets/rdfUserMetadata/:id                                        @api.Datasets.getRDFUserMetadata(id: UUID, mappingNum: String ?= "1")
-POST           /api/datasets/:id/remove                                                 @api.Datasets.deleteDataset(id: UUID)
 GET            /api/datasets/:id/metadata                                               @api.Datasets.getMetadataDefinitions(id: UUID, space: Option[String] ?= None)
 POST           /api/datasets/:id/metadata                                               @api.Datasets.addMetadata(id: UUID)
 POST           /api/datasets/:id/usermetadata                                           @api.Datasets.addUserMetadata(id: UUID)
@@ -531,7 +530,7 @@ GET            /api/datasets/:id                                                
 DELETE         /api/datasets/:id                                                        @api.Datasets.deleteDataset(id: UUID)
 POST           /api/datasets/:id/detachdelete                                           @api.Datasets.detachAndDeleteDataset(id: UUID)
 POST           /api/datasets/:parentDatasetId/newFolder                                 @api.Folders.createFolder(parentDatasetId: UUID)
-PUT            /api/datasets/:id/access                                                     @api.Datasets.updateAccess(id:UUID, aceess:String ?="private")
+PUT            /api/datasets/:id/access                                                 @api.Datasets.updateAccess(id:UUID, aceess:String ?="private")
 
 # ----------------------------------------------------------------------
 # PREVIEWS ENDPOINT
