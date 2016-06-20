@@ -30,7 +30,7 @@ class ToolManager extends SecuredController {
       instanceMap = mgr.instanceMap
     })
 
-    Ok(views.html.datasets.toolManager(toolList, instanceMap.keys.toList, instanceMap))
+    Ok(views.html.toolManager(toolList, instanceMap.keys.toList, instanceMap))
   }
 
   /**
