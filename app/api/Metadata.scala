@@ -70,6 +70,16 @@ class Metadata @Inject()(
       Ok(toJson(vocabularies))
   }
 
+  def getAutocompleteName(filter: String) = PermissionAction(Permission.ViewDataset) {
+    implicit request =>
+      implicit val user = request.user
+      val vocabularies = metadataService.getAutocompleteName(user, filter)
+      Logger.debug(filter)
+      Logger.debug("GACN API")
+      Logger.debug(vocabularies.toString)
+      Ok(toJson(vocabularies))
+  }
+
   def getDefinitionsByDataset(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {

@@ -157,6 +157,30 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     MetadataDefinitionDAO.find(filterAccess).toList.groupBy(_.json).map(_._2.head).toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )
   }
 
+  def getAutocompleteName(user: Option[User], filter: String): List[Metadata] = {
+    val filterAccess = if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public") {
+      MongoDBObject()
+    } else {
+      val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
+      //TODO: Add public space check.
+      user match {
+        case Some(u) => {
+          val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(Set(Permission.ViewMetadata.toString())).nonEmpty)
+          if(okspaces.nonEmpty) {
+            orlist += ("space" $in okspaces.map(x=> new ObjectId(x.spaceId.stringify)))
+          }
+          $or(orlist.map(_.asDBObject))
+        }
+        case None => MongoDBObject()
+      }
+    }
+    Logger.debug("GACN")
+    Logger.debug(filter)
+    Logger.debug(filterAccess.toString)
+    //MetadataDAO.find(filterAccess).toList.groupBy(_.creator.displayName).map(_._2.head).toList.sortWith( _.creator.displayName.\("label").asOpt[String].getOrElse("") < _.creator.displayName.\("label").asOpt[String].getOrElse("") )
+    MetadataDAO.find("content" -> { ".filter.".r $exists true }).toList
+  }
+
   def getDefinition(id: UUID): Option[MetadataDefinition] = {
     MetadataDefinitionDAO.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)))
   }
