@@ -561,6 +561,13 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     }
   }
 
+  def jsonCollection(collection: Collection): JsValue = {
+    toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description,
+      "created" -> collection.created.toString,"author"-> collection.author.toString, "root_flag" -> collections.hasRoot(collection).toString,
+      "child_collection_ids"-> collection.child_collection_ids.toString, "parent_collection_ids" -> collection.parent_collection_ids.toString,
+    "childCollectionsCount" -> collection.childCollectionsCount.toString, "datasetCount"-> collection.datasetCount.toString, "spaces" -> collection.spaces.toString))
+  }
+
   /**
     * Remove root flag from a collection in a space
     */
@@ -590,19 +597,12 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     Ok(toJson(root_collections_list))
   }
 
-  def jsonCollection(collection: Collection): JsValue = {
-    toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description,
-      "created" -> collection.created.toString,"author"-> collection.author.toString, "root_flag" -> collections.hasRoot(collection).toString,
-      "child_collection_ids"-> collection.child_collection_ids.toString, "parent_collection_ids" -> collection.parent_collection_ids.toString,
-    "childCollectionsCount" -> collection.childCollectionsCount.toString, "datasetCount"-> collection.datasetCount.toString, "spaces" -> collection.spaces.toString))
-  }
-
   @ApiOperation(value = "Get all collections",
     notes = "",
     responseClass = "None", httpMethod = "GET")
-  def getAllCollections() = PermissionAction(Permission.ViewCollection) { implicit request =>
+  def getAllCollections(limit : Int) = PermissionAction(Permission.ViewCollection) { implicit request =>
     implicit val user = request.user
-    val all_collections_list = for (collection <- collections.listAccess(0,Set[Permission](Permission.AddResourceToCollection),request.user,true))
+    val all_collections_list = for (collection <- collections.listAccess(limit ,Set[Permission](Permission.AddResourceToCollection),request.user,true))
       yield jsonCollection(collection)
     Ok(toJson(all_collections_list))
   }
