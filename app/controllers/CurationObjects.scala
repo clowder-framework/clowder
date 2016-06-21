@@ -57,8 +57,10 @@ class CurationObjects @Inject()(
       case _ => spaces.get(UUID(spaceId))
     }
 
+    val mdCreators = metadatas.searchbyKeyInDataset("Creator", datasetId).map(x => ((x.content)\"Creator").as[String])
+
     Ok(views.html.curations.newCuration(datasetId, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
-      true, true, List.empty))
+      true, true, mdCreators))
   }
 
   /**
