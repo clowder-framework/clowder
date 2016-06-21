@@ -189,13 +189,13 @@ function updateSpaceEditLink(space_id, space_name) {
     $('#space_link').attr("href", jsRoutes.controllers.Spaces.getSpace(space_id).url).text(space_name);
 }
 
-function updateUsersInSpace(spaceId,spaceTitle) {
+function updateUsersInSpace(spaceId) {
     //Generate the string for each level
     var currRole = null;
     var roleUserMap = {};
     for (var i = 0; i < roleArray.length; i++) {
         currRole = roleArray[i].replace(/ /g, '');
-        console.log("roleList[i] is " + roleArray[i] + " and " + currRole);
+        //console.log("roleList[i] is " + roleArray[i] + " and " + currRole);
 
         var idsCurrent = $('#' + currRole + '-current li a').map(function(){ return this.id }).get().join(',');
         //console.log('idsCurrent are ' + idsCurrent);
@@ -221,7 +221,7 @@ function updateUsersInSpace(spaceId,spaceTitle) {
     });
 
     request.done(function (response, textStatus, jqXHR){
-        //console.log("Successful response from updateUsers.")
+        console.log("Successful response from updateUsers.")
         window.location.reload();
     });
 

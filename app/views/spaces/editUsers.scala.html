@@ -52,7 +52,7 @@
         </div>
 
         @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
-            <button class="btn btn-primary" title="Update" onclick="return updateUsersInSpace('@space.id','@spaces.spaceTitle()')"><span class="glyphicon glyphicon-saved"></span> Submit</button>
+            <button class="btn btn-primary" title="Update" onclick="return updateUsersInSpace('@space.id')"><span class="glyphicon glyphicon-saved"></span> Submit</button>
             <button class="btn btn-default" title="Cancel" type="button" id="cancel-button" onClick="window.location.reload();"><span class="glyphicon glyphicon-remove"></span> Cancel</button>
         }
     </div>

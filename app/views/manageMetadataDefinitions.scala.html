@@ -133,8 +133,8 @@
 		<h1>Metadata Definitions</h1>
         @(spaceName, spaceId) match {
             case (Some(space_name), Some(space_id)) => {
-                <h4><strong>Space: </strong><a href="@routes.Spaces.getSpace(space_id)">@space_name</a> </h4>
-                <p> The following metadata definitions will only be available on datasets, files and curation objects in the space.</p>
+                <h4><strong>@{spaces.spaceTitle()}: </strong><a href="@routes.Spaces.getSpace(space_id)">@space_name</a> </h4>
+                <p> The following metadata definitions will only be available on datasets, files and curation objects in the @{spaces.spaceTitle()}.</p>
             }
             case (_, _) => {<p>The following metadata definitions will be available in datasets and files that are not in a space, and inherited by new spaces.</p>}
         }
