@@ -155,7 +155,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 	            	inSpaceBuffer += theCreator
 	            	creatorActual = theCreator
 	            }
-	            case None => Logger.error(s" No creator for Project space $id found...")
+	            case None => Logger.error(s" No creator for $spaceTitle $id found...")
 	        }
 
 	        var userRoleMap: Map[User, String] = Map.empty
@@ -287,7 +287,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                       val usr = users.findByEmail(email)
                       spaces.addUser(usr.get.id, role, id)
                       val theHtml = views.html.spaces.inviteNotificationEmail(id.stringify, s.name, user.get.getMiniUser, usr.get.fullName, role.name)
-                      Mail.sendEmail("Added to Project space", request.user, email, theHtml)
+                      Mail.sendEmail("Added to $spaceTitle", request.user, email, theHtml)
                     }
                     case None => {
                       val uuid = UUID.generate()
@@ -507,7 +507,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
      val spaceList = person match {
        case Some(p) => {
-         title = Some(person.get.fullName + "'s " + spaceTitle)
+         title = Some(person.get.fullName + "'s " + spaceTitle + "s")
          if (date != "") {
            spaces.listUser(date, nextPage, limit, request.user, showAll, p)
          } else {
