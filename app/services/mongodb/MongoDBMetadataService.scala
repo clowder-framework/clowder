@@ -142,12 +142,13 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
       MongoDBObject()
     } else {
       val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
+      orlist += MongoDBObject("spaceId" -> null)
       //TODO: Add public space check.
       user match {
         case Some(u) => {
           val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(Set(Permission.ViewMetadata.toString())).nonEmpty)
           if(okspaces.nonEmpty) {
-            orlist += ("space" $in okspaces.map(x=> new ObjectId(x.spaceId.stringify)))
+            orlist += ("spaceId" $in okspaces.map(x=> new ObjectId(x.spaceId.stringify)))
           }
           $or(orlist.map(_.asDBObject))
         }
