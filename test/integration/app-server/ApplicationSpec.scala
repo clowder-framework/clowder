@@ -22,7 +22,7 @@ class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUplo
     */
   var spaceTitle: String = play.Play.application().configuration().getString("spaceTitle").trim.filter(_ >= ' ')
   //spaceTitle.replace("&#010;","")
-  spaceTitle = "Project spaces"
+  spaceTitle = "Access to 8 Project spaces"
 
   "The Application API Spec" must {
     "provide a FakeApplication" in {
@@ -57,7 +57,7 @@ class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUplo
       contentAsString(html) must include("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
       contentAsString(html) must include("Resources")
-      contentAsString(html) must include(s"Access to 8 $spaceTitle")
+      contentAsString(html) must include(spaceTitle)
       contentAsString(html) must include("Access to 6 collections")
       contentAsString(html) must include("Access to 2 datasets")
     }
