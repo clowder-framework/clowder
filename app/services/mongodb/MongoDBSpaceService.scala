@@ -40,6 +40,10 @@ class MongoDBSpaceService @Inject() (
   metadatas: MetadataService,
   events: EventService) extends SpaceService {
 
+  def get(id: UUID): Option[ProjectSpace] = {
+    ProjectSpaceDAO.findOneById(new ObjectId(id.stringify))
+  }
+
   /** count all spaces */
   def count(): Long = {
     count(None, nextPage=false, Set[Permission](Permission.ViewSpace), None, showAll=true, None)
@@ -55,14 +59,6 @@ class MongoDBSpaceService @Inject() (
    */
   def countAccess(permissions: Set[Permission], user: Option[User], showAll: Boolean): Long = {
     count(None, nextPage=false, permissions, user, showAll, None)
-  }
-
-  /**
-   * return count based on input
-   */
-  private def count(date: Option[String], nextPage: Boolean, permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
-    val (filter, _) = filteredQuery(date, nextPage, None, permissions, user, showAll, owner)
-    ProjectSpaceDAO.count(filter)
   }
 
   /**
@@ -106,6 +102,36 @@ class MongoDBSpaceService @Inject() (
   def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
     list(None, nextPage=false, limit, None, Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
   }
+
+  /**
+   * Return a list of spaces the user has created with matching title.
+   */
+  def listUser(limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
+    list(None, nextPage=false, limit, Some(title), Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
+  }
+
+  /**
+   * Return a list of spaces the user has created starting at a specific date.
+   */
+  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
+    list(Some(date), nextPage, limit, None, Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
+  }
+
+  /**
+   * Return a list of spaces the user has created starting at a specific date with matching title.
+   */
+  def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
+    list(Some(date), nextPage, limit, Some(title), Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
+  }
+
+  /**
+   * return count based on input
+   */
+  private def count(date: Option[String], nextPage: Boolean, permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
+    val (filter, _) = filteredQuery(date, nextPage, None, permissions, user, showAll, owner)
+    ProjectSpaceDAO.count(filter)
+  }
+
 
   /**
    * return list based on input
@@ -186,24 +212,23 @@ class MongoDBSpaceService @Inject() (
   }
 
   /**
-   * Return a list of spaces the user has created with matching title.
+   * @see app.services.SpaceService.scala
+   *
+   * Implementation of the SpaceService trait.
+   *
    */
-  def listUser(limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
-    list(None, nextPage=false, limit, Some(title), Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
+  def getCollectionsInSpace(space: Option[String], limit: Option[Integer]): List[Collection] = {
+      collections.listSpace(limit.getOrElse(12), space.getOrElse(""))
   }
 
   /**
-   * Return a list of spaces the user has created starting at a specific date.
+   * @see app.services.SpaceService.scala
+   *
+   * Implementation of the SpaceService trait.
+   *
    */
-  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
-    list(Some(date), nextPage, limit, None, Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
-  }
-
-  /**
-   * Return a list of spaces the user has created starting at a specific date with matching title.
-   */
-  def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
-    list(Some(date), nextPage, limit, Some(title), Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
+  def getDatasetsInSpace(space: Option[String], limit: Option[Integer]): List[Dataset] = {
+      datasets.listSpace(limit.getOrElse(12), space.getOrElse(""))
   }
 
   def insert(space: ProjectSpace): Option[String] = {
@@ -244,28 +269,6 @@ class MongoDBSpaceService @Inject() (
   }
 
   /**
-   * @see app.services.SpaceService.scala
-   *
-   * Implementation of the SpaceService trait.
-   *
-   */
-  def removeUser(userId: UUID, space: UUID): Unit = {
-    users.removeUserFromSpace(userId, space)
-    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("userCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
-  }
-
-  /**
-   * @see app.services.SpaceService.scala
-   *
-   * Implementation of the SpaceService trait.
-   *
-   */
-  def getUsersInSpace(spaceId: UUID): List[User] = {
-      val retList = users.listUsersInSpace(spaceId)
-      retList
-  }
-
-  /**
    * Associate a collection with a space
    *
    * @param collection collection id
@@ -277,14 +280,6 @@ class MongoDBSpaceService @Inject() (
     collections.addToSpace(collection, space)
     collections.get(collection) match {
       case Some(current_collection) => {
-
-        val datasetsInCollection = datasets.listCollection(current_collection.id.stringify)
-        for (dataset <- datasetsInCollection){
-          if (!dataset.spaces.contains(space)){
-            addDataset(dataset.id,space)
-          }
-        }
-
         val childCollectionIds = current_collection.child_collection_ids
         for (childCollectionId <- childCollectionIds){
           collections.get(childCollectionId) match {
@@ -317,7 +312,6 @@ class MongoDBSpaceService @Inject() (
     log.debug(s"Space Service - removing $collection from $space")
     collections.removeFromSpace(collection, space)
   }
-
   /**
    * Associate a dataset with a space
    *
@@ -361,6 +355,26 @@ class MongoDBSpaceService @Inject() (
           }
       }
   }
+
+  /**
+   * Retrieve the time to live value that a space is scoped by.
+   *
+   * @param space The id of the space to check
+    * @return An Integer that represents that lifetime of resources in whole days.
+   */
+  def getTimeToLive(space: UUID): Long = {
+      get(space) match {
+          case Some(aSpace) => {
+              return aSpace.resourceTimeToLive
+          }
+          case None => {
+              //Should this do something else other than log and return -1?
+              log.error("Problem retrieving the space by ID in getTimeToLive")
+        	  return -1
+          }
+      }
+  }
+
 
   /**
    * Go through the resources in the space, currently Collections and Datasets, and remove their contents if the
@@ -430,45 +444,6 @@ class MongoDBSpaceService @Inject() (
    * Implementation of the SpaceService trait.
    *
    */
-  def getCollectionsInSpace(space: Option[String], limit: Option[Integer]): List[Collection] = {
-      collections.listSpace(limit.getOrElse(12), space.getOrElse(""))
-  }
-
-  /**
-   * @see app.services.SpaceService.scala
-   *
-   * Implementation of the SpaceService trait.
-   *
-   */
-  def getDatasetsInSpace(space: Option[String], limit: Option[Integer]): List[Dataset] = {
-      datasets.listSpace(limit.getOrElse(12), space.getOrElse(""))
-  }
-
-  /**
-   * Retrieve the time to live value that a space is scoped by.
-   *
-   * @param space The id of the space to check
-    * @return An Integer that represents that lifetime of resources in whole days.
-   */
-  def getTimeToLive(space: UUID): Long = {
-      get(space) match {
-          case Some(aSpace) => {
-              return aSpace.resourceTimeToLive
-          }
-          case None => {
-              //Should this do something else other than log and return -1?
-              log.error("Problem retrieving the space by ID in getTimeToLive")
-        	  return -1
-          }
-      }
-  }
-
-  /**
-   * @see app.services.SpaceService.scala
-   *
-   * Implementation of the SpaceService trait.
-   *
-   */
   def updateSpaceConfiguration(spaceId: UUID, name: String, description: String, timeToLive: Long, expireEnabled: Boolean) {
     get(spaceId) match {
       case Some(s) if name != s.name => {
@@ -479,10 +454,6 @@ class MongoDBSpaceService @Inject() (
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
       $set("description" -> description, "name" -> name, "resourceTimeToLive" -> timeToLive, "isTimeToLiveEnabled" -> expireEnabled),
       false, false, WriteConcern.Safe)
-  }
-
-  def get(id: UUID): Option[ProjectSpace] = {
-    ProjectSpaceDAO.findOneById(new ObjectId(id.stringify))
   }
 
   /**
@@ -497,10 +468,26 @@ class MongoDBSpaceService @Inject() (
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)), $inc("userCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
   }
 
-  def removeRequest(id: UUID, userId: UUID) {
-    Logger.debug("remove request for a space ")
-    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
-      $pull("requests" -> MongoDBObject( "_id" -> new ObjectId(userId.stringify))), false, false, WriteConcern.Safe)
+  /**
+   * @see app.services.SpaceService.scala
+   *
+   * Implementation of the SpaceService trait.
+   *
+   */
+  def removeUser(userId: UUID, space: UUID): Unit = {
+    users.removeUserFromSpace(userId, space)
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("userCount" -> -1), upsert=false, multi=false, WriteConcern.Safe)
+  }
+
+  /**
+   * @see app.services.SpaceService.scala
+   *
+   * Implementation of the SpaceService trait.
+   *
+   */
+  def getUsersInSpace(spaceId: UUID): List[User] = {
+      val retList = users.listUsersInSpace(spaceId)
+      retList
   }
 
   /**
@@ -553,6 +540,13 @@ class MongoDBSpaceService @Inject() (
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
       $addToSet("requests"-> MongoDBObject("_id" -> new ObjectId(userId.stringify), "name" -> username, "comment" -> "N/A" )), false, false, WriteConcern.Safe)
   }
+
+  def removeRequest(id: UUID, userId: UUID) {
+    Logger.debug("remove request for a space ")
+    ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
+      $pull("requests" -> MongoDBObject( "_id" -> new ObjectId(userId.stringify))), false, false, WriteConcern.Safe)
+  }
+
 
   def addInvitationToSpace(invite: SpaceInvite) {
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(invite.space.stringify)),
