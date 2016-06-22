@@ -6,6 +6,7 @@ import javax.inject.{Inject, Singleton}
 
 import com.wordnik.swagger.annotations.ApiOperation
 import models.{ResourceRef, UUID, UserAgent, _}
+import play.api.Play.current
 import play.api.Logger
 import play.api.libs.json.Json._
 import play.api.libs.json._
@@ -310,6 +311,27 @@ class Metadata @Inject()(
               BadRequest("Curation Object has already submitted")
             } else {
               metadataService.removeMetadata(id)
+
+              Logger.debug("re-indexing after metadata removal")
+              current.plugin[ElasticsearchPlugin].foreach { p =>
+                // Delete existing index entry and re-index
+                // TODO: Figure out why resourceType has a leading ' sometimes - typo in some other code?
+                m.attachedTo.resourceType.toString match {
+                  case "file" | "'file" => {
+                    p.delete("data", "file", m.attachedTo.id.stringify)
+                    files.index(m.attachedTo.id)
+                  }
+                  case "dataset" | "'dataset" => {
+                    p.delete("data", "dataset", m.attachedTo.id.stringify)
+                    datasets.index(m.attachedTo.id)
+                  }
+                  case _ => {
+                    Logger.error("unknown attached resource type for metadata - not reindexing")
+                  }
+                }
+              }
+
+
               Ok(JsObject(Seq("status" -> JsString("ok"))))
             }
           }
