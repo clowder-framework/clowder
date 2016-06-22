@@ -17,11 +17,6 @@ import play.api.{Application, Play}
 class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
 
   implicit val user: Option[models.User] = None
-  /**
-    * String name of the Space such as 'Project space' etc. parsaed from the config file
-    */
-  //val spaceTitle: String = play.Play.application().configuration().getString("spaceTitle").trim.filter(_ >= ' ')
-  //spaceTitle.replace("&#010;","")
 
   "The Application API Spec" must {
     "provide a FakeApplication" in {
@@ -49,7 +44,12 @@ class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUplo
 
     "render index template" in {
       val html = views.html.index(List.empty, 1, 2, 3, 4, 5, 6, 7, 8, 3, "1234567890", "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-      val spaceTitle2 = "Access to 8 Project spaces"
+      /**
+        * String name of the Space such as 'Project space' etc. parsaed from the config file
+        */
+      val spaceTitle: String = play.Play.application().configuration().getString("spaceTitle").trim.filter(_ >= ' ')
+      //spaceTitle.replace("&#010;","")
+      val spaceTitle2 = s"Access to 8 ${spaceTitle}s"
 
       contentType(html) mustEqual ("text/html")
 
