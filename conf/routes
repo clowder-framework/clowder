@@ -693,7 +693,7 @@ DELETE         /spaces/curations/retract/:id                                    
 GET            /spaces/curations/:id/edit                                               @controllers.CurationObjects.editCuration(id: UUID)
 POST           /spaces/curations/:id/spaces/:spaceId/update                             @controllers.CurationObjects.updateCuration(id: UUID, spaceId:UUID)
 DELETE         /spaces/curations/:id                                                    @controllers.CurationObjects.deleteCuration(id: UUID)
-GET            /spaces/curations/:id/compareToRepository      f                          @controllers.CurationObjects.compareToRepository(id: UUID, repository:String)
+GET            /spaces/curations/:id/compareToRepository                                @controllers.CurationObjects.compareToRepository(id: UUID, repository:String)
 POST           /spaces/curations/:id/submitRepositorySelection                          @controllers.CurationObjects.submitRepositorySelection(id: UUID)
 GET            /spaces/curations/:id/sendToRepository                                   @controllers.CurationObjects.sendToRepository(id: UUID)
 GET            /spaces/curations/:id/matchmaker                                         @controllers.CurationObjects.findMatchingRepositories(id: UUID)
@@ -708,3 +708,4 @@ GET            /spaces/curations/:id/getMetadataDefinitionsByFile               
 GET            /spaces/curations/:id/metadataDefinitions                                @api.CurationObjects.getMetadataDefinitions(id: UUID)
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()
 GET            /getEvents                                                               @controllers.Events.getEvents(index: Int)
+ixed routes file
