@@ -38,6 +38,8 @@ class Datasets @Inject()(
   metadata: MetadataService,
   events: EventService) extends SecuredController {
 
+  object ActivityFound extends Exception {}
+
   /**
    * Display the page that allows users to create new datasets
    */
@@ -85,6 +87,7 @@ class Datasets @Inject()(
 
     Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
       RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected))
+
   }
 
   def createStep2(id: UUID) = PermissionAction(Permission.CreateDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
@@ -665,9 +668,6 @@ class Datasets @Inject()(
     Ok(views.html.datasets.toolManager(toolList, instanceMap.keys.toList, instanceMap))
   }
 
-
-  // TOOL MANAGER METHODS ----------------------------------------------------------------
-
   /**
     * Construct the sidebar listing active tools relevant to the given datasetId
  *
@@ -782,7 +782,5 @@ class Datasets @Inject()(
       case None => BadRequest("No ToolManagerPlugin found.")
     }
   }
-
-  object ActivityFound extends Exception {}
   // END TOOL MANAGER METHODS ---------------------------------------------------------------
 }
