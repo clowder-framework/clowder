@@ -192,16 +192,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   }
 
   /**
-   * Returns a collection in the database
-   */
-  def collection(collection: String): MongoCollection = getDB(collection)
-
-  /**
-   * Returns the database for the connection
-   */
-  def getDB: MongoDB = mongoConnection.getDB(mongoURI.database.getOrElse("medici"))
-
-  /**
    * Returns a GridFS for writing files, the files will be placed in
    * two collections that start with the prefix (&lt;prefix&gt;.fs and
    * &lt;prefix.chunks&gt;).
@@ -370,7 +360,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Duplicate all clowder instance metadata to all existing spaces
     updateMongo("add-metadata-per-space", addMetadataPerSpace)
-
   }
 
   def updateTagLength() {
@@ -521,6 +510,16 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       }
     }
   }
+
+  /**
+   * Returns a collection in the database
+   */
+  def collection(collection: String): MongoCollection = getDB(collection)
+
+  /**
+   * Returns the database for the connection
+   */
+  def getDB: MongoDB = mongoConnection.getDB(mongoURI.database.getOrElse("medici"))
 
   private def updateMongoCollectionsInDatasetStringToUUID() {
     collection("datasets").foreach { ds =>

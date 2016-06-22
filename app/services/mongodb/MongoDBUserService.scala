@@ -267,7 +267,14 @@ class MongoDBUserService @Inject() (
   override def findById(id: UUID): Option[User] = {
     get(id)
   }
- 
+
+  override def get(id: UUID): Option[User] = {
+    if (id == User.anonymous.id)
+      Some(User.anonymous)
+    else
+      UserDAO.findOneById(new ObjectId(id.stringify))
+  }
+
   /**
    * @see app.services.UserService
    *
@@ -285,21 +292,21 @@ class MongoDBUserService @Inject() (
       }
       retList.toList
   }
-  
+
   /**
    * List user roles.
    */
   def listRoles(): List[Role] = {
     RoleDAO.findAll().toList
   }
-  
+
   /**
    * Add new role.
    */
   def addRole(role: Role): Unit = {
     RoleDAO.insert(role)
   }
-  
+
   /**
    * Find existing role.
    */
@@ -578,13 +585,6 @@ class MongoDBUserService @Inject() (
       }
       case _ => default
     }
-  }
-
-  override def get(id: UUID): Option[User] = {
-    if (id == User.anonymous.id)
-      Some(User.anonymous)
-    else
-      UserDAO.findOneById(new ObjectId(id.stringify))
   }
 
   object UserDAO extends ModelCompanion[User, ObjectId] {

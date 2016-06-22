@@ -62,6 +62,14 @@ class MongoDBDatasetService @Inject() (
   }
 
   /**
+   * return count based on input
+   */
+  private def count(date: Option[String], nextPage: Boolean, title: Option[String], collection: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
+    val (filter, _) = filteredQuery(date, nextPage, title, collection, space, Set[Permission](Permission.ViewDataset), user, showAll, owner)
+    Dataset.count(filter)
+  }
+
+  /**
    * Return a list of datasets in a space, this does not check for permissions
    */
   def listSpace(limit: Integer, space: String): List[Dataset] = {
@@ -115,6 +123,20 @@ class MongoDBDatasetService @Inject() (
    */
   def listAccess(limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset] = {
     list(None, false, limit, None, None, None, permissions, user, showAll, None)
+  }
+
+  /**
+   * Return a list of datasets the user has access to.
+   */
+  def listAccess(limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset] = {
+    list(None, false, limit, Some(title), None, None, permissions, user, showAll, None)
+  }
+
+  /**
+   * Return a list of datasets the user has access to starting at a specific date.
+   */
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset] = {
+    list(Some(date), nextPage, limit, None, None, None, permissions, user, showAll, None)
   }
 
   /**
@@ -208,20 +230,6 @@ class MongoDBDatasetService @Inject() (
   }
 
   /**
-   * Return a list of datasets the user has access to.
-   */
-  def listAccess(limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset] = {
-    list(None, false, limit, Some(title), None, None, permissions, user, showAll, None)
-  }
-
-  /**
-   * Return a list of datasets the user has access to starting at a specific date.
-   */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset] = {
-    list(Some(date), nextPage, limit, None, None, None, permissions, user, showAll, None)
-  }
-
-  /**
    * Return a list of datasets the user has access to starting at a specific date.
    */
   def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset] = {
@@ -233,14 +241,6 @@ class MongoDBDatasetService @Inject() (
    */
   def countUser(user: Option[User], showAll: Boolean, owner: User): Long = {
     count(None, false, None, None, None, Set[Permission](Permission.ViewDataset), user, showAll, Some(owner))
-  }
-
-  /**
-   * return count based on input
-   */
-  private def count(date: Option[String], nextPage: Boolean, title: Option[String], collection: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
-    val (filter, _) = filteredQuery(date, nextPage, title, collection, space, Set[Permission](Permission.ViewDataset), user, showAll, owner)
-    Dataset.count(filter)
   }
 
   /**
@@ -523,6 +523,13 @@ class MongoDBDatasetService @Inject() (
     }
   }
 
+  /**
+   * Get dataset.
+   */
+  def get(id: UUID): Option[Dataset] = {
+    Dataset.findOneById(new ObjectId(id.stringify))
+  }
+
   def selectNewThumbnailFromFiles(datasetId: UUID) {
     get(datasetId) match {
       case Some(dataset) => {
@@ -691,13 +698,6 @@ class MongoDBDatasetService @Inject() (
         Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("tags" -> Tag.toDBObject(tagObj)), false, false, WriteConcern.Safe)
       }
     })
-  }
-
-  /**
-   * Get dataset.
-   */
-  def get(id: UUID): Option[Dataset] = {
-    Dataset.findOneById(new ObjectId(id.stringify))
   }
 
   def removeTag(id: UUID, tagId: UUID) {
@@ -1312,7 +1312,7 @@ class MongoDBDatasetService @Inject() (
 
 		    return unsuccessfulDumps.toList
 	}
-  
+
   def addFollower(id: UUID, userId: UUID) {
     Dataset.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
                     $addToSet("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)

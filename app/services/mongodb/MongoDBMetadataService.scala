@@ -92,10 +92,6 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     }
   }
 
-  def getMetadataBycontextId(contextId: UUID) : List[Metadata] = {
-    MetadataDAO.find(MongoDBObject("contextId" -> new ObjectId(contextId.toString()))).toList
-  }
-
   def getMetadataById(id: UUID): Option[Metadata] = {
     MetadataDAO.findOneById(new ObjectId(id.stringify)) match {
       case Some(metadata) => {
@@ -106,11 +102,16 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     }
   }
 
+  def getMetadataBycontextId(contextId: UUID) : List[Metadata] = {
+    MetadataDAO.find(MongoDBObject("contextId" -> new ObjectId(contextId.toString()))).toList
+  }
+
   def removeMetadataByAttachTo(resourceRef: ResourceRef) = {
     MetadataDAO.remove(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
       "attachedTo._id" -> new ObjectId(resourceRef.id.stringify)), WriteConcern.Safe)
     //not providing metaData count modification here since we assume this is to delete the metadata's host
   }
+
 
   /** Get metadata context if available  **/
   def getMetadataContext(metadataId: UUID): Option[JsValue] = {

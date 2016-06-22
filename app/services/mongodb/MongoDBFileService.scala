@@ -100,7 +100,7 @@ class MongoDBFileService @Inject() (
   def listFilesNotIntermediate(): List[File] = {
     (for (file <- FileDAO.find("isIntermediate" $ne true)) yield file).toList
   }
-  
+
   /**
    * List files after a specified date.
    */
@@ -143,7 +143,7 @@ class MongoDBFileService @Inject() (
         .sort(order).limit(limit).toList
     }
   }
-  
+
   /**
    * List files specific to a user before a specified date.
    */
@@ -200,6 +200,21 @@ class MongoDBFileService @Inject() (
   def getBytes(id: UUID): Option[(InputStream, String, String, Long)] = {
     get(id).flatMap { x =>
       ByteStorageService.load(x.loader, x.loader_id, FileDAO.COLLECTION).map((_, x.filename, x.contentType, x.length))
+    }
+  }
+
+  def get(id: UUID): Option[File] = {
+    FileDAO.findOneById(new ObjectId(id.stringify)) match {
+      case Some(file) => {
+        val previewsByFile = previews.findByFileId(file.id)
+        val sectionsByFile = sections.findByFileId(file.id)
+        val sectionsWithPreviews = sectionsByFile.map { s =>
+          val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
+          s.copy(preview = p)
+        }
+        Some(file.copy(sections = sectionsWithPreviews, previews = previewsByFile))
+      }
+      case None => None
     }
   }
 
@@ -294,6 +309,24 @@ class MongoDBFileService @Inject() (
         MongoDBObject("$group" -> MongoDBObject("_id" -> "$tags.name", "count" -> MongoDBObject("$sum" -> 1L))))
       x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
     }
+  }
+
+  private def buildTagFilter(user: Option[User]): MongoDBObject = {
+    val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
+
+    user match {
+      case Some(u) => {
+        orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
+        //Get all datasets you have access to.
+        val datasetsList= datasets.listUser(u)
+        val foldersList = folders.findByParentDatasetIds(datasetsList.map(x=> x.id))
+        val fileIds = datasetsList.map(x=> x.files) ++ foldersList.map(x=> x.files)
+        orlist += ("_id" $in fileIds.flatten.map(x=> new ObjectId(x.stringify)))
+      }
+      case None => Map.empty
+    }
+
+    $or(orlist.map(_.asDBObject))
   }
 
   def modifyRDFOfMetadataChangedFiles() {
@@ -421,6 +454,21 @@ class MongoDBFileService @Inject() (
     return xmlFile
   }
 
+  def getUserMetadataJSON(id: UUID): String = {
+    FileDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
+      case None => "{}"
+      case Some(x) => {
+        x.getAs[DBObject]("userMetadata") match{
+          case Some(y)=>{
+            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("userMetadata").get)
+            returnedMetadata
+          }
+          case None => "{}"
+        }
+      }
+    }
+  }
+
   def setUserMetadataWasModified(id: UUID, wasModified: Boolean){
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadataWasModified" -> Some(wasModified)),
       false, false, WriteConcern.Safe)
@@ -429,7 +477,7 @@ class MongoDBFileService @Inject() (
   def findMetadataChangedFiles(): List[File] = {
     FileDAO.find(MongoDBObject("userMetadataWasModified" -> true)).toList
   }
-  
+
   def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Removing tags in file " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
     val file = get(id).get
@@ -531,7 +579,6 @@ class MongoDBFileService @Inject() (
     }
     Some(vdArray)
   }
-
    /*convert list of JsObject to JsArray*/
   def getJsonArray(list: List[JsObject]): JsArray = {
     list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
@@ -542,7 +589,7 @@ class MongoDBFileService @Inject() (
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadata" -> md), false, false, WriteConcern.Safe)
   }
- 
+
   def addXMLMetadata(id: UUID, json: String) {
     Logger.debug("Adding/modifying XML file metadata to file " + id + " : " + json)
     val md = com.mongodb.util.JSON.parse(json).asInstanceOf[DBObject]
@@ -551,24 +598,6 @@ class MongoDBFileService @Inject() (
 
   def findByTag(tag: String, user: Option[User]): List[File] = {
     FileDAO.find(buildTagFilter(user) ++ MongoDBObject("tags.name" -> tag)).toList
-  }
-
-  private def buildTagFilter(user: Option[User]): MongoDBObject = {
-    val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
-
-    user match {
-      case Some(u) => {
-        orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
-        //Get all datasets you have access to.
-        val datasetsList= datasets.listUser(u)
-        val foldersList = folders.findByParentDatasetIds(datasetsList.map(x=> x.id))
-        val fileIds = datasetsList.map(x=> x.files) ++ foldersList.map(x=> x.files)
-        orlist += ("_id" $in fileIds.flatten.map(x=> new ObjectId(x.stringify)))
-      }
-      case None => Map.empty
-    }
-
-    $or(orlist.map(_.asDBObject))
   }
 
   def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean, user: Option[User]): List[File] = {
@@ -631,38 +660,23 @@ class MongoDBFileService @Inject() (
       }
     })
   }
-  
-  def get(id: UUID): Option[File] = {
-    FileDAO.findOneById(new ObjectId(id.stringify)) match {
-      case Some(file) => {
-        val previewsByFile = previews.findByFileId(file.id)
-        val sectionsByFile = sections.findByFileId(file.id)
-        val sectionsWithPreviews = sectionsByFile.map { s =>
-          val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
-          s.copy(preview = p)
-        }
-        Some(file.copy(sections = sectionsWithPreviews, previews = previewsByFile))
-      }
-      case None => None
-    }
-  }
 
   def removeAllTags(id: UUID) {
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("tags" -> List()), false, false,
       WriteConcern.Safe)
   }
+  // ---------- Tags related code ends ------------------
 
   def comment(id: UUID, comment: Comment) {
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $addToSet("comments" -> Comment.toDBObject(comment)),
       false, false, WriteConcern.Safe)
   }
-  // ---------- Tags related code ends ------------------
 
   def setIntermediate(id: UUID){
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("isIntermediate" -> Some(true)), false, false,
       WriteConcern.Safe)
   }
-  
+
   def renameFile(id: UUID, newName: String){
     events.updateObjectName(id, newName)
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("filename" -> newName), false, false,
@@ -1001,21 +1015,6 @@ class MongoDBFileService @Inject() (
 		    return unsuccessfulDumps.toList
 
 	}
-
-  def getUserMetadataJSON(id: UUID): String = {
-    FileDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
-      case None => "{}"
-      case Some(x) => {
-        x.getAs[DBObject]("userMetadata") match{
-          case Some(y)=>{
-            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("userMetadata").get)
-            returnedMetadata
-          }
-          case None => "{}"
-        }
-      }
-    }
-  }
 
   def getTechnicalMetadataJSON(id: UUID): String = {
     FileDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {

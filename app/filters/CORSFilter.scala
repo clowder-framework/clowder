@@ -36,7 +36,7 @@ case class CORSFilter() extends Filter{
       )}
     }
   }
- 
+
   def isPreFlight(r: RequestHeader) =(
     r.method.toLowerCase.equals("options")
       &&

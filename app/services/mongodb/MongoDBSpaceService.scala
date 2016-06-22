@@ -45,14 +45,6 @@ class MongoDBSpaceService @Inject() (
     count(None, nextPage=false, Set[Permission](Permission.ViewSpace), None, showAll=true, None)
   }
 
-  /**
-   * return count based on input
-   */
-  private def count(date: Option[String], nextPage: Boolean, permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
-    val (filter, _) = filteredQuery(date, nextPage, None, permissions, user, showAll, owner)
-    ProjectSpaceDAO.count(filter)
-  }
-
   /** list all spaces */
   def list(): List[ProjectSpace] = {
     list(None, nextPage=false, 0, None, Set[Permission](Permission.ViewSpace), None, showAll=true, None)
@@ -63,6 +55,14 @@ class MongoDBSpaceService @Inject() (
    */
   def countAccess(permissions: Set[Permission], user: Option[User], showAll: Boolean): Long = {
     count(None, nextPage=false, permissions, user, showAll, None)
+  }
+
+  /**
+   * return count based on input
+   */
+  private def count(date: Option[String], nextPage: Boolean, permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): Long = {
+    val (filter, _) = filteredQuery(date, nextPage, None, permissions, user, showAll, owner)
+    ProjectSpaceDAO.count(filter)
   }
 
   /**
@@ -77,6 +77,34 @@ class MongoDBSpaceService @Inject() (
    */
   def listAccess(limit: Integer, title:String, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace] = {
     list(None, nextPage=false, limit, Some(title), permissions, user, showAll, None)
+  }
+
+  /**
+   * Return a list of spaces the user has access to starting at a specific date.
+   */
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace] = {
+    list(Some(date), nextPage, limit, None, permissions, user, showAll, None)
+  }
+
+  /**
+   * Return a list of spaces the user has access to starting at a specific date.
+   */
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace] = {
+    list(Some(date), nextPage, limit, Some(title), permissions, user, showAll, None)
+  }
+
+  /**
+   * Count all spaces the user has created.
+   */
+  def countUser(user: Option[User], showAll: Boolean, owner: User): Long = {
+    count(None, nextPage=false, Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
+  }
+
+  /**
+   * Return a list of spaces the user has created.
+   */
+  def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
+    list(None, nextPage=false, limit, None, Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
   }
 
   /**
@@ -158,34 +186,6 @@ class MongoDBSpaceService @Inject() (
   }
 
   /**
-   * Return a list of spaces the user has access to starting at a specific date.
-   */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace] = {
-    list(Some(date), nextPage, limit, None, permissions, user, showAll, None)
-  }
-
-  /**
-   * Return a list of spaces the user has access to starting at a specific date.
-   */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace] = {
-    list(Some(date), nextPage, limit, Some(title), permissions, user, showAll, None)
-  }
-
-  /**
-   * Count all spaces the user has created.
-   */
-  def countUser(user: Option[User], showAll: Boolean, owner: User): Long = {
-    count(None, nextPage=false, Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
-  }
-
-  /**
-   * Return a list of spaces the user has created.
-   */
-  def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
-    list(None, nextPage=false, limit, None, Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
-  }
-
-  /**
    * Return a list of spaces the user has created with matching title.
    */
   def listUser(limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
@@ -242,7 +242,7 @@ class MongoDBSpaceService @Inject() (
     }
     ProjectSpaceDAO.removeById(new ObjectId(id.stringify))
   }
-  
+
   /**
    * @see app.services.SpaceService.scala
    *
