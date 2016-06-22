@@ -132,6 +132,48 @@ class CurationObjects @Inject()(
     }
   }
 
+  private def copyFolders(id:UUID, parentId: UUID, parentType:String, parentCurationObjectId:UUID):Unit = {
+    folders.get(id) match {
+      case Some(folder) =>{
+        var newFiles: List[UUID]= List.empty
+        for ( fileId <- folder.files) {
+          files.get(fileId) match {
+            case Some(f) => {
+              val cf = CurationFile(fileId = f.id, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
+                contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
+                thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = f.sha512)
+              curations.insertFile(cf)
+              newFiles = cf.id :: newFiles
+              metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id))
+                .map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id))))
+            }
+          }
+        }
+
+        val newCurationFolder = CurationFolder(
+          folderId = id,
+          author = folder.author,
+          created = folder.created,
+          name =folder.name,
+          displayName = folder.displayName,
+          files = newFiles,
+          folders = List.empty,
+          parentId = parentId,
+          parentType = parentType.toLowerCase(),
+          parentCurationObjectId = parentCurationObjectId
+        )
+        curations.insertFolder(newCurationFolder)
+        curations.addCurationFolder(parentType, parentId, newCurationFolder.id)
+
+        folder.folders.map(f => copyFolders(f,newCurationFolder.id, "folder", parentCurationObjectId ))
+      }
+      case None => {
+        Logger.error("Curation Folder Not found")
+
+      }
+    }
+  }
+
   def editCuration(id: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, id))) {
     implicit request =>
       implicit val user = request.user
@@ -492,6 +534,7 @@ class CurationObjects @Inject()(
 
   }
 
+
   def sendToRepository(curationId: UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.curationObject, curationId))) {
     implicit request =>
       implicit val user = request.user
@@ -692,6 +735,7 @@ class CurationObjects @Inject()(
     }
   }
 
+
   def buildMetadataMap(content: JsValue): Map[String, JsValue] = {
     var out = scala.collection.mutable.Map.empty[String, JsValue]
     content match {
@@ -725,48 +769,6 @@ class CurationObjects @Inject()(
     }
 
     out.toMap
-  }
-
-  private def copyFolders(id:UUID, parentId: UUID, parentType:String, parentCurationObjectId:UUID):Unit = {
-    folders.get(id) match {
-      case Some(folder) =>{
-        var newFiles: List[UUID]= List.empty
-        for ( fileId <- folder.files) {
-          files.get(fileId) match {
-            case Some(f) => {
-              val cf = CurationFile(fileId = f.id, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
-                contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
-                thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = f.sha512)
-              curations.insertFile(cf)
-              newFiles = cf.id :: newFiles
-              metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id))
-                .map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id))))
-            }
-          }
-        }
-
-        val newCurationFolder = CurationFolder(
-          folderId = id,
-          author = folder.author,
-          created = folder.created,
-          name =folder.name,
-          displayName = folder.displayName,
-          files = newFiles,
-          folders = List.empty,
-          parentId = parentId,
-          parentType = parentType.toLowerCase(),
-          parentCurationObjectId = parentCurationObjectId
-        )
-        curations.insertFolder(newCurationFolder)
-        curations.addCurationFolder(parentType, parentId, newCurationFolder.id)
-
-        folder.folders.map(f => copyFolders(f,newCurationFolder.id, "folder", parentCurationObjectId ))
-      }
-      case None => {
-        Logger.error("Curation Folder Not found")
-
-      }
-    }
   }
 }
 

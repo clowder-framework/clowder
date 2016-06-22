@@ -60,14 +60,6 @@ class Files @Inject() (
       "userid" -> nonEmptyText
     )(FileMD.apply)(FileMD.unapply)
   )  
-  /**
-   * Upload form for extraction.
-   */
-  val extractForm = Form(
-    mapping(
-      "userid" -> nonEmptyText
-    )(FileMD.apply)(FileMD.unapply)
-  )
 
   /**
    * File info.
@@ -243,7 +235,6 @@ class Files @Inject() (
       case None => InternalServerError("User not found")
     }
   }
-
   /**
    * List a specific number of files before or after a certain date.
    */
@@ -346,6 +337,16 @@ class Files @Inject() (
     implicit val user = request.user
     Ok(views.html.upload(uploadForm))
   }
+
+  /**
+   * Upload form for extraction.
+   */
+  val extractForm = Form(
+    mapping(
+      "userid" -> nonEmptyText
+    )(FileMD.apply)(FileMD.unapply)
+  )
+
 
   def extractFile = PermissionAction(Permission.AddFile) { implicit request =>
     implicit val user = request.user

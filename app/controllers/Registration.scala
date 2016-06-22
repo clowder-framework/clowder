@@ -20,6 +20,14 @@ import securesocial.core.providers.Token
 class Registration @Inject()(spaces: SpaceService, users: UserService) extends SecuredController{
 
 
+  def executeForToken(token: String, f: Token => Result): Result = {
+    UserService.findToken(token) match {
+      case Some(t) if !t.isExpired && t.isSignUp => f(t)
+      case _ => Redirect(RoutesHelper.startSignUp()).flashing(Error -> Messages(InvalidLink))
+
+    }
+  }
+
   /**
    * Handles post from the sign up page. Checks if there is an invitation pending for a space. If so,
    * the person is added to the space with the assigned role in the invitation after signing up.
@@ -87,12 +95,4 @@ class Registration @Inject()(spaces: SpaceService, users: UserService) extends S
     else NotFound(views.html.defaultpages.notFound.render(request, None))
 
     }
-
-  def executeForToken(token: String, f: Token => Result): Result = {
-    UserService.findToken(token) match {
-      case Some(t) if !t.isExpired && t.isSignUp => f(t)
-      case _ => Redirect(RoutesHelper.startSignUp()).flashing(Error -> Messages(InvalidLink))
-
-    }
-  }
   }
