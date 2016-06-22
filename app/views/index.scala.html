@@ -18,7 +18,7 @@
               <div class="panel-body">
                   <ul class="list-group">
                       @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
-                        <li class="list-group-item" title="Access to @{spacesCountAccess} Project spaces">
+                        <li class="list-group-item" title="Access to @{spacesCountAccess} @{spaceTitle.replace("&#010;","")}s">
                             <a href="@routes.Spaces.list()">@{spaces.spaceTitle()}s <span class="badge pull-right">@spacesCount</span></a>
                         </li>
                       }
