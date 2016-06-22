@@ -496,6 +496,7 @@
               parentType = "dataset";
               $('#addFilesLink').attr("href", jsRoutes.controllers.Datasets.addFiles('@dataset.id').url);
           }
+
          });
          request.fail(function (jqXHR, textStatus, errorThrown){
             console.error("The following error occurred: " + textStatus, errorThrown);
@@ -506,6 +507,70 @@
          });
 
        }
+
+
+        function moveFile(fileId) {
+            $('.modal').modal('hide');
+            var newFolderId = $('#move_file_select').val();
+            var datasetId = "@dataset.id";
+            var jsonData = JSON.stringify({"folderId": folderId});
+            var request = jsRoutes.api.Folders.moveFileBetweenFolders(datasetId, newFolderId, fileId).ajax({
+                data: jsonData,
+                type: 'POST',
+                contentType: "application/json"
+            });
+            request.done(function(response, textStatus, jsXHR){
+               notify("The file " + response.fileName + " has been succesfully moved to folder: " + response.folderName, "success",  false, 2000);
+            });
+            request.fail(function(jqXHR, textStatus, errorThrown) {
+                notify("Error moving file " + errorThrown, "error")
+            });
+
+        };
+
+        function showMoveModal(fileId) {
+
+            var request = jsRoutes.api.Folders.getAllFoldersByDatasetId("@dataset.id").ajax({
+                type: "GET",
+                contentType: "application/json"
+            });
+            request.done(function(response, textStatus, jsXHR){
+                var modalHtml = '<div class="modal fade" id="moveFileModal" tabindex="-1" role="dialog">';
+                modalHtml +=' <div class="modal-dialog">';
+                modalHtml +=' <div class="modal-content">';
+                modalHtml +=' <div class="modal-header">';
+                modalHtml +=' <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>';
+                modalHtml +=' <h4 class="modal-title">Move File to Folder</h4>';
+                modalHtml +=' </div>';
+                modalHtml +=' <div class="modal-body">';
+                modalHtml +=' <select id="move_file_select" class="form-control">';
+                for (var i = 0; i < response.length; i ++) {
+                    modalHtml +='<option value="'+response[i].id+'">'+ response[i].name + '</option>';
+//                    $('#move_file_select').append($('<option>', {
+//                        value: response[i].id,
+//                        text: response[i].name
+//                    }));
+
+                };
+
+                modalHtml += '</select>';
+                modalHtml +=' </div>';
+                modalHtml +=' <div class="modal-footer">';
+                modalHtml +=' <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>';
+                modalHtml +=' <a type="button" class="btn btn-primary" id="moveFileButton" href="javascript:moveFile(\''+fileId+'\')"> <span class="glyphicon glyphicon-move"></span> Move</a>';
+                modalHtml +=' </div>';
+                modalHtml +=' </div>';
+                modalHtml +=' </div>';
+                modalHtml +=' </div>';
+                var moveBetweenFoldersModal = $(modalHtml);
+                moveBetweenFoldersModal.modal("show");
+            });
+
+            request.fail(function(jqXHR, textStatus, errorThrown){
+                notify("Error getting all folders in dataset" + errorThrown, "error");
+            });
+
+        }
 
     </script>
 }

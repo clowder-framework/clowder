@@ -6,10 +6,14 @@ import models.{ResourceRef, Folder}
 import models.UUID
 import javax.inject.{Inject, Singleton}
 import com.wordnik.swagger.annotations.Api
+import play.api.libs.json.JsValue
 import services._
 import play.api.Logger
 import play.api.libs.json.Json._
 import com.wordnik.swagger.annotations.ApiOperation
+
+import scala.collection.mutable.ListBuffer
+
 /**
   * Folders are ways of organizing files within datasets. They can contain files and folders
  */
@@ -18,6 +22,7 @@ import com.wordnik.swagger.annotations.ApiOperation
 class Folders @Inject() (
   folders: FolderService,
   datasets: DatasetService,
+  files: FileService,
   events: EventService) extends ApiController {
 
   @ApiOperation(value = "Create a Folder",
@@ -204,5 +209,73 @@ class Folders @Inject() (
        case None => InternalServerError(s"Parent dataset $parentDatasetId not found")
      }
    }
+
+  def getAllFoldersByDatasetId(datasetId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
+    implicit val user = request.user
+    val response = ListBuffer.empty[JsValue]
+    val foldersList = folders.findByParentDatasetId(datasetId)
+    val folder_map = scala.collection.mutable.Map.empty[String, String]
+    foldersList.map{ folder =>
+      var folderHierarchy = new ListBuffer[String]()
+      folderHierarchy += folder.name
+      var f1: Folder = folder
+      while(f1.parentType == "folder") {
+        folders.get(f1.parentId) match {
+          case Some(fparent) => {
+            folderHierarchy += fparent.name
+            f1 = fparent
+          }
+          case None =>
+        }
+      }
+      response += toJson(Map("id" -> folder.id.stringify, "name" -> folderHierarchy.reverse.mkString(" -> ")))
+//      folder_map(folder.id.stringify) = folderHierarchy.mkString(" -> ")
+
+    }
+    Ok(toJson(response))
+  }
+
+
+  def moveFileBetweenFolders(datasetId: UUID, newFolderId: UUID, fileId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, datasetId)))(parse.json) { implicit request =>
+    implicit val user = request.user
+    datasets.get(datasetId) match {
+      case Some(dataset) => {
+        val oldFolderId = (request.body \ "folderId").asOpt[String]
+        val checkOldFolder = oldFolderId match {
+          case Some(folder) => dataset.folders.contains(UUID(folder))
+          case None => dataset.files.contains(fileId)
+        }
+        if(checkOldFolder && dataset.folders.contains(newFolderId)) {
+          folders.get(newFolderId) match {
+            case Some(newFolder) => {
+              files.get(fileId) match {
+                case Some(file) => {
+                  folders.addFile(newFolder.id, fileId)
+                  oldFolderId match {
+                    case Some(id) => {
+                      folders.get(UUID(id)) match {
+                        case Some(oldFolder) => folders.removeFile(oldFolder.id, fileId)
+                        case None => Logger.error("Failed to remove file with id: " + file.id.stringify + " from folder with id: " + oldFolderId + ". The folder doesn't exist")
+                      }
+                    }
+                    case None => datasets.removeFile(datasetId, fileId)
+                  }
+
+                  Ok(toJson(Map("status" -> "success", "fileName" -> file.filename, "folderName" -> newFolder.name)))
+                }
+                case None => BadRequest("Failed to copy file. There is no file with id:  " + fileId.stringify)
+              }
+
+            }
+            case None => BadRequest("Failed to copy the file. The destination folder doesn't exist. New folder Id: "+ newFolderId)
+          }
+        } else {
+          BadRequest("Failure to copy the file. The dataset doesn't contain either the from or to folder. ")
+        }
+      }
+      case None => BadRequest("There is no dataset with id: " + datasetId.stringify)
+    }
+
+  }
 
 }
