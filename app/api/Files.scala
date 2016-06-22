@@ -335,7 +335,10 @@ class Files @Inject()(
   def removeMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     files.get(id) match {
       case Some(file) => {
-        metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.file, id), extFilter)
+        extFilter match {
+          case Some(f) => metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.file, id), f)
+          case None => metadataService.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+        }
         Ok
       }
       case None => {

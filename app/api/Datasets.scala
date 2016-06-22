@@ -602,7 +602,10 @@ class  Datasets @Inject()(
   def removeMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     datasets.get(id) match {
       case Some(dataset) => {
-        metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.dataset, id), extFilter)
+        extFilter match {
+          case Some(f) => metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.dataset, id), f)
+          case None => metadataService.removeMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
+        }
         Ok
       }
       case None => {
