@@ -20,9 +20,8 @@ class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUplo
   /**
     * String name of the Space such as 'Project space' etc. parsaed from the config file
     */
-  var spaceTitle: String = play.Play.application().configuration().getString("spaceTitle").trim.filter(_ >= ' ')
+  //val spaceTitle: String = play.Play.application().configuration().getString("spaceTitle").trim.filter(_ >= ' ')
   //spaceTitle.replace("&#010;","")
-  spaceTitle = "Access to 8 Project spaces"
 
   "The Application API Spec" must {
     "provide a FakeApplication" in {
@@ -50,6 +49,7 @@ class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUplo
 
     "render index template" in {
       val html = views.html.index(List.empty, 1, 2, 3, 4, 5, 6, 7, 8, 3, "1234567890", "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+      val spaceTitle2 = "Access to 8 Project spaces"
 
       contentType(html) mustEqual ("text/html")
 
@@ -57,7 +57,7 @@ class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUplo
       contentAsString(html) must include("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
       contentAsString(html) must include("Resources")
-      contentAsString(html) must include(spaceTitle)
+      contentAsString(html) must include(spaceTitle2)
       contentAsString(html) must include("Access to 6 collections")
       contentAsString(html) must include("Access to 2 datasets")
     }
