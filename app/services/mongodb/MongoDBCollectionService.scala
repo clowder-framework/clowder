@@ -145,6 +145,7 @@ class MongoDBCollectionService @Inject() (
    * Return a list of the requested collections
    */
   private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): List[Collection] = {
+    //todd_n should i add addResourceToCollection here?
     val (filter, sort) = filteredQuery(date, nextPage, title, space, permissions, user, showAll, owner)
     //println("db.collections.find(" + MongoUtils.mongoQuery(filter) + ").sort(" + MongoUtils.mongoQuery(sort) + ")")
     if (date.isEmpty || nextPage) {
@@ -172,6 +173,7 @@ class MongoDBCollectionService @Inject() (
     //On the dropdown in the dataset page ‘Add dataset to collection’ you should see parent and child collections you have access to via a space or that you created.
 
     // create access filter
+    //todd_n or should showAll add PermissionAddResourceToCollection here to the set?
     val filterAccess = if (showAll || (configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewCollection))) {
       MongoDBObject()
     } else {
@@ -203,10 +205,10 @@ class MongoDBCollectionService @Inject() (
         space match {
           case Some(s) => MongoDBObject()
           case None => {
-            if (permissions.contains(Permission.AddResourceToCollection)) {
+            if (showAll || permissions.contains(Permission.AddResourceToCollection)) {
               MongoDBObject()
             }
-            else if (showAll || (configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewCollection))) {
+            else if ((configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewCollection))) {
               val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
               orlist += MongoDBObject("parent_collection_ids" -> List.empty)
               orlist += MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject("$size" -> 0)))
