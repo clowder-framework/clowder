@@ -33,7 +33,7 @@ trait CollectionService {
   /**
    * Return the count of collections the user has access to.
    */
-  def countAccess(permisions: Set[Permission], user: Option[User], showAll: Boolean): Long
+  def countAccess(permissions: Set[Permission], user: Option[User], showAll: Boolean): Long
 
   /**
    * Return a list of collections the user has access to.
