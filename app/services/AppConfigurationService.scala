@@ -162,6 +162,8 @@ object AppConfiguration {
     }
   }
 
+  def isDefaultTermsOfServices: Boolean = appConfig.getProperty("tos.text", "") == ""
+
   /** Get the Terms of Services */
   def getTermsOfServicesTextRaw: String = appConfig.getProperty("tos.text", "")
 
@@ -204,6 +206,4 @@ object AppConfiguration {
       appConfig.getProperty("tos.date", new Date()).toString
     }
   }
-
-  def isDefaultTermsOfServices: Boolean = appConfig.getProperty("tos.text", "") == ""
 }
