@@ -32,20 +32,6 @@ class Status @Inject()(spaces: SpaceService,
     Ok(Json.obj("version" -> getVersionInfo))
   }
 
-  def getVersionInfo: JsValue = {
-    val sha1 = sys.props.getOrElse("build.gitsha1", default = "unknown")
-
-    // TODO use the following URL to indicate if there updates to Medici.
-    // if returned object has an empty values medici is up to date
-    // need to figure out how to pass in the branch
-    //val checkurl = "https://opensource.ncsa.illinois.edu/stash/rest/api/1.0/projects/CATS/repos/clowder/commits?since=" + sha1
-
-    Json.obj("number" -> sys.props.getOrElse("build.version", default = "0.0.0").toString,
-      "build" -> sys.props.getOrElse("build.bamboo", default = "development").toString,
-      "branch" -> sys.props.getOrElse("build.branch", default = "unknown").toString,
-      "gitsha1" -> sha1)
-  }
-
   @ApiOperation(value = "status",
     notes = "returns the status information",
     responseClass = "None", httpMethod = "GET")
@@ -173,5 +159,19 @@ class Status @Inject()(spaces: SpaceService,
       "datasets" -> datasets.count(),
       "files" -> fileinfo,
       "users" -> users.count())
+  }
+
+  def getVersionInfo: JsValue = {
+    val sha1 = sys.props.getOrElse("build.gitsha1", default = "unknown")
+
+    // TODO use the following URL to indicate if there updates to Medici.
+    // if returned object has an empty values medici is up to date
+    // need to figure out how to pass in the branch
+    //val checkurl = "https://opensource.ncsa.illinois.edu/stash/rest/api/1.0/projects/CATS/repos/clowder/commits?since=" + sha1
+
+    Json.obj("number" -> sys.props.getOrElse("build.version", default = "0.0.0").toString,
+      "build" -> sys.props.getOrElse("build.bamboo", default = "development").toString,
+      "branch" -> sys.props.getOrElse("build.branch", default = "unknown").toString,
+      "gitsha1" -> sha1)
   }
 }

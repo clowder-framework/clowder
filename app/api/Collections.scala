@@ -441,6 +441,13 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     }
   }
 
+  def jsonCollection(collection: Collection): JsValue = {
+    toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description,
+      "created" -> collection.created.toString,"author"-> collection.author.toString, "root_flag" -> collections.hasRoot(collection).toString,
+      "child_collection_ids"-> collection.child_collection_ids.toString, "parent_collection_ids" -> collection.parent_collection_ids.toString,
+    "childCollectionsCount" -> collection.childCollectionsCount.toString, "datasetCount"-> collection.datasetCount.toString, "spaces" -> collection.spaces.toString))
+  }
+
   @ApiOperation(value = "Create a collection with parent",
     notes = "",
     responseClass = "None", httpMethod = "POST")
@@ -539,6 +546,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     }
   }
 
+
   /**
     * Adds a Root flag for a collection in a space
     */
@@ -581,13 +589,6 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         BadRequest(toJson(s"The given collection id $collectionId is not a valid ObjectId."))
       }
     }
-  }
-
-  def jsonCollection(collection: Collection): JsValue = {
-    toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description,
-      "created" -> collection.created.toString,"author"-> collection.author.toString, "root_flag" -> collections.hasRoot(collection).toString,
-      "child_collection_ids"-> collection.child_collection_ids.toString, "parent_collection_ids" -> collection.parent_collection_ids.toString,
-    "childCollectionsCount" -> collection.childCollectionsCount.toString, "datasetCount"-> collection.datasetCount.toString, "spaces" -> collection.spaces.toString))
   }
 
   @ApiOperation(value = "Get all root collections",

@@ -27,7 +27,7 @@ import util.{Direction, Formatters, Mail}
  */
 class Users @Inject() (users: UserService) extends SecuredController {
   //Custom signup initiation code, to be used if config is set to send signup link emails to admins to forward to users
-  
+
   lazy val registrationEnabled = current.configuration.getBoolean(RegistrationEnabled).getOrElse(true)
   val TokenDurationKey = securesocial.controllers.Registration.TokenDurationKey
   val DefaultDuration = securesocial.controllers.Registration.DefaultDuration
@@ -80,7 +80,7 @@ class Users @Inject() (users: UserService) extends SecuredController {
       case None => InternalServerError("User not defined")
     }
   }
-  
+
   /**
    *  Gets the users ordered by UserId.
    */

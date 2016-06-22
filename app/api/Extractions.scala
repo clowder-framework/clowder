@@ -220,70 +220,6 @@ class Extractions @Inject()(
       }
   }
 
-  def computeStatus(response: Response, file: models.File, l: scala.collection.mutable.Map[String, String]): String = {
-
-    var isActivity = "false"
-    extractions.findIfBeingProcessed(file.id) match {
-      case false =>
-      case true => isActivity = "true"
-    }
-    val rkeyjson = response.json
-    val rkeyjsonlist = rkeyjson.as[List[JsObject]]
-    val rkeylist = rkeyjsonlist.map {
-      rk =>
-        Logger.debug("Routing Key : " + rk \ "routing_key")
-        (rk \ "routing_key").toString
-    }
-    var status = ""
-    if (isActivity.equals("true")) {
-      status = "Processing"
-
-    } else {
-      val ct = file.contentType
-      val mt = ct.split("/")
-      for (m <- mt)
-        Logger.debug("m= " + m)
-
-      var flag = false
-      if (l.size == 0) {
-        Logger.debug("Inside If")
-        val rkl = rkeylist.toArray
-
-        /**
-         * Routing key lists obtained from rabbitmq binding api looks this:
-         * "amq.gen-ik6RuUOEuFxyLIffVCQwSA"
-         * "ncsa.cv.face"
-         * "ncsa.cv.eyes"
-         * "*.file.image.#" (length of array after split of this string is greater than 2)
-         * we split each routing key based on period "."
-         * if the length of the array after split is greater than two, and it is equal to the file content type and flag is false (not processing)
-         * then the queue for the extractor is there, extractor is either busy running other job or it is not currently running.
-         **/
-        for (s <- rkl) {
-          Logger.debug("s===== " + s)
-          val x = s.split("\\.")
-          if (x.length > 2) {
-            if (x(2).equals(mt(0)) && !flag) {
-              Logger.debug("x(2)" + x(2) + "  mt(0): " + mt(0))
-              status = "Required Extractor is either busy or is not currently running. Try after some time."
-              flag = true
-
-            }
-          }
-        }
-
-        if (flag == false)
-          status = "No Extractor Available. Request is not queued."
-
-      } else {
-        status = "Done"
-
-      }
-
-    } //end of outer else
-    status
-  }
-
   /**
    * fetch the extracted metadata for the file
    * REST end-point: GET /api/extractions/:id/value
@@ -397,6 +333,71 @@ class Extractions @Inject()(
         } //end of match user
         case None => Future(BadRequest(toJson(Map("request" -> "Not authorized."))))
       } //user
+  }
+
+
+  def computeStatus(response: Response, file: models.File, l: scala.collection.mutable.Map[String, String]): String = {
+
+    var isActivity = "false"
+    extractions.findIfBeingProcessed(file.id) match {
+      case false =>
+      case true => isActivity = "true"
+    }
+    val rkeyjson = response.json
+    val rkeyjsonlist = rkeyjson.as[List[JsObject]]
+    val rkeylist = rkeyjsonlist.map {
+      rk =>
+        Logger.debug("Routing Key : " + rk \ "routing_key")
+        (rk \ "routing_key").toString
+    }
+    var status = ""
+    if (isActivity.equals("true")) {
+      status = "Processing"
+
+    } else {
+      val ct = file.contentType
+      val mt = ct.split("/")
+      for (m <- mt)
+        Logger.debug("m= " + m)
+
+      var flag = false
+      if (l.size == 0) {
+        Logger.debug("Inside If")
+        val rkl = rkeylist.toArray
+
+        /**
+         * Routing key lists obtained from rabbitmq binding api looks this:
+         * "amq.gen-ik6RuUOEuFxyLIffVCQwSA"
+         * "ncsa.cv.face"
+         * "ncsa.cv.eyes"
+         * "*.file.image.#" (length of array after split of this string is greater than 2)
+         * we split each routing key based on period "."
+         * if the length of the array after split is greater than two, and it is equal to the file content type and flag is false (not processing)
+         * then the queue for the extractor is there, extractor is either busy running other job or it is not currently running.
+         **/
+        for (s <- rkl) {
+          Logger.debug("s===== " + s)
+          val x = s.split("\\.")
+          if (x.length > 2) {
+            if (x(2).equals(mt(0)) && !flag) {
+              Logger.debug("x(2)" + x(2) + "  mt(0): " + mt(0))
+              status = "Required Extractor is either busy or is not currently running. Try after some time."
+              flag = true
+
+            }
+          }
+        }
+
+        if (flag == false)
+          status = "No Extractor Available. Request is not queued."
+
+      } else {
+        status = "Done"
+
+      }
+
+    } //end of outer else
+    status
   }
 
   @ApiOperation(value = "Lists servers IPs running the extractors",

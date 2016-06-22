@@ -72,6 +72,13 @@ class  Datasets @Inject()(
     Ok(toJson(lisDatasets(title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))))
   }
 
+  @ApiOperation(value = "List all datasets the user can edit",
+    notes = "This will check for Permission.AddResourceToDataset and Permission.EditDataset",
+    responseClass = "None", httpMethod = "GET")
+  def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+    Ok(toJson(lisDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+  }
+
   /**
    * Returns list of datasets based on parameters and permissions.
    */
@@ -90,13 +97,6 @@ class  Datasets @Inject()(
         datasets.listAccess(limit, permission, user, superAdmin)
       }
     }
-  }
-
-  @ApiOperation(value = "List all datasets the user can edit",
-    notes = "This will check for Permission.AddResourceToDataset and Permission.EditDataset",
-    responseClass = "None", httpMethod = "GET")
-  def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(lisDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
   }
 
   /**
@@ -187,6 +187,52 @@ class  Datasets @Inject()(
   }
 
   /**
+   * Functionality broken out from attachExistingFile, in order to allow the core work of file attachment to be called from
+   * multiple API endpoints.
+   *
+   * @param dsId A UUID that specifies the dataset that will be modified
+   * @param fileId A UUID that specifies the file to attach to the dataset
+   * @param dataset Reference to the model of the dataset that is specified
+   * @param file Reference to the model of the file that is specified
+   */
+  def attachExistingFileHelper(dsId: UUID, fileId: UUID, dataset: Dataset, file: File, user: Option[User]) = {
+      if (!files.isInDataset(file, dataset)) {
+            datasets.addFile(dsId, file)
+            events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "attach_file_dataset")
+            files.index(fileId)
+            if (!file.xmlMetadata.isEmpty){
+              datasets.index(dsId)
+            }
+
+            if(dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
+                datasets.updateThumbnail(dataset.id, UUID(file.thumbnail_id.get))
+
+                for(collectionId <- dataset.collections){
+                  collections.get(collectionId) match{
+                    case Some(collection) =>{
+                    	if(collection.thumbnail_id.isEmpty){
+                    		collections.updateThumbnail(collection.id, UUID(file.thumbnail_id.get))
+                    	}
+                    }
+                    case None=>Logger.debug(s"No collection found with id $collectionId")
+              }
+            }
+        }
+
+        //add file to RDF triple store if triple store is used
+        if (file.filename.endsWith(".xml")) {
+          configuration.getString("userdfSPARQLStore").getOrElse("no") match {
+            case "yes" => rdfsparql.linkFileToDataset(fileId, dsId)
+            case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
+          }
+        }
+        Logger.info("Adding file to dataset completed")
+      } else {
+          Logger.info("File was already in dataset.")
+      }
+  }
+
+  /**
    * Create new dataset with no file required. However if there are comma separated file IDs passed in, add all of those as existing
    * files. This is to facilitate multi-file-uploader usage for new files, as well as to allow multiple existing files to be
    * added as part of dataset creation.
@@ -269,52 +315,6 @@ class  Datasets @Inject()(
         case None => Ok(toJson(Map("status" -> "error")))
       }
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
-  }
-
-  /**
-   * Functionality broken out from attachExistingFile, in order to allow the core work of file attachment to be called from
-   * multiple API endpoints.
-   *
-   * @param dsId A UUID that specifies the dataset that will be modified
-   * @param fileId A UUID that specifies the file to attach to the dataset
-   * @param dataset Reference to the model of the dataset that is specified
-   * @param file Reference to the model of the file that is specified
-   */
-  def attachExistingFileHelper(dsId: UUID, fileId: UUID, dataset: Dataset, file: File, user: Option[User]) = {
-      if (!files.isInDataset(file, dataset)) {
-            datasets.addFile(dsId, file)
-            events.addSourceEvent(user , file.id, file.filename, dataset.id, dataset.name, "attach_file_dataset")
-            files.index(fileId)
-            if (!file.xmlMetadata.isEmpty){
-              datasets.index(dsId)
-            }
-
-            if(dataset.thumbnail_id.isEmpty && !file.thumbnail_id.isEmpty){
-                datasets.updateThumbnail(dataset.id, UUID(file.thumbnail_id.get))
-
-                for(collectionId <- dataset.collections){
-                  collections.get(collectionId) match{
-                    case Some(collection) =>{
-                    	if(collection.thumbnail_id.isEmpty){
-                    		collections.updateThumbnail(collection.id, UUID(file.thumbnail_id.get))
-                    	}
-                    }
-                    case None=>Logger.debug(s"No collection found with id $collectionId")
-              }
-            }
-        }
-
-        //add file to RDF triple store if triple store is used
-        if (file.filename.endsWith(".xml")) {
-          configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-            case "yes" => rdfsparql.linkFileToDataset(fileId, dsId)
-            case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
-          }
-        }
-        Logger.info("Adding file to dataset completed")
-      } else {
-          Logger.info("File was already in dataset.")
-      }
   }
 
   /**

@@ -59,6 +59,32 @@ trait SecuredController extends Controller {
     }
   }
 
+  /** Return user based on request object */
+  def getUser[A](request: Request[A]): UserRequest[A] = {
+    // controllers will check for user in the following order:
+    // 1) secure social
+    // 2) anonymous access
+
+    val superAdmin = request.cookies.get("superAdmin").exists(_.value.toBoolean)
+
+    // 1) secure social, this allows the web app to make calls to the API and use the secure social user
+    for (
+      authenticator <- SecureSocial.authenticatorFromRequest(request);
+      identity <- UserService.find(authenticator.identityId)
+    ) yield {
+      Authenticator.save(authenticator.touch)
+      val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity) match {
+        case Some(u: ClowderUser) if Permission.checkServerAdmin(Some(u)) => Some(u.copy(superAdminMode=superAdmin))
+        case Some(u) => Some(u)
+        case None => None
+      }
+      return UserRequest(user, request)
+    }
+
+    // 2) anonymous access
+    UserRequest(None, request)
+  }
+
   /** call code iff user is logged in */
   def AuthenticatedAction = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
@@ -182,32 +208,6 @@ trait SecuredController extends Controller {
         Future.successful(Results.Redirect(routes.Error.notAuthorized("error resource", id.toString(), resType.toString())))
       }
     }
-  }
-
-  /** Return user based on request object */
-  def getUser[A](request: Request[A]): UserRequest[A] = {
-    // controllers will check for user in the following order:
-    // 1) secure social
-    // 2) anonymous access
-
-    val superAdmin = request.cookies.get("superAdmin").exists(_.value.toBoolean)
-
-    // 1) secure social, this allows the web app to make calls to the API and use the secure social user
-    for (
-      authenticator <- SecureSocial.authenticatorFromRequest(request);
-      identity <- UserService.find(authenticator.identityId)
-    ) yield {
-      Authenticator.save(authenticator.touch)
-      val user = DI.injector.getInstance(classOf[services.UserService]).findByIdentity(identity) match {
-        case Some(u: ClowderUser) if Permission.checkServerAdmin(Some(u)) => Some(u.copy(superAdminMode=superAdmin))
-        case Some(u) => Some(u)
-        case None => None
-      }
-      return UserRequest(user, request)
-    }
-
-    // 2) anonymous access
-    UserRequest(None, request)
   }
 
   /**

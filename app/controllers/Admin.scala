@@ -331,14 +331,6 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
     }
   }
 
-  private def getPermissionsMap(): scala.collection.immutable.Map[String, Boolean] = {
-    var permissionMap = SortedMap.empty[String, Boolean]
-    Permission.values.map {
-      permission => permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})", "$1 $2") -> false)
-    }
-    return permissionMap
-  }
-
   def viewDumpers() = ServerAdminAction { implicit request =>
   	implicit val user = request.user
 	  Ok(views.html.viewDumpers())
@@ -424,6 +416,14 @@ class Admin @Inject() (sectionIndexInfo: SectionIndexInfoService, userService: U
           }
         }
       )
+  }
+
+  private def getPermissionsMap(): scala.collection.immutable.Map[String, Boolean] = {
+    var permissionMap = SortedMap.empty[String, Boolean]
+    Permission.values.map {
+      permission => permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})", "$1 $2") -> false)
+    }
+    return permissionMap
   }
 
   def users() = ServerAdminAction { implicit request =>

@@ -33,7 +33,7 @@ import controllers.Utils
 /**
  * Json API for files.
  */
-@Api(value = "/files", listingPath = "/api-docs.json/files", description = "A file is the raw bytes plus metadata.")  
+@Api(value = "/files", listingPath = "/api-docs.json/files", description = "A file is the raw bytes plus metadata.")
 class Files @Inject()(
   files: FileService,
   datasets: DatasetService,
@@ -561,7 +561,7 @@ class Files @Inject()(
         case _ => Ok("received something else: " + request.body + '\n')
       }
   }
-  
+
   @ApiOperation(value = "Get the user-generated metadata of the selected file in an RDF file",
 	      notes = "",
 	      responseClass = "None", httpMethod = "GET")
@@ -582,7 +582,7 @@ class Files @Inject()(
     }
    }
   }
-  
+
   @ApiOperation(value = "Get URLs of file's RDF metadata exports.",
 	      notes = "URLs of metadata files exported from XML (if the file was an XML metadata file) as well as the URL used to export the file's user-generated metadata as RDF.",
 	      responseClass = "None", httpMethod = "GET")
@@ -766,7 +766,7 @@ class Files @Inject()(
         }
       }
   }
-  
+
   /**
    * Find geometry file for given 3D file and geometry filename.
    */
@@ -818,7 +818,7 @@ class Files @Inject()(
           case None => Logger.error("Geometry file not found"); InternalServerError
         }
     }
-  
+
   /**
    * Find texture file for given 3D file and texture filename.
    */
@@ -871,7 +871,7 @@ class Files @Inject()(
           case None => Logger.error("Texture file not found"); InternalServerError
         }
     }
-  
+
   /**
     * REST endpoint: PUT: update or change the filename
     * args
@@ -1080,9 +1080,9 @@ class Files @Inject()(
         BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
       }
   }
-  
-  
-  
+
+
+
   //End, Update License code
 
   // ---------- Tags related code starts ------------------
@@ -1236,7 +1236,7 @@ class Files @Inject()(
   }
 
   // ---------- Tags related code ends ------------------
-  
+
   @ApiOperation(value = "Add comment to file", notes = "", responseClass = "None", httpMethod = "POST")
   def comment(id: UUID) = PermissionAction(Permission.AddComment, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
       request.user match {
@@ -1353,7 +1353,7 @@ class Files @Inject()(
       toJson(Map("pv_id" -> pvId.stringify, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString,
         "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))
   }
-  
+
     @ApiOperation(value = "Get metadata of the resource described by the file that were input as XML",
         notes = "",
         responseClass = "None", httpMethod = "GET")
@@ -1563,6 +1563,7 @@ class Files @Inject()(
       Ok(toJson(list))
   }
 
+
   def index(id: UUID) {
     files.get(id) match {
       case Some(file) => {
@@ -1598,7 +1599,7 @@ class Files @Inject()(
           fileDsId = fileDsId + dataset.id.toString + " %%% "
           fileDsName = fileDsName + dataset.name + " %%% "
         }
-        
+
         val formatter = new SimpleDateFormat("dd/MM/yyyy")
 
         current.plugin[ElasticsearchPlugin].foreach {

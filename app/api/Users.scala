@@ -63,7 +63,7 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
 
 
   }
-  
+
   /**
    * Returns the user that is making the request. Used to verify authentication, as well as for user data access.
    */

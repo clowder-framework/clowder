@@ -142,15 +142,6 @@ object Geostreams extends ApiController {
       }
     }
 
-  /**
-   * Returns the request potentially as jsonp
-   * @param data Result to transform
-   * @param request request made to server
-   */
-  def jsonp(data:JsValue, request: Request[Any]): SimpleResult = {
-    jsonp(Enumerator(data.toString), request)
-  }
-
   def getSensorStreams(id: String) = PermissionAction(Permission.ViewGeoStream) { implicit request =>
       Logger.debug("Get sensor streams" + id)
       current.plugin[PostgresPlugin] match {
@@ -218,6 +209,15 @@ object Geostreams extends ApiController {
       }
   }
 
+  /**
+   * Returns the request potentially as jsonp
+   * @param data Result to transform
+   * @param request request made to server
+   */
+  def jsonp(data:JsValue, request: Request[Any]): SimpleResult = {
+    jsonp(Enumerator(data.toString), request)
+  }
+
   def createStream() = PermissionAction(Permission.AddGeoStream)(parse.json) { implicit request =>
       Logger.debug("Creating stream: " + request.body)
       request.body.validate[(String, String, List[Double], JsValue, String)].map {
@@ -248,32 +248,6 @@ object Geostreams extends ApiController {
       }
     }
 
-  /**
-   * Returns the request potentially as jsonp
-   * @param data Result to transform
-   * @param request request made to server
-   */
-  def jsonp(data:String, request: Request[Any]): SimpleResult = {
-    jsonp(Enumerator(data), request)
-  }
-
-  /**
-   * Tries to transform a response into a JavaScript expression.
-   * @param data Result to transform
-   * @param request request made to server
-   */
-  def jsonp(data:Enumerator[String], request: Request[Any]) = {
-    val toByteArray: Enumeratee[String, Array[Byte]] = Enumeratee.map[String]{ s => s.getBytes }
-    request.getQueryString("callback") match {
-      case Some(callback) => Ok.chunked(Enumerator(s"$callback(") >>> data >>> Enumerator(");") &> toByteArray &> Gzip.gzip())
-        .withHeaders(("Content-Encoding", "gzip"))
-        .as(JAVASCRIPT)
-      case None => Ok.chunked(data &> toByteArray &> Gzip.gzip())
-        .withHeaders(("Content-Encoding", "gzip"))
-        .as(JSON)
-    }
-  }
-  
   def getStream(id: String) = PermissionAction(Permission.ViewGeoStream) { implicit request =>
       Logger.debug("Get stream " + id)
       current.plugin[PostgresPlugin] match {
@@ -788,10 +762,6 @@ object Geostreams extends ApiController {
     })
   }
 
-  // ----------------------------------------------------------------------
-  // Calculations
-  // ----------------------------------------------------------------------
-
   /**
    * Write the file to cache, filename in cache is based on MD5(description).
    * A second file with the same name but with extension .json is saved that
@@ -839,6 +809,10 @@ object Geostreams extends ApiController {
       case None => None
     }
   }
+
+  // ----------------------------------------------------------------------
+  // Calculations
+  // ----------------------------------------------------------------------
 
   def searchDatapoints(operator: String, since: Option[String], until: Option[String], geocode: Option[String], stream_id: Option[String], sensor_id: Option[String], sources: List[String], attributes: List[String], format: String, semi: Option[String]) =
     PermissionAction(Permission.ViewGeoStream) { implicit request =>
@@ -904,6 +878,32 @@ object Geostreams extends ApiController {
         }
       }
       case None => pluginNotEnabled
+    }
+  }
+
+  /**
+   * Returns the request potentially as jsonp
+   * @param data Result to transform
+   * @param request request made to server
+   */
+  def jsonp(data:String, request: Request[Any]): SimpleResult = {
+    jsonp(Enumerator(data), request)
+  }
+
+  /**
+   * Tries to transform a response into a JavaScript expression.
+   * @param data Result to transform
+   * @param request request made to server
+   */
+  def jsonp(data:Enumerator[String], request: Request[Any]) = {
+    val toByteArray: Enumeratee[String, Array[Byte]] = Enumeratee.map[String]{ s => s.getBytes }
+    request.getQueryString("callback") match {
+      case Some(callback) => Ok.chunked(Enumerator(s"$callback(") >>> data >>> Enumerator(");") &> toByteArray &> Gzip.gzip())
+        .withHeaders(("Content-Encoding", "gzip"))
+        .as(JAVASCRIPT)
+      case None => Ok.chunked(data &> toByteArray &> Gzip.gzip())
+        .withHeaders(("Content-Encoding", "gzip"))
+        .as(JSON)
     }
   }
 
@@ -1673,7 +1673,7 @@ object Geostreams extends ApiController {
       }
     }
   }
-  
+
   /**
    * Helper function to create list of headers
    */
@@ -1713,7 +1713,7 @@ object Geostreams extends ApiController {
       }
     })
   }
-  
+
   /**
    * Helper function to create the text that is printed as header
    */
