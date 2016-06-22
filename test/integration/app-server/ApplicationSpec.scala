@@ -48,8 +48,6 @@ class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUplo
         * String name of the Space such as 'Project space' etc. parsaed from the config file
         */
       val spaceTitle: String = play.Play.application().configuration().getString("spaceTitle").trim.filter(_ >= ' ')
-      //spaceTitle.replace("&#010;","")
-      val spaceTitle2 = s"Access to 8 ${spaceTitle}s"
 
       contentType(html) mustEqual ("text/html")
 
@@ -57,7 +55,7 @@ class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUplo
       contentAsString(html) must include("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
       contentAsString(html) must include("Resources")
-      contentAsString(html) must include(spaceTitle2)
+      contentAsString(html) must include(s"Access to 8 ${spaceTitle}s")
       contentAsString(html) must include("Access to 6 collections")
       contentAsString(html) must include("Access to 2 datasets")
     }
