@@ -708,4 +708,3 @@ GET            /spaces/curations/:id/getMetadataDefinitionsByFile               
 GET            /spaces/curations/:id/metadataDefinitions                                @api.CurationObjects.getMetadataDefinitions(id: UUID)
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()
 GET            /getEvents                                                               @controllers.Events.getEvents(index: Int)
-ixed routes file
