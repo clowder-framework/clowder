@@ -61,6 +61,8 @@ class MongoDBFileService @Inject() (
   metadatas: MetadataService,
   events: EventService) extends FileService {
 
+  object MustBreak extends Exception {}
+
   /**
    * Count all files
    */
@@ -203,21 +205,6 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def get(id: UUID): Option[File] = {
-    FileDAO.findOneById(new ObjectId(id.stringify)) match {
-      case Some(file) => {
-        val previewsByFile = previews.findByFileId(file.id)
-        val sectionsByFile = sections.findByFileId(file.id)
-        val sectionsWithPreviews = sectionsByFile.map { s =>
-          val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
-          s.copy(preview = p)
-        }
-        Some(file.copy(sections = sectionsWithPreviews, previews = previewsByFile))
-      }
-      case None => None
-    }
-  }
-
   def index(id: Option[UUID]) = {
     id match {
       case Some(fileId) => index(fileId)
@@ -274,21 +261,6 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def getXMLMetadataJSON(id: UUID): String = {
-    FileDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
-      case None => "{}"
-      case Some(x) => {
-        x.getAs[DBObject]("xmlMetadata") match {
-          case Some(y) => {
-            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("xmlMetadata").get)
-            returnedMetadata
-          }
-          case None => "{}"
-        }
-      }
-    }
-  }
-
   /**
     * Directly insert a file into the db (even with a local path)
     */
@@ -310,6 +282,7 @@ class MongoDBFileService @Inject() (
       x.results.map(x => (x.getAsOrElse[String]("_id", "??"), x.getAsOrElse[Long]("count", 0L))).toMap
     }
   }
+
 
   private def buildTagFilter(user: Option[User]): MongoDBObject = {
     val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
@@ -335,6 +308,7 @@ class MongoDBFileService @Inject() (
       modifyRDFUserMetadata(changedFile.id)
     }
   }
+
 
   def modifyRDFUserMetadata(id: UUID, mappingNumber: String = "1") = { implicit request: Request[Any] =>
     sparql.removeFileFromGraphs(id, "rdfCommunityGraphName")
@@ -454,13 +428,13 @@ class MongoDBFileService @Inject() (
     return xmlFile
   }
 
-  def getUserMetadataJSON(id: UUID): String = {
+  def getXMLMetadataJSON(id: UUID): String = {
     FileDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
       case None => "{}"
       case Some(x) => {
-        x.getAs[DBObject]("userMetadata") match{
-          case Some(y)=>{
-            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("userMetadata").get)
+        x.getAs[DBObject]("xmlMetadata") match {
+          case Some(y) => {
+            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("xmlMetadata").get)
             returnedMetadata
           }
           case None => "{}"
@@ -469,14 +443,8 @@ class MongoDBFileService @Inject() (
     }
   }
 
-  def setUserMetadataWasModified(id: UUID, wasModified: Boolean){
-    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadataWasModified" -> Some(wasModified)),
-      false, false, WriteConcern.Safe)
-  }
 
-  def findMetadataChangedFiles(): List[File] = {
-    FileDAO.find(MongoDBObject("userMetadataWasModified" -> true)).toList
-  }
+
 
   def removeTags(id: UUID, userIdStr: Option[String], eid: Option[String], tags: List[String]) {
     Logger.debug("Removing tags in file " + id + " : " + tags + ", userId: " + userIdStr + ", eid: " + eid)
@@ -505,9 +473,25 @@ class MongoDBFileService @Inject() (
     }
   }
 
+  def get(id: UUID): Option[File] = {
+    FileDAO.findOneById(new ObjectId(id.stringify)) match {
+      case Some(file) => {
+        val previewsByFile = previews.findByFileId(file.id)
+        val sectionsByFile = sections.findByFileId(file.id)
+        val sectionsWithPreviews = sectionsByFile.map { s =>
+          val p = PreviewDAO.findOne(MongoDBObject("section_id"->s.id))
+          s.copy(preview = p)
+        }
+        Some(file.copy(sections = sectionsWithPreviews, previews = previewsByFile))
+      }
+      case None => None
+    }
+  }
+
   override def setStatus(id: UUID, status: FileStatus): Unit = {
     FileDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.toString())), $set("status" -> status.toString))
   }
+
 
   def listOutsideDataset(dataset_id: UUID): List[File] = {
     datasets.get(dataset_id) match{
@@ -554,6 +538,38 @@ class MongoDBFileService @Inject() (
       }
     }
   }
+
+  def getUserMetadataJSON(id: UUID): String = {
+    FileDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
+      case None => "{}"
+      case Some(x) => {
+        x.getAs[DBObject]("userMetadata") match{
+          case Some(y)=>{
+            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("userMetadata").get)
+            returnedMetadata
+          }
+          case None => "{}"
+        }
+      }
+    }
+  }
+
+  def getTechnicalMetadataJSON(id: UUID): String = {
+    FileDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
+      case None => "{}"
+      case Some(x) => {
+        x.getAs[DBObject]("metadata") match{
+          case Some(y)=>{
+            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
+            returnedMetadata
+          }
+          case None => "{}"
+        }
+      }
+    }
+  }
+
+
 
   /**
    *  Add versus descriptors to the Versus.descriptors collection associated to a file
@@ -688,6 +704,74 @@ class MongoDBFileService @Inject() (
       WriteConcern.Safe)
   }
 
+  def setUserMetadataWasModified(id: UUID, wasModified: Boolean){
+    FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("userMetadataWasModified" -> Some(wasModified)),
+      false, false, WriteConcern.Safe)
+  }
+
+  def removeFile(id: UUID){
+    get(id) match{
+      case Some(file) => {
+        if(!file.isIntermediate){
+          val fileDatasets = datasets.findByFileId(file.id)
+          for(fileDataset <- fileDatasets){
+            datasets.removeFile(fileDataset.id, id)
+            if(!file.xmlMetadata.isEmpty){
+              datasets.index(fileDataset.id)
+            }
+
+            if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty){
+              if(file.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
+                datasets.newThumbnail(fileDataset.id)
+
+                	for(collectionId <- fileDataset.collections){
+		                          collections.get(collectionId) match{
+		                            case Some(collection) =>{
+		                            	if(!collection.thumbnail_id.isEmpty){
+		                            		if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
+		                            			collections.createThumbnail(collection.id)
+		                            		}
+		                            	}
+		                            }
+		                            case None=>Logger.debug(s"Could not find collection $collectionId")
+		                          }
+		                        }
+		        }
+            }
+
+          }
+          val fileFolders = folders.findByFileId(file.id)
+          for(fileFolder <- fileFolders) {
+            folders.removeFile(fileFolder.id, file.id)
+          }
+          for(section <- sections.findByFileId(file.id)){
+            sections.removeSection(section)
+          }
+          for(preview <- previews.findByFileId(file.id)){
+            previews.removePreview(preview)
+          }
+          for(comment <- comments.findCommentsByFileId(id)){
+            comments.removeComment(comment)
+          }
+          for(texture <- threeD.findTexturesByFileId(file.id)){
+            ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
+          }
+          for (follower <- file.followers) {
+            userService.unfollowFile(follower, id)
+          }
+          if(!file.thumbnail_id.isEmpty)
+            thumbnails.remove(UUID(file.thumbnail_id.get))
+          metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+        }
+
+        // finally delete the actual file
+        ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
+        FileDAO.remove(file)
+      }
+      case None => Logger.debug("File not found")
+    }
+  }
+
   def removeTemporaries(){
     val cal = Calendar.getInstance()
     val timeDiff = play.Play.application().configuration().getInt("rdfTempCleanup.removeAfter")
@@ -713,12 +797,17 @@ class MongoDBFileService @Inject() (
     }
   }
 
+  def findMetadataChangedFiles(): List[File] = {
+    FileDAO.find(MongoDBObject("userMetadataWasModified" -> true)).toList
+  }
+
   def searchAllMetadataFormulateQuery(requestedMetadataQuery: Any): List[File] = {
     Logger.debug("top: "+ requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]].toString()  )
     var theQuery =  searchMetadataFormulateQuery(requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]], "all")
     Logger.debug("thequery: "+theQuery.toString)
     FileDAO.find(theQuery).toList
   }
+
 
   def searchUserMetadataFormulateQuery(requestedMetadataQuery: Any): List[File] = {
     Logger.debug("top: "+ requestedMetadataQuery.asInstanceOf[java.util.LinkedHashMap[String,Any]].toString()  )
@@ -879,69 +968,6 @@ class MongoDBFileService @Inject() (
       removeFile(file.id)
   }
 
-  def removeFile(id: UUID){
-    get(id) match{
-      case Some(file) => {
-        if(!file.isIntermediate){
-          val fileDatasets = datasets.findByFileId(file.id)
-          for(fileDataset <- fileDatasets){
-            datasets.removeFile(fileDataset.id, id)
-            if(!file.xmlMetadata.isEmpty){
-              datasets.index(fileDataset.id)
-            }
-
-            if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty){
-              if(file.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
-                datasets.newThumbnail(fileDataset.id)
-
-                	for(collectionId <- fileDataset.collections){
-		                          collections.get(collectionId) match{
-		                            case Some(collection) =>{
-		                            	if(!collection.thumbnail_id.isEmpty){
-		                            		if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
-		                            			collections.createThumbnail(collection.id)
-		                            		}
-		                            	}
-		                            }
-		                            case None=>Logger.debug(s"Could not find collection $collectionId")
-		                          }
-		                        }
-		        }
-            }
-
-          }
-          val fileFolders = folders.findByFileId(file.id)
-          for(fileFolder <- fileFolders) {
-            folders.removeFile(fileFolder.id, file.id)
-          }
-          for(section <- sections.findByFileId(file.id)){
-            sections.removeSection(section)
-          }
-          for(preview <- previews.findByFileId(file.id)){
-            previews.removePreview(preview)
-          }
-          for(comment <- comments.findCommentsByFileId(id)){
-            comments.removeComment(comment)
-          }
-          for(texture <- threeD.findTexturesByFileId(file.id)){
-            ThreeDTextureDAO.removeById(new ObjectId(texture.id.stringify))
-          }
-          for (follower <- file.followers) {
-            userService.unfollowFile(follower, id)
-          }
-          if(!file.thumbnail_id.isEmpty)
-            thumbnails.remove(UUID(file.thumbnail_id.get))
-          metadatas.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
-        }
-
-        // finally delete the actual file
-        ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
-        FileDAO.remove(file)
-      }
-      case None => Logger.debug("File not found")
-    }
-  }
-
   /**
    * Update thumbnail used to represent this dataset.
    */
@@ -1016,21 +1042,6 @@ class MongoDBFileService @Inject() (
 
 	}
 
-  def getTechnicalMetadataJSON(id: UUID): String = {
-    FileDAO.dao.collection.findOneByID(new ObjectId(id.stringify)) match {
-      case None => "{}"
-      case Some(x) => {
-        x.getAs[DBObject]("metadata") match{
-          case Some(y)=>{
-            val returnedMetadata = com.mongodb.util.JSON.serialize(x.getAs[DBObject]("metadata").get)
-            returnedMetadata
-          }
-          case None => "{}"
-        }
-      }
-    }
-  }
-
   def addFollower(id: UUID, userId: UUID) {
     FileDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)),
                     $addToSet("followers" -> new ObjectId(userId.stringify)), false, false, WriteConcern.Safe)
@@ -1052,8 +1063,6 @@ class MongoDBFileService @Inject() (
     FileDAO.update(MongoDBObject("author._id" -> new ObjectId(userId.stringify)),
       $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
   }
-
-  object MustBreak extends Exception {}
 }
 
 object FileDAO extends ModelCompanion[File, ObjectId] {

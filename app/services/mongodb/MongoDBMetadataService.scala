@@ -42,6 +42,16 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     UUID(mid.get.toString())
   }
 
+  def getMetadataById(id: UUID): Option[Metadata] = {
+    MetadataDAO.findOneById(new ObjectId(id.stringify)) match {
+      case Some(metadata) => {
+        //TODO link to context based on context id
+        Some(metadata)
+      }
+      case None => None
+    }
+  }
+
   /** Get Metadata based on Id of an element (section/file/dataset/collection) */
   def getMetadataByAttachTo(resourceRef: ResourceRef): List[Metadata] = {
     val order = MongoDBObject("createdAt"-> -1)
@@ -89,16 +99,6 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
             }
           }
         }
-    }
-  }
-
-  def getMetadataById(id: UUID): Option[Metadata] = {
-    MetadataDAO.findOneById(new ObjectId(id.stringify)) match {
-      case Some(metadata) => {
-        //TODO link to context based on context id
-        Some(metadata)
-      }
-      case None => None
     }
   }
 

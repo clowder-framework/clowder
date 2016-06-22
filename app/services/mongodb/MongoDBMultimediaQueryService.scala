@@ -28,17 +28,17 @@ class MongoDBMultimediaQueryService @Inject() (sections: SectionService, spaces:
     	//because of a bug in Salat have to explicitely cast to ObjectId
     	$set("thumbnail_id" -> new ObjectId(thumbnailId.stringify)), false, false, WriteConcern.Safe)
   }
-  
-  
+
+
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): Option[TempFile] = {
     val files = current.plugin[MongoSalatPlugin] match {
       case None    => throw new RuntimeException("No MongoSalatPlugin");
       case Some(x) =>  x.gridFS("uploadquery")
     }
-    
+
     // required to avoid race condition on save
     files.db.setWriteConcern(WriteConcern.Safe)
-    
+
     val mongoFile = files.createFile(inputStream)
     Logger.debug("MongoDBMultimediaQueryService.save Uploading file " + filename)
     mongoFile.filename = filename
@@ -47,30 +47,30 @@ class MongoDBMultimediaQueryService @Inject() (sections: SectionService, spaces:
     val oid = mongoFile.getAs[ObjectId]("_id").get
     Some(TempFile(UUID(oid.toString), None, mongoFile.filename.get, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
   }
-  
+
    def get(id: UUID): Option[(InputStream, String, String, Long)] = {
-    
+
      val queries = GridFS(MultimediaFeaturesDAO.dao.collection.db, "uploadquery")
-    
+
       queries.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify))) match {
-      
+
       case Some(query) => {
         //Logger.debug(query.toString())
         Logger.debug("get: file name: "+query.filename +" Query id ="+ query.id.toString())
-        Some(query.inputStream, 
-          query.getAs[String]("filename").getOrElse("unknown-name"), 
+        Some(query.inputStream,
+          query.getAs[String]("filename").getOrElse("unknown-name"),
           query.getAs[String]("contentType").getOrElse("unknown"),
           query.getAs[Long]("length").getOrElse(0))
           }
       case None => None
     }
   }
-  
+
 def listFiles(): List[TempFile]={
   (for (file <- TempFileDAO.find(MongoDBObject())) yield file).toList
   }
-  
-  
+
+
   /**
    * Get file metadata.
    */
@@ -86,10 +86,10 @@ def getFile(id: UUID): Option[TempFile] = {
       case None    => throw new RuntimeException("No MongoSalatPlugin");
       case Some(x) =>  x.gridFS("uploadquery")
     }
-    
+
     // required to avoid race condition on save
     files.db.setWriteConcern(WriteConcern.Safe)
-    
+
     val mongoFile = files.createFile(Array[Byte]())
     mongoFile.filename = filename
     var ct = FileUtils.getContentType(filename, contentType)
@@ -100,7 +100,7 @@ def getFile(id: UUID): Option[TempFile] = {
     //mongoFile._id
     Logger.debug("StoreMD id="+ oid)
      Some(TempFile(UUID(oid.toString), None, mongoFile.filename.get, mongoFile.uploadDate, mongoFile.contentType.get, mongoFile.length))
-    
+
   }
 
   def findFeatureBySection(sectionId: UUID): Option[MultimediaFeatures] = {
@@ -130,6 +130,14 @@ def getFile(id: UUID): Option[TempFile] = {
 
   def insert(multimediaFeature: MultimediaFeatures) {
     MultimediaFeaturesDAO.save(multimediaFeature)
+  }
+
+  def listAll(): SalatMongoCursor[MultimediaFeatures] = {
+    MultimediaFeaturesDAO.find(MongoDBObject())
+  }
+
+  def addMultimediaDistance(d: MultimediaDistance): Unit = {
+    MultimediaDistanceDAO.save(d)
   }
 
   def searchMultimediaDistances(querySectionId: String, representation: String, limit: Int, userSpaceIDs: List[UUID]): List[MultimediaDistance] = {
@@ -213,14 +221,6 @@ def getFile(id: UUID): Option[TempFile] = {
       }
     }
     inner.close()
-  }
-
-  def listAll(): SalatMongoCursor[MultimediaFeatures] = {
-    MultimediaFeaturesDAO.find(MongoDBObject())
-  }
-
-  def addMultimediaDistance(d: MultimediaDistance): Unit = {
-    MultimediaDistanceDAO.save(d)
   }
 
   def time[R](block: => R): R = {
