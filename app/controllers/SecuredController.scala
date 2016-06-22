@@ -99,8 +99,6 @@ trait SecuredController extends Controller {
   def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None) = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
-      println(userRequest.user, permission, resourceRef)
-      println(Permission.checkPermission(userRequest.user, permission, resourceRef))
       userRequest.user match {
         case Some(u) if !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))

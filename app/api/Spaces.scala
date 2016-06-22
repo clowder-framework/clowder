@@ -586,7 +586,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
           case None => InternalServerError("Request user not found")
         }
       }
-      case None => InternalServerError("Space not found")
+      case None => NotFound("Space not found")
     }
   }
 
@@ -613,7 +613,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
           case None => InternalServerError("Request user not found")
         }
       }
-      case None => InternalServerError("Space not found")
+      case None => NotFound("Space not found")
     }
   }
 
@@ -636,7 +636,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
           }
           // If the space wasn't found by ID
           case _ => {
-            InternalServerError("Verify space failed")
+            BadRequest("Verify space failed")
           }
         }
       }

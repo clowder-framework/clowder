@@ -228,7 +228,6 @@ class MongoDBDatasetService @Inject() (
    */
   private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], collection: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): List[Dataset] = {
     val (filter, sort) = filteredQuery(date, nextPage, title, collection, space, permissions, user, showAll, owner)
-    //println("db.datasets.find(" + MongoUtils.mongoQuery(filter) + ").sort(" + MongoUtils.mongoQuery(sort) + ").limit(" + limit + ")")
     if (date.isEmpty || nextPage) {
       Dataset.find(filter).sort(sort).limit(limit).toList
     } else {
@@ -258,7 +257,7 @@ class MongoDBDatasetService @Inject() (
         case Some(u) => {
 
           val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
-          if (permissions.contains(Permission.ViewDataset)) {
+          if (!permissions.intersect(Permission.READONLY).isEmpty ) {
             orlist += MongoDBObject("status" -> "public")
             orlist += MongoDBObject("status" -> "default") ++ ("spaces" $in publicSpaces)
           }
@@ -278,7 +277,7 @@ class MongoDBDatasetService @Inject() (
           $or(orlist.map(_.asDBObject))
         }
         case None =>
-          if (permissions.contains(Permission.ViewDataset)) {
+          if (!permissions.intersect(Permission.READONLY).isEmpty) {
             $or(MongoDBObject("status" -> "public"),
             MongoDBObject("status" -> "default") ++ ("spaces" $in publicSpaces  ))
           } else {

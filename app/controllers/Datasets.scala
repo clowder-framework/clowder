@@ -198,9 +198,9 @@ class Datasets @Inject()(
           case Some(s) => {
             title = Some("Datasets in Space <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
             if (date != "") {
-              datasets.listSpace(date, nextPage, limit, s)
+              datasets.listSpace(date, nextPage, limit, s, user)
             } else {
-              datasets.listSpace(limit, s)
+              datasets.listSpace(limit, s, user)
             }
           }
           case None => {
@@ -222,7 +222,7 @@ class Datasets @Inject()(
         case Some(p) => datasets.listUser(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
-            case Some(s) => datasets.listSpace(first, nextPage = false, 1, s)
+            case Some(s) => datasets.listSpace(first, nextPage = false, 1, s, user)
             case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
           }
         }
@@ -243,7 +243,7 @@ class Datasets @Inject()(
         case Some(p) => datasets.listUser(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
-            case Some(s) => datasets.listSpace(last, nextPage=true, 1, s)
+            case Some(s) => datasets.listSpace(last, nextPage=true, 1, s, user)
             case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
           }
         }
@@ -289,7 +289,12 @@ class Datasets @Inject()(
       }
 
     //Pass the viewMode into the view
-    Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title, owner, when, date))
+    space match {
+      case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
+        BadRequest(views.html.notAuthorized("You are not authorized to access the space.", s, "space"))
+      }
+      case _ => Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title, owner, when, date))
+    }
   }
 
   def addViewer(id: UUID, user: Option[User]) = {

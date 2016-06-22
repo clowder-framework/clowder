@@ -257,7 +257,12 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       }
 
     //Pass the viewMode into the view
-    Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title, owner, when, date))
+    space match {
+      case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
+        BadRequest(views.html.notAuthorized("You are not authorized to access the space.", s, "space"))
+      }
+      case _ =>  Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title, owner, when, date))
+    }
   }
 
   def jsonCollection(collection: Collection): JsValue = {
@@ -391,7 +396,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           filteredPreviewers.map(p => Logger.debug(s"Filtered previewers for collection $id $p.id"))
 
           //Decode the datasets so that their free text will display correctly in the view
-          val datasetsInside = datasets.listCollection(id.stringify)
+          val datasetsInside = datasets.listCollection(id.stringify, user)
           val datasetIdsToUse = datasetsInside.slice(0, limit)
           val decodedDatasetsInside = ListBuffer.empty[models.Dataset]
           for (aDataset <- datasetIdsToUse) {
@@ -490,7 +495,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     collections.get(id) match {
       case Some(collection) => {
 
-        val datasetsInside = datasets.listCollection(id.stringify)
+        val datasetsInside = datasets.listCollection(id.stringify, user)
         val datasetIdsToUse = datasetsInside.slice(index*limit, (index+1)*limit)
         val decodedDatasetsInside = ListBuffer.empty[models.Dataset]
         for (aDataset <- datasetIdsToUse) {

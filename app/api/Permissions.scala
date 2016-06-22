@@ -154,7 +154,7 @@ object Permission extends Enumeration {
       }
       case (Some(u), "private", Some(r)) => checkPermission(u, permission, r)
       case (Some(_), _, None) => true
-      case (None, "private", Some(res)) => checkAnonyPrivatePermissions(permission, res)
+      case (None, "private", Some(res)) => checkAnonymousPrivatePermissions(permission, res)
       case (None, "public", _) => READONLY.contains(permission)
       case (_, p, _) => {
         Logger.error("Invalid permission scheme " + p)
@@ -163,7 +163,7 @@ object Permission extends Enumeration {
     }
   }
   //check the permisssion when permission = private & user is anonymous.
-  def checkAnonyPrivatePermissions(permission: Permission, resourceRef: ResourceRef): Boolean = {
+  def checkAnonymousPrivatePermissions(permission: Permission, resourceRef: ResourceRef): Boolean = {
     // if not readonly, don't let user in
     if (!READONLY.contains(permission)) return false
     // check specific resource
@@ -173,7 +173,7 @@ object Permission extends Enumeration {
         dataset.isPublic || dataset.status.contains("default") && dataset.spaces.map(sId => spaces.get(sId)).flatten.map(_.isPublic).reduce(_&&_)
       }
       case ResourceRef(ResourceRef.dataset, id) => datasets.get(id).exists(dataset => dataset.isPublic || dataset.status.contains("default") && dataset.spaces.map(sId => spaces.get(sId)).flatten.map(_.isPublic).reduce(_&&_)) // TODO check if dataset is public datasets.get(r.id).isPublic()
-      case ResourceRef(ResourceRef.collection, id) =>  false
+      case ResourceRef(ResourceRef.collection, id) =>  collections.get(id).exists(collection => collection.spaces.map(sId => spaces.get(sId)).flatten.map(_.isPublic).reduce(_||_))
       case ResourceRef(ResourceRef.space, id) => spaces.get(id).exists(s=>s.isPublic)
       case ResourceRef(ResourceRef.comment, id) => false
       case ResourceRef(ResourceRef.section, id) => false
@@ -326,7 +326,6 @@ object Permission extends Enumeration {
                     return true
                   }
                 }
-
             }
           }
         }

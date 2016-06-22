@@ -143,7 +143,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 	        val creator = users.findById(s.creator)
 	        var creatorActual: User = null
 	        val collectionsInSpace = spaces.getCollectionsInSpace(Some(id.stringify), Some(size))
-	        val datasetsInSpace = spaces.getDatasetsInSpace(Some(id.stringify), Some(size))
+	        val datasetsInSpace = datasets.listSpace(size, id.toString(), user)
 	        val usersInSpace = spaces.getUsersInSpace(id)
 	        var inSpaceBuffer = usersInSpace.to[ArrayBuffer]
 	        creator match {

@@ -34,7 +34,8 @@ class MongoDBCollectionService @Inject() (
   datasets: DatasetService,
   userService: UserService,
   spaceService: SpaceService,
-  events:EventService)  extends CollectionService {
+  events:EventService,
+  spaces:SpaceService )  extends CollectionService {
   /**
    * Count all collections
    */
@@ -146,7 +147,6 @@ class MongoDBCollectionService @Inject() (
    */
   private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): List[Collection] = {
     val (filter, sort) = filteredQuery(date, nextPage, title, space, permissions, user, showAll, owner)
-    //println("db.collections.find(" + MongoUtils.mongoQuery(filter) + ").sort(" + MongoUtils.mongoQuery(sort) + ")")
     if (date.isEmpty || nextPage) {
       Collection.find(filter).sort(sort).limit(limit).toList
     } else {
@@ -172,6 +172,9 @@ class MongoDBCollectionService @Inject() (
     //On the dropdown in the dataset page ‘Add dataset to collection’ you should see parent and child collections you have access to via a space or that you created.
 
     // create access filter
+    val publicSpaces= spaces.listByStatus("public").map(s => new ObjectId(s.id.stringify))
+//    val publicQuery = MongoDBObject("spaces" $in publicSpaces)
+    val rootQuery = $or(("root_spaces" $exists true), ("parent_collection_ids" $exists false))
     val filterAccess = if (showAll || (configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewCollection))) {
       MongoDBObject()
     } else {
@@ -179,7 +182,7 @@ class MongoDBCollectionService @Inject() (
         case Some(u) => {
           val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
           if (permissions.contains(Permission.ViewCollection)) {
-            orlist += MongoDBObject("public" -> true)
+            orlist += ("spaces" $in publicSpaces)
           }
           if(user == owner || owner.isEmpty) {
             orlist += MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
@@ -194,7 +197,7 @@ class MongoDBCollectionService @Inject() (
           }
           $or(orlist.map(_.asDBObject))
         }
-        case None => MongoDBObject()
+        case None => rootQuery ++ ("spaces" $in publicSpaces)
       }
     }
     val filterOwner = owner match {
