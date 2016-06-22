@@ -74,6 +74,13 @@ class MongoDBUserService @Inject() (
     UserDAO.findOne(query)
   }
 
+  override def get(id: UUID): Option[User] = {
+    if (id == User.anonymous.id)
+      Some(User.anonymous)
+    else
+      UserDAO.findOneById(new ObjectId(id.stringify))
+  }
+
   override def delete(id: UUID): Unit = {
     UserDAO.remove(MongoDBObject("id" -> id))
   }
@@ -159,6 +166,16 @@ class MongoDBUserService @Inject() (
 
   }
 
+  // ----------------------------------------------------------------------
+  // Code implementing specific functions
+  // ----------------------------------------------------------------------
+  /**
+   * Return a specific user based on the id provided.
+   */
+  override def findById(id: UUID): Option[User] = {
+    get(id)
+  }
+
   /**
    * Return a specific user based on an Identity
    */
@@ -168,10 +185,6 @@ class MongoDBUserService @Inject() (
     else
       UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> identity.identityId.userId, "identityId.providerId" -> identity.identityId.providerId))
   }
-
-  // ----------------------------------------------------------------------
-  // Code implementing specific functions
-  // ----------------------------------------------------------------------
 
   /**
    * Return a specific user based on an Identity
@@ -221,7 +234,6 @@ class MongoDBUserService @Inject() (
   override def updateRepositoryPreferences(id: UUID, preferences: Map[String, String])  {
     UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $set("repositoryPreferences" -> preferences))
   }
-
   /**
    * @see app.services.UserService
    *
@@ -232,6 +244,29 @@ class MongoDBUserService @Inject() (
       Logger.debug("add user to space")
       val spaceData = UserSpaceAndRole(spaceId, role)
       val result = UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)), $push("spaceandrole" -> UserSpaceAndRoleData.toDBObject(spaceData)));
+  }
+
+  /**
+   * @see app.services.UserService
+   *
+   * Implementation of the UserService trait.
+   *
+   */
+  def removeUserFromSpace(userId: UUID, spaceId: UUID): Unit = {
+      Logger.debug("remove user from space")
+      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)),
+    		  $pull("spaceandrole" ->  MongoDBObject( "spaceId" -> new ObjectId(spaceId.stringify))), false, false, WriteConcern.Safe)
+  }
+
+  /**
+   * @see app.services.UserService
+   *
+   * Implementation of the UserService trait.
+   *
+   */
+  def changeUserRoleInSpace(userId: UUID, role: Role, spaceId: UUID): Unit = {
+    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify), "spaceandrole.spaceId" -> new ObjectId(spaceId.stringify)),
+        $set({"spaceandrole.$.role" -> RoleDAO.toDBObject(role)}), false, true, WriteConcern.Safe)
   }
 
   /**
@@ -259,20 +294,6 @@ class MongoDBUserService @Inject() (
       }
 
       retRole
-  }
-
-  /**
-   * Return a specific user based on the id provided.
-   */
-  override def findById(id: UUID): Option[User] = {
-    get(id)
-  }
-
-  override def get(id: UUID): Option[User] = {
-    if (id == User.anonymous.id)
-      Some(User.anonymous)
-    else
-      UserDAO.findOneById(new ObjectId(id.stringify))
   }
 
   /**
@@ -317,7 +338,6 @@ class MongoDBUserService @Inject() (
   def findRoleByName(name: String): Option[Role] = {
     RoleDAO.findByName(name)
   }
-
   /**
    * Delete role.
    */
@@ -371,18 +391,6 @@ class MongoDBUserService @Inject() (
     }
   }
 
-  /**
-   * @see app.services.UserService
-   *
-   * Implementation of the UserService trait.
-   *
-   */
-  def removeUserFromSpace(userId: UUID, spaceId: UUID): Unit = {
-      Logger.debug("remove user from space")
-      UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify)),
-    		  $pull("spaceandrole" ->  MongoDBObject( "spaceId" -> new ObjectId(spaceId.stringify))), false, false, WriteConcern.Safe)
-  }
-
   def updateRole(role: Role): Unit = {
     RoleDAO.save(role)
 
@@ -429,17 +437,6 @@ class MongoDBUserService @Inject() (
         case None => {}
       }
     }
-  }
-
-  /**
-   * @see app.services.UserService
-   *
-   * Implementation of the UserService trait.
-   *
-   */
-  def changeUserRoleInSpace(userId: UUID, role: Role, spaceId: UUID): Unit = {
-    UserDAO.dao.update(MongoDBObject("_id" -> new ObjectId(userId.stringify), "spaceandrole.spaceId" -> new ObjectId(spaceId.stringify)),
-        $set({"spaceandrole.$.role" -> RoleDAO.toDBObject(role)}), false, true, WriteConcern.Safe)
   }
 
   override def acceptTermsOfServices(id: UUID): Unit = {
@@ -596,6 +593,10 @@ class MongoDBUserService @Inject() (
 }
 
 class MongoDBSecureSocialUserService(application: Application) extends UserServicePlugin(application) {
+  override def find(id: IdentityId): Option[User] = {
+    UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> id.userId, "identityId.providerId" -> id.providerId))
+  }
+
   override def findByEmailAndProvider(email: String, providerId: String): Option[User] = {
     UserDAO.dao.findOne(MongoDBObject("email" -> email, "identityId.providerId" -> providerId))
   }
@@ -641,10 +642,6 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
 
     // return the user object
     find(user.identityId).get
-  }
-
-  override def find(id: IdentityId): Option[User] = {
-    UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> id.userId, "identityId.providerId" -> id.providerId))
   }
 
   // ----------------------------------------------------------------------
