@@ -40,7 +40,7 @@ class CurationObjects @Inject()(
   contextService: ContextLDService) extends SecuredController {
 
   /**
-    * String name of the Space such as 'Project space' etc. parsaed from the config file
+    * String name of the Space such as 'Project space' etc., parsed from the config file
     */
   val spaceTitle: String = escapeJava(play.Play.application().configuration().getString("spaceTitle").trim)
 

@@ -45,7 +45,7 @@ class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUplo
     "render index template" in {
       val html = views.html.index(List.empty, 1, 2, 3, 4, 5, 6, 7, 8, 3, "1234567890", "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
       /**
-        * String name of the Space such as 'Project space' etc. parsaed from the config file
+        * String name of the Space such as 'Project space' etc., parsed from the config file
         */
       val spaceTitle: String = play.Play.application().configuration().getString("spaceTitle").trim.filter(_ >= ' ')
 
