@@ -176,6 +176,17 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.user.fold(false)(_.superAdminMode))))
   }
 
+  @ApiOperation(value = "List all collections the user can edit except itself and its parent collections",
+    notes = "This will check for Permission.AddResourceToCollection and Permission.EditCollection",
+    responseClass = "None", httpMethod = "GET")
+  def listPossibleParents(currentCollectionId : String, title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+    val selfAndAncestors = collections.getSelfAndAncestors(UUID(currentCollectionId))
+    val descendants = collections.getAllDescendants(UUID(currentCollectionId)).toList
+    val allCollections = lisCollections(None, None, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.user.fold(false)(_.superAdminMode))
+    val possibleNewParents = allCollections.filter((c: Collection) => (!selfAndAncestors.contains(c) && !descendants.contains(c)))
+    Ok(toJson(possibleNewParents))
+  }
+
   /**
    * Returns list of collections based on parameters and permissions.
    * TODO this needs to be cleaned up when do permissions for adding to a resource
@@ -209,17 +220,6 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           collections.listAccess(limit, permission, user, superAdmin)
       }
     }
-  }
-
-  @ApiOperation(value = "List all collections the user can edit except itself and its parent collections",
-    notes = "This will check for Permission.AddResourceToCollection and Permission.EditCollection",
-    responseClass = "None", httpMethod = "GET")
-  def listPossibleParents(currentCollectionId : String, title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    val selfAndAncestors = collections.getSelfAndAncestors(UUID(currentCollectionId))
-    val descendants = collections.getAllDescendants(UUID(currentCollectionId)).toList
-    val allCollections = lisCollections(None, None, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.user.fold(false)(_.superAdminMode))
-    val possibleNewParents = allCollections.filter((c: Collection) => (!selfAndAncestors.contains(c) && !descendants.contains(c)))
-    Ok(toJson(possibleNewParents))
   }
 
   @ApiOperation(value = "Get a specific collection",
@@ -561,13 +561,6 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     }
   }
 
-  def jsonCollection(collection: Collection): JsValue = {
-    toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description,
-      "created" -> collection.created.toString,"author"-> collection.author.toString, "root_flag" -> collections.hasRoot(collection).toString,
-      "child_collection_ids"-> collection.child_collection_ids.toString, "parent_collection_ids" -> collection.parent_collection_ids.toString,
-    "childCollectionsCount" -> collection.childCollectionsCount.toString, "datasetCount"-> collection.datasetCount.toString, "spaces" -> collection.spaces.toString))
-  }
-
   /**
     * Remove root flag from a collection in a space
     */
@@ -597,12 +590,19 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     Ok(toJson(root_collections_list))
   }
 
+  def jsonCollection(collection: Collection): JsValue = {
+    toJson(Map("id" -> collection.id.toString, "name" -> collection.name, "description" -> collection.description,
+      "created" -> collection.created.toString,"author"-> collection.author.toString, "root_flag" -> collections.hasRoot(collection).toString,
+      "child_collection_ids"-> collection.child_collection_ids.toString, "parent_collection_ids" -> collection.parent_collection_ids.toString,
+    "childCollectionsCount" -> collection.childCollectionsCount.toString, "datasetCount"-> collection.datasetCount.toString, "spaces" -> collection.spaces.toString))
+  }
+
   @ApiOperation(value = "Get all collections",
     notes = "",
     responseClass = "None", httpMethod = "GET")
   def getAllCollections(limit : Int) = PermissionAction(Permission.ViewCollection) { implicit request =>
     implicit val user = request.user
-    val all_collections_list = for (collection <- collections.listAccess(limit ,Set[Permission](Permission.AddResourceToCollection),request.user,true))
+    val all_collections_list = for (collection <- collections.listAccess(limit ,Set[Permission](Permission.ViewCollection),request.user,true))
       yield jsonCollection(collection)
     Ok(toJson(all_collections_list))
   }
