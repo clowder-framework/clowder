@@ -312,14 +312,13 @@ class Files @Inject()(
     files.get(id) match {
       case Some(file) => {
         //get metadata and also fetch context information
-        var listOfMetadata = metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
-          .map(JSONLD.jsonMetadataWithContext(_))
-
-        // Check for extractor filter
-        if (extFilter.isDefined) {
-          listOfMetadata = listOfMetadata.filter(md => (md \ "agent" \ "name").toString.replace("\"", "").endsWith(extFilter.get))
+        val listOfMetadata = extFilter match {
+          case Some(f) => metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+            .map(JSONLD.jsonMetadataWithContext(_))
+            .filter(md => (md \ "agent" \ "name").toString.replace("\"", "").endsWith(f))
+          case None => metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+            .map(JSONLD.jsonMetadataWithContext(_))
         }
-
         Ok(toJson(listOfMetadata))
       }
       case None => {
