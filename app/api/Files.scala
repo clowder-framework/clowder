@@ -68,11 +68,6 @@ class Files @Inject()(
     }
   }
 
-  def jsonFile(file: File): JsValue = {
-    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "filedescription" -> file.description, "content-type" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString,
-    		"authorId" -> file.author.id.stringify, "status" -> file.status))
-  }
-
   /**
    * List all files.
    */
@@ -207,7 +202,6 @@ class Files @Inject()(
           }
         }
     }
-
   @ApiOperation(value ="Get metadata definitions available for a file",
     notes="The metadata definitions come from the spaces that the dataset the file is part of. Directly or within a folder",
   responseClass= "None", httpMethod = "GET")
@@ -258,6 +252,7 @@ class Files @Inject()(
       case None => BadRequest(toJson("The requested file does not exist"))
     }
   }
+
 
   /**
    * Add metadata to file.
@@ -625,6 +620,20 @@ class Files @Inject()(
         Ok(toJson(Map("status" -> "success")))
   }
 
+  def jsonFile(file: File): JsValue = {
+    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "filedescription" -> file.description, "content-type" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString,
+    		"authorId" -> file.author.id.stringify, "status" -> file.status))
+  }
+
+  def jsonFileWithThumbnail(file: File): JsValue = {
+    var fileThumbnail = "None"
+    if (!file.thumbnail_id.isEmpty)
+      fileThumbnail = file.thumbnail_id.toString().substring(5, file.thumbnail_id.toString().length - 1)
+
+    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType, "dateCreated" -> file.uploadDate.toString(), "thumbnail" -> fileThumbnail,
+    		"authorId" -> file.author.id.stringify, "status" -> file.status))
+  }
+
   def toDBObject(fields: Seq[(String, JsValue)]): DBObject = {
     fields.map(field =>
       field match {
@@ -686,6 +695,7 @@ class Files @Inject()(
       }
   }
 
+
   /**
    * Add 3D texture to file.
    */
@@ -741,6 +751,7 @@ class Files @Inject()(
       }
   }
 
+
   /**
    * Add thumbnail to query file.
    */
@@ -766,6 +777,7 @@ class Files @Inject()(
         }
       }
   }
+
 
   /**
    * Find geometry file for given 3D file and geometry filename.
@@ -818,6 +830,9 @@ class Files @Inject()(
           case None => Logger.error("Geometry file not found"); InternalServerError
         }
     }
+
+
+
 
   /**
    * Find texture file for given 3D file and texture filename.
@@ -913,6 +928,7 @@ class Files @Inject()(
       }
   }
 
+  //Update License code
   /**
    * REST endpoint: POST: update the license data associated with a specific File
    *
@@ -1054,8 +1070,11 @@ class Files @Inject()(
       }
   }
 
-  //Update License code
 
+
+  //End, Update License code
+
+  // ---------- Tags related code starts ------------------
   /**
    * REST endpoint: GET: gets the tag data associated with this file.
    */
@@ -1079,27 +1098,6 @@ class Files @Inject()(
         Logger.error("The given id " + id + " is not a valid ObjectId.")
         BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
       }
-  }
-
-
-
-  //End, Update License code
-
-  // ---------- Tags related code starts ------------------
-
-    /**
-   * REST endpoint: POST: Adds tags to a file.
-   * Tag's (name, userId, extractor_id) tuple is used as a unique key.
-   * In other words, the same tag names but diff userId or extractor_id are considered as diff tags,
-   * so will be added.
-   */
-  @ApiOperation(value = "Adds tags to a file",
-      notes = "Tag's (name, userId, extractor_id) tuple is used as a unique key. In other words, the same tag names but diff userId or extractor_id are considered as diff tags, so will be added.  The tags are expected as a list of strings: List[String].  An example is:<br>    curl -H 'Content-Type: application/json' -d '{\"tags\":[\"namo\", \"amitabha\"], \"extractor_id\": \"curl\"}' \"http://localhost:9000/api/files/533c2389e4b02a14f0943356/tags?key=theKey\"",
-      responseClass = "None", httpMethod = "POST")
-  def addTags(id: UUID) = PermissionAction(Permission.AddTag, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
-      val theResponse = addTagsHelper(TagCheck_File, id, request)
-  	  files.index(id)
-  	  theResponse
   }
 
   /*
@@ -1137,22 +1135,6 @@ class Files @Inject()(
     }
   }
 
-  /**
-   * REST endpoint: POST: removes tags.
-   * Tag's (name, userId, extractor_id) tuple is used as a unique key.
-   * In other words, the same tag names but diff userId or extractor_id are considered as diff tags.
-   * Current implementation enforces the restriction which only allows the tags to be removed by
-   * the same user or extractor.
-   */
-  @ApiOperation(value = "Removes tags of a file",
-      notes = "Tag's (name, userId, extractor_id) tuple is unique key. Same tag names but diff userId or extractor_id are considered diff tags. Tags can only be removed by the same user or extractor.  The tags are expected as a list of strings: List[String].",
-      responseClass = "None", httpMethod = "POST")
-  def removeTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
-      val theResponse = removeTagsHelper(TagCheck_File, id, request)
-  	  files.index(id)
-  	  theResponse
-  }
-
   def removeTagsHelper(obj_type: TagCheckObjType, id: UUID, request: UserRequest[JsValue]): SimpleResult = {
 
     val (not_found, error_str) = tags.removeTagsHelper(obj_type, id, request)
@@ -1172,6 +1154,37 @@ class Files @Inject()(
         BadRequest(toJson(error_str))
       }
     }
+  }
+
+    /**
+   * REST endpoint: POST: Adds tags to a file.
+   * Tag's (name, userId, extractor_id) tuple is used as a unique key.
+   * In other words, the same tag names but diff userId or extractor_id are considered as diff tags,
+   * so will be added.
+   */
+  @ApiOperation(value = "Adds tags to a file",
+      notes = "Tag's (name, userId, extractor_id) tuple is used as a unique key. In other words, the same tag names but diff userId or extractor_id are considered as diff tags, so will be added.  The tags are expected as a list of strings: List[String].  An example is:<br>    curl -H 'Content-Type: application/json' -d '{\"tags\":[\"namo\", \"amitabha\"], \"extractor_id\": \"curl\"}' \"http://localhost:9000/api/files/533c2389e4b02a14f0943356/tags?key=theKey\"",
+      responseClass = "None", httpMethod = "POST")
+  def addTags(id: UUID) = PermissionAction(Permission.AddTag, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
+      val theResponse = addTagsHelper(TagCheck_File, id, request)
+  	  files.index(id)
+  	  theResponse
+  }
+
+  /**
+   * REST endpoint: POST: removes tags.
+   * Tag's (name, userId, extractor_id) tuple is used as a unique key.
+   * In other words, the same tag names but diff userId or extractor_id are considered as diff tags.
+   * Current implementation enforces the restriction which only allows the tags to be removed by
+   * the same user or extractor.
+   */
+  @ApiOperation(value = "Removes tags of a file",
+      notes = "Tag's (name, userId, extractor_id) tuple is unique key. Same tag names but diff userId or extractor_id are considered diff tags. Tags can only be removed by the same user or extractor.  The tags are expected as a list of strings: List[String].",
+      responseClass = "None", httpMethod = "POST")
+  def removeTags(id: UUID) = PermissionAction(Permission.DeleteTag, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
+      val theResponse = removeTagsHelper(TagCheck_File, id, request)
+  	  files.index(id)
+  	  theResponse
   }
 
   /**
@@ -1201,6 +1214,8 @@ class Files @Inject()(
         BadRequest(toJson("The given id " + id + " is not a valid ObjectId."))
       }
   }
+
+  // ---------- Tags related code ends ------------------
 
   /**
   * REST endpoint: GET  api/files/:id/extracted_metadata
@@ -1235,8 +1250,6 @@ class Files @Inject()(
     }
   }
 
-  // ---------- Tags related code ends ------------------
-
   @ApiOperation(value = "Add comment to file", notes = "", responseClass = "None", httpMethod = "POST")
   def comment(id: UUID) = PermissionAction(Permission.AddComment, Some(ResourceRef(ResourceRef.file, id)))(parse.json) { implicit request =>
       request.user match {
@@ -1265,6 +1278,7 @@ class Files @Inject()(
       }
   }
 
+
   /**
    * Return whether a file is currently being processed.
    */
@@ -1287,6 +1301,31 @@ class Files @Inject()(
         }
       }
   }
+
+
+  def jsonPreviewsFiles(filesList: List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]): JsValue = {
+    val list = for (filePrevs <- filesList) yield jsonPreviews(filePrevs._1, filePrevs._2)
+    toJson(list)
+  }
+
+  def jsonPreviews(prvFile: models.File, prvs: Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]): JsValue = {
+    val list = for (prv <- prvs) yield jsonPreview(UUID(prv._1), prv._2, prv._3, prv._4, prv._5, prv._6, prv._7)
+    val listJson = toJson(list.toList)
+    toJson(Map[String, JsValue]("file_id" -> JsString(prvFile.id.toString), "previews" -> listJson))
+  }
+
+  def jsonPreview(pvId: UUID, pId: String, pPath: String, pMain: String, pvRoute: java.lang.String, pvContentType: String, pvLength: Long): JsValue = {
+    if (pId.equals("X3d"))
+      toJson(Map("pv_id" -> pvId.stringify, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString,
+        "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString,
+        "pv_annotationsEditPath" -> api.routes.Previews.editAnnotation(pvId).toString,
+        "pv_annotationsListPath" -> api.routes.Previews.listAnnotations(pvId).toString,
+        "pv_annotationsAttachPath" -> api.routes.Previews.attachAnnotation(pvId).toString))
+    else
+      toJson(Map("pv_id" -> pvId.stringify, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString,
+        "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))
+  }
+
 
   @ApiOperation(value = "Get file previews",
       notes = "Return the currently existing previews of the selected file (full description, including paths to preview files, previewer names etc).",
@@ -1331,28 +1370,6 @@ class Files @Inject()(
 
     }
 
-  def jsonPreviewsFiles(filesList: List[(models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long)])]): JsValue = {
-    val list = for (filePrevs <- filesList) yield jsonPreviews(filePrevs._1, filePrevs._2)
-    toJson(list)
-  }
-
-  def jsonPreviews(prvFile: models.File, prvs: Array[(java.lang.String, String, String, String, java.lang.String, String, Long)]): JsValue = {
-    val list = for (prv <- prvs) yield jsonPreview(UUID(prv._1), prv._2, prv._3, prv._4, prv._5, prv._6, prv._7)
-    val listJson = toJson(list.toList)
-    toJson(Map[String, JsValue]("file_id" -> JsString(prvFile.id.toString), "previews" -> listJson))
-  }
-
-  def jsonPreview(pvId: UUID, pId: String, pPath: String, pMain: String, pvRoute: java.lang.String, pvContentType: String, pvLength: Long): JsValue = {
-    if (pId.equals("X3d"))
-      toJson(Map("pv_id" -> pvId.stringify, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString,
-        "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString,
-        "pv_annotationsEditPath" -> api.routes.Previews.editAnnotation(pvId).toString,
-        "pv_annotationsListPath" -> api.routes.Previews.listAnnotations(pvId).toString,
-        "pv_annotationsAttachPath" -> api.routes.Previews.attachAnnotation(pvId).toString))
-    else
-      toJson(Map("pv_id" -> pvId.stringify, "p_id" -> pId, "p_path" -> controllers.routes.Assets.at(pPath).toString,
-        "p_main" -> pMain, "pv_route" -> pvRoute, "pv_contenttype" -> pvContentType, "pv_length" -> pvLength.toString))
-  }
 
     @ApiOperation(value = "Get metadata of the resource described by the file that were input as XML",
         notes = "",
@@ -1442,6 +1459,7 @@ class Files @Inject()(
         }
     }
 
+
   @ApiOperation(value = "Delete file",
       notes = "Cascading action (removes file from any datasets containing it and deletes its previews, metadata and thumbnail).",
       responseClass = "None", httpMethod = "POST")
@@ -1486,6 +1504,7 @@ class Files @Inject()(
         case None => Ok(toJson(Map("status" -> "success")))
       }
   }
+
 
   @ApiOperation(value = "Update file description",
     notes = "Takes one argument, a UUID of the file. Request body takes key-value pair for the description",
@@ -1533,14 +1552,6 @@ class Files @Inject()(
       Ok(toJson(list))
   }
 
-  def jsonFileWithThumbnail(file: File): JsValue = {
-    var fileThumbnail = "None"
-    if (!file.thumbnail_id.isEmpty)
-      fileThumbnail = file.thumbnail_id.toString().substring(5, file.thumbnail_id.toString().length - 1)
-
-    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType, "dateCreated" -> file.uploadDate.toString(), "thumbnail" -> fileThumbnail,
-    		"authorId" -> file.author.id.stringify, "status" -> file.status))
-  }
 
   /**
    * List datasets satisfying a general metadata search tree.
@@ -1659,21 +1670,6 @@ class Files @Inject()(
       }
   }
 
-  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
-    val followeeModel = files.get(followeeUUID)
-    followeeModel match {
-      case Some(followeeModel) => {
-        val sourceFollowerIDs = followeeModel.followers
-        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
-        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
-        userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
-      }
-      case None => {
-        List.empty
-      }
-    }
-  }
-
   @ApiOperation(value = "Unfollow file",
     notes = "Remove user from file followers and remove file from user followed files.",
     responseClass = "None", httpMethod = "POST")
@@ -1698,6 +1694,21 @@ class Files @Inject()(
           Unauthorized
         }
       }
+  }
+
+  def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
+    val followeeModel = files.get(followeeUUID)
+    followeeModel match {
+      case Some(followeeModel) => {
+        val sourceFollowerIDs = followeeModel.followers
+        val excludeIDs = follower.followedEntities.map(typedId => typedId.id) ::: List(followeeUUID, follower.id)
+        val num = play.api.Play.configuration.getInt("number_of_recommendations").getOrElse(10)
+        userService.getTopRecommendations(sourceFollowerIDs, excludeIDs, num)
+      }
+      case None => {
+        List.empty
+      }
+    }
   }
 
 }

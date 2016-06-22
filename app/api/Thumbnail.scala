@@ -26,12 +26,6 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
     Ok(toJson(list))
   }
 
-  def jsonThumbnail(thumbnail: Thumbnail): JsValue = {
-    toJson(Map("id" -> thumbnail.id.toString(),  "filename" -> thumbnail.filename.getOrElse(""),
-      "content-type" -> thumbnail.contentType, "date-created" -> thumbnail.uploadDate.toString(), "size" -> thumbnail.length.toString()))
-
-  }
-
   @ApiOperation(value = "Delete thumbnail",
     notes = "Remove thumbnail file from system).",
     responseClass = "None", httpMethod = "POST")
@@ -68,5 +62,11 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
     }.getOrElse {
        BadRequest(toJson("File not attached."))
     }
+  }
+
+  def jsonThumbnail(thumbnail: Thumbnail): JsValue = {
+    toJson(Map("id" -> thumbnail.id.toString(),  "filename" -> thumbnail.filename.getOrElse(""),
+      "content-type" -> thumbnail.contentType, "date-created" -> thumbnail.uploadDate.toString(), "size" -> thumbnail.length.toString()))
+
   }
 }
