@@ -23,6 +23,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 object FileUtils {
+  val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
+
   lazy val files: FileService = DI.injector.getInstance(classOf[FileService])
   lazy val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   lazy val dtsrequests:ExtractionRequestsService = DI.injector.getInstance(classOf[ExtractionRequestsService])
@@ -32,7 +34,6 @@ object FileUtils {
   lazy val events: EventService = DI.injector.getInstance(classOf[EventService])
   lazy val userService: UserService = DI.injector.getInstance(classOf[UserService])
   lazy val folders: FolderService = DI.injector.getInstance(classOf[FolderService])
-  val appConfig: AppConfigurationService = DI.injector.getInstance(classOf[AppConfigurationService])
 
   /**
    * Given a number return a human readable count, unlike apache.commons this will not round down. This
@@ -57,6 +58,43 @@ object FileUtils {
   def getContentType(filename: Option[String], contentType: Option[String]): String = {
     getContentType(filename.getOrElse(""), contentType)
   }
+
+  def getContentType(filename: String, contentType: Option[String]): String = {
+    var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)
+    if (ct == play.api.http.ContentTypes.BINARY) {
+      ct = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
+    }
+    ct
+  }
+
+  // ----------------------------------------------------------------------
+  // START File upload
+  // ----------------------------------------------------------------------
+
+  // LOGIC FLOW
+  // for all files uploaded {
+  //   create file object
+  //   associate relevant metadata to file
+  //   new thread {
+  //     upload file
+  //     process bytes if needed (xml/rdf)
+  //     process file (rabbitmq, index)
+  //     process dataset (associate, rabbitmq, index)
+  //     delete temp file
+  //   }
+  // }
+  //
+  // for all json objects with path {
+  //   check path ok
+  //   create file object
+  //   associate relevant metadata to file
+  //   new thread {
+  //     process bytes if needed (xml/rdf)
+  //     process file (rabbitmq, index)
+  //     process dataset (associate, rabbitmq, index)
+  //   }
+  // }
+  //
 
   /**
    * Upload files from a request and attach metadata if necessary. Returns list of uploaded files.
@@ -94,6 +132,10 @@ object FileUtils {
         }
       }
     }
+    val multipleFile = request.body.asFormUrlEncoded.getOrElse("multiple", null) match {
+      case null => true
+      case m =>  m(0)  == "true"
+    }
 
     // container for list of uploaded files
     val uploadedFiles = new mutable.MutableList[File]()
@@ -126,7 +168,7 @@ object FileUtils {
           }
         }
       }
-      processFile(f, metadata, user, creator, clowderurl, dataset, folder, key, index, showPreviews, originalZipFile, flagsFromPrevious, intermediateUpload).foreach(uploadedFiles += _)
+      processFile(f, metadata, user, creator, clowderurl, dataset, folder, key, index, showPreviews, originalZipFile, flagsFromPrevious, intermediateUpload, multipleFile).foreach(uploadedFiles += _ )
     }
 
     // ------------------------------------------------------------
@@ -157,71 +199,6 @@ object FileUtils {
     uploadedFiles.toList
   }
 
-  // ----------------------------------------------------------------------
-  // START File upload
-  // ----------------------------------------------------------------------
-
-  // LOGIC FLOW
-  // for all files uploaded {
-  //   create file object
-  //   associate relevant metadata to file
-  //   new thread {
-  //     upload file
-  //     process bytes if needed (xml/rdf)
-  //     process file (rabbitmq, index)
-  //     process dataset (associate, rabbitmq, index)
-  //     delete temp file
-  //   }
-  // }
-  //
-  // for all json objects with path {
-  //   check path ok
-  //   create file object
-  //   associate relevant metadata to file
-  //   new thread {
-  //     process bytes if needed (xml/rdf)
-  //     process file (rabbitmq, index)
-  //     process dataset (associate, rabbitmq, index)
-  //   }
-  // }
-  //
-
-  // process a single uploaded file
-  private def processFile(f: MultipartFormData.FilePart[Files.TemporaryFile], metadata: Option[Seq[String]],
-                          user: User, creator: Agent, clowderurl: String,
-                          dataset: Option[Dataset] = None, folder:Option[Folder] = None,
-                          key: String = "", index: Boolean = true,
-                          showPreviews: String = "DatasetLevel", originalZipFile: String = "",
-                          flagsFromPrevious: String = "", intermediateUpload: Boolean = false): Option[File] = {
-    val file = File(UUID.generate(), "", f.filename, user, new Date(),
-      FileUtils.getContentType(f.filename, f.contentType), f.ref.file.length(), "", "",
-      isIntermediate = intermediateUpload, showPreviews = showPreviews,
-      licenseData = License.fromAppConfig(), status = FileStatus.CREATED.toString)
-    files.save(file)
-    Logger.info(s"created file ${file.id}")
-
-    associateMetaData(creator, file, metadata)
-    associateDataset(file, dataset, folder, user)
-
-    // process rest of file in background
-    val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
-    Future {
-      try {
-        saveFile(file, f.ref.file, originalZipFile).foreach { fixedfile =>
-          processFileBytes(fixedfile, f.ref.file, dataset)
-          files.setStatus(fixedfile.id, FileStatus.UPLOADED)
-          processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, dataset)
-          processDataset(file, dataset, folder, clowderurl, user, index)
-          files.setStatus(fixedfile.id, FileStatus.PROCESSED)
-        }
-      } finally {
-        f.ref.clean()
-      }
-    }(fileExecutionContext)
-
-    Some(file)
-  }
-
   // LOGIC FLOW
   // for all json objects {
   //   if key == fileurl || url || weburl {
@@ -248,6 +225,271 @@ object FileUtils {
   //   }
   // }
   //
+
+  def uploadFilesJSON(request: UserRequest[JsValue],
+                        dataset: Option[Dataset] = None, folder:Option[Folder] = None,
+                        key: String = "", index: Boolean = true,
+                        showPreviews: String = "DatasetLevel", originalZipFile: String = "",
+                        flagsFromPrevious: String = "", intermediateUpload: Boolean = false) : List[File] = {
+
+    if (request.user.isEmpty) {
+      Logger.error ("No user object given, should not happen.")
+      return List.empty[File]
+    }
+
+    val user = request.user.get
+    val creator_url = api.routes.Users.findById(user.id).absoluteURL(Utils.https(request))(request)
+    val creator = UserAgent(id = UUID.generate(), user=user.getMiniUser, userId = Some(new URL(creator_url)))
+
+    // Extract path information from requests for later
+    val clowderurl = Utils.baseUrl(request)
+    val clientIP = request.remoteAddress
+    val serverIP = request.host
+
+     // container for list of uploaded files
+    val uploadedFiles = new mutable.MutableList[File]()
+
+    val fileList = request.body match {
+      case v: JsArray => request.body.asOpt[List[JsObject]]
+      case v: JsObject => Some(List[JsObject](v))
+      case _ => None
+    }
+
+    // Now check whether we have any local file paths to handle
+    // [ { "path": "filepath", "md": { "field1":"val", "field2": 100 }, "dataset": UUID } ]
+    // [ { "fileurl": "url", md: ..., "dataset": UUID } ]
+    // [ { "url": "url", md: ..., "dataset": UUID } ]
+    fileList.foreach{ _.filter(key == "" || _.keys.contains(key)).foreach { jsv =>
+      val url = Try {
+        jsv \ "fileurl" match {
+          case u: JsString => Some(new URL(Parsers.parseString(u)))
+          case _ => jsv \ "weburl" match {
+            case u: JsString => Some(new URL(Parsers.parseString(u)))
+            case _ => jsv \ "url" match {
+              case u: JsString => Some(new URL(Parsers.parseString(u)))
+              case _ => None
+            }
+          }
+        }
+      }
+      if (url.isSuccess && url.get.isDefined) {
+        url.get.foreach(processURL(_, jsv, user, creator, clowderurl, dataset, folder, key, index, showPreviews, originalZipFile, flagsFromPrevious, intermediateUpload).foreach(uploadedFiles += _))
+      } else if (jsv.keys.contains("path")) {
+        val path = Parsers.parseString(jsv \ "path")
+        processPath(path, jsv, user, creator, clowderurl, dataset, folder, key, index, showPreviews, originalZipFile, flagsFromPrevious, intermediateUpload).foreach(uploadedFiles += _)
+      }
+    }}
+
+    /*---- Insert DTS Request to database---*/
+    uploadedFiles.foreach{ file =>
+      dtsrequests.insertRequest(serverIP, clientIP, file.filename, file.id, file.contentType, file.length, file.uploadDate)
+    }
+
+    uploadedFiles.toList
+  }
+
+  // process a single uploaded file
+  private def processFile(f: MultipartFormData.FilePart[Files.TemporaryFile], metadata: Option[Seq[String]],
+                          user: User, creator: Agent, clowderurl: String,
+                          dataset: Option[Dataset] = None, folder:Option[Folder] = None,
+                          key: String = "", index: Boolean = true,
+                          showPreviews: String = "DatasetLevel", originalZipFile: String = "",
+                          flagsFromPrevious: String = "", intermediateUpload: Boolean = false, multipleFile:Boolean): Option[File] = {
+    val file = File(UUID.generate(), "", f.filename, user, new Date(),
+      FileUtils.getContentType(f.filename, f.contentType), f.ref.file.length(), "", "",
+      isIntermediate = intermediateUpload, showPreviews = showPreviews,
+      licenseData = License.fromAppConfig(), status = FileStatus.CREATED.toString)
+    files.save(file)
+    Logger.info(s"created file ${file.id}")
+
+    associateMetaData(creator, file, metadata)
+    associateDataset(file, dataset, folder, user, multipleFile)
+
+    // process rest of file in background
+    val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
+    Future {
+      try {
+        saveFile(file, f.ref.file, originalZipFile).foreach { fixedfile =>
+          processFileBytes(fixedfile, f.ref.file, dataset)
+          files.setStatus(fixedfile.id, FileStatus.UPLOADED)
+          processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, dataset)
+          processDataset(file, dataset, folder, clowderurl, user, index)
+          files.setStatus(fixedfile.id, FileStatus.PROCESSED)
+        }
+      } finally {
+        f.ref.clean()
+      }
+    }(fileExecutionContext)
+
+    Some(file)
+  }
+
+  // process a single URL
+  private def processURL(url: URL, jsv: JsValue, user: User, creator: Agent, clowderurl: String,
+                         dataset: Option[Dataset] = None, folder:Option[Folder] = None,
+                         key: String = "", index: Boolean = true,
+                         showPreviews: String = "DatasetLevel", originalZipFile: String = "",
+                         flagsFromPrevious: String = "", intermediateUpload: Boolean = false): Option[File] = {
+    val fileds = jsv \ "dataset" match {
+      case d: JsString if dataset.isEmpty => datasets.get(UUID(Parsers.parseString(d)))
+      case _ => dataset
+    }
+
+    // craete the file object
+    val path = url.getPath
+    val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
+    val file = File(UUID.generate(), path, filename, user, new Date(),
+      FileUtils.getContentType(filename, None), -1, "", "",
+      isIntermediate=intermediateUpload, showPreviews=showPreviews,
+      licenseData=License.fromAppConfig(), status = FileStatus.CREATED.toString)
+    files.save(file)
+
+    // extract metadata
+    // TODO should really be using content not just the objects
+//    val source = s"""{ "@context": { "source": "http://purl.org/dc/terms/source" }, "content": { "source": "${url.toString}" } }"""
+    val source = s"""{ "@context": { "source": "http://purl.org/dc/terms/source" }, "source": "${url.toString}" }"""
+    val metadata = jsv \ "md" match {
+      case x: JsUndefined => {
+        jsv \ "metadata" match {
+          case y: JsUndefined => Some(Seq(source))
+          case y => Some(Seq(Json.stringify(y), source))
+        }
+      }
+      case x => Some(Seq(Json.stringify(x), source))
+    }
+    associateMetaData(creator, file, metadata)
+    associateDataset(file, fileds, folder, user)
+
+    // process rest of file in background
+    val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
+    Future {
+      saveURL(file, url).foreach { fixedfile =>
+        processFileBytes(fixedfile, new java.io.File(path), fileds)
+        files.setStatus(fixedfile.id, FileStatus.UPLOADED)
+        processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, fileds)
+        processDataset(file, fileds, folder, clowderurl, user, index)
+        files.setStatus(fixedfile.id, FileStatus.PROCESSED)
+      }
+    }(fileExecutionContext)
+
+    Some(file)
+  }
+
+  // process a single local path
+  private def processPath(path: String, jsv: JsValue, user: User, creator: Agent, clowderurl: String,
+                          dataset: Option[Dataset] = None, folder:Option[Folder] = None,
+                          key: String = "", index: Boolean = true,
+                          showPreviews: String = "DatasetLevel", originalZipFile: String = "",
+                          flagsFromPrevious: String = "", intermediateUpload: Boolean = false): Option[File] = {
+    val fileds = jsv \ "dataset" match {
+      case d: JsString if dataset.isEmpty => datasets.get(UUID(Parsers.parseString(d)))
+      case _ => dataset
+    }
+
+    // getStringList returns a java.util.List as opposed to the kind of List we want, thus the conversion
+    val sourcelist = play.api.Play.configuration.getStringList("filesystem.sourcepaths").map(_.toList).getOrElse(List.empty[String])
+
+    // Is the current path included in the source whitelist?
+    if (sourcelist.exists(s => path.startsWith(s))) {
+      Logger.debug(path + " is whitelisted for upload")
+
+      // craete the file object
+      val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
+      val length = new java.io.File(path).length()
+      val loader = classOf[services.filesystem.DiskByteStorageService].getName
+      val file = File(UUID.generate(), path, filename, user, new Date(),
+        FileUtils.getContentType(filename, None), length, "", loader,
+        isIntermediate=intermediateUpload, showPreviews=showPreviews,
+        licenseData=License.fromAppConfig(), status = FileStatus.CREATED.toString)
+      files.save(file)
+
+      // extract metadata
+      val metadata = jsv \ "md" match {
+        case x: JsUndefined => {
+          jsv \ "metadata" match {
+            case y: JsUndefined => None
+            case y => Some(Seq(Json.stringify(y)))
+          }
+        }
+        case x => Some(Seq(Json.stringify(x)))
+      }
+
+
+      associateMetaData(creator, file, metadata)
+      associateDataset(file, fileds, folder, user)
+
+      // process rest of file in background
+      val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
+      Future {
+        savePath(file, path).foreach { fixedfile =>
+          processFileBytes(fixedfile, new java.io.File(path), fileds)
+          files.setStatus(fixedfile.id, FileStatus.UPLOADED)
+          processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, fileds)
+          processDataset(file, fileds, folder, clowderurl, user, index)
+          files.setStatus(fixedfile.id, FileStatus.PROCESSED)
+        }
+      }(fileExecutionContext)
+
+      Some(file)
+    } else {
+      Logger.debug(path +" is not a whitelisted upload location")
+      None
+    }
+  }
+
+  /** Associate all metadata with file, added by agent */
+  private def associateMetaData(agent: Agent, file: File, mds: Option[Seq[String]]): Unit = {
+    mds.getOrElse(List.empty[String]).foreach { md =>
+      // TODO: should do a metadata validity check first
+      // Extract context from metadata object and remove it so it isn't repeated twice
+      val jsonmd = Json.parse(md)
+      val context: JsValue = jsonmd \ "@context"
+      val content = jsonmd.as[JsObject] - "@context"
+
+      // check if the context is a URL to external endpoint
+      val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
+
+      // check if context is a JSON-LD document
+      val contextID: Option[UUID] = context match {
+        case js: JsObject => Some(contextService.addContext(new JsString("context name"), js))
+        case js: JsArray => Some(contextService.addContext(new JsString("context name"), js))
+        case _ => None
+      }
+
+      // when the new metadata is added
+      val createdAt = new Date()
+
+      //parse the rest of the request to create a new models.Metadata object
+      val attachedTo = ResourceRef(ResourceRef.file, file.id)
+      val version = None
+      val metadata = models.Metadata(UUID.generate(), attachedTo, contextID, contextURL, createdAt, agent, content, version)
+
+      //add metadata to mongo
+      metadataService.addMetadata(metadata)
+    }
+  }
+
+  /** dataset processning */
+  private def associateDataset(file: File, dataset: Option[Dataset], folder: Option[Folder], user: User, multipleFile:Boolean=true): Unit = {
+    // add metadata to dataset
+    dataset.foreach{ds =>
+      // add file to folder or dataset
+      folder match {
+        case Some(folder) => {
+          if(!multipleFile) {
+            events.addObjectEvent(Some(user), ds.id, ds.name, "add_file_folder")
+          }
+          folders.addFile(folder.id, file.id)
+        }
+        case None => {
+          if(!multipleFile) {
+            events.addObjectEvent(Some(user), ds.id, ds.name, "add_file")
+          }
+          datasets.addFile(ds.id, file)
+        }
+      }
+    }
+  }
 
   /** stream the data from the uploaded path to final resting spot, this can be slow */
   private def saveFile(file: File, path: java.io.File, originalZipFile: String): Option[File] = {
@@ -318,117 +560,24 @@ object FileUtils {
     }
   }
 
-  def uploadFilesJSON(request: UserRequest[JsValue],
-                        dataset: Option[Dataset] = None, folder:Option[Folder] = None,
-                        key: String = "", index: Boolean = true,
-                        showPreviews: String = "DatasetLevel", originalZipFile: String = "",
-                        flagsFromPrevious: String = "", intermediateUpload: Boolean = false) : List[File] = {
-
-    if (request.user.isEmpty) {
-      Logger.error ("No user object given, should not happen.")
-      return List.empty[File]
-    }
-
-    val user = request.user.get
-    val creator_url = api.routes.Users.findById(user.id).absoluteURL(Utils.https(request))(request)
-    val creator = UserAgent(id = UUID.generate(), user=user.getMiniUser, userId = Some(new URL(creator_url)))
-
-    // Extract path information from requests for later
-    val clowderurl = Utils.baseUrl(request)
-    val clientIP = request.remoteAddress
-    val serverIP = request.host
-
-     // container for list of uploaded files
-    val uploadedFiles = new mutable.MutableList[File]()
-
-    val fileList = request.body match {
-      case v: JsArray => request.body.asOpt[List[JsObject]]
-      case v: JsObject => Some(List[JsObject](v))
-      case _ => None
-    }
-
-    // Now check whether we have any local file paths to handle
-    // [ { "path": "filepath", "md": { "field1":"val", "field2": 100 }, "dataset": UUID } ]
-    // [ { "fileurl": "url", md: ..., "dataset": UUID } ]
-    // [ { "url": "url", md: ..., "dataset": UUID } ]
-    fileList.foreach{ _.filter(key == "" || _.keys.contains(key)).foreach { jsv =>
-      val url = Try {
-        jsv \ "fileurl" match {
-          case u: JsString => Some(new URL(Parsers.parseString(u)))
-          case _ => jsv \ "weburl" match {
-            case u: JsString => Some(new URL(Parsers.parseString(u)))
-            case _ => jsv \ "url" match {
-              case u: JsString => Some(new URL(Parsers.parseString(u)))
-              case _ => None
-            }
-          }
-        }
+  /** Fix file object based on path file, no uploading just compute sha512 */
+  private def savePath(file: File, path: String): Option[File] = {
+    // Calculate SHA-512 hash
+    val filestream = new java.io.BufferedInputStream(new FileInputStream(path))
+    val sha512 = DigestUtils.sha512Hex(filestream)
+    filestream.close()
+    files.get(file.id) match {
+      case Some(f) => {
+        val fixedfile = f.copy(sha512 = sha512)
+        files.save(fixedfile)
+        Logger.info("Uploading Completed")
+        Some(fixedfile)
       }
-      if (url.isSuccess && url.get.isDefined) {
-        url.get.foreach(processURL(_, jsv, user, creator, clowderurl, dataset, folder, key, index, showPreviews, originalZipFile, flagsFromPrevious, intermediateUpload).foreach(uploadedFiles += _))
-      } else if (jsv.keys.contains("path")) {
-        val path = Parsers.parseString(jsv \ "path")
-        processPath(path, jsv, user, creator, clowderurl, dataset, folder, key, index, showPreviews, originalZipFile, flagsFromPrevious, intermediateUpload).foreach(uploadedFiles += _)
+      case None => {
+        Logger.error("File was not found anymore")
+        None
       }
-    }}
-
-    /*---- Insert DTS Request to database---*/
-    uploadedFiles.foreach{ file =>
-      dtsrequests.insertRequest(serverIP, clientIP, file.filename, file.id, file.contentType, file.length, file.uploadDate)
     }
-
-    uploadedFiles.toList
-  }
-
-  // process a single URL
-  private def processURL(url: URL, jsv: JsValue, user: User, creator: Agent, clowderurl: String,
-                         dataset: Option[Dataset] = None, folder:Option[Folder] = None,
-                         key: String = "", index: Boolean = true,
-                         showPreviews: String = "DatasetLevel", originalZipFile: String = "",
-                         flagsFromPrevious: String = "", intermediateUpload: Boolean = false): Option[File] = {
-    val fileds = jsv \ "dataset" match {
-      case d: JsString if dataset.isEmpty => datasets.get(UUID(Parsers.parseString(d)))
-      case _ => dataset
-    }
-
-    // craete the file object
-    val path = url.getPath
-    val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
-    val file = File(UUID.generate(), path, filename, user, new Date(),
-      FileUtils.getContentType(filename, None), -1, "", "",
-      isIntermediate=intermediateUpload, showPreviews=showPreviews,
-      licenseData=License.fromAppConfig(), status = FileStatus.CREATED.toString)
-    files.save(file)
-
-    // extract metadata
-    // TODO should really be using content not just the objects
-//    val source = s"""{ "@context": { "source": "http://purl.org/dc/terms/source" }, "content": { "source": "${url.toString}" } }"""
-    val source = s"""{ "@context": { "source": "http://purl.org/dc/terms/source" }, "source": "${url.toString}" }"""
-    val metadata = jsv \ "md" match {
-      case x: JsUndefined => {
-        jsv \ "metadata" match {
-          case y: JsUndefined => Some(Seq(source))
-          case y => Some(Seq(Json.stringify(y), source))
-        }
-      }
-      case x => Some(Seq(Json.stringify(x), source))
-    }
-    associateMetaData(creator, file, metadata)
-    associateDataset(file, fileds, folder, user)
-
-    // process rest of file in background
-    val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
-    Future {
-      saveURL(file, url).foreach { fixedfile =>
-        processFileBytes(fixedfile, new java.io.File(path), fileds)
-        files.setStatus(fixedfile.id, FileStatus.UPLOADED)
-        processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, fileds)
-        processDataset(file, fileds, folder, clowderurl, user, index)
-        files.setStatus(fixedfile.id, FileStatus.PROCESSED)
-      }
-    }(fileExecutionContext)
-
-    Some(file)
   }
 
   /** Fix file object based on path file, no uploading just compute sha512 */
@@ -453,146 +602,6 @@ object FileUtils {
       case None => {
         Logger.error("Could not save bytes, deleting file")
         files.removeFile(file.id)
-        None
-      }
-    }
-  }
-
-  // process a single local path
-  private def processPath(path: String, jsv: JsValue, user: User, creator: Agent, clowderurl: String,
-                          dataset: Option[Dataset] = None, folder:Option[Folder] = None,
-                          key: String = "", index: Boolean = true,
-                          showPreviews: String = "DatasetLevel", originalZipFile: String = "",
-                          flagsFromPrevious: String = "", intermediateUpload: Boolean = false): Option[File] = {
-    val fileds = jsv \ "dataset" match {
-      case d: JsString if dataset.isEmpty => datasets.get(UUID(Parsers.parseString(d)))
-      case _ => dataset
-    }
-
-    // getStringList returns a java.util.List as opposed to the kind of List we want, thus the conversion
-    val sourcelist = play.api.Play.configuration.getStringList("filesystem.sourcepaths").map(_.toList).getOrElse(List.empty[String])
-
-    // Is the current path included in the source whitelist?
-    if (sourcelist.exists(s => path.startsWith(s))) {
-      Logger.debug(path + " is whitelisted for upload")
-
-      // craete the file object
-      val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
-      val length = new java.io.File(path).length()
-      val loader = classOf[services.filesystem.DiskByteStorageService].getName
-      val file = File(UUID.generate(), path, filename, user, new Date(),
-        FileUtils.getContentType(filename, None), length, "", loader,
-        isIntermediate=intermediateUpload, showPreviews=showPreviews,
-        licenseData=License.fromAppConfig(), status = FileStatus.CREATED.toString)
-      files.save(file)
-
-      // extract metadata
-      val metadata = jsv \ "md" match {
-        case x: JsUndefined => {
-          jsv \ "metadata" match {
-            case y: JsUndefined => None
-            case y => Some(Seq(Json.stringify(y)))
-          }
-        }
-        case x => Some(Seq(Json.stringify(x)))
-      }
-
-
-      associateMetaData(creator, file, metadata)
-      associateDataset(file, fileds, folder, user)
-
-      // process rest of file in background
-      val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
-      Future {
-        savePath(file, path).foreach { fixedfile =>
-          processFileBytes(fixedfile, new java.io.File(path), fileds)
-          files.setStatus(fixedfile.id, FileStatus.UPLOADED)
-          processFile(fixedfile, clowderurl, index, flagsFromPrevious, showPreviews, fileds)
-          processDataset(file, fileds, folder, clowderurl, user, index)
-          files.setStatus(fixedfile.id, FileStatus.PROCESSED)
-        }
-      }(fileExecutionContext)
-
-      Some(file)
-    } else {
-      Logger.debug(path +" is not a whitelisted upload location")
-      None
-    }
-  }
-
-  def getContentType(filename: String, contentType: Option[String]): String = {
-    var ct = contentType.getOrElse(play.api.http.ContentTypes.BINARY)
-    if (ct == play.api.http.ContentTypes.BINARY) {
-      ct = play.api.libs.MimeTypes.forFileName(filename).getOrElse(play.api.http.ContentTypes.BINARY)
-    }
-    ct
-  }
-
-  /** Associate all metadata with file, added by agent */
-  private def associateMetaData(agent: Agent, file: File, mds: Option[Seq[String]]): Unit = {
-    mds.getOrElse(List.empty[String]).foreach { md =>
-      // TODO: should do a metadata validity check first
-      // Extract context from metadata object and remove it so it isn't repeated twice
-      val jsonmd = Json.parse(md)
-      val context: JsValue = jsonmd \ "@context"
-      val content = jsonmd.as[JsObject] - "@context"
-
-      // check if the context is a URL to external endpoint
-      val contextURL: Option[URL] = context.asOpt[String].map(new URL(_))
-
-      // check if context is a JSON-LD document
-      val contextID: Option[UUID] = context match {
-        case js: JsObject => Some(contextService.addContext(new JsString("context name"), js))
-        case js: JsArray => Some(contextService.addContext(new JsString("context name"), js))
-        case _ => None
-      }
-
-      // when the new metadata is added
-      val createdAt = new Date()
-
-      //parse the rest of the request to create a new models.Metadata object
-      val attachedTo = ResourceRef(ResourceRef.file, file.id)
-      val version = None
-      val metadata = models.Metadata(UUID.generate(), attachedTo, contextID, contextURL, createdAt, agent, content, version)
-
-      //add metadata to mongo
-      metadataService.addMetadata(metadata)
-    }
-  }
-
-  /** dataset processning */
-  private def associateDataset(file: File, dataset: Option[Dataset], folder: Option[Folder], user: User): Unit = {
-    // add metadata to dataset
-    dataset.foreach{ds =>
-      // add file to folder or dataset
-      folder match {
-        case Some(folder) => {
-          events.addObjectEvent(Some(user), ds.id, ds.name, "add_file_folder")
-          folders.addFile(folder.id, file.id)
-        }
-        case None => {
-          events.addObjectEvent(Some(user), ds.id, ds.name, "add_file")
-          datasets.addFile(ds.id, file)
-        }
-      }
-    }
-  }
-
-  /** Fix file object based on path file, no uploading just compute sha512 */
-  private def savePath(file: File, path: String): Option[File] = {
-    // Calculate SHA-512 hash
-    val filestream = new java.io.BufferedInputStream(new FileInputStream(path))
-    val sha512 = DigestUtils.sha512Hex(filestream)
-    filestream.close()
-    files.get(file.id) match {
-      case Some(f) => {
-        val fixedfile = f.copy(sha512 = sha512)
-        files.save(fixedfile)
-        Logger.info("Uploading Completed")
-        Some(fixedfile)
-      }
-      case None => {
-        Logger.error("File was not found anymore")
         None
       }
     }
