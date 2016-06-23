@@ -234,6 +234,7 @@ class  Datasets @Inject()(
             case None | Some(List("default"))=>
             case Some(collectionList) => {
               collectionList.map{c => collections.addDataset(UUID(c), d.id)}
+              //todd_n maybe change remove add dataset to collection spaces in service, do here
             }
           }
           //Below call is not what is needed? That already does what we are doing in the Dataset constructor...
