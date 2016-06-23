@@ -217,6 +217,15 @@ trait SecuredController extends Controller {
     }
 
     // 2) anonymous access
+    request.queryString.get("key").foreach { key =>
+      // TODO this needs to become more secure
+      if (key.nonEmpty) {
+        if (key.head.equals(play.Play.application().configuration().getString("commKey"))) {
+          return UserRequest(Some(User.anonymous.copy(superAdminMode=true)), request)
+        }
+      }
+    }
+
     UserRequest(None, request)
   }
 }
