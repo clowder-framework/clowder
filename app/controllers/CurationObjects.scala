@@ -556,8 +556,13 @@ class CurationObjects @Inject()(
           val key = play.api.Play.configuration.getString("commKey").getOrElse("")
           val https = controllers.Utils.https(request)
           val hostUrl = api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "?key=" + key
+          val dsLicense = c.datasets(0).licenseData.m_licenseType match {
+            case "license1" => c.datasets(0).author.fullName
+            case "license2" => "http://creativecommons.org/licenses/by-nc-nd/3.0/"
+            case "license3" => "http://creativecommons.org/publicdomain/zero/1.0/"
+          }
           val userPrefMap = userService.findById(c.author.id).map(usr => usr.repositoryPreferences.map( pref => if(pref._1 != "Purpose") { pref._1-> Json.toJson(pref._2.toString().split(",").toList)} else {pref._1-> Json.toJson(pref._2.toString())})).getOrElse(Map.empty)
-          var userPreferences = userPrefMap
+          var userPreferences = userPrefMap ++  Map("License" -> Json.toJson(dsLicense))
           user.map ( usr => usr.profile match {
             case Some(prof) => prof.institution match {
               case Some(institution) => userPreferences += ("Affiliations" -> Json.toJson(institution))
@@ -684,8 +689,7 @@ class CurationObjects @Inject()(
                   )),
                 "Rights Holder" -> Json.toJson(rightsholder),
                 "Publication Callback" -> Json.toJson(api.routes.CurationObjects.savePublishedObject(c.id).absoluteURL(https) +"?key=" + key),
-                "Environment Key" -> Json.toJson(play.api.Play.configuration.getString("commKey").getOrElse("")),
-                "License" -> Json.toJson(license)
+                "Environment Key" -> Json.toJson(play.api.Play.configuration.getString("commKey").getOrElse(""))
               )
             )
           Logger.debug("Submitting request for publication: " + valuetoSend)
