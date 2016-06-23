@@ -1,18 +1,22 @@
-import java.io.{StringWriter, PrintWriter}
-import play.api.{GlobalSettings, Application}
+import java.io.{PrintWriter, StringWriter}
+
+import play.api.{Application, GlobalSettings}
 import play.api.Logger
 import play.filters.gzip.GzipFilter
 import play.libs.Akka
 import securesocial.core.SecureSocial
-import services.{UserService, DI, AppConfiguration}
+import services.{AppConfiguration, DI, UserService}
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
 import models._
 import java.util.Calendar
+
 import play.api.mvc.{RequestHeader, WithFilters}
 import play.api.mvc.Results._
 import akka.actor.Cancellable
+import filters.CORSFilter
 import julienrf.play.jsonp.Jsonp
 
 /**
@@ -30,6 +34,9 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
     Logger.debug("\n----Server Start Time----" + ServerStartTime.startTime + "\n \n")
 
     val users: UserService = DI.injector.getInstance(classOf[UserService])
+
+    // set the default ToS version
+    AppConfiguration.setDefaultTermsOfServicesVersion()
 
     // add all new admins
     users.updateAdmins()
@@ -83,8 +90,6 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
       case Some(identity) =>  users.findByIdentity(identity)
       case None => None
     }
-      users.findByIdentity(SecureSocial.currentUser(request).get)
-
     Future(InternalServerError(
       views.html.errorPage(request, sw.toString.replace("\n", "   "))(user)))
   }

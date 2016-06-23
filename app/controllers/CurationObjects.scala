@@ -359,7 +359,7 @@ class CurationObjects @Inject()(
       metadataJson = metadataJson ++ Map(key -> Json.toJson(metadataList.filter(_.label == key).map{item => item.content}toList))
     }
     val metadataDefsMap = scala.collection.mutable.Map.empty[String, JsValue]
-    for(md <- metadatas.getDefinitions()) {
+    for(md <- metadatas.getDefinitions(Some(c.space))) {
       metadataDefsMap((md.json\ "label").asOpt[String].getOrElse("").toString()) = Json.toJson((md.json \ "uri").asOpt[String].getOrElse(""))
     }
 
@@ -590,9 +590,9 @@ class CurationObjects @Inject()(
           } else {
             metadataJson = metadataJson ++ Map("Abstract" -> Json.toJson(c.description))
           }
-          var metadataToAdd = metadataJson.toMap
+          val metadataToAdd = metadataJson.toMap
           val metadataDefsMap = scala.collection.mutable.Map.empty[String, JsValue]
-          for(md <- metadatas.getDefinitions()) {
+          for(md <- metadatas.getDefinitions(Some(c.space))) {
             metadataDefsMap((md.json\ "label").asOpt[String].getOrElse("").toString()) = Json.toJson((md.json \ "uri").asOpt[String].getOrElse(""))
           }
           if(!metadataDefsMap.contains("Abstract")){
@@ -662,7 +662,7 @@ class CurationObjects @Inject()(
                     "Creation Date" -> Json.toJson("http://purl.org/dc/terms/created")
                 )
               ))),
-                "Repository" -> Json.toJson(repository.toLowerCase()),
+                "Repository" -> Json.toJson(repository),
                 "Preferences" -> Json.toJson(
                   userPreferences
                 ),
