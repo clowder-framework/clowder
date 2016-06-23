@@ -55,7 +55,7 @@
             <td style="width: 35%; vertical-align:top;" class="input-table-cell" id="desccell">
                 <select name="space" id="spaceid" class = "form-control chosen-select" @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined){multiple} style="width: 342px;">
                     @if(!play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
-                        <option value="">Select a space to share the collection with (Optional)</option>
+                        <option value="">Select a @spaces.spaceTitle().toString().filter(_ >= ' ') to share the collection with (Optional)</option>
                     }
                     @spaceList.map { space =>
                         <option id = "@(space.id)" value="@(space.id)">@(space.name)</option>

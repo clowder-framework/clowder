@@ -48,9 +48,9 @@
                 </label>
                 <select name="space" id="spaceid" class ="chosen-select" @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined){multiple}>
                 @if(!play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
-                    <option value="">Select a space to share the dataset with (Optional)</option>
+                    <option value="">Select a @spaces.spaceTitle().toString().filter(_ >= ' ') to share the dataset with (Optional)</option>
                 }
-                    @spaces.map { space =>
+                @spaceList.map { space =>
                         <option id="@(space.id)" value="@(space.id)">@(space.name)</option>
                     }
                     </select>
