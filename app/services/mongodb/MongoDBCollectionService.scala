@@ -145,7 +145,6 @@ class MongoDBCollectionService @Inject() (
    * Return a list of the requested collections
    */
   private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], space: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): List[Collection] = {
-    //todd_n should i add addResourceToCollection here?
     val (filter, sort) = filteredQuery(date, nextPage, title, space, permissions, user, showAll, owner)
     //println("db.collections.find(" + MongoUtils.mongoQuery(filter) + ").sort(" + MongoUtils.mongoQuery(sort) + ")")
     if (date.isEmpty || nextPage) {
