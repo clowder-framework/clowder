@@ -143,11 +143,11 @@ function addDatasetToSpace(id) {
 function copyDatasetToSpace(id) {
     var selectedId = $('#spaceCopySelect').val();
     if(!selectedId) return false;
-    var request = jsRoutes.controllers.Datasets.copyDatasetToSpace(id, selectedId).ajax({
+    var request = jsRoutes.api.Datasets.copyDatasetToSpace(id, selectedId).ajax({
         type: 'POST'
     });
     request.done(function(response, textStatus, jqXHR){
-      console.log("Space Added")
+      location.href = jsRoutes.controllers.Datasets.dataset(response.newDatasetId).url;
     });
     request.fail(function(jqXHR, textStatus, errorThrown) {
         notify("The dataset was not copied to the space due to the following: " + errorThrown, "error");
