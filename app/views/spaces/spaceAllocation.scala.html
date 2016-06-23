@@ -4,9 +4,9 @@
     <div class="row bottom-padding">
         <div class="col-md-12">
         @if(resourceType == ResourceRef.collection) {
-            <h4>Spaces containing the collection</h4>
+            <h4>@{spaces.spaceTitle()}s containing the collection</h4>
         } else {
-            <h4>Spaces containing the dataset</h4>
+            <h4>@{spaces.spaceTitle()}s containing the dataset</h4>
         }
         </div>
     </div>
@@ -35,14 +35,16 @@
                             } else {
                                 @s.datasetCount datasets
                             }
-                            @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
-                                | <button onclick="confirmRemoveResourceFromResourceEvent('space','@(s.id)','dataset','@(resourceId)',event)" class="btn btn-link btn-xs" title="Remove the dataset from the space">
-                                    <span class="glyphicon glyphicon-remove"></span> Remove</button>
-                            } else {
-                                |
-                                <div class="inline" title="No permission to remove from the space">
-                                    <button class="btn btn-link btn-xs disabled"><span class="glyphicon glyphicon-remove"></span> Remove</button>
-                                </div>
+                            @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
+                                @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
+                                    | <button onclick="confirmRemoveResourceFromResourceEvent('space','@(spaceTitle)','@(s.id)','dataset','@(resourceId)',event)" class="btn btn-link btn-xs" title="Remove the dataset from the @spaceTitle">
+                                        <span class="glyphicon glyphicon-remove"></span> Remove</button>
+                                } else {
+                                    |
+                                    <div class="inline" title="No permission to remove from the @spaceTitle">
+                                        <button class="btn btn-link btn-xs disabled"><span class="glyphicon glyphicon-remove"></span> Remove</button>
+                                    </div>
+                                }
                             }
                         }
                         @if(resourceType == ResourceRef.collection) {
@@ -56,15 +58,17 @@
                                 meaning it has no parent in the space.
                             **@
                             @if(v == true){
-                                @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
-                                    | <button onclick="confirmRemoveResourceFromResourceEvent('space','@(s.id)','collection','@(resourceId)',event)" class="btn btn-link btn-xs" title="Remove the collection from the space">
-                                        <span class="glyphicon glyphicon-remove"></span> Remove</button>
-                                } else {
-                                    |
-                                    <div class="inline" title="No permission to remove from the space">
-                                        <button class="btn btn-link btn-xs disabled"><span class="glyphicon glyphicon-remove"></span> Remove</button>
-                                    </div>
-                                }
+                                @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
+                                    @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, s.id))) {
+                                        | <button onclick="confirmRemoveResourceFromResourceEvent('space','@(spaceTitle)','@(s.id)','collection','@(resourceId)',event)" class="btn btn-link btn-xs" title="Remove the collection from the @(spaceTitle)">
+                                            <span class="glyphicon glyphicon-remove"></span> Remove</button>
+                                    } else {
+                                        |
+                                        <div class="inline" title="No permission to remove from the @(spaceTitle)">
+                                            <button class="btn btn-link btn-xs disabled"><span class="glyphicon glyphicon-remove"></span> Remove</button>
+                                        </div>
+                                    }
+                                 }
                             } else {
                                 |
                                 <div class="inline" title="Child collection, only the parent can be removed">
@@ -79,8 +83,6 @@
         }
         </div>
     </div>
-
-
 
     <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
     @if(Permission.checkOwner(user, ResourceRef(resourceType, resourceId))) {

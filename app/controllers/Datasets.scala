@@ -8,6 +8,7 @@ import api.Permission
 import api.Permission.Permission
 import fileutils.FilesUtils
 import models._
+import org.apache.commons.lang.StringEscapeUtils._
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.{JsObject, JsValue}
@@ -40,6 +41,11 @@ class Datasets @Inject()(
   events: EventService) extends SecuredController {
 
   object ActivityFound extends Exception {}
+
+  /**
+    * String name of the Space such as 'Project space' etc., parsed from the config file
+    */
+  val spaceTitle: String = escapeJava(play.Play.application().configuration().getString("spaceTitle").trim)
 
   /**
    * Display the page that allows users to create new datasets
@@ -182,7 +188,7 @@ class Datasets @Inject()(
       case Some(p) => {
         space match {
           case Some(s) => {
-            title = Some(person.get.fullName + "'s Datasets in Space <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
+            title = Some(person.get.fullName + "'s Datasets in " + spaceTitle + " <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
           }
           case None => {
             title = Some(person.get.fullName + "'s Datasets")
@@ -197,7 +203,7 @@ class Datasets @Inject()(
       case None => {
         space match {
           case Some(s) => {
-            title = Some("Datasets in Space <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
+            title = Some("Datasets in " + spaceTitle + " <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
             if (date != "") {
               datasets.listSpace(date, nextPage, limit, s)
             } else {
@@ -591,7 +597,7 @@ class Datasets @Inject()(
         dataset.spaces.foreach { spaceId =>
           spaceService.get(spaceId) match {
             case Some(spc) => userList = spaceService.getUsersInSpace(spaceId) ::: userList
-            case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No spaces found for dataset $id.")
+            case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No $spaceTitle found for dataset $id.")
           }
         }
         userList = userList.distinct.sortBy(_.fullName.toLowerCase)
@@ -613,7 +619,7 @@ class Datasets @Inject()(
 
               }
             }
-            case None => Redirect (routes.Datasets.dataset(id)).flashing ("error" -> s"Error: No spaces found for dataset $id.");
+            case None => Redirect (routes.Datasets.dataset(id)).flashing ("error" -> s"Error: No $spaceTitle found for dataset $id.");
           }
         }
         // Clean-up, and sort space-names per user
