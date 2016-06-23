@@ -13,7 +13,7 @@ import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
 import services.MetadataService
-import services.{ContextLDService, DatasetService, FileService, FolderService}
+import services.{ContextLDService, DatasetService, FileService, FolderService, ExtractorMessage, RabbitmqPlugin}
 import api.Permission
 
 /**
@@ -38,6 +38,12 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
           Logger.error(s"Could not increase counter for ${metadata.attachedTo}")
         }
       }
+    }
+    // send extractor message after attached to resource
+    val mdMap = Map("metadata"->metadata.content)
+    current.plugin[RabbitmqPlugin].foreach { p =>
+      val dtkey = s"${p.exchange}.${metadata.attachedTo.resourceType.name}.metadata.added"
+      p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, mdMap, "", metadata.attachedTo.id, ""))
     }
     UUID(mid.get.toString())
   }
@@ -87,6 +93,14 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
           }
         }
         MetadataDAO.remove(md, WriteConcern.Safe)
+
+        // send extractor message after removed from resource
+        val mdMap = Map("metadata"->md.content)
+        current.plugin[RabbitmqPlugin].foreach { p =>
+          val dtkey = s"${p.exchange}.${md.attachedTo.resourceType.name}.metadata.removed"
+          p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, mdMap, "", md.attachedTo.id, ""))
+        }
+
         //update metadata count for resource
         current.plugin[MongoSalatPlugin] match {
           case None => throw new RuntimeException("No MongoSalatPlugin")
@@ -110,8 +124,13 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     MetadataDAO.remove(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
       "attachedTo._id" -> new ObjectId(resourceRef.id.stringify)), WriteConcern.Safe)
     //not providing metaData count modification here since we assume this is to delete the metadata's host
-  }
 
+    // send extractor message after attached to resource
+    current.plugin[RabbitmqPlugin].foreach { p =>
+      val dtkey = s"${p.exchange}.${resourceRef.resourceType.name}.metadata.removed"
+      p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, Map[String, Any](), "", resourceRef.id, ""))
+    }
+  }
 
   /** Get metadata context if available  **/
   def getMetadataContext(metadataId: UUID): Option[JsValue] = {
