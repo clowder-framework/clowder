@@ -26,7 +26,7 @@ function addToCollection(datasetId) {
         } else {
             txt = txt + o.datasetsInCollection +' datasets';
         }
-        txt = txt + ' | <button class="btn btn-link btn-xs" onclick="confirmRemoveResourceFromResourceEvent(\'collection\',\''+selectedId+'\',\'dataset\',\''+datasetId+'\', event)" title="Remove the dataset from the collection">' +
+        txt = txt + ' | <button class="btn btn-link btn-xs" onclick="confirmRemoveResourceFromResourceEvent(\'collection\',\'collection\',\''+selectedId+'\',\'dataset\',\''+datasetId+'\', event)" title="Remove the dataset from the collection">' +
         '<span class="glyphicon glyphicon-remove"></span> Remove</button>';
         txt = txt + '</div>';
         txt = txt + '</div>';

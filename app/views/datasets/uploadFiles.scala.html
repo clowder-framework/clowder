@@ -36,6 +36,7 @@ of the blueimp jQuery File Upload library. An open source project located here: 
             <noscript>Javascript is required in order to use the uploader to create a new dataset.</noscript>
 
             <input type="hidden" name="datasetid" id="hiddenid" value="@dataset.id">
+            <input type="hidden" name="multiple" id="hiddenmt" value=false>
                 <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
             <div class="row fileupload-buttonbar button-margins upload-files-buttons">
                 <div class="col-lg-7">
@@ -46,7 +47,7 @@ of the blueimp jQuery File Upload library. An open source project located here: 
                             <!-- The file input had "multiple" removed for the current dataset creation method. -->
                         <input type="file" name="files[]" multiple>
                     </span>
-                    <button type="submit" class="btn btn-primary start" id="uploadcreate" onclick="checkZeroFiles();" title="Upload selected files">
+                    <button type="submit" class="btn btn-primary start" id="uploadcreate" onclick="checkZeroFiles('@dataset.id',  @folderId.isDefined);" title="Upload selected files">
                         <span class="glyphicon glyphicon-upload"></span> Upload
                     </button>
                     <button type="submit" class="btn btn-default cancel">

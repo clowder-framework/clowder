@@ -1,4 +1,4 @@
-@(errorString: String, spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(errorString: String, spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
@@ -18,8 +18,8 @@
   <div class="page-header">
     <h1>Create New Collection</h1>
         <p>Collections allow you to bring together multiple datasets and their associated files in an almost unlimited number of ways.
-            Share a collection to a Project Team to work with your team.
-            Permissions will be applied according to the Space's and Datasets' settings.
+            Share a collection to a @{spaces.spaceTitle()} to work with your team. Permissions will be applied according to the
+            @{spaces.spaceTitle()}'s and datasets' settings.
         </p>
   </div>
   <div class="row">
@@ -49,22 +49,24 @@
                 <textarea class="form-control" cols=40 rows=4 type="text" id="description"></textarea>
                 <span class="error hiddencomplete" id="descerror"> This description is a required field</span><br>
             </td>
-        </tr>        
+        </tr>
         <tr>
-            <td style="width: 20%; vertical-align:top;" class="input-table-cell">Share with spaces (optional):</td>
+            <td style="width: 20%; vertical-align:top;" class="input-table-cell">Share with @{spaces.spaceTitle()}s:</td>
             <td style="width: 35%; vertical-align:top;" class="input-table-cell" id="desccell">
                 <select name="space" id="spaceid" class = "form-control chosen-select" @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined){multiple} style="width: 342px;">
                     @if(!play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
                         <option value="">Select a space to share the collection with (Optional)</option>
                     }
-                    @spaces.map { space =>
+                    @spaceList.map { space =>
                         <option id = "@(space.id)" value="@(space.id)">@(space.name)</option>
                     }
                 </select>
+                <p class="help-block">By default the collection is only accessible to the user who created it. You can share
+                    this collection with members of one or more @{spaces.spaceTitle()}s. This is optional.</p>
             </td>
         </tr>
         <tr>
-            <td>	                            
+            <td>
             </td>
             <td>
                 <button style="margin-top: 10px; margin-right: 10px;" class="btn btn-primary" title="Create the collection" onclick="return createCollection();">
@@ -89,7 +91,7 @@
 <script language="javascript">
     $(".chosen-select").chosen({
         width: "100%",
-        placeholder_text_multiple: "Select spaces for this collection."
+        placeholder_text_multiple: "(optional)"
     });
 </script>
 <script language = "javascript">
@@ -104,7 +106,7 @@
     }
 
     $(document).ready(function() {
-        @for(space <- spaces) {
+        @for(space <- spaceList) {
             idNameObj["@space.name"] = "@space.id";
 
         }
@@ -115,7 +117,7 @@
     var targetId = this.getAttribute("id");
     if(!isUndefined(params.selected)) {
         var addedId = params.selected;
-        @for(space <- spaces) {
+        @for(space <- spaceList) {
             var currentId = "@space.id";
             if(currentId != targetId) {
                 $("#@space.id option [value="+addedId +']').remove();
@@ -127,7 +129,7 @@
     }
     else if (!isUndefined(params.deselected)) {
         var removedId = params.deselected;
-        @for(space <- spaces) {
+        @for(space <- spaceList) {
             var currentId = "@space.id";
             if(currentId != targetId) {
                 $('#@space.id').prepend($("<option></option>").attr("value", removedId).text(getName(removedId)));

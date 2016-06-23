@@ -24,18 +24,18 @@
                 @if(user.isDefined) {
                     @if(showAll == false) {
                         <div class="btn-group btn-group-sm pull-right">
-                            <a class="btn btn-default" id="allspace"><span class="glyphicon glyphicon-th"></span> All Spaces</a>
-                            <a class="btn btn-default active" id="myspace"><span class="glyphicon glyphicon-stop"></span> My Spaces</a>
+                            <a class="btn btn-default" id="allspace"><span class="glyphicon glyphicon-th"></span> All @{spaces.spaceTitle()}s</a>
+                            <a class="btn btn-default active" id="myspace"><span class="glyphicon glyphicon-stop"></span> My @{spaces.spaceTitle()}s</a>
                         </div>
                     } else {
                         <div class="btn-group btn-group-sm pull-right">
-                            <a class="btn btn-default active" id="allspace"><span class="glyphicon glyphicon-th"></span> All Spaces</a>
-                            <a class="btn btn-default" id="myspace"><span class="glyphicon glyphicon-stop"></span> My Spaces</a>
+                            <a class="btn btn-default active" id="allspace"><span class="glyphicon glyphicon-th"></span> All @{spaces.spaceTitle()}s</a>
+                            <a class="btn btn-default" id="myspace"><span class="glyphicon glyphicon-stop"></span> My @{spaces.spaceTitle()}s</a>
                         </div>
                     }
                 }
                 @if(user.isDefined) {
-                    <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new space"><span class="glyphicon glyphicon-ok"></span> Create</a>
+                    <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new @{spaces.spaceTitle()}"><span class="glyphicon glyphicon-ok"></span> Create</a>
                 }
 
             </div>
