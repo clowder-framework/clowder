@@ -139,8 +139,8 @@
                     }
                 </div>
             }
-            @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
-                <div class="profile-disclaimer">@play.api.i18n.Messages("profile.disclaimer")</div>
+            @if(ownProfile.isDefined && ownProfile.get == true  && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+                <div class="profile-disclaimer small">@play.api.i18n.Messages("profile.disclaimer")</div>
             }
         </div>
 
