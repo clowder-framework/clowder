@@ -213,8 +213,8 @@ class Folders @Inject() (
   def getAllFoldersByDatasetId(datasetId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
     val response = ListBuffer.empty[JsValue]
+//    response += toJson(Map("id" -> "root", "name" -> "/"))
     val foldersList = folders.findByParentDatasetId(datasetId)
-    val folder_map = scala.collection.mutable.Map.empty[String, String]
     foldersList.map{ folder =>
       var folderHierarchy = new ListBuffer[String]()
       folderHierarchy += folder.name
@@ -228,8 +228,8 @@ class Folders @Inject() (
           case None =>
         }
       }
-      response += toJson(Map("id" -> folder.id.stringify, "name" -> folderHierarchy.reverse.mkString(" -> ")))
-//      folder_map(folder.id.stringify) = folderHierarchy.mkString(" -> ")
+      folderHierarchy +=""
+      response += toJson(Map("id" -> folder.id.stringify, "name" -> folderHierarchy.reverse.mkString("/")))
 
     }
     Ok(toJson(response))
@@ -241,41 +241,85 @@ class Folders @Inject() (
     datasets.get(datasetId) match {
       case Some(dataset) => {
         val oldFolderId = (request.body \ "folderId").asOpt[String]
-        val checkOldFolder = oldFolderId match {
-          case Some(folder) => dataset.folders.contains(UUID(folder))
-          case None => dataset.files.contains(fileId)
-        }
-        if(checkOldFolder && dataset.folders.contains(newFolderId)) {
-          folders.get(newFolderId) match {
-            case Some(newFolder) => {
-              files.get(fileId) match {
-                case Some(file) => {
-                  folders.addFile(newFolder.id, fileId)
+
+        folders.get(newFolderId) match {
+          case Some(newFolder) => {
+            files.get(fileId) match {
+              case Some(file) => {
+                if(newFolder.parentDatasetId == datasetId) {
+
                   oldFolderId match {
                     case Some(id) => {
                       folders.get(UUID(id)) match {
-                        case Some(oldFolder) => folders.removeFile(oldFolder.id, fileId)
-                        case None => Logger.error("Failed to remove file with id: " + file.id.stringify + " from folder with id: " + oldFolderId + ". The folder doesn't exist")
+                        case Some(oldFolder) => {
+                          if(oldFolder.files.contains(fileId)) {
+                            folders.removeFile(oldFolder.id, fileId)
+                            folders.addFile(newFolder.id, fileId)
+                            Ok(toJson(Map("status" -> "success", "fileName" -> file.filename, "folderName" -> newFolder.name)))
+                          } else {
+                            BadRequest("Failed to move file. The file with id: " + file.id.stringify + " isn't in folder with id: " + oldFolder.id.stringify  )
+                          }
+
+                        }
+                        case None => BadRequest("Failed to move file with id: " + file.id.stringify + " from folder with id: " + oldFolderId + ". The folder doesn't exist")
                       }
                     }
-                    case None => datasets.removeFile(datasetId, fileId)
+                    case None => {
+                      if(dataset.files.contains(fileId)) {
+                        folders.addFile(newFolder.id, fileId)
+                        datasets.removeFile(datasetId, fileId)
+                        Ok(toJson(Map("status" -> "success", "fileName" -> file.filename, "folderName" -> newFolder.name)))
+                      } else {
+                        BadRequest("Failed to move file. The file with id: " + file.id.stringify + "Isn't in dataset with id: " + dataset.id.stringify  )
+                      }
+
+                    }
                   }
 
-                  Ok(toJson(Map("status" -> "success", "fileName" -> file.filename, "folderName" -> newFolder.name)))
-                }
-                case None => BadRequest("Failed to copy file. There is no file with id:  " + fileId.stringify)
-              }
 
+                } else {
+                  BadRequest("Failed to copy file. The destination folder is not in the dataset.")
+                }
+
+              }
+              case None => BadRequest("Failed to copy file. There is no file with id:  " + fileId.stringify)
             }
-            case None => BadRequest("Failed to copy the file. The destination folder doesn't exist. New folder Id: "+ newFolderId)
+
           }
-        } else {
-          BadRequest("Failure to copy the file. The dataset doesn't contain either the from or to folder. ")
+          case None => BadRequest("Failed to copy the file. The destination folder doesn't exist. New folder Id: "+ newFolderId)
         }
+
       }
       case None => BadRequest("There is no dataset with id: " + datasetId.stringify)
     }
 
+  }
+
+  def moveFileToDataset(datasetId: UUID, oldFolderId: UUID, fileId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
+    implicit val user = request.user
+    datasets.get(datasetId) match {
+      case Some(dataset) => {
+        files.get(fileId) match {
+          case Some(file) => {
+            folders.get(oldFolderId) match {
+              case Some(folder) => {
+                if(folder.files.contains(fileId)) {
+                  datasets.addFile(datasetId, file)
+                  folders.removeFile(oldFolderId, fileId)
+                  Ok(toJson(Map("status" -> "success", "fileName"-> file.filename )))
+                } else {
+                  BadRequest("The file you are trying to move isn't in the folder you are moving it from.")
+                }
+              }
+              case None => BadRequest("Failed to copy the file. The ")
+            }
+
+          }
+          case None => BadRequest("Failure to copy the file. There is no file with id: " + fileId.stringify)
+        }
+      }
+      case None => BadRequest("There is no dataset with id: " + datasetId.stringify)
+    }
   }
 
 }
