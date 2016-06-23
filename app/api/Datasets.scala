@@ -2144,6 +2144,24 @@ class  Datasets @Inject()(
       }
     }
   }
+
+  @ApiOperation(value = "Insert add_file Event",
+    notes = "Insert an Event into the Events Collection",
+    responseClass = "None", httpMethod = "POST")
+  def addFileEvent(id:UUID,  inFolder:Boolean, fileCount: Int ) = AuthenticatedAction {implicit request =>
+    datasets.get(id) match{
+      case Some(d) =>  {
+        var eventType = if (inFolder) "add_file_folder" else "add_file"
+        eventType = eventType + "_" + fileCount.toString
+        events.addObjectEvent(request.user, id, d.name, eventType)
+      }
+
+      // we do not return an internal server error here since this function just add an event and won't influence the
+      // following operations.
+      case None =>  Logger.error("Dataset not found")
+    }
+    Ok(toJson("added new event"))
+  }
   def copyDatasetToSpace(datasetId: UUID, spaceId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     implicit val user = request.user
     user match {

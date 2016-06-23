@@ -662,7 +662,7 @@ class CurationObjects @Inject()(
                     "Creation Date" -> Json.toJson("http://purl.org/dc/terms/created")
                 )
               ))),
-                "Repository" -> Json.toJson(repository.toLowerCase()),
+                "Repository" -> Json.toJson(repository),
                 "Preferences" -> Json.toJson(
                   userPreferences
                 ),
