@@ -36,7 +36,6 @@ case class Dataset(
   // public, where trial and default equals to private/public of its space
 ){
   def isPublic:Boolean = status.contains("public")
-  def isTrial:Boolean = status.contains("trial")
   def inSpace:Boolean = spaces.size > 0
 }
 

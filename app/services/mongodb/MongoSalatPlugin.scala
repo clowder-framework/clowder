@@ -1197,8 +1197,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
   private def addTrialFlag(): Unit ={
       val q = MongoDBObject()
-      val s = MongoDBObject("$set" -> MongoDBObject("status" -> "trial"))
-      val d = MongoDBObject("$set" -> MongoDBObject("status" -> "private"))
+      val s = MongoDBObject("$set" -> MongoDBObject("status" -> "Trial"))
+      val d = MongoDBObject("$set" -> MongoDBObject("status" -> "Private"))
       collection("datasets").update(q ,d, multi=true)
       collection("spaces.projects").update(q ,s, multi=true)
   }

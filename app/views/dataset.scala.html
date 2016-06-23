@@ -41,19 +41,17 @@
                     <ul class="list-unstyled">
                         <li>Created by <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
                         <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
-                        @if(dataset.isTrial){
-                            <li>Accessibility: Private</li>
-                        } else {
+
                             @if(Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                                <li id="access">Accessibility:
+                                <li id="access">Access:
                                     <label><input type="radio" name="access" id="access-default" value="default" >Default</label>
                                     <label><input type="radio" name="access" id="access-private" value="private" >Private</label>
                                     <label><input type="radio" name="access" id="access-public" value="public">Public</label>
                                 </li>
                             } else {
-                                    <li>Accessibility: @dataset.status</li>
+                                    <li>Access: @dataset.status.capitalize</li>
                             }
-                        }
+
                     </ul>
                 </div>
                 <div class="col-md-6">

@@ -669,7 +669,7 @@
 
 					<tr><td><b>Uploaded&nbsp;on:</b></td><td> @file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
                     <tr><td><b>Uploaded&nbsp;by:</b></td><td> <a href = "@routes.Profile.viewProfileUUID(file.author.id)"> @file.author.fullName</a></td></tr>
-					<tr><td><b>Accessibility:</b></td><td> @access</td></tr>
+					<tr><td><b>Access:</b></td><td> @access.capitalize</td></tr>
 					<tr><td><b>Status:</b></td><td> @file.status</td></tr>
                 </table>
             </div>
