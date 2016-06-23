@@ -64,18 +64,19 @@ class Datasets @Inject()(
       case None => None
     }
 
+
+    var collectionSpaces : ListBuffer[String] = ListBuffer.empty[String]
+
     val collectionSelected = collection match {
       case Some(c) => {
         collections.get(UUID(c)) match {
-          case Some(collection) => {
-            for (colSpace <- collection.spaces){
-              spaceService.get(colSpace) match{
-                case Some(aSpace) => {
-                  if (Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, aSpace.id))) {
-                    decodedSpaceList += Utils.decodeSpaceElements(aSpace)
-                  }
+          case Some(collection) =>  {
+            for (collection_space <- collection.spaces){
+              spaceService.get(collection_space) match {
+                case Some(col_space) => {
+                  collectionSpaces += col_space.id.stringify
                 }
-                case None => None
+                case None => Logger.error("No space found for id " + collection_space)
               }
             }
             Some(collection)
@@ -83,10 +84,13 @@ class Datasets @Inject()(
           case None => None
         }
       }
+      case None => None
     }
 
+
+
     Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected))
+      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected,collectionSpaces.toList))
 
   }
 

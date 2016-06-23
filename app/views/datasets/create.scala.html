@@ -1,4 +1,4 @@
-@(spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection], collectionSpaces : List[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @main("Create Dataset") {
     <!-- Custom items for the create dataset workflow -->
@@ -6,7 +6,7 @@
     <script type="text/javascript" language="javascript">
             //Global so that the javascript for the dataset creation can reference this.
             var isNameRequired = @isNameRequired;
-            var isDescRequired = @isDescriptionRequired;
+            var isDescRequired = @isDescriptionRequired
     </script>
     <div class="page-header">
         <h1>Create New Dataset</h1>
@@ -119,10 +119,12 @@
             }
         });
 
+
         if(@spaceId.isDefined) {
             $('#@spaceId').prop('selected','selected');
             $('#spaceid').trigger("chosen:updated");
         }
+
 
         $(function () {
             $('#createdataset').click(function () {
