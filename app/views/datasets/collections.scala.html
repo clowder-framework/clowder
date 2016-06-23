@@ -3,13 +3,13 @@
 @import api.Permission
 @import play.api.libs.json.Json
 
-<div class="row border-top bottom-padding">
+<div class="row">
     <div class="col-md-12 col-sm-12 col-lg-12">
         <h4>Collections containing the dataset</h4>
     </div>
 </div>
 
-<div class="row">
+<div class="row bottom-padding">
     <div id="collectionsList" class="col-md-12 col-sm-12 col-lg-12">
         @collectionsInside.map { collection =>
             <div id="col_@collection.id" class="row bottom-padding">
@@ -47,21 +47,21 @@
         }
     </div>
 </div>
-
-<!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
-@if(Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))) {
-    <div class="form-inline">
-        <div class="input-group input-group-sm col-md-8">
-            <select id="collectionAddSelect" class="form-control add-resource">
-            </select>
-            <span class="input-group-btn">
-                <a href="#" class="btn btn-default btn-large" id="addCollectionBtn" title="Add Dataset to Collection" onclick="addToCollection('@dataset.id')">
-                    <span class="glyphicon glyphicon-plus"></span> Add
-                </a>
-            </span>
+    <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
+    @if(Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))) {
+        <div class="form-inline bottom-padding">
+            <div class="input-group input-group-sm col-md-8">
+                <select id="collectionAddSelect" class="form-control add-resource">
+                </select>
+                <span class="input-group-btn">
+                    <a href="#" class="btn btn-default btn-large" id="addCollectionBtn" title="Add Dataset to Collection" onclick="addToCollection('@dataset.id')">
+                        <span class="glyphicon glyphicon-plus"></span> Add
+                    </a>
+                </span>
+            </div>
         </div>
-    </div>
-}
+    }
+
 
 <script language="javascript">
     $("#collectionAddSelect").select2({

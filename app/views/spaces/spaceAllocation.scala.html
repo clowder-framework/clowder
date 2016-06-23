@@ -1,7 +1,7 @@
 @(resourceId: UUID, resourceType: Symbol, resourceSpaces_canRemove : Map[ProjectSpace,Boolean], currentCollection: Option[Collection])(implicit user: Option[models.User])
 @import api.Permission
 @import play.api.libs.json.Json
-    <div class="row bottom-padding">
+    <div class="row">
         <div class="col-md-12">
         @if(resourceType == ResourceRef.collection) {
             <h4>Spaces containing the collection</h4>
@@ -11,7 +11,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row bottom-padding">
         <div id="spacesList" class="col-md-12">
         @resourceSpaces_canRemove.map {case (s, v) =>
             <div id="col_@s.id" class="row bottom-padding">
@@ -80,42 +80,41 @@
         </div>
     </div>
 
+        <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
+        @if(Permission.checkOwner(user, ResourceRef(resourceType, resourceId))) {
+            <div class="row bottom-padding">
+                <div class="col-xs-12">
+                    <div class="form-inline">
+                        <div class="input-group input-group-sm col-md-8">
+                            @if(resourceType == ResourceRef.collection) {
+                                <select id="spaceAddSelect" class="form-control add-resource">
+                                </select>
 
 
-    <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
-    @if(Permission.checkOwner(user, ResourceRef(resourceType, resourceId))) {
-        <div class="row">
-            <div class="col-xs-12">
-                <div class="form-inline">
-                    <div class="input-group input-group-sm col-md-8">
-                        @if(resourceType == ResourceRef.collection) {
-                            <select id="spaceAddSelect" class="form-control add-resource">
-                            </select>
+                            } else {
+                                <select id="spaceAddSelect" class="form-control add-resource">
+                                </select>
+                            }
 
-
-                        } else {
-                            <select id="spaceAddSelect" class="form-control add-resource">
-                            </select>
-                        }
-
-                        @if(resourceType == ResourceRef.dataset) {
-                            <span class="input-group-btn">
-                            <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add dataset to Space" onclick="addDatasetToSpace('@resourceId')">
-                                <span class="glyphicon glyphicon-plus"></span> Add
-                            </a>
-                            </span>
-                        } else {
-                            <span class="input-group-btn">
-                            <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add collection to Space" onclick="addCollectionToSpace('@resourceId')">
-                                <span class="glyphicon glyphicon-plus"></span> Add
-                            </a>
-                            </span>
-                        }
+                            @if(resourceType == ResourceRef.dataset) {
+                                <span class="input-group-btn">
+                                <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add dataset to Space" onclick="addDatasetToSpace('@resourceId')">
+                                    <span class="glyphicon glyphicon-plus"></span> Add
+                                </a>
+                                </span>
+                            } else {
+                                <span class="input-group-btn">
+                                <a href="#" class="btn btn-default btn-large" id="addSpaceBtn" title="Add collection to Space" onclick="addCollectionToSpace('@resourceId')">
+                                    <span class="glyphicon glyphicon-plus"></span> Add
+                                </a>
+                                </span>
+                            }
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    }
+        }
+
 
 
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
