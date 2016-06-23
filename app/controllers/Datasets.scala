@@ -17,6 +17,7 @@ import services._
 import util.{FileUtils, Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
 import scala.collection.mutable.{ListBuffer, Map => MutableMap}
+import scala.util.matching.Regex
 
 /**
  * A dataset is a collection of files and streams.
@@ -536,6 +537,7 @@ class Datasets @Inject()(
    */
   def submit(folderId: Option[String]) = PermissionAction(Permission.CreateDataset)(parse.multipartFormData) { implicit request =>
     implicit val user = request.user
+    Logger.debug("------- in Datasets.submit ---------")
 
     val folder = folderId.flatMap(id => folders.get(UUID(id)))
     val retMap = request.body.asFormUrlEncoded.get("datasetid").flatMap(_.headOption) match {
