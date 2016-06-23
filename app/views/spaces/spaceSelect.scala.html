@@ -22,7 +22,7 @@
 <script language="javascript">
         $("#@selectId").select2({
             theme: "bootstrap",
-            placeholder: "Select a space",
+            placeholder: "Select a @spaces.spaceTitle().toString().filter(_ >= ' ')",
             allowClear: true,
             ajax: {
                 url: function(params) {

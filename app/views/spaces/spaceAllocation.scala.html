@@ -86,20 +86,24 @@
 
     <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
     @if(Permission.checkOwner(user, ResourceRef(resourceType, resourceId))) {
-        @if(resourceType == ResourceRef.collection) {
-            @spaces.spaceSelect(resourceId, resourceType, "spaceAddSelect", "addCollectionToSpace('"+resourceId+"')", "Add", "Add collection to Space")
-        } else {
-            @spaces.spaceSelect(resourceId, resourceType, "spaceAddSelect", "addDatasetToSpace('"+resourceId+"')", "Add", "Add dataset to Space" )
-        }
-        @if(current.plugin[services.SpaceCopyPlugin].isDefined) {
-            @if(resourceType == ResourceRef.dataset) {
-                <h4>Copy Dataset to Space</h4>
-                @spaces.spaceSelect(resourceId, resourceType, "spaceCopySelect", "copyDatasetToSpace('"+resourceId+"')", "Copy", "Copy dataset to Space" )
-            } @* else {
-                <h4>Copy Collection to Space</h4>
-                @spaces.spaceSelect(resourceId, resourceType, "spaceCopySelect", "copyCollectionToSpace('"+resourceId+"')", "Copy", "Copy collection to Space")
+        @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
+            @if(resourceType == ResourceRef.collection) {
+                @spaces.spaceSelect(resourceId, resourceType, "spaceAddSelect", "addCollectionToSpace('" + resourceId + "')", "Add", "Add collection to " + spaceTitle)
+            } else {
+                @spaces.spaceSelect(resourceId, resourceType, "spaceAddSelect", "addDatasetToSpace('" + resourceId + "')", "Add", "Add dataset to " +spaceTitle)
+            }
+            @if(current.plugin[services.SpaceCopyPlugin].isDefined) {
+                @if(resourceType == ResourceRef.dataset) {
+                    <h4>Copy Dataset to @{
+                        spaces.spaceTitle()
+                    }s</h4>
+                    @spaces.spaceSelect(resourceId, resourceType, "spaceCopySelect", "copyDatasetToSpace('" + resourceId + "')", "Copy", "Copy dataset to " + spaceTitle)
+                } @* else {
+                  <h4>Copy Collection to Space</h4>
+                  @spaces.spaceSelect(resourceId, resourceType, "spaceCopySelect", "copyCollectionToSpace('"+resourceId+"')", "Copy", "Copy collection to Space")
 
-            }*@
+                  }*@
+            }
         }
 
     }
