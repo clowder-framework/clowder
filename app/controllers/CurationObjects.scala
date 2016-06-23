@@ -5,6 +5,7 @@ import javax.inject.Inject
 import api.Permission
 import com.fasterxml.jackson.annotation.JsonValue
 import models._
+import org.apache.commons.lang.StringEscapeUtils._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.json.Json._
@@ -37,6 +38,11 @@ class CurationObjects @Inject()(
   userService: UserService,
   metadatas: MetadataService,
   contextService: ContextLDService) extends SecuredController {
+
+  /**
+    * String name of the Space such as 'Project space' etc., parsed from the config file
+    */
+  val spaceTitle: String = escapeJava(play.Play.application().configuration().getString("spaceTitle").trim)
 
   def newCO(datasetId:UUID, spaceId: String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
@@ -122,7 +128,7 @@ class CurationObjects @Inject()(
               Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
             }
             else {
-              InternalServerError("Space not found")
+              InternalServerError(spaceTitle + " not found")
             }
           }
           case None => InternalServerError("Dataset Not found")
@@ -506,7 +512,7 @@ class CurationObjects @Inject()(
               }
               Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository(0), propertiesMap, repPreferences))
             }
-            case None => InternalServerError("Space not found")
+            case None => InternalServerError(spaceTitle + " not found")
           }
         }
         case None => InternalServerError("User Not Found")
