@@ -119,12 +119,16 @@
             }
         });
 
-
         if(@spaceId.isDefined) {
             $('#@spaceId').prop('selected','selected');
             $('#spaceid').trigger("chosen:updated");
         }
 
+        //todd_n add for loop to select id
+        @for(eachId <- collectionSpaces){
+            $('#@eachId').prop('selected','selected');
+            $('#spaceid').trigger("chosen:updated");
+        }
 
         $(function () {
             $('#createdataset').click(function () {
