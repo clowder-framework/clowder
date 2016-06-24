@@ -1,7 +1,7 @@
 @(datasets: List[models.Dataset], space: String)(implicit user: Option[models.User])
 
 @import api.Permission
-<h3>Datasets</h3>
+<h3>Datasets in the space</h3>
 @if(datasets.size == 0) {
     @if(user.isDefined && !Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
         <p> Please request access to add datasets to this space</p>

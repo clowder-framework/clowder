@@ -18,6 +18,10 @@
                         <a href="@(routes.Collections.collection(collection.id))">
                             <img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.get)))" alt="Thumbnail of @Html(collection.name)">
                         </a>
+                    } else {
+                        <a href="@routes.Collections.collection(collection.id)">
+                            <span class="smallicon glyphicon glyphicon-th-large"></span>
+                        </a>
                     }
                 </div>
                 <div class="col-md-10 col-sm-10 col-lg-10">

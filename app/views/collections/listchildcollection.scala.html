@@ -8,7 +8,7 @@
                     <img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)">
                 } else {
                     <a href="@routes.Collections.collection(collection.id)">
-                        <span class="bigicon glyphicon glyphicon-th-list"></span>
+                        <span class="bigicon glyphicon glyphicon-th-large"></span>
                     </a>
                 }
             </div>
