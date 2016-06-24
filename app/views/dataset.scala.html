@@ -529,11 +529,13 @@
             var name = '@dataset.name';
             var id = '@dataset.id';
             var access = $("input[name='access']:checked").val();
-            var msg = "Are you sure you want to set " + name + " to " +access+"?";
-            var modalHTML = confirmTemplate(msg, id, access);
-            var confirmModal = $(modalHTML);
-            confirmModal.modal();
-            confirmModal.modal("show");
+            if(access !== undefined){
+                var msg = "Are you sure you want to set " + name + " to " +access+"?";
+                var modalHTML = confirmTemplate(msg, id, access);
+                var confirmModal = $(modalHTML);
+                confirmModal.modal();
+                confirmModal.modal("show");
+            }
         });
 
         function moveFile(fileId) {

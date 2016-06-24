@@ -330,6 +330,10 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         }
       }
 
+      if (spaces.get(spaceid).map(_.isTrial).getOrElse(true) == true ){
+        access = SpaceStatus.TRIAL.toString
+      }
+
       Logger.debug(s"updateInformation for space with id  $spaceid. Args are $description, $name, $enabled, $timeAsString and $access")
 
       //Generate the expiration time and the boolean flag
