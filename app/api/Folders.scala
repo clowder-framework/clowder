@@ -16,6 +16,7 @@ import com.wordnik.swagger.annotations.ApiOperation
 @Api(value= "/folders", listingPath ="/api-docs.json/folders", description ="A folder is a container of files and other folders")
 @Singleton
 class Folders @Inject() (
+  files: FileService,
   folders: FolderService,
   datasets: DatasetService,
   events: EventService) extends ApiController {
@@ -203,6 +204,33 @@ class Folders @Inject() (
        }
        case None => InternalServerError(s"Parent dataset $parentDatasetId not found")
      }
-   }
+  }
 
+  @ApiOperation(value = "Detach file from folder",
+    notes = "File is not deleted, only separated from the selected folder. If the file is an XML metadata file, the metadata are removed from the dataset.",
+    responseClass = "None", httpMethod = "POST")
+  def detachFileFolder(folderId: UUID, fileId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.folder, folderId))) { implicit request =>
+    folders.get(folderId) match{
+      case Some(folder) => {
+        files.get(fileId) match {
+          case Some(file) => {
+            //remove file from folder
+            folders.removeFile(folder.id, file.id)
+            events.addSourceEvent(request.user , file.id, file.filename, folder.id, folder.name, "detach_file_folder")
+            files.index(fileId)
+
+            Logger.debug("----- Removing a file from folder completed")
+            Ok(toJson(Map("status" -> "success")))
+          }
+          case None => {
+            Logger.debug("----- detach helper NONE case")
+            Ok(toJson(Map("status" -> "success")))
+          }
+        }
+      }
+      case None => {
+        Logger.error(s"Error getting folder $folderId"); InternalServerError
+      }
+    }
+  }
 }

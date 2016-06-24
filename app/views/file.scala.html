@@ -768,34 +768,62 @@
 
 			<!-- Move the file to a dataset -->
 			<div class="row ds-section-sm border-top">
-				<h4>Dataset containing the file</h4>
-				<!-- A file cannot be part of more datasets as of June 2016. The code, however supports datasets sharing  -->
-				@datasets.map { dataset =>
-					<div id="dat_@dataset.id" class="row bottom-padding">
-						<div class="col-md-2 col-sm-2 col-lg-2">
-						@if(!dataset.thumbnail_id.isEmpty){
-							<a href="@(routes.Datasets.dataset(dataset.id))">
-								<img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.get)))" alt="Thumbnail of @Html(dataset.name)">
-							</a>
+				@if(datasets.length > 0) {
+					<h4>Dataset containing the file</h4>
+					<!-- A file cannot be part of more datasets as of June 2016. The code, however supports datasets sharing  -->
+					@datasets.map { dataset =>
+						<div id="dat_@dataset.id" class="row bottom-padding">
+							<div class="col-md-2 col-sm-2 col-lg-2">
+							@if(!dataset.thumbnail_id.isEmpty){
+								<a href="@(routes.Datasets.dataset(dataset.id))">
+									<img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(dataset.thumbnail_id.get)))" alt="Thumbnail of @Html(dataset.name)">
+								</a>
+							}
+							</div>
+							<div class="col-md-10 col-sm-10 col-lg-10">
+								<div>
+									<a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id' class ="dataset">@Html(dataset.name)</a>
+								</div>
+							</div>
+						</div>
+						@if(Permission.checkOwner(user, ResourceRef(ResourceRef.file, file.id))) {
+							<div class="form-inline">
+								<div class="input-group input-group-sm col-md-8">
+									<select id="datasetAddSelect" class="form-control add-resource"></select>
+									<span class="input-group-btn">
+										<a href="#" class="btn btn-default btn-large" id="moveFileBtn" title="Move file to dataset" onclick="moveFromFolderToDataset(null,'@dataset.id','@file.id')">
+											<span class="glyphicon glyphicon-move"></span> Move file
+										</a>
+									</span>
+								</div>
+							</div>
 						}
-						</div>
-						<div class="col-md-10 col-sm-10 col-lg-10">
-							<div>
-								<a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id' class ="dataset">@Html(dataset.name)</a>
+					}
+				}
+				@if(folders.length > 0) {
+					<h4>Dataset folder containing the file</h4>
+					@folders.map { folder =>
+						<div id="dat_@folder.parentDatasetId" class="row bottom-padding">
+							<div class="col-md-2 col-sm-2 col-lg-2">
+							</div>
+							<div class="col-md-10 col-sm-10 col-lg-10">
+								<div>
+									<a href="@routes.Datasets.dataset(folder.parentDatasetId)#folderId=@folder.id" id='@folder.parentDatasetId' class ="dataset">@Html(folder.displayName)</a>
+								</div>
 							</div>
 						</div>
-					</div>
-					@if(Permission.checkOwner(user, ResourceRef(ResourceRef.file, file.id))) {
-						<div class="form-inline">
-							<div class="input-group input-group-sm col-md-8">
-								<select id="datasetAddSelect" class="form-control add-resource"></select>
-								<span class="input-group-btn">
-									<a href="#" class="btn btn-default btn-large" id="moveFileBtn" title="Move file to dataset" onclick="moveFromToDataset('@dataset.id','@file.id')">
-										<span class="glyphicon glyphicon-plus"></span> Move file
-									</a>
-								</span>
+						@if(Permission.checkOwner(user, ResourceRef(ResourceRef.file, file.id))) {
+							<div class="form-inline">
+								<div class="input-group input-group-sm col-md-8">
+									<select id="datasetAddSelect" class="form-control add-resource"></select>
+									<span class="input-group-btn">
+										<a href="#" class="btn btn-default btn-large" id="moveFileBtn" title="Move file to dataset" onclick="moveFromFolderToDataset('@folder.id','@folder.parentDatasetId','@file.id')">
+											<span class="glyphicon glyphicon-move"></span> Move file
+										</a>
+									</span>
+								</div>
 							</div>
-						</div>
+						}
 					}
 				}
 				<script language="javascript">

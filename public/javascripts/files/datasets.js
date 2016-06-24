@@ -1,4 +1,4 @@
-function moveFromToDataset(datasetFromId, fileId) {
+function moveFromToDataset(folderFromId, datasetFromId, fileId) {
     var selectedId = $("#datasetAddSelect").val();
     if (!selectedId) return false;
     var selectedName = $("#datasetAddSelect option:selected").text();
@@ -12,7 +12,11 @@ function moveFromToDataset(datasetFromId, fileId) {
         var o =$.parseJSON(jqXHR.responseText);
         $("#datasetAddSelect").select2("val", "");
 
-        removeFileFromDatasetAndRedirect(datasetFromId, fileId, "true", null);
+        if (folderFromId) {
+            removeFileFromFolderAndRedirect(datasetFromId, folderFromId, fileId, "true", null);
+        } else {
+            removeFileFromDatasetAndRedirect(datasetFromId, fileId, "true", null);
+        }
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
@@ -76,8 +80,25 @@ function removeFromDataset(datasetId, fileId, event){
     return false;
 }
 
+function removeFileFromFolderAndRedirect(datasetId, folderId, fileId, isreload, url){
+    var request = jsRoutes.api.Folders.detachFileFolder(folderId,file_id).ajax({
+        type: 'POST'
+    });
+
+    request.done(function (response, textStatus, jqXHR){
+        removeFileFromDatasetAndRedirect(datasetId, fileId, isreload, url);
+    });
+    request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error("The following error occured: " + textStatus, errorThrown);
+        var errMsg = "You must be logged in to remove a file from a folder.";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("The file was not removed from the folder due to : " + errorThrown, "error");
+        }
+    });
+}
+
 //Method to remove the file from dataset and redirect back to a specific URL on completion
-function removeFileFromDatasetAndRedirect(datasetId, fileId, isreload, url){
+function removeFileFromDatasetAndRedirect(datasetId, fileId, isreload, url) {
     var request = jsRoutes.api.Datasets.detachFile(datasetId, fileId, "True").ajax({
         type: 'POST'
     });
