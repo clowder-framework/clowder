@@ -213,16 +213,15 @@ class Folders @Inject() (
   def getAllFoldersByDatasetId(datasetId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
     val response = ListBuffer.empty[JsValue]
-//    response += toJson(Map("id" -> "root", "name" -> "/"))
     val foldersList = folders.findByParentDatasetId(datasetId)
     foldersList.map{ folder =>
       var folderHierarchy = new ListBuffer[String]()
-      folderHierarchy += folder.name
+      folderHierarchy += folder.displayName
       var f1: Folder = folder
       while(f1.parentType == "folder") {
         folders.get(f1.parentId) match {
           case Some(fparent) => {
-            folderHierarchy += fparent.name
+            folderHierarchy += fparent.displayName
             f1 = fparent
           }
           case None =>
