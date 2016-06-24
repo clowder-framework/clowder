@@ -170,9 +170,9 @@ object Permission extends Enumeration {
     resourceRef match {
       case ResourceRef(ResourceRef.file, id) => { val dataset =
         (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasets.findByFileId(id)).head
-        dataset.isPublic || dataset.status.contains("default") && dataset.spaces.map(sId => spaces.get(sId)).flatten.map(_.isPublic).reduce(_&&_)
+        dataset.isPublic || dataset.isDefault && dataset.spaces.map(sId => spaces.get(sId)).flatten.map(_.isPublic).reduce(_&&_)
       }
-      case ResourceRef(ResourceRef.dataset, id) => datasets.get(id).exists(dataset => dataset.isPublic || dataset.status.contains("default") && dataset.spaces.map(sId => spaces.get(sId)).flatten.map(_.isPublic).reduce(_&&_)) // TODO check if dataset is public datasets.get(r.id).isPublic()
+      case ResourceRef(ResourceRef.dataset, id) => datasets.get(id).exists(dataset => dataset.isPublic || dataset.isDefault && dataset.spaces.map(sId => spaces.get(sId)).flatten.map(_.isPublic).reduce(_&&_)) // TODO check if dataset is public datasets.get(r.id).isPublic()
       case ResourceRef(ResourceRef.collection, id) =>  collections.get(id).exists(collection => collection.spaces.map(sId => spaces.get(sId)).flatten.map(_.isPublic).reduce(_||_))
       case ResourceRef(ResourceRef.space, id) => spaces.get(id).exists(s=>s.isPublic)
       case ResourceRef(ResourceRef.comment, id) => false

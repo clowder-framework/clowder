@@ -35,7 +35,8 @@ case class Dataset(
   // can only see the default, private and public, where trial equals to private. viewers can only see private and
   // public, where trial and default equals to private/public of its space
 ){
-  def isPublic:Boolean = status.contains("public")
+  def isPublic:Boolean = status.contains(DatasetStatus.PUBLIC.toString)
+  def isDefault:Boolean = status.contains(DatasetStatus.DEFAULT.toString)
   def inSpace:Boolean = spaces.size > 0
 }
 

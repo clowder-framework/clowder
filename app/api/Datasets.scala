@@ -196,16 +196,16 @@ class  Datasets @Inject()(
     responseClass = "None", httpMethod = "POST")
   def createEmptyDataset() = PermissionAction(Permission.CreateDataset)(parse.json) { implicit request =>
     (request.body \ "name").asOpt[String].map { name =>
-      val description = (request.body \ "description").asOpt[String].getOrElse("")
+      (request.body \ "access").asOpt[String].map { access =>
+        val description = (request.body \ "description").asOpt[String].getOrElse("")
       var d : Dataset = null
       implicit val user = request.user
       user match {
         case Some(identity) => {
           (request.body \ "space").asOpt[List[String]] match {
             case None | Some(List("default"))=>
-              d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig())
+              d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig(), status= access)
             case Some(space) =>
-              val status = DatasetStatus.PRIVATE.toString
               var spaceList: List[UUID] = List.empty
               space.map {
                 aSpace => if (spaces.get(UUID(aSpace)).isDefined) {
@@ -215,7 +215,7 @@ class  Datasets @Inject()(
                   BadRequest(toJson("Bad space = " + aSpace))
                 }
               }
-              d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig(), spaces = spaceList, status = status)
+              d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig(), spaces = spaceList, status = access)
            }
         }
         case None => InternalServerError("User Not found")
@@ -267,6 +267,7 @@ class  Datasets @Inject()(
         }
         case None => Ok(toJson(Map("status" -> "error")))
       }
+      }.getOrElse(BadRequest(toJson("Missing parameter [access]")))
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
 
