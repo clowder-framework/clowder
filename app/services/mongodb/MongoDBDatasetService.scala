@@ -257,7 +257,7 @@ class MongoDBDatasetService @Inject() (
         case Some(u) => {
 
           val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
-          if (!permissions.intersect(Permission.READONLY).isEmpty ) {
+          if (permissions.contains(Permission.ViewDataset) ) {
             orlist += MongoDBObject("status" -> DatasetStatus.PUBLIC.toString)
             orlist += MongoDBObject("status" -> DatasetStatus.DEFAULT.toString) ++ ("spaces" $in publicSpaces)
           }

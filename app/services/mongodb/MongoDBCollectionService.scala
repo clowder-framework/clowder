@@ -8,7 +8,7 @@ import api.Permission.Permission
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
-import models.{User, UUID, Collection, Dataset}
+import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
 import org.bson.types.ObjectId
@@ -172,7 +172,7 @@ class MongoDBCollectionService @Inject() (
     //On the dropdown in the dataset page ‘Add dataset to collection’ you should see parent and child collections you have access to via a space or that you created.
 
     // create access filter
-    val publicSpaces= spaces.listByStatus("public").map(s => new ObjectId(s.id.stringify))
+    val publicSpaces= spaces.listByStatus(SpaceStatus.PUBLIC.toString).map(s => new ObjectId(s.id.stringify))
     val rootQuery = $or(("root_spaces" $exists true), ("parent_collection_ids" $exists false))
     val filterAccess = if (showAll || (configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewCollection))) {
       MongoDBObject()
