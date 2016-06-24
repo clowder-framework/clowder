@@ -86,7 +86,7 @@ function updateAccessApi(id, access) {
 	});
 	request.fail(function (jqXHR, textStatus, errorThrown){
 		console.error("The following error occurred: " + textStatus, errorThrown);
-		var errMsg = "You must be logged in to see files and folders.";
+		var errMsg = "You must be logged in to update the dataset.";
 		if (!checkErrorAndRedirect(jqXHR, errMsg)) {
 			notify("Error in updating the dataset : " + errorThrown, "error");
 		}
