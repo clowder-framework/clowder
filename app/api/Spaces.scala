@@ -639,7 +639,6 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
           }
         }
       }
-      // If the user doesn't have access to download these files
       case None => {
         Unauthorized
       }

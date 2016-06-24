@@ -187,10 +187,10 @@ class Datasets @Inject()(
     val datasetList = person match {
       case Some(p) => {
         space match {
-          case Some(s) => {
+          case Some(s) if datasetSpace.isDefined=> {
             title = Some(person.get.fullName + "'s Datasets in " + spaceTitle + " <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
           }
-          case None => {
+          case _ => {
             title = Some(person.get.fullName + "'s Datasets")
           }
         }
@@ -202,7 +202,7 @@ class Datasets @Inject()(
       }
       case None => {
         space match {
-          case Some(s) => {
+          case Some(s) if datasetSpace.isDefined => {
             title = Some("Datasets in " + spaceTitle + " <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
             if (date != "") {
               datasets.listSpace(date, nextPage, limit, s, user)
@@ -210,7 +210,7 @@ class Datasets @Inject()(
               datasets.listSpace(limit, s, user)
             }
           }
-          case None => {
+          case _ => {
             if (date != "") {
               datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
             } else {
@@ -297,6 +297,9 @@ class Datasets @Inject()(
 
     //Pass the viewMode into the view
     space match {
+      case Some(s) if datasetSpace.isEmpty =>{
+        NotFound(views.html.notFound(play.Play.application().configuration().getString("spaceTitle") + " not found."))
+      }
       case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
         BadRequest(views.html.notAuthorized("You are not authorized to access the space.", s, "space"))
       }

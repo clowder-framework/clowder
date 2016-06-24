@@ -531,7 +531,7 @@ DELETE         /api/datasets/:id                                                
 POST           /api/datasets/:id/detachdelete                                           @api.Datasets.detachAndDeleteDataset(id: UUID)
 POST           /api/datasets/:parentDatasetId/newFolder                                 @api.Folders.createFolder(parentDatasetId: UUID)
 PUT            /api/datasets/:id/access                                                 @api.Datasets.updateAccess(id:UUID, aceess:String ?="private")
-POST           /dataset/:id/addFileEvent                                                @api.Datasets.addFileEvent(id:UUID, inFolder:Boolean, fileCount: Int )
+POST           /api/datasets/:id/addFileEvent                                           @api.Datasets.addFileEvent(id:UUID, inFolder:Boolean, fileCount: Int )
 
 
 # ----------------------------------------------------------------------

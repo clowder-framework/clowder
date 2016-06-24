@@ -154,11 +154,11 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     val collectionList = person match {
       case Some(p) => {
         space match {
-          case Some(s) => {
+          case Some(s)  if(collectionSpace.isDefined) => {
             title = Some(person.get.fullName + "'s Collections in " + spaceTitle + " <a href="
               + routes.Spaces.getSpace(collectionSpace.get.id) + ">" + collectionSpace.get.name + "</a>")
           }
-          case None => {
+          case _ => {
             title = Some(person.get.fullName + "'s Collections")
           }
         }
@@ -170,7 +170,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       }
       case None => {
         space match {
-          case Some(s) => {
+          case Some(s)  if(collectionSpace.isDefined) => {
             title = Some("Collections in " + spaceTitle + " <a href=" + routes.Spaces.getSpace(collectionSpace.get.id) + ">" + collectionSpace.get.name + "</a>")
             if (date != "") {
               collections.listSpace(date, nextPage, limit, s)
@@ -178,7 +178,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
               collections.listSpace(limit, s)
             }
           }
-          case None => {
+          case _ => {
             if (date != "") {
               collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode))
             } else {
@@ -264,8 +264,13 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
     //Pass the viewMode into the view
     space match {
+        //space id is not correct
+      case Some(s) if collectionSpace.isEmpty =>{
+        NotFound(views.html.notFound(play.Play.application().configuration().getString("spaceTitle") + " not found."))
+      }
+        // view the list of collection in a space that you should not access
       case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
-        BadRequest(views.html.notAuthorized("You are not authorized to access the space.", s, "space"))
+        BadRequest(views.html.notAuthorized("You are not authorized to access the " + play.Play.application().configuration().getString("spaceTitle") + ".", s, "space"))
       }
       case _ =>  Ok(views.html.collectionList(decodedCollections.toList, prev, next, limit, viewMode, space, title, owner, when, date))
     }

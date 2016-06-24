@@ -2166,7 +2166,6 @@ class  Datasets @Inject()(
           }
         }
       }
-      // If the user doesn't have access to download these files
       case None => {
         Unauthorized
       }
