@@ -141,6 +141,20 @@ function addDatasetToSpace(id, spaceTitle) {
     return false;
 }
 
+function copyDatasetToSpace(id) {
+    var selectedId = $('#spaceCopySelect').val();
+    if(!selectedId) return false;
+    var request = jsRoutes.api.Datasets.copyDatasetToSpace(id, selectedId).ajax({
+        type: 'POST'
+    });
+    request.done(function(response, textStatus, jqXHR){
+      location.href = jsRoutes.controllers.Datasets.dataset(response.newDatasetId).url;
+    });
+    request.fail(function(jqXHR, textStatus, errorThrown) {
+        notify("The dataset was not copied to the space due to the following: " + errorThrown, "error");
+    });
+}
+
 function removeDatasetFromSpace(spaceId, datasetId, event){
     var request = jsRoutes.api.Spaces.removeDataset(spaceId, datasetId).ajax({
         type: 'POST'

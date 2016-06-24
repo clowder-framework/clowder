@@ -14,7 +14,7 @@ import play.api.Play.current
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json._
 import services._
-import util.{FileUtils, Formatters, RequiredFieldsConfig}
+import util.{License, FileUtils, Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
 import scala.collection.mutable.{ListBuffer, Map => MutableMap}
 import scala.util.matching.Regex
