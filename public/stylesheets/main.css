@@ -929,3 +929,12 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 .valign-link {
     padding-top: 20px;
 }
+
+.profile-section {
+    margin-top: 5px;
+}
+
+.profile-disclaimer {
+    margin: 30px 0px;
+}
+

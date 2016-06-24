@@ -37,7 +37,7 @@
                         }
                         <!-- If the user can edit the collection, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
                         @if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
-                            | <button onclick="confirmRemoveResourceFromResourceEvent('collection','@(collection.id)','dataset','@(dataset.id)',event)" class="btn btn-link btn-xs" title="Remove the dataset from the collection.">
+                            | <button onclick="confirmRemoveResourceFromResourceEvent('collection','collection','@(collection.id)','dataset','@(dataset.id)',event)" class="btn btn-link btn-xs" title="Remove the dataset from the collection.">
                                 <span class="glyphicon glyphicon-remove"></span> Remove</button>
                         } else {
                             |

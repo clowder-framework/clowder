@@ -17,9 +17,11 @@
               </div>
               <div class="panel-body">
                   <ul class="list-group">
-                      <li class="list-group-item" title="Access to @spacesCountAccess spaces">
-                          <a href="@routes.Spaces.list()">Project Spaces <span class="badge pull-right">@spacesCount</span></a>
-                      </li>
+                      @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
+                        <li class="list-group-item" title="Access to @{spacesCountAccess} @{spaceTitle.replace("&#010;","")}s">
+                            <a href="@routes.Spaces.list()">@{spaces.spaceTitle()}s <span class="badge pull-right">@spacesCount</span></a>
+                        </li>
+                      }
                       <li class="list-group-item" title="Access to @collectionsCountAccess collections">
                           <a href="@routes.Collections.list("")">Collections <span class="badge pull-right">@collectionsCount</span></a>
                       </li>

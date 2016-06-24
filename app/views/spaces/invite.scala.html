@@ -28,7 +28,7 @@
         <div class="col-md-4">
 
             <br />
-            <h3>Invitations to Space @space.name</h3>
+            <h3>Invitations to @{spaces.spaceTitle()} @space.name</h3>
             @for(v <- invite){
                 <li>
                     @v.email as @v.role

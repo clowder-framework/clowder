@@ -49,7 +49,7 @@
     <a class="btn btn-link" onclick="refreshToolSidebar()">
       <span class="glyphicon glyphicon-refresh"></span>&nbsp;Refresh List
     </a>
-    <a class="btn btn-link" href="toolManager">
+    <a class="btn btn-link" href=@controllers.routes.ToolManager.toolManager().url>
       <span class="glyphicon glyphicon-log-in"></span>&nbsp;Environment Manager
     </a>
   </div>
@@ -96,7 +96,7 @@
     allowClear: false,
     ajax: {
       url: function() {
-        return jsRoutes.controllers.Datasets.getLaunchableTools().url;
+        return jsRoutes.controllers.ToolManager.getLaunchableTools().url;
       },
       processResults: function(data) {
         var results = {
@@ -117,7 +117,7 @@
     allowClear: true,
     ajax: {
       url: function() {
-        return jsRoutes.controllers.Datasets.getInstances().url;
+        return jsRoutes.controllers.ToolManager.getInstances().url;
       },
       processResults: function(data) {
         var existingInstances = []
@@ -159,7 +159,7 @@
           console.log("launchToolRequest came back with "+request.status.toString());
       }
 
-      request.open("GET", jsRoutes.controllers.Datasets.launchTool(instanceName, toolType, "@datasetID", "@datasetName").url, true);
+      request.open("GET", jsRoutes.controllers.ToolManager.launchTool(instanceName, toolType, "@datasetID", "@datasetName").url, true);
       request.send();
     }
   }
@@ -181,7 +181,7 @@
           console.log("launchUploadRequest came back with "+request.status.toString());
       }
 
-      request.open("GET", jsRoutes.controllers.Datasets.uploadDatasetToTool(instanceID, "@datasetID", "@datasetName").url, true);
+      request.open("GET", jsRoutes.controllers.ToolManager.uploadDatasetToTool(instanceID, "@datasetID", "@datasetName").url, true);
       request.send();
     }
   }

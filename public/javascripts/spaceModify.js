@@ -5,7 +5,7 @@ resource_type_enum = {
 }
 
 
-function addCollectionToSpace(id) {
+function addCollectionToSpace(id,spaceTitle) {
     var selectedId = $("#spaceAddSelect").val();
     if (!selectedId) return false;
     var selectedName = $("#spaceAddSelect option:selected").text();
@@ -30,7 +30,7 @@ function addCollectionToSpace(id) {
         } else {
             txt = txt + o.collectionInSpace +' collections';
         }
-        txt = txt + ' | <button class="btn btn-link btn-xs" onclick="confirmRemoveResourceFromResourceEvent(\'space\',\''+selectedId+'\',\'collection\',\''+id+'\', event)" title="Remove the collection from the space">' +
+        txt = txt + ' | <button class="btn btn-link btn-xs" onclick="confirmRemoveResourceFromResourceEvent(\'space\',\''+spaceTitle+'\',\''+selectedId+'\',\'collection\',\''+id+'\', event)" title="Remove the collection">' +
             '<span class="glyphicon glyphicon-remove"></span> Remove</button>';
         txt = txt + '</div>';
         txt = txt + '</div>';
@@ -41,9 +41,9 @@ function addCollectionToSpace(id) {
 
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to add a collection to a space.";
+        var errMsg = "You must be logged in to add a collection";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("The collection was not added to the space due to the following : " + errorThrown, "error");
+            notify("The collection was not added due to the following : " + errorThrown, "error");
         }
     });
 
@@ -61,9 +61,9 @@ function removeCollectionFromSpace(spaceId, id, event){
 
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to remove a collection from a space.";
+        var errMsg = "You must be logged in to remove a collection.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("The collection was not removed from the space due to : " + errorThrown, "error");
+            notify("The collection was not removed due to : " + errorThrown, "error");
         }
     });
     return false;
@@ -90,14 +90,14 @@ function removeCollectionFromSpaceAndRedirect(spaceId, collectionId, isreload, u
 
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to remove a collection from a space.";
+        var errMsg = "You must be logged in to remove a collection.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("The collection was not removed from the space due to : " + errorThrown, "error");
+            notify("The collection was not removed due to : " + errorThrown, "error");
         }
     });
 }
 
-function addDatasetToSpace(id) {
+function addDatasetToSpace(id, spaceTitle) {
     var selectedId = $("#spaceAddSelect").val();
     if (!selectedId) return false;
     var selectedName = $("#spaceAddSelect option:selected").text();
@@ -120,7 +120,7 @@ function addDatasetToSpace(id) {
         } else {
             txt = txt + o.datasetsInSpace +' datasets';
         }
-        txt = txt + ' | <button class="btn btn-link btn-xs" onclick="confirmRemoveResourceFromResourceEvent(\'space\',\''+selectedId+'\',\'dataset\',\''+id+'\', event)" title="Remove the dataset from the space">' +
+        txt = txt + ' | <button class="btn btn-link btn-xs" onclick="confirmRemoveResourceFromResourceEvent(\'space\',\''+spaceTitle+'\',\''+selectedId+'\',\'dataset\',\''+id+'\', event)" title="Remove the dataset from the space">' +
             '<span class="glyphicon glyphicon-remove"></span> Remove</button>';
         txt = txt + '</div>';
         txt = txt + '</div>';
@@ -131,13 +131,27 @@ function addDatasetToSpace(id) {
 
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to add a dataset to a space.";
+        var errMsg = "You must be logged in to add a dataset.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("The dataset was not added to the space due to the following : " + errorThrown, "error");
+            notify("The dataset was not added due to the following : " + errorThrown, "error");
         }
     });
 
     return false;
+}
+
+function copyDatasetToSpace(id) {
+    var selectedId = $('#spaceCopySelect').val();
+    if(!selectedId) return false;
+    var request = jsRoutes.api.Datasets.copyDatasetToSpace(id, selectedId).ajax({
+        type: 'POST'
+    });
+    request.done(function(response, textStatus, jqXHR){
+      location.href = jsRoutes.controllers.Datasets.dataset(response.newDatasetId).url;
+    });
+    request.fail(function(jqXHR, textStatus, errorThrown) {
+        notify("The dataset was not copied to the space due to the following: " + errorThrown, "error");
+    });
 }
 
 function removeDatasetFromSpace(spaceId, datasetId, event){
@@ -151,9 +165,9 @@ function removeDatasetFromSpace(spaceId, datasetId, event){
 
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to remove a dataset from a space.";
+        var errMsg = "You must be logged in to remove a dataset.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("The dataset was not removed from the space due to : " + errorThrown, "error");
+            notify("The dataset was not removed due to : " + errorThrown, "error");
         }
     });
     return false;
@@ -178,9 +192,9 @@ function removeDatasetFromSpaceAndRedirect(spaceId, datasetId, isreload, url){
     });
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to remove a dataset from a space.";
+        var errMsg = "You must be logged in to remove a dataset.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("The dataset was not removed from the space due to : " + errorThrown, "error");
+            notify("The dataset was not removed due to : " + errorThrown, "error");
         }
     });
 }
@@ -195,12 +209,12 @@ function updateUsersInSpace(spaceId) {
     var roleUserMap = {};
     for (var i = 0; i < roleArray.length; i++) {
         currRole = roleArray[i].replace(/ /g, '');
-        console.log("roleList[i] is " + roleArray[i] + " and " + currRole);
+        //console.log("roleList[i] is " + roleArray[i] + " and " + currRole);
 
         var idsCurrent = $('#' + currRole + '-current li a').map(function(){ return this.id }).get().join(',');
-        console.log('idsCurrent are ' + idsCurrent);
+        //console.log('idsCurrent are ' + idsCurrent);
         var idsSelected = $("#" + currRole + " option:selected").map(function(){ return this.value }).get().join(",");
-        console.log("idsSelected are " + idsSelected);
+        //console.log("idsSelected are " + idsSelected);
 
         if (idsCurrent) {
             if (idsSelected) {
@@ -228,8 +242,8 @@ function updateUsersInSpace(spaceId) {
 
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occurred: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to update the users contained within a space.";
-        notify("Failed to update users in this space, due to:" + errorThrown, "error");
+        var errMsg = "You must be logged in to update the users.";
+        notify("Failed to update users due to:" + errorThrown, "error");
 
     });
 

@@ -8,12 +8,13 @@ import api.Permission
 import api.Permission.Permission
 import fileutils.FilesUtils
 import models._
+import org.apache.commons.lang.StringEscapeUtils._
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json._
 import services._
-import util.{FileUtils, Formatters, RequiredFieldsConfig}
+import util.{License, FileUtils, Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
 import scala.collection.mutable.{ListBuffer, Map => MutableMap}
 import scala.util.matching.Regex
@@ -40,6 +41,11 @@ class Datasets @Inject()(
   events: EventService) extends SecuredController {
 
   object ActivityFound extends Exception {}
+
+  /**
+    * String name of the Space such as 'Project space' etc., parsed from the config file
+    */
+  val spaceTitle: String = escapeJava(play.Play.application().configuration().getString("spaceTitle").trim)
 
   /**
    * Display the page that allows users to create new datasets
@@ -182,7 +188,7 @@ class Datasets @Inject()(
       case Some(p) => {
         space match {
           case Some(s) => {
-            title = Some(person.get.fullName + "'s Datasets in Space <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
+            title = Some(person.get.fullName + "'s Datasets in " + spaceTitle + " <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
           }
           case None => {
             title = Some(person.get.fullName + "'s Datasets")
@@ -197,7 +203,7 @@ class Datasets @Inject()(
       case None => {
         space match {
           case Some(s) => {
-            title = Some("Datasets in Space <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
+            title = Some("Datasets in " + spaceTitle + " <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
             if (date != "") {
               datasets.listSpace(date, nextPage, limit, s)
             } else {
@@ -591,7 +597,7 @@ class Datasets @Inject()(
         dataset.spaces.foreach { spaceId =>
           spaceService.get(spaceId) match {
             case Some(spc) => userList = spaceService.getUsersInSpace(spaceId) ::: userList
-            case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No spaces found for dataset $id.")
+            case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No $spaceTitle found for dataset $id.")
           }
         }
         userList = userList.distinct.sortBy(_.fullName.toLowerCase)
@@ -613,7 +619,7 @@ class Datasets @Inject()(
 
               }
             }
-            case None => Redirect (routes.Datasets.dataset(id)).flashing ("error" -> s"Error: No spaces found for dataset $id.");
+            case None => Redirect (routes.Datasets.dataset(id)).flashing ("error" -> s"Error: No $spaceTitle found for dataset $id.");
           }
         }
         // Clean-up, and sort space-names per user
@@ -640,140 +646,4 @@ class Datasets @Inject()(
       implicit val user = request.user
       Ok(views.html.generalMetadataSearch())
   }
-
-
-  // TOOL MANAGER METHODS ----------------------------------------------------------------
-  /**
-    * With permission, prepare Tool Manager page with list of currently running tool instances.
-    */
-  def toolManager() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
-    implicit val user = request.user
-
-    var instanceMap = MutableMap[UUID, ToolInstance]()
-    var toolList: JsObject = JsObject(Seq[(String, JsValue)]())
-    // Get mapping of instanceIDs to URLs API has returned
-    current.plugin[ToolManagerPlugin].map( mgr => {
-      mgr.refreshActiveInstanceListFromServer()
-      toolList = mgr.toolList
-      instanceMap = mgr.instanceMap
-    })
-
-    Ok(views.html.datasets.toolManager(toolList, instanceMap.keys.toList, instanceMap))
-  }
-
-  /**
-    * Construct the sidebar listing active tools relevant to the given datasetId
- *
-    * @param datasetId UUID of dataset that is currently displayed
-    */
-  def refreshToolSidebar(datasetId: UUID, datasetName: String) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
-    implicit val user = request.user
-
-    // Get mapping of instanceIDs to returned URLs
-    var instanceMap = MutableMap[UUID, ToolInstance]()
-    // Get mapping of instanceID -> ToolInstance if datasetID is in uploadHistory
-    current.plugin[ToolManagerPlugin].map( mgr => instanceMap = mgr.getInstancesWithDataset(datasetId))
-    Ok(views.html.datasets.tools(instanceMap.keys.toList, instanceMap, datasetId, datasetName))
-  }
-
-  /**
-    * Send request to ToolManagerPlugin to launch a new tool instance and upload datasetID.
-    */
-  def launchTool(instanceName: String, tooltype: String, datasetId: UUID, datasetName: String) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
-    implicit val user = request.user
-
-    val hostURL = request.headers.get("Host").getOrElse("")
-    val userId: Option[UUID] = user match {
-      case Some(u) => Some(u.id)
-      case None => None
-    }
-
-    current.plugin[ToolManagerPlugin] match {
-      case Some(mgr) => {
-        val instanceID = mgr.launchTool(hostURL, instanceName, tooltype, datasetId, datasetName, userId)
-        Ok(instanceID.toString)
-      }
-      case None => BadRequest("No ToolManagerPlugin found.")
-    }
-  }
-
-  /**
-    * Fetch list of launchable tools from Plugin.
-    */
-  def getLaunchableTools() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
-    implicit val user = request.user
-
-    current.plugin[ToolManagerPlugin] match {
-      case Some(mgr) => {
-        val tools = mgr.getLaunchableTools()
-        Ok(tools)
-      }
-      case None => BadRequest("No ToolManagerPlugin found.")
-    }
-  }
-
-  /**
-    * Upload a dataset to an existing tool instance. Does not check for or prevent against duplication.
-    */
-  def uploadDatasetToTool(instanceID: UUID, datasetID: UUID, datasetName: String) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
-    implicit val user = request.user
-
-    val hostURL = request.headers.get("Host").getOrElse("")
-    val userId: Option[UUID] = user match {
-      case Some(u) => Some(u.id)
-      case None => None
-    }
-
-    current.plugin[ToolManagerPlugin] match {
-      case Some(mgr) => {
-        mgr.uploadDatasetToInstance(hostURL, instanceID, datasetID, datasetName, userId)
-        Ok("request sent")
-      }
-      case None => BadRequest("No ToolManagerPlugin found.")
-    }
-  }
-
-  /**
-    * Get full list of running instances from Plugin.
-    */
-  def getInstances() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
-    implicit val user = request.user
-
-    current.plugin[ToolManagerPlugin] match {
-      case Some(mgr) => {
-        val instances = mgr.getInstances()
-        Ok(toJson(instances.toMap))
-      }
-      case None => BadRequest("No ToolManagerPlugin found.")
-    }
-  }
-
-  /**
-    * Get remote URL of running instance, if available.
-    */
-  def getInstanceURL(instanceID: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
-    implicit val user = request.user
-
-    val url = current.plugin[ToolManagerPlugin] match {
-      case Some(mgr) => mgr.checkForInstanceURL(instanceID)
-      case None => ""
-    }
-    Ok(url)
-  }
-
-  /**
-    * Send request to server to destroy instance, and remove from Plugin.
-    */
-  def removeInstance(toolPath: String, instanceID: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
-    implicit val user = request.user
-
-    current.plugin[ToolManagerPlugin] match {
-      case Some(mgr) => {
-        mgr.removeInstance(toolPath, instanceID)
-        Ok(instanceID.toString)
-      }
-      case None => BadRequest("No ToolManagerPlugin found.")
-    }
-  }
-  // END TOOL MANAGER METHODS ---------------------------------------------------------------
 }
