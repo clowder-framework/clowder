@@ -50,6 +50,7 @@ class  Datasets @Inject()(
   events: EventService,
   spaces: SpaceService,
   folders: FolderService,
+  relations: RelationService,
   userService: UserService) extends ApiController {
 
   @ApiOperation(value = "Get a specific dataset",
@@ -205,7 +206,7 @@ class  Datasets @Inject()(
             case None | Some(List("default"))=>
               d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig())
             case Some(space) =>
-              var spaceList: List[UUID] = List.empty;
+              var spaceList: List[UUID] = List.empty
               space.map {
                 aSpace => if (spaces.get(UUID(aSpace)).isDefined) {
                   spaceList = UUID(aSpace) :: spaceList
@@ -2160,6 +2161,93 @@ class  Datasets @Inject()(
       case None =>  Logger.error("Dataset not found")
     }
     Ok(toJson("added new event"))
+  }
+  def copyDatasetToSpace(datasetId: UUID, spaceId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(u) => {
+        datasets.get(datasetId) match {
+          case Some(dataset) => {
+            if (u.id == dataset.author.id) {
+              spaces.get(spaceId) match {
+                case Some(space) => {
+                  val d = Dataset(name = dataset.name, description = dataset.description, created = new Date(), author = dataset.author, licenseData = dataset.licenseData, spaces = List(spaceId))
+
+                  datasets.insert(d) match {
+                    case Some(id) => {
+                      spaces.addDataset(d.id, spaceId)
+                      relations.add(Relation(source = Node(datasetId.stringify, ResourceType.dataset), target = Node(d.id.stringify, ResourceType.dataset)))
+                      events.addSourceEvent(request.user, d.id, d.name, space.id, space.name, "add_dataset_space")
+
+                      dataset.folders.map { folder =>
+                        copyFolders(folder, datasetId, "dataset", d.id)
+                      }
+
+                      dataset.files.map { fileId =>
+                        files.get(fileId) match {
+                          case Some(file) => {
+                            val newFile = File(loader_id = file.loader_id, filename = file.filename, author = file.author,
+                              uploadDate = file.uploadDate, contentType = file.contentType, length = file.length, sha512 = file.sha512,
+                              loader = file.loader, showPreviews = file.showPreviews, previews = file.previews, thumbnail_id = file.thumbnail_id,
+                              description = file.description, licenseData = file.licenseData, status = file.status)
+                            files.save(newFile)
+                            datasets.addFile(UUID(id), newFile)
+                            relations.add(Relation(source = Node(file.id.stringify, ResourceType.file), target = Node(newFile.id.stringify, ResourceType.file)))
+                          }
+                          case None => Logger.error("Unable to copy file with id: " + fileId.stringify + " to dataset with id: " + id)
+                        }
+                      }
+                      Ok(toJson(Map("newDatasetId" -> d.id.stringify)))
+                    }
+                    case None => BadRequest(s"Unable to copy the dataset with id $datasetId to space with id: $spaceId")
+                  }
+                }
+                case None => BadRequest(s"No space found with id: + $spaceId.")
+              }
+            } else {
+              BadRequest("You don't have permission to copy the dataset.")
+            }
+          }
+          case None => BadRequest(s"No dataset  found with id: $datasetId")
+        }
+      }
+      case None => BadRequest("You need to be logged in to copy a dataset to a space.")
+    }
+
+  }
+
+  private def copyFolders(id: UUID, parentId: UUID, parentType: String, datasetId: UUID) {
+    folders.get(id) match {
+      case Some(folder) => {
+        val newFiles = ListBuffer[UUID]()
+        for (fileId <- folder.files)   {
+          files.get(fileId) match {
+            case Some(file) => {
+              val newFile = File(loader_id = file.loader_id, filename = file.filename, author = file.author,
+                uploadDate = file.uploadDate, contentType = file.contentType, length = file.length, sha512 = file.sha512,
+                loader = file.loader, showPreviews = file.showPreviews, previews = file.previews, thumbnail_id = file.thumbnail_id,
+                description = file.description, licenseData = file.licenseData, status = file.status)
+              files.save(newFile)
+              relations.add(Relation(source = Node(file.id.stringify, ResourceType.file), target = Node(newFile.id.stringify, ResourceType.file)))
+              newFiles += newFile.id
+            }
+            case None =>
+          }
+        }
+        val newFolder = Folder(author = folder.author, created = new Date(), name = folder.name, displayName = folder.displayName,
+          files = newFiles.toList, folders = List.empty, parentId = parentId, parentType = parentType.toLowerCase(), parentDatasetId = datasetId)
+        folders.insert(newFolder)
+        if(parentType == "dataset"){
+          datasets.addFolder(datasetId, newFolder.id)
+        } else {
+          folders.addSubFolder(parentId, newFolder.id)
+        }
+
+        relations.add(Relation(source= Node(folder.id.stringify, ResourceType.folder), target = Node(newFolder.id.stringify, ResourceType.folder)))
+        folder.folders.map( f => copyFolders(f, newFolder.id, "folder", datasetId))
+      }
+
+    }
   }
 }
 
