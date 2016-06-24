@@ -133,8 +133,8 @@
 		<h1>Metadata Terms & Definitions</h1>
         @(spaceName, spaceId) match {
             case (Some(space_name), Some(space_id)) => {
-                <h4><strong>Space: </strong><a href="@routes.Spaces.getSpace(space_id)">@space_name</a> </h4>
-                <p> The following metadata terms will be available for this Project Space's datasets, files, and curation objects. To add a new term scroll to the bottom of the page.</p>
+                <h4><strong>@{spaces.spaceTitle()}: </strong><a href="@routes.Spaces.getSpace(space_id)">@space_name</a> </h4>
+                <p> The following metadata terms will be available for this @{spaces.spaceTitle()}'s datasets, files, and curation objects. To add a new term scroll to the bottom of the page.</p>
             }
             case (_, _) => {<p>The following metadata definitions will be available in datasets and files that are not in a space, and inherited by new spaces.</p>}
         }

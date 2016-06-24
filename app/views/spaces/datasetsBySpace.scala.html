@@ -4,9 +4,9 @@
 <h3>Datasets</h3>
 @if(datasets.size == 0) {
     @if(user.isDefined && !Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
-        <p> Please request access to add datasets to this space</p>
+        <p> Please request access to add datasets to this @{spaces.spaceTitle()}</p>
     } else {
-        <p> There are no datasets associated with this space. </p>
+        <p> There are no datasets associated with this @{spaces.spaceTitle()}</p>
     }
 } else {
     @spaces.datasetsGrid(datasets, space)

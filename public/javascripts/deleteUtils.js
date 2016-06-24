@@ -1,8 +1,8 @@
 // Functions to Confirm deleting or removing resources.
 //
 //Created by mo on 2/2/16.
-function confirmDeleteResource(resourceType, resourceId, resourceName, isreload, url) {
-    var msg = "Are you sure you want to delete the " + resourceType + " '" + resourceName + "'?";
+function confirmDeleteResource(resourceType, resourceTypeName, resourceId, resourceName, isreload, url) {
+    var msg = "Are you sure you want to delete the " + resourceTypeName + " '" + resourceName + "'?";
     var modalHTML = confirmDeleteTemplate(msg, resourceType, resourceId, isreload, url);
     var confirmModal = $(modalHTML);
     confirmModal.modal();
@@ -31,12 +31,12 @@ function confirmDeleteTemplate(message, resourceType, resourceId, isreload, url)
     return modalHTML;
 }
 
-function confirmRemoveResourceFromResource(resourceFromType, resourceFromId, resourceType, resourceId, resourceName, isreload, url) {
+function confirmRemoveResourceFromResource(resourceFromType, resourceFromTypeName, resourceFromId, resourceType, resourceId, resourceName, isreload, url) {
     var msg = "Are you sure you want to remove the ";
     if (resourceFromType == "collection" && resourceType == "collection") {
-        msg = msg + "child collection" + " '" + resourceName + "' from the parent " + resourceFromType + "?";
+        msg = msg + "child collection" + " '" + resourceName + "' from the parent " + resourceFromTypeName + "?";
     } else {
-        msg = msg + resourceType + " '" + resourceName + "' from the " + resourceFromType + "?";
+        msg = msg + resourceType + " '" + resourceName + "' from the " + resourceFromTypeName + "?";
     }
     var modalHTML = confirmRemoveTemplate(msg,resourceFromType,resourceFromId,resourceType,resourceId,isreload,url);
     var confirmModal = $(modalHTML);
@@ -73,8 +73,8 @@ function confirmRemoveTemplate(message,resourceFromType,resourceFromId,resourceT
     return modalHTML;
 }
 
-function confirmRemoveResourceFromResourceEvent(resourceFromType, resourceFromId, resourceType, resourceId, event) {
-    var msg = "Are you sure you want to remove the " + resourceType + " from the " + resourceFromType + "?";
+function confirmRemoveResourceFromResourceEvent(resourceFromType, resourceFromTypeName, resourceFromId, resourceType, resourceId, event) {
+    var msg = "Are you sure you want to remove the " + resourceType + " from the " + resourceFromTypeName + "?";
     var modalHTML = confirmRemoveTemplate(msg,resourceFromType,resourceFromId,resourceType,resourceId,event);
     var confirmModal = $(modalHTML);
     confirmModal.modal();
