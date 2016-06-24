@@ -120,7 +120,7 @@ class CurationObjects @Inject()(
 
               dataset.folders.map(f => copyFolders(f, newCuration.id, "dataset",  newCuration.id))
               metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
-                .map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id))))
+                .map(m => if((m.content\"Creator").isInstanceOf[JsUndefined]) metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id))))
               Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
             }
             else {
