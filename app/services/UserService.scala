@@ -243,4 +243,10 @@ trait UserService  {
    * return List[MiniEntity] - the top N recommendations rooted from sourceID
    */
   def getTopRecommendations(followerIDs: List[UUID], excludeIDs: List[UUID], num: Int): List[MiniEntity]
+
+  /** record the acceptance of the Terms of Service */
+  def acceptTermsOfServices(id: UUID)
+
+  /** new terms of service, all users will need to agree to this */
+  def newTermsOfServices()
 }

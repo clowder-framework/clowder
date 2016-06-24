@@ -4,7 +4,7 @@
     <div class="row">
         <div class="col-md-12">
             <h1>Staging Area</h1>
-            <h5>Space: <a href="@routes.Spaces.getSpace(space.id)">@space.name</a></h5>
+            <h5>@{spaces.spaceTitle()}: <a href="@routes.Spaces.getSpace(space.id)">@space.name</a></h5>
         </div>
     </div>
     @util.masonry()
@@ -41,7 +41,7 @@
                                     <span class="glyphicon glyphicon-folder-close" title="@curObject.folders.size folders"></span> @curObject.folders.size
                                     <span class="glyphicon glyphicon-file" title="@curObject.files.size files"></span> @curObject.files.size
                                     <span class="glyphicon glyphicon-list" title="@(curObject.metadataCount) metadata fields"></span> @(curObject.metadataCount)
-                                    <button onclick="confirmDeleteResource('curation object','@(curObject.id)','@(curObject.name.replace("'","&#39;"))',false, '/')"  type="button" class="btn btn-link">
+                                    <button onclick="confirmDeleteResource('curation object','curation object','@(curObject.id)','@(curObject.name.replace("'","&#39;"))',false, '/')"  type="button" class="btn btn-link">
                                         <span class="glyphicon glyphicon-trash" title="@curObject.collections.size collections"></span></button>
                                 </li>
                             </ul>

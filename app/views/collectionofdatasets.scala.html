@@ -66,7 +66,7 @@
 						<hr/>
                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                         @if(Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
-                            <button id="deleteButton" onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name.replace("'","&#39;"))', true, '@(routes.Collections.list(""))')"
+                            <button id="deleteButton" onclick="confirmDeleteResource('collection','collection','@(collection.id)','@(collection.name.replace("'","&#39;"))', true, '@(routes.Collections.list(""))')"
                                 class="btn btn-link" title="Delete Collection but not Enclosed Datasets">
                                     <span class="glyphicon glyphicon-trash"></span> Delete</button>
                         } else {
@@ -80,6 +80,10 @@
 							} else {
 								<button id="followButton" class="btn btn-link followButton btn-sm" objectId="@collection.id" objectName="@collection.name" objectType="collection"><span class="glyphicon glyphicon-star-empty"></span> Unfollow</button>
 							}
+						}
+						@if(user.isDefined && collectionSpaces_canRemove.isDefined && !collectionSpaces_canRemove.isEmpty){
+							<a href="@routes.Collections.users(collection.id)" class="btn btn-link">
+								<span class="glyphicon glyphicon-user"></span> Collaborators</a>
 						}
 						<hr/>
 					</div>
