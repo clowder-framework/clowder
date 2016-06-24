@@ -5,7 +5,7 @@
 <div class="row ds-section-sm border-top break-word">
 <h3>External Links</h3>
 @if(links.size == 0) {
-    <p>Edit space to add links</p>
+    <p>Edit @{spaces.spaceTitle()} to add links</p>
 } else {
     <ul class="list-unstyled">
     @for(link <- links) {

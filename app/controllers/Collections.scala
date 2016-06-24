@@ -2,6 +2,7 @@ package controllers
 
 import api.Permission._
 import models._
+import org.apache.commons.lang.StringEscapeUtils._
 import util.{Formatters, RequiredFieldsConfig}
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -20,6 +21,11 @@ import org.apache.commons.lang.StringEscapeUtils
 @Singleton
 class Collections @Inject()(datasets: DatasetService, collections: CollectionService, previewsService: PreviewService,
                             spaceService: SpaceService, users: UserService, events: EventService) extends SecuredController {
+
+  /**
+    * String name of the Space such as 'Project space' etc. parsed from the config file
+    */
+  val spaceTitle: String = escapeJava(play.Play.application().configuration().getString("spaceTitle").trim)
 
   def newCollection(space: Option[String]) = PermissionAction(Permission.CreateCollection) { implicit request =>
     implicit val user = request.user
@@ -149,7 +155,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       case Some(p) => {
         space match {
           case Some(s) => {
-            title = Some(person.get.fullName + "'s Collections in Space <a href="
+            title = Some(person.get.fullName + "'s Collections in " + spaceTitle + " <a href="
               + routes.Spaces.getSpace(collectionSpace.get.id) + ">" + collectionSpace.get.name + "</a>")
           }
           case None => {
@@ -165,7 +171,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       case None => {
         space match {
           case Some(s) => {
-            title = Some("Collections in Space <a href=" + routes.Spaces.getSpace(collectionSpace.get.id) + ">" + collectionSpace.get.name + "</a>")
+            title = Some("Collections in " + spaceTitle + " <a href=" + routes.Spaces.getSpace(collectionSpace.get.id) + ">" + collectionSpace.get.name + "</a>")
             if (date != "") {
               collections.listSpace(date, nextPage, limit, s)
             } else {
@@ -292,7 +298,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
               decodedSpaceList += Utils.decodeSpaceElements(aSpace)
             }
             //This case shouldn't happen as it is validated on the client.
-            BadRequest(views.html.newCollection("Name, Description, or Space was missing during collection creation.", decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
+            BadRequest(views.html.newCollection("Name, Description, or " + spaceTitle + " was missing during collection creation.", decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired, RequiredFieldsConfig.isDescriptionRequired, None))
           }
 
           var parentCollectionIds = List.empty[String]
@@ -571,7 +577,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         collection.spaces.foreach { spaceId =>
           spaceService.get(spaceId) match {
             case Some(spc) => userList = spaceService.getUsersInSpace(spaceId) ::: userList
-            case None => Redirect (routes.Collections.collection(id)).flashing ("error" -> s"Error: No spaces found for collection $id.");
+            case None => Redirect (routes.Collections.collection(id)).flashing ("error" -> s"Error: No $spaceTitle found for collection $id.");
           }
         }
         userList = userList.distinct.sortBy(_.fullName.toLowerCase)
@@ -593,7 +599,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
               }
             }
-            case None => Redirect (routes.Collections.collection(id)).flashing ("error" -> s"Error: No spaces found for collection $id.");
+            case None => Redirect (routes.Collections.collection(id)).flashing ("error" -> s"Error: No $spaceTitle found for collection $id.");
           }
         }
         // Clean-up, and sort space-names per user

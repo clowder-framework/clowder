@@ -259,11 +259,11 @@
 					@if(user.get.id.equals(file.author.id) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
                         <span class="align-right">
 							@if(datasets.length > 0) {
-				            	<button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(datasets.head.id))')" class="btn btn-link" title="Delete the file">
+				            	<button id="deleteButton" onclick="confirmDeleteResource('file','file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(datasets.head.id))')" class="btn btn-link" title="Delete the file">
 						    	<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							} else {
 								@if(folders.length > 0) {
-									<button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(folders.head.parentDatasetId))#folderId=@folders.head.id')" class="btn btn-link" title="Delete the file">
+									<button id="deleteButton" onclick="confirmDeleteResource('file','file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(folders.head.parentDatasetId))#folderId=@folders.head.id')" class="btn btn-link" title="Delete the file">
 										<span class="glyphicon glyphicon-trash"></span> Delete</button>
 								}
 							}
