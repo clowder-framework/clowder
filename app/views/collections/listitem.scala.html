@@ -22,7 +22,7 @@
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                     @if( user.get.id.equals(collection.author.id) || Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
-                                        <button onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name.replace("'","&#39;"))',false, '@redirect')" class="btn btn-link" title="Delete the collection but not its contents">
+                                        <button onclick="confirmDeleteResource('collection','collection','@(collection.id)','@(collection.name.replace("'","&#39;"))',false, '@redirect')" class="btn btn-link" title="Delete the collection but not its contents">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     } else {
                                         <div class="inline" title="No permission to delete the collection">

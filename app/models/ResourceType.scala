@@ -7,7 +7,7 @@ import play.api.libs.json._
  */
 object ResourceType extends Enumeration {
 //  type ResourceType = Value
-  val dataset, file, collection, user, sensor, stream = Value
+  val dataset, file, collection, user, sensor, stream, folder = Value
 
   def isWorkingDay(d: ResourceType.Value) = ! (d == Dataset || d == File)
 }

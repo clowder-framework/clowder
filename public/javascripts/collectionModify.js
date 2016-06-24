@@ -76,7 +76,7 @@ function addDatasetToCollection(id) {
         } else {
             txt = txt + o.datasetCount +' datasets';
         }
-        txt = txt + ' | <button class="btn btn-link btn-xs" onclick="confirmRemoveResourceFromResourceEvent(\'collection\',\''+selectedId+'\',\'dataset\',\''+id+'\', event)" title="Remove the dataset from the collection">' +
+        txt = txt + ' | <button class="btn btn-link btn-xs" onclick="confirmRemoveResourceFromResourceEvent(\'collection\',\'collection\',\''+selectedId+'\',\'dataset\',\''+id+'\', event)" title="Remove the dataset from the collection">' +
             '<span class="glyphicon glyphicon-remove"></span> Remove</button>';
         txt = txt + '</div>';
         txt = txt + '</div>';
