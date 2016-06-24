@@ -298,10 +298,10 @@ class Datasets @Inject()(
     //Pass the viewMode into the view
     space match {
       case Some(s) if datasetSpace.isEmpty =>{
-        NotFound(views.html.notFound(play.Play.application().configuration().getString("spaceTitle") + " not found."))
+        NotFound(views.html.notFound(spaceTitle+ " not found."))
       }
       case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
-        BadRequest(views.html.notAuthorized("You are not authorized to access the space.", s, "space"))
+        BadRequest(views.html.notAuthorized("You are not authorized to access the "+spaceTitle+".", s, "space"))
       }
       case _ => Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title, owner, when, date))
     }

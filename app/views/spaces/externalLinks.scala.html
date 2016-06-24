@@ -20,7 +20,7 @@
 @if(space.isTrial){
     <div id="verify">
         <h3>Status</h3>
-    <p>@play.api.i18n.Messages("trail.space")</p>
+    <p>@play.api.i18n.Messages("trial.space")</p>
     @if(api.Permission.checkServerAdmin(user)){
         <button class="btn btn-link" title="Verify this space" >
             <span class="glyphicon glyphicon-ok" ></span> Verify</button>
@@ -39,13 +39,13 @@
             });
             request.done(function(response, textStatus, jsXHR){
                 $("#verify").hide();
-                notify("Sapce is verified and set to private", "success", false, 2000);
+                notify("@space.name"+" is verified and set to private", "success", false, 2000);
             });
             request.fail(function (jqXHR, textStatus, errorThrown){
                 console.error("The following error occurred: " + textStatus, errorThrown);
                 var errMsg = "You must be logged in to see files and folders.";
                 if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                    notify("Error in getting more files and folders : " + errorThrown, "error");
+                    notify("Error in verifying the space due to : " + errorThrown, "error");
                 }
             });
         });

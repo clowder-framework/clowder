@@ -3,6 +3,7 @@
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f)}
 @import play.api.Play.current
+@import models.SpaceStatus
 
 @main("Space") {
   <div class="page-header">
@@ -51,7 +52,7 @@
           @*do not add class = form-control for this radio button*@
 
           @helper.inputRadioGroup(myForm("access"),
-            options = options("private"->"Private","public"->"Public"),
+            options = options(SpaceStatus.PRIVATE.toString->SpaceStatus.PRIVATE.toString,SpaceStatus.PUBLIC.toString->SpaceStatus.PUBLIC.toString),
             '_label -> "Access")
           @helper.input(myForm("space_id"), 'class -> "form-control", '_label ->"") {(id, name, value, args) =>
           <input type="hidden" name="@id" value="@value">
@@ -65,9 +66,9 @@
 
   <script language="javascript">
   $(document).ready(function() {
-    if(typeof $("input[name='access']:checked").val() === "undefined" || $("input[name='access']:checked").val() === "trial"){
+    if(typeof $("input[name='access']:checked").val() === "undefined" || $("input[name='access']:checked").val() === "@SpaceStatus.TRIAL.toString"){
       $('#access').closest(".control-group").hide();
-      $('#access').append('<input type="radio" id="access_trial" name="access" value="trial" checked>')
+      $('#access').append('<input type="radio" id="access_trial" name="access" value="@SpaceStatus.TRIAL.toString" checked>')
     }
   });
   // as fields are added, they get the same default homePages[0] name For automatic binding the names need to

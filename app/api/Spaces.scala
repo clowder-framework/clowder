@@ -326,7 +326,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         }
         case e: JsError => {
           Logger.error("Errors: " + JsError.toFlatJson(e).toString())
-          BadRequest(toJson("enabled data is missing from the updateSpace call."))
+          BadRequest(toJson("access data is missing from the updateSpace call."))
         }
       }
 
