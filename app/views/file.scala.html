@@ -151,7 +151,23 @@
     </script>
 
 	<div class="row">
-		<div class="col-md-8 col-right-border">
+		<div class="col-md-8">
+			@if(datasets.length > 0) {
+				@datasets.map {dataset =>
+					<span class="h1">
+						<a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id'>@Html(dataset.name)</a>
+					</span>
+					<span class="glyphicon glyphicon-chevron-right" style="font-size: 150%;"></span>
+				}
+			}
+			@if(folders.length > 0) {
+				@folders.map { folder =>
+					<span class="h1">
+						<a href="@routes.Datasets.dataset(folder.parentDatasetId)#folderId=@folder.id">@folder.displayName</a>
+					</span>
+					<span class="glyphicon glyphicon-chevron-right" style="font-size: 150%;"></span>
+				}
+			}
 			<div id="prf-file-name" class="text-left inline">
 				<h1 id="file-name-title" class="inline">@Html(file.filename)</h1>
 				@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
@@ -162,31 +178,15 @@
 					</div>
 				}
 			</div>
-			@if(datasets.length > 0) {
-				<h4>in
-					@datasets.map {dataset =>
-						<span class="caption break-word">
-							<a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id'>@Html(dataset.name)</a>
-						</span>
+			<div class="row bottom-padding">
+				<div class="col-md-12 box-white-space" id="aboutdesc">
+					<p id ="ds_description" class="inline">@if(file.description.length > 0) { @Html(file.description) } else {Add a description}</p>
+					@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
+						<a id="edit-description" class="hiddencomplete" href="javascript:updateFileDescription()" title="Click to edit description">
+							<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+						</a>
 					}
-				</h4>
-			}
-			@if(folders.length > 0) {
-				<h4>in
-					@folders.map { folder =>
-						<span class="caption break-word">
-							<a href="@routes.Datasets.dataset(folder.parentDatasetId)#folderId=@folder.id">@folder.displayName</a>
-						</span>
-					}
-				</h4>
-			}
-			<div class="col-md-12 box-white-space" id="aboutdesc">
-				<p id ="ds_description" class="inline">@if(file.description.length > 0) { @Html(file.description) } else {Add a description}</p>
-				@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
-					<a id="edit-description" class="hiddencomplete" href="javascript:updateFileDescription()" title="Click to edit description">
-						<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
-					</a>
-				}
+				</div>
 			</div>
 		@for((f, pvs) <- previews) {
 			<div class="row" id="filePrevContainer_@(f.id.toString)" data-previewsCount="@(pvs.length)" data-filename="@f.filename">
@@ -232,67 +232,69 @@
 	    		</script>
     		}
 
-        <div class="row">
-        <div class="col-md-12 button-margins">
-          <div class="btn-group" role="group" aria-label="...">
-		  @if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
-			  <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-primary" title="Download and enjoy this file."> <span class="glyphicon glyphicon-save"></span>
-				  Download </button>
-		  } else {
-			  <!-- if 'disabled' title is not visible -->
-			  <button type="button" class="btn btn-primary disabled" title="You don't have permission to download this file."> <span class="glyphicon glyphicon-save"></span>
-				  Download </button>
-		  }
-            <!--  If outputFormats list is not empty, display downloadAs drop-down button with the list of available formats -->      
-            @if(!outputFormats.isEmpty){  
-              <div class="btn-group" role="group">         
-                <button id="downloadAsButton" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> <span class="glyphicon glyphicon-download-alt"></span> </button>
-                <ul class="dropdown-menu" role="menu">
-                  @outputFormats.get.map { outputFrmt =>
-                    <li id="doc" onclick="return downloadFileAs('@routes.Files.downloadAsFormat(UUID(id), outputFrmt)'  );" > <a href="#">@outputFrmt</a> </li>          
-                  }                 
-                </ul>  
-              </div> <!-- end of class button-group -->                        
-            } <!-- end of    if(!outputFormats.isEmpty)-->              
-          </div> <!-- end of class btn-group -->
-                @if(user.isDefined) {
-                <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-					@if(user.get.id.equals(file.author.id) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
-                        <span class="align-right">
-							@if(datasets.length > 0) {
-				            	<button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(datasets.head.id))')" class="btn btn-link" title="Delete the file">
-						    	<span class="glyphicon glyphicon-trash"></span> Delete</button>
-							} else {
-								@if(folders.length > 0) {
-									<button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(folders.head.parentDatasetId))#folderId=@folders.head.id')" class="btn btn-link" title="Delete the file">
-										<span class="glyphicon glyphicon-trash"></span> Delete</button>
+        <div class="row bottom-padding">
+			<div class="col-md-12">
+				<hr/>
+			  <div class="btn-group" role="group" aria-label="...">
+			  @if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
+				  <button id="downloadButton" type="button" onclick="return downloadFile();" class="btn btn-link" title="Download and enjoy this file."> <span class="glyphicon glyphicon-save"></span>
+					  Download </button>
+			  } else {
+				  <!-- if 'disabled' title is not visible -->
+				  <button type="button" class="btn btn-link disabled" title="You don't have permission to download this file."> <span class="glyphicon glyphicon-save"></span>
+					  Download </button>
+			  }
+				<!--  If outputFormats list is not empty, display downloadAs drop-down button with the list of available formats -->
+				@if(!outputFormats.isEmpty){
+				  <div class="btn-group" role="group">
+					<button id="downloadAsButton" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> <span class="glyphicon glyphicon-download-alt"></span> </button>
+					<ul class="dropdown-menu" role="menu">
+					  @outputFormats.get.map { outputFrmt =>
+						<li id="doc" onclick="return downloadFileAs('@routes.Files.downloadAsFormat(UUID(id), outputFrmt)'  );" > <a href="#">@outputFrmt</a> </li>
+					  }
+					</ul>
+				  </div> <!-- end of class button-group -->
+				} <!-- end of    if(!outputFormats.isEmpty)-->
+			  </div> <!-- end of class btn-group -->
+					@if(user.isDefined) {
+					<!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+						@if(user.get.id.equals(file.author.id) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
+							<span class="align-right">
+								@if(datasets.length > 0) {
+									<button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(datasets.head.id))')" class="btn btn-link" title="Delete the file">
+									<span class="glyphicon glyphicon-trash"></span> Delete</button>
+								} else {
+									@if(folders.length > 0) {
+										<button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(folders.head.parentDatasetId))#folderId=@folders.head.id')" class="btn btn-link" title="Delete the file">
+											<span class="glyphicon glyphicon-trash"></span> Delete</button>
+									}
 								}
-							}
 
-					    </span>
-					} else {
-						<span class="align-right" title="No permission to delete the file">
-							<button disabled class="btn btn-link"><span class="glyphicon glyphicon-trash"></span> Delete</button>
-						</span>
+							</span>
+						} else {
+							<span class="align-right" title="No permission to delete the file">
+								<button disabled class="btn btn-link"><span class="glyphicon glyphicon-trash"></span> Delete</button>
+							</span>
+						}
+
+						@if(!file.followers.contains(user.get.id)) {
+							<button id="followButton"
+									class="btn btn-link followButton"
+									objectId="@file.id"
+									objectName="@file.filename"
+									objectType="file"><span class="glyphicon glyphicon-star"></span> Follow
+							</button>
+						} else {
+							<button id="followButton"
+									class="btn btn-link followButton"
+									objectId="@file.id"
+									objectName="@file.filename"
+									objectType="file"><span class="glyphicon glyphicon-star-empty"></span> Unfollow
+							</button>
+						}
 					}
-
-                    @if(!file.followers.contains(user.get.id)) {
-                        <button id="followButton"
-                                class="btn btn-link followButton"
-                                objectId="@file.id"
-                                objectName="@file.filename"
-                                objectType="file"><span class="glyphicon glyphicon-star"></span> Follow
-                        </button>
-                    } else {
-                        <button id="followButton"
-                                class="btn btn-link followButton"
-                                objectId="@file.id"
-                                objectName="@file.filename"
-                                objectType="file"><span class="glyphicon glyphicon-star-empty"></span> Unfollow
-                        </button>
-                    }
-                }
-            </div>
+				<hr/>
+			</div>
         </div>
 
         <div id="recommendPanel" class="panel panel-default" style="display : none;">
@@ -316,7 +318,7 @@
 
 			<!-- sections -->
 			@if(sections.size > 0) {
-			  	<div class="row border-top">
+			  	<div class="row">
 			  	  <div class="col-md-12">
                     <h4>Sections</h4>
 				  	<div class="galleriaHelp">Click on icon at bottom-right of gallery to toggle sections gallery fullscreen view</div>
@@ -527,30 +529,30 @@
     			}
     		}
 
-			<div class="border-top">
-				<div class="row">
-					<div class="col-md-12">
-						<h4>Metadata</h4>
-					</div>
+
+			<div class="row">
+				<div class="col-md-12">
+					<h4>Metadata</h4>
 				</div>
-				<div class="row">
-					<div class="col-md-12">
-						@metadatald.addMetadata("file", file.id.toString, "metadata-content")
-					</div>
+			</div>
+			<div class="row">
+				<div class="col-md-12">
+					@metadatald.addMetadata("file", file.id.toString, "metadata-content")
 				</div>
-				<div class="row">
-					<div class="col-md-12" id="metadata-content">
-						@metadatald.view(mds, true)
-					</div>
+			</div>
+			<div class="row bottom-padding">
+				<div class="col-md-12" id="metadata-content">
+					@metadatald.view(mds, true)
 				</div>
 			</div>
 
-			<div class="row border-top">
+
+			<div class="row bottom-padding">
 				<div class="col-md-12">
 					<h4>Extractions</h4>
 					<a class="btn btn-link" data-toggle="collapse" href="#extractions" aria-expanded="false"
 					aria-controls="collapseExample">
-						List extraction events
+						<span class="glyphicon glyphicon-list" aria-hidden="true"></span> List extraction events
 					</a>
 					<div class="collapse" id="extractions">
 						@extractions.extractionsByFile(extractionsStatus)
@@ -558,7 +560,7 @@
 				</div>
 			</div>
 
-            <div class="row border-top">
+            <div class="row bottom-padding">
                 <div class="col-md-12">
                     <h4>Comments</h4>
                     @if(user.isDefined) {
@@ -675,7 +677,7 @@
             </div>
 
 			<!-- License elements-->
-            <div class="row ds-section-sm border-top">
+            <div class="row ds-section-sm">
                 <div class="accordion" id="accordion6">
                     <div class="accordion-group">
                         <div class="accordian-heading">
@@ -765,7 +767,7 @@
             </div>
             <!-- End License elements -->
 
-            <div class="row ds-section-sm border-top">
+            <div class="row ds-section-sm">
               <h4>Tags</h4>
               <ul id="tagList">
 				  <!-- Do the tags need to have [File] and [Section] appeneded to them? -->
