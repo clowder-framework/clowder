@@ -97,19 +97,19 @@
     @if(Permission.checkOwner(user, ResourceRef(resourceType, resourceId))) {
         @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
             @if(resourceType == ResourceRef.collection) {
-                @spaces.spaceSelect(resourceId, resourceType, "spaceAddSelect", "addCollectionToSpace('" + resourceId + "')", "Add", "Add collection to " + spaceTitle)
+                @spaces.spaceSelect(resourceId, resourceType, "spaceAddSelect", "addCollectionToSpace('" + resourceId + "')", "Add", "Add collection to " + spaceTitle, "add-to-space-widget")
             } else {
-                @spaces.spaceSelect(resourceId, resourceType, "spaceAddSelect", "addDatasetToSpace('" + resourceId + "')", "Add", "Add dataset to " +spaceTitle)
+                @spaces.spaceSelect(resourceId, resourceType, "spaceAddSelect", "addDatasetToSpace('" + resourceId + "')", "Add", "Add dataset to " +spaceTitle, "add-to-space-widget")
             }
             @if(current.plugin[services.SpaceCopyPlugin].isDefined) {
                 @if(resourceType == ResourceRef.dataset) {
                     <h4>Copy Dataset to @{
                         spaces.spaceTitle()
                     }s</h4>
-                    @spaces.spaceSelect(resourceId, resourceType, "spaceCopySelect", "copyDatasetToSpace('" + resourceId + "')", "Copy", "Copy dataset to " + spaceTitle)
+                    @spaces.spaceSelect(resourceId, resourceType, "spaceCopySelect", "copyDatasetToSpace('" + resourceId + "')", "Copy", "Copy dataset to " + spaceTitle, "copy-to-space-widget")
                 } @* else {
                   <h4>Copy Collection to Space</h4>
-                  @spaces.spaceSelect(resourceId, resourceType, "spaceCopySelect", "copyCollectionToSpace('"+resourceId+"')", "Copy", "Copy collection to Space")
+                  @spaces.spaceSelect(resourceId, resourceType, "spaceCopySelect", "copyCollectionToSpace('"+resourceId+"')", "Copy", "Copy collection to Space", "copy-to-space-widget")
 
                   }*@
             }
@@ -125,7 +125,10 @@
 
 
 <script language = "javascript">
-
+    var isSharingEnabled= @play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined;
+    @if(!play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined && resourceSpaces_canRemove.size > 0 ) {
+    $("#add-to-space-widget").addClass("hidden");
+    }
     function getCollection(id) {
         var request = jsRoutes.api.Collections.getCollection(id).ajax({
             type: 'GET'
