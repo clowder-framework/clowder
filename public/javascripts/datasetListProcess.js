@@ -69,7 +69,10 @@ function detachAndRemoveDatasetAndRedirect(datasetId, url){
         }
 	});	
 }
-
+var accessStatus;
+function setOriginAccess() {
+	accessStatus = $("input[name='access']:checked").val();
+}
 
 function updateAccessApi(id, access) {
 	$('.modal').modal('hide');
@@ -78,6 +81,7 @@ function updateAccessApi(id, access) {
 	});
 
 	request.done(function(response, textStatus, jsXHR){
+		accessStatus = access;
 		notify("Dataset is set to "+ access, "success", false, 2000);
 	});
 	request.fail(function (jqXHR, textStatus, errorThrown){
@@ -89,11 +93,10 @@ function updateAccessApi(id, access) {
 	});
 }
 
-function cancelChange(){
+function cancelAccessChange(){
 	console.log("cancel");
 	$('.modal').modal('hide');
-	var status = $("input[name='access']").val();
-		document.getElementById('access-'+status).checked= true;
+	document.getElementById('access-'+accessStatus).checked= true;
 }
 
 
@@ -109,7 +112,7 @@ function confirmTemplate(message, resourceId, access) {
 	modalHTML += '<p>' + message + '</p>';
 	modalHTML += '</div>';
 	modalHTML += '<div class="modal-footer">';
-	modalHTML += '<a type="button" class="btn btn-link"  href="javascript:cancelChange()"><span class="glyphicon glyphicon-remove"></span> Cancel</a>';
+	modalHTML += '<a type="button" class="btn btn-link"  href="javascript:cancelAccessChange()"><span class="glyphicon glyphicon-remove"></span> Cancel</a>';
 	modalHTML += '<a type="button" class="btn btn-primary"  href="javascript:updateAccessApi(\''+ resourceId+'\',\''+ access+'\')"><span class="glyphicon glyphicon-ok"></span> OK</a>';
 	modalHTML += '</div>';
 	modalHTML += '</div>';

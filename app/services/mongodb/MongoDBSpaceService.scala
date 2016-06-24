@@ -153,7 +153,7 @@ class MongoDBSpaceService @Inject() (
     // - space   == show all datasets in space
     // - access  == show all datasets the user can see
     // - default == public only
-    val public = MongoDBObject("status" -> "public")
+    val public = MongoDBObject("status" -> SpaceStatus.PUBLIC.toString)
     val filter = owner match {
       case Some(o) => {
         val author = MongoDBObject("creator" -> new ObjectId(o.id.stringify))

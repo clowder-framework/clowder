@@ -40,10 +40,6 @@
         @if(!msg.contains("pending")) {
           @spaces.requestAuthorization(space.id)
         }
-      }else {
-        <a class="btn btn-default btn-xs btn-margins accordion-toggle collapsed btn-margins" href="@securesocial.controllers.routes.LoginPage.login">
-          <span class="glyphicon glyphicon-envelope"></span> Request Authorization
-        </a>
       }
       </div>
   </div>

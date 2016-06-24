@@ -268,7 +268,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       var name: String = null
       var timeAsString: String = null
       var enabled: Boolean = false
-      var access: String = "private"
+      var access: String = SpaceStatus.PRIVATE.toString
 
       var aResult: JsResult[String] = (request.body \ "description").validate[String]
 
@@ -617,7 +617,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     }
   }
 
-  @ApiOperation(value = "change the accessibility of dataset",
+  @ApiOperation(value = "change the access of dataset",
     notes = "Downloads all files contained in a dataset.",
     responseClass = "None", httpMethod = "PUT")
   def verifySpace(id:UUID) = ServerAdminAction { implicit request =>
@@ -626,8 +626,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       case Some(loggedInUser) => {
         spaces.get(id) match {
           case Some(s) if s.isTrial => {
-            spaces.update(s.copy(status = "private"))
-            datasets.listSpace(0, s.id.toString()).map(d => datasets.update(d.copy(status = "default")))
+            spaces.update(s.copy(status = SpaceStatus.PRIVATE.toString))
             userService.listUsersInSpace(s.id).map { member =>
               val theHtml = views.html.spaces.verifySpaceEmail(s.id.stringify, s.name, member.getMiniUser.fullName)
               Mail.sendEmail("Space Status update", request.user, member, theHtml)

@@ -44,9 +44,10 @@
 
                             @if(Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))) {
                                 <li id="access">Access:
-                                    <label><input type="radio" name="access" id="access-default" value="default" >Default</label>
-                                    <label><input type="radio" name="access" id="access-private" value="private" >Private</label>
-                                    <label><input type="radio" name="access" id="access-public" value="public">Public</label>
+                                    <label class="radio-inline"><input type="radio" name="access" id="access-default" value="default" >Default</label>
+                                    <label class="radio-inline"><input type="radio" name="access" id="access-private" value="private" >Private</label>
+                                    <label class="radio-inline"><input type="radio" name="access" id="access-public" value="public">Public</label>
+
                                 </li>
                             } else {
                                     <li>Access: @dataset.status.capitalize</li>
@@ -310,8 +311,7 @@
             }
 
             $("input[value='@dataset.status']").attr("checked", true);
-
-
+            setOriginAccess();
         });
 
         function cancelTitle() {

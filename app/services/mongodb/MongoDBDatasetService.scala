@@ -201,8 +201,8 @@ class MongoDBDatasetService @Inject() (
     */
   def listUser(user: User): List[Dataset] = {
     val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
-    orlist += MongoDBObject("public" -> true)
-    orlist += MongoDBObject("status" -> "public")
+
+    orlist += MongoDBObject("status" -> DatasetStatus.PUBLIC.toString)
     orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(user.id.stringify))
     val okspaces = user.spaceandrole.filter(_.role.permissions.intersect(Set(Permission.ViewDataset.toString)).nonEmpty)
     if (okspaces.nonEmpty) {
@@ -247,7 +247,7 @@ class MongoDBDatasetService @Inject() (
     val public = MongoDBObject("public" -> true)
     //emptySapces should not be used in most cases since your dataset maybe in a space, then you are changed to viewer or kicked off.
     val emptySpaces = MongoDBObject("spaces" -> List.empty)
-    val publicSpaces= spaces.listByStatus("public").map(s => new ObjectId(s.id.stringify))
+    val publicSpaces= spaces.listByStatus(SpaceStatus.PUBLIC.toString).map(s => new ObjectId(s.id.stringify))
 
     // create access filter
     val filterAccess = if (showAll || configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewDataset)) {
@@ -258,8 +258,8 @@ class MongoDBDatasetService @Inject() (
 
           val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
           if (!permissions.intersect(Permission.READONLY).isEmpty ) {
-            orlist += MongoDBObject("status" -> "public")
-            orlist += MongoDBObject("status" -> "default") ++ ("spaces" $in publicSpaces)
+            orlist += MongoDBObject("status" -> DatasetStatus.PUBLIC.toString)
+            orlist += MongoDBObject("status" -> DatasetStatus.DEFAULT.toString) ++ ("spaces" $in publicSpaces)
           }
           //if you are viewing other user's datasets, return the ones you have permission. otherwise filterAccess should
           // including your own datasets. the if condition here is mainly for efficiency.
@@ -278,8 +278,8 @@ class MongoDBDatasetService @Inject() (
         }
         case None =>
           if (!permissions.intersect(Permission.READONLY).isEmpty) {
-            $or(MongoDBObject("status" -> "public"),
-            MongoDBObject("status" -> "default") ++ ("spaces" $in publicSpaces  ))
+            $or(MongoDBObject("status" -> DatasetStatus.PUBLIC.toString),
+            MongoDBObject("status" -> DatasetStatus.DEFAULT.toString) ++ ("spaces" $in publicSpaces  ))
           } else {
             MongoDBObject("doesnotexist" -> true)
           }
@@ -522,8 +522,7 @@ class MongoDBDatasetService @Inject() (
     if(!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")){
       user match {
         case Some(u)  => {
-          orlist += MongoDBObject("public" -> true)
-          orlist += MongoDBObject("status" -> "public" )
+          orlist += MongoDBObject("status" -> DatasetStatus.PUBLIC.toString )
           orlist += MongoDBObject("spaces" -> List.empty) ++ MongoDBObject("author._id" -> new ObjectId(u.id.stringify))
           val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(Set(Permission.ViewDataset.toString)).nonEmpty)
           if(okspaces.nonEmpty){
@@ -531,7 +530,7 @@ class MongoDBDatasetService @Inject() (
           }
 
         }
-        case None => orlist += MongoDBObject("status" -> "public" )
+        case None => orlist += MongoDBObject("status" -> DatasetStatus.PUBLIC.toString )
       }
     }
     else {

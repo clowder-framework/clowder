@@ -201,7 +201,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
       spaces.get(id) match {
         case Some(s) => {
           Ok(views.html.spaces.editSpace(spaceForm.fill(spaceFormData(s.name, s.description,s.homePage, s.logoURL, s.bannerURL, Some(s.id), s.resourceTimeToLive, s.isTimeToLiveEnabled, s.status, "Update")), Some(s.id)))}
-        case None =>  BadRequest(views.html.notFound("Space does not exist."))
+        case None =>  BadRequest(views.html.notFound(spaceTitle + " does not exist."))
       }
   }
 

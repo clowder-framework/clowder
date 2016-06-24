@@ -52,7 +52,7 @@
 
           @helper.inputRadioGroup(myForm("access"),
             options = options("private"->"Private","public"->"Public"),
-            '_label -> "Accessibility")
+            '_label -> "Access")
           @helper.input(myForm("space_id"), 'class -> "form-control", '_label ->"") {(id, name, value, args) =>
           <input type="hidden" name="@id" value="@value">
           }

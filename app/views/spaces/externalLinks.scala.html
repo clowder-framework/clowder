@@ -16,8 +16,7 @@
 @if(space.isTrial){
     <div id="verify">
         <h3>Status</h3>
-    <p>New Project Spaces are in trial mode, allowing you to take advantage of all SEAD functionality except publishing and making your data public.
-        A SEAD team member will verify your Project Space shortly to make these additional capabilities possible.</p>
+    <p>@play.api.i18n.Messages("trail.space")</p>
     @if(api.Permission.checkServerAdmin(user)){
         <button class="btn btn-link" title="Verify this space" >
             <span class="glyphicon glyphicon-ok" ></span> Verify</button>

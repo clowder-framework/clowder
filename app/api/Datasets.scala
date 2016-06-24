@@ -205,7 +205,7 @@ class  Datasets @Inject()(
             case None | Some(List("default"))=>
               d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig())
             case Some(space) =>
-              val status = "private"
+              val status = DatasetStatus.PRIVATE.toString
               var spaceList: List[UUID] = List.empty
               space.map {
                 aSpace => if (spaces.get(UUID(aSpace)).isDefined) {
@@ -2146,7 +2146,7 @@ class  Datasets @Inject()(
     }
   }
 
-  @ApiOperation(value = "change the accessibility of dataset",
+  @ApiOperation(value = "change the access of dataset",
     notes = "Downloads all files contained in a dataset.",
     responseClass = "None", httpMethod = "PUT")
   def updateAccess(id:UUID, access:String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
@@ -2154,14 +2154,14 @@ class  Datasets @Inject()(
     user match {
       case Some(loggedInUser) => {
         datasets.get(id) match {
-          case Some(dataset) if !dataset.status.contains("trial") => {
+          case Some(dataset) => {
             datasets.update(dataset.copy(status = access))
             events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
             Ok(toJson(Map("status" -> "success")))
           }
           // If the dataset wasn't found by ID
           case _ => {
-            InternalServerError("Update Accessibility failed")
+            InternalServerError("Update Access failed")
           }
         }
       }
