@@ -1,8 +1,8 @@
-package models
+package filters
 
 import controllers.Default
 import play.api.Logger
-import play.api.mvc.{SimpleResult, RequestHeader, Filter}
+import play.api.mvc.{Filter, RequestHeader, SimpleResult}
 
 /*
  * Reference:

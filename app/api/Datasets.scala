@@ -23,6 +23,7 @@ import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.mvc.AnyContent
 import services._
+import _root_.util.{FileUtils, JSONLD, License}
 import _root_.util.{JSONLD, License}
 import views.html.dataset
 import scala.concurrent.{ExecutionContext, Future}
@@ -49,6 +50,7 @@ class  Datasets @Inject()(
   events: EventService,
   spaces: SpaceService,
   folders: FolderService,
+  relations: RelationService,
   userService: UserService) extends ApiController {
 
   @ApiOperation(value = "Get a specific dataset",
@@ -204,7 +206,7 @@ class  Datasets @Inject()(
             case None | Some(List("default"))=>
               d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig())
             case Some(space) =>
-              var spaceList: List[UUID] = List.empty;
+              var spaceList: List[UUID] = List.empty
               space.map {
                 aSpace => if (spaces.get(UUID(aSpace)).isDefined) {
                   spaceList = UUID(aSpace) :: spaceList
@@ -572,6 +574,41 @@ class  Datasets @Inject()(
         }
     }
 
+
+  @ApiOperation(value="Retrieve available metadata definitions for a dataset. It is an aggregation of the metadata that a space belongs to.",
+    responseClass="None", httpMethod="GET")
+  def getMetadataDefinitions(id: UUID, currentSpace: Option[String]) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    implicit val user = request.user
+    datasets.get(id) match {
+      case Some(dataset) => {
+        val metadataDefinitions = collection.mutable.HashSet[models.MetadataDefinition]()
+        var spacesToCheck = List.empty[UUID]
+        currentSpace match {
+          case Some(spaceId) => {
+            spaces.get(UUID(spaceId)) match {
+              case Some(space) => spacesToCheck = List(space.id)
+              case None => spacesToCheck = dataset.spaces
+            }
+          }
+          case None => {
+            spacesToCheck = dataset.spaces
+          }
+        }
+        spacesToCheck.foreach { spaceId =>
+          spaces.get(spaceId) match {
+            case Some(space) => metadataService.getDefinitions(Some(space.id)).foreach{definition => metadataDefinitions += definition}
+            case None =>
+          }
+        }
+        if(dataset.spaces.length == 0) {
+          metadataService.getDefinitions().foreach{definition => metadataDefinitions += definition}
+        }
+        Ok(toJson(metadataDefinitions.toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )))
+      }
+      case None => BadRequest(toJson("The requested dataset does not exist"))
+    }
+  }
+
  @ApiOperation(value = "Retrieve metadata as JSON-LD",
       notes = "Get metadata of the file object as JSON-LD.",
       responseClass = "None", httpMethod = "GET")
@@ -665,6 +702,45 @@ class  Datasets @Inject()(
       case None => Logger.error("Error getting dataset" + id); InternalServerError
     }
   }
+
+  @ApiOperation(value = "Upload files and attach to given dataset",
+    notes = "This will take a list of url or path objects that point to files that will be ingested and added to this dataset.",
+    responseClass = "None", httpMethod = "POST")
+  def uploadToDatasetFile(dataset_id: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.multipartFormData) { implicit request =>
+    datasets.get(dataset_id) match {
+      case Some(dataset) => {
+        val uploadedFiles = FileUtils.uploadFilesMultipart(request, Some(dataset))
+        uploadedFiles.length match {
+          case 0 => BadRequest("No files uploaded")
+          case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
+          case _ => Ok(Json.obj("ids" -> uploadedFiles.toList))
+        }
+      }
+      case None => {
+        BadRequest(s"Dataset with id=${dataset_id} does not exist")
+      }
+    }
+  }
+
+  @ApiOperation(value = "Upload files and attach to given dataset",
+    notes = "This will take a form of file objects that are added to this dataset. This can also add metadata at the same time.",
+    responseClass = "None", httpMethod = "POST")
+  def uploadToDatasetJSON(dataset_id: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, dataset_id)))(parse.json) { implicit request =>
+    datasets.get(dataset_id) match {
+      case Some(dataset) => {
+        val uploadedFiles = FileUtils.uploadFilesJSON(request, Some(dataset))
+        uploadedFiles.length match {
+          case 0 => BadRequest("No files uploaded")
+          case 1 => Ok(Json.obj("id" -> uploadedFiles.head.id))
+          case _ => Ok(Json.obj("ids" -> uploadedFiles.toList))
+        }
+      }
+      case None => {
+        BadRequest(s"Dataset with id=${dataset_id} does not exist")
+      }
+    }
+  }
+
 
   private def getFilesWithinFolders(id: UUID): List[JsValue] = {
     val output = new ListBuffer[JsValue]()
@@ -1808,11 +1884,11 @@ class  Datasets @Inject()(
                 }
                 //file info
                 case (1,0) =>{
-                  if (count < inputFiles.size ){
-                    is = addFileInfoToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
-                    val md5 = MessageDigest.getInstance("MD5")
-                    md5Files.put(folderNameMap(inputFiles(count).id)+"/_info.json",md5)
-                    is = Some(new DigestInputStream(is.get, md5))
+                  is = addFileInfoToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  val md5 = MessageDigest.getInstance("MD5")
+                  md5Files.put(folderNameMap(inputFiles(count).id)+"/_info.json",md5)
+                  is = Some(new DigestInputStream(is.get, md5))
+                  if (count+1 < inputFiles.size ){
                     count +=1
                   } else {
                     count = 0
@@ -1821,11 +1897,11 @@ class  Datasets @Inject()(
                 }
                 //file metadata
                 case (1,1) =>{
-                  if (count < inputFiles.size ){
-                    is = addFileMetadataToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
-                    val md5 = MessageDigest.getInstance("MD5")
-                    md5Files.put(folderNameMap(inputFiles(count).id)+"/_metadata.json",md5)
-                    is = Some(new DigestInputStream(is.get, md5))
+                  is = addFileMetadataToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  val md5 = MessageDigest.getInstance("MD5")
+                  md5Files.put(folderNameMap(inputFiles(count).id)+"/_metadata.json",md5)
+                  is = Some(new DigestInputStream(is.get, md5))
+                  if (count+1 < inputFiles.size ){
                     count +=1
                   } else {
                     count = 0
@@ -1834,11 +1910,11 @@ class  Datasets @Inject()(
                 }
                 //files
                 case (1,2) => {
-                  if (count < inputFiles.size ){
-                    is = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
-                    val md5 = MessageDigest.getInstance("MD5")
-                    md5Files.put(folderNameMap(inputFiles(count).id)+"/"+inputFiles(count).filename,md5)
-                    is = Some(new DigestInputStream(is.get, md5))
+                  is = addFileToZip(folderNameMap(inputFiles(count).id), inputFiles(count), zip)
+                  val md5 = MessageDigest.getInstance("MD5")
+                  md5Files.put(folderNameMap(inputFiles(count).id)+"/"+inputFiles(count).filename,md5)
+                  is = Some(new DigestInputStream(is.get, md5))
+                  if (count+1 < inputFiles.size ){
                     count +=1
                   } else {
                     if (bagit){
@@ -2066,6 +2142,111 @@ class  Datasets @Inject()(
       case None => {
         Unauthorized
       }
+    }
+  }
+
+  @ApiOperation(value = "Insert add_file Event",
+    notes = "Insert an Event into the Events Collection",
+    responseClass = "None", httpMethod = "POST")
+  def addFileEvent(id:UUID,  inFolder:Boolean, fileCount: Int ) = AuthenticatedAction {implicit request =>
+    datasets.get(id) match{
+      case Some(d) =>  {
+        var eventType = if (inFolder) "add_file_folder" else "add_file"
+        eventType = eventType + "_" + fileCount.toString
+        events.addObjectEvent(request.user, id, d.name, eventType)
+      }
+
+      // we do not return an internal server error here since this function just add an event and won't influence the
+      // following operations.
+      case None =>  Logger.error("Dataset not found")
+    }
+    Ok(toJson("added new event"))
+  }
+  def copyDatasetToSpace(datasetId: UUID, spaceId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(u) => {
+        datasets.get(datasetId) match {
+          case Some(dataset) => {
+            if (u.id == dataset.author.id) {
+              spaces.get(spaceId) match {
+                case Some(space) => {
+                  val d = Dataset(name = dataset.name, description = dataset.description, created = new Date(), author = dataset.author, licenseData = dataset.licenseData, spaces = List(spaceId))
+
+                  datasets.insert(d) match {
+                    case Some(id) => {
+                      spaces.addDataset(d.id, spaceId)
+                      relations.add(Relation(source = Node(datasetId.stringify, ResourceType.dataset), target = Node(d.id.stringify, ResourceType.dataset)))
+                      events.addSourceEvent(request.user, d.id, d.name, space.id, space.name, "add_dataset_space")
+
+                      dataset.folders.map { folder =>
+                        copyFolders(folder, datasetId, "dataset", d.id)
+                      }
+
+                      dataset.files.map { fileId =>
+                        files.get(fileId) match {
+                          case Some(file) => {
+                            val newFile = File(loader_id = file.loader_id, filename = file.filename, author = file.author,
+                              uploadDate = file.uploadDate, contentType = file.contentType, length = file.length, sha512 = file.sha512,
+                              loader = file.loader, showPreviews = file.showPreviews, previews = file.previews, thumbnail_id = file.thumbnail_id,
+                              description = file.description, licenseData = file.licenseData, status = file.status)
+                            files.save(newFile)
+                            datasets.addFile(UUID(id), newFile)
+                            relations.add(Relation(source = Node(file.id.stringify, ResourceType.file), target = Node(newFile.id.stringify, ResourceType.file)))
+                          }
+                          case None => Logger.error("Unable to copy file with id: " + fileId.stringify + " to dataset with id: " + id)
+                        }
+                      }
+                      Ok(toJson(Map("newDatasetId" -> d.id.stringify)))
+                    }
+                    case None => BadRequest(s"Unable to copy the dataset with id $datasetId to space with id: $spaceId")
+                  }
+                }
+                case None => BadRequest(s"No space found with id: + $spaceId.")
+              }
+            } else {
+              BadRequest("You don't have permission to copy the dataset.")
+            }
+          }
+          case None => BadRequest(s"No dataset  found with id: $datasetId")
+        }
+      }
+      case None => BadRequest("You need to be logged in to copy a dataset to a space.")
+    }
+
+  }
+
+  private def copyFolders(id: UUID, parentId: UUID, parentType: String, datasetId: UUID) {
+    folders.get(id) match {
+      case Some(folder) => {
+        val newFiles = ListBuffer[UUID]()
+        for (fileId <- folder.files)   {
+          files.get(fileId) match {
+            case Some(file) => {
+              val newFile = File(loader_id = file.loader_id, filename = file.filename, author = file.author,
+                uploadDate = file.uploadDate, contentType = file.contentType, length = file.length, sha512 = file.sha512,
+                loader = file.loader, showPreviews = file.showPreviews, previews = file.previews, thumbnail_id = file.thumbnail_id,
+                description = file.description, licenseData = file.licenseData, status = file.status)
+              files.save(newFile)
+              relations.add(Relation(source = Node(file.id.stringify, ResourceType.file), target = Node(newFile.id.stringify, ResourceType.file)))
+              newFiles += newFile.id
+            }
+            case None =>
+          }
+        }
+        val newFolder = Folder(author = folder.author, created = new Date(), name = folder.name, displayName = folder.displayName,
+          files = newFiles.toList, folders = List.empty, parentId = parentId, parentType = parentType.toLowerCase(), parentDatasetId = datasetId)
+        folders.insert(newFolder)
+        if(parentType == "dataset"){
+          datasets.addFolder(datasetId, newFolder.id)
+        } else {
+          folders.addSubFolder(parentId, newFolder.id)
+        }
+
+        relations.add(Relation(source= Node(folder.id.stringify, ResourceType.folder), target = Node(newFolder.id.stringify, ResourceType.folder)))
+        folder.folders.map( f => copyFolders(f, newFolder.id, "folder", datasetId))
+      }
+
     }
   }
 }

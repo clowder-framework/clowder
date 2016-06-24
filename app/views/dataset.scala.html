@@ -19,6 +19,9 @@
 @import scala.collection.mutable.{Map => MutableMap}
 
 @main(dataset.name) {
+    <script type="text/javascript">
+        var spaceId = "@currentSpace";
+    </script>
 	<div class="row">
 		<!-- left column -->
 		<div class="col-md-8 col-right-border">
@@ -208,6 +211,7 @@
         var pageIndex = 0;
         var folderId;
         var cur_title;
+
         function updateTitle() {
             cur_title = $('#datasettitle').text();
             $('<span class="inline edit_title_div"> </span>').insertAfter($('#datasettitle'));
@@ -409,7 +413,7 @@
             }
         }
 
-        request.open("GET", jsRoutes.controllers.Datasets.refreshToolSidebar("@dataset.id", "@dataset.name").url, true);
+        request.open("GET", jsRoutes.controllers.ToolManager.refreshToolSidebar("@dataset.id", "@dataset.name").url, true);
         request.send();
     }
 
@@ -478,7 +482,7 @@
            currentSpace = "@currentSpace";
         }
          var jsonData = JSON.stringify({"currentSpace": currentSpace, "folderId": folderId});
-         var request = jsRoutes.controllers.Datasets.getUpdatedFilesAndFolders("@dataset.id", @limit, pageIndex).ajax({
+         var request = jsRoutes.controllers.Datasets.getUpdatedFilesAndFolders("@dataset.id", @limit, pageIndex, "@currentSpace").ajax({
             data: jsonData,
             type: 'POST',
             contentType: "application/json"

@@ -1,9 +1,11 @@
 package services
 
 import java.io.InputStream
+
 import models._
 import com.mongodb.casbah.Imports._
-import play.api.libs.json.{JsObject, JsArray, JsValue}
+import models.FileStatus.FileStatus
+import play.api.libs.json.{JsArray, JsObject, JsValue}
 
 /**
  * Generic file service to store blobs of files and metadata about them.
@@ -15,6 +17,11 @@ trait FileService {
    * The number of files
    */
   def count(): Long
+
+  /**
+    * The number of files
+    */
+  def statusCount(): Map[FileStatus, Long]
 
   /**
     * The number of bytes stored
@@ -76,6 +83,11 @@ trait FileService {
    * Get file metadata.
    */
   def get(id: UUID): Option[File]
+
+  /**
+    * Set the file status
+    */
+  def setStatus(id: UUID, status: FileStatus): Unit
 
   /**
    * Lastest file in chronological order.
