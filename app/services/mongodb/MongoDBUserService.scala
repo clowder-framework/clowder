@@ -67,6 +67,9 @@ class MongoDBUserService @Inject() (
           user.put("serverAdmin", false)
         }
       }
+      if (model.authMethod == AuthenticationMethod.UserPassword) {
+        user.put("termsOfServices", MongoDBObject("accepted" -> true, "acceptedDate" -> new Date, "acceptedVersion" -> AppConfiguration.getTermsOfServicesVersionString))
+      }
     } else {
       user.removeField("_id")
     }
@@ -628,7 +631,7 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
         }
       }
       if (user.authMethod == AuthenticationMethod.UserPassword) {
-        userobj.put("acceptedTermsOfServices", new Date())
+        userobj.put("termsOfServices", MongoDBObject("accepted" -> true, "acceptedDate" -> new Date, "acceptedVersion" -> AppConfiguration.getTermsOfServicesVersionString))
       }
     }
 
