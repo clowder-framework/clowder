@@ -421,6 +421,7 @@ class MongoDBCollectionService @Inject() (
   }
 
   def addDataset(collectionId: UUID, datasetId: UUID) = Try {
+    //todd_n should I read that value here? To decide of it should always be added? I think it should be passed in.
     Logger.debug(s"Adding dataset $datasetId to collection $collectionId")
     Collection.findOneById(new ObjectId(collectionId.stringify)) match{
       case Some(collection) => {

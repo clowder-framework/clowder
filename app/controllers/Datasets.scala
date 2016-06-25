@@ -61,6 +61,10 @@ class Datasets @Inject()(
           decodedSpaceList += Utils.decodeSpaceElements(aSpace)
         }
       }
+
+    //todd_n how to read value from conf?
+    val alwaysAddDatasetsToCollectionSpaces = true
+
     val spaceId = space match {
       case Some(s) => {
         spaceService.get(UUID(s)) match {

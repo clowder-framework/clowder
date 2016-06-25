@@ -196,6 +196,10 @@ class  Datasets @Inject()(
     notes = "New dataset requiring zero files based on values of fields in attached JSON. Returns dataset id as JSON object. Requires name, description, and space. Optional list of existing file ids to add.",
     responseClass = "None", httpMethod = "POST")
   def createEmptyDataset() = PermissionAction(Permission.CreateDataset)(parse.json) { implicit request =>
+
+    //todd_n
+    val alwaysAddDatasetsToCollectionSpaces = true
+
     (request.body \ "name").asOpt[String].map { name =>
       val description = (request.body \ "description").asOpt[String].getOrElse("")
       var d : Dataset = null
