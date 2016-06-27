@@ -309,7 +309,7 @@ class Metadata @Inject()(
             || m.attachedTo.resourceType == ResourceRef.curationFile && curations.getCurationByCurationFile(m.attachedTo.id).map(_.status != "In Curation").getOrElse(false)) {
               BadRequest("Curation Object has already submitted")
             } else {
-              metadataService.removeMetadata(id)
+              metadataService.removeMetadata(id, request.host)
               Ok(JsObject(Seq("status" -> JsString("ok"))))
             }
           }

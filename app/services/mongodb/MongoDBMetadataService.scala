@@ -86,7 +86,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
   def updateMetadata(metadataId: UUID, json: JsValue) = {}
 
   /** Remove metadata, if this metadata does exit, nothing is executed */
-  def removeMetadata(id: UUID) = {
+  def removeMetadata(id: UUID, requestHost: String) = {
     getMetadataById(id) match {
       case Some(md) =>
         md.contextId.foreach{cid =>
@@ -100,7 +100,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
         val mdMap = Map("metadata"->md.content)
         current.plugin[RabbitmqPlugin].foreach { p =>
           val dtkey = s"${p.exchange}.${md.attachedTo.resourceType.name}.metadata.removed"
-          p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, mdMap, "", md.attachedTo.id, ""))
+          p.extract(ExtractorMessage(UUID(""), UUID(""), requestHost, dtkey, mdMap, "", md.attachedTo.id, ""))
         }
 
         //update metadata count for resource

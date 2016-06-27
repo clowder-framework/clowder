@@ -24,7 +24,7 @@ trait MetadataService {
   def getMetadataByCreator(resourceRef: ResourceRef, typeofAgent:String): List[Metadata]
 
   /** Remove metadata */
-  def removeMetadata(metadataId: UUID)
+  def removeMetadata(metadataId: UUID, requestHost: String)
 
   /** Remove metadata by attachTo*/
   def removeMetadataByAttachTo(resourceRef: ResourceRef)
