@@ -1,3 +1,35 @@
+function moveFromDatasetToDataset(folderFromId, datasetFromId, fileId) {
+    var selectedId = $("#datasetAddSelect").val();
+    if (!selectedId) return false;
+
+    var request = null;
+
+    if (folderFromId) {
+        request = jsRoutes.api.Folders.moveFileToDataset(selectedId,folderFromId,fileId).ajax({
+            type: 'POST'
+        });
+    } else {
+        request = jsRoutes.api.Datasets.moveFileToDataset(selectedId, datasetFromId, fileId).ajax({
+            type: 'POST'
+        });
+    }
+
+    request.done(function (response, textStatus, jqXHR){
+        console.log(selectedId, folderFromId, fileId);
+        $("#datasetAddSelect").select2("val", "");
+
+        window.location.reload(false);
+    });
+
+    request.fail(function (jqXHR, textStatus, errorThrown){
+        console.error("The following error occured: " + textStatus, errorThrown);
+        var errMsg = "You must be logged in to move a file to a dataset.";
+        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+            notify("The file was not moved to the dataset due to the following : " + errorThrown, "error");
+        }
+    });
+}
+
 function moveFromToDataset(folderFromId, datasetFromId, fileId) {
     var selectedId = $("#datasetAddSelect").val();
     if (!selectedId) return false;
@@ -78,23 +110,6 @@ function removeFromDataset(datasetId, fileId, event){
         }
     });
     return false;
-}
-
-function removeFileFromFolderAndRedirect(datasetId, folderId, fileId, isreload, url){
-    var request = jsRoutes.api.Folders.detachFileFolder(folderId,file_id).ajax({
-        type: 'POST'
-    });
-
-    request.done(function (response, textStatus, jqXHR){
-        removeFileFromDatasetAndRedirect(datasetId, fileId, isreload, url);
-    });
-    request.fail(function (jqXHR, textStatus, errorThrown){
-        console.error("The following error occured: " + textStatus, errorThrown);
-        var errMsg = "You must be logged in to remove a file from a folder.";
-        if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-            notify("The file was not removed from the folder due to : " + errorThrown, "error");
-        }
-    });
 }
 
 //Method to remove the file from dataset and redirect back to a specific URL on completion

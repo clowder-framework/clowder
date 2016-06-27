@@ -294,6 +294,9 @@ class Folders @Inject() (
 
   }
 
+  @ApiOperation(value = "Remove file from a folder and move it to dataset",
+    notes = "File is not deleted, only removed from the selected folder.",
+    responseClass = "None", httpMethod = "POST")
   def moveFileToDataset(datasetId: UUID, oldFolderId: UUID, fileId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
     datasets.get(datasetId) match {
@@ -305,6 +308,8 @@ class Folders @Inject() (
                 if(folder.files.contains(fileId)) {
                   datasets.addFile(datasetId, file)
                   folders.removeFile(oldFolderId, fileId)
+                  events.addSourceEvent(request.user , file.id, file.filename, datasetId, dataset.name, "move_file_dataset")
+
                   Ok(toJson(Map("status" -> "success", "fileName"-> file.filename )))
                 } else {
                   BadRequest("The file you are trying to move isn't in the folder you are moving it from.")
@@ -318,34 +323,6 @@ class Folders @Inject() (
         }
       }
       case None => BadRequest("There is no dataset with id: " + datasetId.stringify)
-    }
-  }
-
-  @ApiOperation(value = "Detach file from folder",
-    notes = "File is not deleted, only separated from the selected folder. If the file is an XML metadata file, the metadata are removed from the dataset.",
-    responseClass = "None", httpMethod = "POST")
-  def detachFileFolder(folderId: UUID, fileId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.folder, folderId))) { implicit request =>
-    folders.get(folderId) match{
-      case Some(folder) => {
-        files.get(fileId) match {
-          case Some(file) => {
-            //remove file from folder
-            folders.removeFile(folder.id, file.id)
-            events.addSourceEvent(request.user , file.id, file.filename, folder.id, folder.name, "detach_file_folder")
-            files.index(fileId)
-
-            Logger.debug("----- Removing a file from folder completed")
-            Ok(toJson(Map("status" -> "success")))
-          }
-          case None => {
-            Logger.debug("----- detach helper NONE case")
-            Ok(toJson(Map("status" -> "success")))
-          }
-        }
-      }
-      case None => {
-        Logger.error(s"Error getting folder $folderId"); InternalServerError
-      }
     }
   }
 }
