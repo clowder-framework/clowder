@@ -68,6 +68,9 @@ trait MetadataService {
   /** Search for resources by key value pairs in the content of the metadata document **/
   def search(key: String, value: String, count: Int, user: Option[User]): List[ResourceRef]
 
+  /** Search for metadata that have a key in a dataset **/
+  def searchbyKeyInDataset(key: String, datasetId: UUID): List[Metadata]
+
   /** Update author full name**/
   def updateAuthorFullName(userId: UUID, fullName: String)
 }

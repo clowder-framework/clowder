@@ -197,24 +197,26 @@ class  Datasets @Inject()(
     responseClass = "None", httpMethod = "POST")
   def createEmptyDataset() = PermissionAction(Permission.CreateDataset)(parse.json) { implicit request =>
     (request.body \ "name").asOpt[String].map { name =>
-      val description = (request.body \ "description").asOpt[String].getOrElse("")
+      (request.body \ "access").asOpt[String].map { access =>
+        val description = (request.body \ "description").asOpt[String].getOrElse("")
       var d : Dataset = null
       implicit val user = request.user
       user match {
         case Some(identity) => {
           (request.body \ "space").asOpt[List[String]] match {
             case None | Some(List("default"))=>
-              d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig())
+              d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig(), status= access)
             case Some(space) =>
               var spaceList: List[UUID] = List.empty
               space.map {
                 aSpace => if (spaces.get(UUID(aSpace)).isDefined) {
                   spaceList = UUID(aSpace) :: spaceList
+
                 } else {
                   BadRequest(toJson("Bad space = " + aSpace))
                 }
               }
-              d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig(), spaces = spaceList)
+              d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig(), spaces = spaceList, status = access)
            }
         }
         case None => InternalServerError("User Not found")
@@ -266,6 +268,7 @@ class  Datasets @Inject()(
         }
         case None => Ok(toJson(Map("status" -> "error")))
       }
+      }.getOrElse(BadRequest(toJson("Missing parameter [access]")))
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
 
@@ -2139,6 +2142,31 @@ class  Datasets @Inject()(
         }
       }
       // If the user doesn't have access to download these files
+      case None => {
+        Unauthorized
+      }
+    }
+  }
+
+  @ApiOperation(value = "change the access of dataset",
+    notes = "Downloads all files contained in a dataset.",
+    responseClass = "None", httpMethod = "PUT")
+  def updateAccess(id:UUID, access:String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(loggedInUser) => {
+        datasets.get(id) match {
+          case Some(dataset) => {
+            datasets.update(dataset.copy(status = access))
+            events.addObjectEvent(user, id, dataset.name, "update_dataset_information")
+            Ok(toJson(Map("status" -> "success")))
+          }
+          // If the dataset wasn't found by ID
+          case _ => {
+            InternalServerError("Update Access failed")
+          }
+        }
+      }
       case None => {
         Unauthorized
       }
