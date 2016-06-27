@@ -41,6 +41,17 @@
                     <ul class="list-unstyled">
                         <li>Created by <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
                         <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
+
+                            @if(Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                                <li id="access">Access:
+                                    <label class="radio-inline"><input type="radio" name="access" id="access-DEFAULT" value="@DatasetStatus.DEFAULT.toString">@DatasetStatus.DEFAULT.toString</label>
+                                    <label class="radio-inline"><input type="radio" name="access" id="access-PRIVATE" value="@DatasetStatus.PRIVATE.toString">@DatasetStatus.PRIVATE.toString</label>
+                                    <label class="radio-inline"><input type="radio" name="access" id="access-PUBLIC" value="@DatasetStatus.PUBLIC.toString">@DatasetStatus.PUBLIC.toString</label>
+                                </li>
+                            } else {
+                                    <li>Access: @dataset.status.capitalize</li>
+                            }
+
                     </ul>
                 </div>
                 <div class="col-md-6">
@@ -138,8 +149,14 @@
                             </div>
                         </div>
                     }
+                    @if(user.isDefined) {
+                        <a id="dataset-users" href="@routes.Datasets.users(dataset.id)" class="btn btn-link btn-sm btn-margin-bottom">
+                            <span class="glyphicon glyphicon-user"></span> Collaborators
+                        </a>
+                    }
                 </div>
             </div>
+
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
                 <ul class="nav nav-tabs margin-bottom-20" >
                     <li role="presentation" class="active"><a href="#tab-files" role="tab" data-toggle="tab">Files </a></li>
@@ -178,10 +195,6 @@
 		<!-- right column -->
 		<div class="col-md-4 col-left-border">
             @spaces.spaceAllocation(dataset.id, ResourceRef.dataset,datasetSpaces_canRemove.getOrElse(Map.empty),None)
-            @if(user.isDefined) {
-                <br/>
-                @datasets.userLink(dataset)
-            }
             @datasets.collections(dataset, collectionsInside)
             @datasets.tags(dataset, fileList, filesTags)
             @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
@@ -297,6 +310,9 @@
                 case None => { }
 
             }
+
+            $("input[value='@dataset.status']").attr("checked", true);
+            setOriginAccess();
         });
 
         function cancelTitle() {
@@ -500,7 +516,6 @@
               parentType = "dataset";
               $('#addFilesLink').attr("href", jsRoutes.controllers.Datasets.addFiles('@dataset.id').url);
           }
-
          });
          request.fail(function (jqXHR, textStatus, errorThrown){
             console.error("The following error occurred: " + textStatus, errorThrown);
@@ -512,6 +527,18 @@
 
        }
 
+        $('input[type=radio][name="access"]').change(function() {
+            var name = '@dataset.name';
+            var id = '@dataset.id';
+            var access = $("input[name='access']:checked").val();
+            if(access !== undefined){
+                var msg = "Are you sure you want to set " + name + " to " +access+"?";
+                var modalHTML = confirmTemplate(msg, id, access);
+                var confirmModal = $(modalHTML);
+                confirmModal.modal();
+                confirmModal.modal("show");
+            }
+        });
 
         function moveFile(fileId) {
             $('.modal').modal('hide');

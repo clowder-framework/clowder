@@ -373,6 +373,10 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     updateMongo("update-counts-spaces", updateCountsInSpaces)
 
+    //add private (the default status) flag for each dataset/collection/space
+    updateMongo("add-trial-flag", addTrialFlag)
+
+
     // instead of user agreeent we now have a temrms of services
     updateMongo("switch-user-agreement-to-terms-of-services", switchToTermsOfServices)
 
@@ -1189,5 +1193,13 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         }
       }
     }
+  }
+
+  private def addTrialFlag(): Unit ={
+      val q = MongoDBObject()
+      val s = MongoDBObject("$set" -> MongoDBObject("status" -> SpaceStatus.TRIAL.toString))
+      val d = MongoDBObject("$set" -> MongoDBObject("status" -> DatasetStatus.PRIVATE.toString))
+      collection("datasets").update(q ,d, multi=true)
+      collection("spaces.projects").update(q ,s, multi=true)
   }
 }
