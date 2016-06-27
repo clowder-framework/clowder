@@ -193,7 +193,7 @@ class Datasets @Inject()(
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String]) = PrivateServerAction { implicit request =>
+  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String]) = UserAction(needActive=false) { implicit request =>
     implicit val user = request.user
 
     val nextPage = (when == "a")
@@ -204,10 +204,10 @@ class Datasets @Inject()(
     val datasetList = person match {
       case Some(p) => {
         space match {
-          case Some(s) => {
+          case Some(s) if datasetSpace.isDefined=> {
             title = Some(person.get.fullName + "'s Datasets in " + spaceTitle + " <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
           }
-          case None => {
+          case _ => {
             title = Some(person.get.fullName + "'s Datasets")
           }
         }
@@ -219,15 +219,15 @@ class Datasets @Inject()(
       }
       case None => {
         space match {
-          case Some(s) => {
+          case Some(s) if datasetSpace.isDefined => {
             title = Some("Datasets in " + spaceTitle + " <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
             if (date != "") {
-              datasets.listSpace(date, nextPage, limit, s)
+              datasets.listSpace(date, nextPage, limit, s, user)
             } else {
-              datasets.listSpace(limit, s)
+              datasets.listSpace(limit, s, user)
             }
           }
-          case None => {
+          case _ => {
             if (date != "") {
               datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
             } else {
@@ -246,7 +246,7 @@ class Datasets @Inject()(
         case Some(p) => datasets.listUser(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
-            case Some(s) => datasets.listSpace(first, nextPage = false, 1, s)
+            case Some(s) => datasets.listSpace(first, nextPage = false, 1, s, user)
             case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
           }
         }
@@ -267,7 +267,7 @@ class Datasets @Inject()(
         case Some(p) => datasets.listUser(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
-            case Some(s) => datasets.listSpace(last, nextPage=true, 1, s)
+            case Some(s) => datasets.listSpace(last, nextPage=true, 1, s, user)
             case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
           }
         }
@@ -313,7 +313,15 @@ class Datasets @Inject()(
       }
 
     //Pass the viewMode into the view
-    Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title, owner, when, date))
+    space match {
+      case Some(s) if datasetSpace.isEmpty =>{
+        NotFound(views.html.notFound(spaceTitle+ " not found."))
+      }
+      case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
+        BadRequest(views.html.notAuthorized("You are not authorized to access the "+spaceTitle+".", s, "space"))
+      }
+      case _ => Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title, owner, when, date))
+    }
   }
 
   def addViewer(id: UUID, user: Option[User]) = {

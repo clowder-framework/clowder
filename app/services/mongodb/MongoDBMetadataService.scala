@@ -1,6 +1,7 @@
 package services.mongodb
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.util.JSON
+import org.bson.types.ObjectId
 import play.api.Logger
 import play.api.Play._
 import models._
@@ -266,6 +267,11 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     }
     val resources: List[ResourceRef] = MetadataDAO.find( filter).limit(count).map(_.attachedTo).toList
     resources
+  }
+
+  def searchbyKeyInDataset(key: String, datasetId: UUID): List[Metadata] = {
+    val field = "content." + key.trim
+    MetadataDAO.find((field $exists true) ++ MongoDBObject("attachedTo.resourceType" -> "dataset") ++ MongoDBObject("attachedTo._id" -> new ObjectId(datasetId.stringify))).toList
   }
 
   def updateAuthorFullName(userId: UUID, fullName: String) {

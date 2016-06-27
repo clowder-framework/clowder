@@ -33,7 +33,7 @@
             <li><a class = "btn btn-xs btn-link btn-margins" href="@routes.Spaces.stagingArea(space.id)" title="Staging Area"><span class="glyphicon glyphicon-briefcase"></span> Staging Area</a></li>
         }
         <li>@spaces.follow(space)</li>
-        @if(!(userRoleMap contains user.get)) {
+        @if(user.isDefined && !(userRoleMap contains user.get)) {
             <li>@spaces.requestAuthorization(space.id)</li>
         }
     </ul>

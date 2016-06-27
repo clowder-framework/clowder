@@ -1,5 +1,6 @@
 @(spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection], collectionSpaces : List[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
+@import models.DatasetStatus
 @main("Create Dataset") {
     <!-- Custom items for the create dataset workflow -->
     <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
@@ -39,14 +40,34 @@
                 <span class="error hiddencomplete" id="descerror">This description is a required field</span>
             </div>
             <div class="form-group">
-                <label id="spacelabel" for="space">Share with @{spaces.spaceTitle()}s</label>
-                <select name="space" id="spaceid" class ="chosen-select" multiple>
-                    @spaceList.map { space =>
+                <label id="spacelabel" for="space">Share with
+                    @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                        @{spaces.spaceTitle()}s
+                     } else {
+                        a @{spaces.spaceTitle()}
+                    }
+                </label>
+                <select name="space" id="spaceid" class ="chosen-select" @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined){multiple}>
+                @if(!play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                    <option value="">Select a @spaces.spaceTitle().toString().filter(_ >= ' ') to share the dataset with (Optional)</option>
+                }
+                @spaceList.map { space =>
                         <option id="@(space.id)" value="@(space.id)">@(space.name)</option>
                     }
                     </select>
-                <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
-                    this dataset with members of one or more @{spaces.spaceTitle()}s. This is optional.</p>
+                @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                    <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
+                        this dataset with members of one @{spaces.spaceTitle()}. This is optional.</p>
+                } else {
+                    <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
+                        this dataset with members of one or more @{spaces.spaceTitle()}s. This is optional.</p>
+                }
+
+            </div>
+            <div class="form-group">Access:
+                <label class="radio-inline"><input type="radio" name="access" id="access-default" value="@DatasetStatus.DEFAULT.toString" >Default</label>
+                <label class="radio-inline"><input type="radio" name="access" id="access-private" value="@DatasetStatus.PRIVATE.toString" checked>Private</label>
+                <label class="radio-inline"><input type="radio" name="access" id="access-public" value="@DatasetStatus.PUBLIC.toString">Public</label>
             </div>
         </div>
     </div>
@@ -138,7 +159,9 @@
                 var desc = $('#description');
                 var spaceList = [];
                 $('#spaceid').find(":selected").each(function(i, selected) {
-                    spaceList[i] = $(selected).val();
+                    if($(selected).val() != "") {
+                        spaceList[i] = $(selected).val();
+                    }
                 });
                 // In case we want choose multiple collections for dataset like spaces in this page, collection is stored in a list here
                 var collectionList = [];
@@ -154,10 +177,11 @@
                     $('#descerror').show();
                     error = true;
                 }
+                var access = $("input[name='access']:checked").val();
                 if (!error) {
                     var encName = htmlEncode(name.val());
                     var encDescription = htmlEncode(desc.val());
-                    var jsonData = JSON.stringify({"name": encName, "description": encDescription, "space": spaceList, "collection": collectionList});
+                    var jsonData = JSON.stringify({"name": encName, "description": encDescription, "space": spaceList, "collection": collectionList, "access":access});
                     var request = jsRoutes.api.Datasets.createEmptyDataset().ajax({
                         data: jsonData,
                         type: 'POST',
