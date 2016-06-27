@@ -1,7 +1,10 @@
 package services
 
+import api.UserRequest
+import play.api.libs.Files
 import play.api.libs.json.JsValue
 import models.{MetadataDefinition, ResourceRef, UUID, Metadata, User}
+import play.api.mvc.MultipartFormData
 
 /**
  * MetadataService for add and query metadata
@@ -9,7 +12,7 @@ import models.{MetadataDefinition, ResourceRef, UUID, Metadata, User}
 trait MetadataService {
   
   /** Add metadata to the metadata collection and attach to a section /file/dataset/collection */
-  def addMetadata(metadata: Metadata) : UUID
+  def addMetadata(metadata: Metadata, requestHost: String) : UUID
   
   /** Get Metadata By Id*/
   def getMetadataById(id : UUID) : Option[Metadata]

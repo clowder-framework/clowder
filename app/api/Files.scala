@@ -288,7 +288,7 @@ class Files @Inject()(
               json, version)
 
             //add metadata to mongo
-            metadataService.addMetadata(metadata)
+            metadataService.addMetadata(metadata, request.host)
 
             files.index(id)
             Ok(toJson(Map("status" -> "success")))
@@ -340,7 +340,7 @@ class Files @Inject()(
                 content, version)
 
               //add metadata to mongo
-              metadataService.addMetadata(metadata)
+              metadataService.addMetadata(metadata, request.host)
               files.index(id)
               Ok(toJson("Metadata successfully added to db"))
             }

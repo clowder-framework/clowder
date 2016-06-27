@@ -8,13 +8,15 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import com.mongodb.casbah.Imports._
+import play.api.libs.Files
 import play.api.libs.json.{JsObject, JsString, Json, JsValue}
+import play.api.mvc.MultipartFormData
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
 import services.MetadataService
 import services.{ContextLDService, DatasetService, FileService, FolderService, ExtractorMessage, RabbitmqPlugin}
-import api.Permission
+import api.{UserRequest, Permission}
 
 /**
  * MongoDB Metadata Service Implementation
@@ -25,7 +27,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
   /**
    * Add metadata to the metadata collection and attach to a section /file/dataset/collection
    */
-  def addMetadata(metadata: Metadata): UUID = {
+  def addMetadata(metadata: Metadata, requestHost: String): UUID = {
     // TODO: Update context
     val mid = MetadataDAO.insert(metadata, WriteConcern.Safe)
     current.plugin[MongoSalatPlugin] match {
@@ -43,7 +45,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     val mdMap = Map("metadata"->metadata.content)
     current.plugin[RabbitmqPlugin].foreach { p =>
       val dtkey = s"${p.exchange}.${metadata.attachedTo.resourceType.name}.metadata.added"
-      p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, mdMap, "", metadata.attachedTo.id, ""))
+      p.extract(ExtractorMessage(UUID(""), UUID(""), requestHost, dtkey, mdMap, "", metadata.attachedTo.id, ""))
     }
     UUID(mid.get.toString())
   }

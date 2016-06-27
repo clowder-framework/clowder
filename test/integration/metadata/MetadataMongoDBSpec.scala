@@ -34,7 +34,7 @@ class MetadataMongoDBSpec extends PlaySpec with OneServerPerSuite {
     "be able to add metadata" in {
       val injector = Guice.createInjector(new services.ConfigurationModule)
       val metadata: MetadataService = injector.getInstance(classOf[MetadataService])
-      val id = metadata.addMetadata(testMetadata)
+      val id = metadata.addMetadata(testMetadata, "")
       assert(id == testMetadata.id)
     }
     "be able retrieve metadata" in {

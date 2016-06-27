@@ -287,7 +287,7 @@ class Metadata @Inject()(
               content, version)
 
             //add metadata to mongo
-            metadataService.addMetadata(metadata)
+            metadataService.addMetadata(metadata, request.host)
 
             Ok(views.html.metadatald.view(List(metadata), true)(request.user))
           } else {
