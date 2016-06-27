@@ -18,6 +18,7 @@ import com.mongodb.casbah.MongoConnection
 import com.mongodb.casbah.MongoDB
 import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.gridfs.GridFS
+import com.mongodb.casbah.Imports.DBObject
 import org.bson.types.ObjectId
 import services.filesystem.DiskByteStorageService
 import services.{ByteStorageService, MetadataService, DI, AppConfigurationService}
@@ -573,7 +574,12 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                 val userURI = "https://clowder.ncsa.illinois.edu/clowder/api/users/" + user.id
                 val creatorUser = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
                 val metadataUser = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorUser, userMD, version)
-                metadataService.addMetadata(metadataUser, "")
+                // insert new metadata into database and try to attach to resource
+                collection("metadata").insert(metadataUser.asInstanceOf[DBObject], WriteConcern.Safe)
+                collection(metadataUser.attachedTo) match {
+                  case Some(c) => c.update(MongoDBObject("_id" -> new ObjectId(metadataUser.attachedTo.id.stringify)), $inc("metadataCount" -> +1))
+                  case None => Logger.error(s"Could not increase counter for ${metadataUser.attachedTo}")
+                }
               }
             }
             case None => {}
@@ -585,7 +591,12 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                 val techMD = Json.parse(com.mongodb.util.JSON.serialize(tmd))
                 val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
                 val metadataTech = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
-                metadataService.addMetadata(metadataTech, "")
+                // insert new metadata into database and try to attach to resource
+                collection("metadata").insert(metadataTech.asInstanceOf[DBObject], WriteConcern.Safe)
+                collection(metadataTech.attachedTo) match {
+                  case Some(c) => c.update(MongoDBObject("_id" -> new ObjectId(metadataTech.attachedTo.id.stringify)), $inc("metadataCount" -> +1))
+                  case None => Logger.error(s"Could not increase counter for ${metadataTech.attachedTo}")
+                }
               }
             }
             case None => {}
@@ -612,7 +623,12 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                 val userURI = "https://clowder.ncsa.illinois.edu/clowder/api/users/" + user.id
                 val creatorUser = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
                 val metadataUser = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorUser, userMD, version)
-                metadataService.addMetadata(metadataUser, "")
+                // insert new metadata into database and try to attach to resource
+                collection("metadata").insert(metadataUser.asInstanceOf[DBObject], WriteConcern.Safe)
+                collection(metadataUser.attachedTo) match {
+                  case Some(c) => c.update(MongoDBObject("_id" -> new ObjectId(metadataUser.attachedTo.id.stringify)), $inc("metadataCount" -> +1))
+                  case None => Logger.error(s"Could not increase counter for ${metadataUser.attachedTo}")
+                }
               }
             }
             case None => {}
@@ -626,13 +642,23 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                 val techMD = Json.parse(com.mongodb.util.JSON.serialize(x))
                 val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
                 val metadataTech = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
-                metadataService.addMetadata(metadataTech, "")
+                // insert new metadata into database and try to attach to resource
+                collection("metadata").insert(metadataTech.asInstanceOf[DBObject], WriteConcern.Safe)
+                collection(metadataTech.attachedTo) match {
+                  case Some(c) => c.update(MongoDBObject("_id" -> new ObjectId(metadataTech.attachedTo.id.stringify)), $inc("metadataCount" -> +1))
+                  case None => Logger.error(s"Could not increase counter for ${metadataTech.attachedTo}")
+                }
               }
             } else {
               val techMD = Json.parse(com.mongodb.util.JSON.serialize(tmd))
               val creatorExtractor = ExtractorAgent(id = UUID.generate(), extractorId = Some(new URL("http://clowder.ncsa.illinois.edu/extractors/migration")))
               val metadataTech = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorExtractor, techMD, version)
-              metadataService.addMetadata(metadataTech, "")
+              // insert new metadata into database and try to attach to resource
+              collection("metadata").insert(metadataTech.asInstanceOf[DBObject], WriteConcern.Safe)
+              collection(metadataTech.attachedTo) match {
+                case Some(c) => c.update(MongoDBObject("_id" -> new ObjectId(metadataTech.attachedTo.id.stringify)), $inc("metadataCount" -> +1))
+                case None => Logger.error(s"Could not increase counter for ${metadataTech.attachedTo}")
+              }
             }
           }
         }
