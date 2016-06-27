@@ -58,6 +58,14 @@ class MongoDBCollectionService @Inject() (
   }
 
   /**
+    * Return a list of collections in a space and checks for permissions
+    */
+  def listInSpaceList(title: Option[String], date: Option[String], limit: Integer, spaces: List[UUID], permissions: Set[Permission], user: Option[User]): List[Collection] = {
+    val (filter, sort) = filteredQuery(date, false, title, None, permissions, user, true, None)
+    Collection.find(filter ++  ("spaces" $in spaces.map(x => new ObjectId(x.stringify)))).limit(limit).toList
+  }
+
+  /**
    * Return a list of collections in a space starting at a specific date, this does not check for permissions
    */
   def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Collection] = {

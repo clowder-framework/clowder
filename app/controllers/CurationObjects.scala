@@ -63,8 +63,10 @@ class CurationObjects @Inject()(
       case _ => spaces.get(UUID(spaceId))
     }
 
+    val mdCreators = metadatas.searchbyKeyInDataset("Creator", datasetId).map(x => ((x.content)\"Creator").as[String])
+
     Ok(views.html.curations.newCuration(datasetId, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
-      true, true, List.empty))
+      true, true, mdCreators))
   }
 
   /**
@@ -124,7 +126,7 @@ class CurationObjects @Inject()(
 
               dataset.folders.map(f => copyFolders(f, newCuration.id, "dataset",  newCuration.id))
               metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
-                .map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id))))
+                .map(m => if((m.content\"Creator").isInstanceOf[JsUndefined]) metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id))))
               Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
             }
             else {

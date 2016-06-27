@@ -149,8 +149,14 @@
                             </div>
                         </div>
                     }
+                    @if(user.isDefined) {
+                        <a id="dataset-users" href="@routes.Datasets.users(dataset.id)" class="btn btn-link btn-sm btn-margin-bottom">
+                            <span class="glyphicon glyphicon-user"></span> Collaborators
+                        </a>
+                    }
                 </div>
             </div>
+
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
                 <ul class="nav nav-tabs margin-bottom-20" >
                     <li role="presentation" class="active"><a href="#tab-files" role="tab" data-toggle="tab">Files </a></li>
@@ -189,10 +195,6 @@
 		<!-- right column -->
 		<div class="col-md-4 col-left-border">
             @spaces.spaceAllocation(dataset.id, ResourceRef.dataset,datasetSpaces_canRemove.getOrElse(Map.empty),None)
-            @if(user.isDefined) {
-                <br/>
-                @datasets.userLink(dataset)
-            }
             @datasets.collections(dataset, collectionsInside)
             @datasets.tags(dataset, fileList, filesTags)
             @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
