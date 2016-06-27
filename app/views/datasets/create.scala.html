@@ -1,5 +1,6 @@
-@(spaces: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
+@import models.DatasetStatus
 @main("Create Dataset") {
     <!-- Custom items for the create dataset workflow -->
     <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
@@ -13,8 +14,9 @@
     </div>
     <div class="row">
         <div class="col-md-12">
-            <p>A dataset is a container for files and metadata. Create one to upload data to the system.
-                You can keep your data private or share it with other spaces.</p>
+            <p>Datasets are the primary way to organize files. Share the dataset with a @{spaces.spaceTitle()} to work with your team.
+                Permissions will be applied according to your @{spaces.spaceTitle()}'s settings.</p>
+
             @if(collection.isDefined){
                 <p>This dataset will be added to collection <a href="@routes.Collections.collection(collection.get.id)">@collection.get.name</a></p>
             }
@@ -38,14 +40,34 @@
                 <span class="error hiddencomplete" id="descerror">This description is a required field</span>
             </div>
             <div class="form-group">
-                <label id="spacelabel" for="space">Share with spaces</label>
-                <select name="space" id="spaceid" class ="chosen-select" multiple>
-                    @spaces.map { space =>
+                <label id="spacelabel" for="space">Share with
+                    @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                        @{spaces.spaceTitle()}s
+                     } else {
+                        a @{spaces.spaceTitle()}
+                    }
+                </label>
+                <select name="space" id="spaceid" class ="chosen-select" @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined){multiple}>
+                @if(!play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                    <option value="">Select a @spaces.spaceTitle().toString().filter(_ >= ' ') to share the dataset with (Optional)</option>
+                }
+                @spaceList.map { space =>
                         <option id="@(space.id)" value="@(space.id)">@(space.name)</option>
                     }
                     </select>
-                <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
-                    this dataset with members of one or more spaces. This is optional.</p>
+                @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                    <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
+                        this dataset with members of one @{spaces.spaceTitle()}. This is optional.</p>
+                } else {
+                    <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
+                        this dataset with members of one or more @{spaces.spaceTitle()}s. This is optional.</p>
+                }
+
+            </div>
+            <div class="form-group">Access:
+                <label class="radio-inline"><input type="radio" name="access" id="access-default" value="@DatasetStatus.DEFAULT.toString" >Default</label>
+                <label class="radio-inline"><input type="radio" name="access" id="access-private" value="@DatasetStatus.PRIVATE.toString" checked>Private</label>
+                <label class="radio-inline"><input type="radio" name="access" id="access-public" value="@DatasetStatus.PUBLIC.toString">Public</label>
             </div>
         </div>
     </div>
@@ -66,7 +88,7 @@
     <script language = "javascript">
         $(".chosen-select").chosen({
             width: "100%",
-            placeholder_text_multiple: "Spaces that will have access to the dataset (optional)"
+            placeholder_text_multiple: "(optional)"
         })
     </script>
 
@@ -89,7 +111,7 @@
         }
 
         $(document).ready(function() {
-            @for(space <- spaces) {
+            @for(space <- spaceList) {
                 idNameObj["@space.name"] = "@space.id";
             }
              $(".chosen-choices").addClass("form-control");
@@ -99,7 +121,7 @@
             var targetId = this.getAttribute("id");
             if(!isUndefined(params.selected)) {
                 var addedId = params.selected;
-                @for(space <- spaces) {
+                @for(space <- spaceList) {
                 var currentId = "@space.id";
                 if(currentId != targetId) {
                     $('#@space.id option [value='+addedId+']').remove();
@@ -110,7 +132,7 @@
                 $('ul.chosen-choices li.search-field').css("width", "0");
             } else if(!isUndefined(params.deselected)) {
                 var removedId = params.deselected;
-                @for(space <- spaces) {
+                @for(space <- spaceList) {
                     var currentId = "@space.id";
                     if(currentId != targetId) {
                         $('#@space.id').prepend($("<option></option>").attr("value", removedId).text(getName(removedId)));
@@ -131,7 +153,9 @@
                 var desc = $('#description');
                 var spaceList = [];
                 $('#spaceid').find(":selected").each(function(i, selected) {
-                    spaceList[i] = $(selected).val();
+                    if($(selected).val() != "") {
+                        spaceList[i] = $(selected).val();
+                    }
                 });
                 // In case we want choose multiple collections for dataset like spaces in this page, collection is stored in a list here
                 var collectionList = [];
@@ -147,10 +171,11 @@
                     $('#descerror').show();
                     error = true;
                 }
+                var access = $("input[name='access']:checked").val();
                 if (!error) {
                     var encName = htmlEncode(name.val());
                     var encDescription = htmlEncode(desc.val());
-                    var jsonData = JSON.stringify({"name": encName, "description": encDescription, "space": spaceList, "collection": collectionList});
+                    var jsonData = JSON.stringify({"name": encName, "description": encDescription, "space": spaceList, "collection": collectionList, "access":access});
                     var request = jsRoutes.api.Datasets.createEmptyDataset().ajax({
                         data: jsonData,
                         type: 'POST',

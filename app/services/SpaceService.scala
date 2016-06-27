@@ -79,6 +79,11 @@ trait SpaceService {
     */
   def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace]
 
+  /**
+    * Return a list of spaces with specific status
+    */
+  def listByStatus(status: String):List[ProjectSpace]
+
   def addCollection(collection: UUID, space: UUID)
 
   def removeCollection(collection: UUID, space:UUID)
@@ -146,10 +151,10 @@ trait SpaceService {
    * @param name The updated name information, HTMLEncoded since it is free text
    * @param description The updated description information, HTMLEncoded since it is free text
    * @param timeToLive The updated amount of time, in milliseconds, that resources should be preserved in the space
-   * @param expireEnabled The updated flag, indicating whether or not the space should allow resources to expire
-   *
+   * @param expireEnabled The updated flag, indicating whether or not the space should allow resources to expire*
+   * @param access The updated flag indicate the space is private or public
    */
-  def updateSpaceConfiguration(spaceId: UUID, name: String, description: String, timeToLive: Long, expireEnabled: Boolean)
+  def updateSpaceConfiguration(spaceId: UUID, name: String, description: String, timeToLive: Long, expireEnabled: Boolean, access:String)
 
   /**
    * Add a user to the space, along with an associated role.

@@ -19,6 +19,9 @@
 @import scala.collection.mutable.{Map => MutableMap}
 
 @main(dataset.name) {
+    <script type="text/javascript">
+        var spaceId = "@currentSpace";
+    </script>
 	<div class="row">
 		<!-- left column -->
 		<div class="col-md-8 col-right-border">
@@ -38,6 +41,17 @@
                     <ul class="list-unstyled">
                         <li>Created by <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
                         <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
+
+                            @if(Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                                <li id="access">Access:
+                                    <label class="radio-inline"><input type="radio" name="access" id="access-DEFAULT" value="@DatasetStatus.DEFAULT.toString">@DatasetStatus.DEFAULT.toString</label>
+                                    <label class="radio-inline"><input type="radio" name="access" id="access-PRIVATE" value="@DatasetStatus.PRIVATE.toString">@DatasetStatus.PRIVATE.toString</label>
+                                    <label class="radio-inline"><input type="radio" name="access" id="access-PUBLIC" value="@DatasetStatus.PUBLIC.toString">@DatasetStatus.PUBLIC.toString</label>
+                                </li>
+                            } else {
+                                    <li>Access: @dataset.status.capitalize</li>
+                            }
+
                     </ul>
                 </div>
                 <div class="col-md-6">
@@ -135,8 +149,14 @@
                             </div>
                         </div>
                     }
+                    @if(user.isDefined) {
+                        <a id="dataset-users" href="@routes.Datasets.users(dataset.id)" class="btn btn-link btn-sm btn-margin-bottom">
+                            <span class="glyphicon glyphicon-user"></span> Collaborators
+                        </a>
+                    }
                 </div>
             </div>
+
 	    	<div class="tabbable" id="bottomDatasetTabbable"> <!-- Only required for left/right tabs -->
                 <ul class="nav nav-tabs margin-bottom-20" >
                     <li role="presentation" class="active"><a href="#tab-files" role="tab" data-toggle="tab">Files </a></li>
@@ -175,10 +195,6 @@
 		<!-- right column -->
 		<div class="col-md-4 col-left-border">
             @spaces.spaceAllocation(dataset.id, ResourceRef.dataset,datasetSpaces_canRemove.getOrElse(Map.empty),None)
-            @if(user.isDefined) {
-                <br/>
-                @datasets.userLink(dataset)
-            }
             @datasets.collections(dataset, collectionsInside)
             @datasets.tags(dataset, fileList, filesTags)
             @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
@@ -208,6 +224,7 @@
         var pageIndex = 0;
         var folderId;
         var cur_title;
+
         function updateTitle() {
             cur_title = $('#datasettitle').text();
             $('<span class="inline edit_title_div"> </span>').insertAfter($('#datasettitle'));
@@ -293,6 +310,9 @@
                 case None => { }
 
             }
+
+            $("input[value='@dataset.status']").attr("checked", true);
+            setOriginAccess();
         });
 
         function cancelTitle() {
@@ -409,7 +429,7 @@
             }
         }
 
-        request.open("GET", jsRoutes.controllers.Datasets.refreshToolSidebar("@dataset.id", "@dataset.name").url, true);
+        request.open("GET", jsRoutes.controllers.ToolManager.refreshToolSidebar("@dataset.id", "@dataset.name").url, true);
         request.send();
     }
 
@@ -478,7 +498,7 @@
            currentSpace = "@currentSpace";
         }
          var jsonData = JSON.stringify({"currentSpace": currentSpace, "folderId": folderId});
-         var request = jsRoutes.controllers.Datasets.getUpdatedFilesAndFolders("@dataset.id", @limit, pageIndex).ajax({
+         var request = jsRoutes.controllers.Datasets.getUpdatedFilesAndFolders("@dataset.id", @limit, pageIndex, "@currentSpace").ajax({
             data: jsonData,
             type: 'POST',
             contentType: "application/json"
@@ -506,6 +526,96 @@
          });
 
        }
+
+        $('input[type=radio][name="access"]').change(function() {
+            var name = '@dataset.name';
+            var id = '@dataset.id';
+            var access = $("input[name='access']:checked").val();
+            if(access !== undefined){
+                var msg = "Are you sure you want to set " + name + " to " +access+"?";
+                var modalHTML = confirmTemplate(msg, id, access);
+                var confirmModal = $(modalHTML);
+                confirmModal.modal();
+                confirmModal.modal("show");
+            }
+        });
+
+        function moveFile(fileId) {
+            $('.modal').modal('hide');
+            var newFolderId = $('#move_file_select').val();
+            var datasetId = "@dataset.id";
+            var jsonData = JSON.stringify({"folderId": folderId});
+            var url;
+            if(newFolderId == "root") {
+                url =jsRoutes.api.Folders.moveFileToDataset(datasetId, folderId, fileId)
+            } else {
+                url =jsRoutes.api.Folders.moveFileBetweenFolders(datasetId, newFolderId, fileId)
+            }
+            var request = url.ajax({
+                data: jsonData,
+                type: 'POST',
+                contentType: "application/json"
+            });
+            request.done(function(response, textStatus, jsXHR){
+                if(newFolderId == "root") {
+                    updatePageAndFolder(0, '');
+                    notify("The file " + response.fileName + " has been succesfully moved to the dataset.", "success",  false, 2000);
+                } else {
+                    updatePageAndFolder(0, newFolderId);
+                    notify("The file " + response.fileName + " has been succesfully moved to folder: " + response.folderName, "success",  false, 2000);
+                }
+
+            });
+            request.fail(function(jqXHR, textStatus, errorThrown) {
+                notify("Error moving file " + errorThrown, "error")
+            });
+
+        };
+
+        function showMoveModal(fileId) {
+
+            var request = jsRoutes.api.Folders.getAllFoldersByDatasetId("@dataset.id").ajax({
+                type: "GET",
+                contentType: "application/json"
+            });
+            request.done(function(response, textStatus, jsXHR){
+                $('#move_file_select').remove();
+                var modalHtml = '<div class="modal fade" id="moveFileModal" tabindex="-1" role="dialog">';
+                modalHtml += '<div class="modal-dialog">';
+                modalHtml += '<div class="modal-content">';
+                modalHtml += '<div class="modal-header">';
+                modalHtml += '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>';
+                modalHtml += '<h4 class="modal-title">Move File to Folder</h4>';
+                modalHtml += '</div>';
+                modalHtml += '<div class="modal-body">';
+                modalHtml += '<select id="move_file_select" class="form-control">';
+                if(folderId != null) {
+                    modalHtml += '<option value="root">/</option>';
+                }
+                for (var i = 0; i < response.length; i ++) {
+                    if(folderId != response[i].id) {
+                        modalHtml +='<option value="'+response[i].id+'">'+ response[i].name + '</option>';
+                    }
+                }
+
+                modalHtml += '</select>';
+                modalHtml += '</div>';
+                modalHtml += '<div class="modal-footer">';
+                modalHtml += '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>';
+                modalHtml += '<a type="button" class="btn btn-primary" id="moveFileButton" href="javascript:moveFile(\''+fileId+'\')"> <span class="glyphicon glyphicon-move"></span> Move</a>';
+                modalHtml += '</div>';
+                modalHtml += '</div>';
+                modalHtml += '</div>';
+                modalHtml += '</div>';
+                var moveBetweenFoldersModal = $(modalHtml);
+                moveBetweenFoldersModal.modal("show");
+            });
+
+            request.fail(function(jqXHR, textStatus, errorThrown){
+                notify("Error getting all folders in dataset" + errorThrown, "error");
+            });
+
+        }
 
     </script>
 }

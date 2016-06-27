@@ -24,18 +24,20 @@
                 <span class="glyphicon glyphicon-th-large" title="@collection.childCollectionsCount child collections"></span> @collection.childCollectionsCount
                 @if(user.isDefined) {
                     @if(space.isDefined) {
-                        @if(user.get.id.equals(collection.author.id) || Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space,UUID(space.get)))) {
-                            <button onclick="confirmRemoveResourceFromResource('space','@(UUID(space.getOrElse("")))','collection','@(collection.id)','@(collection.name.replace("'","&#39;"))',true,'@redirect.url')" class="btn btn-link" title="Remove the collection from the space">
-                                <span class="glyphicon glyphicon-remove"></span></button>
-                        } else {
-                            <div class="inline" title="No permission to remove the collection from the space.">
-                                <button disabled class="btn btn-link"><span class="glyphicon glyphicon-remove"></span></button>
-                            </div>
-                        }
+                        @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
+                            @if(user.get.id.equals(collection.author.id) || Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space,UUID(space.get)))) {
+                                <button onclick="confirmRemoveResourceFromResource('space','@(spaceTitle)','@(UUID(space.getOrElse("")))','collection','@(collection.id)','@(collection.name.replace("'","&#39;"))',true,'@redirect.url')" class="btn btn-link" title="Remove the collection from the @spaceTitle">
+                                    <span class="glyphicon glyphicon-remove"></span></button>
+                            } else {
+                                <div class="inline" title="No permission to remove the collection from the @spaceTitle.">
+                                    <button disabled class="btn btn-link"><span class="glyphicon glyphicon-remove"></span></button>
+                                </div>
+                            }
+                         }
                     } else {
                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                         @if( user.get.id.equals(collection.author.id) || Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
-                            <button onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name.replace("'","&#39;"))',false,'@redirect.url')" class="btn btn-link" title="Delete the collection but not its contents">
+                            <button onclick="confirmDeleteResource('collection','collection','@(collection.id)','@(collection.name.replace("'","&#39;"))',false,'@redirect.url')" class="btn btn-link" title="Delete the collection but not its contents">
                                 <span class="glyphicon glyphicon-trash"></span></button>
                         } else {
                             <div class="inline" title="No permission to delete collection.">

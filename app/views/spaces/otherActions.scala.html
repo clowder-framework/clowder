@@ -7,19 +7,25 @@
                 <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
             </a></li>
             <li><a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-link btn-xs btn-margins">
-                <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
+                <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit @{spaces.spaceTitle()}
+            </a></li>
+            <li><a href="@routes.Metadata.getMetadataBySpace(space.id)" class="btn btn-link btn-xs btn-margins">
+                <span class = "glyphicon glyphicon-list" aria-hidden="true"></span> Manage Metadata Terms & Definitions
             </a></li>
             <li><a href="@routes.Spaces.selectExtractors(space.id)" class="btn btn-link btn-xs btn-margins">
                 <span class = "glyphicon glyphicon-fullscreen" aria-hidden="true"></span> Extractors
             </a></li>
         } else {
-            <li><a href="@routes.Spaces.manageUsers(space.id)" class="btn btn-link btn-xs disabled btn-margins">
+            <li><a class="btn btn-link btn-xs disabled btn-margins">
                 <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
             </a></li>
-            <li><a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-link btn-xs disabled btn-margins">
-                <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
+            <li><a class="btn btn-link btn-xs disabled btn-margins">
+                <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit @{spaces.spaceTitle()}
             </a></li>
-            <li><a href="@routes.Spaces.selectExtractors(space.id)" class="btn btn-link btn-xs disabled btn-margins">
+            <li><a class="btn btn-link btn-xs disabled btn-margins">
+                <span class = "glyphicon glyphicon-list" aria-hidden="true"></span> Manage Metadata Terms & Definitions
+            </a></li>
+            <li><a class="btn btn-link btn-xs disabled btn-margins">
                 <span class = "glyphicon glyphicon-fullscreen" aria-hidden="true"></span> Extractors
             </a></li>
         }
@@ -27,6 +33,8 @@
             <li><a class = "btn btn-xs btn-link btn-margins" href="@routes.Spaces.stagingArea(space.id)" title="Staging Area"><span class="glyphicon glyphicon-briefcase"></span> Staging Area</a></li>
         }
         <li>@spaces.follow(space)</li>
-        <li>@spaces.requestAuthorization(space, userRoleMap)</li>
+        @if(user.isDefined && !(userRoleMap contains user.get)) {
+            <li>@spaces.requestAuthorization(space.id)</li>
+        }
     </ul>
 </div>
