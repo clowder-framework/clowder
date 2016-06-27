@@ -153,7 +153,9 @@
                 var desc = $('#description');
                 var spaceList = [];
                 $('#spaceid').find(":selected").each(function(i, selected) {
-                    spaceList[i] = $(selected).val();
+                    if($(selected).val() != "") {
+                        spaceList[i] = $(selected).val();
+                    }
                 });
                 // In case we want choose multiple collections for dataset like spaces in this page, collection is stored in a list here
                 var collectionList = [];
