@@ -63,26 +63,32 @@
                                 </li>
                             }
 
-                            <li> @user match {
+                            @user match {
                                 case Some(viewer) => {
-                                    <a
-                                    id="followButton"
-                                    type="button"
-                                    class="btn btn-link"
-                                    autocomplete="off"
-                                    objectType="file"
-                                    objectId="@file.id.stringify"
-                                    >
-                                    @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
-                                        <span class='glyphicon glyphicon-star-empty'></span>Unfollow
-                                    } else {
-                                        <span class='glyphicon glyphicon-star'></span>Follow
+                                    <li>
+                                        <a
+                                        id="followButton"
+                                        type="button"
+                                        class="btn btn-link"
+                                        autocomplete="off"
+                                        objectType="file"
+                                        objectId="@file.id.stringify"
+                                        >
+                                        @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
+                                            <span class='glyphicon glyphicon-star-empty'></span>Unfollow
+                                        } else {
+                                            <span class='glyphicon glyphicon-star'></span>Follow
+                                        }
+                                        </a>
+                                    </li>
+                                    @if(user.get.id.equals(file.author.id) || Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
+                                        <a class="btn btn-link" onclick="showMoveModal('@file.id')"> <span class='glyphicon glyphicon-move'></span> Move </a>
                                     }
-                                    </a>
                                 }
                                 case None => {}
                             }
-                            </li>
+
+
                         </ul>
                     </div>
                 </div>

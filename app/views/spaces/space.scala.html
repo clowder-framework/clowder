@@ -50,7 +50,7 @@
         </div>
         <div class="col-md-4 col-lg-4 col-sm-4">
             @spaces.otherActions(space, userRoleMap)
-            @spaces.externalLinks(space.homePage)
+            @spaces.externalLinks(space.homePage, space)
             @if(play.api.Play.configuration.getBoolean("enable_expiration").getOrElse(false)) {
                 @spaces.spaceConfiguration(space)
             }
@@ -78,6 +78,7 @@
 
         $(document).ready(function () {
             activate();
+
         });
 
         // fire when showing from tab

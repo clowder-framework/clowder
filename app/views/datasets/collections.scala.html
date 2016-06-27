@@ -51,20 +51,20 @@
         }
     </div>
 </div>
-    <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
-    @if(Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))) {
-        <div class="form-inline bottom-padding">
-            <div class="input-group input-group-sm col-md-8">
-                <select id="collectionAddSelect" class="form-control add-resource">
-                </select>
-                <span class="input-group-btn">
-                    <a href="#" class="btn btn-default btn-large" id="addCollectionBtn" title="Add Dataset to Collection" onclick="addToCollection('@dataset.id')">
-                        <span class="glyphicon glyphicon-plus"></span> Add
-                    </a>
-                </span>
-            </div>
+
+@if(Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))) {
+    <div class="form-inline bottom-padding">
+        <div class="input-group input-group-sm col-md-8">
+            <select id="collectionAddSelect" class="form-control add-resource">
+            </select>
+            <span class="input-group-btn">
+                <a href="#" class="btn btn-default btn-large" id="addCollectionBtn" title="Add Dataset to Collection" onclick="addToCollection('@dataset.id')">
+                    <span class="glyphicon glyphicon-plus"></span> Add
+                </a>
+            </span>
         </div>
-    }
+    </div>
+}
 
 
 <script language="javascript">
@@ -74,7 +74,7 @@
         allowClear: true,
         ajax: {
             url: function(params) {
-                return jsRoutes.api.Collections.listCanEdit(params.term, null, 5).url;
+                return jsRoutes.api.Collections.addDatasetToCollectionOptions("@dataset.id", params.term, null, 5).url;
             },
             data: function(params) {
                 return { title: params.term };
