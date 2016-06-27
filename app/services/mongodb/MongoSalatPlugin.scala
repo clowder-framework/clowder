@@ -1190,4 +1190,5 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       }
     }
   }
+
 }

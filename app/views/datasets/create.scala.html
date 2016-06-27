@@ -39,14 +39,29 @@
                 <span class="error hiddencomplete" id="descerror">This description is a required field</span>
             </div>
             <div class="form-group">
-                <label id="spacelabel" for="space">Share with @{spaces.spaceTitle()}s</label>
-                <select name="space" id="spaceid" class ="chosen-select" multiple>
-                    @spaceList.map { space =>
+                <label id="spacelabel" for="space">Share with
+                    @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                        @{spaces.spaceTitle()}s
+                     } else {
+                        a @{spaces.spaceTitle()}
+                    }
+                </label>
+                <select name="space" id="spaceid" class ="chosen-select" @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined){multiple}>
+                @if(!play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                    <option value="">Select a @spaces.spaceTitle().toString().filter(_ >= ' ') to share the dataset with (Optional)</option>
+                }
+                @spaceList.map { space =>
                         <option id="@(space.id)" value="@(space.id)">@(space.name)</option>
                     }
                     </select>
-                <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
-                    this dataset with members of one or more @{spaces.spaceTitle()}s. This is optional.</p>
+                @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                    <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
+                        this dataset with members of one @{spaces.spaceTitle()}. This is optional.</p>
+                } else {
+                    <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
+                        this dataset with members of one or more @{spaces.spaceTitle()}s. This is optional.</p>
+                }
+
             </div>
         </div>
     </div>
