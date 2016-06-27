@@ -444,9 +444,12 @@ class MongoDBCollectionService @Inject() (
               datasets.addCollection(dataset.id, collection.id)
               datasets.index(dataset.id)
               index(collection.id)
-              for (collectionSpace <- collection.spaces){
-                if (!dataset.spaces.contains(collectionSpace)){
-                  spaceService.addDataset(dataset.id,collectionSpace)
+              //if value is true, add dataset to spaces of collection
+              if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpaces")){
+                for (collectionSpace <- collection.spaces){
+                  if (!dataset.spaces.contains(collectionSpace)){
+                    spaceService.addDataset(dataset.id,collectionSpace)
+                  }
                 }
               }
               if(collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){
