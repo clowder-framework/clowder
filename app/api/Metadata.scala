@@ -323,13 +323,12 @@ class Metadata @Inject()(
               Logger.debug("re-indexing after metadata removal")
               current.plugin[ElasticsearchPlugin].foreach { p =>
                 // Delete existing index entry and re-index
-                // TODO: Figure out why resourceType has a leading ' sometimes - typo in some other code?
-                m.attachedTo.resourceType.toString match {
-                  case "file" | "'file" => {
+                m.attachedTo.resourceType match {
+                  case ResourceRef.file => {
                     p.delete("data", "file", m.attachedTo.id.stringify)
                     files.index(m.attachedTo.id)
                   }
-                  case "dataset" | "'dataset" => {
+                  case ResourceRef.dataset => {
                     p.delete("data", "dataset", m.attachedTo.id.stringify)
                     datasets.index(m.attachedTo.id)
                   }
