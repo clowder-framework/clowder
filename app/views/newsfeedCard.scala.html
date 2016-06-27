@@ -83,10 +83,10 @@
     set note for @linkForObject("file", event.object_id, event.object_name)
   }
   case "add_user_to_space" => {
-    added @(event.targetuser.getOrElse(User.anonymous.getMiniUser).fullName) as a user to @linkForObject(spaces.spaceTitle().toString(), event.object_id, event.object_name)
+    added @linkForObject("user", event.targetuser.map(_.id), event.targetuser.map(_.fullName)) as a user to @linkForObject("space", event.object_id, event.object_name)
   }
   case "remove_user_from_space" => {
-    removed @(event.targetuser.getOrElse(User.anonymous.getMiniUser).fullName) as a user from @linkForObject(spaces.spaceTitle().toString(), event.object_id, event.object_name)
+    removed @linkForObject("user", event.targetuser.map(_.id), event.targetuser.map(_.fullName)) as a user from @linkForObject("space", event.object_id, event.object_name)
   }
   case "added_folder" => {
     created a folder in @linkForObject("dataset", event.object_id, event.object_name)
@@ -116,11 +116,11 @@
   }
   case "acceptrequest_space" => {
     accepted @linkForObject("user", event.targetuser.map(_.id), event.targetuser.map(_.fullName))'s request to
-    @linkForObject(spaces.spaceTitle().toString(), event.object_id, event.object_name)
+    @linkForObject("space", event.object_id, event.object_name)
   }
   case "rejectrequest_space" => {
     rejected  @linkForObject("user", event.targetuser.map(_.id), event.targetuser.map(_.fullName))'s  request to
-    @linkForObject(spaces.spaceTitle().toString(), event.object_id, event.object_name)
+    @linkForObject("space", event.object_id, event.object_name)
   }
   case "tos_update" => {
     updated the <a href="@routes.Application.tos()">Terms of Services</a>
