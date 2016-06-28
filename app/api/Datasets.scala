@@ -197,9 +197,6 @@ class  Datasets @Inject()(
     responseClass = "None", httpMethod = "POST")
   def createEmptyDataset() = PermissionAction(Permission.CreateDataset)(parse.json) { implicit request =>
 
-    //todd_n
-    val alwaysAddDatasetsToCollectionSpaces = true
-
     (request.body \ "name").asOpt[String].map { name =>
       (request.body \ "access").asOpt[String].map { access =>
         val description = (request.body \ "description").asOpt[String].getOrElse("")
@@ -241,7 +238,6 @@ class  Datasets @Inject()(
             case None | Some(List("default"))=>
             case Some(collectionList) => {
               collectionList.map{c => collections.addDataset(UUID(c), d.id)}
-              //todd_n maybe change remove add dataset to collection spaces in service, do here
             }
           }
           //Below call is not what is needed? That already does what we are doing in the Dataset constructor...
