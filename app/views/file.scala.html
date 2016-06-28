@@ -171,7 +171,7 @@
 				</h4>
 			}
 			@if(folders.length > 0) {
-				<h4>in
+				<h4>in the folder
 					@folders.map { folder =>
 						<span class="caption break-word">
 							<a href="@routes.Datasets.dataset(folder.parentDatasetId)#folderId=@folder.id">@folder.displayName</a>

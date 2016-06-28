@@ -294,12 +294,8 @@ class Folders @Inject() (
 
   }
 
-  @ApiOperation(value = "Remove file from a folder and move it to dataset",
-    notes = "File is not deleted, only removed from the selected folder.",
-    responseClass = "None", httpMethod = "POST")
   def moveFileToDataset(datasetId: UUID, oldFolderId: UUID, fileId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
-    Logger.debug("----- moveFileToDataset.")
     datasets.get(datasetId) match {
       case Some(dataset) => {
         files.get(fileId) match {
@@ -307,11 +303,8 @@ class Folders @Inject() (
             folders.get(oldFolderId) match {
               case Some(folder) => {
                 if(folder.files.contains(fileId)) {
-                  Logger.debug("----- Folder contains file.")
                   datasets.addFile(datasetId, file)
                   folders.removeFile(oldFolderId, fileId)
-                  events.addSourceEvent(request.user , file.id, file.filename, datasetId, dataset.name, "move_file_dataset")
-
                   Ok(toJson(Map("status" -> "success", "fileName"-> file.filename )))
                 } else {
                   BadRequest("The file you are trying to move isn't in the folder you are moving it from.")
@@ -327,4 +320,5 @@ class Folders @Inject() (
       case None => BadRequest("There is no dataset with id: " + datasetId.stringify)
     }
   }
+
 }
