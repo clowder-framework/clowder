@@ -9,13 +9,13 @@
 #DEBUG=echo
 
 # make sure PROJECT ends with /
-PROJECT=${PROJECT:-"ncsa"}
+PROJECT=${PROJECT:-"clowder/"}
 if [ ! "${PROJECT}" = "" ]; then
   if [ ! "$( echo $PROJECT | tail -c 2)" = "/" ]; then
     PROJECT="${PROJECT}/"
   fi
 else
-  PROJECT="ncsa/"
+  PROJECT="clowder/"
 fi
 
 # copy dist file to docker folder
