@@ -14,8 +14,8 @@
         <div class="button-margins">
             <a href="@routes.Profile.viewProfileUUID(profile.id)" class="btn btn-link" title="Show profile">
                 <span class="glyphicon glyphicon-user"></span> Profile</a>
-            <a href="@routes.Spaces.newSpace()" class="btn btn-link" title="Create a new space">
-                <span class="glyphicon glyphicon-ok"></span> Create Space</a>
+            <a href="@routes.Spaces.newSpace()" class="btn btn-link" title="Create a new @{spaces.spaceTitle()}">
+                <span class="glyphicon glyphicon-ok"></span> Create @{spaces.spaceTitle()}</a>
             <a href="@routes.Datasets.newDataset(None, None)" class="btn btn-link" title="Create a new dataset">
                 <span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
             <a href="@routes.Collections.newCollection(None)" class="btn btn-link" title="Create a new collection">
@@ -27,7 +27,7 @@
         <!-- Nav tabs -->
         <ul class="nav nav-tabs" role="tablist">
             <li role="presentation" class="active"><a href="#events" aria-controls="events" role="tab" data-toggle="tab"><b>Activity</b></a></li>
-            <li role="presentation"><a href="#spaces" aria-controls="spaces" role="tab" data-toggle="tab"><b>My Spaces</b></a></li>
+            <li role="presentation"><a href="#spaces" aria-controls="spaces" role="tab" data-toggle="tab"><b>My @{spaces.spaceTitle()}s</b></a></li>
             <li role="presentation"><a href="#datasets" aria-controls="datasets" role="tab" data-toggle="tab"><b>My Datasets</b></a></li>
             <li role="presentation"><a href="#collections" aria-controls="collections" role="tab" data-toggle="tab"><b>My Collections</b></a></li>
             <li role="presentation"><a href="#followers" aria-controls="followers" role="tab" data-toggle="tab"><b>Followers</b></a></li>
@@ -36,34 +36,14 @@
         <div class="tab-content">
             <div role="tabpanel" class="tab-pane active" id="events">
                 <div class="top-padding">
-                    @for(event <- newsfeed) {
-                        <div class="panel panel-default">
-                            <div class="panel-body">
-                                <div class="row">
-                                    <div class="col-xs-1">
-                                        <a href="@routes.Profile.viewProfileUUID(event.user.id)">
-                                            <img class="img-responsive" src="@event.user.avatarURL">
-                                        </a>
-                                    </div>
-                                    <div class="col-xs-11">
-                                        <div class="row">
-                                            <a href="@routes.Profile.viewProfileUUID(event.user.id)">
-                                                @event.user.fullName
-                                            </a>
-                                            @newsfeedCard(event)
-                                        </div>
-                                        <div class="row top-padding">
-                                            @Formatters.humanReadableTimeSince(event.created)
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                    @if(newsfeed.size < 1) {
-                        <p>You can follow <a href="@routes.Users.getUsers()">users</a>, <a href="@routes.Spaces.list("")">spaces</a>, <a href="@routes.Datasets.list("")">datasets</a> and <a href="@routes.Collections.list("")">collections</a>.
-                            Any updates on your followed instances will show here.</p>
-                    }
+                    @eventsList(newsfeed)
+                    <div id="moreevent"></div>
+                    <div class="text-center more-events">
+                        <a  id="moreeventbutton" href="#/" onClick="moreEvents()" class="btn btn-link">
+                            <span class="glyphicon glyphicon-refresh"> </span>
+                            View More Events
+                        </a>
+                    </div>
                 </div>
             </div>
             <div role="tabpanel" class="tab-pane" id="spaces">

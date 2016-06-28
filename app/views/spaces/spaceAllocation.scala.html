@@ -104,7 +104,7 @@
             }
             @if(current.plugin[services.SpaceCopyPlugin].isDefined) {
                 @if(resourceType == ResourceRef.dataset) {
-                    <h4>Copy Dataset to @{
+                    <h4 class="bottom-padding">Copy Dataset to @{
                         spaces.spaceTitle()
                     }s</h4>
                     @spaces.spaceSelect(resourceId, resourceType, "spaceCopySelect", "copyDatasetToSpace('" + resourceId + "')", "Copy", "Copy dataset to " + spaceTitle, "copy-to-space-widget")

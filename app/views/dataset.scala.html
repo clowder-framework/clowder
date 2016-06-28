@@ -153,11 +153,6 @@
                             </div>
                         </div>
                     }
-                    @if(user.isDefined) {
-                        <a id="dataset-users" href="@routes.Datasets.users(dataset.id)" class="btn btn-link btn-sm btn-margin-bottom">
-                            <span class="glyphicon glyphicon-user"></span> Collaborators
-                        </a>
-                    }
                     <hr/>
                 </div>
             </div>
@@ -170,7 +165,7 @@
                     <li role="presentation"><a href="#tab-comments" role="tab" data-toggle="tab">Comments (@comments.size)</a></li>
                 </ul>
                 <div class="tab-content">
-                    <div role="tabpanel" class="tab-pane fade in active" id="tab-files">asdfa</div>
+                    <div role="tabpanel" class="tab-pane fade in active" id="tab-files"></div>
                     <div role="tabpanel" class="tab-pane fade" id="tab-comments">
                             <!-- If the user can add comments, the form will be present, otherwise the form is not available at all. -->
                         @if(Permission.checkPermission(Permission.AddComment, ResourceRef(ResourceRef.dataset, dataset.id))) {
