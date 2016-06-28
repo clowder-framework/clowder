@@ -128,10 +128,10 @@
                 <div class="row">
 
                     @for(row <- followers) {
-                        @users.tile(row, "col-lg-4 col-md-4 col-sm-4 col-xs-6", false)
+                        @users.tile(row, "col-xs-2", false)
                     }
                     @if(followers.size < 1) {
-                        <div class="text-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                        <div class="text-center col-xs-12">
                             This area will show users that follow you. Ask other users to follow you <a class="btn-link" href="@routes.Profile.viewProfileUUID(profile.id)">here</a>
                         </div>
                     }
@@ -157,7 +157,7 @@
                             <div class="panel-body caption break-word">
                                 <div class="row" style="margin-top : 15px;">
                                 @for(userInfo <- followedUsers) {
-                                    @users.tile(userInfo, "col-sm-4 col-xs-6", true)
+                                    @users.tile(userInfo, "col-xs-2", true)
                                 }
                                 </div>
                             </div>
@@ -181,7 +181,7 @@
                         <div id="collapseSpaces" class="panel-collapse collapse">
                             <div class="panel-body">
                             @for(info <- followedSpaces) {
-                                <div class="col-md-4" style="margin-top : 30 px" id="@info._1-tile">
+                                <div class="col-xs-3" style="margin-top : 30 px" id="@info._1-tile">
                                     <div class="panel panel-default">
                                         <div class="panel-heading">
                                             <a href="@routes.Spaces.getSpace(info._1)">@info._2.toString</a>
@@ -256,7 +256,7 @@
                         <div id="collapseTwo" class="panel-collapse collapse">
                             <div class="panel-body">
                             @for(fileInfo <- followedFiles) {
-                                <div class="col-md-4" style="margin-top: 30px" id="@fileInfo._1-tile">
+                                <div class="col-xs-3" style="margin-top: 30px" id="@fileInfo._1-tile">
                                     <div class="panel panel-default">
                                         <div class="panel-heading caption break-word">
                                             <a href="@routes.Files.file(fileInfo._1)">@fileInfo._2.toString</a>
@@ -330,7 +330,7 @@
                         <div id="collapseThree" class="panel-collapse collapse">
                             <div class="panel-body">
                             @for(datasetInfo <- followedDatasets) {
-                                <div class="col-md-4" style="margin-top: 30px" id="@datasetInfo._1-tile">
+                                <div class="col-xs-3" style="margin-top: 30px" id="@datasetInfo._1-tile">
                                     <div class="panel panel-default">
                                         <div class="panel-heading caption break-word">
                                             <a href="@routes.Datasets.dataset(datasetInfo._1)">@datasetInfo._2.toString</a>
@@ -404,7 +404,7 @@
                         <div id="collapseFour" class="panel-collapse collapse">
                             <div class="panel-body">
                             @for(collectionInfo <- followedCollections) {
-                                <div class="col-md-4" style="margin-top: 30px" id="@collectionInfo._1-tile">
+                                <div class="col-xs-3" style="margin-top: 30px" id="@collectionInfo._1-tile">
                                     <div class="panel panel-default">
                                         <div class="panel-heading caption break-word">
                                             <a href="@routes.Collections.collection(collectionInfo._1)">@collectionInfo._2.toString</a>

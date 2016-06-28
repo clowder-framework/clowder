@@ -27,7 +27,7 @@
             @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
                 @if(user.isDefined && Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
                     <button id="deleteButton" onclick="confirmDeleteResource('space','@(spaceTitle)','@(space.id)','@(space.name.replace("'","&#39;"))',true, '@(routes.Spaces.list(""))')"
-                        class="btn btn-link btn-sm" title="Delete the @spaceTitle but not its contents">
+                        class="btn btn-link" title="Delete the @spaceTitle but not its contents">
                             <span class="glyphicon glyphicon-trash"></span> Delete</button>
                 } else {
                     <button disabled id="deleteButton" class="btn btn-link" title="Delete the @spaceTitle but not its contents">
