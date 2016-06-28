@@ -346,6 +346,7 @@ def extract(host, port, key, file, wait):
 	#Display extracted content (TODO: needs to be one endpoint!!!)
 	metadata = requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/metadata?key=' + key).json()
 	metadata["technicalmetadata"] = requests.get('http://' + host + ':' + port + '/api/files/' + file_id + '/technicalmetadatajson?key=' + key).json()
+	metadata["metadata.jsonld"] = requests.get('http://' + host + ':' + port + '/api/files/' + file_id + '/metadata.jsonld?key=' + key).json()
 	metadata = json.dumps(metadata)
 
 	return metadata
