@@ -483,25 +483,18 @@ class  Datasets @Inject()(
   @ApiOperation(value = "Attach existing file to a new dataset and delete it from the old one",
     notes = "If the file is an XML metadata file, the metadata are added to the dataset.",
     responseClass = "None", httpMethod = "POST")
-  def moveFileToDataset(datasetId: UUID, fromDatasetId: UUID, fileId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
+  def moveFileBetweenDatasets(datasetId: UUID, toDatasetId: UUID, fileId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     datasets.get(datasetId) match {
       case Some(dataset) => {
-        datasets.get(fromDatasetId) match {
-          case Some(datasetFrom) => {
-            files.get(fileId) match {
-              case Some(file) => {
-                attachExistingFileHelper(datasetId, fileId, dataset, file, request.user)
-                detachFileHelper(fromDatasetId, fileId, datasetFrom, request.user)
-              }
-              case None => {
-                Logger.error("Error getting file" + fileId)
-                BadRequest(toJson(s"The given file id $fileId is not a valid ObjectId."))
-              }
-            }
+        files.get(fileId) match {
+          case Some(file) => {
+            //attachExistingFileHelper(toDatasetId, fileId, dataset, file, request.user)
+            //detachFileHelper(datasetId, fileId, dataset, request.user)
+            Ok(toJson(Map("status" -> "success")))
           }
           case None => {
-            Logger.error("Error getting old dataset" + fromDatasetId)
-            BadRequest(toJson(s"The given old dataset id $fromDatasetId is not a valid ObjectId."))
+            Logger.error("Error getting file" + fileId)
+            BadRequest(toJson(s"The given file id $fileId is not a valid ObjectId."))
           }
         }
       }

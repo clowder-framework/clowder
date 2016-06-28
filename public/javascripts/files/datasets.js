@@ -2,17 +2,15 @@ function moveFromDatasetToDataset(folderFromId, datasetFromId, fileId) {
     var selectedId = $("#datasetAddSelect").val();
     if (!selectedId) return false;
 
-    var request = null;
-
+    var url;
     if (folderFromId) {
-        request = jsRoutes.api.Folders.moveFileToDataset(selectedId,folderFromId,fileId).ajax({
-            type: 'POST'
-        });
+        url = jsRoutes.api.Folders.moveFileToDataset(selectedId,folderFromId,fileId);
     } else {
-        request = jsRoutes.api.Datasets.moveFileToDataset(selectedId, datasetFromId, fileId).ajax({
-            type: 'POST'
-        });
+        //url = jsRoutes.api.Datasets.moveFileBetweenDatasets(datasetFromId, selectedId, fileId);
     }
+    var request = url.ajax({
+        type: 'POST'
+    });
 
     request.done(function (response, textStatus, jqXHR){
         console.log(selectedId, folderFromId, fileId);
