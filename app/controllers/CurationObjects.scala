@@ -565,7 +565,7 @@ class CurationObjects @Inject()(
           val https = controllers.Utils.https(request)
           val hostUrl = api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "?key=" + key
           val dsLicense = c.datasets(0).licenseData.m_licenseType match {
-            case "license1" => c.datasets(0).author.fullName
+            case "license1" => "All Rights Reserved " + c.datasets(0).author.fullName
             case "license2" => "http://creativecommons.org/licenses/by-nc-nd/3.0/"
             case "license3" => "http://creativecommons.org/publicdomain/zero/1.0/"
           }
