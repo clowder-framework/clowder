@@ -19,15 +19,14 @@
     <div class="col-md-12 col-lg-12 col-sm-12">
       <h1 id="spacenamedisplay">@space.name</h1>
       <p><span id="spacedescdisplay">@space.description</span></p>
-
-
     </div>
   </div>
+  <hr>
 
-    @spaces.externalLinks(space.homePage, space)
-
+  @spaces.externalLinks(space.homePage, space, "row")
   <div class="row">
     <div class="col-md-12 col-lg-12 col-sm-12">
+
       <h3>Project Space Stats</h3>
       <p><span class="glyphicon glyphicon-user"></span> Members: @space.userCount</p>
       <p><span class="glyphicon glyphicon-th-list"></span> Collections: @space.collectionCount</p>

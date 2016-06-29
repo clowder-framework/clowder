@@ -1,36 +1,37 @@
-@(links: List[java.net.URL], space:models.ProjectSpace)(implicit user: Option[models.User])
+@(links: List[java.net.URL], space:models.ProjectSpace, classes: String)(implicit user: Option[models.User])
 
 @import api.Permission
 
-<div class="row ds-section-sm break-word space-col-right">
-<h3>External Links</h3>
-@if(links.size == 0) {
-    @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
-        <p>Edit @{spaces.spaceTitle()} to add links</p>
-    } else {
-        <p>No External Links</p>
-    }
-} else {
-    <ul class="list-unstyled">
-    @for(link <- links) {
-        <li><a href="@link">@link</a></li>
-    }
-    </ul>
-}
-@if(space.isTrial){
-    <div id="verify">
-        <h3>Status</h3>
-    <p>@play.api.i18n.Messages("trial.space")</p>
-    @if(api.Permission.checkServerAdmin(user)){
-        <button class="btn btn-link" title="Verify this space" >
-            <span class="glyphicon glyphicon-ok" ></span> Verify</button>
-    }
+<div class="@classes">
+    <div class="col-md-12 col-lg-12 col-sm-12">
+        <h3>External Links</h3>
+        @if(links.size == 0) {
+            @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
+                <p>Edit @{spaces.spaceTitle()} to add links</p>
+            } else {
+                <p>No External Links</p>
+            }
+        } else {
+            <ul class="list-unstyled">
+            @for(link <- links) {
+                <li><a href="@link">@link</a></li>
+            }
+            </ul>
+        }
+        @if(space.isTrial){
+            <div id="verify">
+                <h3>Status</h3>
+            <p>@play.api.i18n.Messages("trial.space")</p>
+            @if(api.Permission.checkServerAdmin(user)){
+                <button class="btn btn-link" title="Verify this space" >
+                    <span class="glyphicon glyphicon-ok" ></span> Verify</button>
+            }
+            </div>
+        } else {
+            <h3>Access</h3>
+            @space.status.capitalize
+        }
     </div>
-} else {
-    <h3>Access</h3>
-    @space.status.capitalize
-}
-
 </div>
     <script>
         $("#verify").find("button").click(function() {
