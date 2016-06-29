@@ -29,8 +29,18 @@ case class ProjectSpace (
   followers: List[UUID] = List.empty,
   curationObjects: List[UUID] = List.empty,
   invitations: List[(UUID, String)] = List.empty,
-  requests: List[RequestResource] = List.empty)
+  requests: List[RequestResource] = List.empty,
+  status: String = SpaceStatus.TRIAL.toString // space has three status: trial, private and public. yet users can only see the
+  // access of the space, where trial equals to private
+){
+  def isPublic:Boolean = status.contains(SpaceStatus.PUBLIC.toString)
+  def isTrial:Boolean = status.contains(SpaceStatus.TRIAL.toString)
+}
 
+object SpaceStatus extends Enumeration {
+  type SpaceStatus = Value
+  val TRIAL, PRIVATE, PUBLIC = Value
+}
 
 case class UserSpace (
    id: UUID = UUID.generate,

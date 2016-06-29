@@ -86,7 +86,7 @@
                     </div>
                 }
             }
-            <div>
+            <div class="profile-section">
                 @profile.identityId.providerId match {
                     case "userpass" => {
                         Profile Source : Local Account
@@ -114,8 +114,9 @@
             }
             <div>&nbsp;</div>
             @if(profile.profile.isDefined) {
-                <div>
-                    <h5>@profile.profile.get.getPositionAtInstitution</h5>
+                <div class="profile-section">
+                    <h4>Institution</h4>
+                    <p>@profile.profile.get.getPositionAtInstitution</p>
 
                     @profile.profile.get.orcidID match{
                         case Some(info) => {
@@ -137,6 +138,9 @@
                         <p>@profile.profile.get.pastprojects.mkString(", ")</p>
                     }
                 </div>
+            }
+            @if(ownProfile.isDefined && ownProfile.get == true  && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+                <div class="profile-disclaimer small">@play.api.i18n.Messages("profile.disclaimer")</div>
             }
         </div>
 

@@ -3,8 +3,7 @@
   sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset], folders: List[Folder],
   mds: List[models.Metadata],
   rdfExported: Boolean,
-  extractionsStatus: List[Extraction], outputFormats: Option[List[String]],
-		spaceId: Option[String])(implicit user: Option[models.User])
+  extractionsStatus: List[Extraction], outputFormats: Option[List[String]], spaceId: Option[String], access:String)(implicit user: Option[models.User])
 
 @import helper._
 @import play.api.Play.current
@@ -260,11 +259,11 @@
 					@if(user.get.id.equals(file.author.id) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
                         <span class="align-right">
 							@if(datasets.length > 0) {
-				            	<button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(datasets.head.id))')" class="btn btn-link" title="Delete the file">
+				            	<button id="deleteButton" onclick="confirmDeleteResource('file','file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(datasets.head.id))')" class="btn btn-link" title="Delete the file">
 						    	<span class="glyphicon glyphicon-trash"></span> Delete</button>
 							} else {
 								@if(folders.length > 0) {
-									<button id="deleteButton" onclick="confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(folders.head.parentDatasetId))#folderId=@folders.head.id')" class="btn btn-link" title="Delete the file">
+									<button id="deleteButton" onclick="confirmDeleteResource('file','file','@(file.id)','@(file.filename.replace("'","&#39;"))', true, '@(routes.Datasets.dataset(folders.head.parentDatasetId))#folderId=@folders.head.id')" class="btn btn-link" title="Delete the file">
 										<span class="glyphicon glyphicon-trash"></span> Delete</button>
 								}
 							}
@@ -668,9 +667,10 @@
 						}
 						<a class="btn btn-link btn-sm clipboard" data-copy="@file.sha512" title="Copy SHA to clipboard"><span class="glyphicon glyphicon-edit"></span> copy</a></td></tr>
 
-					<tr><td><b>Uploaded&nbsp;on:</b></td><td>@file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
+					<tr><td><b>Uploaded&nbsp;on:</b></td><td> @file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
                     <tr><td><b>Uploaded&nbsp;by:</b></td><td> <a href = "@routes.Profile.viewProfileUUID(file.author.id)"> @file.author.fullName</a></td></tr>
-					<tr><td><b>Status:</b></td><td>@file.status</td></tr>
+					<tr><td><b>Access:</b></td><td> @access.capitalize</td></tr>
+					<tr><td><b>Status:</b></td><td> @file.status</td></tr>
                 </table>
             </div>
 

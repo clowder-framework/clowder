@@ -26,6 +26,11 @@ trait CollectionService {
   def listSpace(limit: Integer, space: String): List[Collection]
 
   /**
+    * Return a list of collections in a space and checks for permissions
+    */
+  def listInSpaceList(title: Option[String], date: Option[String], limit: Integer, spaces: List[UUID], permissions: Set[Permission], user: Option[User]): List[Collection]
+
+  /**
    * Return a list of collections in a space starting at a specific date, this does not check for permissions
    */
   def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Collection]
@@ -33,7 +38,7 @@ trait CollectionService {
   /**
    * Return the count of collections the user has access to.
    */
-  def countAccess(permisions: Set[Permission], user: Option[User], showAll: Boolean): Long
+  def countAccess(permissions: Set[Permission], user: Option[User], showAll: Boolean): Long
 
   /**
    * Return a list of collections the user has access to.

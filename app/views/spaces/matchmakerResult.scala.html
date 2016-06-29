@@ -1,4 +1,4 @@
-@(curationObject: models.CurationObject, properties: Map[String, List[String]], userPreferences:  Map[String,List[String]], mmResponse: List[models.MatchMakerResponse])(implicit user: Option[models.User] )
+@(curationObject: models.CurationObject, properties: Map[String, List[String]], userPreferences:  Map[String,List[String]], mmResponse: List[models.MatchMakerResponse], isTrialSpace:Boolean)(implicit user: Option[models.User] )
 @main("Matchmaker") {
     <div class="row">
         <div class="col-md-12">
@@ -187,6 +187,16 @@
                 $('#hiddenPurpose').val(dataMap["Purpose"]);
                 $('#selectRepository').submit();
 
+            }
+        });
+
+        $(document).ready(function(){
+            if(@isTrialSpace){
+                $("input[value='Testing-Only']").checked;
+                $("input[name='Purpose']").click(function(event){
+                    event.preventDefault();
+                    event.stopPropagation();
+                });
             }
         });
 

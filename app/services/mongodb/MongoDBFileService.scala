@@ -723,20 +723,19 @@ class MongoDBFileService @Inject() (
             if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty){            
               if(file.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){ 
                 datasets.newThumbnail(fileDataset.id)
-                
                 	for(collectionId <- fileDataset.collections){
-		                          collections.get(collectionId) match{
-		                            case Some(collection) =>{		                              
-		                            	if(!collection.thumbnail_id.isEmpty){	                            	  
-		                            		if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
-		                            			collections.createThumbnail(collection.id)
-		                            		}		                        
-		                            	}
-		                            }
-		                            case None=>Logger.debug(s"Could not find collection $collectionId") 
-		                          }
-		                        }		        	  
-		        }
+                    collections.get(collectionId) match{
+                      case Some(collection) =>{
+                        if(!collection.thumbnail_id.isEmpty){
+                          if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
+                            collections.createThumbnail(collection.id)
+                          }
+                        }
+                      }
+                      case None=>Logger.debug(s"Could not find collection $collectionId")
+                    }
+                  }
+		          }
             }
                      
           }
@@ -765,13 +764,20 @@ class MongoDBFileService @Inject() (
         }
 
         // finally delete the actual file
-        ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
+        if(isLastPointingToLoader(file.loader, file.loader_id)) {
+          ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
+        }
+
         FileDAO.remove(file)
       }
       case None => Logger.debug("File not found")
     }
   }
 
+  def isLastPointingToLoader(loader: String, loader_id: String): Boolean = {
+    val result = FileDAO.find(MongoDBObject("loader" -> loader, "loader_id" -> loader_id))
+    result.size == 1
+  }
   def removeTemporaries(){
     val cal = Calendar.getInstance()
     val timeDiff = play.Play.application().configuration().getInt("rdfTempCleanup.removeAfter")
