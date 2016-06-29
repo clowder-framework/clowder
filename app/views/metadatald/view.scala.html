@@ -139,7 +139,7 @@
     }
 
     @if(metadata.size == 0) {
-        <h4>No metadata available for this resource</h4>
+        <p class="text-center">No metadata available for this resource</p>
     }
     @for((m, i) <- metadata.zipWithIndex) {
         <div class="panel panel-default">
