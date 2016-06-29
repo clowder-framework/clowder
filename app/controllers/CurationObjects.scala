@@ -74,6 +74,7 @@ class CurationObjects @Inject()(
    * the browser is redirected to the new Curation page.
    */
   def submit(datasetId:UUID, spaceId:UUID) = PermissionAction(Permission.EditStagingArea, Some(ResourceRef(ResourceRef.space, spaceId))) (parse.multipartFormData)  { implicit request =>
+    Logger.debug("create curation object:PPPPPP ")
 
     //get name, des, space from request
     val COName = request.body.asFormUrlEncoded.getOrElse("name", null)

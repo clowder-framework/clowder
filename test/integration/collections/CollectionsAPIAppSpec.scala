@@ -320,7 +320,7 @@ class CollectionsAPIAppSpec extends PlaySpec with ConfiguredApp with FakeMultipa
       info("contentType="+contentType(result))
       contentType(result) mustEqual Some("application/json")
       //contentAsString(result) must include ("File")
-      info("content"+contentAsString(result))
+      info("content!!!!!!!!!!"+contentAsString(result))
     }
 
     "respond to the removeCollection(coll_id:UUID) function routed by POST /api/collections/:coll_id/remove  " in {
