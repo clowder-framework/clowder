@@ -37,12 +37,13 @@ case class Dataset(
 ){
   def isPublic:Boolean = status.contains(DatasetStatus.PUBLIC.toString)
   def isDefault:Boolean = status.contains(DatasetStatus.DEFAULT.toString)
+  def isTRIAL:Boolean = status.contains(DatasetStatus.TRIAL.toString)
   def inSpace:Boolean = spaces.size > 0
 }
 
 object DatasetStatus extends Enumeration {
   type DatasetStatus = Value
-  val PUBLIC, PRIVATE, DEFAULT = Value
+  val PUBLIC, PRIVATE, DEFAULT, TRIAL = Value
 }
 
 
