@@ -1,7 +1,8 @@
 @(resourceId: UUID, resourceType: Symbol, resourceSpaces_canRemove : Map[ProjectSpace,Boolean], currentCollection: Option[Collection])(implicit user: Option[models.User])
 @import api.Permission
+@import play.api.libs.json.Json
 @import play.api.Play.current
-    <div class="row bottom-padding">
+    <div class="row">
         <div class="col-md-12">
         @if(resourceType == ResourceRef.collection) {
             @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
@@ -20,7 +21,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row bottom-padding">
         <div id="spacesList" class="col-md-12">
         @resourceSpaces_canRemove.map {case (s, v) =>
             <div id="col_@s.id" class="row bottom-padding">
@@ -103,7 +104,7 @@
             }
             @if(current.plugin[services.SpaceCopyPlugin].isDefined) {
                 @if(resourceType == ResourceRef.dataset) {
-                    <h4>Copy Dataset to @{
+                    <h4 class="bottom-padding">Copy Dataset to @{
                         spaces.spaceTitle()
                     }s</h4>
                     @spaces.spaceSelect(resourceId, resourceType, "spaceCopySelect", "copyDatasetToSpace('" + resourceId + "')", "Copy", "Copy dataset to " + spaceTitle, "copy-to-space-widget")
@@ -116,6 +117,7 @@
         }
 
     }
+
 
 
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
