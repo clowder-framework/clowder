@@ -17,6 +17,7 @@ object Permission extends Enumeration {
     CreateSpace,
     DeleteSpace,
     EditSpace,
+    PublicSpace,
     AddResourceToSpace,
     EditStagingArea,
 
@@ -25,6 +26,7 @@ object Permission extends Enumeration {
     CreateDataset,
     DeleteDataset,
     EditDataset,
+    PublicDataset,
     AddResourceToDataset,
     ExecuteOnDataset,
 

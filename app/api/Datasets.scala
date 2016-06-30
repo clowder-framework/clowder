@@ -2186,7 +2186,7 @@ class  Datasets @Inject()(datasets: DatasetService,
   @ApiOperation(value = "change the access of dataset",
     notes = "Downloads all files contained in a dataset.",
     responseClass = "None", httpMethod = "PUT")
-  def updateAccess(id:UUID, access:String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def updateAccess(id:UUID, access:String) = PermissionAction(Permission.PublicDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     user match {
       case Some(loggedInUser) => {
