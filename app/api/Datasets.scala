@@ -197,8 +197,9 @@ class  Datasets @Inject()(
     responseClass = "None", httpMethod = "POST")
   def createEmptyDataset() = PermissionAction(Permission.CreateDataset)(parse.json) { implicit request =>
     (request.body \ "name").asOpt[String].map { name =>
-      (request.body \ "access").asOpt[String].map { access =>
-        val description = (request.body \ "description").asOpt[String].getOrElse("")
+
+      val description = (request.body \ "description").asOpt[String].getOrElse("")
+      val access =  (request.body \ "access").asOpt[String].getOrElse(DatasetStatus.DEFAULT.toString)
       var d : Dataset = null
       implicit val user = request.user
       user match {
@@ -268,7 +269,7 @@ class  Datasets @Inject()(
         }
         case None => Ok(toJson(Map("status" -> "error")))
       }
-      }.getOrElse(BadRequest(toJson("Missing parameter [access]")))
+
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
 
