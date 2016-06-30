@@ -375,9 +375,9 @@ class  Datasets @Inject()(
             case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
           }
         }
-        Logger.info("Adding file to dataset completed")
+        Logger.debug("----- Adding file to dataset completed")
       } else {
-          Logger.info("File was already in dataset.")
+          Logger.debug("File was already in dataset.")
       }
   }
 
@@ -481,6 +481,39 @@ class  Datasets @Inject()(
 	  }
   }
 
+  @ApiOperation(value = "Attach existing file to a new dataset and delete it from the old one",
+    notes = "If the file is an XML metadata file, the metadata are added to the dataset.",
+    responseClass = "None", httpMethod = "POST")
+  def moveFileBetweenDatasets(datasetId: UUID, toDatasetId: UUID, fileId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
+    datasets.get(datasetId) match {
+      case Some (dataset) => {
+        datasets.get (toDatasetId) match {
+          case Some (toDataset) => {
+            files.get (fileId) match {
+              case Some (file) => {
+                attachExistingFileHelper (toDatasetId, fileId, toDataset, file, request.user)
+                detachFileHelper(datasetId, fileId, dataset, request.user)
+                Logger.info ("----- Successfully moved File between datasets.")
+                Ok (toJson (Map ("status" -> "success") ) )
+              }
+              case None => {
+                Logger.error ("Error getting file" + fileId)
+                BadRequest (toJson (s"The given file id $fileId is not a valid ObjectId.") )
+              }
+            }
+          }
+          case None => {
+            Logger.error ("Error getting dataset" + toDatasetId)
+            BadRequest (toJson (s"The given dataset id $toDatasetId is not a valid ObjectId.") )
+          }
+        }
+      }
+      case None => {
+        Logger.error ("Error getting dataset" + datasetId)
+        BadRequest (toJson (s"The given dataset id $datasetId is not a valid ObjectId.") )
+      }
+    }
+  }
   //////////////////
 
   @ApiOperation(value = "List all datasets in a collection", notes = "Returns list of datasets and descriptions.", responseClass = "None", httpMethod = "GET")

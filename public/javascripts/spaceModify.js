@@ -122,7 +122,8 @@ function addDatasetToSpace(id, spaceTitle) {
     request.done(function (response, textStatus, jqXHR) {
         var o = $.parseJSON(jqXHR.responseText);
         var txt = '<div id="col_'+selectedId+'" class="row bottom-padding">' +
-            '<div class="col-md-2"><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+'><span class="smallicon glyphicon glyphicon-tent"></span></a></div>' +
+            '<div class="col-md-2"><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+'>' +
+            '<span class="smallicon glyphicon glyphicon-tent"></span></a></div>' +
             '<div class="col-md-10">' +
             '<div><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+' class ="space">'+selectedName+'</a>' +
             '</div>';

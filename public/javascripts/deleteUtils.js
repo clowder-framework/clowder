@@ -3,6 +3,13 @@
 //Created by mo on 2/2/16.
 function confirmDeleteResource(resourceType, resourceTypeName, resourceId, resourceName, isreload, url) {
     var msg = "Are you sure you want to delete the " + resourceTypeName + " '" + resourceName + "'?";
+    if (resourceType == "space") {
+        msg = msg + " When you delete a " + resourceTypeName + ", the collections, datasets and files will still be available.";
+    } else if (resourceType == "collection") {
+        msg = msg + " When you delete a collection, the datasets and files will still be available.";
+    } else if (resourceType == "dataset") {
+        msg += " When you delete a dataset you also delete the files contained within it.";
+    }
     var modalHTML = confirmDeleteTemplate(msg, resourceType, resourceId, isreload, url);
     var confirmModal = $(modalHTML);
     confirmModal.modal();

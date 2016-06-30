@@ -19,17 +19,18 @@
         </div>
     }
 
-    <div class="row space-head vertical-align">
+    <div class="row vertical-align">
         <div class="col-md-12 col-lg-12 col-sm-12">
             <h1 id="spacenamedisplay">@space.name</h1>
             <p><span id="spacedescdisplay">@space.description</span></p>
+            <hr/>
             @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
                 @if(user.isDefined && Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
                     <button id="deleteButton" onclick="confirmDeleteResource('space','@(spaceTitle)','@(space.id)','@(space.name.replace("'","&#39;"))',true, '@(routes.Spaces.list(""))')"
-                        class="btn btn-link btn-sm" title="Delete the @spaceTitle but not its contents">
+                        class="btn btn-link" title="Delete the @spaceTitle but not its contents">
                             <span class="glyphicon glyphicon-trash"></span> Delete</button>
                 } else {
-                    <button disabled id="deleteButton" class="btn btn-link btn-sm" title="Delete the @spaceTitle but not its contents">
+                    <button disabled id="deleteButton" class="btn btn-link" title="Delete the @spaceTitle but not its contents">
                         <span class="glyphicon glyphicon-trash"></span> Delete</button>
                 }
             }
@@ -41,13 +42,13 @@
             }
         </div>
     </div>
-
+    <hr/>
     <div class="row">
-        <div class="col-md-8 col-lg-8 col-sm-8 space-col-left">
+        <div class="col-md-8 col-lg-8 col-sm-8">
             @spaces.collectionsBySpace(collections, space.id.stringify)
             @spaces.datasetsBySpace(datasets, space.id.stringify)
         </div>
-        <div class="col-md-4 col-lg-4 col-sm-4 space-col-right">
+        <div class="col-md-4 col-lg-4 col-sm-4">
             @spaces.otherActions(space, userRoleMap)
             @spaces.externalLinks(space.homePage, space)
             @if(play.api.Play.configuration.getBoolean("enable_expiration").getOrElse(false)) {
