@@ -431,7 +431,6 @@ class MongoDBCollectionService @Inject() (
   }
 
   def addDataset(collectionId: UUID, datasetId: UUID) = Try {
-    //todd_n should I read that value here? To decide of it should always be added? I think it should be passed in.
     Logger.debug(s"Adding dataset $datasetId to collection $collectionId")
     Collection.findOneById(new ObjectId(collectionId.stringify)) match{
       case Some(collection) => {
@@ -444,14 +443,6 @@ class MongoDBCollectionService @Inject() (
               datasets.addCollection(dataset.id, collection.id)
               datasets.index(dataset.id)
               index(collection.id)
-              //if value is true, add dataset to spaces of collection
-              if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpaces")){
-                for (collectionSpace <- collection.spaces){
-                  if (!dataset.spaces.contains(collectionSpace)){
-                    spaceService.addDataset(dataset.id,collectionSpace)
-                  }
-                }
-              }
               if(collection.thumbnail_id.isEmpty && !dataset.thumbnail_id.isEmpty){
                   Collection.dao.collection.update(MongoDBObject("_id" -> new ObjectId(collection.id.stringify)),
                   $set("thumbnail_id" -> dataset.thumbnail_id.get), false, false, WriteConcern.Safe)
@@ -463,6 +454,37 @@ class MongoDBCollectionService @Inject() (
               Logger.debug("Dataset was already in collection.")
             }
             Success
+          }
+          case None => {
+            Logger.error("Error getting dataset " + datasetId)
+            Failure
+          }
+        }
+      }
+      case None => {
+        Logger.error("Error getting collection" + collectionId);
+        Failure
+      }
+    }
+  }
+
+  //adds datasest to the spaces of the collection
+  def addDatasetToCollectionSpaces(collectionId: UUID, datasetId: UUID) = Try {
+    Logger.debug(s"Adding dataset $datasetId to spaces of collection $collectionId")
+    Collection.findOneById(new ObjectId(collectionId.stringify)) match {
+      case Some(collection) => {
+        datasets.get(datasetId) match {
+          case Some(dataset) => {
+            for (collectionSpace <- collection.spaces){
+              spaceService.get(collectionSpace) match {
+                case Some(space) => {
+                  if (!dataset.spaces.contains(space)){
+                    spaceService.addDataset(datasetId, collectionSpace)
+                  }
+                }
+                case None => Logger.error("No space found for : " + collectionSpace)
+              }
+            }
           }
           case None => {
             Logger.error("Error getting dataset " + datasetId)
