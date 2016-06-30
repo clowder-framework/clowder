@@ -36,22 +36,21 @@ import org.apache.commons.io.input.CountingInputStream
  */
 @Api(value = "/datasets", listingPath = "/api-docs.json/datasets", description = "A dataset is a container for files and metadata")
 @Singleton
-class  Datasets @Inject()(
-                           datasets: DatasetService,
-                           files: FileService,
-                           collections: CollectionService,
-                           sections: SectionService,
-                           comments: CommentService,
-                           previews: PreviewService,
-                           extractions: ExtractionService,
-                           metadataService: MetadataService,
-                           contextService: ContextLDService,
-                           rdfsparql: RdfSPARQLService,
-                           events: EventService,
-                           spaces: SpaceService,
-                           folders: FolderService,
-                           relations: RelationService,
-                           userService: UserService) extends ApiController {
+class  Datasets @Inject()(datasets: DatasetService,
+  files: FileService,
+  collections: CollectionService,
+                          sections: SectionService,
+                          comments: CommentService,
+                          previews: PreviewService,
+                          extractions: ExtractionService,
+                          metadataService: MetadataService,
+                          contextService: ContextLDService,
+                          rdfsparql: RdfSPARQLService,
+                          events: EventService,
+                          spaces: SpaceService,
+                          folders: FolderService,
+                          relations: RelationService,
+                          userService: UserService) extends ApiController {
 
   @ApiOperation(value = "Get a specific dataset",
     notes = "This will return a sepcific dataset requested",
