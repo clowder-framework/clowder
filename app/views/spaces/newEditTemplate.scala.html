@@ -52,25 +52,10 @@
           @helper.inputText(myForm("editTime"), 'class -> "form-control", '_label -> "Time to live (hours):")
           @*do not add class = form-control for this radio button*@
 
-          @if( play.Play.application().configuration().getString("enablePublic").contains("true")) {
-          @spaceId match {
-
-            case Some(id)  if Permission.checkPermission(Permission.PublicSpace, ResourceRef(ResourceRef.space, id)) => {
-              @*if in the update space case and the user has the permission*@
-              @helper.inputRadioGroup(myForm("access"),
-            options = options(SpaceStatus.PRIVATE.toString -> SpaceStatus.PRIVATE.toString, SpaceStatus.PUBLIC.toString -> SpaceStatus.PUBLIC.toString),
-            '_label -> "Access")
-             }
-
-              case None => {
-                @*if in the create space case and no verification required*@
                 @helper.inputRadioGroup(myForm("access"),
                   options = options(SpaceStatus.PRIVATE.toString -> SpaceStatus.PRIVATE.toString, SpaceStatus.PUBLIC.toString -> SpaceStatus.PUBLIC.toString),
                   '_label -> "Access")
-              }
-          case _ => {}
-          }
-          }
+
 
           @helper.input(myForm("space_id"), 'class -> "form-control", '_label ->"") {(id, name, value, args) =>
           <input type="hidden" name="@id" value="@value">
@@ -84,12 +69,30 @@
 
   <script language="javascript">
   $(document).ready(function() {
-    @if(play.Play.application().configuration().getString("enableVerified") == true){
-    if(typeof $("input[name='access']:checked").val() === "undefined" || $("input[name='access']:checked").val() === "@SpaceStatus.TRIAL.toString"){
+    @if( play.Play.application().configuration().getString("enablePublic").contains("true")) {
 
+      @if(play.Play.application().configuration().getString("enableVerified").contains("true")){
+      //enableVerified == true, create a space or still unverified space
+        if(typeof $("input[name='access']:checked").val() === "undefined" || $("input[name='access']:checked").val() === "@SpaceStatus.TRIAL.toString"){
+
+          $('#access').closest(".control-group").hide();
+          $('#access').append('<input type="radio" id="access_trial" name="access" value="@SpaceStatus.TRIAL.toString" checked>')
+        }
+      } else{
+      // enablePublic ==true  && enableVerified == false && update
+        @if(spaceId.isDefined && !Permission.checkPermission(Permission.PublicSpace, ResourceRef(ResourceRef.space, spaceId.get))){
+          $('#access').closest(".control-group").hide();
+        }
+      // enablePublic ==true  && enableVerified == false && create
+        if(typeof $("input[name='access']:checked").val() === "undefined" ){
+        document.getElementById('access_@SpaceStatus.PRIVATE.toString').checked= true;
+        }
+      }
+    } else {
+    // enablePublic == fasle
       $('#access').closest(".control-group").hide();
-      $('#access').append('<input type="radio" id="access_trial" name="access" value="@SpaceStatus.TRIAL.toString" checked>')
-    }
+      document.getElementById('access_@SpaceStatus.PRIVATE.toString').checked= true;
+
     }
 
   });

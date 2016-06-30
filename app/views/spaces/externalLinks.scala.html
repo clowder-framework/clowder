@@ -27,8 +27,11 @@
     }
     </div>
 } else {
-    <h3>Access</h3>
+    @if( play.Play.application().configuration().getString("enablePublic").contains("true")) {
+
+        <h3>Access</h3>
     @space.status.capitalize
+    }
 }
 
 </div>

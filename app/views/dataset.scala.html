@@ -41,7 +41,7 @@
                     <ul class="list-unstyled">
                         <li>Created by <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
                         <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
-
+                        @if( play.Play.application().configuration().getString("enablePublic").contains("true")) {
                         @if(Permission.checkPermission(Permission.PublicDataset, ResourceRef(ResourceRef.dataset, dataset.id)) && !dataset.isTRIAL) {
                                 <li id="access">Access:
                                     <label class="radio-inline"><input type="radio" name="access" id="access-DEFAULT" value="@DatasetStatus.DEFAULT.toString">@DatasetStatus.DEFAULT.toString</label>
@@ -51,6 +51,7 @@
                             } else {
                                     <li>Access: @dataset.status.capitalize</li>
                             }
+                        }
 
                     </ul>
                 </div>
