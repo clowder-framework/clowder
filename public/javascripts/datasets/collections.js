@@ -16,7 +16,8 @@ function addToCollection(datasetId) {
         var o =$.parseJSON(jqXHR.responseText);
         // TODO retrieve more information about collection from API and show it in the GUI
         var txt = '<div id="col_'+selectedId+'" class="row bottom-padding">' +
-            '<div class="col-md-2"></div>' +
+            '<div class="col-md-2">' +'<a href="'+jsRoutes.controllers.Collections.collection(selectedId).url+'">' +
+            '<span class="smallicon glyphicon glyphicon-th-large"></span></a></div>' +
             '<div class="col-md-10">' +
             '<div><a href="'+jsRoutes.controllers.Collections.collection(selectedId).url+'" id='+selectedId+' class ="collection">'+selectedName+'</a> ' +
             '</div>';

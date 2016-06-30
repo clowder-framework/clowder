@@ -24,7 +24,7 @@
     </script>
 	<div class="row">
 		<!-- left column -->
-		<div class="col-md-8 col-right-border">
+		<div class="col-md-8">
             <div class="row">
                 <div class="col-md-12 caption break-word" id="ds-title">
                     <h1 id="datasettitle" class="inline">@Html(dataset.name)</h1>
@@ -79,49 +79,53 @@
                         </a>
                     }
             </div>
-                <div class="col-md-12 box-white-space">
+                <div class="col-xs-12">
+                    <hr/>
                     <!-- If the user can add files to the dataset, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
                         <a id="addFilesLink" href="@(routes.Datasets.addFiles(dataset.id))"
-                        class="btn btn-link btn-sm btn-margin-bottom" id="fileUploadBtn" title="Add File to Dataset" role="button">
+                        class="btn btn-link" id="fileUploadBtn" title="Add File to Dataset" role="button">
                             <span class="glyphicon glyphicon-plus"></span> Add Files
                         </a>
                     }
                     @if(showDownload && Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.dataset, dataset.id))) {
                         <a id='download-url' href="#"
-                        onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id').url, '_blank');"
-                        class="btn btn-link btn-sm btn-margin-bottom" title="Download All Files as Zip" role="button">
+                            onclick="window.open(jsRoutes.api.Datasets.download('@dataset.id').url, '_blank');"
+                            class="btn btn-link" title="Download All Files as Zip" role="button">
                             <span class="glyphicon glyphicon-download-alt"></span>
                             Download All Files
                         </a>
                     } else {
                         <a id='download-url' href="#" disabled
-                        class="btn btn-link btn-sm btn-margin-bottom" title="There are no files in this dataset or you don't have permission to Download it" role="button">
+                            class="btn btn-link disabled" title="There are no files in this dataset or you don't have permission to Download it" role="button">
                             <span class="glyphicon glyphicon-download-alt"></span>
                             Download All Files
                         </a>
                     }
                     @datasets.deleteButton(dataset)
                     @datasets.follow(dataset)
+                    @if(user.isDefined) {
+                        @datasets.userLink(dataset)
+                    }
                     @if(user.isDefined && play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
                         @if(toPublish && currentSpace.isDefined && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.space, UUID(currentSpace.getOrElse(""))))) {
-                            <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-link btn-sm btn-margin-bottom">
+                            <a href="@(routes.CurationObjects.newCO(dataset.id, currentSpace.get))" class="btn btn-link">
                                 <span class="glyphicon glyphicon-globe"></span> Publish
                             </a>
                         } else {
                             @if(toPublish && dataset.spaces.size > 0) {
-                                <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-link btn-sm btn-margin-bottom">
+                                <a href="@(routes.CurationObjects.newCO(dataset.id, ""))" class="btn btn-link">
                                     <span class="glyphicon glyphicon-globe"></span> Publish
                                 </a>
                             } else {
-                                <button class="btn btn-link btn-sm btn-margin-bottom" disabled>
+                                <button class="btn btn-link" disabled>
                                     <span class="glyphicon glyphicon-globe"></span> Publish
                                 </button>
                             }
                         }
                     }
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                        <a data-toggle="modal" data-target="#folder-modal" class="btn btn-link btn-sm btn-margin-bottom">
+                        <a data-toggle="modal" data-target="#folder-modal" class="btn btn-link">
                             <span class="glyphicon glyphicon-ok"></span> Create Folder
                         </a>
                         <div class="modal fade" id="folder-modal" tabindex="-1" role ="dialog" aria-labelledby="folder-modal-label">
@@ -149,11 +153,7 @@
                             </div>
                         </div>
                     }
-                    @if(user.isDefined) {
-                        <a id="dataset-users" href="@routes.Datasets.users(dataset.id)" class="btn btn-link btn-sm btn-margin-bottom">
-                            <span class="glyphicon glyphicon-user"></span> Collaborators
-                        </a>
-                    }
+                    <hr/>
                 </div>
             </div>
 
@@ -193,7 +193,7 @@
         </div>
 
 		<!-- right column -->
-		<div class="col-md-4 col-left-border">
+		<div class="col-md-4">
             @spaces.spaceAllocation(dataset.id, ResourceRef.dataset,datasetSpaces_canRemove.getOrElse(Map.empty),None)
             @datasets.collections(dataset, collectionsInside)
             @datasets.tags(dataset, fileList, filesTags)

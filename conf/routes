@@ -494,6 +494,7 @@ POST           /api/datasets/searchmetadata                                     
 GET            /api/datasets/listOutsideCollection/:coll_id                             @api.Datasets.listOutsideCollection(coll_id: UUID)
 POST           /api/datasets/:ds_id/filesRemove/:file_id/:ignoreNotFound                @api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound)
 POST           /api/datasets/:datasetId/moveFile/:toFolder/:fileId                      @api.Folders.moveFileBetweenFolders( datasetId: UUID, toFolder: UUID, fileId: UUID)
+POST           /api/datasets/:datasetId/moveBetweenDatasets/:toDataset/:fileId          @api.Datasets.moveFileBetweenDatasets(datasetId: UUID, toDataset: UUID, fileId: UUID)
 POST           /api/datasets/:datasetId/moveToDataset/:fromFolder/:fileId               @api.Folders.moveFileToDataset(datasetId: UUID, fromFolder: UUID, fileId: UUID)
 DELETE         /api/datasets/:parentDatasetId/deleteFolder/:folderId                    @api.Folders.deleteFolder(parentDatasetId: UUID, folderId: UUID)
 PUT            /api/datasets/:parentDatasetId/updateName/:folderId                      @api.Folders.updateFolderName(parentDatasetId: UUID, folderId: UUID)
