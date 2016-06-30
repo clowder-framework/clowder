@@ -369,18 +369,6 @@ class  Datasets @Inject()(datasets: DatasetService,
           }
         }
       }
-
-      //add file to RDF triple store if triple store is used
-      if (file.filename.endsWith(".xml")) {
-        configuration.getString("userdfSPARQLStore").getOrElse("no") match {
-          case "yes" => rdfsparql.linkFileToDataset(fileId, dsId)
-          case _ => Logger.trace("Skipping RDF store. userdfSPARQLStore not enabled in configuration file")
-        }
-      }
-      Logger.info("Adding file to dataset completed")
-    } else {
-      Logger.info("File was already in dataset.")
-    }
         //add file to RDF triple store if triple store is used
         if (file.filename.endsWith(".xml")) {
           configuration.getString("userdfSPARQLStore").getOrElse("no") match {
