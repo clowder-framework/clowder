@@ -449,14 +449,9 @@ class Datasets @Inject()(
               if(folder.files.length > 0) { showDownload = true}
             }
           }
-          var showAccess = false;
+          var showAccess = false
           if(play.Play.application().configuration().getBoolean("verifySpaces")) {
-            dataset.spaces.map { s=>
-              spaceService.get(s) match {
-                case Some(space) => if(space.status != SpaceStatus.TRIAL.toString) {showAccess = true}
-              }
-
-            }
+            showAccess = !dataset.isTRIAL
           } else {
             showAccess = play.Play.application().configuration().getBoolean("enablePublic")
           }
