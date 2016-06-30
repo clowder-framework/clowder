@@ -6,6 +6,9 @@ import play.api.mvc._
 import play.api.Play.configuration
 import services._
 
+import scala.collection.immutable.SortedMap
+
+
 /**
  * List of all permissions used by the system to authorize users.
  */
@@ -86,8 +89,13 @@ object Permission extends Enumeration {
     ViewUser,
     EditUser = Value
 
-  val READONLY = Set[Permission](ViewCollection, ViewComments, ViewDataset, ViewFile, ViewGeoStream, ViewMetadata,
+  var READONLY = Set[Permission](ViewCollection, ViewComments, ViewDataset, ViewFile, ViewGeoStream, ViewMetadata,
     ViewSection, ViewSpace, ViewTags, ViewUser, DownloadFiles)
+  var permissionMap = SortedMap.empty[String, Boolean]
+  Permission.values.map {
+    permission => permissionMap += (permission.toString().replaceAll("(\\p{Ll})(\\p{Lu})", "$1 $2") -> false)
+  }
+  Logger.debug(permissionMap.toString())
 
   lazy val files: FileService = DI.injector.getInstance(classOf[FileService])
   lazy val previews: PreviewService = DI.injector.getInstance(classOf[PreviewService])

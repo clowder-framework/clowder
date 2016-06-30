@@ -178,7 +178,7 @@
                 }
                 var access = $("input[name='access']:checked").val();
                 if(access === undefined) {
-                    access = '@play.Play.application().configuration().getString("permission").capitalize()'';
+                    access = '@play.Play.application().configuration().getString("permission")';
                 }
                 if (!error) {
                     var encName = htmlEncode(name.val());
