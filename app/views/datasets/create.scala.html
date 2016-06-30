@@ -1,8 +1,6 @@
-@(spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection], showAccess: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import models.DatasetStatus
-@import api.Permission
-
 @main("Create Dataset") {
     <!-- Custom items for the create dataset workflow -->
     <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
@@ -66,14 +64,14 @@
                 }
 
             </div>
-
-            @if( play.Play.application().configuration().getString("enablePublic").contains("true")) {
-            <div class="form-group">Access:
-                <label class="radio-inline"><input type="radio" name="access" id="access-default" value="@DatasetStatus.DEFAULT.toString" >Default</label>
-                <label class="radio-inline"><input type="radio" name="access" id="access-private" value="@DatasetStatus.PRIVATE.toString" checked>Private</label>
-                <label class="radio-inline"><input type="radio" name="access" id="access-public" value="@DatasetStatus.PUBLIC.toString">Public</label>
-            </div>
+            @if(showAccess) {
+                <div class="form-group">Access:
+                    <label class="radio-inline"><input type="radio" name="access" id="access-default" value="@DatasetStatus.DEFAULT.toString" >Default</label>
+                    <label class="radio-inline"><input type="radio" name="access" id="access-private" value="@DatasetStatus.PRIVATE.toString" checked>Private</label>
+                    <label class="radio-inline"><input type="radio" name="access" id="access-public" value="@DatasetStatus.PUBLIC.toString">Public</label>
+                </div>
             }
+
         </div>
     </div>
     <div class="row">

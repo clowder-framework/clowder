@@ -61,6 +61,7 @@ class Datasets @Inject()(
           decodedSpaceList += Utils.decodeSpaceElements(aSpace)
         }
       }
+
     val spaceId = space match {
       case Some(s) => {
         spaceService.get(UUID(s)) match {
@@ -80,9 +81,10 @@ class Datasets @Inject()(
       }
       case None => None
     }
+    val showAccess = play.Play.application().configuration().getBoolean("enablePublic") && !play.Play.application().configuration().getBoolean("verifySpaces")
 
     Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected))
+      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected, showAccess))
 
   }
 
@@ -447,9 +449,20 @@ class Datasets @Inject()(
               if(folder.files.length > 0) { showDownload = true}
             }
           }
+          var showAccess = false;
+          if(play.Play.application().configuration().getBoolean("verifySpaces")) {
+            dataset.spaces.map { s=>
+              spaceService.get(s) match {
+                case Some(space) => if(space.status != SpaceStatus.TRIAL.toString) {showAccess = true}
+              }
+
+            }
+          } else {
+            showAccess = play.Play.application().configuration().getBoolean("enablePublic")
+          }
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
             decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove),fileList,
-            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload))
+            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess))
         }
         case None => {
           Logger.error("Error getting dataset" + id)

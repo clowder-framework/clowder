@@ -18,19 +18,20 @@
     </ul>
 }
 @if(space.isTrial){
-    <div id="verify">
-        <h3>Status</h3>
-    <p>@play.api.i18n.Messages("trial.space")</p>
-    @if(api.Permission.checkServerAdmin(user)){
-        <button class="btn btn-link" title="Verify this space" >
-            <span class="glyphicon glyphicon-ok" ></span> Verify</button>
+    @if(play.Play.application().configuration().getBoolean("verifySpaces")) {
+        <div id="verify">
+            <h3>Status</h3>
+            <p>@play.api.i18n.Messages("trial.space")</p>
+            @if(api.Permission.checkServerAdmin(user)){
+                <button class="btn btn-link" title="Verify this space" >
+                    <span class="glyphicon glyphicon-ok" ></span> Verify</button>
+            }
+        </div>
     }
-    </div>
 } else {
-    @if( play.Play.application().configuration().getString("enablePublic").contains("true")) {
-
+    @if(play.Play.application().configuration().getBoolean("enablePublic")) {
         <h3>Access</h3>
-    @space.status.capitalize
+        @space.status.capitalize
     }
 }
 
