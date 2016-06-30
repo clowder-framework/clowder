@@ -37,8 +37,6 @@
         getBasicDefinitions()
 
         function getBasicDefinitions() {
-            console.log("GET BASIC DEFNS")
-
             // metadata definitions
             var request = jsRoutes.api.Metadata.getDefinitionsDistinctName().ajax({
                 type: 'GET',
@@ -47,6 +45,7 @@
 
             request.done(function (response, textStatus, jqXHR) {
                 var fields = response;
+                $("#add-metadata-select").empty()
                 for (var i = 0; i < fields.length; i++) {
                     var elem = $("<option></option>");
                     elem.attr("data-type", fields[i].json.type);
@@ -55,12 +54,44 @@
                     elem.text(fields[i].json.label);
                     $("#add-metadata-select").append(elem);
                 }
-                // chosen pulldown configuration
-                $("#add-metadata-select").chosen({
-                    no_results_text: "Press enter to define new key",
-                    search_contains: true,
+
+                // Select box will populate as user types, with metadata field autocomplete suggestions
+                $("#add-metadata-select").select2({
+                    theme: "bootstrap",
+                    placeholder: "Select a type or field key",
+                    allowClear: true,
                     width: "100%",
-                    placeholder_text_single: "Select or type field key"});
+                    ajax: {
+                        url: function(filter) {
+                            // Get autocomplete results if typing; otherwise return standard set of definitions
+                            if (filter.term == null || filter.term == "") {
+                                return jsRoutes.api.Metadata.getDefinitionsDistinctName().url
+                            }
+                            else {
+                                return jsRoutes.api.Metadata.getAutocompleteName(filter.term).url
+                            }
+                        },
+                        processResults: function(data, page) {
+                            return {
+                                results: data.map(function(x) {
+                                    if (typeof(x) == 'object') {
+                                        // MetadataDefinitions
+                                        return {
+                                            text: x.json.label,
+                                            id: x.id
+                                        }
+
+                                    } else {
+                                        // autocomplete fields
+                                        return {
+                                            text: x,
+                                            id: x
+                                        }
+                                    }
+                                })};
+                        }
+                    }
+                })
             });
 
             request.fail(function (jqXHR, textStatus, errorThrown){
@@ -72,24 +103,18 @@
             });
         }
 
-        function getAutocompleteEntries(filter) {
-            console.log("TIME TO FETCH AUTOCOMP")
-
-            var request = jsRoutes.api.Metadata.getAutocompleteName(filter).ajax({
-                type: 'GET',
-                contentType: "application/json"
-            });
-
-            request.done(function (response, textStatus, jqXHR) {
-                console.log("RESPN")
-                console.log(response)
-            });
-        }
-
         function search(key, value, count) {
             count = count || 10;
             if ( key != "" && value != "" ) {
-                var request = jsRoutes.api.Metadata.searchByKeyValue(key, value, count).ajax({
+                // Must separate extractorName back out from key name for ElasticSearch query
+                if (key.indexOf(".") > -1) {
+                    var extractorName = key.split(".")[0]
+                    var key = key.replace(extractorName+".", "")
+                } else {
+                    var extractorName = ""
+                }
+
+                var request = jsRoutes.api.Metadata.searchByKeyValue(key, value, extractorName, count).ajax({
                     type: 'GET',
                     contentType: "application/json"
                 });
@@ -124,20 +149,6 @@
 
             $( "#mt-search-feedback" ).text( "Not valid!" ).show().fadeOut( 2000 );
         }
-
-        $( "form[id='metadata-search']").keyup(function( event ) {
-            event.preventDefault();
-            console.log("KEYUP EVENT")
-            console.log(event.target.value)
-            var v = event.target.value
-
-            if (v == "") {
-                getBasicDefinitions()
-            } else {
-                getAutocompleteEntries(v)
-            }
-
-        });
 
         // form submission
         $( "form[id='metadata-search']").submit(function( event ) {

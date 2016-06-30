@@ -8,7 +8,7 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import com.mongodb.casbah.Imports._
-import play.api.libs.json.{JsObject, JsString, Json, JsValue}
+import play.api.libs.json.{JsObject, JsString, Json, JsValue, JsArray}
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
@@ -157,28 +157,26 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     MetadataDefinitionDAO.find(filterAccess).toList.groupBy(_.json).map(_._2.head).toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )
   }
 
-  def getAutocompleteName(user: Option[User], filter: String): List[Metadata] = {
-    val filterAccess = if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public") {
-      MongoDBObject()
-    } else {
-      val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
-      //TODO: Add public space check.
-      user match {
-        case Some(u) => {
-          val okspaces = u.spaceandrole.filter(_.role.permissions.intersect(Set(Permission.ViewMetadata.toString())).nonEmpty)
-          if(okspaces.nonEmpty) {
-            orlist += ("space" $in okspaces.map(x=> new ObjectId(x.spaceId.stringify)))
-          }
-          $or(orlist.map(_.asDBObject))
-        }
-        case None => MongoDBObject()
-      }
-    }
-    Logger.debug("GACN")
-    Logger.debug(filter)
-    Logger.debug(filterAccess.toString)
-    //MetadataDAO.find(filterAccess).toList.groupBy(_.creator.displayName).map(_._2.head).toList.sortWith( _.creator.displayName.\("label").asOpt[String].getOrElse("") < _.creator.displayName.\("label").asOpt[String].getOrElse("") )
-    MetadataDAO.find("content" -> { ".filter.".r $exists true }).toList
+  def extractJsonKeys(json: JsValue): collection.Set[String] = json match {
+    // from http://stackoverflow.com/questions/26650354/get-all-keys-of-play-api-libs-json-jsvalue
+    case o: JsObject => o.keys ++ o.values.flatMap(extractJsonKeys)
+    case JsArray(as) => as.flatMap(extractJsonKeys).toSet
+    case _ => Set()
+  }
+
+  def getAutocompleteName(user: Option[User], filter: String): List[String] = {
+    // Get list of metadata objects where this field name appears
+    val mdlist = MetadataDAO.find("content."+filter $exists true).toList
+
+    var allKeys = List[String]()
+
+    // Filter only to those keys
+    mdlist.map(md => {
+      val mdkeys = extractJsonKeys(md.content).toList
+      allKeys = allKeys.union(mdkeys).filter(k => k matches filter).distinct
+    })
+
+    return allKeys
   }
 
   def getDefinition(id: UUID): Option[MetadataDefinition] = {
@@ -246,14 +244,19 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     resources
   }
 
-  def search(key: String, value: String, count: Int, user: Option[User]): List[ResourceRef] = {
+  def search(key: String, value: String, extractorName: String, count: Int, user: Option[User]): List[ResourceRef] = {
     val field = "content." + key.trim
     val trimOr = value.trim().replaceAll(" ", "|")
     // for some reason "/"+value+"/i" doesn't work because it gets translate to
     // { "content.Abstract" : { "$regex" : "/test/i"}}
     val regexp = (s"""(?i)$trimOr""").r
-    val doc = MongoDBObject(field -> regexp)
+    val doc = if (extractorName != "")
+      MongoDBObject(field -> regexp, "creator.extractorId" -> (extractorName+"$").r)
+    else
+      MongoDBObject(field -> regexp)
+
     var filter = doc
+    Logger.debug(filter.toString)
     if (!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")) {
       user match {
         case Some(u) => {
@@ -268,7 +271,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
         case None => List.empty
       }
     }
-    val resources: List[ResourceRef] = MetadataDAO.find( filter).limit(count).map(_.attachedTo).toList
+    val resources: List[ResourceRef] = MetadataDAO.find(filter).limit(count).map(_.attachedTo).toList
     resources
   }
 

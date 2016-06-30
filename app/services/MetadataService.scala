@@ -39,7 +39,7 @@ trait MetadataService {
   def getDefinitionsDistinctName(user: Option[User] = None): List[MetadataDefinition]
 
   /** Vocabularies from metadata names besides definitions **/
-  def getAutocompleteName(user: Option[User], filter: String): List[Metadata]
+  def getAutocompleteName(user: Option[User], filter: String): List[String]
 
   /** Get vocabulary based on id **/
   def getDefinition(id: UUID): Option[MetadataDefinition]
@@ -66,7 +66,7 @@ trait MetadataService {
   def search(query: JsValue): List[ResourceRef]
 
   /** Search for resources by key value pairs in the content of the metadata document **/
-  def search(key: String, value: String, count: Int, user: Option[User]): List[ResourceRef]
+  def search(key: String, value: String, extractorName: String, count: Int, user: Option[User]): List[ResourceRef]
 
   /** Update author full name**/
   def updateAuthorFullName(userId: UUID, fullName: String)

@@ -97,7 +97,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         val response = x.prepareSearch(index)
           .setTypes("file", "dataset","collection")
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-          .setQuery(QueryBuilders.queryString(query).analyzer("snowball"))
+          .setQuery(QueryBuilders.queryString(query).analyzer("snowball").analyzeWildcard(true))
           .setFrom(0).setSize(60).setExplain(true)
           .execute()
           .actionGet()
