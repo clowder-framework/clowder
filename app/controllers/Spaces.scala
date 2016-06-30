@@ -386,11 +386,14 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                   formData => {
                     if (Permission.checkPermission(user, Permission.CreateSpace)) {
                       Logger.debug("Creating space " + formData.name)
-                      val newSpace = ProjectSpace(name = formData.name, description = formData.description,
+                      var newSpace = ProjectSpace(name = formData.name, description = formData.description,
                         created = new Date, creator = userId, homePage = formData.homePage,
                         logoURL = formData.logoURL, bannerURL = formData.bannerURL,
                         collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty,
                         resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
+                      if(play.Play.application().configuration().getBoolean("enablePublic")) {
+                        newSpace = newSpace.copy(status = formData.access)
+                      }
 
                       // insert space
                       spaces.insert(newSpace)

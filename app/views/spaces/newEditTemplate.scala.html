@@ -66,7 +66,9 @@
 
   <script language="javascript">
   $(document).ready(function() {
-    if(typeof $("input[name='access']:checked").val() === "undefined" || $("input[name='access']:checked").val() === "@SpaceStatus.TRIAL.toString"){
+    var verified = @play.Play.application().configuration().getBoolean("verifySpaces");
+    var publicEnabled = @play.Play.application().configuration().getBoolean("enablePublic");
+    if( !publicEnabled || (verified && publicEnabled && (typeof $("input[name='access']:checked").val() === "undefined" || $("input[name='access']:checked").val() === "@SpaceStatus.TRIAL.toString"))){
       $('#access').closest(".control-group").hide();
       $('#access').append('<input type="radio" id="access_trial" name="access" value="@SpaceStatus.TRIAL.toString" checked>')
     }

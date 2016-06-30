@@ -1,4 +1,4 @@
-@(spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection], showAccess: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import models.DatasetStatus
 @main("Create Dataset") {
@@ -64,11 +64,14 @@
                 }
 
             </div>
-            <div class="form-group">Access:
-                <label class="radio-inline"><input type="radio" name="access" id="access-default" value="@DatasetStatus.DEFAULT.toString" >Default</label>
-                <label class="radio-inline"><input type="radio" name="access" id="access-private" value="@DatasetStatus.PRIVATE.toString" checked>Private</label>
-                <label class="radio-inline"><input type="radio" name="access" id="access-public" value="@DatasetStatus.PUBLIC.toString">Public</label>
-            </div>
+            @if(showAccess) {
+                <div class="form-group">Access:
+                    <label class="radio-inline"><input type="radio" name="access" id="access-default" value="@DatasetStatus.DEFAULT.toString" >Default</label>
+                    <label class="radio-inline"><input type="radio" name="access" id="access-private" value="@DatasetStatus.PRIVATE.toString" checked>Private</label>
+                    <label class="radio-inline"><input type="radio" name="access" id="access-public" value="@DatasetStatus.PUBLIC.toString">Public</label>
+                </div>
+            }
+
         </div>
     </div>
     <div class="row">
