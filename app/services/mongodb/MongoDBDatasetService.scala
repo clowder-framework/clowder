@@ -1224,6 +1224,11 @@ class MongoDBDatasetService @Inject() (
       MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
       $addToSet("spaces" -> Some(new ObjectId(spaceId.stringify))),
       false, false)
+     if (get(datasetId).exists(_.isTRIAL == true) && spaces.get(spaceId).exists(_.isTrial == false)) {
+       Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
+       $pull("status" -> DatasetStatus.DEFAULT.toString),
+       false, false)
+    }
   }
 
   def removeFromSpace(datasetId: UUID, spaceId: UUID): Unit = {

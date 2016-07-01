@@ -62,10 +62,14 @@ class Datasets @Inject()(
         }
       }
 
+    var hasVerifiedSpace = false
     val spaceId = space match {
       case Some(s) => {
         spaceService.get(UUID(s)) match {
-          case Some(space) =>  Some(space.id.toString)
+          case Some(space) => {
+            hasVerifiedSpace = !space.isTrial
+            Some(space.id.toString)
+          }
           case None => None
         }
       }
@@ -81,7 +85,8 @@ class Datasets @Inject()(
       }
       case None => None
     }
-    val showAccess = play.Play.application().configuration().getBoolean("enablePublic") && !play.Play.application().configuration().getBoolean("verifySpaces")
+    val showAccess = play.Play.application().configuration().getBoolean("enablePublic") &&
+      (!play.Play.application().configuration().getBoolean("verifySpaces") || hasVerifiedSpace)
 
     Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
       RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected, showAccess))

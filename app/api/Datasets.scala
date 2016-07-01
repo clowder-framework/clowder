@@ -196,19 +196,21 @@ class  Datasets @Inject()(datasets: DatasetService,
     responseClass = "None", httpMethod = "POST")
   def createEmptyDataset() = PermissionAction(Permission.CreateDataset)(parse.json) { implicit request =>
     (request.body \ "name").asOpt[String].map { name =>
-      (request.body \ "access").asOpt[String].map { access =>
-        var accessVerified = access
-        val description = (request.body \ "description").asOpt[String].getOrElse("")
+
+      val description = (request.body \ "description").asOpt[String].getOrElse("")
+      var access =
+      if(play.Play.application().configuration().getBoolean("verifySpaces")){
+         (request.body \ "access").asOpt[String].getOrElse(DatasetStatus.TRIAL.toString)
+      } else {
+        (request.body \ "access").asOpt[String].getOrElse(DatasetStatus.DEFAULT.toString)
+      }
         var d : Dataset = null
         implicit val user = request.user
         user match {
           case Some(identity) => {
             (request.body \ "space").asOpt[List[String]] match {
               case None | Some(List("default"))=>
-                if(configuration(play.api.Play.current).getString("default.dataset.status") == Some("TRIAL")) {
-                  accessVerified = DatasetStatus.TRIAL.toString
-                }
-                d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig(), status= accessVerified)
+
               case Some(space) =>
                 var spaceList: List[UUID] = List.empty
                 space.map {
@@ -271,7 +273,6 @@ class  Datasets @Inject()(datasets: DatasetService,
           }
           case None => Ok(toJson(Map("status" -> "error")))
         }
-      }.getOrElse(BadRequest(toJson("Missing parameter [access]")))
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
 

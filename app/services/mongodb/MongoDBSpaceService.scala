@@ -326,6 +326,7 @@ class MongoDBSpaceService @Inject() (
     log.debug(s"Space Service - Adding $dataset to $space")
     datasets.addToSpace(dataset, space)
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("datasetCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
+
   }
 
   /**

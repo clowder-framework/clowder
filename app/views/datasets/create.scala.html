@@ -66,8 +66,8 @@
             </div>
             @if(showAccess) {
                 <div class="form-group">Access:
-                    <label class="radio-inline"><input type="radio" name="access" id="access-default" value="@DatasetStatus.DEFAULT.toString" >Default</label>
-                    <label class="radio-inline"><input type="radio" name="access" id="access-private" value="@DatasetStatus.PRIVATE.toString" checked>Private</label>
+                    <label class="radio-inline"><input type="radio" name="access" id="access-default" value="@DatasetStatus.DEFAULT.toString" checked>Default</label>
+                    <label class="radio-inline"><input type="radio" name="access" id="access-private" value="@DatasetStatus.PRIVATE.toString">Private</label>
                     <label class="radio-inline"><input type="radio" name="access" id="access-public" value="@DatasetStatus.PUBLIC.toString">Public</label>
                 </div>
             }
@@ -175,9 +175,7 @@
                     error = true;
                 }
                 var access = $("input[name='access']:checked").val();
-                if(access === undefined) {
-                    access = '@play.Play.application().configuration().getString("permission")';
-                }
+
                 if (!error) {
                     var encName = htmlEncode(name.val());
                     var encDescription = htmlEncode(desc.val());
