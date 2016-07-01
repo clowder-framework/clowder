@@ -88,7 +88,7 @@ object Permission extends Enumeration {
 
   var READONLY = Set[Permission](ViewCollection, ViewComments, ViewDataset, ViewFile, ViewGeoStream, ViewMetadata,
     ViewSection, ViewSpace, ViewTags, ViewUser )
-  if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+  if( play.Play.application().configuration().getBoolean("allowAnonymousDownload")) {
      READONLY += DownloadFiles
   }
 
