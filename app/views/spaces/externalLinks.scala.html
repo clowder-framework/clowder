@@ -2,7 +2,8 @@
 
 @import api.Permission
 
-<div class="row ds-section-sm break-word space-col-right">
+<div class="@classes">
+    <div class="col-md-12 col-lg-12 col-sm-12">
 <h3>External Links</h3>
 @if(links.size == 0) {
     @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
@@ -34,7 +35,7 @@
         @space.status.capitalize
     }
 }
-
+    </div>
 </div>
     <script>
         $("#verify").find("button").click(function() {
