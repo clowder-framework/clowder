@@ -14,8 +14,8 @@
 }
 </div>
     @currentFolder match {
-        case None => { @files.grid(fileList, fileComments, dataset.id, space, ResourceRef(ResourceRef.dataset, dataset.id)) }
-        case Some(s) => { @files.grid(fileList, fileComments, dataset.id, space, ResourceRef(ResourceRef.folder, UUID(s)))}
+        case None => { @files.grid(fileList, fileComments, dataset.id, space, ResourceRef(ResourceRef.dataset, dataset.id), dataset.folders.length > 0) }
+        case Some(s) => { @files.grid(fileList, fileComments, dataset.id, space, ResourceRef(ResourceRef.folder, UUID(s)), dataset.folders.length > 0)}
     }
 
 <div class="row">
