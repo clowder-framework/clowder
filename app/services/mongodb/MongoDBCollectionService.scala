@@ -183,7 +183,7 @@ class MongoDBCollectionService @Inject() (
 
     val publicSpaces= spaces.listByStatus(SpaceStatus.PUBLIC.toString).map(s => new ObjectId(s.id.stringify))
     val enablePublic = play.Play.application().configuration().getBoolean("enablePublic")
-    val rootQuery = $or(("root_spaces" $exists true), ("parent_collection_ids" $exists false))
+//    val rootQuery = $or(("root_spaces" $exists true), ("parent_collection_ids" $exists false))
     val filterAccess = if (showAll || (configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewCollection))) {
       MongoDBObject()
     } else {
@@ -208,9 +208,9 @@ class MongoDBCollectionService @Inject() (
         }
         case None => {
           if(enablePublic && showPublic) {
-            rootQuery ++ ("spaces" $in publicSpaces)
+            MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject("$size" -> 0))) ++ ("spaces" $in publicSpaces)
           } else {
-            rootQuery
+            MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject("$size" -> 0)))
           }
 
         }
