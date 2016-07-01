@@ -237,7 +237,8 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       case (Some(s), Some(d)) => {
         spaces.removeDataset(datasetId, spaceId)
         events.addSourceEvent(request.user ,  d.id, d.name, s.id, s.name, "remove_dataset_space")
-        Ok(toJson("success"))
+
+        Ok(Json.obj("isTrial"-> datasets.get(datasetId).exists(_.isTRIAL).toString))
       }
       case (_, _) => NotFound
     }

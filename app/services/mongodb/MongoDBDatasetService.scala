@@ -1241,11 +1241,11 @@ class MongoDBDatasetService @Inject() (
     if (play.Play.application().configuration().getBoolean("verifySpaces")) {
 
       get(datasetId) match {
-        case Some(d) if d.spaces.map(s => spaces.get(s)).flatten.exists(_.isTrial == false) =>
+        case Some(d) if !d.spaces.map(s => spaces.get(s)).flatten.exists(_.isTrial == false) =>
           Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
-            $pull("status" -> DatasetStatus.TRIAL.toString),
+            $set("status" -> DatasetStatus.TRIAL.toString),
             false, false)
-        case None =>
+        case _ =>
       }
     }
   }
