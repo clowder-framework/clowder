@@ -19,6 +19,11 @@
                     validateButton.removeAttr("disabled");
                     queryParameter.attr("disabled", true);
                     queryParameterValue.attr("disabled", true);
+                } else if ($(this).val() == "wktlocation") {
+                    definitions.attr("disabled", true);
+                    validateButton.attr("disabled", true);
+                    queryParameter.attr("disabled", true);
+                    queryParameterValue.attr("disabled", true);
                 } else {
                     definitions.removeAttr("disabled");
                     validateButton.removeAttr("disabled");
@@ -176,6 +181,7 @@
                                 case "scientific_variable" => {Scientific Variable}
                                 case "datetime" => {Date and Time}
                                 case "listgeocode" => {Location}
+                                case "wktlocation" => {WKT Location}
                             }
                         </td>
                         <td>
@@ -229,6 +235,7 @@
                                     <option value="list">List</option>
                                     <option value="listjquery">Queryable List</option>
                                     <option value="listgeocode">Location</option>
+                                    <option value="wktlocation">WKT Location</option>
                                     <option value="scientific_variable">Scientific Variable</option>
                                     <option value="datetime">Date and Time</option>
                                 </select>

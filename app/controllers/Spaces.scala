@@ -334,9 +334,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
             // when permission is public, user can reach the authorization request button, so we check if the request is
             // already inserted
             if(s.requests.contains(RequestResource(user.id))) {
-              Ok(views.html.authorizationMessage("Your prior request is active, and pending"))
+              Ok(views.html.authorizationMessage("Your prior request for " + spaceTitle + " " + s.name + " is active, and pending", s))
             }else if (spaces.getRoleForUserInSpace(s.id, user.id) != None) {
-              Ok(views.html.authorizationMessage("You are already part of the " + spaceTitle))
+              Ok(views.html.authorizationMessage("You are already part of the " + spaceTitle + " " + s.name, s))
             } else{
               Logger.debug("Request submitted in controller.Space.addRequest  ")
               val subject: String = "Request for access from " + AppConfiguration.getDisplayName
@@ -356,7 +356,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                 }
               }
               spaces.addRequest(id, user.id, user.fullName)
-              Ok(views.html.authorizationMessage("Request submitted"))
+              Ok(views.html.authorizationMessage("Request submitted for " + spaceTitle + " " + s.name, s))
             }
           }
           case None => InternalServerError(spaceTitle + " not found")

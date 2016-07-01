@@ -154,6 +154,7 @@ class MongoDBSpaceService @Inject() (
     // - access  == show all datasets the user can see
     // - default == public only
     val public = MongoDBObject("status" -> SpaceStatus.PUBLIC.toString)
+
     val filter = owner match {
       case Some(o) => {
         val author = MongoDBObject("creator" -> new ObjectId(o.id.stringify))
@@ -177,7 +178,7 @@ class MongoDBSpaceService @Inject() (
           user match {
             case Some(u) => {
               val author = $and(MongoDBObject("author.identityId.userId" -> u.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> u.identityId.providerId))
-              if (permissions.contains(Permission.ViewSpace) ) {
+              if (permissions.contains(Permission.ViewSpace) && play.Play.application().configuration().getBoolean("enablePublic")) {
                 $or(author, public, ("_id" $in u.spaceandrole.filter(_.role.permissions.intersect(permissions.map(_.toString)).nonEmpty).map(x => new ObjectId(x.spaceId.stringify))))
               } else {
                 $or(author, ("_id" $in u.spaceandrole.filter(_.role.permissions.intersect(permissions.map(_.toString)).nonEmpty).map(x => new ObjectId(x.spaceId.stringify))))
