@@ -257,7 +257,7 @@ class MongoDBDatasetService @Inject() (
         case Some(u) => {
 
           val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
-          if (permissions.contains(Permission.ViewDataset) ) {
+          if (permissions.contains(Permission.ViewDataset) && play.Play.application().configuration().getBoolean("enablePublic")) {
             orlist += MongoDBObject("status" -> DatasetStatus.PUBLIC.toString)
             orlist += MongoDBObject("status" -> DatasetStatus.DEFAULT.toString) ++ ("spaces" $in publicSpaces)
           }
@@ -1224,9 +1224,11 @@ class MongoDBDatasetService @Inject() (
       MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
       $addToSet("spaces" -> Some(new ObjectId(spaceId.stringify))),
       false, false)
+    print (get(datasetId).exists(_.isTRIAL == true))
+    print (spaces.get(spaceId).exists(_.isTrial == false))
      if (get(datasetId).exists(_.isTRIAL == true) && spaces.get(spaceId).exists(_.isTrial == false)) {
        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
-       $pull("status" -> DatasetStatus.DEFAULT.toString),
+       $set("status" -> DatasetStatus.DEFAULT.toString),
        false, false)
     }
   }
