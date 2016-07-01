@@ -7,13 +7,14 @@
 # PROJECT : the project to add to the image, default is ncsa and clowder
 
 #DEBUG=echo
+#BUILT=doit
 
 # set default for clowder
 PROJECT=${PROJECT:-"ncsa clowder"}
 
 # copy dist file to docker folder
 ZIPFILE=$( /bin/ls -1rt target/universal/clowder-*.zip 2>/dev/null | tail -1 )
-if [ "$ZIPFILE" = "" ]; then
+if [ "$ZIPFILE" = "" -o ! "$BUILT" = ""  ]; then
   echo "Running ./sbt dist"
   ./sbt dist
   ZIPFILE=$( /bin/ls -1rt target/universal/clowder-*.zip 2>/dev/null | tail -1 )
