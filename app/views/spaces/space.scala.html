@@ -28,7 +28,7 @@
                 @if(user.isDefined && Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
                     <button id="deleteButton" onclick="confirmDeleteResource('space','@(spaceTitle)','@(space.id)','@(space.name.replace("'","&#39;"))',true, '@(routes.Spaces.list(""))')"
                         class="btn btn-link" title="Delete the @spaceTitle but not its contents">
-                            <span class="glyphicon glyphicon-trash"></span> Delete</button>
+                              <span class="glyphicon glyphicon-trash"></span> Delete</button>
                 } else {
                     <button disabled id="deleteButton" class="btn btn-link" title="Delete the @spaceTitle but not its contents">
                         <span class="glyphicon glyphicon-trash"></span> Delete</button>
@@ -50,7 +50,7 @@
         </div>
         <div class="col-md-4 col-lg-4 col-sm-4">
             @spaces.otherActions(space, userRoleMap)
-            @spaces.externalLinks(space.homePage, space)
+            @spaces.externalLinks(space.homePage, space, "row ds-section-sm break-word space-col-right")
             @if(play.api.Play.configuration.getBoolean("enable_expiration").getOrElse(false)) {
                 @spaces.spaceConfiguration(space)
             }
