@@ -36,21 +36,22 @@ import org.apache.commons.io.input.CountingInputStream
  */
 @Api(value = "/datasets", listingPath = "/api-docs.json/datasets", description = "A dataset is a container for files and metadata")
 @Singleton
-class  Datasets @Inject()(datasets: DatasetService,
+class  Datasets @Inject()(
+  datasets: DatasetService,
   files: FileService,
   collections: CollectionService,
-                          sections: SectionService,
-                          comments: CommentService,
-                          previews: PreviewService,
-                          extractions: ExtractionService,
-                          metadataService: MetadataService,
-                          contextService: ContextLDService,
-                          rdfsparql: RdfSPARQLService,
-                          events: EventService,
-                          spaces: SpaceService,
-                          folders: FolderService,
-                          relations: RelationService,
-                          userService: UserService) extends ApiController {
+  sections: SectionService,
+  comments: CommentService,
+  previews: PreviewService,
+  extractions: ExtractionService,
+  metadataService: MetadataService,
+  contextService: ContextLDService,
+  rdfsparql: RdfSPARQLService,
+  events: EventService,
+  spaces: SpaceService,
+  folders: FolderService,
+  relations: RelationService,
+  userService: UserService) extends ApiController {
 
   @ApiOperation(value = "Get a specific dataset",
     notes = "This will return a sepcific dataset requested",
@@ -198,12 +199,13 @@ class  Datasets @Inject()(datasets: DatasetService,
     (request.body \ "name").asOpt[String].map { name =>
 
       val description = (request.body \ "description").asOpt[String].getOrElse("")
-      var access =
-      if(play.Play.application().configuration().getBoolean("verifySpaces")){
-         (request.body \ "access").asOpt[String].getOrElse(DatasetStatus.TRIAL.toString)
-      } else {
-        (request.body \ "access").asOpt[String].getOrElse(DatasetStatus.DEFAULT.toString)
-      }
+      val access =
+        if(play.Play.application().configuration().getBoolean("verifySpaces")){
+           //verifySpaces == true && access set to trial if not specified otherwise
+           (request.body \ "access").asOpt[String].getOrElse(DatasetStatus.TRIAL.toString)
+        } else {
+          (request.body \ "access").asOpt[String].getOrElse(DatasetStatus.DEFAULT.toString)
+        }
         var d : Dataset = null
         implicit val user = request.user
         user match {
