@@ -67,16 +67,16 @@ for v in $VERSION; do
   if [ "$PROJECT" = "" ]; then
     ${DEBUG} docker tag clowder-$$ clowder:${v}
     ${DEBUG} docker tag toolserver-$$ toolserver:${v}
-    echo "Tagged clowder toolserver with ${v}"
+    echo "Tagged clowder and toolserver with ${v}"
   else
     for p in ${PROJECT}; do
       ${DEBUG} docker tag clowder-$$ ${p}/clowder:${v}
       ${DEBUG} docker tag toolserver-$$ ${p}/toolserver:${v}
       echo "Tagged clowder toolserver with ${v}"
       if [ ! -z "$PUSH" ]; then
-        ${DEBUG} docker push ${PROJECT}clowder:${v}
-        ${DEBUG} docker push ${PROJECT}toolserver:${v}
-        echo "Pushed clowder toolserver to dockerhub"
+        ${DEBUG} docker push ${p}/clowder:${v}
+        ${DEBUG} docker push ${p}/toolserver:${v}
+        echo "Pushed clowder and toolserver to dockerhub $p"
       fi
     done
   fi
