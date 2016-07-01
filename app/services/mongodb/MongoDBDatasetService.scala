@@ -1235,10 +1235,23 @@ class MongoDBDatasetService @Inject() (
 
   def removeFromSpace(datasetId: UUID, spaceId: UUID): Unit = {
     val result = Dataset.update(
-    MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
-    $pull("spaces" -> Some(new ObjectId(spaceId.stringify))),
-    false, false)
+      MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
+      $pull("spaces" -> Some(new ObjectId(spaceId.stringify))),
+      false, false)
+
+
+    if (play.Play.application().configuration().getBoolean("verifySpaces")) {
+
+      get(datasetId) match {
+        case Some(d) if d.spaces.map(s => spaces.get(s)).flatten.exists(_.isTrial == false) =>
+          Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
+            $pull("status" -> DatasetStatus.TRIAL.toString),
+            false, false)
+        case None =>
+      }
+    }
   }
+
 
   def dumpAllDatasetMetadata(): List[String] = {
 		    Logger.debug("Dumping metadata of all datasets.")

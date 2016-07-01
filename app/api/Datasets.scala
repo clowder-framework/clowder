@@ -1813,7 +1813,7 @@ class  Datasets @Inject()(
     * @return Enumerator to produce array of bytes from a zipped stream containing the bytes of each file
     *         in the dataset
     */
-  def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean, user : User)
+  def enumeratorFromDataset(dataset: Dataset, chunkSize: Int = 1024 * 8, compression: Int = Deflater.DEFAULT_COMPRESSION, bagit: Boolean, user : Option[User])
                            (implicit ec: ExecutionContext): Enumerator[Array[Byte]] = {
     implicit val pec = ec.prepare()
     val dataFolder = if (bagit) "data/" else ""
@@ -2113,17 +2113,23 @@ class  Datasets @Inject()(
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
-  private def addBagItTextToZip(totalbytes: Long, totalFiles: Long, zip: ZipOutputStream, dataset: models.Dataset, user: models.User) = {
+  private def addBagItTextToZip(totalbytes: Long, totalFiles: Long, zip: ZipOutputStream, dataset: models.Dataset, user: Option[models.User]) = {
     zip.putNextEntry(new ZipEntry("bagit.txt"))
     val softwareLine = "Bag-Software-Agent: clowder.ncsa.illinois.edu\n"
     val baggingDate = "Bagging-Date: "+(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime)+"\n"
     val baggingSize = "Bag-Size: " + _root_.util.FileUtils.humanReadableByteCount(totalbytes) + "\n"
     val payLoadOxum = "Payload-Oxum: "+ totalbytes + "." + totalFiles +"\n"
-    val contactName = "Contact-Name: " + user.fullName+"\n"
-    val contactEmail = "Contact-Email: "+user.email.getOrElse("")+"\n"
     val senderIdentifier="Internal-Sender-Identifier: "+dataset.id+"\n"
     val senderDescription = "Internal-Sender-Description: "+dataset.description+"\n"
-    val s = softwareLine+baggingDate+baggingSize+payLoadOxum+contactName+contactEmail+senderIdentifier+senderDescription
+    var s:String = ""
+    if (user.isDefined) {
+      val contactName = "Contact-Name: " + user.get.fullName + "\n"
+      val contactEmail = "Contact-Email: " + user.get.email.getOrElse("") + "\n"
+      s = softwareLine+baggingDate+baggingSize+payLoadOxum+contactName+contactEmail+senderIdentifier+senderDescription
+    } else {
+      s = softwareLine+baggingDate+baggingSize+payLoadOxum+senderIdentifier+senderDescription
+    }
+
     Some(new ByteArrayInputStream(s.getBytes("UTF-8")))
   }
 
@@ -2162,13 +2168,11 @@ class  Datasets @Inject()(
     responseClass = "None", httpMethod = "GET")
   def download(id: UUID, bagit: Boolean,compression: Int) = PermissionAction(Permission.DownloadFiles, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
-    user match {
-      case Some(loggedInUser) => {
         datasets.get(id) match {
           case Some(dataset) => {
             // Use custom enumerator to create the zip file on the fly
             // Use a 1MB in memory byte array
-            Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression,bagit,loggedInUser)).withHeaders(
+            Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression,bagit,user)).withHeaders(
               "Content-Type" -> "application/zip",
               "Content-Disposition" -> ("attachment; filename=" + dataset.name + ".zip")
             )
@@ -2178,12 +2182,6 @@ class  Datasets @Inject()(
             NotFound
           }
         }
-      }
-      // If the user doesn't have access to download these files
-      case None => {
-        Unauthorized
-      }
-    }
   }
 
   @ApiOperation(value = "change the access of dataset",
