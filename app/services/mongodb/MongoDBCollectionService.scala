@@ -250,7 +250,6 @@ class MongoDBCollectionService @Inject() (
                     orlistB += ("spaces" $in publicSpaces)
                     orlist += (MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject("$size" -> 0))) ++ $or(orlistB.map(_.asDBObject)))
                   }
-
                   $or(orlist.map(_.asDBObject))
 
                 }
