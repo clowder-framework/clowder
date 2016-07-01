@@ -183,6 +183,7 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.comment, id) => false
       case ResourceRef(ResourceRef.section, id) => false
       case ResourceRef(ResourceRef.preview, id) => false
+      case ResourceRef(ResourceRef.thumbnail, id) => true
       case ResourceRef(resType, id) => {
         Logger.error("Unrecognized resource type " + resType)
         false
