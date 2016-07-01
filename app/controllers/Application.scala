@@ -81,7 +81,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         for (aCollection <- collectionsWithThumbnails) {
           decodedCollections += Utils.decodeCollectionElements(aCollection)
         }
-        val spacesUser = spaces.listUser(4, Some(clowderUser),request.user.fold(false)(_.superAdminMode), clowderUser)
+        val spacesUser = spaces.listUser(4, Some(clowderUser),request.user.fold(false)(_.superAdminMode), clowderUser, true)
         var followers: List[(UUID, String, String, String)] = List.empty
         for (followerID <- clowderUser.followers.take(3)) {
           val userFollower = users.findById(followerID)

@@ -46,7 +46,7 @@ class MongoDBSpaceService @Inject() (
 
   /** list all spaces */
   def list(): List[ProjectSpace] = {
-    list(None, nextPage=false, 0, None, Set[Permission](Permission.ViewSpace), None, showAll=true, None)
+    list(None, nextPage=false, 0, None, Set[Permission](Permission.ViewSpace), None, showAll=true, None, showPublic = true)
   }
 
   /**
@@ -59,29 +59,29 @@ class MongoDBSpaceService @Inject() (
   /**
    * Return a list of spaces the user has access to.
    */
-  def listAccess(limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace] = {
-    list(None, nextPage=false, limit, None, permissions, user, showAll, None)
+  def listAccess(limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[ProjectSpace] = {
+    list(None, nextPage=false, limit, None, permissions, user, showAll, None, showPublic)
   }
 
   /**
    * Return a list of spaces the user has access to.
    */
-  def listAccess(limit: Integer, title:String, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace] = {
-    list(None, nextPage=false, limit, Some(title), permissions, user, showAll, None)
+  def listAccess(limit: Integer, title:String, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[ProjectSpace] = {
+    list(None, nextPage=false, limit, Some(title), permissions, user, showAll, None, showPublic)
   }
 
   /**
    * Return a list of spaces the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace] = {
-    list(Some(date), nextPage, limit, None, permissions, user, showAll, None)
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[ProjectSpace] = {
+    list(Some(date), nextPage, limit, None, permissions, user, showAll, None, showPublic)
   }
 
   /**
    * Return a list of spaces the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[ProjectSpace] = {
-    list(Some(date), nextPage, limit, Some(title), permissions, user, showAll, None)
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[ProjectSpace] = {
+    list(Some(date), nextPage, limit, Some(title), permissions, user, showAll, None, showPublic)
   }
 
   /**
@@ -94,29 +94,29 @@ class MongoDBSpaceService @Inject() (
   /**
    * Return a list of spaces the user has created.
    */
-  def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
-    list(None, nextPage=false, limit, None, Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
+  def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User, showPublic: Boolean): List[ProjectSpace] = {
+    list(None, nextPage=false, limit, None, Set[Permission](Permission.ViewSpace), user, showAll, Some(owner), showPublic)
   }
 
   /**
    * Return a list of spaces the user has created with matching title.
    */
-  def listUser(limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
-    list(None, nextPage=false, limit, Some(title), Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
+  def listUser(limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User, showPublic: Boolean): List[ProjectSpace] = {
+    list(None, nextPage=false, limit, Some(title), Set[Permission](Permission.ViewSpace), user, showAll, Some(owner), showPublic)
   }
 
   /**
    * Return a list of spaces the user has created starting at a specific date.
    */
-  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
-    list(Some(date), nextPage, limit, None, Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
+  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User, showPublic: Boolean): List[ProjectSpace] = {
+    list(Some(date), nextPage, limit, None, Set[Permission](Permission.ViewSpace), user, showAll, Some(owner), showPublic)
   }
 
   /**
    * Return a list of spaces the user has created starting at a specific date with matching title.
    */
-  def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace] = {
-    list(Some(date), nextPage, limit, Some(title), Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
+  def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User, showPublic: Boolean): List[ProjectSpace] = {
+    list(Some(date), nextPage, limit, Some(title), Set[Permission](Permission.ViewSpace), user, showAll, Some(owner), showPublic)
   }
 
   def listByStatus(status: String):List[ProjectSpace] = {
@@ -135,8 +135,8 @@ class MongoDBSpaceService @Inject() (
   /**
    * return list based on input
    */
-  private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): List[ProjectSpace] = {
-    val (filter, sort) = filteredQuery(date, nextPage, title, permissions, user, showAll, owner)
+  private def list(date: Option[String], nextPage: Boolean, limit: Integer, title: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User], showPublic: Boolean = true): List[ProjectSpace] = {
+    val (filter, sort) = filteredQuery(date, nextPage, title, permissions, user, showAll, owner, showPublic)
     if (date.isEmpty || nextPage) {
       ProjectSpaceDAO.find(filter).sort(sort).limit(limit).toList
     } else {
@@ -147,13 +147,13 @@ class MongoDBSpaceService @Inject() (
   /**
    * Monster function, does all the work. Will create a filters and sorts based on the given parameters
    */
-  private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User]): (DBObject, DBObject) = {
+  private def filteredQuery(date: Option[String], nextPage: Boolean, titleSearch: Option[String], permissions: Set[Permission], user: Option[User], showAll: Boolean, owner: Option[User], showPublic: Boolean = true): (DBObject, DBObject) = {
     // filter =
     // - owner   == show datasets owned by owner that user can see
     // - space   == show all datasets in space
     // - access  == show all datasets the user can see
     // - default == public only
-    val public = MongoDBObject("status" -> SpaceStatus.PUBLIC.toString)
+    val public = if(showPublic) { MongoDBObject("status" -> SpaceStatus.PUBLIC.toString) } else {MongoDBObject()}
     val filter = owner match {
       case Some(o) => {
         val author = MongoDBObject("creator" -> new ObjectId(o.id.stringify))

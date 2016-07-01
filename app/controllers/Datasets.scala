@@ -176,7 +176,7 @@ class Datasets @Inject()(
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String]) = UserAction(needActive=false) { implicit request =>
+  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String], showAll: Boolean) = UserAction(needActive=false) { implicit request =>
     implicit val user = request.user
 
     val nextPage = (when == "a")
@@ -195,9 +195,9 @@ class Datasets @Inject()(
           }
         }
         if (date != "") {
-          datasets.listUser(date, nextPage, limit, request.user, request.user.fold(false)(_.superAdminMode), p)
+          datasets.listUser(date, nextPage, limit, request.user, request.user.fold(false)(_.superAdminMode) || showAll, p)
         } else {
-          datasets.listUser(limit, request.user, request.user.fold(false)(_.superAdminMode), p)
+          datasets.listUser(limit, request.user, request.user.fold(false)(_.superAdminMode) || showAll, p)
         }
       }
       case None => {
@@ -212,9 +212,9 @@ class Datasets @Inject()(
           }
           case _ => {
             if (date != "") {
-              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
+              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode) || showAll)
             } else {
-              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
+              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode) || showAll)
             }
 
           }
@@ -226,11 +226,11 @@ class Datasets @Inject()(
     val prev = if (datasetList.nonEmpty && date != "") {
       val first = Formatters.iso8601(datasetList.head.created)
       val ds = person match {
-        case Some(p) => datasets.listUser(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
+        case Some(p) => datasets.listUser(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode) || showAll, p)
         case None => {
           space match {
             case Some(s) => datasets.listSpace(first, nextPage = false, 1, s, user)
-            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
+            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode) || showAll)
           }
         }
       }
@@ -247,11 +247,11 @@ class Datasets @Inject()(
     val next = if (datasetList.nonEmpty) {
       val last = Formatters.iso8601(datasetList.last.created)
       val ds = person match {
-        case Some(p) => datasets.listUser(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
+        case Some(p) => datasets.listUser(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode) || showAll, p)
         case None => {
           space match {
             case Some(s) => datasets.listSpace(last, nextPage=true, 1, s, user)
-            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
+            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode) || showAll)
           }
         }
       }

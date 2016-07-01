@@ -501,7 +501,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
    /**
    * Show the list page
    */
-   def list(when: String, date: String, limit: Int, mode: String, owner: Option[String], showAll: Boolean) = UserAction(needActive=true) { implicit request =>
+   def list(when: String, date: String, limit: Int, mode: String, owner: Option[String], showAll: Boolean, showPublic: Boolean) = UserAction(needActive=true) { implicit request =>
      implicit val user = request.user
 
      val nextPage = (when == "a")
@@ -512,16 +512,16 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
        case Some(p) => {
          title = Some(person.get.fullName + "'s " + spaceTitle + "s")
          if (date != "") {
-           spaces.listUser(date, nextPage, limit, request.user, showAll, p)
+           spaces.listUser(date, nextPage, limit, request.user, showAll, p, showPublic)
          } else {
-           spaces.listUser(limit, request.user, showAll, p)
+           spaces.listUser(limit, request.user, showAll, p, showPublic)
          }
        }
        case None => {
          if (date != "") {
-           spaces.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewSpace), request.user, showAll)
+           spaces.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewSpace), request.user, showAll, showPublic)
          } else {
-           spaces.listAccess(limit, Set[Permission](Permission.ViewSpace), request.user, showAll)
+           spaces.listAccess(limit, Set[Permission](Permission.ViewSpace), request.user, showAll, showPublic)
          }
        }
      }
@@ -530,8 +530,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
      val prev = if (spaceList.nonEmpty && date != "") {
        val first = Formatters.iso8601(spaceList.head.created)
        val space = person match {
-         case Some(p) => spaces.listUser(first, nextPage=false, 1, request.user, showAll, p)
-         case None => spaces.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewSpace), request.user, showAll)
+         case Some(p) => spaces.listUser(first, nextPage=false, 1, request.user, showAll, p, showPublic)
+         case None => spaces.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewSpace), request.user, showAll, showPublic)
        }
        if (space.nonEmpty && space.head.id != spaceList.head.id) {
          first
@@ -546,8 +546,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
      val next = if (spaceList.nonEmpty) {
        val last = Formatters.iso8601(spaceList.last.created)
        val ds = person match {
-         case Some(p) => spaces.listUser(last, nextPage=true, 1, request.user, showAll, p)
-         case None => spaces.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewSpace), request.user, showAll)
+         case Some(p) => spaces.listUser(last, nextPage=true, 1, request.user, showAll, p, showPublic)
+         case None => spaces.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewSpace), request.user, showAll, showPublic)
        }
        if (ds.nonEmpty && ds.head.id != spaceList.last.id) {
          last
