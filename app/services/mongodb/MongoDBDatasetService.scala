@@ -1224,8 +1224,6 @@ class MongoDBDatasetService @Inject() (
       MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
       $addToSet("spaces" -> Some(new ObjectId(spaceId.stringify))),
       false, false)
-    print (get(datasetId).exists(_.isTRIAL == true))
-    print (spaces.get(spaceId).exists(_.isTrial == false))
      if (get(datasetId).exists(_.isTRIAL == true) && spaces.get(spaceId).exists(_.isTrial == false)) {
        Dataset.update(MongoDBObject("_id" -> new ObjectId(datasetId.stringify)),
        $set("status" -> DatasetStatus.DEFAULT.toString),
