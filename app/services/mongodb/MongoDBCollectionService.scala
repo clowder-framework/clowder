@@ -82,29 +82,29 @@ class MongoDBCollectionService @Inject() (
   /**
    * Return a list of collections the user has access to.
    */
-  def listAccess(limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection] = {
-    list(None, false, limit, None, None, permissions, user, showAll, None)
+  def listAccess(limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Collection] = {
+    list(None, false, limit, None, None, permissions, user, showAll, None, showPublic)
   }
 
   /**
    * Return a list of collections the user has access to.
    */
-  def listAccess(limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection] = {
-    list(None, false, limit, Some(title), None, permissions, user, showAll, None)
+  def listAccess(limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Collection] = {
+    list(None, false, limit, Some(title), None, permissions, user, showAll, None, showPublic)
   }
 
   /**
    * Return a list of collections the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection] = {
-    list(Some(date), nextPage, limit, None, None, permissions, user, showAll, None)
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Collection] = {
+    list(Some(date), nextPage, limit, None, None, permissions, user, showAll, None, showPublic)
   }
 
   /**
    * Return a list of collections the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection] = {
-    list(Some(date), nextPage, limit, Some(title), None, permissions, user, showAll, None)
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Collection] = {
+    list(Some(date), nextPage, limit, Some(title), None, permissions, user, showAll, None, showPublic)
   }
 
   /**
@@ -258,7 +258,7 @@ class MongoDBCollectionService @Inject() (
                   if(enablePublic && showPublic) {
                     ("spaces" $in publicSpaces)
                   } else {
-                    MongoDBObject()
+                    MongoDBObject("doesnotexist" -> true)
                   }
 
                 }
@@ -421,7 +421,7 @@ class MongoDBCollectionService @Inject() (
   def listOutsideDataset(datasetId: UUID, user: Option[User], showAll: Boolean): List[Collection] = {
     Dataset.findOneById(new ObjectId(datasetId.stringify)) match {
       case Some(dataset) => {
-        val list = for (collection <- listAccess(0, Set[Permission](Permission.ViewCollection), user, showAll); if (!isInDataset(dataset, collection))) yield collection
+        val list = for (collection <- listAccess(0, Set[Permission](Permission.ViewCollection), user, showAll, false); if (!isInDataset(dataset, collection))) yield collection
         return list.reverse
       }
       case None => {
@@ -437,7 +437,7 @@ class MongoDBCollectionService @Inject() (
   def listInsideDataset(datasetId: UUID, user: Option[User], showAll: Boolean): List[Collection] = {
     Dataset.findOneById(new ObjectId(datasetId.stringify)) match {
       case Some(dataset) => {
-        val list = for (collection <- listAccess(0, Set[Permission](Permission.ViewCollection, Permission.AddResourceToCollection), user, showAll); if (isInDataset(dataset, collection))) yield collection
+        val list = for (collection <- listAccess(0, Set[Permission](Permission.ViewCollection, Permission.AddResourceToCollection), user, showAll, false); if (isInDataset(dataset, collection))) yield collection
         return list.reverse
       }
       case None => {
