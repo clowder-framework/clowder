@@ -31,12 +31,12 @@
                             <span id="mt-search-feedback"></span>
                         </div>
                     </div>
-                    <div class="form-group col-lg-4 col-md-4">
-                        <button class='btn' id='add-clause' onclick='getBasicDefinitions(2)'>
-                            <span class='glyphicon glyphicon-plus'></span>
-                        </button>
-                    </div>
                 </form>
+                <div class="form-group col-lg-4 col-md-4">
+                    <button class='btn' id='add-clause' onclick='getBasicDefinitions(2)'>
+                        <span class='glyphicon glyphicon-plus'></span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -81,8 +81,8 @@
                         "</div>" +
 
                         "<div class='form-group col-lg-1 col-md-1'>" +
-                        "<button class='btn btn-primary' id='remove-"+String(rowId)+"' onclick='removeClause("+String(rowId)+")'>" +
-                        "<span class='glyphicon glyphicon-remove'></span></button></div>" +
+                        "<button class='btn' id='remove-"+String(rowId)+"' onclick='removeClause("+String(rowId)+")'>" +
+                        "<span class='glyphicon glyphicon-minus'></span></button></div>" +
                     "</div>"
                     )
                 );
