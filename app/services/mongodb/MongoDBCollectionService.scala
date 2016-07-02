@@ -469,6 +469,37 @@ class MongoDBCollectionService @Inject() (
     }
   }
 
+  //adds datasest to the spaces of the collection
+  def addDatasetToCollectionSpaces(collectionId: UUID, datasetId: UUID) = Try {
+    Logger.debug(s"Adding dataset $datasetId to spaces of collection $collectionId")
+    Collection.findOneById(new ObjectId(collectionId.stringify)) match {
+      case Some(collection) => {
+        datasets.get(datasetId) match {
+          case Some(dataset) => {
+            for (collectionSpace <- collection.spaces){
+              spaceService.get(collectionSpace) match {
+                case Some(space) => {
+                  if (!dataset.spaces.contains(space)){
+                    spaceService.addDataset(datasetId, collectionSpace)
+                  }
+                }
+                case None => Logger.error("No space found for : " + collectionSpace)
+              }
+            }
+          }
+          case None => {
+            Logger.error("Error getting dataset " + datasetId)
+            Failure
+          }
+        }
+      }
+      case None => {
+        Logger.error("Error getting collection" + collectionId);
+        Failure
+      }
+    }
+  }
+
   def listChildCollections(parentCollectionId : UUID): List[Collection] = {
     val childCollections = List.empty[Collection]
     get(parentCollectionId) match {
