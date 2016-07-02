@@ -4,6 +4,7 @@
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f)}
 @import play.api.Play.current
 @import models.SpaceStatus
+@import api.Permission
 
 @main("Space") {
   <div class="page-header">
@@ -66,10 +67,32 @@
 
   <script language="javascript">
   $(document).ready(function() {
-    if(typeof $("input[name='access']:checked").val() === "undefined" || $("input[name='access']:checked").val() === "@SpaceStatus.TRIAL.toString"){
+    var verified = @play.Play.application().configuration().getBoolean("verifySpaces");
+    var publicEnabled = @play.Play.application().configuration().getBoolean("enablePublic");
+    if( publicEnabled) {
+
+    if(verified){
+      //enableVerified == true, create a space or still unverified space
+      if(typeof $("input[name='access']:checked").val() === "undefined" || $("input[name='access']:checked").val() === "@SpaceStatus.TRIAL.toString"){
+
+        $('#access').closest(".control-group").hide();
+        $('#access').append('<input type="radio" id="access_trial" name="access" value="@SpaceStatus.TRIAL.toString" checked>')
+      }
+    } else{
+      // enablePublic ==true  && enableVerified == false && update
+      @if(spaceId.isDefined && !Permission.checkPermission(Permission.PublicSpace, ResourceRef(ResourceRef.space, spaceId.get))){
       $('#access').closest(".control-group").hide();
-      $('#access').append('<input type="radio" id="access_trial" name="access" value="@SpaceStatus.TRIAL.toString" checked>')
+      }
+      // enablePublic ==true  && enableVerified == false && create
+      if(typeof $("input[name='access']:checked").val() === "undefined" ){
+        document.getElementById('access_@SpaceStatus.PRIVATE.toString').checked= true;
+      }
     }
+  } else {
+    // enablePublic == fasle
+     $('#access').closest(".control-group").hide();
+      document.getElementById('access_PRIVATE').checked= true;
+  }
   });
   // as fields are added, they get the same default homePages[0] name For automatic binding the names need to
   // be homePages[0], homePages[1],.. etc. This function renumbers all the fields appropriately even if a field in the

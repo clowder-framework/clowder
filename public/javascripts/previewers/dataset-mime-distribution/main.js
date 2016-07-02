@@ -1,7 +1,6 @@
 (function($, Configuration) {
-	console.log("Dataset test previewer for " + Configuration.collection_id);
-
-    console.log("Updating tab " + Configuration.div);
+	//console.log("Dataset test previewer for " + Configuration.dataset_id);
+	//console.log("Updating tab " + Configuration.div);
     
     var dataset_id = Configuration.dataset_id;
 
