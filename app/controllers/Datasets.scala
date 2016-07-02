@@ -100,7 +100,7 @@ class Datasets @Inject()(
     }
 
     Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected))
+      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected, collectionSpaces.toList))
 
   }
 
