@@ -73,9 +73,9 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a href=""><span class="glyphicon glyphicon-user"></span> Dashboard</a></li>
-                            <li><a href="@routes.Spaces.list(showAll=false)"><span class="glyphicon glyphicon-tent"> @{spaces.spaceTitle()}s</a></li>
-                            <li><a href=""><span class="glyphicon glyphicon-briefcase"> Datasets</a></li>
-                            <li><a href=""><span class="glyphicon glyphicon-th-list"> Collections</a></li>
+                            <li><a href="@routes.Spaces.list(showPublic=false)"><span class="glyphicon glyphicon-tent"> @{spaces.spaceTitle()}s</a></li>
+                            <li><a href="@routes.Collections.list(showPublic=false)"><span class="glyphicon glyphicon-th-list"> Collections</a></li>
+                            <li><a href="@routes.Datasets.list(showPublic=false)"><span class="glyphicon glyphicon-briefcase"> Datasets</a></li>
                         </ul>
                     </li>
                 }
@@ -85,8 +85,8 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a href="@routes.Spaces.list()"><span class="glyphicon glyphicon-tent"> </span> @{spaces.spaceTitle()}s</a></li>
-                            <li><a href="@routes.Datasets.list("")"><span class="glyphicon glyphicon-briefcase"> </span> Datasets</a></li>
                             <li><a href="@routes.Collections.list("")"><span class="glyphicon glyphicon-th-list"> </span> Collections</a></li>
+                            <li><a href="@routes.Datasets.list("")"><span class="glyphicon glyphicon-briefcase"> </span> Datasets</a></li>
                             @if(user.isDefined){
                                 <li><a href="@routes.Users.getUsers()"><span class="glyphicon glyphicon-user"></span> Users</a></li>
                             }
@@ -101,8 +101,8 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a href="@routes.Spaces.newSpace()"><span class="glyphicon glyphicon-tent"> </span>@{spaces.spaceTitle()}s</a></li>
-                            <li><a href="@routes.Datasets.newDataset(None, None)"><span class="glyphicon glyphicon-briefcase"> </span> Datasets</a></li>
                             <li><a href="@routes.Collections.newCollection(None)"><span class="glyphicon glyphicon-th-list"> </span> Collections</a></li>
+                            <li><a href="@routes.Datasets.newDataset(None, None)"><span class="glyphicon glyphicon-briefcase"> </span> Datasets</a></li>
                         </ul>
                     </li>
                     <li class="dropdown">

@@ -110,25 +110,25 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     (title, date) match {
       case (Some(t), Some(d)) => {
         if (mine)
-          spaces.listUser(d, true, limit, t, user, superAdmin, user.get, showPublic)
+          spaces.listUser(d, true, limit, t, user, superAdmin, user.get)
         else
           spaces.listAccess(d, true, limit, t, permission, user, superAdmin, showPublic)
       }
       case (Some(t), None) => {
         if (mine)
-          spaces.listUser(limit, t, user, superAdmin, user.get, showPublic)
+          spaces.listUser(limit, t, user, superAdmin, user.get)
         else
           spaces.listAccess(limit, t, permission, user, superAdmin, showPublic)
       }
       case (None, Some(d)) => {
         if (mine)
-          spaces.listUser(d, true, limit, user, superAdmin, user.get, showPublic)
+          spaces.listUser(d, true, limit, user, superAdmin, user.get)
         else
           spaces.listAccess(d, true, limit, permission, user, superAdmin, showPublic)
       }
       case (None, None) => {
         if (mine)
-          spaces.listUser(limit, user, superAdmin, user.get, showPublic)
+          spaces.listUser(limit, user, superAdmin, user.get)
         else
           spaces.listAccess(limit, permission, user, superAdmin, showPublic)
       }

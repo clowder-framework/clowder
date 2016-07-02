@@ -62,22 +62,22 @@ trait SpaceService {
   /**
    * Return a list of spaces the user has created.
    */
-  def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User, showPublic: Boolean): List[ProjectSpace]
+  def listUser(limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace]
 
   /**
    * Return a list of spaces the user has created with matching title.
    */
-  def listUser(limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User, showPublic: Boolean): List[ProjectSpace]
+  def listUser(limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace]
 
   /**
    * Return a list of spaces the user has created starting at a specific date.
    */
-  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User, showPublic: Boolean): List[ProjectSpace]
+  def listUser(date: String, nextPage: Boolean, limit: Integer, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace]
 
   /**
     * Return a list of spaces the user has created starting at a specific date with matching title.
     */
-  def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User, showPublic: Boolean): List[ProjectSpace]
+  def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[ProjectSpace]
 
   /**
     * Return a list of spaces with specific status
