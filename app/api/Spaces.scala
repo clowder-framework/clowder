@@ -196,13 +196,18 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   @ApiOperation(value = "Remove a collection from a space",
     notes = "",
     responseClass = "None", httpMethod = "POST")
-  def removeCollection(spaceId: UUID, collectionId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+  def removeCollection(spaceId: UUID, collectionId: UUID, removeDatasets : Boolean) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     (spaces.get(spaceId), collectionService.get(collectionId)) match {
       case (Some(s), Some(c)) => {
         if(c.root_spaces contains s.id) {
           spaces.removeCollection(collectionId, spaceId)
           collectionService.removeFromRootSpaces(collectionId, spaceId)
-          updateSubCollections(spaceId, collectionId)
+          if (removeDatasets){
+            updateSubCollectionsAndDatasets(spaceId, collectionId)
+          } else {
+            updateSubCollections(spaceId, collectionId)
+          }
+
           events.addSourceEvent(request.user,  c.id, c.name, s.id, s.name,"remove_collection_space")
           Ok(toJson("success"))
         } else {
@@ -230,6 +235,55 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       }
       case None => Logger.error("no collection found with id " + collectionId)
     }
+  }
+
+  private def updateSubCollectionsAndDatasets(spaceId: UUID, collectionId: UUID)  {
+    collectionService.get(collectionId) match {
+      case Some(collection) => {
+        val collectionDescendants = collectionService.getAllDescendants(collectionId)
+        val datasetsInCollection = datasetService.listCollection(collectionId.stringify)
+
+        for (dataset <- datasetsInCollection){
+          if (!datasetBelongsToOtherCollectionInSpace(dataset.id, collectionId, spaceId, collectionDescendants.toList)){
+            spaces.removeDataset(dataset.id,spaceId)
+          }
+        }
+
+        for (descendant <- collectionDescendants){
+          for (space <- descendant.spaces) {
+            if (space == spaceId){
+              spaces.removeCollection(descendant.id, space)
+
+            }
+          }
+        }
+      }
+      case None => Logger.error("no collection found with id " + collectionId)
+    }
+  }
+
+  private def datasetBelongsToOtherCollectionInSpace(datasetId : UUID, collectionId : UUID, spaceId : UUID, descendants : List[Collection]): Boolean  = {
+    var foundOtherCollectionInSpace = false
+
+    datasetService.get(datasetId) match {
+      case Some(dataset) => {
+        val collectionIdsContainingDataset = dataset.collections
+        for (collectionIdContainingDataset <- collectionIdsContainingDataset){
+          collectionService.get(collectionIdContainingDataset) match {
+            case Some(collection) => {
+              val spacesOfCollection = collection.spaces
+              if (spacesOfCollection.contains(spaceId) && !descendants.contains(collection)){
+                foundOtherCollectionInSpace = true
+              }
+            }
+            case None => Logger.error("no collection matches id " + collectionIdContainingDataset)
+          }
+        }
+      }
+      case None => Logger.error("No dataset matches id " + datasetId)
+
+    }
+    return foundOtherCollectionInSpace
   }
 
   @ApiOperation(value = "Remove a dataset from a space",
