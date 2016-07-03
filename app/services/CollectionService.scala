@@ -106,6 +106,8 @@ trait CollectionService {
     */
   def addDatasetToCollectionSpaces(collectionId: UUID, datasetId: UUID): Try[Unit]
 
+  def addDatasetsInCollectionAndChildCollectionsToCollectionSpaces(collectionId : UUID) : Try[Unit]
+
   /**
    * Remove dataset from collection
    */

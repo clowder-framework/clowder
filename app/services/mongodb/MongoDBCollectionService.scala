@@ -476,10 +476,10 @@ class MongoDBCollectionService @Inject() (
       case Some(collection) => {
         datasets.get(datasetId) match {
           case Some(dataset) => {
-            for (collectionSpace <- collection.spaces){
+            for (collectionSpace <- collection.spaces) {
               spaceService.get(collectionSpace) match {
                 case Some(space) => {
-                  if (!dataset.spaces.contains(space)){
+                  if (!dataset.spaces.contains(space)) {
                     spaceService.addDataset(datasetId, collectionSpace)
                   }
                 }
@@ -497,6 +497,28 @@ class MongoDBCollectionService @Inject() (
         Logger.error("Error getting collection" + collectionId);
         Failure
       }
+    }
+  }
+
+  def addDatasetsInCollectionAndChildCollectionsToCollectionSpaces(collectionId : UUID) = Try {
+    addDatasetsToCollectionSpaces(collectionId)
+    val allDescendants = getAllDescendants(collectionId)
+    for (collection <- allDescendants){
+      addDatasetsToCollectionSpaces(collection.id)
+    }
+  }
+
+  private def addDatasetsToCollectionSpaces(collectionId : UUID) = Try {
+    Collection.findOneById(new ObjectId(collectionId.stringify)) match {
+      case Some(collection) => {
+        val datasetsInCollection = datasets.listCollection(collection.id.stringify)
+        for (dataset <- datasetsInCollection){
+          for (space <- collection.spaces){
+            datasets.addToSpace(dataset.id,space)
+          }
+        }
+      }
+      case None => Logger.error("Error getting collection" + collectionId)
     }
   }
 
