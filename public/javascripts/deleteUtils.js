@@ -61,7 +61,14 @@ function confirmRemoveTemplate(message,resourceFromType,resourceFromId,resourceT
     modalHTML += '</div>';
     modalHTML += '<div class="modal-body">';
     modalHTML += '<p>' + message + '</p>';
-    modalHTML += '</div>';
+
+    if (resourceFromType == "space" && resourceType == "collection"){
+        modalHTML += '<p><input type="checkbox" name="removedatasets" id="removedatasets" checked> Remove datasets of this collection from space.</input></p></div>'
+    }
+    else {
+        modalHTML += '</div>';
+    }
+
     modalHTML += '<div class="modal-footer">';
     modalHTML += '<button type="button" class="btn btn-link" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> Cancel</button>';
     modalHTML += '<a type="button" class="btn btn-primary" id="OKModalButton" href="javascript:RemoveTemplate(\''+resourceFromType+'\',\''+ resourceFromId+'\',\''+ resourceType+'\',\''+ resourceId+'\',\''+ isreload+'\',\''+ url+'\')"><span class="glyphicon glyphicon-ok"></span> OK</a>';
