@@ -148,10 +148,13 @@
         }
 
         //todd_n add for loop to select id
-        @for(eachId <- collectionSpaces){
+        if(!@collectionSpaces.isEmpty){
+            @for(eachId <- collectionSpaces){
             $('#@eachId').prop('selected','selected');
             $('#spaceid').trigger("chosen:updated");
+            }
         }
+
 
         $(function () {
             $('#createdataset').click(function () {
