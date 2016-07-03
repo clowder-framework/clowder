@@ -280,7 +280,7 @@ class MongoDBSpaceService @Inject() (
     collections.get(collection) match {
       case Some(current_collection) => {
 
-        if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpaces")){
+        if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
           val datasetsInCollection = datasets.listCollection(current_collection.id.stringify)
           for (dataset <- datasetsInCollection){
             if (!dataset.spaces.contains(space)){
