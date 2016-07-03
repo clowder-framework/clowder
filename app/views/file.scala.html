@@ -788,7 +788,7 @@
 								</div>
 							</div>
 						</div>
-						@if(Permission.checkOwner(user, ResourceRef(ResourceRef.file, file.id))) {
+						@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
 							<div class="form-inline">
 								<div class="input-group input-group-sm col-md-8">
 									<select id="datasetAddSelect" class="form-control add-resource"></select>
@@ -814,7 +814,7 @@
 								</div>
 							</div>
 						</div>
-						@if(Permission.checkOwner(user, ResourceRef(ResourceRef.file, file.id))) {
+						@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
 							<div class="form-inline">
 								<div class="input-group input-group-sm col-md-8">
 									<select id="datasetAddSelect" class="form-control add-resource"></select>

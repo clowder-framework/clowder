@@ -61,7 +61,6 @@ class Datasets @Inject()(
           decodedSpaceList += Utils.decodeSpaceElements(aSpace)
         }
       }
-
     val spaceId = space match {
       case Some(s) => {
         spaceService.get(UUID(s)) match {
@@ -79,7 +78,10 @@ class Datasets @Inject()(
       case Some(c) => {
         collections.get(UUID(c)) match {
           case Some(collection) =>  {
-            if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
+            //if the spaces of the collection are not automatically added to the dataset spaces
+            //they will be preselected in the view, but the user can choose
+            //not to share the dataset with those spaces
+            if (!play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
               for (collection_space <- collection.spaces){
                 spaceService.get(collection_space) match {
                   case Some(col_space) => {
@@ -98,7 +100,7 @@ class Datasets @Inject()(
     }
 
     Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected,collectionSpaces.toList))
+      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected, collectionSpaces.toList))
 
   }
 

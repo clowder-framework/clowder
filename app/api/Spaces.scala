@@ -159,6 +159,9 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
             events.addSourceEvent(request.user,  c.id, c.name, s.id, s.name, "add_collection_space")
             spaces.get(spaceId) match {
               case Some(space) => {
+                if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
+                  collectionService.addDatasetsInCollectionAndChildCollectionsToCollectionSpaces(collectionId)
+                }
                 Ok(Json.obj("collectionInSpace" -> space.collectionCount.toString))
               }
               case None => NotFound

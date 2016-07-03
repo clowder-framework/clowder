@@ -1,4 +1,4 @@
-@(msg: String)(implicit user: Option[models.User])
+@(msg: String, space: models.ProjectSpace)(implicit user: Option[models.User])
 
 @main("Authorization Request") {
 
@@ -11,6 +11,7 @@
 					You are not authorized to proceed with your request
 				}
 			</h2>
+			<a class="btn btn-link" href="@routes.Spaces.getSpace(space.id)">@space.name</a>
 		</div>
 	</div>
 

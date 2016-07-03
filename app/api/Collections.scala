@@ -80,6 +80,9 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             case Some(collection) => {
               datasets.get(datasetId) match {
                 case Some(dataset) => {
+                  if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
+                    collections.addDatasetToCollectionSpaces(collection.id,dataset.id)
+                  }
                   events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "attach_dataset_collection")
                 }
                 case None =>
