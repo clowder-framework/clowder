@@ -479,7 +479,7 @@ class MongoDBCollectionService @Inject() (
             for (collectionSpace <- collection.spaces) {
               spaceService.get(collectionSpace) match {
                 case Some(space) => {
-                  if (!dataset.spaces.contains(space)) {
+                  if (!dataset.spaces.contains(space.id)) {
                     spaceService.addDataset(datasetId, collectionSpace)
                   }
                 }
