@@ -197,25 +197,31 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     notes = "",
     responseClass = "None", httpMethod = "POST")
   def removeCollection(spaceId: UUID, collectionId: UUID, removeDatasets : Boolean) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
-    (spaces.get(spaceId), collectionService.get(collectionId)) match {
-      case (Some(s), Some(c)) => {
-        if(c.root_spaces contains s.id) {
-          spaces.removeCollection(collectionId, spaceId)
-          collectionService.removeFromRootSpaces(collectionId, spaceId)
-          if (removeDatasets){
-            updateSubCollectionsAndDatasets(spaceId, collectionId)
-          } else {
-            updateSubCollections(spaceId, collectionId)
+    val user = request.user
+    user match {
+      case Some(loggedInUser) => {
+        (spaces.get(spaceId), collectionService.get(collectionId)) match {
+          case (Some(s), Some(c)) => {
+            if(c.root_spaces contains s.id) {
+              spaces.removeCollection(collectionId, spaceId)
+              collectionService.removeFromRootSpaces(collectionId, spaceId)
+              if (removeDatasets){
+                updateSubCollectionsAndDatasets(spaceId, collectionId, user)
+              } else {
+                updateSubCollections(spaceId, collectionId)
+              }
+
+              events.addSourceEvent(request.user,  c.id, c.name, s.id, s.name,"remove_collection_space")
+              Ok(toJson("success"))
+            } else {
+              BadRequest("Space is not part of root spaces")
+            }
+
           }
-
-          events.addSourceEvent(request.user,  c.id, c.name, s.id, s.name,"remove_collection_space")
-          Ok(toJson("success"))
-        } else {
-          BadRequest("Space is not part of root spaces")
+          case (_, _) => NotFound
         }
-
       }
-      case (_, _) => NotFound
+      BadRequest("User not supplied")
     }
   }
 
@@ -237,11 +243,11 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     }
   }
 
-  private def updateSubCollectionsAndDatasets(spaceId: UUID, collectionId: UUID)  {
+  private def updateSubCollectionsAndDatasets(spaceId: UUID, collectionId: UUID, user : Option[User] )  {
     collectionService.get(collectionId) match {
       case Some(collection) => {
         val collectionDescendants = collectionService.getAllDescendants(collectionId)
-        val datasetsInCollection = datasetService.listCollection(collectionId.stringify)
+        val datasetsInCollection = datasetService.listCollection(collectionId.stringify, user)
 
         for (dataset <- datasetsInCollection){
           if (!datasetBelongsToOtherCollectionInSpace(dataset.id, collectionId, spaceId, collectionDescendants.toList)){
