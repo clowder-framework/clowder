@@ -579,6 +579,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
        } else {
          Some(mode)
        }
+     if(!showPublic) {
+       title = Some("My " + spaceTitle + "s")
+     }
 
      Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, prev, next, title))
    }

@@ -261,7 +261,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       } else {
         Some(mode)
       }
-
+    if(!showPublic) {
+      title = Some("My Collections")
+    }
     //Pass the viewMode into the view
     space match {
         //space id is not correct

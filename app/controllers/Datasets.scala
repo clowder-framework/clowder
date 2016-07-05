@@ -301,7 +301,9 @@ class Datasets @Inject()(
       } else {
         Some(mode)
       }
-
+    if(!showPublic) {
+      title = Some("My Datasets")
+    }
     //Pass the viewMode into the view
     space match {
       case Some(s) if datasetSpace.isEmpty =>{
