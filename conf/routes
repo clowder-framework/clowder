@@ -79,7 +79,6 @@ POST           /extraction/upload                                               
 # FILES
 # ----------------------------------------------------------------------
 GET            /files                                                                   @controllers.Files.list(when: String ?= "", date: String ?= "", size: Int ?= 12, mode: String ?= "")
-GET            /datasets/:datasetId/files                                               @controllers.Files.listByDataset(datasetId: UUID, filepage: Int  ?= 0, limit: Int ?= 12, mode: String ?= "")
 GET            /files/new                                                               @controllers.Files.uploadFile
 GET            /files/metadataSearch                                                    @controllers.Files.metadataSearch
 GET            /files/generalMetadataSearch                                             @controllers.Files.generalMetadataSearch
@@ -101,7 +100,7 @@ GET            /file_by_section/:id                                             
 # ----------------------------------------------------------------------
 # DATASETS
 # ----------------------------------------------------------------------
-GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
+GET            /datasets                                                                @controllers.Datasets.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None, showPublic: Boolean ?= true)
 GET            /datasets/new                                                            @controllers.Datasets.newDataset(space: Option[String], collection: Option[String])
 GET            /datasets/createStep2                                                    @controllers.Datasets.createStep2(id: UUID)
 GET            /datasets/metadataSearch                                                 @controllers.Datasets.metadataSearch
@@ -126,7 +125,7 @@ POST           /datasets/:parentDatasetId/newFolder                             
 # ----------------------------------------------------------------------
 # COLLECTIONS
 # ----------------------------------------------------------------------
-GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None )
+GET            /collections                                                             @controllers.Collections.list(when: String ?= "", date: String ?= "", size: Int ?= 12, space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None, showPublic: Boolean ?= true)
 GET            /collections/listChildCollections                                        @controllers.Collections.listChildCollections(parentCollectionId : String, when: String ?= "", date: String ?= "", size: Int ?= 12,  space: Option[String] ?= None, mode: String ?= "", owner: Option[String] ?= None)
 GET            /collections/new                                                         @controllers.Collections.newCollection(space: Option[String])
 GET            /collections/:id/newchildCollection                                      @controllers.Collections.newCollectionWithParent(id: UUID)
@@ -145,7 +144,7 @@ GET            /spaces/new                                                      
 GET            /spaces/following                                                        @controllers.Spaces.followingSpaces(index: Int ?=0, size: Int ?= 12, mode: String ?= "")
 GET            /spaces/:id                                                              @controllers.Spaces.getSpace(id: UUID, size: Int ?= 9, direction: String ?= "desc")
 GET            /spaces/:id/updateSpace                                                  @controllers.Spaces.updateSpace(id:UUID)
-POST           /spaces/:id/addRequest                                                   @controllers.Spaces.addRequest(id:UUID)
+GET            /spaces/:id/addRequest                                                   @controllers.Spaces.addRequest(id:UUID)
 GET            /spaces/:id/users                                                        @controllers.Spaces.manageUsers(id: UUID)
 GET            /spaces/:id/extractors                                                   @controllers.Spaces.selectExtractors(id: UUID)
 POST           /spaces/:id/extractors                                                   @controllers.Spaces.updateExtractors(id: UUID)
@@ -439,11 +438,14 @@ POST           /api/spaces/:spaceId/addCollectionToSpace/:collectionId          
 POST           /api/spaces/:id/follow                                                   @api.Spaces.follow(id: UUID)
 POST           /api/spaces/:id/unfollow                                                 @api.Spaces.unfollow(id: UUID)
 POST           /api/spaces/:id/metadata                                                 @api.Metadata.addDefinitionToSpace(id: UUID)
+PUT            /api/spaces/:id/verify                                                   @api.Spaces.verifySpace(id:UUID)
+
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT
 # ----------------------------------------------------------------------
 GET            /api/collections                                                         @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 GET            /api/collections/canEdit                                                 @api.Collections.listCanEdit(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
+GET            /api/collections/datasetPossibleParents/:ds_id                           @api.Collections.addDatasetToCollectionOptions(ds_id: UUID, title: Option[String]?= None, date: Option[String] ?= None, limit: Int ?= 12)
 GET            /api/collections/possibleParents                                         @api.Collections.listPossibleParents(currentCollectionId: String, title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 POST           /api/collections                                                         @api.Collections.createCollection()
 GET            /api/collections/rootCollections                                         @api.Collections.getRootCollections
@@ -481,7 +483,6 @@ GET            /api/collections/:coll_id/getParentCollections                   
 POST           /api/collections/:coll_id/addSubCollection/:sub_coll_id                  @api.Collections.attachSubCollection(coll_id: UUID, sub_coll_id: UUID)
 GET            /api/collections/:coll_id/removeFromSpaceAllowed/:space_id               @api.Collections.removeFromSpaceAllowed(coll_id: UUID, space_id: UUID)
 
-
 # ----------------------------------------------------------------------
 # DATASETS ENDPOINT
 # ----------------------------------------------------------------------
@@ -494,13 +495,16 @@ POST           /api/datasets/searchusermetadata                                 
 POST           /api/datasets/searchmetadata                                             @api.Datasets.searchDatasetsGeneralMetadata
 GET            /api/datasets/listOutsideCollection/:coll_id                             @api.Datasets.listOutsideCollection(coll_id: UUID)
 POST           /api/datasets/:ds_id/filesRemove/:file_id/:ignoreNotFound                @api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound)
+POST           /api/datasets/:datasetId/moveFile/:toFolder/:fileId                      @api.Folders.moveFileBetweenFolders( datasetId: UUID, toFolder: UUID, fileId: UUID)
+POST           /api/datasets/:datasetId/moveBetweenDatasets/:toDataset/:fileId          @api.Datasets.moveFileBetweenDatasets(datasetId: UUID, toDataset: UUID, fileId: UUID)
+POST           /api/datasets/:datasetId/moveToDataset/:fromFolder/:fileId               @api.Folders.moveFileToDataset(datasetId: UUID, fromFolder: UUID, fileId: UUID)
 DELETE         /api/datasets/:parentDatasetId/deleteFolder/:folderId                    @api.Folders.deleteFolder(parentDatasetId: UUID, folderId: UUID)
 PUT            /api/datasets/:parentDatasetId/updateName/:folderId                      @api.Folders.updateFolderName(parentDatasetId: UUID, folderId: UUID)
 POST           /api/datasets/:datasetId/copyDatasetToSpace/:spaceId                     @api.Datasets.copyDatasetToSpace(datasetId: UUID, spaceId: UUID)
+GET            /api/datasets/:datasetId/folders                                         @api.Folders.getAllFoldersByDatasetId(datasetId: UUID)
 DELETE         /api/datasets/:ds_id/:file_id                                            @api.Datasets.detachFile(ds_id: UUID,file_id: UUID, ignoreNotFound ?= "True")
 GET            /api/datasets/getRDFURLsForDataset/:id                                   @api.Datasets.getRDFURLsForDataset(id: UUID)
 GET            /api/datasets/rdfUserMetadata/:id                                        @api.Datasets.getRDFUserMetadata(id: UUID, mappingNum: String ?= "1")
-POST           /api/datasets/:id/remove                                                 @api.Datasets.deleteDataset(id: UUID)
 GET            /api/datasets/:id/metadata                                               @api.Datasets.getMetadataDefinitions(id: UUID, space: Option[String] ?= None)
 POST           /api/datasets/:id/metadata                                               @api.Datasets.addMetadata(id: UUID)
 POST           /api/datasets/:id/usermetadata                                           @api.Datasets.addUserMetadata(id: UUID)
@@ -534,7 +538,8 @@ GET            /api/datasets/:id                                                
 DELETE         /api/datasets/:id                                                        @api.Datasets.deleteDataset(id: UUID)
 POST           /api/datasets/:id/detachdelete                                           @api.Datasets.detachAndDeleteDataset(id: UUID)
 POST           /api/datasets/:parentDatasetId/newFolder                                 @api.Folders.createFolder(parentDatasetId: UUID)
-POST           /dataset/:id/addFileEvent                                                @api.Datasets.addFileEvent(id:UUID, inFolder:Boolean, fileCount: Int )
+PUT            /api/datasets/:id/access                                                 @api.Datasets.updateAccess(id:UUID, aceess:String ?="PRIVATE")
+POST           /api/datasets/:id/addFileEvent                                           @api.Datasets.addFileEvent(id:UUID, inFolder:Boolean, fileCount: Int )
 
 
 # ----------------------------------------------------------------------

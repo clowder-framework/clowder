@@ -1,17 +1,27 @@
 @(resourceId: UUID, resourceType: Symbol, resourceSpaces_canRemove : Map[ProjectSpace,Boolean], currentCollection: Option[Collection])(implicit user: Option[models.User])
 @import api.Permission
+@import play.api.libs.json.Json
 @import play.api.Play.current
-    <div class="row bottom-padding">
+    <div class="row">
         <div class="col-md-12">
         @if(resourceType == ResourceRef.collection) {
-            <h4>@{spaces.spaceTitle()}s containing the collection</h4>
+            @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                <h4> @{spaces.spaceTitle()} containing the collection</h4>
+            } else {
+                <h4>@{spaces.spaceTitle()}s containing the collection</h4>
+            }
+
         } else {
-            <h4>@{spaces.spaceTitle()}s containing the dataset</h4>
+            @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                <h4>@{spaces.spaceTitle()} containing the dataset</h4>
+            } else {
+                <h4>@{spaces.spaceTitle()}s containing the dataset</h4>
+            }
         }
         </div>
     </div>
 
-    <div class="row">
+    <div class="row bottom-padding">
         <div id="spacesList" class="col-md-12">
         @resourceSpaces_canRemove.map {case (s, v) =>
             <div id="col_@s.id" class="row bottom-padding">
@@ -88,25 +98,26 @@
     @if(Permission.checkOwner(user, ResourceRef(resourceType, resourceId))) {
         @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
             @if(resourceType == ResourceRef.collection) {
-                @spaces.spaceSelect(resourceId, resourceType, "spaceAddSelect", "addCollectionToSpace('" + resourceId + "')", "Add", "Add collection to " + spaceTitle)
+                @spaces.spaceSelect(resourceId, resourceType, "spaceAddSelect", "addCollectionToSpace('" + resourceId + "')", "Add", "Add collection to " + spaceTitle, "add-to-space-widget")
             } else {
-                @spaces.spaceSelect(resourceId, resourceType, "spaceAddSelect", "addDatasetToSpace('" + resourceId + "')", "Add", "Add dataset to " +spaceTitle)
+                @spaces.spaceSelect(resourceId, resourceType, "spaceAddSelect", "addDatasetToSpace('" + resourceId + "')", "Add", "Add dataset to " +spaceTitle, "add-to-space-widget")
             }
             @if(current.plugin[services.SpaceCopyPlugin].isDefined) {
                 @if(resourceType == ResourceRef.dataset) {
-                    <h4>Copy Dataset to @{
+                    <h4 class="bottom-padding">Copy Dataset to @{
                         spaces.spaceTitle()
                     }s</h4>
-                    @spaces.spaceSelect(resourceId, resourceType, "spaceCopySelect", "copyDatasetToSpace('" + resourceId + "')", "Copy", "Copy dataset to " + spaceTitle)
+                    @spaces.spaceSelect(resourceId, resourceType, "spaceCopySelect", "copyDatasetToSpace('" + resourceId + "')", "Copy", "Copy dataset to " + spaceTitle, "copy-to-space-widget")
                 } @* else {
                   <h4>Copy Collection to Space</h4>
-                  @spaces.spaceSelect(resourceId, resourceType, "spaceCopySelect", "copyCollectionToSpace('"+resourceId+"')", "Copy", "Copy collection to Space")
+                  @spaces.spaceSelect(resourceId, resourceType, "spaceCopySelect", "copyCollectionToSpace('"+resourceId+"')", "Copy", "Copy collection to Space", "copy-to-space-widget")
 
                   }*@
             }
         }
 
     }
+
 
 
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
@@ -116,7 +127,10 @@
 
 
 <script language = "javascript">
-
+    var isSharingEnabled= @play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined;
+    @if(!play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined && resourceSpaces_canRemove.size > 0 ) {
+    $("#add-to-space-widget").addClass("hidden");
+    }
     function getCollection(id) {
         var request = jsRoutes.api.Collections.getCollection(id).ajax({
             type: 'GET'

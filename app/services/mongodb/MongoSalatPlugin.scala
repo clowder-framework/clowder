@@ -373,6 +373,10 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     updateMongo("update-counts-spaces", updateCountsInSpaces)
 
+    //add private (the default status) flag for each dataset/collection/space
+    updateMongo("add-trial-flag", addTrialFlag)
+
+
     // instead of user agreeent we now have a temrms of services
     updateMongo("switch-user-agreement-to-terms-of-services", switchToTermsOfServices)
 
@@ -383,6 +387,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Duplicate all clowder instance metadata to all existing spaces
     updateMongo("add-metadata-per-space", addMetadataPerSpace)
+
+    updateMongo("add-trial-flag2",addTrialFlag2)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1189,5 +1195,27 @@ class MongoSalatPlugin(app: Application) extends Plugin {
         }
       }
     }
+  }
+
+  private def addTrialFlag(): Unit ={
+      val q = MongoDBObject()
+      val s = MongoDBObject("$set" -> MongoDBObject("status" -> SpaceStatus.TRIAL.toString))
+      val d = MongoDBObject("$set" -> MongoDBObject("status" -> DatasetStatus.PRIVATE.toString))
+      collection("datasets").update(q ,d, multi=true)
+      collection("spaces.projects").update(q ,s, multi=true)
+  }
+
+  private def addTrialFlag2(): Unit ={
+    val q = MongoDBObject()
+
+    val (s ,d ) = if(play.Play.application().configuration().getBoolean("verifySpaces")){
+       (MongoDBObject("$set" -> MongoDBObject("status" -> SpaceStatus.TRIAL.toString)),
+        MongoDBObject("$set" -> MongoDBObject("status" -> DatasetStatus.TRIAL.toString)) )
+    } else {
+       (MongoDBObject("$set" -> MongoDBObject("status" -> SpaceStatus.PRIVATE.toString)),
+        MongoDBObject("$set" -> MongoDBObject("status" -> DatasetStatus.DEFAULT.toString)))
+    }
+    collection("datasets").update(q ,d, multi=true)
+    collection("spaces.projects").update(q ,s, multi=true)
   }
 }

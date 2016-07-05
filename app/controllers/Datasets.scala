@@ -61,10 +61,15 @@ class Datasets @Inject()(
           decodedSpaceList += Utils.decodeSpaceElements(aSpace)
         }
       }
+
+    var hasVerifiedSpace = false
     val spaceId = space match {
       case Some(s) => {
         spaceService.get(UUID(s)) match {
-          case Some(space) =>  Some(space.id.toString)
+          case Some(space) => {
+            hasVerifiedSpace = !space.isTrial
+            Some(space.id.toString)
+          }
           case None => None
         }
       }
@@ -80,9 +85,11 @@ class Datasets @Inject()(
       }
       case None => None
     }
+    val showAccess = play.Play.application().configuration().getBoolean("enablePublic") &&
+      (!play.Play.application().configuration().getBoolean("verifySpaces") || hasVerifiedSpace)
 
     Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected))
+      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected, showAccess))
 
   }
 
@@ -176,7 +183,7 @@ class Datasets @Inject()(
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String]) = PrivateServerAction { implicit request =>
+  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String], showPublic: Boolean) = UserAction(needActive=false) { implicit request =>
     implicit val user = request.user
 
     val nextPage = (when == "a")
@@ -187,10 +194,10 @@ class Datasets @Inject()(
     val datasetList = person match {
       case Some(p) => {
         space match {
-          case Some(s) => {
+          case Some(s) if datasetSpace.isDefined=> {
             title = Some(person.get.fullName + "'s Datasets in " + spaceTitle + " <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
           }
-          case None => {
+          case _ => {
             title = Some(person.get.fullName + "'s Datasets")
           }
         }
@@ -202,19 +209,19 @@ class Datasets @Inject()(
       }
       case None => {
         space match {
-          case Some(s) => {
+          case Some(s) if datasetSpace.isDefined => {
             title = Some("Datasets in " + spaceTitle + " <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
             if (date != "") {
-              datasets.listSpace(date, nextPage, limit, s)
+              datasets.listSpace(date, nextPage, limit, s, user)
             } else {
-              datasets.listSpace(limit, s)
+              datasets.listSpace(limit, s, user)
             }
           }
-          case None => {
+          case _ => {
             if (date != "") {
-              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
+              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
             } else {
-              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
+              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
             }
 
           }
@@ -229,8 +236,8 @@ class Datasets @Inject()(
         case Some(p) => datasets.listUser(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
-            case Some(s) => datasets.listSpace(first, nextPage = false, 1, s)
-            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
+            case Some(s) => datasets.listSpace(first, nextPage = false, 1, s, user)
+            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
           }
         }
       }
@@ -250,8 +257,8 @@ class Datasets @Inject()(
         case Some(p) => datasets.listUser(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
-            case Some(s) => datasets.listSpace(last, nextPage=true, 1, s)
-            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
+            case Some(s) => datasets.listSpace(last, nextPage=true, 1, s, user)
+            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
           }
         }
       }
@@ -296,7 +303,15 @@ class Datasets @Inject()(
       }
 
     //Pass the viewMode into the view
-    Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title, owner, when, date))
+    space match {
+      case Some(s) if datasetSpace.isEmpty =>{
+        NotFound(views.html.notFound(spaceTitle+ " not found."))
+      }
+      case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
+        BadRequest(views.html.notAuthorized("You are not authorized to access the "+spaceTitle+".", s, "space"))
+      }
+      case _ => Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title, owner, when, date))
+    }
   }
 
   def addViewer(id: UUID, user: Option[User]) = {
@@ -439,9 +454,15 @@ class Datasets @Inject()(
               if(folder.files.length > 0) { showDownload = true}
             }
           }
+          var showAccess = false
+          if(play.Play.application().configuration().getBoolean("verifySpaces")) {
+            showAccess = !dataset.isTRIAL
+          } else {
+            showAccess = play.Play.application().configuration().getBoolean("enablePublic")
+          }
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
             decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove),fileList,
-            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload))
+            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess))
         }
         case None => {
           Logger.error("Error getting dataset" + id)

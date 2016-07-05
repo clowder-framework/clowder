@@ -37,6 +37,10 @@ function addCollectionToSpace(id,spaceTitle) {
         txt = txt + '</div>';
         $("#spacesList").append(txt);
         $("#spaceAddSelect").select2("val", "");
+        if(!isSharingEnabled) {
+            $("#add-to-space-widget").addClass("hidden");
+        }
+
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
@@ -57,6 +61,10 @@ function removeCollectionFromSpace(spaceId, id, event){
 
     request.done(function (response, textStatus, jqXHR){
         $('#col_'+spaceId).remove();
+        if(!isSharingEnabled && $('#spacesList .row').length == 0){
+            $("#add-to-space-widget").removeClass("hidden");
+        }
+
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
@@ -85,6 +93,9 @@ function removeCollectionFromSpaceAndRedirect(spaceId, collectionId, isreload, u
             }
         else {
             $('#col_' + spaceId).remove();
+            if(!isSharingEnabled && $('#spacesList .row').length == 0 ) {
+                $("#add-to-space-widget").removeClass("hidden");
+            }
         }
     });
 
@@ -110,7 +121,8 @@ function addDatasetToSpace(id, spaceTitle) {
     request.done(function (response, textStatus, jqXHR) {
         var o = $.parseJSON(jqXHR.responseText);
         var txt = '<div id="col_'+selectedId+'" class="row bottom-padding">' +
-            '<div class="col-md-2"></div>' +
+            '<div class="col-md-2"><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+'>' +
+            '<span class="smallicon glyphicon glyphicon-tent"></span></a></div>' +
             '<div class="col-md-10">' +
             '<div><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+' class ="space">'+selectedName+'</a>' +
             '</div>';
@@ -127,6 +139,11 @@ function addDatasetToSpace(id, spaceTitle) {
         txt = txt + '</div>';
         $("#spacesList").append(txt);
         $("#spaceAddSelect").select2("val", "");
+        if(!isSharingEnabled) {
+            $("#add-to-space-widget").addClass("hidden");
+            $('#dataset-users').removeClass("hidden");
+        }
+
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
@@ -161,6 +178,11 @@ function removeDatasetFromSpace(spaceId, datasetId, event){
 
     request.done(function (response, textStatus, jqXHR){
         $('#col_'+spaceId).remove();
+        if(!isSharingEnabled &&  $('#spacesList .row').length == 0) {
+            $("#add-to-space-widget").removeClass("hidden");
+            $('#dataset-users').addClass("hidden");
+        }
+
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
@@ -188,7 +210,15 @@ function removeDatasetFromSpaceAndRedirect(spaceId, datasetId, isreload, url){
             }
         else {
             $('#col_' + spaceId).remove();
+            if(!isSharingEnabled && $('#spacesList .row').length == 0) {
+                $("#add-to-space-widget").removeClass("hidden");
+                $('#dataset-users').addClass("hidden");
+            }
+            if(response.isTrial.valueOf() ==="true"){
+                $('#access').hide();
+            }
         }
+
     });
     request.fail(function (jqXHR, textStatus, errorThrown){
         console.error("The following error occured: " + textStatus, errorThrown);

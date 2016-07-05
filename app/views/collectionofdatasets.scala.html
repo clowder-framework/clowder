@@ -76,9 +76,9 @@
                         }
 						@if(user.isDefined) {
 							@if(!collection.followers.contains(user.get.id)) {
-								<button id="followButton" class="btn btn-link followButton btn-sm" objectId="@collection.id" objectName="@collection.name" objectType="collection"><span class="glyphicon glyphicon-star"></span> Follow</button>
+								<button id="followButton" class="btn btn-link followButton" objectId="@collection.id" objectName="@collection.name" objectType="collection"><span class="glyphicon glyphicon-star"></span> Follow</button>
 							} else {
-								<button id="followButton" class="btn btn-link followButton btn-sm" objectId="@collection.id" objectName="@collection.name" objectType="collection"><span class="glyphicon glyphicon-star-empty"></span> Unfollow</button>
+								<button id="followButton" class="btn btn-link followButton" objectId="@collection.id" objectName="@collection.name" objectType="collection"><span class="glyphicon glyphicon-star-empty"></span> Unfollow</button>
 							}
 						}
 						@if(user.isDefined && collectionSpaces_canRemove.isDefined && !collectionSpaces_canRemove.isEmpty){
@@ -331,8 +331,6 @@
                     $('#edit-description').addClass("hiddencomplete");
                  });
 		}
-
-
 	});
 
 	function updateDatasets(page) {
@@ -368,7 +366,6 @@
 			}
 		})
 	}
-
 
 </script>
 <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>

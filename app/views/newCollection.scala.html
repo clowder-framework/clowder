@@ -53,7 +53,10 @@
         <tr>
             <td style="width: 20%; vertical-align:top;" class="input-table-cell">Share with @{spaces.spaceTitle()}s:</td>
             <td style="width: 35%; vertical-align:top;" class="input-table-cell" id="desccell">
-                <select name="space" id="spaceid" class = "form-control chosen-select" multiple style="width: 342px;">
+                <select name="space" id="spaceid" class = "form-control chosen-select" @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined){multiple} style="width: 342px;">
+                    @if(!play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                        <option value="">Select a @spaces.spaceTitle().toString().filter(_ >= ' ') to share the collection with (Optional)</option>
+                    }
                     @spaceList.map { space =>
                         <option id = "@(space.id)" value="@(space.id)">@(space.name)</option>
                     }
@@ -77,11 +80,11 @@
     </table>
     <form id="collectioncreate" action='@routes.Collections.submit' method="POST" enctype="multipart/form-data">
             <!-- Redirect browsers with JavaScript disabled to the origin page -->
-            <noscript>Javascript is required in order to use the uploader to create a new collection.</noscript>
+        <noscript>Javascript is required in order to use the uploader to create a new collection.</noscript>
 
-            <input type="hidden" name="name" id="hiddenname" value="not set">
-            <input type="hidden" name="description" id="hiddendescription" value="not set">
-            <input type="hidden" name="space" id="hiddenspace" value="not set">
+        <input type="hidden" name="name" id="hiddenname" value="not set">
+        <input type="hidden" name="description" id="hiddendescription" value="not set">
+        <input type="hidden" name="space" id="hiddenspace" value="not set">
     </form>
     </div>
   </div>

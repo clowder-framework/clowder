@@ -54,7 +54,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
       case Some(clowderUser) if clowderUser.active => {
         newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20)))
         .sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
-        val datasetsUser = datasets.listUser(4, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
+        val datasetsUser = datasets.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
         val datasetcommentMap = datasetsUser.map { dataset =>
           var allComments = comments.findCommentsByDatasetId(dataset.id)
           dataset.files.map { file =>
@@ -65,7 +65,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
           }
           dataset.id -> allComments.size
         }.toMap
-        val collectionList = collections.listUser(4, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
+        val collectionList = collections.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
         val collectionsWithThumbnails = collectionList.map {c =>
           if (c.thumbnail_id.isDefined) {
             c
@@ -81,7 +81,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         for (aCollection <- collectionsWithThumbnails) {
           decodedCollections += Utils.decodeCollectionElements(aCollection)
         }
-        val spacesUser = spaces.listUser(4, Some(clowderUser),request.user.fold(false)(_.superAdminMode), clowderUser)
+        val spacesUser = spaces.listUser(12, Some(clowderUser),request.user.fold(false)(_.superAdminMode), clowderUser)
         var followers: List[(UUID, String, String, String)] = List.empty
         for (followerID <- clowderUser.followers.take(3)) {
           val userFollower = users.findById(followerID)
@@ -142,8 +142,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
             }
           }
         }
-        Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser, datasetcommentMap, decodedCollections.toList, spacesUser, true, followers, followedUsers.take(3),
-       followedFiles.take(3), followedDatasets.take(3), followedCollections.take(3),followedSpaces.take(3), Some(true)))
+        Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser, datasetcommentMap, decodedCollections.toList, spacesUser, true, followers, followedUsers.take(12),
+       followedFiles.take(8), followedDatasets.take(8), followedCollections.take(8),followedSpaces.take(8), Some(true)))
       }
       case _ => Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, filesBytes, collectionsCount, collectionsCountAccess,
         spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
@@ -261,8 +261,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Datasets.detachFile,
         api.routes.javascript.Datasets.download,
         api.routes.javascript.Datasets.getPreviews,
+        api.routes.javascript.Datasets.updateAccess,
         api.routes.javascript.Datasets.addFileEvent,
         api.routes.javascript.Datasets.getMetadataDefinitions,
+        api.routes.javascript.Datasets.moveFileBetweenDatasets,
         api.routes.javascript.Files.download,
         api.routes.javascript.Files.comment,
         api.routes.javascript.Files.getTags,
@@ -304,6 +306,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Geostreams.patchStreamMetadata,
         api.routes.javascript.Collections.list,
         api.routes.javascript.Collections.listCanEdit,
+        api.routes.javascript.Collections.addDatasetToCollectionOptions,
         api.routes.javascript.Collections.listPossibleParents,
         api.routes.javascript.Collections.attachPreview,
         api.routes.javascript.Collections.attachDataset,
@@ -332,6 +335,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Spaces.unfollow,
         api.routes.javascript.Spaces.acceptRequest,
         api.routes.javascript.Spaces.rejectRequest,
+        api.routes.javascript.Spaces.verifySpace,
         api.routes.javascript.Users.getUser,
         api.routes.javascript.Users.findById,
         api.routes.javascript.Users.follow,
@@ -370,6 +374,9 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Folders.createFolder,
         api.routes.javascript.Folders.deleteFolder,
         api.routes.javascript.Folders.updateFolderName,
+        api.routes.javascript.Folders.getAllFoldersByDatasetId,
+        api.routes.javascript.Folders.moveFileBetweenFolders,
+        api.routes.javascript.Folders.moveFileToDataset,
         controllers.routes.javascript.Files.file,
         controllers.routes.javascript.Datasets.dataset,
         controllers.routes.javascript.Datasets.newDataset,

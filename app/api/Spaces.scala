@@ -24,7 +24,7 @@ import scala.util.Try
  */
 @Api(value = "/spaces", listingPath = "/api-docs.json/spaces", description = "Spaces are groupings of collections and datasets.")
 class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetService: DatasetService,
-  collectionService: CollectionService, events: EventService) extends ApiController {
+  collectionService: CollectionService, events: EventService, datasets: DatasetService) extends ApiController {
 
   @ApiOperation(value = "Create a space",
     notes = "",
@@ -85,7 +85,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   @ApiOperation(value = "List spaces the user can view",
     notes = "Retrieves information about spaces",
     responseClass = "None", httpMethod = "GET")
-  def list(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true) { implicit request =>
+  def list(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=false) { implicit request =>
     Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.ViewSpace), false, request.user, request.user.fold(false)(_.superAdminMode)).map(spaceToJson)))
   }
 
@@ -237,7 +237,8 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       case (Some(s), Some(d)) => {
         spaces.removeDataset(datasetId, spaceId)
         events.addSourceEvent(request.user ,  d.id, d.name, s.id, s.name, "remove_dataset_space")
-        Ok(toJson("success"))
+
+        Ok(Json.obj("isTrial"-> datasets.get(datasetId).exists(_.isTRIAL).toString))
       }
       case (_, _) => NotFound
     }
@@ -268,6 +269,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       var name: String = null
       var timeAsString: String = null
       var enabled: Boolean = false
+      var access: String = SpaceStatus.PRIVATE.toString
 
       var aResult: JsResult[String] = (request.body \ "description").validate[String]
 
@@ -319,14 +321,28 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         }
       }
 
-      Logger.debug(s"updateInformation for dataset with id  $spaceid. Args are $description, $name, $enabled, and $timeAsString")
+      (request.body \ "access").validate[String] match {
+        case b: JsSuccess[String] => {
+          access = b.get
+        }
+        case e: JsError => {
+          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          BadRequest(toJson("access data is missing from the updateSpace call."))
+        }
+      }
+
+      if (spaces.get(spaceid).map(_.isTrial).getOrElse(true) == true ){
+        access = SpaceStatus.TRIAL.toString
+      }
+
+      Logger.debug(s"updateInformation for space with id  $spaceid. Args are $description, $name, $enabled, $timeAsString and $access")
 
       //Generate the expiration time and the boolean flag
       val timeToLive = timeAsString.toInt * 60 * 60 * 1000L
       //val expireEnabled = enabledAsString.toBoolean
       Logger.debug("converted values are " + timeToLive + " and " + enabled)
 
-      spaces.updateSpaceConfiguration(spaceid, name, description, timeToLive, enabled)
+      spaces.updateSpaceConfiguration(spaceid, name, description, timeToLive, enabled, access)
       events.addObjectEvent(request.user, spaceid, name, "update_space_information")
       Ok(Json.obj("status" -> "success"))
     }
@@ -575,7 +591,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
           case None => InternalServerError("Request user not found")
         }
       }
-      case None => InternalServerError("Space not found")
+      case None => NotFound("Space not found")
     }
   }
 
@@ -602,7 +618,42 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
           case None => InternalServerError("Request user not found")
         }
       }
-      case None => InternalServerError("Space not found")
+      case None => NotFound("Space not found")
+    }
+  }
+
+  @ApiOperation(value = "change the access of dataset",
+    notes = "Downloads all files contained in a dataset.",
+    responseClass = "None", httpMethod = "PUT")
+  def verifySpace(id:UUID) = ServerAdminAction { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(loggedInUser) => {
+        spaces.get(id) match {
+          case Some(s) if s.isTrial => {
+            spaces.update(s.copy(status = SpaceStatus.PRIVATE.toString))
+            //set datasets in this space as verified status
+            datasetService.listSpace(0, s.id.toString()).map{ d =>
+              if(d.isTRIAL) {
+                datasetService.update(d.copy(status = DatasetStatus.DEFAULT.toString))
+              }
+            }
+
+            userService.listUsersInSpace(s.id).map { member =>
+              val theHtml = views.html.spaces.verifySpaceEmail(s.id.stringify, s.name, member.getMiniUser.fullName)
+              Mail.sendEmail("Space Status update", request.user, member, theHtml)
+            }
+            Ok(toJson(Map("status" -> "success")))
+          }
+          // If the space wasn't found by ID
+          case _ => {
+            BadRequest("Verify space failed")
+          }
+        }
+      }
+      case None => {
+        Unauthorized
+      }
     }
   }
 }

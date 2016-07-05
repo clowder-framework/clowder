@@ -30,7 +30,22 @@ case class Dataset(
   licenseData: LicenseData = new LicenseData(),
   spaces: List[UUID] = List.empty,
   lastModifiedDate: Date = new Date(),
-  followers: List[UUID] = List.empty)
+  followers: List[UUID] = List.empty,
+  status: String = DatasetStatus.PRIVATE.toString// dataset has four status: trial, default, private and public. yet editors of the dataset
+  // can only see the default, private and public, where trial equals to private. viewers can only see private and
+  // public, where trial and default equals to private/public of its space
+){
+  def isPublic:Boolean = status.contains(DatasetStatus.PUBLIC.toString)
+  def isDefault:Boolean = status.contains(DatasetStatus.DEFAULT.toString)
+  def isTRIAL:Boolean = status.contains(DatasetStatus.TRIAL.toString)
+  def inSpace:Boolean = spaces.size > 0
+}
+
+object DatasetStatus extends Enumeration {
+  type DatasetStatus = Value
+  val PUBLIC, PRIVATE, DEFAULT, TRIAL = Value
+}
+
 
 object Dataset {
   implicit val datasetWrites = new Writes[Dataset] {
