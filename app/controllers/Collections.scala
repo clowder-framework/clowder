@@ -144,7 +144,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
   /**
    * List collections.
    */
-  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String]) = UserAction(needActive=false) { implicit request =>
+  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String], showPublic: Boolean) = UserAction(needActive=false) { implicit request =>
     implicit val user = request.user
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
@@ -180,9 +180,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           }
           case _ => {
             if (date != "") {
-              collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode))
+              collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
             } else {
-              collections.listAccess(limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode))
+              collections.listAccess(limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
             }
 
           }
@@ -198,7 +198,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         case None => {
           space match {
             case Some(s) => collections.listSpace(first, nextPage = false, 1, s)
-            case None => collections.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode))
+            case None => collections.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
           }
         }
       }
@@ -219,7 +219,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         case None => {
           space match {
             case Some(s) => collections.listSpace(last, nextPage = true, 1, s)
-            case None => collections.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode))
+            case None => collections.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
           }
         }
       }
@@ -677,9 +677,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           }
           case None => {
             if (date != "") {
-              (collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode))).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+              (collections.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), true)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
             } else {
-              (collections.listAccess(limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode))).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+              (collections.listAccess(limit, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), true)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
             }
 
           }
@@ -699,7 +699,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         case None => {
           space match {
             case Some(s) => (collections.listSpace(first, nextPage = false, 1, s)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
-            case None => (collections.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode))).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+            case None => (collections.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), true)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
           }
         }
       }
@@ -720,7 +720,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         case None => {
           space match {
             case Some(s) => (collections.listSpace(last, nextPage = true, 1, s)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
-            case None => (collections.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode))).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
+            case None => (collections.listAccess(last, nextPage = true, 1, Set[Permission](Permission.ViewCollection), request.user, request.user.fold(false)(_.superAdminMode), true)).filter((c : Collection) => c.parent_collection_ids.contains(parentCollectionId) == true)
           }
         }
       }

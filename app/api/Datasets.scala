@@ -83,16 +83,16 @@ class  Datasets @Inject()(
   private def lisDatasets(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Dataset] = {
     (title, date) match {
       case (Some(t), Some(d)) => {
-        datasets.listAccess(d, true, limit, t, permission, user, superAdmin)
+        datasets.listAccess(d, true, limit, t, permission, user, superAdmin, true)
       }
       case (Some(t), None) => {
-        datasets.listAccess(limit, t, permission, user, superAdmin)
+        datasets.listAccess(limit, t, permission, user, superAdmin, true)
       }
       case (None, Some(d)) => {
-        datasets.listAccess(d, true, limit, permission, user, superAdmin)
+        datasets.listAccess(d, true, limit, permission, user, superAdmin, true)
       }
       case (None, None) => {
-        datasets.listAccess(limit, permission, user, superAdmin)
+        datasets.listAccess(limit, permission, user, superAdmin, true)
       }
     }
   }
@@ -103,12 +103,12 @@ class  Datasets @Inject()(
   def listOutsideCollection(collectionId: UUID) = PrivateServerAction { implicit request =>
     collections.get(collectionId) match {
       case Some(collection) => {
-        val list = for (dataset <- datasets.listAccess(0, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode)); if (!datasets.isInCollection(dataset, collection)))
+        val list = for (dataset <- datasets.listAccess(0, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), false); if (!datasets.isInCollection(dataset, collection)))
           yield dataset
         Ok(toJson(list))
       }
       case None => {
-        val list = datasets.listAccess(0, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
+        val list = datasets.listAccess(0, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), false)
         Ok(toJson(list))
       }
     }
