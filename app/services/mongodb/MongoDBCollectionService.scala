@@ -514,7 +514,9 @@ class MongoDBCollectionService @Inject() (
         val datasetsInCollection = datasets.listCollection(collection.id.stringify)
         for (dataset <- datasetsInCollection){
           for (space <- collection.spaces){
-            datasets.addToSpace(dataset.id,space)
+            if (!dataset.spaces.contains(space)){
+              spaceService.addDataset(dataset.id,space)
+            }
           }
         }
       }
