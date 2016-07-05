@@ -4,33 +4,38 @@
 
 <div class="@classes">
     <div class="col-md-12 col-lg-12 col-sm-12">
-        <h3>External Links</h3>
-        @if(links.size == 0) {
-            @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
-                <p>Edit @{spaces.spaceTitle()} to add links</p>
-            } else {
-                <p>No External Links</p>
-            }
-        } else {
-            <ul class="list-unstyled">
-            @for(link <- links) {
-                <li><a href="@link">@link</a></li>
-            }
-            </ul>
-        }
-        @if(space.isTrial){
-            <div id="verify">
-                <h3>Status</h3>
+<h3>External Links</h3>
+@if(links.size == 0) {
+    @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
+        <p>Edit @{spaces.spaceTitle()} to add links</p>
+    } else {
+        <p>No External Links</p>
+    }
+} else {
+    <ul class="list-unstyled">
+    @for(link <- links) {
+        <li><a href="@link">@link</a></li>
+    }
+    </ul>
+}
+@if(space.isTrial){
+    @if(play.Play.application().configuration().getBoolean("verifySpaces") &&
+            Permission.checkPermission(Permission.PublicSpace, ResourceRef(ResourceRef.space, space.id))) {
+        <div id="verify">
+
             <p>@play.api.i18n.Messages("trial.space")</p>
             @if(api.Permission.checkServerAdmin(user)){
                 <button class="btn btn-link" title="Verify this space" >
                     <span class="glyphicon glyphicon-ok" ></span> Verify</button>
             }
-            </div>
-        } else {
-            <h3>Access</h3>
-            @space.status.capitalize
-        }
+        </div>
+    }
+} else {
+    @if(play.Play.application().configuration().getBoolean("enablePublic")) {
+        <h3>Access</h3>
+        @space.status.capitalize
+    }
+}
     </div>
 </div>
     <script>
