@@ -237,7 +237,8 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       case (Some(s), Some(d)) => {
         spaces.removeDataset(datasetId, spaceId)
         events.addSourceEvent(request.user ,  d.id, d.name, s.id, s.name, "remove_dataset_space")
-        Ok(toJson("success"))
+
+        Ok(Json.obj("isTrial"-> datasets.get(datasetId).exists(_.isTRIAL).toString))
       }
       case (_, _) => NotFound
     }
@@ -631,6 +632,13 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         spaces.get(id) match {
           case Some(s) if s.isTrial => {
             spaces.update(s.copy(status = SpaceStatus.PRIVATE.toString))
+            //set datasets in this space as verified status
+            datasetService.listSpace(0, s.id.toString()).map{ d =>
+              if(d.isTRIAL) {
+                datasetService.update(d.copy(status = DatasetStatus.DEFAULT.toString))
+              }
+            }
+
             userService.listUsersInSpace(s.id).map { member =>
               val theHtml = views.html.spaces.verifySpaceEmail(s.id.stringify, s.name, member.getMiniUser.fullName)
               Mail.sendEmail("Space Status update", request.user, member, theHtml)

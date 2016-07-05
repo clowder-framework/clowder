@@ -1,3 +1,4 @@
+
 @(filesList: List[models.File], comments: Map[UUID, Int], prev: String, next: String, limit: Int, mode: Option[String], d:Option[Dataset])(implicit user: Option[models.User])
 
 @main("Files") {
@@ -102,7 +103,7 @@
     <div class="row hidden" id="list-view">
         <div class="col-md-12">
 				@filesList.map { file =>
-                    @files.listitem(file, comments, routes.Application.index(), None, None, None)
+                    @files.listitem(file, comments, routes.Application.index(), None, None, None, false)
 				}
         </div>
     </div>

@@ -17,6 +17,7 @@ object Permission extends Enumeration {
     CreateSpace,
     DeleteSpace,
     EditSpace,
+    PublicSpace,
     AddResourceToSpace,
     EditStagingArea,
 
@@ -25,6 +26,7 @@ object Permission extends Enumeration {
     CreateDataset,
     DeleteDataset,
     EditDataset,
+    PublicDataset,
     AddResourceToDataset,
     ExecuteOnDataset,
 
@@ -84,8 +86,11 @@ object Permission extends Enumeration {
     ViewUser,
     EditUser = Value
 
-  val READONLY = Set[Permission](ViewCollection, ViewComments, ViewDataset, ViewFile, ViewGeoStream, ViewMetadata,
-    ViewSection, ViewSpace, ViewTags, ViewUser)
+  var READONLY = Set[Permission](ViewCollection, ViewComments, ViewDataset, ViewFile, ViewGeoStream, ViewMetadata,
+    ViewSection, ViewSpace, ViewTags, ViewUser )
+  if( play.Play.application().configuration().getBoolean("allowAnonymousDownload")) {
+     READONLY += DownloadFiles
+  }
 
   lazy val files: FileService = DI.injector.getInstance(classOf[FileService])
   lazy val previews: PreviewService = DI.injector.getInstance(classOf[PreviewService])
@@ -178,6 +183,7 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.comment, id) => false
       case ResourceRef(ResourceRef.section, id) => false
       case ResourceRef(ResourceRef.preview, id) => false
+      case ResourceRef(ResourceRef.thumbnail, id) => true
       case ResourceRef(resType, id) => {
         Logger.error("Unrecognized resource type " + resType)
         false
