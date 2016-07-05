@@ -4,6 +4,8 @@
 @main("Create Dataset") {
     <!-- Custom items for the create dataset workflow -->
     <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
+    <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
+
     <script type="text/javascript" language="javascript">
             //Global so that the javascript for the dataset creation can reference this.
             var isNameRequired = @isNameRequired;
