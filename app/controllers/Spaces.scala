@@ -514,7 +514,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
      val nextPage = (when == "a")
      val person = owner.flatMap(o => users.get(UUID(o)))
-     var title: Option[String] = Some(spaceTitle + "s")
+     var title: Option[String] = Some(play.api.i18n.Messages("list.title", spaceTitle+"s"))
 
      val spaceList = person match {
        case Some(p) => {
@@ -580,7 +580,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
          Some(mode)
        }
      if(!showPublic) {
-       title = Some("My " + spaceTitle + "s")
+       title = Some(play.api.i18n.Messages("you.title", spaceTitle+ "s"))
      }
 
      Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, prev, next, title))

@@ -154,6 +154,8 @@ class MongoDBSpaceService @Inject() (
     // - access  == show all datasets the user can see
     // - default == public only
     val public = MongoDBObject("status" -> SpaceStatus.PUBLIC.toString)
+    val verifiedFilter = MongoDBObject("status" -> MongoDBObject("$in" ->  List(SpaceStatus.PUBLIC.toString, SpaceStatus.PRIVATE.toString)))
+    val verifySpaces = play.Play.application().configuration().getBoolean("verifySpaces")
 
     val filter = owner match {
       case Some(o) => {
@@ -182,21 +184,32 @@ class MongoDBSpaceService @Inject() (
         }
       }
       case None => {
-        if (showAll && showPublic) {
+        if (showAll && showPublic && !verifySpaces) {
+
           MongoDBObject()
         } else {
           user match {
             case Some(u) => {
               val author = $and(MongoDBObject("author.identityId.userId" -> u.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> u.identityId.providerId))
               if (permissions.contains(Permission.ViewSpace) && play.Play.application().configuration().getBoolean("enablePublic") && showPublic) {
-                $or(author, public, ("_id" $in u.spaceandrole.filter(_.role.permissions.intersect(permissions.map(_.toString)).nonEmpty).map(x => new ObjectId(x.spaceId.stringify))))
+                if(verifySpaces) {
+                  $or(author, verifiedFilter,  ("_id" $in u.spaceandrole.filter(_.role.permissions.intersect(permissions.map(_.toString)).nonEmpty).map(x => new ObjectId(x.spaceId.stringify))))
+                } else {
+                  $or(author, public, ("_id" $in u.spaceandrole.filter(_.role.permissions.intersect(permissions.map(_.toString)).nonEmpty).map(x => new ObjectId(x.spaceId.stringify))))
+                }
+
               } else {
                 $or(author, ("_id" $in u.spaceandrole.filter(_.role.permissions.intersect(permissions.map(_.toString)).nonEmpty).map(x => new ObjectId(x.spaceId.stringify))))
 
               }
               }
             case None => if(showPublic) {
-              public
+              if(verifySpaces) {
+                verifiedFilter
+              } else {
+                public
+              }
+
             } else {
               MongoDBObject("doesnotexist" -> true)
             }

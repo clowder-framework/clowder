@@ -78,9 +78,10 @@
                                 <li><a href="@routes.Datasets.list(showPublic=false)"><span class="glyphicon glyphicon-briefcase"></span> Datasets</a></li>
                                 <li><a href="@routes.Collections.list(showPublic=false)"><span class="glyphicon glyphicon-th-list"></span> Collections</a></li>
                             } else {
-                                <li><a href="@routes.Spaces.list(owner=user)"><span class="glyphicon glyphicon-tent"></span> @{spaces.spaceTitle()}s</a></li>
-                                <li><a href="@routes.Collections.list(owner=user)"><span class="glyphicon glyphicon-th-list"></span> Collections</a></li>
-                                <li><a href="@routes.Datasets.list(owner=user)"><span class="glyphicon glyphicon-briefcase"></span> Datasets</a></li>
+                                <li><a href="@routes.Spaces.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-tent"></span> @{spaces.spaceTitle()}s</a></li>
+                                <li><a href="@routes.Datasets.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-briefcase"></span> Datasets</a></li>
+                                <li><a href="@routes.Collections.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-th-list"></span> Collections</a></li>
+
                             }
 
                         </ul>
@@ -92,8 +93,9 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a href="@routes.Spaces.list()"><span class="glyphicon glyphicon-tent"> </span> @{spaces.spaceTitle()}s</a></li>
-                            <li><a href="@routes.Collections.list("")"><span class="glyphicon glyphicon-th-list"> </span> Collections</a></li>
                             <li><a href="@routes.Datasets.list("")"><span class="glyphicon glyphicon-briefcase"> </span> Datasets</a></li>
+                            <li><a href="@routes.Collections.list("")"><span class="glyphicon glyphicon-th-list"> </span> Collections</a></li>
+
                             @if(user.isDefined){
                                 <li><a href="@routes.Users.getUsers()"><span class="glyphicon glyphicon-user"></span> Users</a></li>
                             }
@@ -111,15 +113,16 @@
                             <li><a href="@routes.Spaces.newSpace()"><span class="glyphicon glyphicon-tent"> </span>@{
                                 spaces.spaceTitle()
                             }s</a></li>
-                            <li><a href="@routes.Collections.newCollection(None)"><span class="glyphicon glyphicon-th-list"> </span>
-                                Collections</a></li>
                             <li><a href="@routes.Datasets.newDataset(None, None)"><span class="glyphicon glyphicon-briefcase"> </span>
                                 Datasets</a></li>
+                            <li><a href="@routes.Collections.newCollection(None)"><span class="glyphicon glyphicon-th-list"> </span>
+                                Collections</a></li>
+
                         </ul>
                     </li>
                 }
                     <li class="dropdown">
-                        <a href="#" class="dropdown-toggle nav-icon" data-toggle="dropdown" title="Help">Help<b class="caret"></b></a>
+                        <a href="#" class="dropdown-toggle nav-icon" data-toggle="dropdown" title="Help">About<b class="caret"></b></a>
                         <ul class="dropdown-menu" role="menu">
                             <li><a href="https://clowder.ncsa.illinois.edu/" target="_blank">About Clowder</a></li>
                             <li><a href="@routes.Application.about">About this instance</a></li>
