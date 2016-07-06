@@ -104,7 +104,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
    * Returns list of collections based on parameters and permissions.
    * TODO this needs to be cleaned up when do permissions for adding to a resource
    */
-  private def listSpaces(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], mine: Boolean, user: Option[User], superAdmin: Boolean, showPublic: Boolean) : List[ProjectSpace] = {
+  private def listSpaces(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], mine: Boolean, user: Option[User], superAdmin: Boolean, showPublic: Boolean, onlyTrial: Boolean = false) : List[ProjectSpace] = {
     if (mine && user.isEmpty) return List.empty[ProjectSpace]
 
     (title, date) match {
@@ -124,13 +124,13 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         if (mine)
           spaces.listUser(d, true, limit, user, superAdmin, user.get)
         else
-          spaces.listAccess(d, true, limit, permission, user, superAdmin, showPublic)
+          spaces.listAccess(d, true, limit, permission, user, superAdmin, showPublic, onlyTrial)
       }
       case (None, None) => {
         if (mine)
           spaces.listUser(limit, user, superAdmin, user.get)
         else
-          spaces.listAccess(limit, permission, user, superAdmin, showPublic)
+          spaces.listAccess(limit, permission, user, superAdmin, showPublic, onlyTrial)
       }
     }
   }

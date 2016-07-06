@@ -37,7 +37,7 @@ trait SpaceService {
   /**
    * Return a list of spaces the user has access to.
    */
-  def listAccess(limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[ProjectSpace]
+  def listAccess(limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean, onlyTrial: Boolean): List[ProjectSpace]
 
   /**
    * Return a list of spaces the user has access to matching title.
@@ -47,7 +47,7 @@ trait SpaceService {
   /**
    * Return a list of spaces the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[ProjectSpace]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean, onlyTrial: Boolean): List[ProjectSpace]
 
   /**
    * Return a list of spaces the user has access to starting at a specific date and  matching title.
