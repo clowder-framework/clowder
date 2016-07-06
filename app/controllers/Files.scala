@@ -64,7 +64,7 @@ class Files @Inject() (
   /**
    * File info.
    */
-  def file(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
+  def file(id: UUID, dataset: Option[String], space: Option[String], folder: Option[String]) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))).async { implicit request =>
     implicit val user = request.user
     files.get(id) match {
       case Some(file) => {
@@ -136,6 +136,7 @@ class Files @Inject() (
 
         //Decode the datasets so that their free text will display correctly in the view
         val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
+        val access =  (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasets.findByFileId(file.id) ).head.status
         val decodedDatasetsContaining = ListBuffer.empty[models.Dataset]
 
         for (aDataset <- datasetsContainingFile) {
@@ -164,14 +165,14 @@ class Files @Inject() (
               plugin.getOutputFormats(contentTypeEnding).map(outputFormats =>
                 Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                   extractorsActive, decodedDatasetsContaining.toList,foldersContainingFile,
-                  mds, isRDFExportEnabled, extractionsByFile, outputFormats)))
+                  mds, isRDFExportEnabled, extractionsByFile, outputFormats, space,  access)))
             }
             case None =>
               Logger.debug("Polyglot plugin not found")
               //passing None as the last parameter (list of output formats)
               Future(Ok(views.html.file(file, id.stringify, commentsByFile, previewsWithPreviewer, sectionsWithPreviews,
                 extractorsActive, decodedDatasetsContaining.toList, foldersContainingFile,
-                mds, isRDFExportEnabled, extractionsByFile, None)))
+                mds, isRDFExportEnabled, extractionsByFile, None, space, access)))
           }              
       }
           
@@ -301,34 +302,6 @@ class Files @Inject() (
     Ok(views.html.filesList(fileList, commentMap, prev, next, limit, viewMode, None))
   }
 
-  def listByDataset(datasetId: UUID, filepage: Int, limit: Int, mode: String) = PermissionAction(Permission.ViewDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
-    implicit val user = request.user
-    datasets.get(datasetId) match {
-      case Some(d) => {
-        val next = if (d.files.length > limit * (filepage+1) ) "dataset-" +datasetId.toString + "-next" else "dataset-" +datasetId.toString
-        val currentPage = if(filepage<0) "0" else filepage.toString
-        val limitFileList = d.files.slice(limit * filepage, limit * (filepage+1)).map(f => files.get(f)).flatten
-        val commentMap = limitFileList.map{file =>
-          var allComments = comments.findCommentsByFileId(file.id)
-          sections.findByFileId(file.id).map { section =>
-            allComments ++= comments.findCommentsBySectionId(section.id)
-          }
-          file.id -> allComments.size
-        }.toMap
-        val viewMode: Option[String] =
-          if (mode == null || mode == "") {
-            request.cookies.get("view-mode") match {
-              case Some(cookie) => Some(cookie.value)
-              case None => None //If there is no cookie, and a mode was not passed in, the view will choose its default
-            }
-          } else {
-            Some(mode)
-          }
-        Ok(views.html.filesList(limitFileList, commentMap, currentPage, next, limit, viewMode, Some(d)))
-      }
-      case None => BadRequest("Dataset not found")
-    }
-  }
 
   /**
    * Upload file page.

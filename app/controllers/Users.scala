@@ -1,6 +1,7 @@
 package controllers
 
 import java.util.UUID
+
 import com.typesafe.plugin._
 import models.User
 import org.joda.time.DateTime
@@ -15,9 +16,11 @@ import securesocial.core.providers.utils.Mailer
 import securesocial.core.providers.{Token, UsernamePasswordProvider}
 import services.AppConfiguration
 import javax.inject.Inject
+
+import play.api.http.Status._
 import services.UserService
-import play.api.mvc.Action
-import util.{Formatters, Mail, Direction}
+import play.api.mvc.{Action, Results}
+import util.{Direction, Formatters, Mail}
 
 /**
  * Manage users.
@@ -85,6 +88,7 @@ class Users @Inject() (users: UserService) extends SecuredController {
               case Some(fuser) => {
                 followedUsers = followedUsers.++(List((fuser.id, fuser.fullName, fuser.email.getOrElse(""), fuser.getAvatarUrl())))
               }
+              case None =>
             }
         }
 
@@ -161,6 +165,7 @@ class Users @Inject() (users: UserService) extends SecuredController {
               val ufEmail = uFollower.email.getOrElse("")
               followers = followers.++(List((uFollower.id, uFollower.fullName, ufEmail, uFollower.getAvatarUrl())))
             }
+            case None =>
           }
         }
 
@@ -170,5 +175,15 @@ class Users @Inject() (users: UserService) extends SecuredController {
       case None => InternalServerError("User not defined")
     }
 
+  }
+
+  def acceptTermsOfServices(redirect: Option[String]) = AuthenticatedAction { implicit request =>
+    request.user match {
+      case Some(user) => {
+        users.acceptTermsOfServices(user.id)
+        Results.Redirect(redirect.getOrElse(routes.Application.index().url), TEMPORARY_REDIRECT)
+      }
+      case None => InternalServerError("User not defined")
+    }
   }
 }

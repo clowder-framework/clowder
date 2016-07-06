@@ -35,11 +35,20 @@ trait MetadataService {
   /** Vocabulary definitions for user fields **/
   def getDefinitions(spaceId: Option[UUID] = None): List[MetadataDefinition]
 
+  /** Vocabulary definitions with distinct names **/
+  def getDefinitionsDistinctName(user: Option[User] = None): List[MetadataDefinition]
+
   /** Get vocabulary based on id **/
   def getDefinition(id: UUID): Option[MetadataDefinition]
 
   /** Get vocabulary based on uri **/
   def getDefinitionByUri(uri:String):Option[MetadataDefinition]
+
+  /** Get vocabulary based on uri and space **/
+  def getDefinitionByUriAndSpace(uri: String, spaceId: Option[String]): Option[MetadataDefinition]
+
+  /** Remove all metadata definitions related to a space**/
+  def removeDefinitionsBySpace(spaceId: UUID)
 
   /** Add vocabulary definitions, leaving it unchanged if the update argument is set to false, defaults to update **/
   def addDefinition(definition: MetadataDefinition, update: Boolean = true)
@@ -55,6 +64,9 @@ trait MetadataService {
 
   /** Search for resources by key value pairs in the content of the metadata document **/
   def search(key: String, value: String, count: Int, user: Option[User]): List[ResourceRef]
+
+  /** Search for metadata that have a key in a dataset **/
+  def searchbyKeyInDataset(key: String, datasetId: UUID): List[Metadata]
 
   /** Update author full name**/
   def updateAuthorFullName(userId: UUID, fullName: String)

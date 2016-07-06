@@ -70,24 +70,13 @@
                     '_showErrors -> true
                 )
 
-                @if(AppConfiguration.getUserAgreement) {
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            <h3 class="panel-title">Terms of Use Agreement</h3>
-                        </div>
-                        <div class="panel-body" style="overflow-y: auto; height:400px;">
-                            @Html(Messages(AppConfiguration.getUserAgreement))
-                        </div>
-                    </div>
-
-                    @helper.checkbox(
-                        signUpForm("agreementAcknowledged"),
-                        '_label -> "Check the box to accept the Terms of Use",
-                        'class -> "form-control",
-                        '_help -> "",
-                        '_showErrors -> true
-                    )
-                }
+                @helper.checkbox(
+                    signUpForm("agreementAcknowledged"),
+                    '_label -> "Terms of Services",
+                    '_text -> Html("Check the box to accept the <a target=\"tos\" href=\"../tos\">Terms of Service</a>"),
+                    '_help -> "",
+                    '_showErrors -> true
+                )
 
                 <div class="form-actions btn-margin-bottom">
                     <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-ok"></span> @Messages("securesocial.signup.createAccount")</button>
