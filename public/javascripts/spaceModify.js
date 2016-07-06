@@ -121,7 +121,8 @@ function addDatasetToSpace(id, spaceTitle) {
     request.done(function (response, textStatus, jqXHR) {
         var o = $.parseJSON(jqXHR.responseText);
         var txt = '<div id="col_'+selectedId+'" class="row bottom-padding">' +
-            '<div class="col-md-2"><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+'><span class="smallicon glyphicon glyphicon-tent"></span></a></div>' +
+            '<div class="col-md-2"><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+'>' +
+            '<span class="smallicon glyphicon glyphicon-tent"></span></a></div>' +
             '<div class="col-md-10">' +
             '<div><a href="'+jsRoutes.controllers.Spaces.getSpace(selectedId).url+'" id='+selectedId+' class ="space">'+selectedName+'</a>' +
             '</div>';
@@ -181,6 +182,7 @@ function removeDatasetFromSpace(spaceId, datasetId, event){
             $("#add-to-space-widget").removeClass("hidden");
             $('#dataset-users').addClass("hidden");
         }
+
     });
 
     request.fail(function (jqXHR, textStatus, errorThrown){
@@ -211,6 +213,9 @@ function removeDatasetFromSpaceAndRedirect(spaceId, datasetId, isreload, url){
             if(!isSharingEnabled && $('#spacesList .row').length == 0) {
                 $("#add-to-space-widget").removeClass("hidden");
                 $('#dataset-users').addClass("hidden");
+            }
+            if(response.isTrial.valueOf() ==="true"){
+                $('#access').hide();
             }
         }
 
