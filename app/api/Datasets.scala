@@ -238,9 +238,6 @@ class  Datasets @Inject()(
             case None | Some(List("default"))=>
             case Some(collectionList) => {
               collectionList.map { c => collections.addDataset(UUID(c), d.id) }
-              if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
-                collectionList.map{ c => collections.addDatasetToCollectionSpaces(UUID(c),d.id)}
-              }
             }
           }
           //Below call is not what is needed? That already does what we are doing in the Dataset constructor...
