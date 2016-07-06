@@ -33,19 +33,19 @@
         @if(curation.status =="In Curation" && Permission.checkPermission(Permission.EditStagingArea, ResourceRef(ResourceRef.curationObject, curation.id))) {
             @if(currentFolder.isDefined){
               <a id="file-@file.id" title="Delete curation file" class="btn btn-link delete-file"
-              onclick="confirmDeleteResource('curation file','@(file.id)','@(file.filename.replace("'","&#39;"))', '@currentFolder.get', '@curation.id')">
+              onclick="confirmDeleteResource('curation file','curation file','@(file.id)','@(file.filename.replace("'","&#39;"))', '@currentFolder.get', '@curation.id')">
                 <span class="glyphicon glyphicon-trash"></span>
               </a>
             } else {
                 <a id="file-@file.id" title="Delete curation file" class="btn btn-link delete-file"
-                onclick="confirmDeleteResource('curation file','@(file.id)','@(file.filename.replace("'","&#39;"))', '@curation.id', '@curation.id')">
+                onclick="confirmDeleteResource('curation file','curation file','@(file.id)','@(file.filename.replace("'","&#39;"))', '@curation.id', '@curation.id')">
                     <span class="glyphicon glyphicon-trash"></span>
                 </a>
             }
         }
       </h4>
       <div id ='allMetadata_@(file.id)'>
-        <button class="btn btn-link" type="button">Show File metadata</button>
+        <button class="btn btn-link" type="button">Show curation file metadata</button>
         <div style="display:none;">
           <div class="row border-top">
             <div class="col-md-12">
@@ -76,11 +76,11 @@
                     $("#allMetadata_@(file.id.toString) > button").on('click', function(){
                         if($("#allMetadata_@(file.id.toString) > div").attr('style') == 'display:none;'){
                             $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:block;');
-                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide file metadata";
+                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Hide curation file metadata";
                         }
                         else{
                             $("#allMetadata_@(file.id.toString) > div").attr('style', 'display:none;');
-                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show file metadata";
+                            $("#allMetadata_@(file.id.toString) > button").get(0).innerHTML = "Show curation file metadata";
                         }
                     });
 

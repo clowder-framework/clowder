@@ -32,6 +32,16 @@ trait DatasetService {
   def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Dataset]
 
   /**
+    * Return a list of datasets in a space
+    */
+  def listSpace(limit: Integer, space: String, user:Option[User]): List[Dataset]
+
+  /**
+    * Return a list of datasets in a space starting at a specific date
+    */
+  def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String, user:Option[User]): List[Dataset]
+
+  /**
    * Return a count of datasets in a collection, this does not check for permissions
    */
   def countCollection(collection: String): Long
@@ -50,6 +60,20 @@ trait DatasetService {
    * Return a list of datasets in a collection starting at a specific date, this does not check for permissions
    */
   def listCollection(date: String, nextPage: Boolean, limit: Integer, collection: String): List[Dataset]
+  /**
+    * Return a list of datasets in a collection
+    */
+  def listCollection(collection: String, user:Option[User]): List[Dataset]
+
+  /**
+    * Return a list of datasets in a collection
+    */
+  def listCollection(limit: Integer, collection: String, user:Option[User]): List[Dataset]
+
+  /**
+    * Return a list of datasets in a collection starting at a specific date
+    */
+  def listCollection(date: String, nextPage: Boolean, limit: Integer, collection: String, user:Option[User]): List[Dataset]
 
   /**
    * Return a count of datasets the user has access to.
@@ -59,22 +83,22 @@ trait DatasetService {
   /**
    * Return a list of datasets the user has access to.
    */
-  def listAccess(limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset]
+  def listAccess(limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
 
   /**
    * Return a list of datasets the user has access to.
    */
-  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset]
+  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
 
   /**
    * Return a list of datasets the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
 
   /**
    * Return a list of datasets the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Dataset]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
 
   /**
    * Return a count of datasets the user has created.

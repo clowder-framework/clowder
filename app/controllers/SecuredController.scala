@@ -3,10 +3,12 @@ package controllers
 import api.Permission.Permission
 import api.{Permission, UserRequest}
 import models.{ClowderUser, RequestResource, ResourceRef, User}
+import org.apache.commons.lang.StringEscapeUtils._
 import play.api.mvc._
-import play.api.templates.Html
 import securesocial.core.{Authenticator, SecureSocial, UserService}
 import services._
+import securesocial.core.IdentityProvider
+import securesocial.core.providers.utils.RoutesHelper
 
 import scala.concurrent.Future
 
@@ -28,6 +30,13 @@ trait SecuredController extends Controller {
       val userRequest = getUser(request)
       userRequest.user match {
         case Some(u) if needActive && !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => {
+          if (request.uri.startsWith(routes.Application.tos().url)) {
+            block(userRequest)
+          } else {
+            Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
+          }
+        }
         case _ => block(userRequest)
       }
     }
@@ -41,10 +50,12 @@ trait SecuredController extends Controller {
       val userRequest = getUser(request)
       userRequest.user match {
         case Some(u) if !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
         case Some(u) if u.superAdminMode || Permission.checkPrivateServer(userRequest.user) => block(userRequest)
         case None if Permission.checkPrivateServer(userRequest.user) => block(userRequest)
         case _ => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
-          .flashing("error" -> "You must be logged in to access this page."))
+          .flashing("error" -> "You must be logged in to access this page.")
+          .withSession(request.session + (SecureSocial.OriginalUrlKey -> request.uri)))
       }
     }
   }
@@ -55,9 +66,17 @@ trait SecuredController extends Controller {
       val userRequest = getUser(request)
       userRequest.user match {
         case Some(u) if !u.active => Future.successful(Unauthorized("Account is not activated"))
+        case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => {
+          if (request.uri.startsWith(routes.Users.acceptTermsOfServices().url)) {
+            block(userRequest)
+          } else {
+            Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
+          }
+        }
         case Some(u) => block(userRequest)
         case None => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
-          .flashing("error" -> "You must be logged in to access this page."))
+          .flashing("error" -> "You must be logged in to access this page.")
+          .withSession(request.session + (SecureSocial.OriginalUrlKey -> request.uri)))
       }
     }
   }
@@ -68,9 +87,11 @@ trait SecuredController extends Controller {
       val userRequest = getUser(request)
       userRequest.user match {
         case Some(u) if !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
         case Some(u) if u.superAdminMode || Permission.checkServerAdmin(userRequest.user) => block(userRequest)
         case _ => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
-          .flashing("error" -> "You must be logged in as an administrator to access this page."))
+          .flashing("error" -> "You must be logged in as an administrator to access this page.")
+          .withSession(request.session + (SecureSocial.OriginalUrlKey -> request.uri)))
       }
     }
   }
@@ -81,10 +102,15 @@ trait SecuredController extends Controller {
       val userRequest = getUser(request)
       userRequest.user match {
         case Some(u) if !u.active => Future.successful(Results.Redirect(routes.Error.notActivated()))
+        case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Results.Redirect(routes.Application.tos(Some(request.uri))))
         case Some(u) if u.superAdminMode || Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
         case Some(u) => notAuthorizedMessage(userRequest.user, resourceRef)
         case None if Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
-        case None => Future.successful(Results.Redirect(routes.Error.authenticationRequiredMessage("You must be logged in to perform that action.", userRequest.uri )))
+        // Anonymous user access to a private space
+        case None if permission == Permission.ViewSpace => notAuthorizedMessage(userRequest.user, resourceRef)
+        case None => Future.successful(Results.Redirect(securesocial.controllers.routes.LoginPage.login)
+          .flashing("error" -> "You must be logged in to perform that action.")
+          .withSession(request.session + (SecureSocial.OriginalUrlKey -> request.uri)))
       }
     }
   }
@@ -122,16 +148,18 @@ trait SecuredController extends Controller {
       }
 
       case Some(ResourceRef(ResourceRef.space, id)) => {
+        val spaceTitle: String = escapeJava(play.Play.application().configuration().getString("spaceTitle").trim)
         val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
         spaces.get(id) match {
-          case None => Future.successful(BadRequest(views.html.notFound("Space does not exist.")(user)))
+          case None => Future.successful(BadRequest(views.html.notFound(spaceTitle + " does not exist.")(user)))
           case Some(space) => {
+            //user has submit request
             if (user.isDefined && space.requests.contains(RequestResource(user.get.id))) {
-              Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission + "space \""
-                + space.name + "\". \nAuthorization request is pending", "", "space")))
+              Future.successful(Forbidden(views.html.spaces.publicView(space, messageNoPermission + spaceTitle + " \""
+                + space.name + "\". \nAuthorization request is pending")(user)))
             } else {
-              Future.successful(Results.Redirect(routes.Error.notAuthorized(messageNoPermission + "space \""
-                + space.name + "\"", id.toString, "space")))
+              Future.successful(Forbidden(views.html.spaces.publicView(space,messageNoPermission + spaceTitle + " \""
+                + space.name + "\"")(user)))
             }
           }
         }

@@ -1,15 +1,12 @@
 package services.mongodb
 
-import java.text.SimpleDateFormat
-import java.util.Date
+
 import javax.inject.{Inject, Singleton}
 import api.Permission
-import api.Permission.Permission
 import api.Permission.Permission
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
-import com.mongodb.util.JSON
 import com.mongodb.DBObject
 import com.novus.salat.dao.{SalatDAO, ModelCompanion}
 import models._
@@ -17,10 +14,8 @@ import org.bson.types.ObjectId
 import play.api.Logger
 import play.{Logger => log}
 import play.api.Play._
-import securesocial.core.providers.Token
 import services._
 import MongoContext.context
-import util.Direction._
 import models.Collection
 import models.Dataset
 import models.Role
@@ -37,6 +32,7 @@ class MongoDBSpaceService @Inject() (
   datasets: DatasetService,
   users: UserService,
   curations: CurationService,
+  metadatas: MetadataService,
   events: EventService) extends SpaceService {
 
   def get(id: UUID): Option[ProjectSpace] = {
@@ -123,6 +119,10 @@ class MongoDBSpaceService @Inject() (
     list(Some(date), nextPage, limit, Some(title), Set[Permission](Permission.ViewSpace), user, showAll, Some(owner))
   }
 
+  def listByStatus(status: String):List[ProjectSpace] = {
+    ProjectSpaceDAO.find(MongoDBObject("status" -> status)).toList
+  }
+
   /**
    * return count based on input
    */
@@ -153,7 +153,8 @@ class MongoDBSpaceService @Inject() (
     // - space   == show all datasets in space
     // - access  == show all datasets the user can see
     // - default == public only
-    val public = MongoDBObject("public" -> true)
+    val public = MongoDBObject("status" -> SpaceStatus.PUBLIC.toString)
+
     val filter = owner match {
       case Some(o) => {
         val author = MongoDBObject("creator" -> new ObjectId(o.id.stringify))
@@ -177,8 +178,13 @@ class MongoDBSpaceService @Inject() (
           user match {
             case Some(u) => {
               val author = $and(MongoDBObject("author.identityId.userId" -> u.identityId.userId) ++ MongoDBObject("author.identityId.providerId" -> u.identityId.providerId))
-              $or(author, public, ("_id" $in u.spaceandrole.filter(_.role.permissions.intersect(permissions.map(_.toString)).nonEmpty).map(x => new ObjectId(x.spaceId.stringify))))
-            }
+              if (permissions.contains(Permission.ViewSpace) && play.Play.application().configuration().getBoolean("enablePublic")) {
+                $or(author, public, ("_id" $in u.spaceandrole.filter(_.role.permissions.intersect(permissions.map(_.toString)).nonEmpty).map(x => new ObjectId(x.spaceId.stringify))))
+              } else {
+                $or(author, ("_id" $in u.spaceandrole.filter(_.role.permissions.intersect(permissions.map(_.toString)).nonEmpty).map(x => new ObjectId(x.spaceId.stringify))))
+
+              }
+              }
             case None => public
           }
         }
@@ -260,8 +266,9 @@ class MongoDBSpaceService @Inject() (
         for(usr <- spaceUsers){
           removeUser(usr.id, id)
         }
+        metadatas.removeDefinitionsBySpace(id)
       }
-
+      case None =>
     }
     ProjectSpaceDAO.removeById(new ObjectId(id.stringify))
   }
@@ -285,7 +292,7 @@ class MongoDBSpaceService @Inject() (
               if (!child_collection.spaces.contains(space)){
                 addCollection(childCollectionId, space)
               }
-
+              collections.syncUpRootSpaces(child_collection.id, child_collection.root_spaces)
             }
             case None => {
               log.error("No collection found for " + childCollectionId)
@@ -320,6 +327,7 @@ class MongoDBSpaceService @Inject() (
     log.debug(s"Space Service - Adding $dataset to $space")
     datasets.addToSpace(dataset, space)
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(space.stringify)), $inc("datasetCount" -> 1), upsert=false, multi=false, WriteConcern.Safe)
+
   }
 
   /**
@@ -414,6 +422,7 @@ class MongoDBSpaceService @Inject() (
                     datasetOnlyInSpace match {
                         //We only want to set this as true, if it was None, if it was false, we don't want to indicate that ths=is is the only space the dataset is in.
                       case None => datasetOnlyInSpace = Some(true)
+                      case _ =>
                     }
                   }
                 }
@@ -441,7 +450,7 @@ class MongoDBSpaceService @Inject() (
    * Implementation of the SpaceService trait.
    *
    */
-  def updateSpaceConfiguration(spaceId: UUID, name: String, description: String, timeToLive: Long, expireEnabled: Boolean) {
+  def updateSpaceConfiguration(spaceId: UUID, name: String, description: String, timeToLive: Long, expireEnabled: Boolean, access:String) {
     get(spaceId) match {
       case Some(s) if name != s.name => {
         events.updateObjectName(spaceId, name)
@@ -449,7 +458,7 @@ class MongoDBSpaceService @Inject() (
       case _ => 
     }
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
-      $set("description" -> description, "name" -> name, "resourceTimeToLive" -> timeToLive, "isTimeToLiveEnabled" -> expireEnabled),
+      $set("description" -> description, "name" -> name, "resourceTimeToLive" -> timeToLive, "isTimeToLiveEnabled" -> expireEnabled, "status" -> access),
       false, false, WriteConcern.Safe)
   }
 
@@ -613,7 +622,7 @@ class MongoDBSpaceService @Inject() (
   object ProjectSpaceDAO extends ModelCompanion[ProjectSpace, ObjectId] {
     val dao = current.plugin[MongoSalatPlugin] match {
       case None => throw new RuntimeException("No MongoSalatPlugin");
-  case Some(x) => new SalatDAO[ProjectSpace, ObjectId](collection = x.collection("spaces.projects")) {}
+      case Some(x) => new SalatDAO[ProjectSpace, ObjectId](collection = x.collection("spaces.projects")) {}
     }
   }
 
@@ -623,7 +632,7 @@ class MongoDBSpaceService @Inject() (
   object UserSpaceDAO extends ModelCompanion[UserSpace, ObjectId] {
     val dao = current.plugin[MongoSalatPlugin] match {
       case None => throw new RuntimeException("No MongoSalatPlugin");
-  case Some(x) => new SalatDAO[UserSpace, ObjectId](collection = x.collection("spaces.users")) {}
+      case Some(x) => new SalatDAO[UserSpace, ObjectId](collection = x.collection("spaces.users")) {}
     }
   } 
     

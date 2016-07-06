@@ -1,6 +1,6 @@
 # clowder server
 clowder:
-  image: ncsa/clowder:local
+  image: clowder/clowder:develop
 #  environment:
 #    CLOWDER_ADMIN: "joe@aol.com"
 #    TOOLMANAGER_URI: "http://192.168.99.100:8080"
@@ -14,27 +14,27 @@ clowder:
 
 # extractors
 audio-preview:
-  image: ncsa/clowder-extractors-audio-preview
+  image: clowder/extractors-audio-preview
   links:
     - rabbitmq
 
 image-preview:
-  image: ncsa/clowder-extractors-image-preview
+  image: clowder/extractors-image-preview
   links:
     - rabbitmq
 
 image-metadata:
-  image: ncsa/clowder-extractors-image-metadata
+  image: clowder/extractors-image-metadata
   links:
     - rabbitmq
 
 pdf-preview:
-  image: ncsa/clowder-extractors-pdf-preview
+  image: clowder/extractors-pdf-preview
   links:
     - rabbitmq
 
 video-preview:
-  image: ncsa/clowder-extractors-video-preview
+  image: clowder/extractors-video-preview
   links:
     - rabbitmq
 

@@ -15,6 +15,7 @@ import play.api.libs.json.Json
 import play.api.libs.ws.{Response, WS}
 import play.api.{Application, Logger, Plugin}
 import play.libs.Akka
+import play.api.libs.json.JsValue
 import scala.concurrent.Future
 
 
@@ -25,7 +26,7 @@ case class ExtractorMessage(
   intermediateId: UUID,
   host: String,
   key: String,
-  metadata: Map[String, String],
+  metadata: Map[String, Any],
   fileSize: String,
   datasetId: UUID,
   flags: String,
@@ -294,7 +295,14 @@ class SendingActor(channel: Channel, exchange: String, replyQueueName: String) e
         "secretKey" -> Json.toJson(secretKey)
       )
       // add extra fields
-      metadata.foreach(kv => msgMap.put(kv._1, Json.toJson(kv._2)))
+      metadata.foreach(kv =>
+        kv._2 match {
+          case x: JsValue => msgMap.put(kv._1, x)
+          case x: String => msgMap.put(kv._1, Json.toJson(x))
+          case _ => msgMap.put(kv._1, Json.toJson(kv._2.toString))
+        }
+
+      )
       val msg = Json.toJson(msgMap.toMap)
       // correlation id used for rpc call
       val corrId = java.util.UUID.randomUUID().toString() // TODO switch to models.UUID?

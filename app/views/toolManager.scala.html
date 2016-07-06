@@ -67,7 +67,7 @@
                       <ul class="list-unstyled">
                         @inst.owner match {
                           case Some(u) => {
-                            <li>Created by <a href= "@routes.Profile.viewProfile(u.email)"> @u.fullName </a></li>
+                            <li>Created by <a href= "@routes.Profile.viewProfileUUID(u.id)"> @u.fullName </a></li>
                           }
                           case None => {}
                         }
@@ -134,7 +134,7 @@
         }
       }
 
-      request.open("GET", jsRoutes.controllers.Datasets.removeInstance(toolPath, instanceID).url, true);
+      request.open("GET", jsRoutes.controllers.ToolManager.removeInstance(toolPath, instanceID).url, true);
       request.send();
     }
   </script>
