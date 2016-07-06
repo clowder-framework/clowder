@@ -78,28 +78,28 @@ class  Datasets @Inject()(
   }
 
   /**
-   * Returns list of datasets based on parameters and permissions.
-   */
+    * Returns list of datasets based on parameters and permissions.
+    */
   private def lisDatasets(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Dataset] = {
     (title, date) match {
       case (Some(t), Some(d)) => {
-        datasets.listAccess(d, true, limit, t, permission, user, superAdmin)
+        datasets.listAccess(d, true, limit, t, permission, user, superAdmin, true)
       }
       case (Some(t), None) => {
-        datasets.listAccess(limit, t, permission, user, superAdmin)
+        datasets.listAccess(limit, t, permission, user, superAdmin, true)
       }
       case (None, Some(d)) => {
-        datasets.listAccess(d, true, limit, permission, user, superAdmin)
+        datasets.listAccess(d, true, limit, permission, user, superAdmin, true)
       }
       case (None, None) => {
-        datasets.listAccess(limit, permission, user, superAdmin)
+        datasets.listAccess(limit, permission, user, superAdmin, true)
       }
     }
   }
 
   /**
-   * List all datasets outside a collection.
-   */
+    * List all datasets outside a collection.
+    */
   def listOutsideCollection(collectionId: UUID) = PrivateServerAction { implicit request =>
     collections.get(collectionId) match {
       case Some(collection) => {
@@ -196,7 +196,6 @@ class  Datasets @Inject()(
     notes = "New dataset requiring zero files based on values of fields in attached JSON. Returns dataset id as JSON object. Requires name, description, and space. Optional list of existing file ids to add.",
     responseClass = "None", httpMethod = "POST")
   def createEmptyDataset() = PermissionAction(Permission.CreateDataset)(parse.json) { implicit request =>
-
     (request.body \ "name").asOpt[String].map { name =>
       (request.body \ "access").asOpt[String].map { access =>
         val description = (request.body \ "description").asOpt[String].getOrElse("")
@@ -237,7 +236,7 @@ class  Datasets @Inject()(
           (request.body \ "collection").asOpt[List[String]] match {
             case None | Some(List("default"))=>
             case Some(collectionList) => {
-              collectionList.map { c => collections.addDataset(UUID(c), d.id) }
+              collectionList.map{c => collections.addDataset(UUID(c), d.id)}
             }
           }
           //Below call is not what is needed? That already does what we are doing in the Dataset constructor...

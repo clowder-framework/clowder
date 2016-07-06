@@ -61,10 +61,15 @@ class Datasets @Inject()(
           decodedSpaceList += Utils.decodeSpaceElements(aSpace)
         }
       }
+
+    var hasVerifiedSpace = false
     val spaceId = space match {
       case Some(s) => {
         spaceService.get(UUID(s)) match {
-          case Some(space) =>  Some(space.id.toString)
+          case Some(space) => {
+            hasVerifiedSpace = !space.isTrial
+            Some(space.id.toString)
+          }
           case None => None
         }
       }
@@ -96,9 +101,11 @@ class Datasets @Inject()(
       }
       case None => None
     }
+    val showAccess = play.Play.application().configuration().getBoolean("enablePublic") &&
+      (!play.Play.application().configuration().getBoolean("verifySpaces") || hasVerifiedSpace)
 
     Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected, collectionSpaces.toList))
+      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected, showAccess))
 
   }
 
@@ -192,7 +199,7 @@ class Datasets @Inject()(
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String]) = UserAction(needActive=false) { implicit request =>
+  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String], showPublic: Boolean) = UserAction(needActive=false) { implicit request =>
     implicit val user = request.user
 
     val nextPage = (when == "a")
@@ -228,9 +235,9 @@ class Datasets @Inject()(
           }
           case _ => {
             if (date != "") {
-              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
+              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
             } else {
-              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
+              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
             }
 
           }
@@ -246,7 +253,7 @@ class Datasets @Inject()(
         case None => {
           space match {
             case Some(s) => datasets.listSpace(first, nextPage = false, 1, s, user)
-            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
+            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
           }
         }
       }
@@ -267,7 +274,7 @@ class Datasets @Inject()(
         case None => {
           space match {
             case Some(s) => datasets.listSpace(last, nextPage=true, 1, s, user)
-            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
+            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
           }
         }
       }
@@ -463,9 +470,15 @@ class Datasets @Inject()(
               if(folder.files.length > 0) { showDownload = true}
             }
           }
+          var showAccess = false
+          if(play.Play.application().configuration().getBoolean("verifySpaces")) {
+            showAccess = !dataset.isTRIAL
+          } else {
+            showAccess = play.Play.application().configuration().getBoolean("enablePublic")
+          }
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
             decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove),fileList,
-            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload))
+            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess))
         }
         case None => {
           Logger.error("Error getting dataset" + id)
@@ -527,7 +540,7 @@ class Datasets @Inject()(
               }
               file.id -> allComments.size
             }.toMap
-l
+
             val folderHierarchy = new ListBuffer[Folder]()
             val next = dataset.files.length + dataset.folders.length > limit * (filepageUpdate+1)
             Ok(views.html.datasets.filesAndFolders(dataset, None, foldersList, folderHierarchy.reverse.toList, pageIndex, next, limitFileList.toList, fileComments, space)(request.user))

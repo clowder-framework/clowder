@@ -389,6 +389,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Duplicate all clowder instance metadata to all existing spaces
     updateMongo("add-metadata-per-space", addMetadataPerSpace)
+
+    updateMongo("add-trial-flag2",addTrialFlag2)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1236,5 +1238,19 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       val d = MongoDBObject("$set" -> MongoDBObject("status" -> DatasetStatus.PRIVATE.toString))
       collection("datasets").update(q ,d, multi=true)
       collection("spaces.projects").update(q ,s, multi=true)
+  }
+
+  private def addTrialFlag2(): Unit ={
+    val q = MongoDBObject()
+
+    val (s ,d ) = if(play.Play.application().configuration().getBoolean("verifySpaces")){
+       (MongoDBObject("$set" -> MongoDBObject("status" -> SpaceStatus.TRIAL.toString)),
+        MongoDBObject("$set" -> MongoDBObject("status" -> DatasetStatus.TRIAL.toString)) )
+    } else {
+       (MongoDBObject("$set" -> MongoDBObject("status" -> SpaceStatus.PRIVATE.toString)),
+        MongoDBObject("$set" -> MongoDBObject("status" -> DatasetStatus.DEFAULT.toString)))
+    }
+    collection("datasets").update(q ,d, multi=true)
+    collection("spaces.projects").update(q ,s, multi=true)
   }
 }
