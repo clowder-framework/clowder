@@ -103,12 +103,12 @@ class  Datasets @Inject()(
   def listOutsideCollection(collectionId: UUID) = PrivateServerAction { implicit request =>
     collections.get(collectionId) match {
       case Some(collection) => {
-        val list = for (dataset <- datasets.listAccess(0, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode)); if (!datasets.isInCollection(dataset, collection)))
+        val list = for (dataset <- datasets.listAccess(0, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), false); if (!datasets.isInCollection(dataset, collection)))
           yield dataset
         Ok(toJson(list))
       }
       case None => {
-        val list = datasets.listAccess(0, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
+        val list = datasets.listAccess(0, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), false)
         Ok(toJson(list))
       }
     }

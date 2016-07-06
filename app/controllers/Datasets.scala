@@ -105,7 +105,7 @@ class Datasets @Inject()(
       (!play.Play.application().configuration().getBoolean("verifySpaces") || hasVerifiedSpace)
 
     Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected, showAccess))
+      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected,collectionSpaces showAccess))
 
   }
 
