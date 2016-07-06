@@ -843,11 +843,14 @@
 								return { title: params.term };
 							},
 							processResults: function(data, page) {
+								//console.log(spaceId, data);
 								return {results: data.filter(function(x) {
+									// multiple dataset support, currently a file can be a memeber of one dataset only
 									var ids = $('.dataset').map(function() {
 										return $(this).attr('id');
 									});
-									return $.inArray(x.id, ids) == -1;
+									// filter out file's own dataset and datsets not from this space
+									return $.inArray(x.id, ids) == -1 && $.inArray(spaceId, x.spaces) != -1;
 								}).map(function(x) {
 									return {
 										text: x.name,
