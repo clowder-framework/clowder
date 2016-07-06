@@ -1,4 +1,4 @@
-@(spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection],collectionSpaces : List[String] showAccess: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection],collectionSpaces : List[String], showAccess: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import models.DatasetStatus
 @main("Create Dataset") {
