@@ -605,7 +605,10 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
   }
 
   override def findByEmailAndProvider(email: String, providerId: String): Option[User] = {
-    UserDAO.dao.findOne(MongoDBObject("email" -> email.toLowerCase, "identityId.providerId" -> providerId))
+    if (providerId == "userpass")
+      UserDAO.dao.findOne(MongoDBObject("email" -> email.toLowerCase, "identityId.providerId" -> providerId))
+    else
+      UserDAO.dao.findOne(MongoDBObject("email" -> email, "identityId.providerId" -> providerId))
   }
 
   override def save(user: Identity): User = {
@@ -615,11 +618,14 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
 
     // replace _typeHint with the right model type so it will get correctly deserialized
     userobj.put("_typeHint", "models.ClowderUser")
-    // replace email with forced lowercase
-    userobj.put("email", user.email.getOrElse("").toLowerCase)
-    val identobj = MongoDBObject("userId" -> user.identityId.userId.toLowerCase(),
-      "providerId" -> user.identityId.providerId)
-    userobj.put("identityId", identobj)
+    // replace email with forced lowercase for userpass provider
+    if user.identityId.providerId == "userpass" {
+      userobj.put("email", user.email.map(_.toLowerCase))
+      val identobj = MongoDBObject("userId" -> user.identityId.userId.toLowerCase(),
+        "providerId" -> user.identityId.providerId)
+      userobj.put("identityId", identobj)
+    }
+
 
     // query to find the user based on identityId
     val query = MongoDBObject("identityId.userId" -> user.identityId.userId, "identityId.providerId" -> user.identityId.providerId)
