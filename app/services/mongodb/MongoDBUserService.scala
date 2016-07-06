@@ -619,13 +619,12 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
     // replace _typeHint with the right model type so it will get correctly deserialized
     userobj.put("_typeHint", "models.ClowderUser")
     // replace email with forced lowercase for userpass provider
-    if user.identityId.providerId == "userpass" {
+    if (user.identityId.providerId == "userpass") {
       userobj.put("email", user.email.map(_.toLowerCase))
       val identobj = MongoDBObject("userId" -> user.identityId.userId.toLowerCase(),
         "providerId" -> user.identityId.providerId)
       userobj.put("identityId", identobj)
     }
-
 
     // query to find the user based on identityId
     val query = MongoDBObject("identityId.userId" -> user.identityId.userId, "identityId.providerId" -> user.identityId.providerId)

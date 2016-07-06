@@ -389,6 +389,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("add-metadata-per-space", addMetadataPerSpace)
 
     updateMongo("add-trial-flag2",addTrialFlag2)
+
+    updateMongo("user-emails-to-lowercase", updateMongoEmailCase)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1217,5 +1219,36 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
     collection("datasets").update(q ,d, multi=true)
     collection("spaces.projects").update(q ,s, multi=true)
+  }
+
+  private def updateMongoEmailCase(): Unit ={
+    val userpasses = collection("social.users").find(MongoDBObject("identityId.providerId" -> "userpass"))
+    userpasses.foreach{ user =>
+      val userId = user.getAsOrElse[ObjectId]("_id", new ObjectId())
+      val email = user.getAsOrElse[String]("email", "")
+      val username = user.getAsOrElse[DBObject]("identityId", new MongoDBObject()).getAsOrElse[String]("userId", "")
+
+      try {
+        // Find if user exists with lowercase email already
+        val conflict = collection("social.users").find(MongoDBObject(
+          "_id" -> MongoDBObject("$ne" -> userId),
+          "identityId" -> MongoDBObject("userId" -> username.toLowerCase, "providerId" -> "userpass")
+        ))
+
+        if (conflict.count == 0) {
+          collection("social.users").update(MongoDBObject("_id" -> userId),
+            MongoDBObject("$set" -> MongoDBObject(
+              "email" -> email.toLowerCase,
+              "identityId" -> MongoDBObject("userId" -> username.toLowerCase, "providerId" -> "userpass")
+            )), upsert=false, multi=true)
+        } else {
+          // If there's already an account with lowercase email, deactivate this account
+          collection("social.users").update(MongoDBObject("_id" -> userId),
+            MongoDBObject("$set" -> MongoDBObject("active" -> false)), upsert=false, multi=true)
+        }
+      } catch {
+        case e: BSONException => Logger.error("Unable to update email for user with id: " + user)
+      }
+    }
   }
 }
