@@ -390,6 +390,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     updateMongo("add-trial-flag2",addTrialFlag2)
 
+    // Make sure all email addresses of userpassword are lowercase
     updateMongo("user-emails-to-lowercase", updateMongoEmailCase)
   }
 
