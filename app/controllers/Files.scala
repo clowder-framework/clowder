@@ -12,6 +12,7 @@ import com.mongodb.DBObject
 import com.wordnik.swagger.annotations.ApiOperation
 import fileutils.FilesUtils
 import models._
+import org.apache.commons.lang.StringEscapeUtils._
 import play.api.Logger
 import play.api.Play.{current, configuration}
 import play.api.data.Form
@@ -50,6 +51,7 @@ class Files @Inject() (
   thumbnails: ThumbnailService,
   metadata: MetadataService,
   contextLDService: ContextLDService,
+  spaces: SpaceService,
   folders: FolderService) extends SecuredController {
 
   /**
@@ -59,8 +61,8 @@ class Files @Inject() (
     mapping(
       "userid" -> nonEmptyText
     )(FileMD.apply)(FileMD.unapply)
-  )  
-  
+  )
+  val spaceTitle: String = escapeJava(play.Play.application().configuration().getString("spaceTitle").trim)
   /**
    * File info.
    */
@@ -89,7 +91,7 @@ class Files @Inject() (
               if (!p.collection)
               if (!file.showPreviews.equals("None")) && (p.contentType.contains(file.contentType))
             ) yield {
-              if (file.licenseData.isDownloadAllowed(user)) {
+              if (file.licenseData.isDownloadAllowed(user) || Permission.checkPermission(user, Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
                 (file.id.toString, p.id, p.path, p.main, routes.Files.file(file.id) + "/blob", file.contentType, file.length, "")
               }
               else {
@@ -136,7 +138,34 @@ class Files @Inject() (
 
         //Decode the datasets so that their free text will display correctly in the view
         val datasetsContainingFile = datasets.findByFileId(file.id).sortBy(_.name)
-        val access =  (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasets.findByFileId(file.id) ).head.status
+        val allDatasets =  (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasetsContainingFile)
+
+        val access = if(!allDatasets.head.isDefault) {
+          val status = allDatasets.head.status
+          status(0).toUpper + status.substring(1).toLowerCase()
+        } else {
+          var isInPublicSpace = false
+          allDatasets.map{ ds =>
+            ds.spaces.map{ s=>
+              spaces.get(s) match {
+                case Some(space) => {
+                  if(space.isPublic) {
+                    isInPublicSpace = true
+                  }
+                }
+                case None => {}
+              }
+            }
+
+          }
+          if(isInPublicSpace) {
+            "Public (" + spaceTitle + " Default)"
+          } else {
+            "Private (" + spaceTitle + " Default)"
+          }
+        }
+
+
         val decodedDatasetsContaining = ListBuffer.empty[models.Dataset]
 
         for (aDataset <- datasetsContainingFile) {
@@ -144,9 +173,9 @@ class Files @Inject() (
         	decodedDatasetsContaining += dDataset
         }
         val foldersContainingFile = folders.findByFileId(file.id).sortBy(_.name)
-          val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
+        val isRDFExportEnabled = current.plugin[RDFExportService].isDefined
 
-          val extractionsByFile = extractions.findByFileId(id)
+        val extractionsByFile = extractions.findByFileId(id)
           
           //call Polyglot to get all possible output formats for this file's content type 
           
@@ -628,7 +657,7 @@ def uploadExtract() =
           //Check the license type before doing anything. 
           files.get(id) match {
               case Some(file) => {                                                                                                             
-                  if (file.licenseData.isDownloadAllowed(request.user)) {
+                  if (file.licenseData.isDownloadAllowed(request.user) || Permission.checkPermission(request.user, Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
                       files.getBytes(id) match {
                       case Some((inputStream, filename, contentType, contentLength)) => {
                           request.headers.get(RANGE) match {
