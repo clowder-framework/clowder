@@ -1,6 +1,10 @@
 package services
 
-import play.Logger
+import java.text.SimpleDateFormat
+import java.util.Date
+
+import models.UserTermsOfServices
+import org.apache.commons.io.IOUtils
 import util.ResourceLister
 
 /**
@@ -8,8 +12,6 @@ import util.ResourceLister
  * and can be used to store application configuration options. See also AppConfiguration
  * for specific configuration options.
  *
- * @author Luigi Marini
- * @author Rob Kooper
  */
 trait AppConfigurationService {
   /** Adds an additional value to the property with the specified key. */
@@ -31,7 +33,7 @@ trait AppConfigurationService {
    * Gets the configuration property with the specified key. If the key is not found
    * it wil return the default value (empty string if not specified).
    */
-  def getProperty[objectType <: AnyRef](key: String, default:objectType): objectType = {
+  def getProperty[objectType <: AnyRef](key: String, default: objectType): objectType = {
     getProperty[objectType](key) match {
       case Some(x) => x
       case None => default
@@ -60,10 +62,20 @@ object AppConfiguration {
   // ----------------------------------------------------------------------
 
   /** Set the default theme */
-  def setTheme(theme: String) = appConfig.setProperty("theme", theme)
+  def setTheme(theme: String) = {
+    if (themes.contains(theme))
+      appConfig.setProperty("theme", theme)
+  }
 
   /** Get the default theme */
-  def getTheme: String = appConfig.getProperty[String]("theme", "simplex.min.css")
+  def getTheme: String = {
+    val theme = appConfig.getProperty[String]("theme", "simplex.min.css")
+    if (themes.contains(theme)) {
+      theme
+    } else {
+      "simplex.min.css"
+    }
+  }
 
   /** Get list of available themes */
   def themes: List[String] = {
@@ -90,46 +102,109 @@ object AppConfiguration {
 
   // ----------------------------------------------------------------------
 
-  /**
-   * Add the given admin to list of admins. This list is primarily used when a new user signs
-   * up (requires registerThroughAdmins to be set to true in application.conf) or when the
-   * plugin is enabled to send emails on creating of new datasets, collections and/or files.
-   */
-  def addAdmin(admin: String) = appConfig.addPropertyValue("admins", admin)
+  /** Set the google analytics code */
+  def setGoogleAnalytics(gacode: String) = appConfig.setProperty("google.analytics", gacode)
 
-  /**
-   * Removes the given admin to list of admins. This list is primarily used when a new user signs
-   * up (requires registerThroughAdmins to be set to true in application.conf) or when the
-   * plugin is enabled to send emails on creating of new datasets, collections and/or files.
-   */
-  def removeAdmin(admin: String) = appConfig.removePropertyValue("admins", admin)
+  /** Get the welcome message */
+  def getGoogleAnalytics: String = appConfig.getProperty("google.analytics", "")
 
-  /**
-   * Checks if the given admin is on the list of admins. This list is primarily used when a
-   * new user signs up (requires registerThroughAdmins to be set to true in application.conf)
-   * or when the plugin is enabled to send emails on creating of new datasets, collections
-   * and/or files.
-   */
-  def checkAdmin(admin: String) = appConfig.hasPropertyValue("admins", admin)
+  // ----------------------------------------------------------------------
 
-  /**
-   * Get list of all admins. This list is primarily used when a new user signs up (requires
-   * registerThroughAdmins to be set to true in application.conf) or when the plugin is enabled
-   * to send emails on creating of new datasets, collections and/or files.
-   */
-  def getAdmins: List[String] = appConfig.getProperty[List[String]]("admins", List.empty[String])
+  /** Set the Sensors title */
+  def setSensorsTitle(sensorsTitle: String) = appConfig.setProperty("sensors.title", sensorsTitle)
 
-  /**
-   * Sets default admins as specified in application.conf. This list is primarily used when a new
-   * user signs up (requires registerThroughAdmins to be set to true in application.conf) or when
-   * the plugin is enabled to send emails on creating of new datasets, collections and/or files.
-   */
-  def setDefaultAdmins() = {
-    if (!appConfig.getProperty[List[String]]("admins").isDefined) {
-      val x = play.Play.application().configuration().getString("initialAdmins")
-      if (x != "") {
-        appConfig.setProperty("admins", x.trim.split("\\s*,\\s*").toList)
+  /** Get the welcome message */
+  def getSensorsTitle: String = appConfig.getProperty("sensors.title", "Sensors")
+
+  // ----------------------------------------------------------------------
+
+  /** Set the Sensor title */
+  def setSensorTitle(sensorTitle: String) = appConfig.setProperty("sensor.title", sensorTitle)
+
+  /** Get the welcome message */
+  def getSensorTitle: String = appConfig.getProperty("sensor.title", "Sensor")
+
+  // ----------------------------------------------------------------------
+  /** Set the Parameters title */
+  def setParametersTitle(parametersTitle: String) = appConfig.setProperty("parameters.title", parametersTitle)
+
+  /** Get the welcome message */
+  def getParametersTitle: String = appConfig.getProperty("parameters.title", "Parameters")
+
+  // ----------------------------------------------------------------------
+
+  /** Set the Parameter title */
+  def setParameterTitle(parameterTitle: String) = appConfig.setProperty("parameter.title", parameterTitle)
+
+  /** Get the welcome message */
+  def getParameterTitle: String = appConfig.getProperty("parameter.title", "Parameter")
+
+  // ----------------------------------------------------------------------
+  // Terms of Services
+  // ----------------------------------------------------------------------
+  lazy val defaultToSDate = new SimpleDateFormat("yyyy-MM-dd").parse("2016-06-06")
+
+  /** Set the Terms of Services */
+  def setTermsOfServicesText(tos: String) = {
+    if (tos == "") {
+      setTermsOfServicesVersionDate(defaultToSDate)
+    } else {
+      setTermsOfServicesVersionDate(new Date())
+    }
+    appConfig.setProperty("tos.text", tos)
+  }
+
+  def setDefaultTermsOfServicesVersion() = {
+    if (isDefaultTermsOfServices && getTermsOfServicesVersionDate != defaultToSDate) {
+      setTermsOfServicesVersionDate(defaultToSDate)
+    }
+  }
+
+  /** Get the Terms of Services */
+  def getTermsOfServicesTextRaw: String = appConfig.getProperty("tos.text", "")
+
+  def getTermsOfServicesText: String = {
+    val tos = appConfig.getProperty("tos.text", "") match {
+      case "" => {
+        play.api.Play.current.resourceAsStream("/public/tos.txt") match {
+          case Some(inp) => {
+            IOUtils.toString(inp, "UTF-8")
+          }
+          case None => "missing Terms of Services"
+        }
       }
+      case x:String => x
+      case _ => "missing Terms of Services"
+    }
+    tos.replace("@@NAME", getDisplayName)
+  }
+
+  def isTermOfServicesHtml: Boolean = {
+    appConfig.getProperty("tos.html") == Some(true)
+  }
+
+  def setTermOfServicesHtml(html: Boolean) = appConfig.setProperty("tos.html", Boolean.box(html))
+
+  def isDefaultTermsOfServices: Boolean = appConfig.getProperty("tos.text", "") == ""
+
+  def acceptedTermsOfServices(tos: Option[UserTermsOfServices]) = {
+    tos.exists(t => t.accepted && t.acceptedDate.after(getTermsOfServicesVersionDate))
+  }
+
+  /** Set the version of the Terms of Services and returns the version */
+  def setTermsOfServicesVersionDate(date: Date) = {
+    DI.injector.getInstance(classOf[UserService]).newTermsOfServices()
+    appConfig.setProperty("tos.date", date)
+  }
+
+  /** get the version of the Terms of Services */
+  def getTermsOfServicesVersionDate: Date = appConfig.getProperty("tos.date", new Date())
+
+  def getTermsOfServicesVersionString: String = {
+    if (isDefaultTermsOfServices) {
+      new SimpleDateFormat("yyyy-MM-dd").format(appConfig.getProperty("tos.date", new Date()))
+    } else {
+      appConfig.getProperty("tos.date", new Date()).toString
     }
   }
 }

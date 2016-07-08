@@ -1,0 +1,72 @@
+@(parent: models.Collection, collection: models.Collection, redirect: Call)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@import api.Permission
+<div class="panel panel-default" id="@collection.id-listitem">
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-xs-2">
+                @if(!collection.thumbnail_id.isEmpty){
+                    <img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)">
+                } else {
+                    <a href="@routes.Collections.collection(collection.id)">
+                        <span class="bigicon glyphicon glyphicon-th-large"></span>
+                    </a>
+                }
+            </div>
+            <div class="col-xs-10">
+                <div class="row">
+                    <div class="col-xs-12">
+                        <h3><a href="@(routes.Collections.collection(collection.id))">@Html(collection.name)</a></h3>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-8">
+                        <div class="row">
+                            <div class="col-xs-12">@Html(collection.description)</div>
+                        </div>
+                        <div class="row top-padding">
+                            <div class="col-xs-12">
+                                Created by <a href= "@routes.Profile.viewProfileUUID(collection.author.id)"> @collection.author.fullName </a>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12">Created on @collection.created.format("MMM dd, yyyy")</div>
+                        </div>
+                    </div>
+                    <div class="col-xs-4">
+                        @if(user.isDefined) {
+                            @if(!collection.followers.contains(user.get.id)) {
+                                <div>
+                                    <a id="followButton"
+                                        class="btn btn-link"
+                                        objectId="@collection.id"
+                                        objectName="@collection.name"
+                                        objectType="collection">
+                                            <span class='glyphicon glyphicon-star'></span> Follow</a>
+                                </div>
+                            } else {
+                                <div>
+                                    <a id="followButton"
+                                        class="btn btn-link"
+                                        objectId="@collection.id"
+                                        objectName="@collection.name"
+                                        objectType="collection">
+                                            <span class='glyphicon glyphicon-star-empty'></span> Unfollow</a>
+                                </div>
+                            }
+                            <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                            @if( user.get.id.equals(collection.author.id) || Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
+                                <button onclick="confirmRemoveResourceFromResource('collection','collection','@(parent.id)','collection','@(collection.id)','@(collection.name)',true,'@(redirect)')"
+                                class="btn btn-link" title="Remove the child collection from the collection @parent.name">
+                                    <span class="glyphicon glyphicon-remove"></span> Remove</button>
+                            } else {
+                                <div class="inline" title="No permission to delete the child collection">
+                                    <button class="btn btn-link btn-sm disabled"><span class="glyphicon glyphicon-remove"></span> Remove</button>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

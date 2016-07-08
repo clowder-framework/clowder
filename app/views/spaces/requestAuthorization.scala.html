@@ -1,0 +1,8 @@
+@(id: UUID)(implicit user: Option[models.User])
+
+    @*icon is not added and have tried to use button but failed *@
+    <form action="@(routes.Spaces.addRequest(id))" method="GET">
+       <input type="submit" value="Request access" class="btn btn-default btn-margins accordion-toggle collapsed"/>
+    </form>
+
+

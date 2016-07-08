@@ -327,22 +327,31 @@ def extract(host, port, key, file, wait):
 	data["fileurl"] = file
 
 	if key:
-		file_id = requests.post('http://' + host + ':' + port + '/api/extractions/upload_url?key=' + key, headers={'Content-Type': 'application/json'}, data=json.dumps(data)).json()['id']
+                r = requests.post('http://' + host + ':' + str(port) + '/api/extractions/upload_url?key=' + key, headers={'Content-Type': 'application/json'}, data=json.dumps(data))
+		if r.status_code != 200:
+			print("ERROR: " + r.text)
+			return ""
+		else:
+			file_id = r.json()['id']
 	else:
 		file_id = requests.post('http://' + host + ':' + port + '/api/extractions/upload_url?key=' + key, auth=(username, password), headers={'Content-Type': 'application/json'}, data=json.dumps(data)).json()['id']
 
 	#Poll until output is ready (optional)
 	while wait > 0:
-		status = requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/status').json()
+		status = requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/status?key=' + key).json()
 		if status['Status'] == 'Done': break
 		time.sleep(1)
 		wait -= 1
 
 	#Display extracted content (TODO: needs to be one endpoint!!!)
-	metadata = requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/metadata').json()
-	metadata["technicalmetadata"] = requests.get('http://' + host + ':' + port + '/api/files/' + file_id + '/technicalmetadatajson').json()
+	metadata = requests.get('http://' + host + ':' + port + '/api/extractions/' + file_id + '/metadata?key=' + key).json()
+	metadata["technicalmetadata"] = requests.get('http://' + host + ':' + port + '/api/files/' + file_id + '/technicalmetadatajson?key=' + key).json()
+	metadata["metadata.jsonld"] = requests.get('http://' + host + ':' + port + '/api/files/' + file_id + '/metadata.jsonld?key=' + key).json()
 	metadata = json.dumps(metadata)
 
+	#Delete test files
+	requests.delete('http://' + host + ':' + port + '/api/files/' + file_id +'?key='+ key)
+    
 	return metadata
 
 def timeToString(t):

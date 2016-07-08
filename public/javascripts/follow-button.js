@@ -8,12 +8,11 @@ function unfollowCallback() {
     var $followerSize = $('#followerSize');
     var followerSize = parseInt($followerSize.text());
     $followerSize.text(followerSize - 1);
-    location.reload(true);
 }
 
-$(document ).ready(function() {
+
+$(document).ready(function() {
 	var followButtonList = $("[id=followButton]");
-	
 	followButtonList.click(function() {
 		var index = followButtonList.index(this);
 		var followButton = followButtonList.eq(index);
@@ -27,28 +26,32 @@ $(document ).ready(function() {
     	        type: "POST"
     	      })
     	        .done(function(data) {
-    	          followButton.text("Unfollow");
-    	          followButton.removeClass('btn-success');
-    	          followButton.addClass('btn-danger');
+    	          followButton.html("<span class='glyphicon glyphicon-star-empty'></span> Unfollow");
+    	          followButton.removeClass('btn-link');
+    	          followButton.addClass('btn-link');
     	          followCallback();
     	        })
     	        .fail(function(data) {
-    	          console.log(data);
-    	          console.log("Failed to follow");
+    	            console.log(data);
+					notify("Failed to follow.", "error");
     	        });
     	    } else {
     	      jsRoutes.api.Users.unfollow(jsObjectId).ajax({
     	        type: "POST"
     	      })
     	        .done(function(data) {
-    	          followButton.text("Follow");
-    	          followButton.removeClass('btn-danger');
-    	          followButton.addClass('btn-success');
+    	          followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
+    	          followButton.removeClass('btn-link');
+    	          followButton.addClass('btn-link');
+				  if( typeof removeIndicator !== 'undefined' && removeIndicator) {
+					  $('#'+followButton.attr('objectid')+'-tile').remove();
+					  $('#'+followButton.attr('objectid')+'-listitem').remove();
+				  }
     	          unfollowCallback();
     	        })
     	        .fail(function(data) {
-    	          console.log(data);
-    	          console.log("Failed to unfollow");
+    	            console.log(data);
+					notify("Failed to unfollow.", "error");
     	        });
     	    }
 	}
@@ -58,29 +61,34 @@ $(document ).ready(function() {
     	        type: "POST"
     	      })
     	        .done(function(data) {
-    	          followButton.text("Unfollow");
-    	          followButton.removeClass('btn-success');
-    	          followButton.addClass('btn-danger');
+    	          followButton.html("<span class='glyphicon glyphicon-star-empty'></span> Unfollow");
+    	          followButton.removeClass('btn-link');
+    	          followButton.addClass('btn-link');
     	          followCallback();
     	        })
     	        .fail(function(data) {
-    	          console.log(data);
-    	          console.log("Failed to follow");
+    	            console.log(data);
+					notify("Failed to follow.", "error");
     	        });
     	    } else {
     	      jsRoutes.api.Files.unfollow(jsObjectId).ajax({
     	        type: "POST"
     	      })
     	        .done(function(data) {
-    	          followButton.text("Follow");
-    	          followButton.removeClass('btn-danger');
-    	          followButton.addClass('btn-success');
+    	          followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
+    	          followButton.removeClass('btn-link');
+    	          followButton.addClass('btn-link');
+				  if(typeof removeIndicator !== 'undefined' && removeIndicator) {
+					  $('#'+followButton.attr('objectid')+'-tile').remove();
+					  $('#'+followButton.attr('objectid')+'-listitem').remove();
+					  activate();
+				  }
     	          unfollowCallback();
     	        })
     	        .fail(function(data) {
-    	          console.log(data);
-    	          console.log("Failed to unfollow");
-    	        });
+					console.log(data);
+					notify("Failed to unfollow.", "error");
+				});
     	    }
     } else if(jsObjectType === "dataset") {
     	if (followButton.text( ).trim() === "Follow") {
@@ -88,29 +96,34 @@ $(document ).ready(function() {
     	        type: "POST"
     	      })
     	        .done(function(data) {
-    	          followButton.text("Unfollow");
-    	          followButton.removeClass('btn-success');
-    	          followButton.addClass('btn-danger');
+    	          followButton.html("<span class='glyphicon glyphicon-star-empty'></span> Unfollow");
+    	          followButton.removeClass('btn-link');
+    	          followButton.addClass('btn-link');
     	          followCallback();
     	        })
     	        .fail(function(data) {
-    	          console.log(data);
-    	          console.log("Failed to follow");
+    	            console.log(data);
+					notify("Failed to follow.", "error");
     	        });
     	    } else {
     	      jsRoutes.api.Datasets.unfollow(jsObjectId).ajax({
     	        type: "POST"
     	      })
     	        .done(function(data) {
-    	          followButton.text("Follow");
-    	          followButton.removeClass('btn-danger');
-    	          followButton.addClass('btn-success');
+    	          followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
+    	          followButton.removeClass('btn-link');
+    	          followButton.addClass('btn-link');
+				  if(typeof removeIndicator !== 'undefined' && removeIndicator) {
+					  $('#'+followButton.attr('objectid')+'-tile').remove();
+					  $('#'+followButton.attr('objectid')+'-listitem').remove();
+					  activate();
+				  }
     	          unfollowCallback();
     	        })
     	        .fail(function(data) {
-    	          console.log(data);
-    	          console.log("Failed to unfollow");
-    	        });
+    	            console.log(data);
+					notify("Failed to unfollow.", "error");
+				});
     	    }
     } else if(jsObjectType === "collection" ) {
     	if (followButton.text( ).trim() === "Follow") {
@@ -118,30 +131,70 @@ $(document ).ready(function() {
     	        type: "POST"
     	      })
     	        .done(function(data) {
-    	          followButton.text("Unfollow");
-    	          followButton.removeClass('btn-success');
-    	          followButton.addClass('btn-danger');
+    	          followButton.html("<span class='glyphicon glyphicon-star-empty'></span> Unfollow");
+    	          followButton.removeClass('btn-link');
+    	          followButton.addClass('btn-link');
     	          followCallback();
     	        })
     	        .fail(function(data) {
-    	          console.log(data);
-    	          console.log("Failed to follow");
+    	            console.log(data);
+					notify("Failed to follow.", "error");
     	        });
     	    } else {
     	      jsRoutes.api.Collections.unfollow(jsObjectId).ajax({
     	        type: "POST"
     	      })
     	        .done(function(data) {
-    	          followButton.text("Follow");
-    	          followButton.removeClass('btn-danger');
-    	          followButton.addClass('btn-success');
+    	          followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
+    	          followButton.removeClass('btn-link');
+    	          followButton.addClass('btn-link');
+				  if(typeof removeIndicator !== 'undefined' && removeIndicator) {
+					  $('#'+followButton.attr('objectid')+'-tile').remove();
+					  $('#'+followButton.attr('objectid')+'-listitem').remove();
+					  activate();
+				  }
     	          unfollowCallback();
     	        })
     	        .fail(function(data) {
-    	          console.log(data);
-    	          console.log("Failed to unfollow");
-    	        });
+    	            console.log(data);
+					notify("Failed to unfollow.", "error");
+				});
     	    }
-    	}
+	} else if(jsObjectType === "space" ) {
+		if (followButton.text( ).trim() === "Follow") {
+			jsRoutes.api.Spaces.follow(jsObjectId).ajax({
+				type: "POST"
+			})
+				.done(function(data) {
+					followButton.html("<span class='glyphicon glyphicon-star-empty'></span> Unfollow");
+					followButton.removeClass('btn-link');
+					followButton.addClass('btn-link');
+					followCallback();
+				})
+				.fail(function(data) {
+					console.log(data);
+					notify("Failed to follow.", "error");
+				});
+		} else {
+			jsRoutes.api.Spaces.unfollow(jsObjectId).ajax({
+				type: "POST"
+			})
+				.done(function(data) {
+					followButton.html("<span class='glyphicon glyphicon-star'></span> Follow");
+					followButton.removeClass('btn-link');
+					followButton.addClass('btn-link');
+					if(typeof removeIndicator !== 'undefined' && removeIndicator) {
+						$('#'+followButton.attr('objectid')+'-tile').remove();
+						$('#'+followButton.attr('objectid')+'-listitem').remove();
+						activate();
+					}
+					unfollowCallback();
+				})
+				.fail(function(data) {
+					console.log(data);
+					notify("Failed to unfollow.", "error");
+				});
+		}
+	}
   });
 });

@@ -1,0 +1,98 @@
+@(file: File, comments: Map[UUID, Int], redirect: Call, dataset: Option[String], space: Option[String], folder: Option[String], showMove: Boolean)(implicit user: Option[models.User])
+@import api.Permission
+@import _root_.util.FileUtils
+<div class="panel panel-default" id="@file.id-listitem">
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-md-2 col-sm-2 col-lg-2">
+                @if(!file.thumbnail_id.isEmpty){
+                    <a href="@(routes.Files.file(file.id, dataset, space, folder))">
+                        <img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(file.filename)">
+                    </a>
+                } else {
+                    <a href="@(routes.Files.file(file.id, dataset, space, folder))">
+                        <span class="bigicon glyphicon glyphicon-file"></span>
+                    </a>
+                }
+            </div>
+
+            <div class="col-md-10 col-sm-10 col-lg-10">
+                <h3><a href="@(routes.Files.file(file.id, dataset, space, folder))">@file.filename</a></h3>
+                <div class="row">
+                    <div class="col-md-6 col-lg-6 col-sm-6">
+                        <ul class="list-unstyled">
+                            <li>@(if(file.contentType != null) file.contentType else "N/A")</li>
+                            <li>@file.uploadDate.format("MMM dd, yyyy")</li>
+                            <li>@FileUtils.humanReadableByteCount(file.length)</li>
+                            <li>
+                                <span class="glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
+                                <span class="glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
+                                <span class="glyphicon glyphicon-comment" title="@(comments.get(file.id)) comments"></span> @(comments.get(file.id))
+                                @if(user.isDefined) {
+                                        <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
+                                    @if(user.get.id.equals(file.author.id) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
+                                        <button onclick="
+                                                @folder match {
+                                                    case None => {confirmDeleteResource('file','file','@(file.id)','@(file.filename.replace("'","&#39;"))',false, '@redirect')}
+                                                    case Some(s) => {confirmDeleteResource('file','file','@(file.id)','@(file.filename.replace("'","&#39;"))',false, '@redirect#@s')}
+                                                }
+                                                " class="btn btn-link" title="Delete the file">
+                                            <span class="glyphicon glyphicon-trash"></span></button>
+                                    } else {
+                                        <div class="inline" title="No permission to delete the file">
+                                            <button disabled class="btn btn-link"><span class="glyphicon glyphicon-trash"></span></button>
+                                        </div>
+                                    }
+                                }
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6 col-lg-6 col-sm-6">
+                        <ul class="list-unstyled">
+                            @if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
+                                <li>
+                                    <button id="downloadButton" onclick="window.open(jsRoutes.api.Files.download('@file.id').url, '_blank');" class="btn btn-link" title="Download and enjoy this file.">
+                                        <span class="glyphicon glyphicon-save"></span> Download
+                                    </button>
+                                </li>
+                            } else {
+                                <li>
+                                    <div class="inline" title="No permission to download the file">
+                                        <button disabled class="btn btn-link"><span class="glyphicon glyphicon-save"></span> Download</button>
+                                    </div>
+                                </li>
+                            }
+
+                            @user match {
+                                case Some(viewer) => {
+                                    <li>
+                                        <a
+                                        id="followButton"
+                                        type="button"
+                                        class="btn btn-link"
+                                        autocomplete="off"
+                                        objectType="file"
+                                        objectId="@file.id.stringify"
+                                        >
+                                        @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
+                                            <span class='glyphicon glyphicon-star-empty'></span>Unfollow
+                                        } else {
+                                            <span class='glyphicon glyphicon-star'></span>Follow
+                                        }
+                                        </a>
+                                    </li>
+                                    @if(showMove && (user.get.id.equals(file.author.id) || Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id)))) {
+                                        <a class="btn btn-link" onclick="showMoveModal('@file.id')"> <span class='glyphicon glyphicon-move'></span> Move </a>
+                                    }
+                                }
+                                case None => {}
+                            }
+
+
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

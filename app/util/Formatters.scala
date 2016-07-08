@@ -1,9 +1,10 @@
 package util
 
+import java.text.SimpleDateFormat
 import java.util.Date
 
 /**
- * Created by lmarini on 4/21/14.
+ * Formatters
  */
 object Formatters {
 
@@ -39,4 +40,13 @@ object Formatters {
     }
   }
 
+  def iso8601(date: Date): String = {
+    val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX")
+    formatter.format(date)
+  }
+
+  def iso8601(date: String): Date = {
+    val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX")
+    formatter.parse(date)
+  }
 }

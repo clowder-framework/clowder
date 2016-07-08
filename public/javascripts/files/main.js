@@ -4,7 +4,7 @@
 function detachFile(fileId, fileName,event){
     var request = $.ajax({
         type: 'POST',
-        url: window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '')+"/api/datasets/"+"@dataset.id"+"/filesRemove/"+fileId+"/True"
+        url: jsRoutes.api.Datasets.detachFile(@dataset.id, fileId, "True").url
     });
     request.done(function (response, textStatus, jqXHR){
         console.log("Response " + response);

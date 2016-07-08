@@ -1,22 +1,27 @@
 package controllers
 
-import api.{Permission, WithPermission}
-import play.api.Routes
-import javax.inject.{Singleton, Inject}
+import javax.inject.{Inject, Singleton}
+
+import api.Permission
+import api.Permission._
+import play.api.{Logger, Routes}
 import play.api.mvc.Action
 import services._
-import models.{User, Event}
+import models.{UUID, User, Event}
 import play.api.Logger
+
+import scala.collection.mutable.ListBuffer
 
 /**
  * Main application controller.
- * 
- * @author Luigi Marini
  */
 @Singleton
-class Application @Inject() (files: FileService, collections: CollectionService, datasets: DatasetService, events: EventService) extends SecuredController {
+class Application @Inject() (files: FileService, collections: CollectionService, datasets: DatasetService,
+                             spaces: SpaceService, events: EventService, comments: CommentService,
+                             sections: SectionService, users: UserService) extends SecuredController {
   /**
    * Redirect any url's that have a trailing /
+   *
    * @param path the path minus the slash
    * @return moved permanently to path without /
    */
@@ -27,39 +32,168 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   /**
    * Main page.
    */
-  def index = SecuredAction(authorization = WithPermission(Permission.Public)) { request =>
+  def index = UserAction(needActive = false) { implicit request =>
   	implicit val user = request.user
   	val latestFiles = files.latest(5)
     val datasetsCount = datasets.count()
+    val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.user.fold(false)(_.superAdminMode))
     val filesCount = files.count()
-    val collectionCount = collections.count()
-    request.user match {
-      case Some(loggedInUser) => {
-        var newsfeedEvents = events.getEvents(
-          loggedInUser.followedEntities, Some(20)
-        ).sorted(Ordering.by((_: Event).created).reverse)
-        Ok(views.html.index(latestFiles, datasetsCount, filesCount, collectionCount,
-          AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, newsfeedEvents))
+    val filesBytes = files.bytes()
+    val collectionsCount = collections.count()
+    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.user.fold(false)(_.superAdminMode))
+    val spacesCount = spaces.count()
+    val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.user.fold(false)(_.superAdminMode))
+    val usersCount = users.count()
+    //newsfeedEvents is the combination of followedEntities and requestevents, then take the most recent 20 of them.
+    var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(20)))
+    newsfeedEvents =  newsfeedEvents ::: events.getRequestEvents(user, Some(20))
+    user match {
+      case Some(clowderUser) if !clowderUser.active => {
+        Redirect(routes.Error.notActivated())
       }
-      case None => {
-        Ok(views.html.index(latestFiles, datasetsCount, filesCount, collectionCount,
-          AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage, List()))
-      }
-    }
+      case Some(clowderUser) if clowderUser.active => {
+        newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20)))
+        .sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
+        val datasetsUser = datasets.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
+        val datasetcommentMap = datasetsUser.map { dataset =>
+          var allComments = comments.findCommentsByDatasetId(dataset.id)
+          dataset.files.map { file =>
+            allComments ++= comments.findCommentsByFileId(file)
+            sections.findByFileId(file).map { section =>
+              allComments ++= comments.findCommentsBySectionId(section.id)
+            }
+          }
+          dataset.id -> allComments.size
+        }.toMap
+        val collectionList = collections.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
+        val collectionsWithThumbnails = collectionList.map {c =>
+          if (c.thumbnail_id.isDefined) {
+            c
+          } else {
+            val collectionThumbnail = datasets.listCollection(c.id.stringify).find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
+            c.copy(thumbnail_id = collectionThumbnail)
+          }
+        }
 
+        //Modifications to decode HTML entities that were stored in an encoded fashion as part
+        //of the collection's names or descriptions
+        val decodedCollections = ListBuffer.empty[models.Collection]
+        for (aCollection <- collectionsWithThumbnails) {
+          decodedCollections += Utils.decodeCollectionElements(aCollection)
+        }
+        val spacesUser = spaces.listUser(12, Some(clowderUser),request.user.fold(false)(_.superAdminMode), clowderUser)
+        var followers: List[(UUID, String, String, String)] = List.empty
+        for (followerID <- clowderUser.followers.take(3)) {
+          val userFollower = users.findById(followerID)
+          userFollower match {
+            case Some(uFollower) => {
+              val ufEmail = uFollower.email.getOrElse("")
+              followers = followers.++(List((uFollower.id, uFollower.fullName, ufEmail, uFollower.getAvatarUrl())))
+            }
+            case None =>
+          }
+        }
+        var followedUsers: List[(UUID, String, String, String)] = List.empty
+        var followedFiles: List[(UUID, String, String)] = List.empty
+        var followedDatasets: List[(UUID, String, String)] = List.empty
+        var followedCollections: List[(UUID, String, String)] = List.empty
+        var followedSpaces: List[(UUID, String, String)] = List.empty
+        val maxDescLength = 50
+        for (tidObject <- clowderUser.followedEntities) {
+          if (tidObject.objectType == "user") {
+            val followedUser = users.get(tidObject.id)
+            followedUser match {
+              case Some(fuser) => {
+                followedUsers = followedUsers.++(List((fuser.id, fuser.fullName, fuser.email.getOrElse(""), fuser.getAvatarUrl())))
+              }
+              case None =>
+            }
+          } else if (tidObject.objectType == "file") {
+            val followedFile = files.get(tidObject.id)
+            followedFile match {
+              case Some(ffile) => {
+                followedFiles = followedFiles.++(List((ffile.id, ffile.filename, ffile.contentType)))
+              }
+              case None =>
+            }
+          } else if (tidObject.objectType == "dataset") {
+            val followedDataset = datasets.get(tidObject.id)
+            followedDataset match {
+              case Some(fdset) => {
+                followedDatasets = followedDatasets.++(List((fdset.id, fdset.name, fdset.description.substring(0, Math.min(maxDescLength, fdset.description.length())))))
+              }
+              case None =>
+            }
+          } else if (tidObject.objectType == "collection") {
+            val followedCollection = collections.get(tidObject.id)
+            followedCollection match {
+              case Some(fcoll) => {
+                followedCollections = followedCollections.++(List((fcoll.id, fcoll.name, fcoll.description.substring(0, Math.min(maxDescLength, fcoll.description.length())))))
+              }
+              case None =>
+            }
+          } else if (tidObject.objectType == "'space") {
+            val followedSpace = spaces.get(tidObject.id)
+            followedSpace match {
+              case Some(fspace) => {
+                followedSpaces = followedSpaces.++(List((fspace.id, fspace.name, fspace.description.substring(0, Math.min(maxDescLength, fspace.description.length())))))
+              }
+              case None => {}
+            }
+          }
+        }
+        Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser, datasetcommentMap, decodedCollections.toList, spacesUser, true, followers, followedUsers.take(12),
+       followedFiles.take(8), followedDatasets.take(8), followedCollections.take(8),followedSpaces.take(8), Some(true)))
+      }
+      case _ => Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, filesBytes, collectionsCount, collectionsCountAccess,
+        spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
+    }
   }
-  
-  def options(path:String) = SecuredAction() { implicit request =>
+
+  def about = UserAction(needActive = false) { implicit request =>
+    implicit val user = request.user
+    val latestFiles = files.latest(5)
+    val datasetsCount = datasets.count()
+    val datasetsCountAccess = datasets.countAccess(Set[Permission](Permission.ViewDataset), user, request.user.fold(false)(_.superAdminMode))
+    val filesCount = files.count()
+    val filesBytes = files.bytes()
+    val collectionsCount = collections.count()
+    val collectionsCountAccess = collections.countAccess(Set[Permission](Permission.ViewCollection), user, request.user.fold(false)(_.superAdminMode))
+    val spacesCount = spaces.count()
+    val spacesCountAccess = spaces.countAccess(Set[Permission](Permission.ViewSpace), user, request.user.fold(false)(_.superAdminMode))
+    val usersCount = users.count()
+
+    Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, filesBytes, collectionsCount, collectionsCountAccess,
+        spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
+  }
+
+  def email(subject: String) = UserAction(needActive=false) { implicit request =>
+    if (request.user.isEmpty) {
+      Redirect(routes.Application.index())
+    } else {
+      implicit val user = request.user
+      Ok(views.html.emailAdmin(subject))
+    }
+  }
+
+  /** Show the Terms of Services */
+  def tos(redirect: Option[String]) = UserAction(needActive = false) { implicit request =>
+    implicit val user = request.user
+    Ok(views.html.tos(redirect))
+  }
+
+  def options(path:String) = UserAction(needActive = false) { implicit request =>
     Logger.info("---controller: PreFlight Information---")
     Ok("")
    }
 
+  def apidoc(path: String) = ApiHelpController.getResource("/api-docs.json/" + path)
+
   /**
    * Bookmarklet
    */
-  def bookmarklet() = SecuredAction(authorization = WithPermission(Permission.Public)) { implicit request =>
-    val protocol = Utils.protocol(request)
-    Ok(views.html.bookmarklet(request.host, protocol)).as("application/javascript")
+  def bookmarklet() = AuthenticatedAction { implicit request =>
+    Ok(views.html.bookmarklet(Utils.baseUrl(request))).as("application/javascript")
   }
   
   /**
@@ -68,8 +202,6 @@ class Application @Inject() (files: FileService, collections: CollectionService,
   def javascriptRoutes = Action { implicit request =>
     Ok(
       Routes.javascriptRouter("jsRoutes")(
-        routes.javascript.Admin.test,
-        routes.javascript.Admin.secureTest,
         routes.javascript.Admin.reindexFiles,
         routes.javascript.Admin.createIndex,
         routes.javascript.Admin.buildIndex,
@@ -77,74 +209,199 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         routes.javascript.Admin.deleteAllIndexes,
         routes.javascript.Admin.getIndexes,
         routes.javascript.Tags.search,
-        routes.javascript.Admin.setTheme,
         routes.javascript.Admin.getAdapters,
         routes.javascript.Admin.getExtractors,
         routes.javascript.Admin.getMeasures,
         routes.javascript.Admin.getIndexers,
+        routes.javascript.Spaces.getSpace,
+        routes.javascript.Admin.removeRole,
+        routes.javascript.Admin.editRole,
         routes.javascript.Files.file,
+        routes.javascript.Files.fileBySection,
         routes.javascript.Datasets.dataset,
+        routes.javascript.Datasets.datasetBySection,
+        routes.javascript.Datasets.addFiles,
+        routes.javascript.Folders.addFiles,
+        routes.javascript.Geostreams.list,
         routes.javascript.Collections.collection,
-        routes.javascript.RedirectUtility.authenticationRequiredMessage,
-        api.routes.javascript.Admin.removeAdmin,        
+        routes.javascript.Error.authenticationRequiredMessage,
+        routes.javascript.Collections.getUpdatedDatasets,
+        routes.javascript.Collections.getUpdatedChildCollections,
+        routes.javascript.Profile.viewProfileUUID,
+        routes.javascript.Assets.at,
+        api.routes.javascript.Admin.reindex,
         api.routes.javascript.Comments.comment,
         api.routes.javascript.Comments.removeComment,
         api.routes.javascript.Comments.editComment,
+        api.routes.javascript.Datasets.get,
+        api.routes.javascript.Datasets.list,
+        api.routes.javascript.Datasets.listCanEdit,
         api.routes.javascript.Datasets.comment,
         api.routes.javascript.Datasets.createEmptyDataset,
         api.routes.javascript.Datasets.attachExistingFile,
         api.routes.javascript.Datasets.attachMultipleFiles,
         api.routes.javascript.Datasets.deleteDataset,
         api.routes.javascript.Datasets.detachAndDeleteDataset,
+        api.routes.javascript.Datasets.datasetFilesList,
+        api.routes.javascript.Datasets.datasetAllFilesList,
+        api.routes.javascript.Datasets.getTechnicalMetadataJSON,
+        api.routes.javascript.Datasets.listInCollection,
         api.routes.javascript.Datasets.getTags,
         api.routes.javascript.Datasets.addTags,
+        api.routes.javascript.Datasets.copyDatasetToSpace,
         api.routes.javascript.Datasets.removeTag,
         api.routes.javascript.Datasets.removeTags,
         api.routes.javascript.Datasets.removeAllTags,
         api.routes.javascript.Datasets.updateInformation,
+        api.routes.javascript.Datasets.updateName,
+        api.routes.javascript.Datasets.updateDescription,
         api.routes.javascript.Datasets.updateLicense,
         api.routes.javascript.Datasets.follow,
         api.routes.javascript.Datasets.unfollow,
         api.routes.javascript.Datasets.detachFile,
+        api.routes.javascript.Datasets.download,
+        api.routes.javascript.Datasets.getPreviews,
+        api.routes.javascript.Datasets.updateAccess,
+        api.routes.javascript.Datasets.addFileEvent,
+        api.routes.javascript.Datasets.getMetadataDefinitions,
+        api.routes.javascript.Datasets.moveFileBetweenDatasets,
+        api.routes.javascript.Files.download,
         api.routes.javascript.Files.comment,
         api.routes.javascript.Files.getTags,
         api.routes.javascript.Files.addTags,
         api.routes.javascript.Files.removeTags,
         api.routes.javascript.Files.removeAllTags,
         api.routes.javascript.Files.updateLicense,
+        api.routes.javascript.Files.updateFileName,
+        api.routes.javascript.Files.updateDescription,
         api.routes.javascript.Files.extract,
         api.routes.javascript.Files.removeFile,
         api.routes.javascript.Files.follow,
         api.routes.javascript.Files.unfollow,
         api.routes.javascript.Files.getTechnicalMetadataJSON,
         api.routes.javascript.Files.filePreviewsList,
+        api.routes.javascript.Files.updateMetadata,
+        api.routes.javascript.Files.addMetadata,
+        api.routes.javascript.Files.getMetadataDefinitions,
         api.routes.javascript.Previews.upload,
         api.routes.javascript.Previews.uploadMetadata,
         api.routes.javascript.Previews.download,
         api.routes.javascript.Previews.getMetadata,
+        api.routes.javascript.Search.searchMultimediaIndex,
         api.routes.javascript.Sections.add,
+        api.routes.javascript.Sections.delete,
         api.routes.javascript.Sections.comment,
         api.routes.javascript.Sections.getTags,
         api.routes.javascript.Sections.addTags,
         api.routes.javascript.Sections.removeTags,
         api.routes.javascript.Sections.removeAllTags,
         api.routes.javascript.Geostreams.searchSensors,
+        api.routes.javascript.Geostreams.searchStreams,
+        api.routes.javascript.Geostreams.getSensor,
+        api.routes.javascript.Geostreams.getStream,
         api.routes.javascript.Geostreams.getSensorStreams,
         api.routes.javascript.Geostreams.searchDatapoints,
+        api.routes.javascript.Geostreams.deleteSensor,
+        api.routes.javascript.Geostreams.updateSensorMetadata,
+        api.routes.javascript.Geostreams.patchStreamMetadata,
+        api.routes.javascript.Collections.list,
+        api.routes.javascript.Collections.listCanEdit,
+        api.routes.javascript.Collections.addDatasetToCollectionOptions,
+        api.routes.javascript.Collections.listPossibleParents,
         api.routes.javascript.Collections.attachPreview,
         api.routes.javascript.Collections.attachDataset,
         api.routes.javascript.Collections.removeDataset,
         api.routes.javascript.Collections.removeCollection,
+        api.routes.javascript.Collections.attachSubCollection,
+        api.routes.javascript.Collections.removeSubCollection,
         api.routes.javascript.Collections.follow,
         api.routes.javascript.Collections.unfollow,
+        api.routes.javascript.Collections.updateCollectionName,
+        api.routes.javascript.Collections.updateCollectionDescription,
+        api.routes.javascript.Collections.getCollection,
+        api.routes.javascript.Collections.removeFromSpaceAllowed,
+        api.routes.javascript.Spaces.get,
+        api.routes.javascript.Spaces.removeSpace,
+        api.routes.javascript.Spaces.list,
+        api.routes.javascript.Spaces.listCanEdit,
+        api.routes.javascript.Spaces.addCollectionToSpace,
+        api.routes.javascript.Spaces.addDatasetToSpace,
+        api.routes.javascript.Spaces.removeCollection,
+        api.routes.javascript.Spaces.removeDataset,
+        api.routes.javascript.Spaces.updateSpace,
+        api.routes.javascript.Spaces.updateUsers,
+        api.routes.javascript.Spaces.removeUser,
+        api.routes.javascript.Spaces.follow,
+        api.routes.javascript.Spaces.unfollow,
+        api.routes.javascript.Spaces.acceptRequest,
+        api.routes.javascript.Spaces.rejectRequest,
+        api.routes.javascript.Spaces.verifySpace,
+        api.routes.javascript.Users.getUser,
+        api.routes.javascript.Users.findById,
         api.routes.javascript.Users.follow,
         api.routes.javascript.Users.unfollow,
+        api.routes.javascript.Users.updateName,
+        api.routes.javascript.Relations.findTargets,
+        api.routes.javascript.Relations.add,
+        api.routes.javascript.Relations.delete,
         api.routes.javascript.Projects.addproject,
         api.routes.javascript.Institutions.addinstitution,
-        api.routes.javascript.Users.getUser,
-        controllers.routes.javascript.Profile.viewProfileUUID,
+        api.routes.javascript.CurationObjects.getCurationObjectOre,
+        api.routes.javascript.CurationObjects.findMatchmakingRepositories,
+        api.routes.javascript.CurationObjects.retractCurationObject,
+        api.routes.javascript.CurationObjects.getCurationFiles,
+        api.routes.javascript.CurationObjects.deleteCurationFile,
+        api.routes.javascript.CurationObjects.deleteCurationFolder,
+        api.routes.javascript.CurationObjects.savePublishedObject,
+        api.routes.javascript.CurationObjects.getMetadataDefinitionsByFile,
+        api.routes.javascript.CurationObjects.getMetadataDefinitions,
+        api.routes.javascript.ContextLD.addContext,
+        api.routes.javascript.ContextLD.getContextByName,
+        api.routes.javascript.ContextLD.removeById,
+        api.routes.javascript.ContextLD.getContextById,
+        api.routes.javascript.Metadata.addUserMetadata,
+        api.routes.javascript.Metadata.searchByKeyValue,
+        api.routes.javascript.Metadata.getDefinitions,
+        api.routes.javascript.Metadata.getDefinition,
+        api.routes.javascript.Metadata.getDefinitionsDistinctName,
+        api.routes.javascript.Metadata.getUrl,
+        api.routes.javascript.Metadata.addDefinition,
+        api.routes.javascript.Metadata.addDefinitionToSpace,
+        api.routes.javascript.Metadata.editDefinition,
+        api.routes.javascript.Metadata.deleteDefinition,
+        api.routes.javascript.Metadata.removeMetadata,
+        api.routes.javascript.Events.sendExceptionEmail,
+        api.routes.javascript.Folders.createFolder,
+        api.routes.javascript.Folders.deleteFolder,
+        api.routes.javascript.Folders.updateFolderName,
+        api.routes.javascript.Folders.getAllFoldersByDatasetId,
+        api.routes.javascript.Folders.moveFileBetweenFolders,
+        api.routes.javascript.Folders.moveFileToDataset,
         controllers.routes.javascript.Files.file,
         controllers.routes.javascript.Datasets.dataset,
+        controllers.routes.javascript.Datasets.newDataset,
+        controllers.routes.javascript.Datasets.createStep2,
+        controllers.routes.javascript.ToolManager.launchTool,
+        controllers.routes.javascript.ToolManager.getLaunchableTools,
+        controllers.routes.javascript.ToolManager.uploadDatasetToTool,
+        controllers.routes.javascript.ToolManager.getInstances,
+        controllers.routes.javascript.ToolManager.refreshToolSidebar,
+        controllers.routes.javascript.ToolManager.removeInstance,
+        controllers.routes.javascript.Folders.createFolder,
+        controllers.routes.javascript.Datasets.getUpdatedFilesAndFolders,
+        controllers.routes.javascript.Collections.collection,
+        controllers.routes.javascript.Collections.newCollection,
+        controllers.routes.javascript.Collections.newCollectionWithParent,
+        controllers.routes.javascript.Spaces.stagingArea,
+        controllers.routes.javascript.CurationObjects.submit,
+        controllers.routes.javascript.CurationObjects.getCurationObject,
+        controllers.routes.javascript.CurationObjects.getUpdatedFilesAndFolders,
+        controllers.routes.javascript.CurationObjects.findMatchingRepositories,
+        controllers.routes.javascript.CurationObjects.sendToRepository,
+        controllers.routes.javascript.CurationObjects.compareToRepository,
+        controllers.routes.javascript.CurationObjects.deleteCuration,
+        controllers.routes.javascript.CurationObjects.getStatusFromRepository,
+        controllers.routes.javascript.Events.getEvents,
         controllers.routes.javascript.Collections.collection,
         api.routes.javascript.Extractions.submitToExtractor
       )

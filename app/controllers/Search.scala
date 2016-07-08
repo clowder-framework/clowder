@@ -1,26 +1,24 @@
 package controllers
 
-import play.Logger
-import services._
-import scala.collection.JavaConversions.mapAsScalaMap
-import edu.illinois.ncsa.isda.lsva.ImageMeasures
-import edu.illinois.ncsa.isda.lsva.ImageDescriptors.FeatureType
-import scala.collection.mutable.{ HashMap, ListBuffer }
-import util.DistancePriorityQueue
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.Play.current
-import api.{ Permission, WithPermission }
 import javax.inject.Inject
-import scala.concurrent.Future
-import scala.Some
-import util.SearchResult
-import models.UUID
+
+import api.Permission
+import edu.illinois.ncsa.isda.lsva.ImageDescriptors.FeatureType
+import edu.illinois.ncsa.isda.lsva.ImageMeasures
+import models.{ResourceRef, UUID}
 import org.elasticsearch.action.search.SearchResponse
+import play.Logger
+import play.api.Play.current
+import play.api.libs.concurrent.Execution.Implicits._
+import services._
+import util.{DistancePriorityQueue, SearchResult}
+
+import scala.collection.JavaConversions.mapAsScalaMap
+import scala.collection.mutable.{HashMap, ListBuffer}
+import scala.concurrent.Future
 
 /**
  * Text search.
- *
- * @author Luigi Marini
  */
 class Search @Inject() (
   datasets: DatasetService,
@@ -32,7 +30,7 @@ class Search @Inject() (
   /**
    * Search results.
    */
-  def search(query: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def search(query: String) = PermissionAction(Permission.ViewDataset) { implicit request =>
     implicit val user = request.user
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
@@ -68,45 +66,49 @@ class Search @Inject() (
                 if (hit.getType() == "file") {
                   files.get(UUID(hit.getId())) match {
                     case Some(file) => {
-                      Logger.debug("FILES:hits.hits._id: Search result found file " + hit.getId());
-                      Logger.debug("FILES:hits.hits._source: Search result found dataset " + hit.getSource().get("datasetId"))
-                      //Logger.debug("Search result found file " + hit.getId()); files += file
+                      if (Permission.checkPermission(Permission.ViewFile, ResourceRef(ResourceRef.file, file.id))) {
+                        Logger.debug("FILES:hits.hits._id: Search result found file " + hit.getId())
+                        Logger.debug("FILES:hits.hits._source: Search result found dataset " + hit.getSource().get("datasetId"))
+                        //Logger.debug("Search result found file " + hit.getId()); files += file
 
-                      var datasetsList = ListBuffer(): ListBuffer[(String, String)]
-                      if ((hit.getSource().get("datasetId") != null) && (hit.getSource().get("datasetName") != null)) {
-                        val datasetsIdsList = hit.getSource().get("datasetId").toString().split(" %%% ").toList
-                        val datasetsNamesList = hit.getSource().get("datasetName").toString().split(" %%% ").toList.iterator
-                        for (currentDatasetId <- datasetsIdsList) {
-                          datasetsList = datasetsList :+ (currentDatasetId, datasetsNamesList.next())
+                        var datasetsList = ListBuffer(): ListBuffer[(String, String)]
+                        if ((hit.getSource().get("datasetId") != null) && (hit.getSource().get("datasetName") != null)) {
+                          val datasetsIdsList = hit.getSource().get("datasetId").toString().split(" %%% ").toList
+                          val datasetsNamesList = hit.getSource().get("datasetName").toString().split(" %%% ").toList.iterator
+                          for (currentDatasetId <- datasetsIdsList) {
+                            datasetsList = datasetsList :+(currentDatasetId, datasetsNamesList.next())
+                          }
                         }
-                      }
 
-                      mapdatasetIds.put(hit.getId(), datasetsList)
-                      listOfFiles += file
+                        mapdatasetIds.put(hit.getId(), datasetsList)
+                        listOfFiles += file
+                      }
                     }
                     case None => Logger.debug("File not found " + hit.getId())
                   }
                 } else if (hit.getType() == "dataset") {
+
                   Logger.debug("DATASETS:hits.hits._source: Search result found dataset " + hit.getSource().get("name"))
                   Logger.debug("DATASETS:Dataset.id=" + hit.getId());
                   //Dataset.findOneById(new ObjectId(hit.getId())) match {
 
                   datasets.get(UUID(hit.getId())) match {
                     case Some(dataset) => {
-                      Logger.debug("Search result found dataset" + hit.getId())
-
-                      var collectionsList = ListBuffer(): ListBuffer[(String, String)]
-                      Logger.debug("src: " + hit.getSource().toString())
-                      if ((hit.getSource().get("collId") != null) && (hit.getSource().get("collName") != null)) {
-                        val collectionsIdsList = hit.getSource().get("collId").toString().split(" %%% ").toList
-                        val collectionsNamesList = hit.getSource().get("collName").toString().split(" %%% ").toList.iterator
-                        for (currentCollectionId <- collectionsIdsList) {
-                          collectionsList = collectionsList :+ (currentCollectionId, collectionsNamesList.next())
+                      if (Permission.checkPermission(Permission.ViewDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                        Logger.debug("Search result found dataset" + hit.getId())
+                        var collectionsList = ListBuffer(): ListBuffer[(String, String)]
+                        Logger.debug("src: " + hit.getSource().toString())
+                        if ((hit.getSource().get("collId") != null) && (hit.getSource().get("collName") != null)) {
+                          val collectionsIdsList = hit.getSource().get("collId").toString().split(" %%% ").toList
+                          val collectionsNamesList = hit.getSource().get("collName").toString().split(" %%% ").toList.iterator
+                          for (currentCollectionId <- collectionsIdsList) {
+                            collectionsList = collectionsList :+(currentCollectionId, collectionsNamesList.next())
+                          }
                         }
-                      }
-                      mapcollectionIds.put(hit.getId(), collectionsList)
+                        mapcollectionIds.put(hit.getId(), collectionsList)
 
-                      listOfdatasets += dataset
+                        listOfdatasets += dataset
+                      }
                     }
                     case None => {
                       Logger.debug("Dataset not found " + hit.getId())
@@ -116,24 +118,17 @@ class Search @Inject() (
                   }
                 } else if (hit.getType() == "collection") {
                   Logger.debug("COLLECTIONS:hits.hits._source: Search result found collection " + hit.getSource().get("name"))
-                  Logger.debug("COLLECTIONS:Collection.id=" + hit.getId());
+                  Logger.debug("COLLECTIONS:Collection.id=" + hit.getId())
                   //Dataset.findOneById(new ObjectId(hit.getId())) match {
                   collections.get(UUID(hit.getId())) match {
-                    case Some(collection) =>
-                      Logger.debug("Search result found collection" + hit.getId());
-                      var collectionThumbnail: Option[String] = None
-                      try {
-                        for (dataset <- collection.datasets) {
-                          if (!dataset.thumbnail_id.isEmpty) {
-                            collectionThumbnail = dataset.thumbnail_id
-                            throw ThumbnailFound
-                          }
-                        }
-                      } catch {
-                        case ThumbnailFound =>
+                    case Some(collection) => {
+                      if(Permission.checkPermission(Permission.ViewCollection, ResourceRef(ResourceRef.collection, collection.id))) {
+                        Logger.debug("Search result found collection" + hit.getId())
+                        val collectionThumbnail = datasets.listCollection(collection.id.stringify).find(_.thumbnail_id.isDefined).flatMap(_.thumbnail_id)
+                        val collectionWithThumbnail = collection.copy(thumbnail_id = collectionThumbnail)
+                        listOfcollections += collectionWithThumbnail
                       }
-                      val collectionWithThumbnail = collection.copy(thumbnail_id = collectionThumbnail)
-                      listOfcollections += collectionWithThumbnail
+                    }
                     case None => {
                       Logger.debug("Collection not found " + hit.getId())
                       Redirect(routes.Collections.collection(UUID(hit.getId)))
@@ -161,7 +156,7 @@ class Search @Inject() (
 
   }
 
-  def multimediasearch() = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def multimediasearch() = PermissionAction(Permission.ViewDataset) { implicit request =>
     Logger.debug("Starting multimedia search interface")
     implicit val user = request.user
     Ok(views.html.multimediasearch())
@@ -170,69 +165,21 @@ class Search @Inject() (
   /**
    * Search MultimediaFeatures.
    */
-  def searchMultimediaIndex(section_id: UUID) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def callSearchMultimediaIndexView(section_id: UUID) = PermissionAction(Permission.ViewSection,
+    Some(ResourceRef(ResourceRef.section, section_id))) { implicit request =>
     Logger.debug("Searching multimedia index " + section_id.stringify)
+    implicit val user = request.user
     // TODO handle multiple previews found
     val preview = previews.findBySectionId(section_id)(0)
-    queries.findFeatureBySection(section_id) match {
-      case Some(feature) => {
-        // setup priority queues
-        val queues = new HashMap[String, DistancePriorityQueue]
-        val representations = feature.features.map { f =>
-          queues(f.representation) = new DistancePriorityQueue(20)
-        }
-        // push into priority queues
-        feature.features.map { f =>
-          Logger.debug("Computing " + f.representation)
-          queries.listAll().map { mf =>
-            Logger.trace("Found multimedia features " + mf.id + " for section " + section_id)
-            mf.features.find(_.representation == f.representation) match {
-              case Some(fd) => {
-                val distance = ImageMeasures.getDistance(FeatureType.valueOf(fd.representation), f.descriptor.toArray, fd.descriptor.toArray)
-                if (!distance.isNaN()) {
-                  Logger.trace(f.representation + "/" + fd.representation + " Distance between " + feature.section_id + " and " + mf.id + " is " + distance)
-                  queues.get(f.representation).map { q =>
-                    val popped = q.insertWithOverflow(SearchResult(mf.section_id.get.toString, distance, None))
-                    if (popped != null) Logger.trace("Popped distance off the queue " + popped)
-                  }
-                } else {
-                  Logger.debug("Distance NaN " + f.descriptor + " and " + fd.descriptor + " is " + distance)
-                }
-              }
-              case None =>
-                Logger.error("Matching descriptor not found")
-            }
-          }
-        }
-
-        val items = new HashMap[String, ListBuffer[SearchResult]]
-        queues map {
-          case (key, queue) =>
-            val list = new ListBuffer[SearchResult]
-            while (queue.size > 0) {
-              val element = queue.pop()
-              val previewsBySection = previews.findBySectionId(UUID(element.section_id))
-              if (previewsBySection.size == 1) {
-                Logger.trace("Appended search result " + key + " " + element.section_id + " " + element.distance + " " + previewsBySection(0).id.toString)
-                list.prepend(SearchResult(element.section_id, element.distance, Some(previewsBySection(0).id.toString)))
-              } else {
-                Logger.error("Found more/less than one preview " + preview)
-              }
-            }
-            items += key -> list
-        }
-        Ok(views.html.searchMultimediaIndex(preview, items))
-      }
-      case None => InternalServerError("feature not found")
-    }
+    Ok(views.html.searchMultimediaIndex(section_id, preview))
   }
 
-  def advanced() = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def advanced() = PermissionAction(Permission.ViewDataset) { implicit request =>
     Logger.debug("Starting Advanced Search interface")
     Ok(views.html.advancedsearch())
   }
 
-  def SearchByText(query: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def SearchByText(query: String) = PermissionAction(Permission.ViewDataset) { implicit request =>
     Logger.debug("Searching for" + query)
     Ok("")
   }
@@ -240,8 +187,7 @@ class Search @Inject() (
   /*
    * GET the query file from a URL and compare within the database and show the result   
    * */
-  def searchbyURL(queryURL: String) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
-    Async {
+  def searchbyURL(queryURL: String) = PermissionAction(Permission.ViewDataset).async { implicit request =>
       implicit val user = request.user
       current.plugin[VersusPlugin] match {
         case Some(plugin) => {
@@ -272,16 +218,14 @@ class Search @Inject() (
         case None => {
           Future(Ok("No Versus Service"))
         }
-      } //match            
-    } //Async
+      } //match
   }
 
   /**
    * Finds similar objects(images, pdfs, etc) in Multiple index for a temporary file
    * Input file is NOT in db, just uploaded by user.
    */
-  def findSimilarToQueryFile(fileID: UUID, typeToSearch: String, sectionsSelected: List[String]) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
-    Async {
+  def findSimilarToQueryFile(fileID: UUID, typeToSearch: String, sectionsSelected: List[String]) = PermissionAction(Permission.ViewDataset).async { implicit request =>
       implicit val user = request.user
       //query file is a new/temp file, it will be stored in MultimediaQueryService
       //in controllers/Files -> uploadSelectQuery
@@ -326,16 +270,14 @@ class Search @Inject() (
           Logger.debug("File with id " + fileID + " not found")
           Future(Ok("File with id " + fileID + " not found"))
         }
-      } //end of queries.get(imageID) match 
-    } //Async
+      } //end of queries.get(imageID) match
   }
 
   /**
    * Finds similar objects(images, pdfs, etc) in Multiple index for a given file (file is already in db)
    *
    */
-  def findSimilarToExistingFile(inputFileId: UUID) = SecuredAction(authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
-    Async {
+  def findSimilarToExistingFile(inputFileId: UUID) = PermissionAction(Permission.ViewDataset).async { implicit request =>
       implicit val user = request.user
       //file will be stored in FileService
       files.getBytes(inputFileId) match {
@@ -375,8 +317,7 @@ class Search @Inject() (
           Logger.debug("Could not find similar for file id " + inputFileId)
           Future(Ok("Could not find similar for file id " + inputFileId))
         }
-      } //end of files.getBytes(inputFileId) match 
-    } //Async
+      } //end of files.getBytes(inputFileId) match
   }
 
   /**
@@ -461,11 +402,7 @@ class Search @Inject() (
    * Pass a list of indexes and a list of weights to this method. Will calculate the weighted combination
    * of the indexes.
    */
-  def findSimilarWeightedIndexes() =
-    SecuredAction(parse.multipartFormData,
-      authorization = WithPermission(Permission.SearchDatasets)) {
-        implicit request =>
-          Async {
+  def findSimilarWeightedIndexes() = PermissionAction(Permission.ViewDataset).async(parse.multipartFormData) { implicit request =>
             implicit val user = request.user
             //using a helper method to validate input and get weights
             val (inputErrors, errorMessage, weights) = validateInput(request.body.dataParts)
@@ -526,12 +463,11 @@ class Search @Inject() (
               } //end of queries.get(imageID) match 
             } //end of if no validation errors
             else { Future(Ok("Form validation errors: " + errorMessage)) }
-          } //Async
       }
 
   //  def Filterby(id: String) = TODO
 
-  def uploadquery() = SecuredAction(parse.multipartFormData, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def uploadquery() = PermissionAction(Permission.ViewDataset)(parse.multipartFormData) { implicit request =>
     request.body.file("picture").map { picture =>
       import java.io.File
       picture.ref.moveTo(new File("/tmp/picture"))

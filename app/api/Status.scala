@@ -3,10 +3,10 @@ package api
 import javax.inject.Inject
 
 import com.wordnik.swagger.annotations.ApiOperation
+import play.api.Logger
 import models.User
 import play.api.Play._
 import play.api.libs.json.{JsValue, Json}
-import securesocial.core.Identity
 import services._
 import services.mongodb.MongoSalatPlugin
 
@@ -14,10 +14,9 @@ import scala.collection.mutable
 
 /**
  * class that contains all status/version information about medici.
- *
- * @author Rob Kooper
  */
-class Status @Inject()(collections: CollectionService,
+class Status @Inject()(spaces: SpaceService,
+                       collections: CollectionService,
                        datasets: DatasetService,
                        files: FileService,
                        users: UserService,
@@ -29,92 +28,136 @@ class Status @Inject()(collections: CollectionService,
   @ApiOperation(value = "version",
     notes = "returns the version information",
     responseClass = "None", httpMethod = "GET")
-  def version = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Public)) { request =>
+  def version = UserAction(needActive=false) { implicit request =>
     Ok(Json.obj("version" -> getVersionInfo))
   }
 
   @ApiOperation(value = "status",
     notes = "returns the status information",
     responseClass = "None", httpMethod = "GET")
-  def status = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.Public)) { request =>
+  def status = UserAction(needActive=false) { implicit request =>
 
     Ok(Json.obj("version" -> getVersionInfo,
-      "counts" -> getCounts,
+      "counts" -> getCounts(request.user),
       "plugins" -> getPlugins(request.user),
       "extractors" -> Json.toJson(extractors.getExtractorNames())))
   }
 
-  def getPlugins(user: Option[Identity]): JsValue = {
+  def getPlugins(user: Option[User]): JsValue = {
     val result = new mutable.HashMap[String, JsValue]()
 
-    // mongo
-    result.put("mongo", current.plugin[MongoSalatPlugin] match {
-      case Some(p) => {
-        if (WithPermission(Permission.Admin).isAuthorized(user)) {
-          Json.obj("uri" -> p.mongoURI.toString(),
-            "updates" -> appConfig.getProperty[List[String]]("mongodb.updates", List.empty[String]))
-        } else {
-          jsontrue
-        }
+    current.plugins foreach {
+      // mongo
+      case p: MongoSalatPlugin => {
+        result.put("mongo", if (Permission.checkServerAdmin(user)) {
+              Json.obj("uri" -> p.mongoURI.toString(),
+                "updates" -> appConfig.getProperty[List[String]]("mongodb.updates", List.empty[String]))
+            } else {
+              jsontrue
+            })
       }
-      case None => jsonfalse
-    })
 
-    // elasticsearch
-    result.put("elasticsearch", current.plugin[ElasticsearchPlugin] match {
-      case Some(p) => {
-        if (WithPermission(Permission.Admin).isAuthorized(user)) {
-          jsontrue
+      // elasticsearch
+      case p: ElasticsearchPlugin => {
+        val status = if (p.connect) {
+          "connected"
         } else {
-          jsontrue
+          "disconnected"
         }
-      }
-      case None => jsonfalse
-    })
-
-    // rabbitmq
-    result.put("rabbitmq", current.plugin[RabbitmqPlugin] match {
-      case Some(p) => {
-        if (WithPermission(Permission.Admin).isAuthorized(user)) {
-          Json.obj("uri" -> p.rabbitmquri)
+        result.put("elasticsearch", if (Permission.checkServerAdmin(user)) {
+          Json.obj("server" -> p.serverAddress,
+            "clustername" -> p.nameOfCluster,
+            "status" -> status)
         } else {
-          jsontrue
-        }
+          Json.obj("status" -> status)
+        })
       }
-      case None => jsonfalse
-    })
 
-    // geostream
-    result.put("geostream", current.plugin[PostgresPlugin] match {
-      case Some(p) => {
-        if (WithPermission(Permission.Admin).isAuthorized(user)) {
-          Json.obj("database" -> p.conn.getSchema)
+      // rabbitmq
+      case p: RabbitmqPlugin => {
+        val status = if (p.connect) {
+          "connected"
         } else {
-          jsontrue
+          "disconnected"
         }
+        result.put("rabbitmq", if (Permission.checkServerAdmin(user)) {
+          Json.obj("uri" -> p.rabbitmquri,
+            "exchange" -> p.exchange,
+            "status" -> status)
+        } else {
+          Json.obj("status" -> status)
+        })
       }
-      case None => jsonfalse
-    })
 
-    // versus
-    result.put("versus", current.plugin[VersusPlugin] match {
-      case Some(p) => {
-        if (WithPermission(Permission.Admin).isAuthorized(user)) {
+      // geostream
+      case p: PostgresPlugin => {
+        val status = if (p.conn != null) {
+          "connected"
+        } else {
+          "disconnected"
+        }
+        result.put("rabbitmq", if (Permission.checkServerAdmin(user)) {
+          Json.obj("catalog" -> p.conn.getCatalog,
+            "schema" -> p.conn.getSchema,
+            "updates" -> appConfig.getProperty[List[String]]("postgres.updates", List.empty[String]),
+            "status" -> status)
+        } else {
+          Json.obj("status" -> status)
+        })
+      }
+
+      // versus
+      case p: VersusPlugin => {
+        result.put("versus", if (Permission.checkServerAdmin(user)) {
           Json.obj("host" -> configuration.getString("versus.host").getOrElse("").toString)
         } else {
           jsontrue
+        })
+      }
+
+      case p: ToolManagerPlugin => {
+        val status = if (p.enabled) {
+          "enabled"
+        } else {
+          "disabled"
+        }
+        result.put("toolmanager", if (Permission.checkServerAdmin(user)) {
+          Json.obj("host" -> configuration.getString("toolmanagerURI").getOrElse("").toString,
+            "tools" -> p.getLaunchableTools(),
+            "status" -> status)
+        } else {
+          Json.obj("status" -> status)
+        })
+      }
+
+      case p => {
+        val name = p.getClass.getName
+        if (name.startsWith("services.")) {
+          val status = if (p.enabled) {
+            "enabled"
+          } else {
+            "disabled"
+          }
+          result.put(p.getClass.getName, Json.obj("status" -> status))
+        } else {
+          Logger.debug(s"Ignoring ${name} plugin")
         }
       }
-      case None => jsonfalse
-    })
+    }
 
     Json.toJson(result.toMap[String, JsValue])
   }
 
-  def getCounts: JsValue = {
-    Json.obj("collections" -> collections.count(),
+  def getCounts(user: Option[User]): JsValue = {
+    val fileinfo = if (Permission.checkServerAdmin(user)) {
+      Json.toJson(files.statusCount().map{x => x._1.toString -> Json.toJson(x._2)})
+    } else {
+      Json.toJson(files.count())
+    }
+    Json.obj("spaces" -> spaces.count(),
+      "collections" -> collections.count(),
       "datasets" -> datasets.count(),
-      "files" -> files.count(),
+      "files" -> fileinfo,
       "users" -> users.count())
   }
 

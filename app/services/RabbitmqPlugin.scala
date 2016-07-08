@@ -15,6 +15,7 @@ import play.api.libs.json.Json
 import play.api.libs.ws.{Response, WS}
 import play.api.{Application, Logger, Plugin}
 import play.libs.Akka
+import play.api.libs.json.JsValue
 import scala.concurrent.Future
 
 
@@ -25,7 +26,7 @@ case class ExtractorMessage(
   intermediateId: UUID,
   host: String,
   key: String,
-  metadata: Map[String, String],
+  metadata: Map[String, Any],
   fileSize: String,
   datasetId: UUID,
   flags: String,
@@ -34,9 +35,6 @@ case class ExtractorMessage(
 /**
  * Rabbitmq service.
  *
- * @author Luigi Marini
- * @author Rob Kooper
- * @author Smruti Padhy
  */
 class RabbitmqPlugin(application: Application) extends Plugin {
   val files: FileService = DI.injector.getInstance(classOf[FileService])
@@ -51,11 +49,15 @@ class RabbitmqPlugin(application: Application) extends Plugin {
   var username: String = ""
   var password: String = ""
   var rabbitmquri: String = ""
+  var exchange: String = ""
+  var mgmtPort: String = ""
 
   override def onStart() {
     Logger.debug("Starting Rabbitmq Plugin")
     val configuration = play.api.Play.configuration
-    rabbitmquri = configuration.getString("medici2.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
+    rabbitmquri = configuration.getString("clowder.rabbitmq.uri").getOrElse("amqp://guest:guest@localhost:5672/%2f")
+    exchange = configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
+    mgmtPort = configuration.getString("clowder.rabbitmq.managmentPort").getOrElse("15672")
     Logger.debug("uri= "+ rabbitmquri)
 
     try {
@@ -121,8 +123,6 @@ class RabbitmqPlugin(application: Application) extends Plugin {
     if (!factory.isDefined) return true
 
     val configuration = play.api.Play.configuration
-    val exchange = configuration.getString("medici2.rabbitmq.exchange").getOrElse("medici")
-    val mgmtPort = configuration.getString("medici2.rabbitmq.managmentPort").getOrElse("15672")
 
     try {
       val protocol = if (factory.get.isSSL) "https://" else "http://"
@@ -295,7 +295,14 @@ class SendingActor(channel: Channel, exchange: String, replyQueueName: String) e
         "secretKey" -> Json.toJson(secretKey)
       )
       // add extra fields
-      metadata.foreach(kv => msgMap.put(kv._1, Json.toJson(kv._2)))
+      metadata.foreach(kv =>
+        kv._2 match {
+          case x: JsValue => msgMap.put(kv._1, x)
+          case x: String => msgMap.put(kv._1, Json.toJson(x))
+          case _ => msgMap.put(kv._1, Json.toJson(kv._2.toString))
+        }
+
+      )
       val msg = Json.toJson(msgMap.toMap)
       // correlation id used for rpc call
       val corrId = java.util.UUID.randomUUID().toString() // TODO switch to models.UUID?

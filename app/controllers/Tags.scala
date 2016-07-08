@@ -1,26 +1,20 @@
 package controllers
 
-import models.Dataset
-import models.Tag
-
-import api.WithPermission
-import api.Permission
-import util.Parsers
-import scala.collection.mutable.ListBuffer
-import play.api.Logger
-import scala.collection.mutable.Map
-import services.{SectionService, FileService, DatasetService}
 import javax.inject.Inject
+
+import api.Permission
+import api.Permission
+import api.Permission.Permission
+import models.User
 import play.api.Logger
-import services.{CollectionService, DatasetService, FileService, SectionService}
 import play.api.Play.current
+import services.{CollectionService, DatasetService, FileService, SectionService}
+import util.Parsers
 
-
+import scala.collection.mutable.ListBuffer
 
 /**
  * Tagging.
- * 
- * @author Luigi Marini
  */
 class Tags @Inject()(collections: CollectionService, datasets: DatasetService, files: FileService, sections: SectionService) extends SecuredController {
 
@@ -32,7 +26,7 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
    * The code will query the datasets, files and sections and combine the lists into a single sorted list
    * and display it to the user.
    */
-  def search(tag: String, start: String, size: Integer, mode: String) = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.SearchDatasets)) { implicit request =>
+  def search(tag: String, start: String, size: Integer, mode: String) = PrivateServerAction { implicit request =>
     implicit val user = request.user
 
     var nextItems = ListBuffer.empty[AnyRef]
@@ -45,25 +39,25 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     // get all datasets tagged
     //Modifications to decode HTML entities that were stored in an encoded fashion as part
     //of the datasets names or descriptions
-    tempItems ++= datasets.findByTag(tagCleaned, start, size + 1, false)
+    tempItems ++= datasets.findByTag(tagCleaned, start, size + 1, false, user)
     for (aDataset <- tempItems) {
       nextItems += Utils.decodeDatasetElements(aDataset)
     }
     tempItems = ListBuffer.empty[models.Dataset]
     if (start != "") {
-      tempItems ++= datasets.findByTag(tagCleaned, start, size + 1, true)
+      tempItems ++= datasets.findByTag(tagCleaned, start, size + 1, true, user)
       for (aDataset <- tempItems) {
         prevItems += Utils.decodeDatasetElements(aDataset)
       }
     }
 
     // get all files tagged
-    nextItems ++= files.findByTag(tagCleaned, start, size + 1, false)
-    if (start != "") prevItems ++= files.findByTag(tagCleaned, start, size + 1, true)
+    nextItems ++= files.findByTag(tagCleaned, start, size + 1, false, user)
+    if (start != "") prevItems ++= files.findByTag(tagCleaned, start, size + 1, true, user)
 
     // get all sections tagged
     // TODO this logic should be moved to findByTag in sections.
-    val sectionFiles = sections.findByTag(tagCleaned).map{ s => files.get(s.file_id) match {
+    val sectionFiles = sections.findByTag(tagCleaned, user).map{ s => files.get(s.file_id) match {
       case Some(f) => f
     } }
     if (start == "" ) {
@@ -120,17 +114,9 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     Ok(views.html.searchByTag(tag, nextItems.slice(0, size).toList, prev, next, size, viewMode))
   }
 
-  def tagCloud() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowTags)) { implicit request =>
+  def tagListWeighted() = PrivateServerAction { implicit request =>
     implicit val user = request.user
-
-    Ok(views.html.tagCloud(computeTagWeights))
-  }
-
-  def tagListWeighted() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowTags)) { implicit request =>
-    implicit val user = request.user
-
-    val tags = computeTagWeights
-
+    val tags = computeTagWeights(user)
     if (tags.isEmpty) {
       Ok(views.html.tagList(List.empty[(String, Double)]))
     } else {
@@ -144,65 +130,86 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
     }
   }
 
-  def tagListOrdered() = SecuredAction(parse.anyContent, authorization = WithPermission(Permission.ShowTags)) { implicit request =>
+  def tagListOrdered() = PrivateServerAction { implicit request =>
     implicit val user = request.user
 
-    Ok(views.html.tagListChar(createTagList))
+    Ok(views.html.tagListChar(createTagList(user)))
   }
 
-  def createTagList() = {
-    val tagMap = collection.mutable.Map.empty[Char, collection.mutable.Map[String, Integer]]
+  def createTagList(user: Option[User]) = {
+    val tagMap = collection.mutable.Map.empty[Char, collection.mutable.Map[String, Long]]
 
     // TODO allow for tags in collections
     //    for(collection <- collections.listCollections(); tag <- collection.tags) {
     //      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.collection").getOrElse(1)
     //    }
 
-    for(dataset <- datasets.listDatasets; tag <- dataset.tags) {
-      var firstChar = if (tag.name(0).isLetter) tag.name(0).toUpper else '#'
-      if (!tagMap.contains(firstChar)) tagMap(firstChar) = collection.mutable.Map.empty[String, Integer].withDefaultValue(0)
-      val map = tagMap(firstChar)
-      map(tag.name) = map(tag.name) + 1
+    datasets.getTags(user).foreach { case (tag: String, count: Long) =>
+      if (tag.length == 0) {
+        Logger.error("tag with length 0 : " + tag + " " + count)
+      } else {
+        val firstChar = if (tag(0).isLetter) tag(0).toUpper else '#'
+        if (!tagMap.contains(firstChar)) {
+          val map = collection.mutable.Map[String, Long]((tag, count)).withDefaultValue(0)
+          tagMap(firstChar) = map
+        } else {
+          val map = tagMap(firstChar)
+          map(tag) = map(tag) + count
+        }
+      }
     }
-
-    for(file <- files.listFiles; tag <- file.tags) {
-      var firstChar = if (tag.name(0).isLetter) tag.name(0).toUpper else '#'
-      if (!tagMap.contains(firstChar)) tagMap(firstChar) = collection.mutable.Map.empty[String, Integer].withDefaultValue(0)
-      val map = tagMap(firstChar)
-      map(tag.name) = map(tag.name) + 1
+    files.getTags(user).foreach { case (tag: String, count: Long) =>
+      if (tag.length == 0) {
+        Logger.error("tag with length 0 : " + tag + " " + count)
+      } else {
+        val firstChar = if (tag(0).isLetter) tag(0).toUpper else '#'
+        if (!tagMap.contains(firstChar)) {
+          val map = collection.mutable.Map[String, Long]((tag, count)).withDefaultValue(0)
+          tagMap(firstChar) = map
+        } else {
+          val map = tagMap(firstChar)
+          map(tag) = map(tag) + count
+        }
+      }
     }
-
-    for(section <- sections.listSections; tag <- section.tags) {
-      var firstChar = if (tag.name(0).isLetter) tag.name(0).toUpper else '#'
-      if (!tagMap.contains(firstChar)) tagMap(firstChar) = collection.mutable.Map.empty[String, Integer].withDefaultValue(0)
-      val map = tagMap(firstChar)
-      map(tag.name) = map(tag.name) + 1
+    sections.getTags(user).foreach { case (tag: String, count: Long) =>
+      if (tag.length == 0) {
+        Logger.error("tag with length 0 : " + tag + " " + count)
+      } else {
+        val firstChar = if (tag(0).isLetter) tag(0).toUpper else '#'
+        if (!tagMap.contains(firstChar)) {
+          val map = collection.mutable.Map[String, Long]((tag, count)).withDefaultValue(0)
+          tagMap(firstChar) = map
+        } else {
+          val map = tagMap(firstChar)
+          map(tag) = map(tag) + count
+        }
+      }
     }
 
     tagMap.map{ case (k, v) => (k, v.toMap)}.toMap
   }
 
-  def computeTagWeights() = {
-    val weightedTags = collection.mutable.Map.empty[String, Integer].withDefaultValue(0)
+  def computeTagWeights(user: Option[User]) = {
+    val weightedTags = collection.mutable.Map.empty[String, Long].withDefaultValue(0)
 
     // TODO allow for tags in collections
 //    for(collection <- collections.listCollections(); tag <- collection.tags) {
 //      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.collection").getOrElse(1)
 //    }
 
-    for(dataset <- datasets.listDatasets; tag <- dataset.tags) {
-      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.dataset").getOrElse(1)
+    datasets.getTags(user).foreach { case (tag: String, count: Long) =>
+      weightedTags(tag) = weightedTags(tag) + count * current.configuration.getInt("tags.weight.dataset").getOrElse(1)
     }
 
-    for(file <- files.listFiles; tag <- file.tags) {
-      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.files").getOrElse(1)
+    files.getTags(user).foreach { case (tag: String, count: Long) =>
+      weightedTags(tag) = weightedTags(tag) + count * current.configuration.getInt("tags.weight.files").getOrElse(1)
     }
 
-    for(section <- sections.listSections; tag <- section.tags) {
-      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.sections").getOrElse(1)
+    sections.getTags(user).foreach { case (tag: String, count: Long) =>
+      weightedTags(tag) = weightedTags(tag) + count * current.configuration.getInt("tags.weight.sections").getOrElse(1)
     }
 
-    Logger.debug("thelist: "+ weightedTags.toList.toString)
     weightedTags.toList
   }
 }

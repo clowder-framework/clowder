@@ -1,0 +1,5 @@
+{
+  "http://schema.org/name": "Medici Context",
+  "http://schema.org/url": { "@id": "http://isda.ncsa.illinois.edu/drupal/" },
+  "http://schema.org/image": { "@id": "http://isda.ncsa.illinois.edu/drupal/sites/all/themes/danland/images/slideshows/mHARP_banner1a.png" }
+}

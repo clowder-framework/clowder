@@ -9,7 +9,6 @@ import models.TypedID
 /**
  * Used to store Typed ID in MongoDB.
  *
- * @author Yibo Guo
  */
 object TypedIDDAO extends ModelCompanion[TypedID, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {

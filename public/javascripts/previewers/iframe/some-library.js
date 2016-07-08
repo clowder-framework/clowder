@@ -3,13 +3,7 @@
 	console.log("Iframe previewer for " + Configuration.id);
 	
 	console.log("Updating tab " + Configuration.tab);
-	
-	var width = 750;
-	
-	var prNum = Configuration.tab.replace("#previewer","");
-	
-	var hostAddress = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
-		
+
 	  $.ajax({
 		    url: Configuration.url,
 		    async:false,
@@ -27,7 +21,7 @@
 		    	appendStr = appendStr.concat('</div><div class="modal-body iframeModalDivInternal"><iframe class="iframeModal" src="'+resourceData.url+'" frameBorder="0"><p>Could not load iframe</p></iframe></div></div></div>');
 		    	appendStr = appendStr.concat('<div class="prevIframeWrap"><iframe class="prevIframe" scrolling="no" src="'+resourceData.url+'"><p>Could not load iframe</p></iframe></div>');
 		    	appendStr = appendStr.concat('<a class="iframeLink" href="#!" data-toggle="modal" data-target="#externResource_'+fileId+'">');
-		    	appendStr = appendStr.concat('<div class="transbox"><button type="button" class="btn btn-default iframeBtn" aria-hidden="true">&plus;</button></div></a>');
+		    	appendStr = appendStr.concat('<div class="transbox"><button type="button" class="btn btn-default iframeBtn" aria-hidden="true"><span class="glyphicon glyphicon-plus"></span></button></div></a>');
 		    	$(Configuration.tab).append(appendStr);
 		    	$(Configuration.tab).append('<p><a href="'+resourceData.url+'" target="_blank">Click here to open in new window</a></p>');
 		    			    	

@@ -9,7 +9,7 @@ import services.SectionIndexInfoService
 import models.{SectionIndexInfo, UUID}
 
 /**
- * @author Inna Zharnitsky 
+ * USe Mongodb to store section index information
  */
 class MongoDBSectionIndexInfoService extends SectionIndexInfoService {  
   

@@ -1,7 +1,6 @@
 package models
 
-import api.{Permission, WithPermission}
-import securesocial.core.Identity
+import api.Permission
 
 /**
  * case class to handle specific license information. Currently attached to individual Datasets and Files.  
@@ -24,9 +23,9 @@ case class LicenseData (
      * @return A boolean, true if the license type allows the file to be downloaded, false otherwise.
      * 
      */
-    def isDownloadAllowed(user: Option[Identity]) = {
+    def isDownloadAllowed(user: Option[User]) = {
       (m_licenseType != "license1") || m_allowDownload || (user match {
-        case Some(x) => WithPermission(Permission.DownloadFiles).isAuthorized(x) || isRightsOwner(x.fullName)
+        case Some(x) => Permission.checkPermission(user, Permission.DownloadFiles) || isRightsOwner(x.fullName)
         case None => false
       })
     }

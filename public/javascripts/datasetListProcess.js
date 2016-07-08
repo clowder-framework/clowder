@@ -1,28 +1,29 @@
-function removeDataset(datasetId,event, reloadPage){
-	if(reloadPage === undefined) reloadPage = false;
-	
+function removeDataset(datasetId, isreload, url){
 	var request = jsRoutes.api.Datasets.deleteDataset(datasetId).ajax({
 		type: 'DELETE'
 	});
 	request.done(function (response, textStatus, jqXHR){
-        if($(event.target).is("span")){
-        	$(event.target.parentNode.parentNode.parentNode).remove();
-        }
-        else{
-        	$(event.target.parentNode.parentNode).remove();
-        }
-        
-        
-        if(reloadPage == true)
-        	location.reload(true);
+        if(isreload === "true")
+			window.location.href=url;
+		else {
+			$('#'+ datasetId+'-listitem').remove();
+			var obj = $('#'+ datasetId+'-tile');
+			if($('#masonry').length > 0) {
+				$('#masonry').masonry('remove', obj);
+				$('#masonry').masonry('layout');
+			}
+			if($('#masonry-datasets').length > 0) {
+				$('#masonry-datasets').masonry('remove', obj);
+				$('#masonry-datasets').masonry('layout');
+			}
+		}
     });
-	request.fail(function (jqXHR, textStatus, errorThrown){
+	request.fail(function (jqXHR, textStatus, errorThrown) {
 		console.error("The following error occured: "+textStatus, errorThrown);
         var errMsg = "You must be logged in to remove a dataset from the system.";
         if (!checkErrorAndRedirect(jqXHR, errMsg)) {
             notify("The dataset was not removed due to : " + errorThrown, "error");
-        }   
-		
+        }
 	});	
 }
 
@@ -67,4 +68,56 @@ function detachAndRemoveDatasetAndRedirect(datasetId, url){
             notify("The dataset was not deleted from the system due to : " + errorThrown, "error");
         }
 	});	
+}
+var accessStatus;
+function setOriginAccess() {
+	accessStatus = $("input[name='access']:checked").val();
+}
+
+function updateAccessApi(id, access) {
+	$('.modal').modal('hide');
+	var request = jsRoutes.api.Datasets.updateAccess(id, access).ajax({
+		type: 'PUT'
+	});
+
+	request.done(function(response, textStatus, jsXHR){
+		accessStatus = access;
+		notify("Dataset is set to "+ access, "success", false, 2000);
+	});
+	request.fail(function (jqXHR, textStatus, errorThrown){
+		console.error("The following error occurred: " + textStatus, errorThrown);
+		var errMsg = "You must be logged in to update the dataset.";
+		if (!checkErrorAndRedirect(jqXHR, errMsg)) {
+			notify("Error in updating the dataset : " + errorThrown, "error");
+		}
+	});
+}
+
+function cancelAccessChange(){
+	console.log("cancel");
+	$('.modal').modal('hide');
+	document.getElementById('access-'+accessStatus).checked= true;
+}
+
+
+function confirmTemplate(message, resourceId, access) {
+	var modalHTML = '<div id="confirm-access" class="modal fade" role="dialog">';
+	modalHTML += '<div class="modal-dialog">';
+	modalHTML += '<div class="modal-content">';
+	modalHTML += '<div class="modal-header">';
+	modalHTML += '<button type="button" class="close" data-dismiss="modal">&times;</button>';
+	modalHTML += '<h4 class="modal-title">Confirm</h4>';
+	modalHTML += '</div>';
+	modalHTML += '<div class="modal-body">';
+	modalHTML += '<p>' + message + '</p>';
+	modalHTML += '</div>';
+	modalHTML += '<div class="modal-footer">';
+	modalHTML += '<a type="button" class="btn btn-link"  href="javascript:cancelAccessChange()"><span class="glyphicon glyphicon-remove"></span> Cancel</a>';
+	modalHTML += '<a type="button" class="btn btn-primary"  href="javascript:updateAccessApi(\''+ resourceId+'\',\''+ access+'\')"><span class="glyphicon glyphicon-ok"></span> OK</a>';
+	modalHTML += '</div>';
+	modalHTML += '</div>';
+	modalHTML += '</div>';
+	modalHTML += '</div>';
+
+	return modalHTML;
 }

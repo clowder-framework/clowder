@@ -1,0 +1,139 @@
+<form id="instrument-{{id}}" class="stream-tmpl">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="panel-group" id="instrument-group-{{id}}" role="tablist">
+          <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="instrument-heading-{{id}}">
+              <h4 class="panel-title">
+                <a data-toggle="collapse"
+                  data-parent="#instrument-group-{{id}}"
+                  href="#instrument-contents-{{id}}"
+                  id="instrument-link-{{id}}"
+                  aria-expanded="true"
+                  aria-controls="collapseOne">
+                  {{#if name}}
+                    {{name}}
+                  {{else}}
+                    Instrument
+                  {{/if}}
+                </a>
+                {{#if permalink}}
+                  <span class="label pull-right">
+                    <a href="{{permalink}}" target="_blank">
+                      <span class="label label-default">
+                        STREAM ID: {{id}} <span class="glyphicon glyphicon-new-window"></span>
+                      </span>
+                    </a>
+                  </span>
+                {{/if}}
+              </h4>
+            </div>
+            <div id="instrument-contents-{{id}}" class="panel-collapse collapse" role="tabpanel" aria-labelledby="instrument-heading-{{id}}">
+              <div class="panel-body">
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="form-group">
+                      <div class="row">
+                        <label for="instrumentName" class="col-sm-4 paddingTop7 control-label" data-toggle="tooltip" data-placement="left"
+                               title="The full description of the instrument, typically provided by the Data Source. Should be concise, but descriptive.">Name</label>
+                        <div class="col-sm-8">
+                          <input type="text" class="form-control input-sm" id="instrumentName" name="instrumentName" value="{{name}}" placeholder="Falls Creek Northeast Temperature Monitor" required>
+                        </div>
+                      </div>
+
+                      <div class="row">
+                        <input type="hidden" name="id" value="{{id}}" />
+                        <label for="instrumentMake" class="col-sm-4 paddingTop7 control-label">Make</label>
+                        <div class="col-sm-8">
+                          <input type="text" class="form-control input-sm" id="instrumentMake" name="instrumentMake" value="{{properties.instrumentMake}}" placeholder="PISCES">
+                        </div>
+                      </div>
+
+                      <div class="row">
+                        <label for="instrumentModel" class="col-sm-4 paddingTop7 control-label">Model</label>
+                        <div class="col-sm-8">
+                          <input type="text" class="form-control input-sm" id="instrumentModel" name="instrumentModel" value="{{properties.instrumentModel}}" placeholder="PT-5000">
+                        </div>
+                      </div>
+
+                      <div class="row">
+                        <h3></h3>
+                      </div>
+
+                      <div id="hasDepth">
+                        <div class="row">
+                          <label for="instrumentVerticalOffset" class="col-sm-4 paddingTop7 control-label"
+                                 data-toggle="tooltip" data-placement="left"
+                                 title="The vertical 'offset', or how far the instrument is above or below the surface. Use negative values for items below the surface.">
+                            Elevation
+                          </label>
+                          <div class="col-sm-4">
+                            <input type="text" class="form-control input-sm" id="instrumentVerticalOffset" name="instrumentVerticalOffset" value="{{properties.instrumentVerticalOffset}}" placeholder="use negative values to indicate items below the surface">
+                          </div>
+                          <div class="col-sm-4">
+                            <input type="text" class="form-control input-sm" id="instrumentVerticalOffsetUnits" name="instrumentVerticalOffsetUnits" value="{{properties.instrumentVerticalOffsetUnits}}" placeholder="meters">
+                          </div>
+                        </div>
+
+                        <div class="row">
+                          <label for="instrumentHorizontalOffset" class="col-sm-4 paddingTop7 control-label"
+                               data-toggle="tooltip" data-placement="left"
+                               title="An 'horizontal offset' instrument is at the same lat/long, but positioned slightly away.">
+                            Horizontal Offset
+                          </label>
+                          <div class="col-sm-4">
+                            <input type="number" class="form-control input-sm" id="instrumentHorizontalOffset" name="instrumentHorizontalOffset" value="{{properties.instrumentHorizontalOffset}}" placeholder="5">
+                          </div>
+                          <div class="col-sm-4">
+                            <input type="text" class="form-control input-sm" id="instrumentHorizontalOffsetUnits" name="instrumentHorizontalOffsetUnits" value="{{properties.instrumentHorizontalOffsetUnits}}" placeholder="meters">
+                          </div>
+                        </div>
+
+                        <div class="row">
+                          <label for="instrumentOffsetHorizontalOrientation" class="col-sm-4 paddingTop7 control-label">Horizontal Offset Orientation (in compass degrees)</label>
+                          <div class="col-sm-8">
+                            <input type="number" class="form-control input-sm" id="instrumentHorizontalOffsetOrientation" name="instrumentHorizontalOffsetOrientation" value="{{properties.instrumentHorizontalOffsetOrientation}}" placeholder="180 (ie: south of the lat/long)">
+                          </div>
+                        </div>
+
+                        <div class="row">
+                          <label for="notes" class="col-sm-4 paddingTop7 control-label">Notes</label>
+                          <div class="col-sm-8">
+                            <textarea class="form-control input-sm" id="notes" name="notes" placeholder="optional information...">{{properties.notes}}</textarea>
+                          </div>
+                        </div>
+
+
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {{> parameters this}}
+
+                {{!-- the remove instrument button is only used on new forms to cancel adding one. existing streams shouldn't be deleted without deleting the datapoints, etc. --}}
+                {{#unless name}}
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="pull-right instrument-delete">
+                        <div class="btn btn-primary btn-sm removeInstrument" id="instrument-delete-{{id}}" data-id="{{id}}">Remove Instrument</div>
+                      </div>
+                    </div>
+                  </div>
+                {{/unless}}
+
+
+                <div class="row">
+                  <div class="col-md-12">
+                    <h3></h3>
+                  </div>
+                </div>
+
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</form>

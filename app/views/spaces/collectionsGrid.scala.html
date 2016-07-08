@@ -1,0 +1,31 @@
+@(collectionsList: List[Collection], space: String)(implicit user: Option[models.User])
+
+@import api.Permission
+<p>
+    <span class="small">Viewing most recent collections</small>
+    <span class="pull-right">
+         <a href="@(routes.Collections.list("", "", 12, Some(space)))" class="btn btn-link btn-xs">
+            <span class="glyphicon glyphicon-th-large"></span>
+            View All Collections
+        </a>
+    </span>
+
+</p>
+
+@util.masonry()
+
+<div class="row" id="tile-view">
+    <div class="col-md-12">
+        <div id="masonry-collections">
+        @collectionsList.map { collection =>
+            @collections.tile(collection, routes.Spaces.getSpace(UUID(space)), Some(space), "col-lg-4 col-md-4 col-sm-4", false)
+        }
+        </div>
+    </div>
+</div>
+
+@if(!user.isDefined) {
+    <script type="text/javascript">
+        $('#create-collection').addClass('disabled');
+    </script>
+}

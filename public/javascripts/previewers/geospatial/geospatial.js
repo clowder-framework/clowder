@@ -3,8 +3,7 @@
 
 	var defaultOpacity = 0.8;
 	// retrieve the metadata
-	var metadataApiUrl = "/api/files/" + Configuration.fileid
-			+ "/technicalmetadatajson";
+	var metadataApiUrl = jsRoutes.api.Files.getTechnicalMetadataJSON(Configuration.fileid).url;
 	var request = $.ajax({
 		type : "GET",
 		url : metadataApiUrl,
@@ -42,7 +41,7 @@
 				console.log("Updating tab " + Configuration.tab);
 
 				// add css for ol3
-				var cssLink = $("<link rel='stylesheet' type='text/css' href='http://openlayers.org/en/v3.0.0/css/ol.css'>");
+				var cssLink = $("<link rel='stylesheet' type='text/css' href='" + Configuration.previewer + "/../../openlayers/ol.css'>");
 				$(Configuration.tab).append(cssLink);
 
 				// add map div for ol3
@@ -51,7 +50,7 @@
 				// loading the ol3 javascript
 				$
 						.getScript(
-								"http://openlayers.org/en/v3.0.0/build/ol.js",
+								Configuration.previewer + "/../../openlayers/ol.js",
 								function() {
 									// add layer opacity control
 									$(Configuration.tab).append(

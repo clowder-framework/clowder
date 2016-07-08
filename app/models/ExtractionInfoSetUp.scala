@@ -1,27 +1,19 @@
 package models
 
-import java.util.Date
 import play.api.Play.current
-import java.util.ArrayList
-import play.api.libs.concurrent
 import services.RabbitmqPlugin
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.JsObject
 import play.api.Logger
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import javax.inject.Inject
 import services.ExtractorService
 import services.DI
 import scala.concurrent.Future
 import services.ExtractionRequestsService
 import java.net.InetAddress
 import play.api.libs.ws.Response
+
 /**
- * @author Smruti Padhy 
- * 
- *  DTS extractions information 
- * 
+ *  DTS extractions information
  */
 
 object ExtractionInfoSetUp {
@@ -48,7 +40,7 @@ def updateDTSRequests(file_id:UUID,extractor_id:String)={
     val updateStatus = current.plugin[RabbitmqPlugin] match {
       case Some(plugin) => {
         val configuration = play.api.Play.configuration
-        val exchange = configuration.getString("medici2.rabbitmq.exchange").getOrElse("medici")
+        val exchange = configuration.getString("clowder.rabbitmq.exchange").getOrElse("clowder")
         if (exchange != "") {
           Logger.debug("Exchange is not an empty string: " + exchange)
           updateAndGetStatus(plugin, exchange)

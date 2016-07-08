@@ -1,0 +1,14 @@
+@(dataset: Dataset)(implicit user: Option[models.User])
+
+@if(user.isDefined) {
+    @if(dataset.files.length > 0){
+        <div class="btn-group btn-group-xs">
+            <button id="downloadDatasetButton" onclick="window.open(jsRoutes.api.Datasets.download('@(dataset.id)').url, '_blank')"
+            type="button" title="Download all files in this dataset as a zip file" class="btn btn-default">
+                <span class="glyphicon glyphicon-download-alt"></span>
+                Download All Files
+            </button>
+        </div>
+    }
+
+}

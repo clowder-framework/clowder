@@ -2,22 +2,32 @@ package models
 
 import play.api.Play.current
 import java.security.MessageDigest
-import play.api.Play.configuration
+import java.util.Date
 
+import play.api.Play.configuration
+import play.api.libs.json.Json
 import securesocial.core._
+import services.AppConfiguration
 
 /**
  * Simple class to capture basic User Information. This is similar to Identity in securesocial
  *
- * @author Rob Kooper
  */
 trait User extends Identity {
   def id: UUID
+  def active: Boolean
+  def serverAdmin: Boolean
   def profile: Option[Profile]
   def friends: Option[List[String]]
   def followedEntities: List[TypedID]
   def followers: List[UUID]
   def viewed: Option[List[UUID]]
+  def spaceandrole: List[UserSpaceAndRole]
+  def repositoryPreferences: Map[String,Any]
+  def termsOfServices: Option[UserTermsOfServices]
+
+  // One can only be superAdmin iff you are a serveradmin
+  def superAdminMode: Boolean
 
   /**
    * Get the avatar URL for this user's profile
@@ -60,15 +70,41 @@ trait User extends Identity {
   def getMiniUser: MiniUser = {
     new MiniUser(id = id, fullName = fullName, avatarURL = getAvatarUrl(), email = email)
   }
+
+  override def toString: String = format(false)
+
+  def format(paren: Boolean): String = {
+    val e = email.fold(" ")(x => s""" <${x}> """)
+    val x = (identityId.providerId) match {
+      case ("userpass") => s"""${fullName}${e}[Local Account]"""
+      case (provider) => s"""${fullName}${e}[${provider.capitalize}]"""
+    }
+    if (paren) {
+      x.replaceAll("<", "(").replaceAll(">", ")")
+    } else {
+      x
+    }
+  }
 }
 
 object User {
   def anonymous = new ClowderUser(UUID("000000000000000000000000"),
-  new IdentityId("anonymous", ""),
-  "Anonymous", "User", "Anonymous User",
-  None,
-  AuthenticationMethod.UserPassword)
+    new IdentityId("anonymous", ""),
+    firstName="Anonymous",
+    lastName="User",
+    fullName="Anonymous User",
+    email=None,
+    authMethod=AuthenticationMethod("SystemUser"),
+    active=true,
+    termsOfServices=Some(UserTermsOfServices(accepted=true, acceptedDate=new Date(), "")))
+  implicit def userToMiniUser(x: User): MiniUser = x.getMiniUser
 }
+
+case class MiniUser(
+   id: UUID,
+   fullName: String,
+   avatarURL: String,
+   email: Option[String])
 
 case class ClowderUser(
   id: UUID = UUID.generate(),
@@ -85,6 +121,15 @@ case class ClowderUser(
   oAuth2Info: Option[OAuth2Info] = None,
   passwordInfo: Option[PasswordInfo] = None,
 
+  // should user be active
+  active: Boolean = false,
+
+  // is the user an admin
+  serverAdmin: Boolean = false,
+
+  // has the user escalated privileges, this is never saved to the database
+  @transient superAdminMode: Boolean = false,
+
   // profile
   profile: Option[Profile] = None,
 
@@ -94,7 +139,17 @@ case class ClowderUser(
   friends: Option[List[String]] = None,
 
   // social
-  viewed: Option[List[UUID]] = None
+  viewed: Option[List[UUID]] = None,
+
+  // spaces
+  spaceandrole: List[UserSpaceAndRole] = List.empty,
+
+  //staging area
+  repositoryPreferences: Map[String,Any] = Map.empty,
+
+  // terms of services
+  termsOfServices: Option[UserTermsOfServices] = None
+
 ) extends User
 
 case class Profile(
@@ -117,3 +172,9 @@ case class Profile(
     }
   }
 }
+
+case class UserTermsOfServices(
+  accepted: Boolean = false,
+  acceptedDate: Date = null,
+  acceptedVersion: String = ""
+)

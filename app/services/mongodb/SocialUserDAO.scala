@@ -9,7 +9,6 @@ import securesocial.core.Identity
 /**
  * Used to store securesocial users in MongoDB.
  *
- * @author Luigi Marini
  */
 object SocialUserDAO extends ModelCompanion[Identity, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {

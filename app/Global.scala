@@ -1,16 +1,22 @@
-import play.api.{GlobalSettings, Application}
+import java.io.{PrintWriter, StringWriter}
+
+import play.api.{Application, GlobalSettings}
 import play.api.Logger
-
 import play.filters.gzip.GzipFilter
-
 import play.libs.Akka
-import services.AppConfiguration
+import securesocial.core.SecureSocial
+import services.{AppConfiguration, DI, UserService}
+
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
-import models.{ServerStartTime, CORSFilter, ExtractionInfoSetUp, JobsScheduler}
+import models._
 import java.util.Calendar
-import play.api.mvc.WithFilters
+
+import play.api.mvc.{RequestHeader, WithFilters}
+import play.api.mvc.Results._
 import akka.actor.Cancellable
+import filters.CORSFilter
 import julienrf.play.jsonp.Jsonp
 
 /**
@@ -27,17 +33,36 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
     ServerStartTime.startTime = Calendar.getInstance().getTime
     Logger.debug("\n----Server Start Time----" + ServerStartTime.startTime + "\n \n")
 
-    // set admins
-    AppConfiguration.setDefaultAdmins()
+    val users: UserService = DI.injector.getInstance(classOf[UserService])
 
-    extractorTimer = Akka.system().scheduler.schedule(0 minutes, 5 minutes) {
-      ExtractionInfoSetUp.updateExtractorsInfo()
+    // set the default ToS version
+    AppConfiguration.setDefaultTermsOfServicesVersion()
+
+    // add all new admins
+    users.updateAdmins()
+
+    // create default roles
+    if (users.listRoles().isEmpty) {
+      Logger.debug("Ensuring roles exist")
+      users.updateRole(Role.Admin)
+      users.updateRole(Role.Editor)
+      users.updateRole(Role.Viewer)
+    }
+
+    // set default metadata definitions
+    MetadataDefinition.registerDefaultDefinitions()
+
+    if (extractorTimer == null) {
+      extractorTimer = Akka.system().scheduler.schedule(0 minutes, 5 minutes) {
+        ExtractionInfoSetUp.updateExtractorsInfo()
+      }
     }
 
     // Use if Mailer Server and stmp in Application.conf are set up
-
-    jobTimer = Akka.system().scheduler.schedule(0 minutes, 1 minutes) {
-      JobsScheduler.runScheduledJobs()
+    if (jobTimer == null) {
+      jobTimer = Akka.system().scheduler.schedule(0 minutes, 1 minutes) {
+        JobsScheduler.runScheduledJobs()
+      }
     }
 
     Logger.info("Application has started")
@@ -50,9 +75,39 @@ object Global extends WithFilters(new GzipFilter(), new Jsonp(), CORSFilter()) w
   }
 
   private lazy val injector = services.DI.injector
+  private lazy val users: UserService =  DI.injector.getInstance(classOf[UserService])
 
   /** Used for dynamic controller dispatcher **/
   override def getControllerInstance[A](clazz: Class[A]) = {
     injector.getInstance(clazz)
+  }
+
+  override def onError(request: RequestHeader, ex: Throwable) = {
+    val sw = new StringWriter()
+    val pw = new PrintWriter(sw)
+    ex.printStackTrace(pw)
+    implicit val user = SecureSocial.currentUser(request) match{
+      case Some(identity) =>  users.findByIdentity(identity)
+      case None => None
+    }
+    Future(InternalServerError(
+      views.html.errorPage(request, sw.toString.replace("\n", "   "))(user)))
+  }
+
+  override def onHandlerNotFound(request: RequestHeader) = {
+    implicit val user = SecureSocial.currentUser(request) match{
+      case Some(identity) =>  users.findByIdentity(identity)
+      case None => None
+    }
+    Future(NotFound(
+      views.html.errorPage(request, "Not found")(user)))
+  }
+
+  override def onBadRequest(request: RequestHeader, error: String) = {
+    implicit val user = SecureSocial.currentUser(request) match{
+      case Some(identity) =>  users.findByIdentity(identity)
+      case None => None
+    }
+    Future(BadRequest(views.html.errorPage(request, error)(user)))
   }
 }

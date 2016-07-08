@@ -1,13 +1,5 @@
 @(dataset: Dataset)(implicit user: Option[models.User])
 
-@if(user.isDefined) {
-    <a class="btn btn-default btn-xs accordion-toggle collapsed" data-toggle="collapse"
-    data-parent="#accordion6" href="#collapseSix" id="editlicense"
-    title="Edit License Information">
-        <span class="glyphicon glyphicon-chevron-down"></span> Edit License
-    </a>
-}
-
 <div id="collapseSix" class="accordion-body collapse">
     <div class="panel panel-primary">
         <div class="panel-body">
@@ -17,7 +9,6 @@
         </div>
     </div>
 </div>
-
 <script type="text/javascript" language="javascript">
     $(document).ready(function() {
         //Will have to modify the if check to see if there is data that specifies what should be selected

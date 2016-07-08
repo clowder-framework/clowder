@@ -1,21 +1,17 @@
 package api
 
-import play.api.mvc.Controller
-import play.api.libs.json.Json._
-import play.api.Play.current
-import services._
 import javax.inject.Inject
-import services.ExtractorMessage
-import models.{Feature, UUID, MultimediaFeatures}
-import play.api.libs.json.JsObject
-import scala.Some
+
 import controllers.Utils
+import models.{Feature, MultimediaFeatures, UUID}
+import play.api.Play.current
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json._
+import play.api.mvc.Controller
+import services.{ExtractorMessage, _}
 
 /**
  * Index data.
- * 
- * @author Luigi Marini
- *
  */
 @Inject
 class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: PreviewService) extends Controller with ApiController {
@@ -23,19 +19,19 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
   /**
    * Submit section, preview, file for indexing.
    */
-  def index() = SecuredAction(authorization=WithPermission(Permission.AddIndex)) { request =>
+  def index() = PermissionAction(Permission.MultimediaIndexDocument)(parse.json) { implicit request =>
       (request.body \ "section_id").asOpt[String].map { section_id =>
       	  (request.body \ "preview_id").asOpt[String].map { preview_id =>
             previews.get(UUID(preview_id)) match {
       	      case Some(p) =>
 	      	    // TODO RK need to replace unknown with the server name
 	            val key = "unknown." + "index."+ p.contentType.replace(".", "_").replace("/", ".")
-	            val host = Utils.baseUrl(request) + request.path.replaceAll("api/indexes$", "")
+	            val host = Utils.baseUrl(request)
 	            val id = p.id
 	            current.plugin[RabbitmqPlugin].foreach{
                 // TODO replace null with None
 	              _.extract(ExtractorMessage(id, id, host, key, Map("section_id"->section_id), p.length.toString, null, ""))}
-	            var fileType = p.contentType
+	            val fileType = p.contentType
 	            current.plugin[VersusPlugin].foreach{ _.indexPreview(id,fileType) }
 	            Ok(toJson("success"))
       	      case None => BadRequest(toJson("Missing parameter [preview_id]"))
@@ -52,13 +48,14 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
   /**
    * Add feature to index.
    */
-  def features() = SecuredAction(authorization=WithPermission(Permission.AddIndex)) { request =>
+  def features() = PermissionAction(Permission.MultimediaIndexDocument)(parse.json) { implicit request =>
       (request.body \ "section_id").asOpt[String].map { section_id =>
         val sectionUUID = UUID(section_id)
         multimediaSearch.findFeatureBySection(sectionUUID) match {
           case Some(multimediaFeature) => {
             val features = (request.body \ "features").as[List[JsObject]]
             multimediaSearch.updateFeatures(multimediaFeature, sectionUUID, features)
+            // TODO add method to pre-compute with existing feature vectors
             Ok(toJson(Map("id"->multimediaFeature.id.toString)))
           }
           case None => {
@@ -68,6 +65,8 @@ class Indexes @Inject() (multimediaSearch: MultimediaQueryService, previews: Pre
             }
             val doc = MultimediaFeatures(section_id = Some(sectionUUID), features = features)
             multimediaSearch.insert(doc)
+            // precompute distances
+            multimediaSearch.computeDistances(doc)
             Ok(toJson(Map("id"->doc.id.toString)))
           }
         }

@@ -834,9 +834,7 @@ function clearConfigTabAnnotations(prNum){
 (function ($, Configuration) {
 
   console.log("X3D previewer for " + Configuration.id);
-  
-  var pathJs = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '') + Configuration.jsPath + "/";
-  
+
   width = 750;
   height = 550;
   
@@ -960,7 +958,7 @@ function clearConfigTabAnnotations(prNum){
   if(!isx3dActive){
 	  var s = document.createElement("script");
 	  s.type = "text/javascript";
-	  s.src = pathJs + "x3dom.js";
+	  s.src = Configuration.previewer + "/../../x3dom.js";
 	  console.log("Updating tab " + Configuration.tab);
 	  $(Configuration.tab).append(s);
   } 

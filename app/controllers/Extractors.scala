@@ -5,7 +5,7 @@ import play.api.mvc.Controller
 import api.WithPermission
 import api.Permission
 import javax.inject.{Inject, Singleton}
-import services.{ExtractorService, ExtractionService}
+import services.ExtractorService
 
 /**
  * Information about extractors.
@@ -13,7 +13,7 @@ import services.{ExtractorService, ExtractionService}
 @Singleton
 class Extractors  @Inject() (extractions: ExtractionService, extractorService: ExtractorService) extends Controller with SecuredController {
 
-  def listAllExtractions = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+  def listAllExtractions = ServerAdminAction { implicit request =>
     implicit val user = request.user
     val allExtractions = extractions.findAll()
     Ok(views.html.listAllExtractions(allExtractions))
