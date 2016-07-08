@@ -513,10 +513,9 @@ class Extractions @Inject()(
     list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
   }
 
-  def submitToExtractor() = SecuredAction(authorization = WithPermission(Permission.AddFilesMetadata)) { implicit request =>
+  def submitToExtractor(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file, file_id)))(parse.json) { implicit request =>
     Logger.debug(s"Submitting file for extraction with body $request.body" )
     val extractor = (request.body \ "extractor").as[String]
-    val file_id = UUID((request.body \ "file_id").as[String])
     val parameters = (request.body \ "parameters").as[JsObject]
     files.get(file_id) match {
       case Some(f) => {

@@ -61,7 +61,7 @@ GET            /extractions/extractors_names                                    
 GET            /extractions/supported_input_types                                       @controllers.ExtractionInfo.getExtractorInputTypes()
 
 
-GET            /files/:file_id/extractors                                               @controllers.Extractors.submitExtraction(file_id: UUID)
+GET            /files/:file_id/extractions                                              @controllers.Extractors.submitExtraction(file_id: UUID)
 
 # ----------------------------------------------------------------------
 # DTS BOOKMARKLET
@@ -378,7 +378,7 @@ GET            /api/extractors                                                  
 GET            /api/extractors/:id                                                      @api.Extractions.getExtractorInfo(id: UUID)
 POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
 
-POST           /api/extractions                                                         @api.Extractions.submitToExtractor
+POST           /api/files/:file_id/extractions                                          @api.Extractions.submitToExtractor(file_id: UUID)
 
 GET            /api/extractions/requests                                                @api.Extractions.getDTSRequests()
 GET            /api/extractions/servers_ips                                             @api.Extractions.getExtractorServersIP()

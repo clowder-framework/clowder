@@ -1,17 +1,18 @@
 package controllers
 
-import models.UUID
+import models.{ResourceRef, UUID}
 import play.api.mvc.Controller
-import api.WithPermission
 import api.Permission
 import javax.inject.{Inject, Singleton}
-import services.ExtractorService
+
+import services.{ExtractionService, ExtractorService, FileService}
 
 /**
  * Information about extractors.
  */
 @Singleton
-class Extractors  @Inject() (extractions: ExtractionService, extractorService: ExtractorService) extends Controller with SecuredController {
+class Extractors  @Inject() (extractions: ExtractionService,
+  extractorService: ExtractorService, fileService: FileService) extends Controller with SecuredController {
 
   def listAllExtractions = ServerAdminAction { implicit request =>
     implicit val user = request.user
@@ -19,8 +20,11 @@ class Extractors  @Inject() (extractions: ExtractionService, extractorService: E
     Ok(views.html.listAllExtractions(allExtractions))
   }
 
-  def submitExtraction(file_id: UUID) = SecuredAction(authorization=WithPermission(Permission.Admin)) { implicit request =>
+  def submitExtraction(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file, file_id))) { implicit request =>
     val extractors = extractorService.listExtractorsInfo()
-    Ok(views.html.extractions.submitExtraction(extractors, file_id))
+    fileService.get(file_id) match {
+      case Some(file) => Ok(views.html.extractions.submitExtraction(extractors, file))
+      case None => InternalServerError("File not found")
+    }
   }
 }
