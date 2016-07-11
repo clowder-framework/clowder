@@ -239,7 +239,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   }
 
 
-  @ApiOperation(value = "List UUIDs of all datasets in a space",
+  @ApiOperation(value = "List UUIDs of all collections in a space",
     notes = "",
     responseClass = "List", httpMethod = "GET")
   def listCollections(spaceId: UUID, limit: Integer) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
