@@ -1,7 +1,14 @@
 @(file: File, comments: Map[UUID, Int], redirect: Call, dataset: Option[String], space: Option[String], folder: Option[String], showMove: Boolean)(implicit user: Option[models.User])
 @import api.Permission
 @import _root_.util.FileUtils
-<div class="panel panel-default" id="@file.id-listitem">
+<div class="panel panel-default file-panel" id="@file.id-listitem">
+    @if(!file.thumbnail_id.isEmpty){
+        <div class="row">
+            <div class="pull-left col-xs-12">
+                <span class="glyphicon glyphicon-file"></span>
+            </div>
+        </div>
+    }
     <div class="panel-body">
         <div class="row">
             <div class="col-md-2 col-sm-2 col-lg-2">

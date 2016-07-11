@@ -151,10 +151,11 @@
 
 	<div class="row">
 		<div class="col-md-8 col-sm-8 col-lg-8">
+			<div id="file-name-div">
 			@if(datasets.length > 0) {
 				@datasets.map {dataset =>
 					<span class="h1">
-						<a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id'>@Html(dataset.name)</a>
+						<a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id'> <span class="glyphicon glyphicon-briefcase"></span> @Html(dataset.name)</a>
 					</span>
 					<span class="glyphicon glyphicon-chevron-right" style="font-size: 150%;"></span>
 				}
@@ -162,13 +163,13 @@
 			@if(folders.length > 0) {
 				@folders.map { folder =>
 					<span class="h1">
-						<a href="@routes.Datasets.dataset(folder.parentDatasetId)#folderId=@folder.id">@folder.displayName</a>
+						<a href="@routes.Datasets.dataset(folder.parentDatasetId)#folderId=@folder.id"> <span class="glyphicon glyphicon-folder"> </span>@folder.displayName</a>
 					</span>
 					<span class="glyphicon glyphicon-chevron-right" style="font-size: 150%;"></span>
 				}
 			}
 			<div id="prf-file-name" class="text-left inline">
-				<h1 id="file-name-title" class="inline">@Html(file.filename)</h1>
+				<h1 id="file-name-title" class="inline"> <span class="glyphicon glyphicon-file"></span> @Html(file.filename)</h1>
 				@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
 					<div id="h-edit-file" class="hiddencomplete">
 						<a id ="edit-file" href="javascript:updateFileName()" title="Click to edit file name.">
@@ -176,6 +177,7 @@
 						</a>
 					</div>
 				}
+			</div>
 			</div>
 			<div class="row bottom-padding">
 				<div class="col-md-12 box-white-space" id="aboutdesc">

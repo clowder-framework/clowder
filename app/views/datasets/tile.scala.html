@@ -2,7 +2,10 @@
 @import _root_.util.Formatters.ellipsize
 @import api.Permission
 <div class="post-box @classes" id="@dataset.id-tile">
-    <div class="panel panel-default">
+    <div class="panel panel-default dataset-panel">
+        <div class="pull-left">
+            <span class="glyphicon glyphicon-briefcase"></span>
+        </div>
         <div class="panel-body">
             @if(!dataset.thumbnail_id.isEmpty){
                 <a href="@(routes.Datasets.dataset(dataset.id,space))">
@@ -16,7 +19,7 @@
         </div>
             <!-- Dataset Info -->
         <ul class="list-group">
-            <li class="list-group-item">
+            <li class="list-group-item dataset-panel-footer">
                 <span class="glyphicon glyphicon-folder-close" title="@dataset.folders.size folders"></span> @dataset.folders.size
                 <span class="glyphicon glyphicon-file" title="@dataset.files.size files"></span> @dataset.files.size
                 <span class="glyphicon glyphicon-tags" title="@dataset.tags.size tags"></span> @dataset.tags.size
