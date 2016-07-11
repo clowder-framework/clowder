@@ -243,8 +243,8 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     notes = "",
     responseClass = "List", httpMethod = "GET")
   def listCollections(spaceId: UUID, limit: Integer) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
-    val datasetList = collectionService.listSpace(limit, spaceId.uuid)
-    Ok(Json.obj("ids" -> datasetList.map(d => d.id.uuid)))
+    val collectionList = collectionService.listSpace(limit, spaceId.uuid)
+    Ok(Json.obj("ids" -> collectionList.map(c => c.id.uuid)))
   }
 
 
