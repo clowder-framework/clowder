@@ -516,23 +516,44 @@ class Extractions @Inject()(
   def submitToExtractor(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file, file_id)))(parse.json) { implicit request =>
     Logger.debug(s"Submitting file for extraction with body $request.body" )
     val extractor = (request.body \ "extractor").as[String]
-    val parameters = (request.body \ "parameters").as[JsObject]
+    val parameters = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
     files.get(file_id) match {
-      case Some(f) => {
-        val id = f.id
-        val fileType = f.contentType
-        val flags = ""
+      case Some(file) => {
+        val id = file.id
+        val fileType = file.contentType
+        val idAndFlags = ""
         val host = Utils.baseUrl(request)
+
+        // Log request
         val clientIP = request.remoteAddress
         val serverIP = request.host
-        dtsrequests.insertRequest(serverIP, clientIP, f.filename, id, fileType, f.length, f.uploadDate)
-        val extra = Map("filename" -> f.filename, "parameters" -> parameters.toString)
+        dtsrequests.insertRequest(serverIP, clientIP, file.filename, id, fileType, file.length, file.uploadDate)
+
         val key = "extractors." + extractor
-        current.plugin[RabbitmqPlugin].foreach {
-          // TODO replace null with None
-          _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))
+        val extra = Map("filename" -> file.filename, "parameters" -> parameters.toString)
+        val showPreviews = file.showPreviews
+
+        val newFlags = if (showPreviews.equals("FileLevel"))
+          idAndFlags + "+filelevelshowpreviews"
+        else if (showPreviews.equals("None"))
+          idAndFlags + "+nopreviews"
+        else
+          idAndFlags
+
+        val originalId = if (!file.isIntermediate) {
+          file.id.toString()
+        } else {
+          idAndFlags
         }
-        Ok(Json.obj("status" -> "OK"))
+
+        // send file to rabbitmq for processing
+        current.plugin[RabbitmqPlugin] match {
+          case Some(p) =>
+            p.extract(ExtractorMessage(new UUID(originalId), file.id, host, key, extra, file.length.toString, null, newFlags))
+            Ok(Json.obj("status" -> "OK"))
+          case None =>
+            Ok(Json.obj("status" -> "error", "msg"-> "RabbitmqPlugin disabled"))
+        }
       }
       case None => BadRequest(toJson(Map("request" -> "File not found")))
     }
