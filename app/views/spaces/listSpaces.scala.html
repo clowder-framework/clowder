@@ -21,19 +21,7 @@
                     <button type="button" class="btn btn-default active" href="#tile-view" id="tile-view-btn"><span class="glyphicon glyphicon-th-large"></span></button>
                     <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
                 </div>
-                @if(user.isDefined) {
-                    @if(showAll == false) {
-                        <div class="btn-group btn-group-sm pull-right">
-                            <a class="btn btn-default" id="allspace"><span class="glyphicon glyphicon-th"></span> All @{spaces.spaceTitle()}s</a>
-                            <a class="btn btn-default active" id="myspace"><span class="glyphicon glyphicon-stop"></span> My @{spaces.spaceTitle()}s</a>
-                        </div>
-                    } else {
-                        <div class="btn-group btn-group-sm pull-right">
-                            <a class="btn btn-default active" id="allspace"><span class="glyphicon glyphicon-th"></span> All @{spaces.spaceTitle()}s</a>
-                            <a class="btn btn-default" id="myspace"><span class="glyphicon glyphicon-stop"></span> My @{spaces.spaceTitle()}s</a>
-                        </div>
-                    }
-                }
+
                 @if(user.isDefined) {
                     <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new @{spaces.spaceTitle()}"><span class="glyphicon glyphicon-ok"></span> Create</a>
                 }
@@ -70,22 +58,6 @@
                         //Utilizing library from https://github.com/carhartl/jquery-cookie/tree/v1.4.1
                         $.cookie("view-mode", "list", { path: '/' });
                     });
-                    $('#myspace').click(function(){
-                        var path;
-                        if(window.location.search == ""){
-                            path = location.pathname+'?showAll=false'
-                        } else {
-                            path = location.pathname+location.search+'&showAll=false'
-                        }
-                        window.location.assign( path);
-                    });
-
-                     $('#allspace').click(function(){
-                        // this will leave a semi-colon in the path. but it should be a problem. Otherwise, we have to care about
-                        // '/spaces?showAll=false;when=.....', where we should remove the one char after showAll not the one before.
-                        var path=(location.pathname+location.search).replace('showAll=false', '');
-                        window.location.assign( path);
-                     });
 
                 });
 
