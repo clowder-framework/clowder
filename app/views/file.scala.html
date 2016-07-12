@@ -151,7 +151,8 @@
 
 	<div class="row">
 		<div class="col-md-8 col-sm-8 col-lg-8">
-			<div id="file-name-div">
+			<div class="row">
+			<div id="file-name-div" class="col-xs-12">
 			@if(datasets.length > 0) {
 				@datasets.map {dataset =>
 					<span class="h1">
@@ -177,6 +178,7 @@
 						</a>
 					</div>
 				}
+			</div>
 			</div>
 			</div>
 			<div class="row bottom-padding">
