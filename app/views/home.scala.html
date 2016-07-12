@@ -1,3 +1,4 @@
+
 @(displayedName: String,  newsfeed: List[models.Event], profile:User, datasetsList: List[Dataset],  dscomments: Map[UUID, Int], collectionsList:List[Collection], spacesList: List[ProjectSpace],
          deletePermission: Boolean,  followers: List[(UUID, String, String, String)], followedUsers: List[(UUID, String, String, String)], followedFiles: List[(UUID, String, String)],
         followedDatasets: List[(UUID, String, String)], followedCollections: List[(UUID, String, String)], followedSpaces: List[(UUID, String, String)], ownProfile: Option[Boolean])(implicit user: Option[models.User])
@@ -49,8 +50,10 @@
             <div role="tabpanel" class="tab-pane" id="spaces">
                 @* spaces *@
                 <div class="row top-padding">
+                    <div class="col-xs-12">
+                        <p>Use @{spaces.spaceTitle()}s to collaboratively work with your team to manage and annotate data.</p>
+                    </div>
                     <div class="col-xs-6">
-
                     </div>
                     <div class="col-xs-6">
                         <span class="pull-right">
@@ -74,6 +77,9 @@
             <div role="tabpanel" class="tab-pane" id="datasets">
                 @* datasets *@
                 <div class="row top-padding">
+                    <div class="col-xs-12">
+                        <p>Create Datasets to upload and publish data. Further organize your data using folders and assign metadata at both the file and dataset level.</p>
+                    </div>
                     <div class="col-xs-6">
                     </div>
                     <div class="col-xs-6">
@@ -95,6 +101,9 @@
             <div role="tabpanel" class="tab-pane" id="collections">
                 @* collections *@
                 <div class="row top-padding">
+                    <div class="col-xs-12">
+                        <p>Use Collections to bring together multiple datasets and their associated files in an almost unlimited number of ways.</p>
+                    </div>
                     <div class="col-xs-6">
                     </div>
                     <div class="col-xs-6">
