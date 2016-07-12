@@ -232,14 +232,22 @@ class MongoDBFileService @Inject() (
         val techMd = getTechnicalMetadataJSON(id)
         val xmlMd = getXMLMetadataJSON(id)
 
+
         // Create mapping in JSON-LD metadata from name -> contents
         val metadataMap = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
-        var allMd = Map[String, JsValue]()
+        var allMd = Map[String, JsArray]()
         for (md <- metadataMap) {
-          allMd += (md.creator.displayName -> md.content)
+          if (allMd.keySet.exists(_ == md.creator.displayName)) {
+            // If we already have metadata from this creator, add this metadata to their array
+            var existingMd = allMd(md.creator.displayName).as[JsArray]
+            existingMd = existingMd :+ md.content
+            allMd += (md.creator.displayName -> existingMd)
+          } else {
+            // Otherwise add a new entry for this creator
+            allMd += (md.creator.displayName -> new JsArray(Seq(md.content)))
+          }
         }
         val allMdStr = Json.toJson(allMd).toString()
-        Logger.debug("jsonldMd=" + allMdStr)
 
         var fileDsId = ""
         var fileDsName = ""

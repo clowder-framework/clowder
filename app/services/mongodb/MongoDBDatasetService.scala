@@ -22,7 +22,7 @@ import org.json.JSONObject
 import play.api.Logger
 import play.api.Play._
 import play.api.libs.json.Json._
-import play.api.libs.json.{Json, JsValue}
+import play.api.libs.json.{Json, JsValue, JsArray}
 import services._
 import services.mongodb.MongoContext.context
 
@@ -1181,9 +1181,17 @@ class MongoDBDatasetService @Inject() (
 
         // Create mapping in JSON-LD metadata from name -> contents
         val metadataMap = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
-        var allMd = Map[String, JsValue]()
+        var allMd = Map[String, JsArray]()
         for (md <- metadataMap) {
-          allMd += (md.creator.displayName -> md.content)
+          if (allMd.keySet.exists(_ == md.creator.displayName)) {
+            // If we already have metadata from this creator, add this metadata to their array
+            var existingMd = allMd(md.creator.displayName).as[JsArray]
+            existingMd = existingMd :+ md.content
+            allMd += (md.creator.displayName -> existingMd)
+          } else {
+            // Otherwise add a new entry for this creator
+            allMd += (md.creator.displayName -> new JsArray(Seq(md.content)))
+          }
         }
         val allMdStr = Json.toJson(allMd).toString()
 
