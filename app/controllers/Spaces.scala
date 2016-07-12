@@ -509,12 +509,12 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
    /**
    * Show the list page
    */
-   def list(when: String, date: String, limit: Int, mode: String, owner: Option[String], showAll: Boolean) = UserAction(needActive=true) { implicit request =>
+   def list(when: String, date: String, limit: Int, mode: String, owner: Option[String], showAll: Boolean, showPublic: Boolean, onlyTrial: Boolean) = UserAction(needActive=true) { implicit request =>
      implicit val user = request.user
 
      val nextPage = (when == "a")
      val person = owner.flatMap(o => users.get(UUID(o)))
-     var title: Option[String] = Some(spaceTitle + "s")
+     var title: Option[String] = Some(play.api.i18n.Messages("list.title", spaceTitle+"s"))
 
      val spaceList = person match {
        case Some(p) => {
@@ -526,11 +526,17 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
          }
        }
        case None => {
-         if (date != "") {
-           spaces.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewSpace), request.user, showAll)
-         } else {
-           spaces.listAccess(limit, Set[Permission](Permission.ViewSpace), request.user, showAll)
+         val trialValue  = onlyTrial && Permission.checkServerAdmin(user)
+         if(trialValue) {
+           title = Some( "Trial " + spaceTitle+ "s")
          }
+         if (date != "") {
+           spaces.listAccess (date, nextPage, limit, Set[Permission] (Permission.ViewSpace), request.user, showAll, showPublic, trialValue)
+         } else {
+           spaces.listAccess(limit, Set[Permission](Permission.ViewSpace), request.user, showAll, showPublic, trialValue)
+         }
+
+
        }
      }
 
@@ -539,7 +545,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
        val first = Formatters.iso8601(spaceList.head.created)
        val space = person match {
          case Some(p) => spaces.listUser(first, nextPage=false, 1, request.user, showAll, p)
-         case None => spaces.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewSpace), request.user, showAll)
+         case None => spaces.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewSpace), request.user, showAll, showPublic, onlyTrial)
        }
        if (space.nonEmpty && space.head.id != spaceList.head.id) {
          first
@@ -555,7 +561,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
        val last = Formatters.iso8601(spaceList.last.created)
        val ds = person match {
          case Some(p) => spaces.listUser(last, nextPage=true, 1, request.user, showAll, p)
-         case None => spaces.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewSpace), request.user, showAll)
+         case None => spaces.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewSpace), request.user, showAll, showPublic, onlyTrial)
        }
        if (ds.nonEmpty && ds.head.id != spaceList.last.id) {
          last
@@ -579,8 +585,12 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
        } else {
          Some(mode)
        }
+     if(!showPublic) {
+       title = Some(play.api.i18n.Messages("you.title", spaceTitle+ "s"))
+     }
 
-     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, prev, next, title))
+
+     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, prev, next, title, showPublic, onlyTrial))
    }
 
 
