@@ -475,10 +475,19 @@ class Datasets @Inject()(
           } else {
             ""
           }
+          var accessOptions = new ListBuffer[String]();
+          if(isInPublicSpace){
+            accessOptions.append(spaceTitle + " Default (Public)")
+          } else {
+            accessOptions.append(spaceTitle + " Default (Private)")
+          }
+          accessOptions.append(DatasetStatus.PRIVATE.toString.substring(0,1).toUpperCase() + DatasetStatus.PRIVATE.toString.substring(1).toLowerCase())
+          accessOptions.append(DatasetStatus.PUBLIC.toString.substring(0,1).toUpperCase() + DatasetStatus.PUBLIC.toString.substring(1).toLowerCase())
+
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
             decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove),fileList,
-            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess, access))
+            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess, access, accessOptions.toList))
         }
         case None => {
           Logger.error("Error getting dataset" + id)

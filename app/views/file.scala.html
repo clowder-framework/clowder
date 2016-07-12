@@ -25,7 +25,7 @@
 			Configuration.fileSize = @p._7;
 		}
 		else if("@p._2" === "X3d"){
-			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(UUID(p._1)))";
+			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(UUID(p._1))";
 			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(UUID(p._1))";
 			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(UUID(p._1))";
 			Configuration.wasPTM = "@(filename.endsWith(".ptm") || contentType.contains("ptmimages"))";
@@ -535,11 +535,13 @@
 					<h4>Metadata</h4>
 				</div>
 			</div>
-			<div class="row">
-				<div class="col-md-12">
+			@if(user.isDefined) {
+				<div class="row">
+					<div class="col-md-12">
 					@metadatald.addMetadata("file", file.id.toString, "metadata-content")
+					</div>
 				</div>
-			</div>
+			}
 			<div class="row bottom-padding">
 				<div class="col-md-12" id="metadata-content">
 					@metadatald.view(mds, true)

@@ -180,9 +180,40 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.dataset, id) => datasets.get(id).exists(dataset => dataset.isPublic || (dataset.isDefault && dataset.spaces.find(sId => spaces.get(sId).exists(_.isPublic)).nonEmpty)) // TODO check if dataset is public datasets.get(r.id).isPublic()
       case ResourceRef(ResourceRef.collection, id) =>  collections.get(id).exists(collection => collection.spaces.find(sId => spaces.get(sId).exists(_.isPublic)).nonEmpty)
       case ResourceRef(ResourceRef.space, id) => spaces.get(id).exists(s=>s.isPublic)
-      case ResourceRef(ResourceRef.comment, id) => false
-      case ResourceRef(ResourceRef.section, id) => false
-      case ResourceRef(ResourceRef.preview, id) => false
+      case ResourceRef(ResourceRef.comment, id) => {
+        comments.get(id) match {
+          case Some(comment) => {
+            (comment.dataset_id, comment.file_id) match {
+              case (Some(d_id), None) => checkAnonymousPrivatePermissions(permission, ResourceRef(ResourceRef.dataset, d_id))
+              case (None, Some(f_id)) => checkAnonymousPrivatePermissions(permission, ResourceRef(ResourceRef.file, f_id))
+              case (_, _) => false
+            }
+          }
+          case None => false
+        }
+      }
+      case ResourceRef(ResourceRef.section, id) => {
+        sections.get(id) match {
+          case Some(s) => {
+            checkAnonymousPrivatePermissions(permission, ResourceRef(ResourceRef.file, s.file_id))
+          }
+          case None => false
+        }
+      }
+      case ResourceRef(ResourceRef.preview, id) => {
+        previews.get(id) match {
+          case Some(preview) => {
+            (preview.file_id, preview.dataset_id, preview.collection_id, preview.section_id) match {
+              case (Some(f_id), None, None, None) => checkAnonymousPrivatePermissions(permission, ResourceRef(ResourceRef.file, f_id))
+              case (None, Some(d_id), None, None) => checkAnonymousPrivatePermissions(permission, ResourceRef(ResourceRef.dataset, d_id))
+              case (None, None, Some(c_id), None) => checkAnonymousPrivatePermissions(permission, ResourceRef(ResourceRef.collection, c_id))
+              case (None, None, None, Some(p_id)) => checkAnonymousPrivatePermissions(permission, ResourceRef(ResourceRef.section, p_id))
+              case (_, _, _, _) => false
+            }
+          }
+          case None => false
+        }
+      }
       case ResourceRef(ResourceRef.thumbnail, id) => true
       case ResourceRef(resType, id) => {
         Logger.error("Unrecognized resource type " + resType)
