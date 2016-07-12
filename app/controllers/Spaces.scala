@@ -334,9 +334,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
             // when permission is public, user can reach the authorization request button, so we check if the request is
             // already inserted
             if(s.requests.contains(RequestResource(user.id))) {
-              Ok(views.html.authorizationMessage("Your prior request is active, and pending"))
+              Ok(views.html.authorizationMessage("Your prior request for " + spaceTitle + " " + s.name + " is active, and pending", s))
             }else if (spaces.getRoleForUserInSpace(s.id, user.id) != None) {
-              Ok(views.html.authorizationMessage("You are already part of the " + spaceTitle))
+              Ok(views.html.authorizationMessage("You are already part of the " + spaceTitle + " " + s.name, s))
             } else{
               Logger.debug("Request submitted in controller.Space.addRequest  ")
               val subject: String = "Request for access from " + AppConfiguration.getDisplayName
@@ -356,7 +356,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                 }
               }
               spaces.addRequest(id, user.id, user.fullName)
-              Ok(views.html.authorizationMessage("Request submitted"))
+              Ok(views.html.authorizationMessage("Request submitted for " + spaceTitle + " " + s.name, s))
             }
           }
           case None => InternalServerError(spaceTitle + " not found")
@@ -390,7 +390,8 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                         created = new Date, creator = userId, homePage = formData.homePage,
                         logoURL = formData.logoURL, bannerURL = formData.bannerURL,
                         collectionCount = 0, datasetCount = 0, userCount = 0, metadata = List.empty,
-                        resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
+                        resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled,
+                        status = formData.access)
 
                       // insert space
                       spaces.insert(newSpace)
@@ -425,9 +426,16 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                     spaces.get(formData.spaceId.get) match {
                       case Some(existing_space) => {
                         if (Permission.checkPermission(user, Permission.EditSpace, Some(ResourceRef(ResourceRef.space, existing_space.id)))) {
-                          val updated_space = existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
-                              homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled, status = formData.access)
-
+                          val updated_space =
+                            // status can only be changed by user who has PublicSpace permission.
+                            Permission.checkPermission(user, Permission.PublicSpace, Some(ResourceRef(ResourceRef.space, existing_space.id))) match {
+                              case true =>
+                                existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
+                                  homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled, status = formData.access)
+                              case false =>
+                                existing_space.copy(name = formData.name, description = formData.description, logoURL = formData.logoURL, bannerURL = formData.bannerURL,
+                                  homePage = formData.homePage, resourceTimeToLive = formData.resourceTimeToLive * 60 * 60 * 1000L, isTimeToLiveEnabled = formData.isTimeToLiveEnabled)
+                            }
                           spaces.update(updated_space)
                           val option_user = users.findByIdentity(identity)
                           events.addObjectEvent(option_user, updated_space.id, updated_space.name, "update_space_information")
@@ -501,12 +509,12 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
    /**
    * Show the list page
    */
-   def list(when: String, date: String, limit: Int, mode: String, owner: Option[String], showAll: Boolean) = UserAction(needActive=true) { implicit request =>
+   def list(when: String, date: String, limit: Int, mode: String, owner: Option[String], showAll: Boolean, showPublic: Boolean, onlyTrial: Boolean) = UserAction(needActive=true) { implicit request =>
      implicit val user = request.user
 
      val nextPage = (when == "a")
      val person = owner.flatMap(o => users.get(UUID(o)))
-     var title: Option[String] = Some(spaceTitle + "s")
+     var title: Option[String] = Some(play.api.i18n.Messages("list.title", spaceTitle+"s"))
 
      val spaceList = person match {
        case Some(p) => {
@@ -518,11 +526,17 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
          }
        }
        case None => {
-         if (date != "") {
-           spaces.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewSpace), request.user, showAll)
-         } else {
-           spaces.listAccess(limit, Set[Permission](Permission.ViewSpace), request.user, showAll)
+         val trialValue  = onlyTrial && Permission.checkServerAdmin(user)
+         if(trialValue) {
+           title = Some( "Trial " + spaceTitle+ "s")
          }
+         if (date != "") {
+           spaces.listAccess (date, nextPage, limit, Set[Permission] (Permission.ViewSpace), request.user, showAll, showPublic, trialValue)
+         } else {
+           spaces.listAccess(limit, Set[Permission](Permission.ViewSpace), request.user, showAll, showPublic, trialValue)
+         }
+
+
        }
      }
 
@@ -531,7 +545,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
        val first = Formatters.iso8601(spaceList.head.created)
        val space = person match {
          case Some(p) => spaces.listUser(first, nextPage=false, 1, request.user, showAll, p)
-         case None => spaces.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewSpace), request.user, showAll)
+         case None => spaces.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewSpace), request.user, showAll, showPublic, onlyTrial)
        }
        if (space.nonEmpty && space.head.id != spaceList.head.id) {
          first
@@ -547,7 +561,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
        val last = Formatters.iso8601(spaceList.last.created)
        val ds = person match {
          case Some(p) => spaces.listUser(last, nextPage=true, 1, request.user, showAll, p)
-         case None => spaces.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewSpace), request.user, showAll)
+         case None => spaces.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewSpace), request.user, showAll, showPublic, onlyTrial)
        }
        if (ds.nonEmpty && ds.head.id != spaceList.last.id) {
          last
@@ -571,8 +585,12 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
        } else {
          Some(mode)
        }
+     if(!showPublic) {
+       title = Some(play.api.i18n.Messages("you.title", spaceTitle+ "s"))
+     }
 
-     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, prev, next, title))
+
+     Ok(views.html.spaces.listSpaces(decodedSpaceList, when, date, limit, owner, showAll, viewMode, prev, next, title, showPublic, onlyTrial))
    }
 
 

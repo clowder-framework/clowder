@@ -208,7 +208,7 @@ class Folders @Inject() (
        }
        case None => InternalServerError(s"Parent dataset $parentDatasetId not found")
      }
-   }
+  }
 
   def getAllFoldersByDatasetId(datasetId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user

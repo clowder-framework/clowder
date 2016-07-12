@@ -11,7 +11,7 @@
   toPublish: Boolean,
   curationObjects: List[models.CurationObject],
   currentSpace: Option[String],
-  limit: Int, showDownload: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  limit: Int, showDownload: Boolean, showAccess:  Boolean, access: String)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import helper._
 @import api.Permission
@@ -41,16 +41,18 @@
                     <ul class="list-unstyled">
                         <li>Created by <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
                         <li>Created on @dataset.created.format("MMM dd, yyyy")</li>
+                            @if(showAccess) {
+                                @if(Permission.checkPermission(Permission.PublicDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
+                                    <li id="access">Access:
+                                        <label class="radio-inline"><input type="radio" name="access" id="access-DEFAULT" value="@DatasetStatus.DEFAULT.toString">@DatasetStatus.DEFAULT.toString</label>
+                                        <label class="radio-inline"><input type="radio" name="access" id="access-PRIVATE" value="@DatasetStatus.PRIVATE.toString">@DatasetStatus.PRIVATE.toString</label>
+                                        <label class="radio-inline"><input type="radio" name="access" id="access-PUBLIC" value="@DatasetStatus.PUBLIC.toString">@DatasetStatus.PUBLIC.toString</label>
+                                    </li>
 
-                            @if(Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))) {
-                                <li id="access">Access:
-                                    <label class="radio-inline"><input type="radio" name="access" id="access-DEFAULT" value="@DatasetStatus.DEFAULT.toString">@DatasetStatus.DEFAULT.toString</label>
-                                    <label class="radio-inline"><input type="radio" name="access" id="access-PRIVATE" value="@DatasetStatus.PRIVATE.toString">@DatasetStatus.PRIVATE.toString</label>
-                                    <label class="radio-inline"><input type="radio" name="access" id="access-PUBLIC" value="@DatasetStatus.PUBLIC.toString">@DatasetStatus.PUBLIC.toString</label>
-                                </li>
                             } else {
-                                    <li>Access: @dataset.status.capitalize</li>
+                                    <li>Access: @access</li>
                             }
+                        }
 
                     </ul>
                 </div>

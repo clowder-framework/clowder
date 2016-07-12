@@ -1,8 +1,9 @@
-@(links: List[java.net.URL], space:models.ProjectSpace)(implicit user: Option[models.User])
+@(links: List[java.net.URL], space:models.ProjectSpace, classes: String)(implicit user: Option[models.User])
 
 @import api.Permission
 
-<div class="row ds-section-sm break-word space-col-right">
+<div class="@classes">
+    <div class="col-md-12 col-lg-12 col-sm-12">
 <h3>External Links</h3>
 @if(links.size == 0) {
     @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
@@ -18,19 +19,24 @@
     </ul>
 }
 @if(space.isTrial){
-    <div id="verify">
-        <h3>Status</h3>
-    <p>@play.api.i18n.Messages("trial.space")</p>
-    @if(api.Permission.checkServerAdmin(user)){
-        <button class="btn btn-link" title="Verify this space" >
-            <span class="glyphicon glyphicon-ok" ></span> Verify</button>
-    }
-    </div>
-} else {
-    <h3>Access</h3>
-    @space.status.capitalize
-}
+    @if(play.Play.application().configuration().getBoolean("verifySpaces") &&
+            Permission.checkPermission(Permission.PublicSpace, ResourceRef(ResourceRef.space, space.id))) {
+        <div id="verify">
 
+            <p>@play.api.i18n.Messages("trial.space")</p>
+            @if(api.Permission.checkServerAdmin(user)){
+                <button class="btn btn-link" title="Verify this space" >
+                    <span class="glyphicon glyphicon-ok" ></span> Verify</button>
+            }
+        </div>
+    }
+} else {
+    @if(play.Play.application().configuration().getBoolean("enablePublic")) {
+        <h3>Access</h3>
+        @space.status.capitalize
+    }
+}
+    </div>
 </div>
     <script>
         $("#verify").find("button").click(function() {

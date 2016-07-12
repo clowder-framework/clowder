@@ -86,25 +86,25 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     notes = "Retrieves information about spaces",
     responseClass = "None", httpMethod = "GET")
   def list(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=false) { implicit request =>
-    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.ViewSpace), false, request.user, request.user.fold(false)(_.superAdminMode)).map(spaceToJson)))
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.ViewSpace), false, request.user, request.user.fold(false)(_.superAdminMode), true).map(spaceToJson)))
   }
 
   @ApiOperation(value = "List spaces the user can add to",
     notes = "Retrieves a list of spaces that the user has permission to add to",
     responseClass = "None", httpMethod = "GET")
   def listCanEdit(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true) { implicit request =>
-    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.user.fold(false)(_.superAdminMode)).map(spaceToJson)))
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.user.fold(false)(_.superAdminMode), true).map(spaceToJson)))
   }
 
   def listCanEditNotAlreadyIn(collectionId : UUID, title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true ){ implicit request =>
-    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.user.fold(false)(_.superAdminMode)).map(spaceToJson)))
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.user.fold(false)(_.superAdminMode), true).map(spaceToJson)))
   }
 
   /**
    * Returns list of collections based on parameters and permissions.
    * TODO this needs to be cleaned up when do permissions for adding to a resource
    */
-  private def listSpaces(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], mine: Boolean, user: Option[User], superAdmin: Boolean) : List[ProjectSpace] = {
+  private def listSpaces(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], mine: Boolean, user: Option[User], superAdmin: Boolean, showPublic: Boolean, onlyTrial: Boolean = false) : List[ProjectSpace] = {
     if (mine && user.isEmpty) return List.empty[ProjectSpace]
 
     (title, date) match {
@@ -112,25 +112,25 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         if (mine)
           spaces.listUser(d, true, limit, t, user, superAdmin, user.get)
         else
-          spaces.listAccess(d, true, limit, t, permission, user, superAdmin)
+          spaces.listAccess(d, true, limit, t, permission, user, superAdmin, showPublic)
       }
       case (Some(t), None) => {
         if (mine)
           spaces.listUser(limit, t, user, superAdmin, user.get)
         else
-          spaces.listAccess(limit, t, permission, user, superAdmin)
+          spaces.listAccess(limit, t, permission, user, superAdmin, showPublic)
       }
       case (None, Some(d)) => {
         if (mine)
           spaces.listUser(d, true, limit, user, superAdmin, user.get)
         else
-          spaces.listAccess(d, true, limit, permission, user, superAdmin)
+          spaces.listAccess(d, true, limit, permission, user, superAdmin, showPublic, onlyTrial)
       }
       case (None, None) => {
         if (mine)
           spaces.listUser(limit, user, superAdmin, user.get)
         else
-          spaces.listAccess(limit, permission, user, superAdmin)
+          spaces.listAccess(limit, permission, user, superAdmin, showPublic, onlyTrial)
       }
     }
   }
@@ -237,7 +237,8 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       case (Some(s), Some(d)) => {
         spaces.removeDataset(datasetId, spaceId)
         events.addSourceEvent(request.user ,  d.id, d.name, s.id, s.name, "remove_dataset_space")
-        Ok(toJson("success"))
+
+        Ok(Json.obj("isTrial"-> datasets.get(datasetId).exists(_.isTRIAL).toString))
       }
       case (_, _) => NotFound
     }
@@ -631,6 +632,13 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         spaces.get(id) match {
           case Some(s) if s.isTrial => {
             spaces.update(s.copy(status = SpaceStatus.PRIVATE.toString))
+            //set datasets in this space as verified status
+            datasetService.listSpace(0, s.id.toString()).map{ d =>
+              if(d.isTRIAL) {
+                datasetService.update(d.copy(status = DatasetStatus.DEFAULT.toString))
+              }
+            }
+
             userService.listUsersInSpace(s.id).map { member =>
               val theHtml = views.html.spaces.verifySpaceEmail(s.id.stringify, s.name, member.getMiniUser.fullName)
               Mail.sendEmail("Space Status update", request.user, member, theHtml)
