@@ -1,3 +1,4 @@
+
 @(displayedName: String,  newsfeed: List[models.Event], profile:User, datasetsList: List[Dataset],  dscomments: Map[UUID, Int], collectionsList:List[Collection], spacesList: List[ProjectSpace],
          deletePermission: Boolean,  followers: List[(UUID, String, String, String)], followedUsers: List[(UUID, String, String, String)], followedFiles: List[(UUID, String, String)],
         followedDatasets: List[(UUID, String, String)], followedCollections: List[(UUID, String, String)], followedSpaces: List[(UUID, String, String)], ownProfile: Option[Boolean])(implicit user: Option[models.User])

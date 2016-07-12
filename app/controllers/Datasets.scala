@@ -205,7 +205,7 @@ class Datasets @Inject()(
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
     val datasetSpace = space.flatMap(o => spaceService.get(UUID(o)))
-    var title: Option[String] = Some("Datasets")
+    var title: Option[String] = Some(play.api.i18n.Messages("list.title", "Datasets"))
 
     val datasetList = person match {
       case Some(p) => {
@@ -317,7 +317,9 @@ class Datasets @Inject()(
       } else {
         Some(mode)
       }
-
+    if(!showPublic) {
+      title = Some(play.api.i18n.Messages("you.title", "Datasets"))
+    }
     //Pass the viewMode into the view
     space match {
       case Some(s) if datasetSpace.isEmpty =>{
@@ -442,12 +444,15 @@ class Datasets @Inject()(
           var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
 
           var decodedSpaces_canRemove : Map[ProjectSpace, Boolean] = Map.empty;
-
+          var isInPublicSpace = false
           dataset.spaces.map{
             sp => spaceService.get(sp) match {
               case Some(s) => {
                 decodedSpaces_canRemove +=  (Utils.decodeSpaceElements(s) -> true)
                 datasetSpaces = s :: datasetSpaces
+                if(s.isPublic) {
+                  isInPublicSpace = true
+                }
               }
               case None => Logger.error(s"space with id $sp on dataset $id doesn't exist.")
             }
@@ -471,14 +476,27 @@ class Datasets @Inject()(
             }
           }
           var showAccess = false
+
           if(play.Play.application().configuration().getBoolean("verifySpaces")) {
             showAccess = !dataset.isTRIAL
           } else {
             showAccess = play.Play.application().configuration().getBoolean("enablePublic")
           }
+          var access=if(showAccess) {
+            if(dataset.isDefault && isInPublicSpace) {
+              "Public (" + spaceTitle + " Default)"
+            } else if (dataset.isDefault && !isInPublicSpace) {
+              "Private (" + spaceTitle + " Default)"
+            } else {
+              dataset.status(0).toUpper + dataset.status.substring(1).toLowerCase()
+            }
+          } else {
+            ""
+          }
+
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
             decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove),fileList,
-            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess))
+            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess, access))
         }
         case None => {
           Logger.error("Error getting dataset" + id)
