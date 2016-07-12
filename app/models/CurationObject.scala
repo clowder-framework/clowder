@@ -136,8 +136,7 @@ case class CurationFile(
   thumbnail_id: Option[String] = None,
   metadataCount: Long = 0,
   licenseData: LicenseData = new LicenseData(),
-  notesHTML: Option[String] = None,
-  sha512: String = "" )
+  notesHTML: Option[String] = None)
 
 
 object CurationFile {

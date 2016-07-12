@@ -18,7 +18,6 @@ case class File(
   uploadDate: Date,
   contentType: String,
   length: Long = 0,
-  sha512: String = "",
   loader: String = "",
   showPreviews: String = "DatasetLevel",
   sections: List[Section] = List.empty,

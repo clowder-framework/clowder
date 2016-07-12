@@ -662,14 +662,6 @@
 						}
 						</tr>
 					}
-					<tr><td><b>SHA&nbsp;512:</b></td><td>
-						@if(file.sha512.length > 10) {
-							<span title="@file.sha512">...@file.sha512.substring(file.sha512.length-10, file.sha512.length)</span>
-						} else {
-							@file.sha512
-						}
-						<a class="btn btn-link btn-sm clipboard" data-copy="@file.sha512" title="Copy SHA to clipboard"><span class="glyphicon glyphicon-edit"></span> copy</a></td></tr>
-
 					<tr><td><b>Uploaded&nbsp;on:</b></td><td> @file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
                     <tr><td><b>Uploaded&nbsp;by:</b></td><td> <a href = "@routes.Profile.viewProfileUUID(file.author.id)"> @file.author.fullName</a></td></tr>
 					@if( play.Play.application().configuration().getBoolean("enablePublic")) {
