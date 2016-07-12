@@ -43,9 +43,11 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
       }
     }
     // send extractor message after attached to resource
-    val mdMap = Map("metadata"->metadata.content)
+    val mdMap = Map("metadata"->metadata.content,
+      "resourceType"->metadata.attachedTo.resourceType.name,
+      "resourceID"->metadata.attachedTo.id.toString)
     current.plugin[RabbitmqPlugin].foreach { p =>
-      val dtkey = s"${p.exchange}.${metadata.attachedTo.resourceType.name}.metadata.added"
+      val dtkey = s"${p.exchange}.metadata.added"
       p.extract(ExtractorMessage(UUID(""), UUID(""), requestHost, dtkey, mdMap, "", metadata.attachedTo.id, ""))
     }
     UUID(mid.get.toString())
@@ -98,9 +100,11 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
         MetadataDAO.remove(md, WriteConcern.Safe)
 
         // send extractor message after removed from resource
-        val mdMap = Map("metadata"->md.content)
+        val mdMap = Map("metadata"->md.content,
+          "resourceType"->md.attachedTo.resourceType.name,
+          "resourceId"->md.attachedTo.id.toString)
         current.plugin[RabbitmqPlugin].foreach { p =>
-          val dtkey = s"${p.exchange}.${md.attachedTo.resourceType.name}.metadata.removed"
+          val dtkey = s"${p.exchange}.metadata.removed"
           p.extract(ExtractorMessage(UUID(""), UUID(""), requestHost, dtkey, mdMap, "", md.attachedTo.id, ""))
         }
 
@@ -130,8 +134,10 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
 
     // send extractor message after attached to resource
     current.plugin[RabbitmqPlugin].foreach { p =>
-      val dtkey = s"${p.exchange}.${resourceRef.resourceType.name}.metadata.removed"
-      p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, Map[String, Any](), "", resourceRef.id, ""))
+      val dtkey = s"${p.exchange}.metadata.removed"
+      p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, Map[String, Any](
+        "resourceType"->resourceRef.resourceType.name,
+        "resourceId"->resourceRef.id.toString), "", resourceRef.id, ""))
     }
   }
 

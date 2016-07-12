@@ -211,9 +211,11 @@ class  Datasets @Inject()(
         user match {
           case Some(identity) => {
             (request.body \ "space").asOpt[List[String]] match {
-              case None | Some(List("default"))=>
+              case None | Some(List("default"))=> {
+                d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig(), status = access)
+              }
 
-              case Some(space) =>
+              case Some(space) => {
                 var spaceList: List[UUID] = List.empty
                 space.map {
                   aSpace => if (spaces.get(UUID(aSpace)).isDefined) {
@@ -224,6 +226,8 @@ class  Datasets @Inject()(
                   }
                 }
                 d = Dataset(name = name, description = description, created = new Date(), author = identity, licenseData = License.fromAppConfig(), spaces = spaceList, status = access)
+              }
+
             }
           }
           case None => InternalServerError("User Not found")
