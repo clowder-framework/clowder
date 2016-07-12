@@ -837,7 +837,7 @@
 						allowClear: true,
 						ajax: {
 							url: function(params) {
-								return jsRoutes.api.Datasets.listCanEdit(null, null, 5).url;
+								return jsRoutes.api.Datasets.listCanEdit(null, null, spaceId, 15).url;
 							},
 							data: function(params) {
 								return { title: params.term };
@@ -850,7 +850,7 @@
 										return $(this).attr('id');
 									});
 									// filter out file's own dataset and datsets not from this space
-									return $.inArray(x.id, ids) == -1 && $.inArray(spaceId, x.spaces) != -1;
+									return $.inArray(x.id, ids) == -1;// && $.inArray(spaceId, x.spaces) != -1;
 								}).map(function(x) {
 									return {
 										text: x.name,

@@ -67,31 +67,43 @@ class  Datasets @Inject()(
     notes = "This will check for Permission.ViewDataset",
     responseClass = "None", multiValueResponse=true, httpMethod = "GET")
   def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(lisDatasets(title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+    Ok(toJson(lisDatasets(title, date, None, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))))
   }
 
   @ApiOperation(value = "List all datasets the user can edit",
     notes = "This will check for Permission.AddResourceToDataset and Permission.EditDataset",
     responseClass = "None", httpMethod = "GET")
-  def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(lisDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+  def listCanEdit(title: Option[String], date: Option[String], space: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+    Ok(toJson(lisDatasets(title, date, space, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
   }
 
   /**
     * Returns list of datasets based on parameters and permissions.
     */
-  private def lisDatasets(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Dataset] = {
-    (title, date) match {
-      case (Some(t), Some(d)) => {
+  private def lisDatasets(title: Option[String], date: Option[String], space: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Dataset] = {
+    (title, date, space) match {
+      case (Some(t), Some(d), Some(s)) => {
+        datasets.listSpaceAccess(d, true, limit, t, permission, s, user, superAdmin, true)
+      }
+      case (Some(t), Some(d), None) => {
         datasets.listAccess(d, true, limit, t, permission, user, superAdmin, true)
       }
-      case (Some(t), None) => {
+      case (Some(t), None, Some(s)) => {
+        datasets.listSpaceAccess(limit, t, permission, s, user, superAdmin, true)
+      }
+      case (Some(t), None, None) => {
         datasets.listAccess(limit, t, permission, user, superAdmin, true)
       }
-      case (None, Some(d)) => {
+      case (None, Some(d), Some(s)) => {
+        datasets.listSpaceAccess(d, true, limit, permission, s, user, superAdmin, true)
+      }
+      case (None, Some(d), None) => {
         datasets.listAccess(d, true, limit, permission, user, superAdmin, true)
       }
-      case (None, None) => {
+      case (None, None, Some(s)) => {
+        datasets.listSpaceAccess(limit, permission, s, user, superAdmin, true)
+      }
+      case (None, None, None) => {
         datasets.listAccess(limit, permission, user, superAdmin, true)
       }
     }
