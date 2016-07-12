@@ -85,6 +85,11 @@ trait CollectionService {
    */
   def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[Collection]
 
+  /**
+    * List All Collections (Including childs) a user can view.
+    */
+  def listAllCollections(user: User, showAll: Boolean, limit: Int): List[Collection]
+
   def updateAuthorFullName(userId: UUID, fullName: String)
   /**
    * Get collection.
