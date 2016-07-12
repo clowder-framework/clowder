@@ -3,15 +3,22 @@
 @for(event <- newsfeed) {
   <div class="panel panel-default">
     <div class="panel-body">
-      <div class="media">
-        <div class="media-body">
+      <div class="row">
+        <div class="col-xs-1">
           <a href="@routes.Profile.viewProfileUUID(event.user.id)">
-            <h4 class="media-heading">@event.user.fullName</h4>
+            <img class="img-responsive" src="@event.user.avatarURL">
           </a>
-          @newsfeedCard(event)
         </div>
-        <div class="media-right">
-        @Formatters.humanReadableTimeSince(event.created)
+        <div class="col-xs-11">
+          <div class="row">
+            <a href="@routes.Profile.viewProfileUUID(event.user.id)">
+              @event.user.fullName
+            </a>
+            @newsfeedCard(event)
+          </div>
+          <div class="row top-padding">
+            @Formatters.humanReadableTimeSince(event.created)
+          </div>
         </div>
       </div>
     </div>
@@ -22,9 +29,9 @@
     // the default number of event index. means there is no event for this user.
     if(eventCount === 3){
       @if( newsfeed.size < 1) {
-      $("#moreeventbutton").replaceWith("<p>You can follow <a href=@routes.Users.getUsers()>users</a>, <a href=@routes.Spaces.list("")>spaces</a>,"
+      $("#moreeventbutton").replaceWith("<p>You can follow <a href=@routes.Users.getUsers()>users</a>, <a href=@routes.Spaces.list("")>@{spaces.spaceTitle()}s</a>,"
               + " <a href=@routes.Datasets.list("")>datasets</a> and <a href=@routes.Collections.list("")>collections</a>."
-              + "Any updates on your followed instances will show here.</p>");
+              + " Any updates on your followed instances will show here.</p>");
       } else  {
       @if( newsfeed.size < 20) { $("#moreeventbutton").replaceWith("<p>No more events.</p>");}
       }

@@ -1,4 +1,4 @@
-@(file: File, comments: Map[UUID, Int], redirect: Call, dataset: Option[String], space: Option[String], folder: Option[String])(implicit user: Option[models.User])
+@(file: File, comments: Map[UUID, Int], redirect: Call, dataset: Option[String], space: Option[String], folder: Option[String], showMove: Boolean)(implicit user: Option[models.User])
 @import api.Permission
 @import _root_.util.FileUtils
 <div class="panel panel-default" id="@file.id-listitem">
@@ -8,6 +8,10 @@
                 @if(!file.thumbnail_id.isEmpty){
                     <a href="@(routes.Files.file(file.id, dataset, space, folder))">
                         <img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(file.thumbnail_id.toString().substring(5,file.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(file.filename)">
+                    </a>
+                } else {
+                    <a href="@(routes.Files.file(file.id, dataset, space, folder))">
+                        <span class="bigicon glyphicon glyphicon-file"></span>
                     </a>
                 }
             </div>
@@ -29,8 +33,8 @@
                                     @if(user.get.id.equals(file.author.id) || Permission.checkPermission(Permission.DeleteFile, ResourceRef(ResourceRef.file, file.id))){
                                         <button onclick="
                                                 @folder match {
-                                                    case None => {confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))',false, '@redirect')}
-                                                    case Some(s) => {confirmDeleteResource('file','@(file.id)','@(file.filename.replace("'","&#39;"))',false, '@redirect#@s')}
+                                                    case None => {confirmDeleteResource('file','file','@(file.id)','@(file.filename.replace("'","&#39;"))',false, '@redirect')}
+                                                    case Some(s) => {confirmDeleteResource('file','file','@(file.id)','@(file.filename.replace("'","&#39;"))',false, '@redirect#@s')}
                                                 }
                                                 " class="btn btn-link" title="Delete the file">
                                             <span class="glyphicon glyphicon-trash"></span></button>
@@ -59,26 +63,32 @@
                                 </li>
                             }
 
-                            <li> @user match {
+                            @user match {
                                 case Some(viewer) => {
-                                    <a
-                                    id="followButton"
-                                    type="button"
-                                    class="btn btn-link"
-                                    autocomplete="off"
-                                    objectType="file"
-                                    objectId="@file.id.stringify"
-                                    >
-                                    @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
-                                        <span class='glyphicon glyphicon-star-empty'></span>Unfollow
-                                    } else {
-                                        <span class='glyphicon glyphicon-star'></span>Follow
+                                    <li>
+                                        <a
+                                        id="followButton"
+                                        type="button"
+                                        class="btn btn-link"
+                                        autocomplete="off"
+                                        objectType="file"
+                                        objectId="@file.id.stringify"
+                                        >
+                                        @if(viewer.followedEntities.filter(x => (x.id == file.id)).nonEmpty) {
+                                            <span class='glyphicon glyphicon-star-empty'></span>Unfollow
+                                        } else {
+                                            <span class='glyphicon glyphicon-star'></span>Follow
+                                        }
+                                        </a>
+                                    </li>
+                                    @if(showMove && (user.get.id.equals(file.author.id) || Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id)))) {
+                                        <a class="btn btn-link" onclick="showMoveModal('@file.id')"> <span class='glyphicon glyphicon-move'></span> Move </a>
                                     }
-                                    </a>
                                 }
                                 case None => {}
                             }
-                            </li>
+
+
                         </ul>
                     </div>
                 </div>

@@ -5,6 +5,7 @@ import javax.inject.Inject
 import api.Permission
 import com.fasterxml.jackson.annotation.JsonValue
 import models._
+import org.apache.commons.lang.StringEscapeUtils._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.json.Json._
@@ -38,6 +39,11 @@ class CurationObjects @Inject()(
   metadatas: MetadataService,
   contextService: ContextLDService) extends SecuredController {
 
+  /**
+    * String name of the Space such as 'Project space' etc., parsed from the config file
+    */
+  val spaceTitle: String = escapeJava(play.Play.application().configuration().getString("spaceTitle").trim)
+
   def newCO(datasetId:UUID, spaceId: String) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     implicit val user = request.user
     val (name, desc, spaceByDataset) = datasets.get(datasetId) match {
@@ -57,8 +63,10 @@ class CurationObjects @Inject()(
       case _ => spaces.get(UUID(spaceId))
     }
 
+    val mdCreators = metadatas.searchbyKeyInDataset("Creator", datasetId).map(x => ((x.content)\"Creator").as[String])
+
     Ok(views.html.curations.newCuration(datasetId, name, desc, defaultspace, spaceByDataset, RequiredFieldsConfig.isNameRequired,
-      true, true, List.empty))
+      true, true, mdCreators))
   }
 
   /**
@@ -118,11 +126,11 @@ class CurationObjects @Inject()(
 
               dataset.folders.map(f => copyFolders(f, newCuration.id, "dataset",  newCuration.id))
               metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
-                .map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id))))
+                .map(m => if((m.content\"Creator").isInstanceOf[JsUndefined]) metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id))))
               Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
             }
             else {
-              InternalServerError("Space not found")
+              InternalServerError(spaceTitle + " not found")
             }
           }
           case None => InternalServerError("Dataset Not found")
@@ -320,7 +328,11 @@ class CurationObjects @Inject()(
               user match {
                 case Some(usr) => {
                   val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
-                  Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences, mmResp))
+                  val isTrial = spaces.get(c.space) match {
+                    case None => true
+                    case Some(s) => s.isTrial
+                  }
+                  Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences, mmResp, isTrial))
                 }
                 case None =>Results.Redirect(routes.Error.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
               }
@@ -332,7 +344,8 @@ class CurationObjects @Inject()(
   def callMatchmaker(c: CurationObject, user: Option[User])(implicit request: Request[Any]): List[MatchMakerResponse] = {
     val https = controllers.Utils.https(request)
     val hostUrl = api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "#aggregation"
-    val userPrefMap = userService.findById(c.author.id).map(usr => usr.repositoryPreferences.map( pref => if(pref._1 != "Purpose") { pref._1-> Json.toJson(pref._2.toString().split(",").toList)} else {pref._1-> Json.toJson(pref._2.toString())})).getOrElse(Map.empty)
+    var userPrefMap = userService.findById(c.author.id).map(usr => usr.repositoryPreferences.map( pref => if(pref._1 != "Purpose") { pref._1-> Json.toJson(pref._2.toString().split(",").toList)} else {pref._1-> Json.toJson(pref._2.toString())})).getOrElse(Map.empty)
+    if(spaces.get(c.space).get.isTrial) userPrefMap += ("Purpose" -> Json.toJson("Testing-Only"))
     var userPreferences = userPrefMap + ("Repository" -> Json.toJson(c.repository))
     user.map ( usr => usr.profile match {
       case Some(prof) => prof.institution match {
@@ -506,7 +519,7 @@ class CurationObjects @Inject()(
               }
               Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository(0), propertiesMap, repPreferences))
             }
-            case None => InternalServerError("Space not found")
+            case None => InternalServerError(spaceTitle + " not found")
           }
         }
         case None => InternalServerError("User Not Found")
@@ -550,8 +563,13 @@ class CurationObjects @Inject()(
           val key = play.api.Play.configuration.getString("commKey").getOrElse("")
           val https = controllers.Utils.https(request)
           val hostUrl = api.routes.CurationObjects.getCurationObjectOre(c.id).absoluteURL(https) + "?key=" + key
+          val dsLicense = c.datasets(0).licenseData.m_licenseType match {
+            case "license1" => "All Rights Reserved " + c.datasets(0).author.fullName
+            case "license2" => "http://creativecommons.org/licenses/by-nc-nd/3.0/"
+            case "license3" => "http://creativecommons.org/publicdomain/zero/1.0/"
+          }
           val userPrefMap = userService.findById(c.author.id).map(usr => usr.repositoryPreferences.map( pref => if(pref._1 != "Purpose") { pref._1-> Json.toJson(pref._2.toString().split(",").toList)} else {pref._1-> Json.toJson(pref._2.toString())})).getOrElse(Map.empty)
-          var userPreferences = userPrefMap
+          var userPreferences = userPrefMap ++  Map("License" -> Json.toJson(dsLicense))
           user.map ( usr => usr.profile match {
             case Some(prof) => prof.institution match {
               case Some(institution) => userPreferences += ("Affiliations" -> Json.toJson(institution))
@@ -662,7 +680,7 @@ class CurationObjects @Inject()(
                     "Creation Date" -> Json.toJson("http://purl.org/dc/terms/created")
                 )
               ))),
-                "Repository" -> Json.toJson(repository.toLowerCase()),
+                "Repository" -> Json.toJson(repository),
                 "Preferences" -> Json.toJson(
                   userPreferences
                 ),
@@ -678,8 +696,7 @@ class CurationObjects @Inject()(
                   )),
                 "Rights Holder" -> Json.toJson(rightsholder),
                 "Publication Callback" -> Json.toJson(api.routes.CurationObjects.savePublishedObject(c.id).absoluteURL(https) +"?key=" + key),
-                "Environment Key" -> Json.toJson(play.api.Play.configuration.getString("commKey").getOrElse("")),
-                "License" -> Json.toJson(license)
+                "Environment Key" -> Json.toJson(play.api.Play.configuration.getString("commKey").getOrElse(""))
               )
             )
           Logger.debug("Submitting request for publication: " + valuetoSend)
