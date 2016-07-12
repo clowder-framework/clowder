@@ -673,7 +673,7 @@
 					<tr><td><b>Uploaded&nbsp;on:</b></td><td> @file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
                     <tr><td><b>Uploaded&nbsp;by:</b></td><td> <a href = "@routes.Profile.viewProfileUUID(file.author.id)"> @file.author.fullName</a></td></tr>
 					@if( play.Play.application().configuration().getBoolean("enablePublic")) {
-						<tr><td><b>Access:</b></td><td> @access.capitalize</td></tr>
+						<tr><td><b>Access:</b></td><td> @access</td></tr>
 					}
 					<tr><td><b>Status:</b></td><td> @file.status</td></tr>
                 </table>
@@ -790,7 +790,7 @@
 								</div>
 							</div>
 						</div>
-						@if(Permission.checkOwner(user, ResourceRef(ResourceRef.file, file.id))) {
+						@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
 							<div class="form-inline">
 								<div class="input-group input-group-sm col-md-8">
 									<select id="datasetAddSelect" class="form-control add-resource"></select>
@@ -816,7 +816,7 @@
 								</div>
 							</div>
 						</div>
-						@if(Permission.checkOwner(user, ResourceRef(ResourceRef.file, file.id))) {
+						@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
 							<div class="form-inline">
 								<div class="input-group input-group-sm col-md-8">
 									<select id="datasetAddSelect" class="form-control add-resource"></select>
