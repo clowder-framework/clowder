@@ -228,7 +228,8 @@
 		});
 
 		request.done(function(response, textStatus, jqXHR) {
-			$('#collectiontitle').html('<span class="glyphicon glyphicon-th-large"></span>' + encName.replace(/\n/g, "<br>"));
+			$('#collectiontitle').text(encName.replace(/\n/g, "<br>"));
+			$('#collectiontitle').prepend('<span class="glyphicon glyphicon-th-large"></span>');
             $('.edit_title_div').remove();
 			$('#collectiontitle').css("display", "inline");
 			$('#h-edit-title').removeClass("inline");
@@ -247,7 +248,8 @@
 
 	}
 	function cancelTitle() {
-		$('#collectiontitle').html( '<span class="glyphicon glyphicon-th-large"></span>' + cur_title);
+		$('#collectiontitle').text(cur_title);
+		$('#collectiontitle').prepend('<span class="glyphicon glyphicon-th-large"></span>');
         $('.edit_title_div').remove();
 		$('#collectiontitle').css("display", "inline");
 		$('#h-edit-title').removeClass("inline");

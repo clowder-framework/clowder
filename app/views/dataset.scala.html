@@ -319,13 +319,14 @@
         });
 
         function cancelTitle() {
-              $('#datasettitle').html('<span class="glyphicon glyphicon-briefcase" ></span>' + cur_title);
-              $('.edit_title_div').remove();
-              $('#datasettitle').css("display", "inline");
-              $('#h-edit-title').removeClass("inline");
-              $('#h-edit-title').css("display", "");
-              $('#ds-title').addClass("dataset-title");
-              $('#ds-title').mouseleave();
+          $('#datasettitle').text( cur_title);
+          $('#datasettitle').prepend('<span class="glyphicon glyphicon-briefcase" ></span>');
+          $('.edit_title_div').remove();
+          $('#datasettitle').css("display", "inline");
+          $('#h-edit-title').removeClass("inline");
+          $('#h-edit-title').css("display", "");
+          $('#ds-title').addClass("dataset-title");
+          $('#ds-title').mouseleave();
         }
 
         function saveTitle() {
@@ -344,7 +345,8 @@
             });
 
             request.done(function(response, textStatus, jqXHR){
-                $('#datasettitle').html('<span class="glyphicon glyphicon-briefcase" ></span>' + encName.replace(/\n/g, "<br>"));
+                $('#datasettitle').text(encName.replace(/\n/g, "<br>"));
+                $('#datasettitle').prepend('<span class="glyphicon glyphicon-briefcase" ></span>');
                 $('.edit_title_div').remove();
                 $('#datasettitle').css("display", "inline");
                 $('#h-edit-title').removeClass("inline");
