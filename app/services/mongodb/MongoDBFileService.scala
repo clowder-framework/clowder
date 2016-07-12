@@ -223,25 +223,16 @@ class MongoDBFileService @Inject() (
 
         val tagsJson = new JSONArray(tagListBuffer.toList)
 
-        Logger.debug("tagStr=" + tagsJson);
-
         val commentsByFile = for (comment <- comments.findCommentsByFileId(id)) yield {
           comment.text
         }
         val commentJson = new JSONArray(commentsByFile)
 
-        Logger.debug("commentStr=" + commentJson.toString())
-
         val usrMd = getUserMetadataJSON(id)
-        Logger.debug("usrmd=" + usrMd)
-
         val techMd = getTechnicalMetadataJSON(id)
-        Logger.debug("techmd=" + techMd)
-
         val xmlMd = getXMLMetadataJSON(id)
-        Logger.debug("xmlmd=" + xmlMd)
 
-        // Create mapping in JSON-LD metadata from extractor name -> contents
+        // Create mapping in JSON-LD metadata from name -> contents
         val metadataMap = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
         var allMd = Map[String, JsValue]()
         for (md <- metadataMap) {
