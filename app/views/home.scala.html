@@ -190,19 +190,20 @@
                             <div class="panel-body">
                             @for(info <- followedSpaces) {
                                 <div class="col-xs-3" style="margin-top : 30 px" id="@info._1-tile">
-                                    <div class="panel panel-default">
-                                        <div class="panel-heading">
-                                            <a href="@routes.Spaces.getSpace(info._1)">@info._2.toString</a>
+                                    <div class="panel panel-default space-panel">
+                                        <div class="pull-left">
+                                            <span class="glyphicon glyphicon-tent"></span>
                                         </div>
                                         <div class="panel-body caption break-word">
+                                            <h4><a href="@routes.Spaces.getSpace(info._1)">@info._2.toString</a></h4>
                                         @info._3
                                         </div>
-                                        <div class="panel-footer">
+                                        <ul class="list-group space-panel-footer">
                                         @user match {
                                             case Some(viewer) => {
                                                 @ownProfile match {
                                                     case Some(sameProfile) => {
-                                                        <h4>
+
                                                             <button
                                                             id="followButton"
                                                             type="button"
@@ -231,7 +232,7 @@
                                                                 <span class="glyphicon glyphicon-star"></span> Follow
                                                             }
                                                             </button>
-                                                        </h4>
+
                                                     }
                                                     case None => {
                                                     }
@@ -239,7 +240,7 @@
                                             }
                                             case None => {}
                                         }
-                                        </div>
+                                        </ul>
                                     </div>
                                 </div>
                             }
@@ -265,19 +266,20 @@
                             <div class="panel-body">
                             @for(fileInfo <- followedFiles) {
                                 <div class="col-xs-3" style="margin-top: 30px" id="@fileInfo._1-tile">
-                                    <div class="panel panel-default">
-                                        <div class="panel-heading caption break-word">
-                                            <a href="@routes.Files.file(fileInfo._1)">@fileInfo._2.toString</a>
+                                    <div class="panel panel-default file-panel">
+                                        <div class="pull-left">
+                                            <span class="glyphicon glyphicon-file"></span>
                                         </div>
                                         <div class="panel-body caption break-word">
+                                            <h4><a href="@routes.Files.file(fileInfo._1)">@fileInfo._2.toString</a></h4>
                                         @fileInfo._3
                                         </div>
-                                        <div class="panel-footer">
+                                        <ul class="list-group file-panel-footer">
                                         @user match {
                                             case Some(viewer) => {
                                                 @ownProfile match {
                                                     case Some(sameProfile) => {
-                                                        <h4>
+
                                                             <button
                                                             id="followButton"
                                                             type="button"
@@ -306,7 +308,7 @@
                                                                 <span class="glyphicon glyphicon-star"></span> Follow
                                                             }
                                                             </button>
-                                                        </h4>
+
                                                     }
                                                     case None => {
                                                     }
@@ -314,7 +316,7 @@
                                             }
                                             case None => {}
                                         }
-                                        </div>
+                                        </ul>
                                     </div>
                                 </div>
                             }
@@ -339,19 +341,20 @@
                             <div class="panel-body">
                             @for(datasetInfo <- followedDatasets) {
                                 <div class="col-xs-3" style="margin-top: 30px" id="@datasetInfo._1-tile">
-                                    <div class="panel panel-default">
-                                        <div class="panel-heading caption break-word">
-                                            <a href="@routes.Datasets.dataset(datasetInfo._1)">@datasetInfo._2.toString</a>
+                                    <div class="panel panel-default dataset-panel">
+                                        <div class="pull-left">
+                                            <span class="glyphicon glyphicon-briefcase"></span>
                                         </div>
                                         <div class="panel-body caption break-word">
+                                            <h4> <a href="@routes.Datasets.dataset(datasetInfo._1)">@datasetInfo._2.toString</a></h4>
                                         @datasetInfo._3
                                         </div>
-                                        <div class="panel-footer">
+                                        <ul class="list-group dataset-panel-footer">
                                         @user match {
                                             case Some(viewer) => {
                                                 @ownProfile match {
                                                     case Some(sameProfile) => {
-                                                        <h4>
+
                                                             <button
                                                             id="followButton"
                                                             type="button"
@@ -380,7 +383,7 @@
                                                                 <span class="glyphicon glyphicon-star"></span> Follow
                                                             }
                                                             </button>
-                                                        </h4>
+
                                                     }
                                                     case None => {
                                                     }
@@ -388,7 +391,7 @@
                                             }
                                             case None => {}
                                         }
-                                        </div>
+                                        </ul>
                                     </div>
                                 </div>
                             }
@@ -413,19 +416,20 @@
                             <div class="panel-body">
                             @for(collectionInfo <- followedCollections) {
                                 <div class="col-xs-3" style="margin-top: 30px" id="@collectionInfo._1-tile">
-                                    <div class="panel panel-default">
-                                        <div class="panel-heading caption break-word">
-                                            <a href="@routes.Collections.collection(collectionInfo._1)">@collectionInfo._2.toString</a>
+                                    <div class="panel panel-default collection-panel">
+                                        <div class="pull-left">
+                                            <span class="glyphicon glyphicon-th-large"></span>
                                         </div>
                                         <div class="panel-body caption break-word">
+                                            <h4><a href="@routes.Collections.collection(collectionInfo._1)">@collectionInfo._2.toString</a></h4>
                                         @collectionInfo._3
                                         </div>
-                                        <div class="panel-footer">
+                                        <ul class="list-group collection-panel-footer">
                                         @user match {
                                             case Some(viewer) => {
                                                 @ownProfile match {
                                                     case Some(sameProfile) => {
-                                                        <h4>
+
                                                             <button
                                                             id="followButton"
                                                             type="button"
@@ -454,7 +458,7 @@
                                                                 <span class="glyphicon glyphicon-star"></span> Follow
                                                             }
                                                             </button>
-                                                        </h4>
+
                                                     }
                                                     case None => {
                                                     }
@@ -462,7 +466,7 @@
                                             }
                                             case None => {}
                                         }
-                                        </div>
+                                        </ul>
                                     </div>
                                 </div>
                             }

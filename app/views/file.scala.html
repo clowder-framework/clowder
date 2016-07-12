@@ -607,7 +607,7 @@
 						});
 						request.done(function(response, textStatus, jqXHR) {
 							$('.file_name_div').remove();
-							$('#file-name-title').text(htmlEncode(name).replace(/\n/g, "<br />"));
+							$('#file-name-title').html('<span class="glyphicon glyphicon-file"></span> ' + htmlEncode(name).replace(/\n/g, "<br />"));
 							$('#prf-file-name').mouseleave();
 							$('#h-edit-file').css("display", "");
 						});
@@ -621,7 +621,7 @@
 					}
 
 					function cancelFileName() {
-						$('#file-name-title').html(fileName);
+						$('#file-name-title').html('<span class="glyphicon glyphicon-file"></span> ' + fileName);
 						$('.file_name_div').remove();
 						$('#prf-file-name').css("display", "inline");
 						$('#h-edit-file').css("display", "");

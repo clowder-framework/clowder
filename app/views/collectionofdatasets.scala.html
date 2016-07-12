@@ -207,7 +207,7 @@
 	 $('#collectiontitle').text("");
 	 $('#h-edit-title').css("display", "none");
 	 $('#h-edit-title').addClass("hiddencomplete");
-
+	 $('#coll-title').removeClass("collection-title");
 	}
 
 	function saveTitle() {
@@ -228,11 +228,12 @@
 		});
 
 		request.done(function(response, textStatus, jqXHR) {
-			$('#collectiontitle').text(encName.replace(/\n/g, "<br>"));
+			$('#collectiontitle').html('<span class="glyphicon glyphicon-th-large"></span>' + encName.replace(/\n/g, "<br>"));
             $('.edit_title_div').remove();
 			$('#collectiontitle').css("display", "inline");
 			$('#h-edit-title').removeClass("inline");
 			$('#h-edit-title').css("display", "");
+			$('#coll-title').addClass("collection-title");
 			$('#coll-title').mouseleave();
 		});
 
@@ -246,11 +247,12 @@
 
 	}
 	function cancelTitle() {
-		$('#collectiontitle').text(cur_title);
+		$('#collectiontitle').html( '<span class="glyphicon glyphicon-th-large"></span>' + cur_title);
         $('.edit_title_div').remove();
 		$('#collectiontitle').css("display", "inline");
 		$('#h-edit-title').removeClass("inline");
 		$('#h-edit-title').css("display", "");
+		$('#coll-title').addClass("collection-title");
 		$('#coll-title').mouseleave();
 	}
 
