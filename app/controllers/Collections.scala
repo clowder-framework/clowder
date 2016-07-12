@@ -149,7 +149,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
     val collectionSpace = space.flatMap(o => spaceService.get(UUID(o)))
-    var title: Option[String] = Some("Collections")
+    var title: Option[String] = Some(play.api.i18n.Messages("list.title", "Collections"))
 
     val collectionList = person match {
       case Some(p) => {
@@ -261,7 +261,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
       } else {
         Some(mode)
       }
-
+    if(!showPublic) {
+      title = Some(play.api.i18n.Messages("you.title", "Colections"))
+    }
     //Pass the viewMode into the view
     space match {
         //space id is not correct
