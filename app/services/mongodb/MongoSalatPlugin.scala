@@ -1225,30 +1225,32 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   private def updateMongoEmailCase(): Unit ={
     val userpasses = collection("social.users").find(MongoDBObject("identityId.providerId" -> "userpass"))
     userpasses.foreach{ user =>
-      val userId = user.getAsOrElse[ObjectId]("_id", new ObjectId())
-      val email = user.getAsOrElse[String]("email", "")
-      val username = user.getAsOrElse[DBObject]("identityId", new MongoDBObject()).getAsOrElse[String]("userId", "")
-
-      try {
-        // Find if user exists with lowercase email already
-        val conflict = collection("social.users").find(MongoDBObject(
-          "_id" -> MongoDBObject("$ne" -> userId),
-          "identityId" -> MongoDBObject("userId" -> username.toLowerCase, "providerId" -> "userpass")
-        ))
-
-        if (conflict.count == 0) {
-          collection("social.users").update(MongoDBObject("_id" -> userId),
-            MongoDBObject("$set" -> MongoDBObject(
-              "email" -> email.toLowerCase,
+      (user.getAs[ObjectId]("_id"), user.getAs[String]("email"),
+                user.getAsOrElse[DBObject]("identityId", new MongoDBObject()).getAs[String]("userId")) match {
+        case (Some(userId), Some(email), Some(username)) => {
+          try {
+            // Find if user exists with lowercase email already
+            val conflicts = collection("social.users").count(MongoDBObject(
+              "_id" -> MongoDBObject("$ne" -> userId),
               "identityId" -> MongoDBObject("userId" -> username.toLowerCase, "providerId" -> "userpass")
-            )), upsert=false, multi=true)
-        } else {
-          // If there's already an account with lowercase email, deactivate this account
-          collection("social.users").update(MongoDBObject("_id" -> userId),
-            MongoDBObject("$set" -> MongoDBObject("active" -> false)), upsert=false, multi=true)
+            ))
+
+            if (conflicts == 0) {
+              collection("social.users").update(MongoDBObject("_id" -> userId),
+                MongoDBObject("$set" -> MongoDBObject(
+                  "email" -> email.toLowerCase,
+                  "identityId" -> MongoDBObject("userId" -> username.toLowerCase, "providerId" -> "userpass")
+                )), upsert=false, multi=true)
+            } else {
+              // If there's already an account with lowercase email, deactivate this account
+              collection("social.users").update(MongoDBObject("_id" -> userId),
+                MongoDBObject("$set" -> MongoDBObject("active" -> false)), upsert=false, multi=true)
+            }
+          } catch {
+            case e: BSONException => Logger.error("Unable to update email for user with id: " + user)
+          }
         }
-      } catch {
-        case e: BSONException => Logger.error("Unable to update email for user with id: " + user)
+        case _ => Logger.error("Missing user fields when updating email case")
       }
     }
   }
