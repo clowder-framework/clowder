@@ -289,13 +289,18 @@ class Metadata @Inject()(
 
             //add metadata to mongo
             metadataService.addMetadata(metadata)
-            attachedTo.get.resourceType match {
-              case ResourceRef.dataset => {
-                datasets.index(attachedTo.get.id)
+            attachedTo match {
+              case Some(resource) => {
+                resource.resourceType match {
+                  case ResourceRef.dataset => {
+                    datasets.index(resource.id)
+                  }
+                  case ResourceRef.file => {
+                    files.index(resource.id)
+                  }
+                }
               }
-              case ResourceRef.file => {
-                files.index(attachedTo.get.id)
-              }
+              case None => {}
             }
 
             Ok(views.html.metadatald.view(List(metadata), true)(request.user))
