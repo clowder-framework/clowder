@@ -544,9 +544,9 @@ POST           /api/datasets/:id/addFileEvent                                   
 # VOCABULARIES ENDPOINT
 # ----------------------------------------------------------------------
 
-GET             /vocabularies/new                                                       @controllers.Vocabularies.newVocabulary(space : Option[String])
-POST            /vocabularies/submit                                                    @controllers.Vocabularies.submit()
-GET             /vocabularies/:id                                                       @controllers.Vocabularies.vocabulary(id : UUID)
+#GET             /vocabularies/new                                                       @controllers.Vocabularies.newVocabulary(space : Option[String])
+#POST            /vocabularies/submit                                                    @controllers.Vocabularies.submit()
+#GET             /vocabularies/:id                                                       @controllers.Vocabularies.vocabulary(id : UUID)
 
 # ----------------------------------------------------------------------
 # PREVIEWS ENDPOINT
@@ -733,10 +733,14 @@ GET         /api/vocabularies/list                                              
 POST        /api/vocabularies/createVocabularyFromJson                                  @api.Vocabularies.createVocabularyFromJson(isPublic : Boolean ?= false)
 POST        /api/vocabularies/createVocabulary                                          @api.Vocabularies.createVocabularyFromForm()
 GET         /api/vocabularies/getByAuthor                                               @api.Vocabularies.getByAuthor()
-POST        /api/vocabularies/findByDescription                                          @api.Vocabularies.findByDescription(containsAll : Boolean ?= false)
+#POST        /api/vocabularies/findByDescription                                         @api.Vocabularies.findByTag(containsAll : Boolean ?= false)
+GET         /api/vocabularies/getPublic                                                 @api.Vocabularies.getPublicVocabularies()
+
 
 GET         /api/vocabularies/:vocab_id                                                 @api.Vocabularies.get(vocab_id : UUID)
+PUT         /api/editVocabulary/:vocab_id                                               @api.Vocabularies.editVocabulary(vocab_id : UUID)
 GET         /api/vocabularies/:name                                                     @api.Vocabularies.getByName(name : String)
+#GET         /api/vocabularies/:tag                                                      @api.Vocabularies.getByTag(tag : String)
 GET         /api/vocabularies/:name/getByNameAuthor                                     @api.Vocabularies.getByNameAndAuthor(name: String)
 
 POST        /api/vocabularies/:vocab_id/addToSpace/:space_id                            @api.Vocabularies.addToSpace(vocab_id: UUID, space_id : UUID)

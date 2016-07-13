@@ -401,8 +401,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.CurationObjects.compareToRepository,
         controllers.routes.javascript.CurationObjects.deleteCuration,
         controllers.routes.javascript.CurationObjects.getStatusFromRepository,
-        controllers.routes.javascript.Events.getEvents,
-        controllers.routes.javascript.Vocabularies.submit
+        controllers.routes.javascript.Events.getEvents
       )
     ).as(JSON) 
   }

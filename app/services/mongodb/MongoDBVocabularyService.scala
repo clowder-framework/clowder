@@ -38,6 +38,21 @@ class MongoDBVocabularyService @Inject() (userService: UserService) extends Voca
     Vocabulary.findOneById(new ObjectId(id.stringify))
   }
 
+  def updateName(vocabId: UUID, name : String){
+    val result = Vocabulary.update(MongoDBObject("_id" -> new ObjectId(vocabId.stringify)),
+      $set("name" -> name), false, false, WriteConcern.Safe)
+  }
+
+  def updateDescription(vocabId: UUID, description: String) {
+    val result = Vocabulary.update(MongoDBObject("_id" -> new ObjectId(vocabId.stringify)),
+      $set("description" -> description), false, false, WriteConcern.Safe)
+  }
+
+  def updateTags(vocabId : UUID, tags : List[String]){
+    val result = Vocabulary.update(MongoDBObject("_id" -> new ObjectId(vocabId.stringify)),
+      $set("tags" -> tags), false, false, WriteConcern.Safe)
+  }
+
   def getByName(name : String) : List[Vocabulary] = {
     Vocabulary.dao.find(MongoDBObject("name"->name)).toList
   }
@@ -74,11 +89,11 @@ class MongoDBVocabularyService @Inject() (userService: UserService) extends Voca
       false, false)
   }
 
-  def findByDescription(desc : List[String], containsAll : Boolean ) : List[Vocabulary] = {
+  def findByTag(tag : List[String], containsAll : Boolean ) : List[Vocabulary] = {
     if (containsAll == false){
-      Vocabulary.findAll.toList.filter((v: Vocabulary )=> (!v.description.intersect(desc).isEmpty))
+      Vocabulary.findAll.toList.filter((v: Vocabulary )=> (!v.tags.intersect(tag).isEmpty))
     } else {
-      Vocabulary.findAll.toList.filter((v: Vocabulary )=> (desc.toSet[String].subsetOf(v.description.toSet[String])))
+      Vocabulary.findAll.toList.filter((v: Vocabulary )=> (tag.toSet[String].subsetOf(v.tags.toSet[String])))
     }
   }
 
@@ -87,6 +102,21 @@ class MongoDBVocabularyService @Inject() (userService: UserService) extends Voca
       MongoDBObject("_id" -> new ObjectId(vocabId.stringify)),
       $addToSet("terms" -> Some(new ObjectId(vocabTermId.stringify))),
       false, false)
+  }
+
+  def removeVocabularyTermId(vocabId : UUID, vocabTermId : UUID) = Try {
+    Vocabulary.update(MongoDBObject("_id" -> new ObjectId(vocabId.stringify)), $pull("terms" -> Some(new ObjectId(vocabTermId.stringify))), false, false, WriteConcern.Safe)
+  }
+
+  def makePublic(vocabId : UUID) = Try {
+    Vocabulary.dao.update(MongoDBObject("_id" -> new ObjectId(vocabId.stringify)),
+      $set("isPublic" -> true), false, false, WriteConcern.Safe)
+  }
+
+
+  def makePrivate(vocabId : UUID) = Try {
+    Vocabulary.dao.update(MongoDBObject("_id" -> new ObjectId(vocabId.stringify)),
+      $set("isPublic" -> false), false, false, WriteConcern.Safe)
   }
 }
 

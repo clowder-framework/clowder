@@ -15,8 +15,9 @@ case class Vocabulary (
   name : String = "",
   lastModified : Date = new Date(),
   keys : List[String] = List.empty,
-  description : List[String] = List.empty,
+  description : String = "",
   spaces : List[UUID] = List.empty,
+  tags : List[String] = List.empty,
   isPublic : Boolean = false,
   terms : List[UUID] = List.empty)
 
@@ -26,7 +27,7 @@ object Vocabulary{
     def writes(vocabulary : Vocabulary) : JsValue = {
       val vocabularyAuthor = vocabulary.author.get.identityId.userId
       Json.obj("id" -> vocabulary.id.toString,"author" -> vocabularyAuthor, "name" -> vocabulary.name,
-        "keys" -> vocabulary.keys.toList, "description" -> vocabulary.description.toList,"spaces"->vocabulary.spaces.toList)
+        "keys" -> vocabulary.keys.toList, "description" -> vocabulary.description,"spaces"->vocabulary.spaces.toList)
     }
   }
 }

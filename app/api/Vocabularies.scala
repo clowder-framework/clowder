@@ -34,6 +34,27 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     }
   }
 
+  def jsonVocabulary(vocabulary: Vocabulary): JsValue = {
+    val terms = getVocabularyTerms(vocabulary)
+    val author = vocabulary.author.get.identityId.userId
+    Json.obj("id" -> vocabulary.id.stringify, "author" -> author, "name" -> vocabulary.name, "terms" -> terms, "keys" -> vocabulary.keys.mkString(","),"tags"->vocabulary.tags.mkString(","), "description" -> vocabulary.description, "isPublic" -> vocabulary.isPublic.toString, "spaces" -> vocabulary.spaces.mkString(","))
+  }
+
+  def getVocabularyTerms(vocabulary: Vocabulary): List[VocabularyTerm] = {
+    var vocab_terms: ListBuffer[VocabularyTerm] = ListBuffer.empty
+    if (!vocabulary.terms.isEmpty) {
+      for (term <- vocabulary.terms) {
+        val current_term = vocabularyTermService.get(term) match {
+          case Some(vocab_term) => {
+            vocab_terms += vocab_term
+          }
+        }
+      }
+    }
+
+    vocab_terms.toList
+  }
+
   @ApiOperation(value = "Get vocabularies by author",
     notes = "",
     responseClass = "None", httpMethod = "GET")
@@ -64,6 +85,33 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     }
   }
 
+  @ApiOperation(value = "Get tags for all vocabularies",
+    notes = "",
+    responseClass = "None", httpMethod = "GET")
+  def getAllTagsOfAllVocabularies() = PrivateServerAction {implicit request =>
+    val user = request.user
+
+    var allTags = scala.collection.mutable.Set[String]()
+
+    user match {
+      case Some(identity) => {
+        val all_vocabularies : List[Vocabulary] = vocabularyService.listAll()
+        for (each_vocab <- all_vocabularies){
+          try {
+            val current_tags = each_vocab.tags.toSet[String]
+            allTags ++= current_tags
+          } catch  {
+            case e: Exception => Logger.debug("no name provided")
+          }
+
+        }
+        Ok(toJson(allTags.toList))
+
+      }
+      case None => BadRequest("Bad request")
+    }
+  }
+
   @ApiOperation(value = "Get vocabulary by name",
     notes = "",
     responseClass = "None", httpMethod = "GET")
@@ -74,47 +122,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
       case Some(identity) => {
         val result = vocabularyService.getByName(name).map((v: Vocabulary) => jsonVocabulary(v))
         Ok(toJson(result))
-      }
-      case None => BadRequest("No user matches that user")
-    }
-  }
-
-  def jsonVocabulary(vocabulary: Vocabulary): JsValue = {
-    val terms = getVocabularyTerms(vocabulary)
-    val author = vocabulary.author.get.identityId.userId
-    Json.obj("id" -> vocabulary.id.stringify, "author" -> author, "name" -> vocabulary.name, "terms" -> terms, "keys" -> vocabulary.keys.mkString(","), "description" -> vocabulary.description.mkString(","), "isPublic" -> vocabulary.isPublic.toString, "spaces" -> vocabulary.spaces.mkString(","))
-  }
-
-  def getVocabularyTerms(vocabulary: Vocabulary): List[VocabularyTerm] = {
-    var vocab_terms: ListBuffer[VocabularyTerm] = ListBuffer.empty
-    if (!vocabulary.terms.isEmpty) {
-      for (term <- vocabulary.terms) {
-        var current_term = vocabularyTermService.get(term) match {
-          case Some(vocab_term) => {
-            vocab_terms += vocab_term
-          }
-        }
-      }
-    }
-
-    vocab_terms.toList
-  }
-
-  @ApiOperation(value = "Get vocabulary by name or description",
-    notes = "",
-    responseClass = "None", httpMethod = "GET")
-  def getByNameDescription(tag: String) = PrivateServerAction { implicit request =>
-    val user = request.user
-    var matching_vocabulary :  ListBuffer[JsValue] = ListBuffer.empty
-    user match {
-      case Some(identity) => {
-        val result_name = vocabularyService.getByName(tag)
-        val result_description = vocabularyService.findByDescription(List[String](tag),true)
-        val result = result_name ::: result_description
-        for (each <- result){
-          matching_vocabulary = matching_vocabulary += jsonVocabulary(each)
-        }
-        Ok(toJson(matching_vocabulary.toList))
       }
       case None => BadRequest("No user matches that user")
     }
@@ -139,8 +146,68 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     notes = "This will check for Permission.ViewVocabulary",
     responseClass = "None", httpMethod = "GET")
   def list() = PrivateServerAction { implicit request =>
-    val vocabs = vocabularyService.listAll().map((v: Vocabulary) => jsonVocabulary(v))
+    val user = request.user
+    val all_vocabs = vocabularyService.listAll()
+    val vocabs = all_vocabs.filter(( v : Vocabulary) =>( v.author.get.identityId.userId == user.get.identityId.userId )).map((v: Vocabulary) => jsonVocabulary(v))
+
     Ok(toJson(vocabs))
+  }
+
+  @ApiOperation(value = "List all vocabularies the user can view",
+    notes = "This will check for Permission.ViewVocabulary",
+    responseClass = "None", httpMethod = "GET")
+  def listAll() = PrivateServerAction { implicit request =>
+    val user = request.user
+    val all_vocabs = vocabularyService.listAll().map((v: Vocabulary) => jsonVocabulary(v))
+
+    Ok(toJson(all_vocabs))
+  }
+
+  @ApiOperation(value = "Edit a vocabulary object",
+    notes = "",
+    responseClass = "None", httpMethod = "PUT")
+  def editVocabulary(id : UUID) = AuthenticatedAction(parse.json) {implicit request =>
+    val user = request.user
+    user match {
+      case Some(identity) => {
+        val new_name = (request.body \ "name").asOpt[String].getOrElse("")
+        //val keys = (request.body \ "keys").asOpt[String].getOrElse("")
+        val new_description = (request.body \ "description").asOpt[String].getOrElse("")
+        val new_tags = (request.body \ "tags").asOpt[String].getOrElse("")
+        //parse a list of vocabterm from the json here
+        val new_request_terms = (request.body \ "terms").asOpt[List[JsValue]].getOrElse(List.empty)
+        var new_terms: ListBuffer[UUID] = ListBuffer.empty
+
+        for (each_term <- new_request_terms) {
+          val key = (each_term \ "key").asOpt[String].getOrElse("")
+          val units = (each_term \ "units").asOpt[String].getOrElse("")
+          val default_value = (each_term \ "default_value").asOpt[String].getOrElse("")
+          val description = (each_term \ "description").asOpt[String].getOrElse("")
+          val current_vocabterm: VocabularyTerm = VocabularyTerm(key = key, author = Option(identity), created = new Date(), units = units, default_value = default_value, description = description)
+
+          vocabularyTermService.insert(current_vocabterm) match {
+            case Some(id) => {
+              Logger.info("Vocabulary Term inserted")
+              new_terms += (UUID(id))
+            }
+            case None => Logger.error("Could not insert vocabulary term")
+          }
+        }
+        vocabularyService.get(id) match {
+          case Some(vocabulary) => {
+            vocabularyService.updateName(id,new_name )
+            vocabularyService.updateDescription(id, new_description)
+            vocabularyService.updateTags(id,new_tags.split(",").toList )
+            for (each_new_term <- new_terms){
+              vocabularyService.addVocabularyTerm(id, each_new_term)
+            }
+            Ok("Vocabulary with id " + id + " edited")
+          }
+          case None => BadRequest("No vocabulary with id " + id + " exists")
+        }
+      }
+      case None => BadRequest("No user supplied")
+    }
   }
 
   @ApiOperation(value = "Create a vocabulary object",
@@ -148,48 +215,66 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     responseClass = "None", httpMethod = "POST")
   def createVocabularyFromJson(isPublic: Boolean) = AuthenticatedAction(parse.json) { implicit request =>
     val user = request.user
-    var t: Vocabulary = null
+    var t : Vocabulary = null
+
     user match {
       case Some(identity) => {
-        (request.body \ "keys").asOpt[String] match {
-          case Some(keys) => {
-            val name = (request.body \ "name").asOpt[String].getOrElse("")
-            val description = (request.body \ "description").asOpt[String].getOrElse("")
-            //parse a list of vocabterm from the json here
-            val request_terms = (request.body \ "terms").asOpt[List[JsValue]].getOrElse(List.empty)
-            var terms: ListBuffer[UUID] = ListBuffer.empty
+        val name = (request.body \ "name").asOpt[String].getOrElse("")
+        val keys = (request.body \ "keys").asOpt[String].getOrElse("")
+        val description = (request.body \ "description").asOpt[String].getOrElse("")
+        val tags = (request.body \ "tags").asOpt[String].getOrElse("")
+        //parse a list of vocabterm from the json here
+        val request_terms = (request.body \ "terms").asOpt[List[JsValue]].getOrElse(List.empty)
+        var terms: ListBuffer[UUID] = ListBuffer.empty
 
-            for (each_term <- request_terms) {
-              val key = (each_term \ "key").asOpt[String].getOrElse("")
-              val units = (each_term \ "units").asOpt[String].getOrElse("")
-              val default_value = (each_term \ "default_value").asOpt[String].getOrElse("")
-              val description = (each_term \ "description").asOpt[String].getOrElse("")
-              val current_vocabterm: VocabularyTerm = VocabularyTerm(key = key, author = Option(identity), created = new Date(), units = units, default_value = default_value, description = description)
+        for (each_term <- request_terms) {
+          val key = (each_term \ "key").asOpt[String].getOrElse("")
+          val units = (each_term \ "units").asOpt[String].getOrElse("")
+          val default_value = (each_term \ "default_value").asOpt[String].getOrElse("")
+          val description = (each_term \ "description").asOpt[String].getOrElse("")
+          val current_vocabterm: VocabularyTerm = VocabularyTerm(key = key, author = Option(identity), created = new Date(), units = units, default_value = default_value, description = description)
 
-              vocabularyTermService.insert(current_vocabterm) match {
-                case Some(id) => {
-                  Logger.info("Vocabulary Term inserted")
-                  terms += (UUID(id))
-                }
-                case None => Logger.error("Could not insert vocabulary term")
-              }
+          vocabularyTermService.insert(current_vocabterm) match {
+            case Some(id) => {
+              Logger.info("Vocabulary Term inserted")
+              terms += (UUID(id))
             }
-
-            t = Vocabulary(author = Some(identity), created = new Date(), name = name, keys = keys.split(",").toList, description = description.split(',').toList, isPublic = isPublic, terms = terms.toList)
-
-            vocabularyService.insert(t) match {
-              case Some(id) => {
-                Ok(toJson(Map("id" -> id)))
-              }
-              case None => BadRequest("could not create or save vocabulary")
-            }
-
+            case None => Logger.error("Could not insert vocabulary term")
           }
-          case None => BadRequest("no keys supplied")
+        }
+
+        t = Vocabulary(author = Some(identity), created = new Date(), name = name, keys = keys.split(",").toList,tags = tags.split(",").toList, description = description, isPublic = isPublic, terms = terms.toList)
+
+        vocabularyService.insert(t) match {
+          case Some(id) => {
+            Ok(toJson(Map("id" -> id)))
+          }
+          case None => BadRequest("could not create or save vocabulary")
         }
 
       }
       case None => BadRequest("no user supplied")
+    }
+
+  }
+
+  private def deleteOldTerms(vocabId : UUID): Unit = {
+    vocabularyService.get(vocabId) match {
+      case Some(vocabulary) => {
+        val terms : List[UUID] = vocabulary.terms
+        for (term <- terms){
+          vocabularyTermService.get(term) match {
+            case Some(vocab_term) => {
+              vocabularyTermService.delete(vocab_term.id)
+              vocabularyService.removeVocabularyTermId(vocabId, vocab_term.id)
+            }
+            case None => {
+              vocabularyService.removeVocabularyTermId(vocabId, term)
+            }
+          }
+        }
+      }
+      case None => BadRequest("no vocabulary with id " + vocabId )
     }
   }
 
@@ -211,9 +296,9 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     if (formKeys != null) {
       keys = formKeys(0).split(',').toList
     }
-    var description = List.empty[String]
+    var description : String = ""
     if (formDescription != null) {
-      description = formDescription(0).split(',').toList
+      description = formDescription(0)
     }
     var v: Vocabulary = null
 
@@ -231,9 +316,6 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     }
   }
 
-  def editVocabulary() = {
-
-  }
 
   @ApiOperation(value = "Delete vocabulary",
     notes = "",
@@ -241,8 +323,10 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
   def removeVocabulary(id: UUID) = PermissionAction(Permission.DeleteVocabulary, Some(ResourceRef(ResourceRef.vocabulary, id))) { implicit request =>
     vocabularyService.get(id) match {
       case Some(vocab) => {
+        deleteOldTerms(vocab.id)
         vocabularyService.delete(vocab.id)
       }
+      case None => Logger.error("No vocabulary exists for id " + id)
     }
     Ok(toJson((Map("status" -> "success"))))
   }
@@ -289,17 +373,39 @@ class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTe
     }
   }
 
+
   @ApiOperation(value = "List all vocabularies the user can view with description",
     notes = "This will check for Permission.ViewVocabulary",
     responseClass = "None", httpMethod = "POST")
-  def findByDescription(containsAll: Boolean) = PrivateServerAction(parse.json) { implicit request =>
+  def getBySingleTag(tag : String) = PrivateServerAction(parse.json) { implicit request =>
     val user = request.user
-    val description = (request.body \ "description").asOpt[String].getOrElse("").split(',').toList
+    var tags  : ListBuffer[String] = ListBuffer.empty[String]
+    tags += tag
 
     user match {
       case Some(identity) => {
-        if (!description.isEmpty) {
-          Ok(toJson(vocabularyService.findByDescription(description, containsAll)))
+        if (!tag.isEmpty) {
+          Ok(toJson(vocabularyService.findByTag(tags.toList,false)))
+        }
+        else {
+          Ok(toJson("no description provided"))
+        }
+      }
+      case None => BadRequest(toJson("not found"))
+    }
+  }
+
+  @ApiOperation(value = "List all vocabularies the user can view with description",
+    notes = "This will check for Permission.ViewVocabulary",
+    responseClass = "None", httpMethod = "POST")
+  def getByTag(containsAll: Boolean) = PrivateServerAction(parse.json) { implicit request =>
+    val user = request.user
+    val tag = (request.body \ "tag").asOpt[String].getOrElse("").split(',').toList
+
+    user match {
+      case Some(identity) => {
+        if (!tag.isEmpty) {
+          Ok(toJson(vocabularyService.findByTag(tag, containsAll)))
         }
         else {
           Ok(toJson("no description provided"))
