@@ -70,6 +70,7 @@
 
 	<script>
 		var spaceId = "@spaceId";
+		var datasetInSpaceConf = '@{play.Play.application().configuration().getBoolean("datasetInSpace")}';
     	var isPageLoaded = false;
     	var isx3dActive = false;
     	var Configuration = {};
@@ -791,7 +792,12 @@
 							</div>
 						</div>
 						<script>
-							spaceId = "@dataset.spaces.head.toString()";
+							if (!spaceId || spaceId.length ===0) {
+								if (!"@dataset.spaces.isEmpty") {
+									spaceId = "@dataset.spaces.head.toString()";
+								}
+							}
+							datasetsInSpace();
 						</script>
 						@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
 							<div class="form-inline">
@@ -821,17 +827,22 @@
 							</div>
 						</div>
 						<script>
-							var parentDatasetId = "@folder.parentDatasetId.toString()";
-							var requestSpaceId = jsRoutes.api.Datasets.get(parentDatasetId).ajax({
-								type: 'GET'
-							});
-							requestSpaceId.done(function(response, textStatus, jqXHR) {
-								console.log(response.spaces.toString());
-								spaceId = response.spaces.toString();
-							});
-							requestSpaceId.fail(function(jqXHR, textStatus, errorThrown) {
-								console.error("The following error occured: " + textStatus, errorThrown);
-							});
+							if (!spaceId || spaceId.length ===0) {
+								var parentDatasetId = "@folder.parentDatasetId.toString()";
+								var requestSpaceId = jsRoutes.api.Datasets.get(parentDatasetId).ajax({
+									type: 'GET'
+								});
+								requestSpaceId.done(function(response, textStatus, jqXHR) {
+									console.log(response.spaces.toString());
+									spaceId = response.spaces.toString();
+									datasetsInSpace();
+								});
+								requestSpaceId.fail(function(jqXHR, textStatus, errorThrown) {
+									console.error("The following error occured: " + textStatus, errorThrown);
+								});
+							} else {
+								datasetsInSpace();
+							}
 						</script>
 						@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
 							<div class="form-inline">
@@ -849,35 +860,54 @@
 					}
 				}
 				<script language="javascript">
-					$("#datasetAddSelect").select2({
-						theme: "bootstrap",
-						placeholder: "Select a dataset",
-						allowClear: true,
-						ajax: {
-							url: function(params) {
-								return jsRoutes.api.Datasets.listCanEdit(null, null, spaceId, 15).url;
-							},
-							data: function(params) {
-								return { title: params.term };
-							},
-							processResults: function(data, page) {
-								console.log(spaceId, data);
-								return {results: data.filter(function(x) {
-									// multiple dataset support, currently a file can be a memeber of one dataset only
-									var ids = $('.dataset').map(function() {
-										return $(this).attr('id');
-									});
-									// filter out file's own dataset and datsets not from this space
-									return $.inArray(x.id, ids) == -1;
-								}).map(function(x) {
-									return {
-										text: x.name,
-										id: x.id
-									}
-								})};
+					function datasetsInSpace() {
+						console.log("Dataset_in_space; ",datasetInSpaceConf,", Space_Id: ",spaceId);
+						if (datasetInSpaceConf) {
+							if (spaceId && spaceId.length ===0) {
+								selectDatasets();
+							} else {
+								$("#datasetAddSelect").select2({
+									theme: "bootstrap",
+									placeholder: "Select a dataset",
+									allowClear: true,
+									data: null
+								})
 							}
+						} else {
+							selectDatasets();
 						}
-					})
+					}
+					function selectDatasets() {
+						$("#datasetAddSelect").select2({
+							theme: "bootstrap",
+							placeholder: "Select a dataset",
+							allowClear: true,
+							ajax: {
+								url: function(params) {
+									return jsRoutes.api.Datasets.listCanEdit(null, null, spaceId, 15).url;
+								},
+								data: function(params) {
+									return { title: params.term };
+								},
+								processResults: function(data, page) {
+									console.log(data);
+									return {results: data.filter(function(x) {
+										// multiple dataset support, currently a file can be a memeber of one dataset only
+										var ids = $('.dataset').map(function() {
+											return $(this).attr('id');
+										});
+										// filter out file's own dataset and datsets not from this space
+										return $.inArray(x.id, ids) == -1;
+									}).map(function(x) {
+										return {
+											text: x.name,
+											id: x.id
+										}
+									})};
+								}
+							}
+						})
+					}
 				</script>
 			</div>
 
