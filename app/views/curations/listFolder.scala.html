@@ -1,7 +1,7 @@
 @(folder: CurationFolder, parentId:UUID, parentCurationObject: UUID, inCuration: Boolean)(implicit user: Option[models.User])
 
 @import api.Permission
-<div class="panel panel-default" id="@folder.id-listitem">
+<div class="panel panel-default folder-panel" id="@folder.id-listitem">
   <div class="panel-body">
     <div class="row">
       <div class="col-md-2 col-sm-2 col-lg-2">
