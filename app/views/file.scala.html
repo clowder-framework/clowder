@@ -152,10 +152,12 @@
 
 	<div class="row">
 		<div class="col-md-8 col-sm-8 col-lg-8">
+			<div class="row">
+			<div id="file-name-div" class="file-title-div col-xs-12">
 			@if(datasets.length > 0) {
 				@datasets.map {dataset =>
 					<span class="h1">
-						<a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id'>@Html(dataset.name)</a>
+						<a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id'> <span class="glyphicon glyphicon-briefcase"></span> @Html(dataset.name)</a>
 					</span>
 					<span class="glyphicon glyphicon-chevron-right" style="font-size: 150%;"></span>
 				}
@@ -163,13 +165,13 @@
 			@if(folders.length > 0) {
 				@folders.map { folder =>
 					<span class="h1">
-						<a href="@routes.Datasets.dataset(folder.parentDatasetId)#folderId=@folder.id">@folder.displayName</a>
+						<a href="@routes.Datasets.dataset(folder.parentDatasetId)#folderId=@folder.id"> <span class="glyphicon glyphicon-folder-close"></span> @folder.displayName</a>
 					</span>
 					<span class="glyphicon glyphicon-chevron-right" style="font-size: 150%;"></span>
 				}
 			}
 			<div id="prf-file-name" class="text-left inline">
-				<h1 id="file-name-title" class="inline">@Html(file.filename)</h1>
+				<h1 id="file-name-title" class="inline"> <span class="glyphicon glyphicon-file"></span> @Html(file.filename)</h1>
 				@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
 					<div id="h-edit-file" class="hiddencomplete">
 						<a id ="edit-file" href="javascript:updateFileName()" title="Click to edit file name.">
@@ -177,6 +179,8 @@
 						</a>
 					</div>
 				}
+			</div>
+			</div>
 			</div>
 			<div class="row bottom-padding">
 				<div class="col-md-12 box-white-space" id="aboutdesc">
@@ -578,10 +582,10 @@
 						fileName = $('#file-name-title').text();
 						$('<div class="inline file_name_div h3"> </div>').insertAfter($('#prf-file-name'));
 						$('.file_name_div').append('<input type="text" id="file_name_input" class="form-control" />');
-						$('.file_name_div').append('<button class="btn btn-sm btn-primary edit-tab" onclick="saveFileName()"> <span class="glyphicon glyphicon-send"></span> Save</button>');
-						$('.file_name_div').append('<button class="btn btn-sm btn-link" onclick="cancelFileName()"> <span class="glyphicon glyphicon-remove"></span> Cancel</button>');
+						$('.file_name_div').append('<button class="btn btn-sm btn-primary edit-tab btn-margins" onclick="saveFileName()"> <span class="glyphicon glyphicon-send"></span> Save</button>');
+						$('.file_name_div').append('<button class="btn btn-sm btn-link btn-margins" onclick="cancelFileName()"> <span class="glyphicon glyphicon-remove"></span> Cancel</button>');
 						$('.file_name_div').append('<div class="hiddencomplete" id="file-name-error"> <span class="small error">File name is required.</span></div>');
-
+						$('#file-name-div').removeClass("file-title-div");
 						$('#file_name_input').val(fileName);
 						$('#file-name-title').text("");
 						$('#h-edit-file').css("display", "none");
@@ -605,7 +609,9 @@
 						request.done(function(response, textStatus, jqXHR) {
 							$('.file_name_div').remove();
 							$('#file-name-title').text(htmlEncode(name).replace(/\n/g, "<br />"));
+							$('#file-name-title').prepend('<span class="glyphicon glyphicon-file"></span>');
 							$('#prf-file-name').mouseleave();
+							$('#file-name-div').addClass("file-title-div");
 							$('#h-edit-file').css("display", "");
 						});
 						request.fail(function(jqXHR, textStatus, errorThrown) {
@@ -618,10 +624,12 @@
 					}
 
 					function cancelFileName() {
-						$('#file-name-title').html(fileName);
+						$('#file-name-title').text(fileName);
+						$('#file-name-title').prepend('<span class="glyphicon glyphicon-file"></span> ');
 						$('.file_name_div').remove();
 						$('#prf-file-name').css("display", "inline");
 						$('#h-edit-file').css("display", "");
+						$('#file-name-div').addClass("file-title-div");
 						$('#prf-file-name').mouseleave();
 					}
 

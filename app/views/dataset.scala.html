@@ -26,8 +26,8 @@
 		<!-- left column -->
 		<div class="col-md-8">
             <div class="row">
-                <div class="col-md-12 caption break-word" id="ds-title">
-                    <h1 id="datasettitle" class="inline">@Html(dataset.name)</h1>
+                <div class="col-md-12 caption break-word dataset-title" id="ds-title">
+                    <h1 id="datasettitle" class="inline"> <span class="glyphicon glyphicon-briefcase" ></span> @Html(dataset.name)</h1>
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
                         <h3 id="h-edit-title" class="hiddencomplete">
                             <a id ="edit-title" href = "javascript:updateTitle()" title="Click to edit title">
@@ -236,6 +236,7 @@
             $('.edit_title_div').append('<button id="cancel_title" onclick="cancelTitle()" class="btn btn-sm edit-tab btn-default btn-margins"> <span class="glyphicon glyphicon-remove"></span>Cancel </button>');
             $('#title_input').val(cur_title);
             $('#datasettitle').text("");
+            $('#ds-title').removeClass("dataset-title");
             $('#h-edit-title').addClass("hiddencomplete");
             $('#h-edit-title').css("display", "none");
         }
@@ -318,12 +319,14 @@
         });
 
         function cancelTitle() {
-              $('#datasettitle').text(cur_title);
-              $('.edit_title_div').remove();
-              $('#datasettitle').css("display", "inline");
-              $('#h-edit-title').removeClass("inline");
-              $('#h-edit-title').css("display", "");
-              $('#ds-title').mouseleave();
+          $('#datasettitle').text( cur_title);
+          $('#datasettitle').prepend('<span class="glyphicon glyphicon-briefcase" ></span>');
+          $('.edit_title_div').remove();
+          $('#datasettitle').css("display", "inline");
+          $('#h-edit-title').removeClass("inline");
+          $('#h-edit-title').css("display", "");
+          $('#ds-title').addClass("dataset-title");
+          $('#ds-title').mouseleave();
         }
 
         function saveTitle() {
@@ -343,10 +346,12 @@
 
             request.done(function(response, textStatus, jqXHR){
                 $('#datasettitle').text(encName.replace(/\n/g, "<br>"));
+                $('#datasettitle').prepend('<span class="glyphicon glyphicon-briefcase" ></span>');
                 $('.edit_title_div').remove();
                 $('#datasettitle').css("display", "inline");
                 $('#h-edit-title').removeClass("inline");
                 $('#h-edit-title').css("display", "");
+                $('#ds-title').addClass("dataset-title");
                 $('#ds-title').mouseleave();
                 notify("Dataset name updated successfully", "success", false, 2000 );
             });
