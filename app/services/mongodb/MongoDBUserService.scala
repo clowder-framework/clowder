@@ -73,6 +73,12 @@ class MongoDBUserService @Inject() (
     } else {
       user.removeField("_id")
     }
+
+    // always set orcid id if logged in with orcid
+    if (model.identityId.providerId == ORCIDProvider.ORCID) {
+      user.put("profile.orcidID", model.identityId.userId)
+    }
+
     UserDAO.update(query, MongoDBObject("$set" -> user), upsert = true, multi = false, WriteConcern.Safe)
     UserDAO.findOne(query)
   }
@@ -633,6 +639,11 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
       if (user.authMethod == AuthenticationMethod.UserPassword) {
         userobj.put("termsOfServices", MongoDBObject("accepted" -> true, "acceptedDate" -> new Date, "acceptedVersion" -> AppConfiguration.getTermsOfServicesVersionString))
       }
+    }
+
+    // always set orcid id if logged in with orcid
+    if (user.identityId.providerId == ORCIDProvider.ORCID) {
+      userobj.put("profile.orcidID", user.identityId.userId)
     }
 
     // update all fields from past in user object
