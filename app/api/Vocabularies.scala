@@ -18,9 +18,6 @@ import scala.collection.mutable.ListBuffer
 import scala.util.Success
 
 
-/**
-  * Created by todd_n on 2/9/16.
-  */
 @Singleton
 class Vocabularies @Inject() (vocabularyService: VocabularyService, vocabularyTermService : VocabularyTermService, userService : UserService, spaces: SpaceService) extends ApiController {
 

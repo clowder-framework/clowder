@@ -4,9 +4,6 @@ import java.util.Date
 import play.api.libs.json.{Json, JsValue, Writes}
 import securesocial.core.Identity
 
-/**
-  * Created by todd_n on 2/8/16.
-  */
 case class VocabularyTerm(
   id : UUID = UUID.generate(),
   author : Option[Identity],

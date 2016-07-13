@@ -7,9 +7,7 @@ import securesocial.core.Identity
 
 import scala.util.Try
 
-/**
-  * Created by todd_n on 2/9/16.
-  */
+
 trait VocabularyService {
 
   def count(): Long

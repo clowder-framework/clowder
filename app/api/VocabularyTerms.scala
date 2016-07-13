@@ -12,9 +12,6 @@ import services.{VocabularyTermService, SpaceService, UserService, VocabularySer
 
 import scala.collection.immutable.List
 
-/**
-  * Created by todd_n on 2/9/16.
-  */
 @Singleton
 class VocabularyTerms @Inject()(vocabularyTermService: VocabularyTermService, userService : UserService) extends ApiController {
 
