@@ -658,9 +658,8 @@ class  Datasets @Inject()(
       case Some(dataset) => {
         //get metadata and also fetch context information
         val listOfMetadata = extFilter match {
-          case Some(f) => metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
+          case Some(f) => metadataService.getExtractedMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id), Some(f))
                                     .map(JSONLD.jsonMetadataWithContext(_))
-                                    .filter(md => (md \ "agent" \ "name").toString.replace("\"", "").endsWith(f))
           case None => metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
                                     .map(JSONLD.jsonMetadataWithContext(_))
         }

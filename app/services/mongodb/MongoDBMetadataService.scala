@@ -66,6 +66,17 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
       "attachedTo._id" -> new ObjectId(resourceRef.id.stringify))).sort(order).toList
   }
 
+  /** Get Extractor metadata by attachTo, from a specific extractor if given */
+  def getExtractedMetadataByAttachTo(resourceRef: ResourceRef, extractor: Option[String]): List[Metadata] = {
+    val order = MongoDBObject("createdAt" -> -1)
+    MetadataDAO.find(MongoDBObject(
+      "attachedTo.resourceType" -> resourceRef.resourceType.name,
+      "attachedTo._id" -> new ObjectId(resourceRef.id.stringify),
+      // Get only extractors metadata even if specific extractor not given
+      "creator.extractorId" -> (".*extractors/" + extractor.getOrElse("")).r
+    )).sort(order).toList
+  }
+
   /** Get metadata based on type i.e. user generated metadata or technical metadata  */
   def getMetadataByCreator(resourceRef: ResourceRef, typeofAgent: String): List[Metadata] = {
     val order = MongoDBObject("createdAt"-> -1)
