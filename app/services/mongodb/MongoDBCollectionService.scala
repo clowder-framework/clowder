@@ -225,7 +225,7 @@ class MongoDBCollectionService @Inject() (
             if (permissions.contains(Permission.AddResourceToCollection)) {
               MongoDBObject()
             }
-            else if (showAll ||(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewCollection))) {
+            else if (showAll || (configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public" && permissions.contains(Permission.ViewCollection))) {
               val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
                 orlist += MongoDBObject("parent_collection_ids" -> List.empty)
                 orlist += MongoDBObject("root_spaces" -> MongoDBObject("$not" -> MongoDBObject("$size" -> 0)))

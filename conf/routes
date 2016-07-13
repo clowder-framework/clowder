@@ -678,7 +678,7 @@ GET            /users/followers                                                 
 GET            /users/following                                                         @controllers.Users.getFollowing(index: Int ?= 0, limit: Int ?=12)
 
 # ----------------------------------------------------------------------
-# MEDICI STATUS API
+# Clowder STATUS API
 # ----------------------------------------------------------------------
 GET            /api/version                                                             @api.Status.version
 GET            /api/status                                                              @api.Status.status
