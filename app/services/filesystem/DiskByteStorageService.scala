@@ -17,7 +17,7 @@ import services.ByteStorageService
  */
 class DiskByteStorageService extends ByteStorageService {
   /**
-   * Save the bytes to disk, returns (path, sha512, length)
+   * Save the bytes to disk, returns (path, length)
    */
   def save(inputStream: InputStream, prefix: String): Option[(String, Long)] = {
     Play.current.configuration.getString("medici2.diskStorage.path") match {

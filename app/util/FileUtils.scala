@@ -561,7 +561,6 @@ object FileUtils {
   }
 
   /** Fix file object based on path file, no uploading just compute sha512 */
-  // TODO: files.get and return file if it exists (on disk, in mongo, return file object)
   private def savePath(file: File, path: String): Option[File] = {
     files.get(file.id) match {
       case Some(f) => {
