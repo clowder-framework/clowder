@@ -769,7 +769,7 @@
                 </script>
             </div>
             <!-- End License elements -->
-				
+
 			<!-- Move the file to a dataset -->
 			<div class="row ds-section-sm border-top">
 				@if(datasets.length > 0) {
@@ -790,12 +790,16 @@
 								</div>
 							</div>
 						</div>
+						<script>
+							spaceId = "@dataset.spaces.head.toString()";
+						</script>
 						@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
 							<div class="form-inline">
 								<div class="input-group input-group-sm col-md-8">
 									<select id="datasetAddSelect" class="form-control add-resource"></select>
 									<span class="input-group-btn">
-										<a href="#" class="btn btn-default btn-large" id="moveFileBtn" title="Move file to a dataset" onclick="moveFromDatasetToDataset(null,'@dataset.id','@file.id')">
+										<a href="#" class="btn btn-default btn-large" id="moveFileBtn" title="Move file to a dataset"
+											onclick="moveFromDatasetToDataset(null,'@dataset.id','@file.id')">
 											<span class="glyphicon glyphicon-move"></span> Move to dataset
 										</a>
 									</span>
@@ -816,12 +820,26 @@
 								</div>
 							</div>
 						</div>
+						<script>
+							var parentDatasetId = "@folder.parentDatasetId.toString()";
+							var requestSpaceId = jsRoutes.api.Datasets.get(parentDatasetId).ajax({
+								type: 'GET'
+							});
+							requestSpaceId.done(function(response, textStatus, jqXHR) {
+								console.log(response.spaces.toString());
+								spaceId = response.spaces.toString();
+							});
+							requestSpaceId.fail(function(jqXHR, textStatus, errorThrown) {
+								console.error("The following error occured: " + textStatus, errorThrown);
+							});
+						</script>
 						@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
 							<div class="form-inline">
 								<div class="input-group input-group-sm col-md-8">
 									<select id="datasetAddSelect" class="form-control add-resource"></select>
 									<span class="input-group-btn">
-										<a href="#" class="btn btn-default btn-large" id="moveFileBtn" title="Move file from folder to a dataset" onclick="moveFromDatasetToDataset('@folder.id','@folder.parentDatasetId','@file.id')">
+										<a href="#" class="btn btn-default btn-large" id="moveFileBtn" title="Move file from folder to a dataset"
+											onclick="moveFromDatasetToDataset('@folder.id','@folder.parentDatasetId','@file.id')">
 											<span class="glyphicon glyphicon-move"></span> Move to dataset
 										</a>
 									</span>
@@ -843,14 +861,14 @@
 								return { title: params.term };
 							},
 							processResults: function(data, page) {
-								//console.log(spaceId, data);
+								console.log(spaceId, data);
 								return {results: data.filter(function(x) {
 									// multiple dataset support, currently a file can be a memeber of one dataset only
 									var ids = $('.dataset').map(function() {
 										return $(this).attr('id');
 									});
 									// filter out file's own dataset and datsets not from this space
-									return $.inArray(x.id, ids) == -1;// && $.inArray(spaceId, x.spaces) != -1;
+									return $.inArray(x.id, ids) == -1;
 								}).map(function(x) {
 									return {
 										text: x.name,
