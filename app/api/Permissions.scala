@@ -340,33 +340,16 @@ object Permission extends Enumeration {
         }
       }
       case ResourceRef(ResourceRef.comment, id) => {
-        val comment = comments.get(id)
-        if(comment.get.dataset_id.isDefined) {
-          for (clowderUser <- getUserByIdentity(user)) {
-            for (dataset <- datasets.get(comment.get.dataset_id.get)) {
-              dataset.spaces.map {
-                spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
-                  if (role.permissions.contains(permission.toString)) {
-                    return true
-                  }
-                }
-              }
+        comments.get(id) match {
+          case Some(comment) => {
+            (comment.dataset_id, comment.file_id) match {
+              case (Some(d_id), None) => checkPermission(user, permission, ResourceRef(ResourceRef.dataset, d_id))
+              case (None, Some(f_id)) => checkPermission(user, permission, ResourceRef(ResourceRef.file, f_id))
+              case (_, _) => false
             }
           }
+          case None => false
         }
-        else if(comment.get.file_id.isDefined) {
-          val datasetList = datasets.findByFileId(comment.get.file_id.get)
-          for (clowderUser <- getUserByIdentity(user)) {
-            datasetList.flatMap(_.spaces).map {
-              spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
-                  if(role.permissions.contains(permission.toString)) {
-                    return true
-                  }
-                }
-            }
-          }
-        }
-        false
       }
 
       case ResourceRef(ResourceRef.curationObject, id) => {
@@ -397,12 +380,13 @@ object Permission extends Enumeration {
             if (id == user.id) {
               true
             } else {
+              var returnValue = false
               u.spaceandrole.map { space_role =>
                 if (space_role.role.permissions.contains(permission.toString)) {
-                  true
+                  returnValue =  true
                 }
               }
-              false
+              returnValue
             }
           }
           case None => false
