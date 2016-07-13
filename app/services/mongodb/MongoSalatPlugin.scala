@@ -6,6 +6,7 @@ import java.util.{Calendar, Date}
 import com.mongodb.{BasicDBObject, CommandFailureException}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
+import MongoContext.context
 import models._
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.input.CountingInputStream
@@ -389,6 +390,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("add-metadata-per-space", addMetadataPerSpace)
 
     updateMongo("add-trial-flag2",addTrialFlag2)
+
+    updateMongo("copy-sha512-to-metadata-and-remove", copySha512ToMetadataAndRemove)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1217,5 +1220,69 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
     collection("datasets").update(q ,d, multi=true)
     collection("spaces.projects").update(q ,s, multi=true)
+  }
+
+  private def copySha512ToMetadataAndRemove(): Unit = {
+    for (colln <- List[String]("uploads")) {
+      // Iteracte across all files that have a sha512 entry
+      collection(colln).find(MongoDBObject("loader" -> classOf[MongoDBByteStorage].getName,
+                  "sha512" -> MongoDBObject("$exists" -> true))).snapshot().foreach { file =>
+        val id = file.getAsOrElse[ObjectId]("_id", new ObjectId())
+        file.getAs[String]("sha512") match {
+          case Some(sha) => {
+            // Check for extractor metadata for a newer SHA512
+            val mdQuery = MongoDBObject("attachedTo._id" -> file._id, "creator.extractorId" -> ".*ncsa.file.digest".r)
+            val attachedMdCount = collection("metadata").count(mdQuery)
+
+            if (attachedMdCount > 0) {
+              // There is file digest metadata for this file, so check it
+              val mdResponse = collection("metadata").find(mdQuery).snapshot()
+              mdResponse.foreach { md =>
+                md.getAs[DBObject]("content") match {
+                  case Some(content) => {
+                    if (sha != content.get("sha512").toString)
+                      Logger.error("Old SHA512 does not match metadata digest for file "+id.toString)
+                  }
+                  case None => Logger.error("no extractorId found in md for file "+id.toString)
+                }
+              }
+            } else {
+              // No file digest metadata for this file, so we will use current SHA512 to imitate extractor
+              val mdObj = Metadata(
+                UUID.generate,
+                ResourceRef(ResourceRef.file, UUID(id.toString)),
+                None, //contextId
+                None, //contentURL,
+                new Date(),
+                new ExtractorAgent(
+                  UUID.generate,
+                  "extractor",
+                  Some("ncsa.file.digest"),
+                  Some(new URL("http://clowder.ncsa.illinois.edu/clowder/api/extractors/ncsa.file.digest"))
+                ),
+                Json.parse("{\"sha512\": \""+sha+"\"}"),
+                None
+              )
+              val dbmd = com.novus.salat.grater[Metadata].asDBObject(mdObj)
+              collection("metadata").insert(dbmd, WriteConcern.Safe)
+
+              val mdCount = file.getAsOrElse[Long]("metadataCount", 0)
+              file.put("metadataCount", mdCount+1)
+            }
+
+            // Overwrite if not, give error flag if so and they dont match
+            file.remove("sha512")
+          }
+          case None => Logger.error("SHA512 is None for file: "+id.toString)
+        }
+
+        try {
+          collection(colln).save(file, WriteConcern.Safe)
+        }
+        catch {
+          case e: Exception => Logger.error("Unable to update file :" + id.toString, e)
+        }
+      }
+    }
   }
 }

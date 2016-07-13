@@ -51,6 +51,14 @@ class CurationObjects @Inject()(datasets: DatasetService,
               case None => 0
             }
 
+            // Pull sha512 from metadata of file rather than file object itself
+            var sha512 = ""
+            metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, file.id)).map { md =>
+              val sha = (md.content \\ "sha512")
+              if (sha.length > 0)
+                sha512 = sha(0).toString
+            }
+
             var tempMap =  Map(
               "Identifier" -> Json.toJson("urn:uuid:"+file.id),
               "@id" -> Json.toJson("urn:uuid:"+file.id),
@@ -62,6 +70,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "Mimetype" -> Json.toJson(file.contentType),
               "Publication Date" -> Json.toJson(""),
               "External Identifier" -> Json.toJson(""),
+              "SHA512 Hash" -> Json.toJson(sha512),
               "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2015/File")),
               "Is Version Of" -> Json.toJson(controllers.routes.Files.file(file.fileId).absoluteURL(https) + "?key=" + key),
               "similarTo" -> Json.toJson(api.routes.Files.download(file.fileId).absoluteURL(https)  + "?key=" + key)
@@ -200,6 +209,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                     "Has Part" -> Json.toJson("http://purl.org/dc/terms/hasPart"),
                     "Size" -> Json.toJson("tag:tupeloproject.org,2006:/2.0/files/length"),
                     "Mimetype" -> Json.toJson("http://purl.org/dc/elements/1.1/format"),
+                    "SHA512 Hash" -> Json.toJson("http://sead-data.net/terms/hasSHA512Digest"),
                     "Dataset Description" -> Json.toJson("http://sead-data.net/terms/datasetdescription"),
                     "Publishing Project" -> Json.toJson("http://sead-data.net/terms/publishingProject"),
                     "License" -> Json.toJson("http://purl.org/dc/terms/license")
