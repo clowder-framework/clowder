@@ -465,7 +465,7 @@ object FileUtils {
       val metadata = models.Metadata(UUID.generate(), attachedTo, contextID, contextURL, createdAt, agent, content, version)
 
       //add metadata to mongo
-      metadataService.addMetadata(metadata, requestHost)
+      metadataService.addMetadata(metadata, Some(requestHost))
     }
   }
 

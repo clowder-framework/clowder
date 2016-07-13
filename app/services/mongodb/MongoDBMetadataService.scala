@@ -28,7 +28,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
   /**
    * Add metadata to the metadata collection and attach to a section /file/dataset/collection
    */
-  def addMetadata(metadata: Metadata, requestHost: String): UUID = {
+  def addMetadata(metadata: Metadata, requestHost: Option[String]): UUID = {
     // TODO: Update context
     val mid = MetadataDAO.insert(metadata, WriteConcern.Safe)
     current.plugin[MongoSalatPlugin] match {
@@ -46,9 +46,14 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     val mdMap = Map("metadata"->metadata.content,
       "resourceType"->metadata.attachedTo.resourceType.name,
       "resourceID"->metadata.attachedTo.id.toString)
-    current.plugin[RabbitmqPlugin].foreach { p =>
-      val dtkey = s"${p.exchange}.metadata.added"
-      p.extract(ExtractorMessage(UUID(""), UUID(""), requestHost, dtkey, mdMap, "", metadata.attachedTo.id, ""))
+    requestHost match {
+      case Some(host) => {
+        current.plugin[RabbitmqPlugin].foreach { p =>
+          val dtkey = s"${p.exchange}.metadata.added"
+          p.extract(ExtractorMessage(UUID(""), UUID(""), host, dtkey, mdMap, "", metadata.attachedTo.id, ""))
+        }
+      }
+      case None => Logger.debug("No host provided; not sending metadata.added to RabbitMQ")
     }
     UUID(mid.get.toString())
   }

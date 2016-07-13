@@ -558,7 +558,7 @@ class  Datasets @Inject()(
           json, version)
 
         //add metadata to mongo
-        metadataService.addMetadata(metadata, request.host)
+        metadataService.addMetadata(metadata, Some(request.host))
 
         datasets.index(id)
         Ok(toJson(Map("status" -> "success")))
@@ -603,7 +603,7 @@ class  Datasets @Inject()(
                   content, version)
 
                 //add metadata to mongo
-                metadataService.addMetadata(metadata, request.host)
+                metadataService.addMetadata(metadata, Some(request.host))
                 datasets.index(id)
                 Ok(toJson("Metadata successfully added to db"))
             }

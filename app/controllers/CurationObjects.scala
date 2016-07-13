@@ -100,7 +100,7 @@ class CurationObjects @Inject()(
                       thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = f.sha512)
                     curations.insertFile(cf)
                     newFiles = cf.id :: newFiles
-                    metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id)), request.host))
+                    metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id)), Some(request.host)))
                   }
                 }
               }
@@ -127,7 +127,7 @@ class CurationObjects @Inject()(
 
               dataset.folders.map(f => copyFolders(f, newCuration.id, "dataset",  newCuration.id, request.host))
               metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
-                .map(m => if((m.content\"Creator").isInstanceOf[JsUndefined]) metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id)), request.host))
+                .map(m => if((m.content\"Creator").isInstanceOf[JsUndefined]) metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id)), Some(request.host)))
               Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
             }
             else {
@@ -154,7 +154,7 @@ class CurationObjects @Inject()(
               curations.insertFile(cf)
               newFiles = cf.id :: newFiles
               metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id))
-                .map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id)), requestHost))
+                .map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id)), Some(requestHost)))
             }
           }
         }
