@@ -3,6 +3,7 @@ package util
 import models.User
 import play.api.libs.concurrent.Akka
 import play.api.templates.Html
+import play.api.Logger
 import com.typesafe.plugin._
 import play.api.libs.concurrent.Execution.Implicits._
 import services.{DI, UserService}
@@ -60,6 +61,10 @@ object Mail {
     // this needs to be done otherwise the request object is lost and this will throw an
     // error.
     val text = body.body
+    if ( Logger.isDebugEnabled ) {
+      Logger.debug("Sending email to %s".format(recipients.toList:_*))
+      Logger.debug("Mail = [%s]".format(text))
+    }
     Akka.system.scheduler.scheduleOnce(1.seconds) {
       val mail = use[MailerPlugin].email
       mail.setSubject(subject)
@@ -68,7 +73,10 @@ object Mail {
 
       // the mailer plugin handles null / empty string gracefully
       mail.send("", text)
+
     }
+
+
   }
 
   private def getAdmins: List[String] = {
