@@ -205,7 +205,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
             if(c.root_spaces contains s.id) {
               spaces.removeCollection(collectionId, spaceId)
               collectionService.removeFromRootSpaces(collectionId, spaceId)
-              if (removeDatasets){
+              if (removeDatasets ){
                 updateSubCollectionsAndDatasets(spaceId, collectionId, user)
               } else {
                 updateSubCollections(spaceId, collectionId)
@@ -250,8 +250,10 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         val datasetsInCollection = datasetService.listCollection(collectionId.stringify, user)
 
         for (dataset <- datasetsInCollection){
-          if (!datasetBelongsToOtherCollectionInSpace(dataset.id, collectionId, spaceId, collectionDescendants.toList)){
-            spaces.removeDataset(dataset.id,spaceId)
+          if (dataset.spaces.contains(spaceId)){
+            if (!datasetBelongsToOtherCollectionInSpace(dataset.id, collectionId, spaceId, collectionDescendants.toList)){
+              spaces.removeDataset(dataset.id,spaceId)
+            }
           }
         }
 
