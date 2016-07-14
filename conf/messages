@@ -4,3 +4,7 @@ verify.email.contact.link=@routes.Application.email().absoluteURL(controllers.Ut
 verify.email.content=Your team now has access to the full suite of Clowder functionality, including publishing and making your data public.
 you.title= My {0}
 list.title= {0}
+datasets.title=Datasets
+collections.title=Collections
+spaces.title=Spaces
+home.title=My {0}

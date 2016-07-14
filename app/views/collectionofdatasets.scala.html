@@ -140,6 +140,25 @@
 					}
 				</div>
 			</div>
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="row">
+						<div class="col-xs-8">
+							<h2>Datasets in the collection</h2>
+						</div>
+						<div class="col-xs-4 valign-link">
+						@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
+							<a id="create_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))"
+							class="btn btn-link pull-right" title="Create Dataset">
+								<span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
+						}
+						</div>
+					</div>
+					<div id="datasets">
+					@collections.datasetsInCollection(datasetsInCollection, commentMap, collection.id, prevd, nextd)
+					</div>
+				</div>
+			</div>
 			<div class="row top-padding">
 				<div class="col-xs-12" id="childCollectionsDiv">
 					<div class="row">
@@ -160,25 +179,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="row">
-				<div class="col-xs-12">
-					<div class="row">
-						<div class="col-xs-8">
-							<h2>Datasets in the collection</h2>
-						</div>
-						<div class="col-xs-4 valign-link">
-							@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
-								<a id="create_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))"
-								class="btn btn-link pull-right" title="Create Dataset">
-									<span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
-							}
-						</div>
-					</div>
-					<div id="datasets">
-						@collections.datasetsInCollection(datasetsInCollection, commentMap, collection.id, prevd, nextd)
-					</div>
-				</div>
-			</div>
+
 		</div>
 
 		<!-- right column -->

@@ -20,8 +20,9 @@
     }
 
     <div class="row vertical-align">
-        <div class="col-md-12 col-lg-12 col-sm-12">
-            <h1 id="spacenamedisplay">@space.name</h1>
+
+            <div class="col-md-12 col-lg-12 col-sm-12">
+                <h1 id="spacenamedisplay" class="space-title"><span class="glyphicon glyphicon-tent"></span>@space.name</h1>
             <p><span id="spacedescdisplay">@space.description</span></p>
             <hr/>
             @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
@@ -45,8 +46,8 @@
     <hr/>
     <div class="row">
         <div class="col-md-8 col-lg-8 col-sm-8">
-            @spaces.collectionsBySpace(collections, space.id.stringify)
             @spaces.datasetsBySpace(datasets, space.id.stringify)
+            @spaces.collectionsBySpace(collections, space.id.stringify)
         </div>
         <div class="col-md-4 col-lg-4 col-sm-4">
             @spaces.otherActions(space, userRoleMap)
