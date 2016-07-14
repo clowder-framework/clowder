@@ -221,7 +221,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
           case (_, _) => NotFound
         }
       }
-      BadRequest("User not supplied")
+      case None => BadRequest("User not supplied")
     }
   }
 
