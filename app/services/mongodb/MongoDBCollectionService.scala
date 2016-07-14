@@ -297,6 +297,8 @@ class MongoDBCollectionService @Inject() (
     (filterAccess ++ filterDate ++ filterTitle ++ filterSpace ++ filterOwner, sort)
   }
 
+  
+
   /**
    * List collections in the system.
    */

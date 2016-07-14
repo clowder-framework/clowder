@@ -4,7 +4,10 @@
 @import api.Permission
 
 <div class="post-box @classes" id="@file.id-tile">
-    <div class="panel panel-default">
+    <div class="panel panel-default file-panel">
+        <div class="pull-left">
+            <span class="glyphicon glyphicon-file"></span>
+        </div>
         <div class="panel-body">
             @if(!file.thumbnail_id.isEmpty){
                 <a href="@(routes.Files.file(file.id))">
@@ -21,7 +24,7 @@
             </div>
         </div>
         <ul class="list-group">
-            <li class="list-group-item">
+            <li class="list-group-item file-panel-footer">
                 <span class="glyphicon glyphicon glyphicon-tags" title="@file.tags.size tags"></span> @file.tags.size
                 <span class="glyphicon glyphicon glyphicon-list" title="@(file.metadataCount) metadata fields"></span> @(file.metadataCount)
                 @if(user.isDefined) {

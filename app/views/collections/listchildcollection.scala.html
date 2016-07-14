@@ -1,6 +1,6 @@
 @(parent: models.Collection, collection: models.Collection, redirect: Call)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 @import api.Permission
-<div class="panel panel-default" id="@collection.id-listitem">
+<div class="panel panel-default collection-panel" id="@collection.id-listitem">
     <div class="panel-body">
         <div class="row">
             <div class="col-xs-2">
