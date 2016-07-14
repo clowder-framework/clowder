@@ -104,7 +104,7 @@ trait CollectionService {
   /**
     * Add datataset to collection spaces
     */
-  def addDatasetToCollectionSpaces(collectionId: UUID, datasetId: UUID): Try[Unit]
+  def addDatasetToCollectionSpaces(collectionId: UUID, datasetId: UUID, user : Option[User]): Try[Unit]
 
   def addDatasetsInCollectionAndChildCollectionsToCollectionSpaces(collectionId : UUID) : Try[Unit]
 

@@ -495,7 +495,7 @@ class MongoDBCollectionService @Inject() (
   }
 
   //adds datasest to the spaces of the collection
-  def addDatasetToCollectionSpaces(collectionId: UUID, datasetId: UUID) = Try {
+  def addDatasetToCollectionSpaces(collectionId: UUID, datasetId: UUID, user : Option[User]) = Try {
     Logger.debug(s"Adding dataset $datasetId to spaces of collection $collectionId")
     Collection.findOneById(new ObjectId(collectionId.stringify)) match {
       case Some(collection) => {
@@ -505,7 +505,11 @@ class MongoDBCollectionService @Inject() (
               spaceService.get(collectionSpace) match {
                 case Some(space) => {
                   if (!dataset.spaces.contains(space.id)) {
-                    spaceService.addDataset(datasetId, collectionSpace)
+                    //check permission for space
+                    if (Permission.checkPermission(user, Permission.AddResourceToSpace,ResourceRef(ResourceRef.space, space.id))){
+                      spaceService.addDataset(datasetId, collectionSpace)
+                    } else
+                      Logger.info("User does not have permission to add datasets to space " + space.id)
                   }
                 }
                 case None => Logger.error("No space found for : " + collectionSpace)
@@ -525,18 +529,18 @@ class MongoDBCollectionService @Inject() (
     }
   }
 
-  def addDatasetsInCollectionAndChildCollectionsToCollectionSpaces(collectionId : UUID) = Try {
-    addDatasetsToCollectionSpaces(collectionId)
+  def addDatasetsInCollectionAndChildCollectionsToCollectionSpaces(collectionId : UUID, user : Option[User]) = Try {
+    addDatasetsToCollectionSpaces(collectionId,user)
     val allDescendants = getAllDescendants(collectionId)
     for (collection <- allDescendants){
-      addDatasetsToCollectionSpaces(collection.id)
+      addDatasetsToCollectionSpaces(collection.id, user)
     }
   }
 
-  private def addDatasetsToCollectionSpaces(collectionId : UUID) = Try {
+  private def addDatasetsToCollectionSpaces(collectionId : UUID, user : Option[User]) = Try {
     Collection.findOneById(new ObjectId(collectionId.stringify)) match {
       case Some(collection) => {
-        val datasetsInCollection = datasets.listCollection(collection.id.stringify)
+        val datasetsInCollection = datasets.listCollection(collection.id.stringify, user)
         for (dataset <- datasetsInCollection){
           for (space <- collection.spaces){
             if (!dataset.spaces.contains(space)){
