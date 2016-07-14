@@ -106,7 +106,7 @@ trait DatasetService {
   def listSpaceAccess(limit: Integer, permisions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
 
   /**
-    * Return a list of datasets in a space the user has access to.
+    * Return a list of datasets in a space with specific title the user has access to.
     */
   def listSpaceAccess(limit: Integer, title: String, permisions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
 
@@ -116,7 +116,7 @@ trait DatasetService {
   def listSpaceAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
 
   /**
-    * Return a list of datasets in a space the user has access to starting at a specific date.
+    * Return a list of datasets in a space the user has access to starting at a specific date with specific title.
     */
   def listSpaceAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset]
 
