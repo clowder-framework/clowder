@@ -273,16 +273,21 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
 
     datasetService.get(datasetId) match {
       case Some(dataset) => {
-        val collectionIdsContainingDataset = dataset.collections
-        for (collectionIdContainingDataset <- collectionIdsContainingDataset){
-          collectionService.get(collectionIdContainingDataset) match {
-            case Some(collection) => {
-              val spacesOfCollection = collection.spaces
-              if (spacesOfCollection.contains(spaceId) && !descendants.contains(collection)){
-                foundOtherCollectionInSpace = true
+        if (!dataset.spaces.contains(spaceId)){
+          foundOtherCollectionInSpace = false
+        }
+        else {
+          val collectionIdsContainingDataset = dataset.collections
+          for (collectionIdContainingDataset <- collectionIdsContainingDataset){
+            collectionService.get(collectionIdContainingDataset) match {
+              case Some(collection) => {
+                val spacesOfCollection = collection.spaces
+                if (spacesOfCollection.contains(spaceId) && !descendants.contains(collection)){
+                  foundOtherCollectionInSpace = true
+                }
               }
+              case None => Logger.error("no collection matches id " + collectionIdContainingDataset)
             }
-            case None => Logger.error("no collection matches id " + collectionIdContainingDataset)
           }
         }
       }
