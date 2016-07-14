@@ -235,7 +235,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     responseClass = "List", httpMethod = "GET")
   def listDatasets(spaceId: UUID, limit: Integer) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     val datasetList = datasets.listSpace(limit, spaceId.stringify)
-    Ok(Json.obj("datasets" -> toJson(datasetList)))
+    Ok(toJson(datasetList))
   }
 
 
@@ -244,7 +244,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     responseClass = "List", httpMethod = "GET")
   def listCollections(spaceId: UUID, limit: Integer) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     val collectionList = collectionService.listSpace(limit, spaceId.stringify)
-    Ok(Json.obj("collections" -> toJson(collectionList)))
+    Ok(toJson(collectionList))
   }
 
 
