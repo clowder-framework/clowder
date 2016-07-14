@@ -845,7 +845,6 @@
 							allowClear: true,
 							ajax: {
 								url: function(params) {
-									//return jsRoutes.api.Datasets.listCanEdit(null, null, 5).url;
 									return jsRoutes.api.Datasets.listMoveFileToDataset("@file.id", 15).url;
 								},
 								data: function(params) {
