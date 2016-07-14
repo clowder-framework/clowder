@@ -4,7 +4,7 @@
     @if(!collection.thumbnail_id.isEmpty) {
         <div class="row">
             <div class="pull-left col-xs-12">
-                <span class="glyphicon glyphicon-th-large"></span>
+                <span class="glyphicon glyphicon-th-large collection-background"></span>
             </div>
         </div>
     }
@@ -17,7 +17,7 @@
                 </a>
             } else {
                 <a href="@(routes.Collections.collection(collection.id))">
-                    <span class="bigicon glyphicon glyphicon-th-large"></span>
+                    <span class="bigicon glyphicon glyphicon-th-large collection-background"></span>
                 </a>
             }
             </div>
@@ -29,7 +29,8 @@
                             <li>@Html(collection.description)</li>
                             <li>@collection.created.format("MMM dd, yyyy")</li>
                             <li>
-                                <span class="glyphicon glyphicon glyphicon-file" title="@collection.datasetCount datasets"></span> @collection.datasetCount
+                                <span class="glyphicon glyphicon-briefcase" title="@collection.datasetCount datasets"></span> @collection.datasetCount
+                                <span class="glyphicon glyphicon-th-large" title="@collection.childCollectionsCount child collections"></span> @collection.childCollectionsCount
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                     @if( user.get.id.equals(collection.author.id) || Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
