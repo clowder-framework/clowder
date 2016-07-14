@@ -106,7 +106,7 @@ trait CollectionService {
     */
   def addDatasetToCollectionSpaces(collectionId: UUID, datasetId: UUID, user : Option[User]): Try[Unit]
 
-  def addDatasetsInCollectionAndChildCollectionsToCollectionSpaces(collectionId : UUID) : Try[Unit]
+  def addDatasetsInCollectionAndChildCollectionsToCollectionSpaces(collectionId : UUID, user : Option[User]) : Try[Unit]
 
   /**
    * Remove dataset from collection
@@ -178,7 +178,7 @@ trait CollectionService {
     * Add subcollection to collection
     *
     */
-  def addSubCollection(collectionId: UUID, subCollectionId: UUID) : Try[Unit]
+  def addSubCollection(collectionId: UUID, subCollectionId: UUID, user : Option[User]) : Try[Unit]
 
 
   def getSelfAndAncestors(collectionId :UUID) : List[Collection]

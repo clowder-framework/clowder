@@ -306,7 +306,7 @@ class MongoDBSpaceService @Inject() (
    * @param collection collection id
    * @param space space id
    */
-  def addCollection(collection: UUID, space: UUID): Unit = {
+  def addCollection(collection: UUID, space: UUID, user : Option[User]): Unit = {
     log.debug(s"Adding $collection to $space")
 
     collections.addToSpace(collection, space)
@@ -314,7 +314,7 @@ class MongoDBSpaceService @Inject() (
       case Some(current_collection) => {
 
         if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
-          val datasetsInCollection = datasets.listCollection(current_collection.id.stringify)
+          val datasetsInCollection = datasets.listCollection(current_collection.id.stringify, user)
           for (dataset <- datasetsInCollection){
             if (!dataset.spaces.contains(space)){
               addDataset(dataset.id,space)
@@ -327,7 +327,7 @@ class MongoDBSpaceService @Inject() (
           collections.get(childCollectionId) match {
             case Some(child_collection) => {
               if (!child_collection.spaces.contains(space)){
-                addCollection(childCollectionId, space)
+                addCollection(childCollectionId, space, user)
               }
               collections.syncUpRootSpaces(child_collection.id, child_collection.root_spaces)
             }

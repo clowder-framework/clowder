@@ -154,13 +154,13 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
           if (!Permission.checkOwner(request.user, ResourceRef(ResourceRef.collection, collectionId))) {
             Forbidden(toJson(s"You are not the owner of the collection"))
           } else {
-            spaces.addCollection(collectionId, spaceId)
+            spaces.addCollection(collectionId, spaceId, request.user)
             collectionService.addToRootSpaces(collectionId, spaceId)
             events.addSourceEvent(request.user,  c.id, c.name, s.id, s.name, "add_collection_space")
             spaces.get(spaceId) match {
               case Some(space) => {
                 if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
-                  collectionService.addDatasetsInCollectionAndChildCollectionsToCollectionSpaces(collectionId)
+                  collectionService.addDatasetsInCollectionAndChildCollectionsToCollectionSpaces(collectionId, request.user)
                 }
                 Ok(Json.obj("collectionInSpace" -> space.collectionCount.toString))
               }

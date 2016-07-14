@@ -902,7 +902,7 @@ class MongoDBCollectionService @Inject() (
     }
   }
 
-  def addSubCollection(collectionId :UUID, subCollectionId: UUID) = Try{
+  def addSubCollection(collectionId :UUID, subCollectionId: UUID, user : Option[User]) = Try{
     Collection.findOneById(new ObjectId(collectionId.stringify)) match {
       case Some(collection) => {
         get(subCollectionId) match {
@@ -915,7 +915,7 @@ class MongoDBCollectionService @Inject() (
                 if (!sub_collection.spaces.contains(parentSpaceId)) {
                   spaceService.get(parentSpaceId) match {
                     case Some(parentSpace) => {
-                      spaceService.addCollection(subCollectionId, parentSpaceId)
+                      spaceService.addCollection(subCollectionId, parentSpaceId, user)
                     }
                     case None => Logger.error("No space found for " + parentSpaceId)
                   }

@@ -50,7 +50,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
           collections.insert(c) match {
             case Some(id) => {
               c.spaces.map(spaceId => spaces.get(spaceId)).flatten.map{ s =>
-                spaces.addCollection(c.id, s.id)
+                spaces.addCollection(c.id, s.id, user)
                 collections.addToRootSpaces(c.id, s.id)
                 events.addSourceEvent(request.user, c.id, c.name, s.id, s.name, "add_collection_space")
               }
@@ -474,7 +474,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     notes = "",
     responseClass = "None", httpMethod = "POST")
   def attachSubCollection(collectionId: UUID, subCollectionId: UUID) = PermissionAction(Permission.AddResourceToCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
-    collections.addSubCollection(collectionId, subCollectionId) match {
+    collections.addSubCollection(collectionId, subCollectionId, request.user) match {
       case Success(_) => {
         collections.get(collectionId) match {
           case Some(collection) => {
@@ -517,7 +517,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             case Some(id) => {
               c.spaces.map{ spaceId =>
                 spaces.get(spaceId)}.flatten.map{ s =>
-                  spaces.addCollection(c.id, s.id)
+                  spaces.addCollection(c.id, s.id, request.user)
                   collections.addToRootSpaces(c.id, s.id)
                   events.addSourceEvent(request.user, c.id, c.name, s.id, s.name, "add_collection_space")
               }
@@ -527,7 +527,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
                 case Some(parentId) => {
                   collections.get(UUID(parentId)) match {
                     case Some(parentCollection) => {
-                      collections.addSubCollection(UUID(parentId), UUID(id)) match {
+                      collections.addSubCollection(UUID(parentId), UUID(id), user) match {
                         case Success(_) => {
                           Ok(toJson(Map("id" -> id)))
                         }
@@ -602,7 +602,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     Logger.debug("changing the value of the root flag")
     (collections.get(collectionId), spaces.get(spaceId)) match {
       case (Some(collection), Some(space)) => {
-        spaces.addCollection(collectionId, spaceId)
+        spaces.addCollection(collectionId, spaceId, request.user)
         collections.addToRootSpaces(collectionId, spaceId)
         events.addSourceEvent(request.user, collection.id, collection.name, space.id, space.name, "add_collection_space")
         Ok(jsonCollection(collection))
