@@ -1267,7 +1267,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
               collection("metadata").insert(dbmd, WriteConcern.Safe)
 
               try {
-                val mdCount = file.getAsOrElse[Long]("metadataCount", 0)
+                val mdCount = file.getAsOrElse[Long]("metadataCount", 0L)
                 file.put("metadataCount", mdCount+1)
               }
               catch {
