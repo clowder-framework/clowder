@@ -16,9 +16,7 @@ import services.{VocabularyService, UserService}
 import play.api.Play._
 import scala.util.{Success, Try}
 
-/**
-  * Created by todd_n on 2/9/16.
-  */
+
 @Singleton
 class MongoDBVocabularyService @Inject() (userService: UserService) extends VocabularyService {
 

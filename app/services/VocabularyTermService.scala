@@ -4,9 +4,7 @@ import models.{VocabularyTerm, UUID}
 
 import scala.util.Try
 
-/**
-  * Created by todd_n on 2/9/16.
-  */
+
 trait VocabularyTermService {
 
   def count(): Long
