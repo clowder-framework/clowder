@@ -68,17 +68,14 @@ class PostgresPlugin(application: Application) extends Plugin {
     ps.setDouble(7, alt)
     ps.executeUpdate()
     val rs = ps.getGeneratedKeys
-    var datapointID = ""
-    if (rs.next()) {
-      datapointID = rs.getInt(1).toString
+    val createdDatapoint = if (rs.next()) {
+      Some(getDatapoint(rs.getInt(1).toString))
+    } else {
+      None
     }
     rs.close()
     ps.close()
-    if (datapointID == "") {
-      None
-    } else {
-      getDatapoint(datapointID)
-    }
+    createdDatapoint
   }
 
   def createSensor(name: String, geoType: String, lat: Double, lon: Double, alt: Double, metadata: String): Option[String] = {
@@ -90,17 +87,14 @@ class PostgresPlugin(application: Application) extends Plugin {
     ps.setString(5, metadata)
     ps.executeUpdate()
     val rs = ps.getGeneratedKeys
-    var sensorID = ""
-    if (rs.next()) {
-      sensorID = rs.getInt(1).toString
+    val createdSensor = if (rs.next()) {
+      Some(getSensor(rs.getInt(1).toString))
+    } else {
+      None
     }
     rs.close()
     ps.close()
-    if (sensorID == "") {
-      None
-    } else {
-      getSensor(sensorID)
-    }
+    createdSensor
   }
 
   def searchSensors(geocode: Option[String], sensor_name: Option[String]): Option[String] = {
@@ -345,17 +339,14 @@ class PostgresPlugin(application: Application) extends Plugin {
     ps.setInt(6, stream_id.toInt)
     ps.executeUpdate()
     val rs = ps.getGeneratedKeys
-    var streamID = ""
-    if (rs.next()) {
-      streamID = rs.getInt(1).toString
+    val createdStream = if (rs.next()) {
+      Some(getStream(rs.getInt(1).toString))
+    } else {
+      None
     }
     rs.close()
     ps.close()
-    if (streamID == "") {
-      None
-    } else {
-      getStream(streamID)
-    }
+    createdStream
   }
 
   def searchStreams(geocode: Option[String], stream_name: Option[String]): Option[String] = {
