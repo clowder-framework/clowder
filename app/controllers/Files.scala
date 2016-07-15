@@ -1051,7 +1051,7 @@ def uploadExtract() =
 
             val host = Utils.baseUrl(request)
             val id = f.id
-            val extra = Map("filename" -> f.filename)
+            val extra = Map("filename" -> f.filename, "action" -> "upload")
 
             // TODO replace null with None
             current.plugin[RabbitmqPlugin].foreach {
