@@ -521,43 +521,50 @@ class Extractions @Inject()(
     // send file to rabbitmq for processing
     current.plugin[RabbitmqPlugin] match {
       case Some(p) =>
-    val extractor = (request.body \ "extractor").as[String]
-    val parameters = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
-      files.get(file_id) match {
-        case Some(file) => {
-          val id = file.id
-          val fileType = file.contentType
-          val idAndFlags = ""
-          val host = Utils.baseUrl(request)
+        files.get(file_id) match {
+          case Some(file) => {
+            val id = file.id
+            val fileType = file.contentType
+            val idAndFlags = ""
+            val host = Utils.baseUrl(request)
 
-          // Log request
-          val clientIP = request.remoteAddress
-          val serverIP = request.host
-          dtsrequests.insertRequest(serverIP, clientIP, file.filename, id, fileType, file.length, file.uploadDate)
+            // if extractor_id is not specified default to execution of all extractors matching mime type
+            val key = (request.body \ "extractor").asOpt[String] match {
+              case Some(extractorId) => "extractors." + extractorId
+              case None => "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+            }
+            // parameters for execution
+            val parameters = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
 
-          val key = "extractors." + extractor
-          val extra = Map("filename" -> file.filename, "parameters" -> parameters.toString)
-          val showPreviews = file.showPreviews
+            // Log request
+            val clientIP = request.remoteAddress
+            val serverIP = request.host
+            dtsrequests.insertRequest(serverIP, clientIP, file.filename, id, fileType, file.length, file.uploadDate)
 
-          val newFlags = if (showPreviews.equals("FileLevel"))
-            idAndFlags + "+filelevelshowpreviews"
-          else if (showPreviews.equals("None"))
-            idAndFlags + "+nopreviews"
-          else
-            idAndFlags
+            val extra = Map("filename" -> file.filename,
+              "parameters" -> parameters.toString,
+              "action" -> "manual-submission")
+            val showPreviews = file.showPreviews
 
-          val originalId = if (!file.isIntermediate) {
-            file.id.toString()
-          } else {
-            idAndFlags
+            val newFlags = if (showPreviews.equals("FileLevel"))
+              idAndFlags + "+filelevelshowpreviews"
+            else if (showPreviews.equals("None"))
+              idAndFlags + "+nopreviews"
+            else
+              idAndFlags
+
+            val originalId = if (!file.isIntermediate) {
+              file.id.toString()
+            } else {
+              idAndFlags
+            }
+
+            p.extract(ExtractorMessage(new UUID(originalId), file.id, host, key, extra, file.length.toString, null, newFlags))
+            Ok(Json.obj("status" -> "OK"))
           }
-
-          p.extract(ExtractorMessage(new UUID(originalId), file.id, host, key, extra, file.length.toString, null, newFlags))
-          Ok(Json.obj("status" -> "OK"))
+          case None =>
+            BadRequest(toJson(Map("request" -> "File not found")))
         }
-        case None =>
-          BadRequest(toJson(Map("request" -> "File not found")))
-      }
       case None =>
         Ok(Json.obj("status" -> "error", "msg"-> "RabbitmqPlugin disabled"))
     }
