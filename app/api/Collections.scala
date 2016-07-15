@@ -646,12 +646,14 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Get all collections",
     notes = "",
     responseClass = "None", httpMethod = "GET")
-  def getAllCollections() = PermissionAction(Permission.ViewCollection) { implicit request =>
-    implicit val user = request.user
-    val count : Long  = collections.countAccess(Set[Permission](Permission.ViewCollection),user,true)
-    val limit = count.toInt
-    val all_collections_list = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection),request.user,false, true))
-      yield jsonCollection(collection)
+  def getAllCollections(limit : Int, showAll: Boolean) = PermissionAction(Permission.ViewCollection) { implicit request =>
+    val all_collections_list = request.user match {
+      case Some(usr) => {
+        for (collection <- collections.listAllCollections(usr, showAll, limit))
+          yield jsonCollection(collection)
+      }
+      case None => List.empty
+    }
     Ok(toJson(all_collections_list))
   }
 

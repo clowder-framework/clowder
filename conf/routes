@@ -450,7 +450,7 @@ GET            /api/collections/possibleParents                                 
 POST           /api/collections                                                         @api.Collections.createCollection()
 GET            /api/collections/rootCollections                                         @api.Collections.getRootCollections
 GET            /api/collections/topLevelCollections                                     @api.Collections.getTopLevelCollections
-GET            /api/collections/allCollections                                          @api.Collections.getAllCollections()
+GET            /api/collections/allCollections                                          @api.Collections.getAllCollections(limit : Int ?= 0, showAll: Boolean ?=false)
 
 # deprecrated
 GET            /api/collections/list                                                    @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
