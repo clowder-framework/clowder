@@ -508,11 +508,6 @@ class Extractions @Inject()(
     )
   }
 
-  /*convert list of JsObject to JsArray*/
-  def getJsonArray(list: List[JsObject]): JsArray = {
-    list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
-  }
-
   @ApiOperation(value = "Submit file for extraction by a specific extractor", notes = "  ", responseClass = "None",
     httpMethod = "POST")
   def submitToExtractor(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file,
@@ -568,5 +563,10 @@ class Extractions @Inject()(
       case None =>
         Ok(Json.obj("status" -> "error", "msg"-> "RabbitmqPlugin disabled"))
     }
+  }
+
+  /*convert list of JsObject to JsArray*/
+  private def getJsonArray(list: List[JsObject]): JsArray = {
+    list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
   }
 }
