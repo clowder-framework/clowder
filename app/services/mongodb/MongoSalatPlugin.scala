@@ -1274,6 +1274,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                 case e: Exception => {
                   // If we can't get metadataCount from file correctly, just set to 1 for newly added md
                   file.put("metadataCount", 1L)
+                  Logger.error("Unable to update metadataCount; setting to 1")
                 }
               }
             }
