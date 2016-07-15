@@ -1266,8 +1266,16 @@ class MongoSalatPlugin(app: Application) extends Plugin {
               val dbmd = com.novus.salat.grater[Metadata].asDBObject(mdObj)
               collection("metadata").insert(dbmd, WriteConcern.Safe)
 
-              val mdCount = file.getAsOrElse[Long]("metadataCount", 0)
-              file.put("metadataCount", mdCount+1)
+              try {
+                val mdCount = file.getAsOrElse[Long]("metadataCount", 0)
+                file.put("metadataCount", mdCount+1)
+              }
+              catch {
+                case e: Exception => {
+                  // If we can't get metadataCount from file correctly, just set to 1 for newly added md
+                  file.put("metadataCount", 1L)
+                }
+              }
             }
 
             // Overwrite if not, give error flag if so and they dont match
