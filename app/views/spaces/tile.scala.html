@@ -2,7 +2,10 @@
 @import _root_.util.Formatters.ellipsize
 @import api.Permission
 <div class="post-box @classes" id="@space.id-tile">
-    <div class="panel panel-default">
+    <div class="panel panel-default space-panel">
+        <div class="pull-left">
+            <span class="glyphicon glyphicon-tent"></span>
+        </div>
         <div class="panel-body">
             @if(!space.logoURL.isEmpty) {
                 <a href="@routes.Spaces.getSpace(space.id)">
@@ -16,7 +19,7 @@
         </div>
             <!-- Space Info -->
         <ul class="list-group">
-            <li class="list-group-item">
+            <li class="list-group-item space-panel-footer">
                 <span class="glyphicon glyphicon-briefcase" title="@space.datasetCount datasets"></span> @space.datasetCount
                 <span class="glyphicon glyphicon-th-large" title="@space.collectionCount collections"></span> @space.collectionCount
                 <span class="glyphicon glyphicon-user" title="@space.userCount users"></span> @space.userCount

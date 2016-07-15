@@ -96,6 +96,7 @@ POST           /uploaddnd/:id                                                   
 POST           /uploadDragDrop                                                          @controllers.Files.uploadDragDrop
 GET            /fileThumbnail/:id/blob                                                  @controllers.Files.thumbnail(id: UUID)
 GET            /file_by_section/:id                                                     @controllers.Files.fileBySection(id: UUID)
+GET            /files/:file_id/extractions                                              @controllers.Extractors.submitExtraction(file_id: UUID)
 
 # ----------------------------------------------------------------------
 # DATASETS
@@ -374,6 +375,9 @@ POST           /api/files/:id/reindex                                           
 GET            /api/extractors                                                          @api.Extractions.listExtractors()
 GET            /api/extractors/:id                                                      @api.Extractions.getExtractorInfo(id: UUID)
 POST           /api/extractors                                                          @api.Extractions.addExtractorInfo()
+
+POST           /api/files/:file_id/extractions                                          @api.Extractions.submitToExtractor(file_id: UUID)
+
 GET            /api/extractions/requests                                                @api.Extractions.getDTSRequests()
 GET            /api/extractions/servers_ips                                             @api.Extractions.getExtractorServersIP()
 GET            /api/extractions/extractors_names                                        @api.Extractions.getExtractorNames()
@@ -384,7 +388,6 @@ POST           /api/extractions/upload_url                                      
 POST           /api/extractions/multiple_uploadby_url                                   @api.Extractions.multipleUploadByURL()
 POST           /api/extractions/upload_file                                             @api.Extractions.uploadExtract(showPreviews: String ?= "DatasetLevel")
 GET            /api/extractions/:id/status                                              @api.Extractions.checkExtractorsStatus(id:UUID)
-POST           /api/extractions/:id/submit                                              @api.Extractions.submitExtraction(id:UUID)
 GET            /api/extractions/:id/metadata                                            @api.Extractions.fetch(id:UUID)
 GET            /api/extractions/:id/statuses                                            @api.Extractions.checkExtractionsStatuses(id:UUID)
 # End of change segment
@@ -437,6 +440,8 @@ POST           /api/spaces/:id/follow                                           
 POST           /api/spaces/:id/unfollow                                                 @api.Spaces.unfollow(id: UUID)
 POST           /api/spaces/:id/metadata                                                 @api.Metadata.addDefinitionToSpace(id: UUID)
 PUT            /api/spaces/:id/verify                                                   @api.Spaces.verifySpace(id:UUID)
+GET            /api/spaces/:id/datasets                                                 @api.Spaces.listDatasets(id: UUID, limit: Integer ?= 0)
+GET            /api/spaces/:id/collections                                              @api.Spaces.listCollections(id: UUID, limit: Integer ?= 0)
 
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT
@@ -448,7 +453,7 @@ GET            /api/collections/possibleParents                                 
 POST           /api/collections                                                         @api.Collections.createCollection()
 GET            /api/collections/rootCollections                                         @api.Collections.getRootCollections
 GET            /api/collections/topLevelCollections                                     @api.Collections.getTopLevelCollections
-GET            /api/collections/allCollections                                          @api.Collections.getAllCollections()
+GET            /api/collections/allCollections                                          @api.Collections.getAllCollections(limit : Int ?= 0, showAll: Boolean ?=false)
 
 # deprecrated
 GET            /api/collections/list                                                    @api.Collections.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
@@ -679,7 +684,7 @@ GET            /users/followers                                                 
 GET            /users/following                                                         @controllers.Users.getFollowing(index: Int ?= 0, limit: Int ?=12)
 
 # ----------------------------------------------------------------------
-# MEDICI STATUS API
+# Clowder STATUS API
 # ----------------------------------------------------------------------
 GET            /api/version                                                             @api.Status.version
 GET            /api/status                                                              @api.Status.status
