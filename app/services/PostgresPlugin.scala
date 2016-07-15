@@ -69,7 +69,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     ps.executeUpdate()
     val rs = ps.getGeneratedKeys
     val createdDatapoint = if (rs.next()) {
-      Some(getDatapoint(rs.getInt(1).toString))
+      getDatapoint(rs.getInt(1).toString)
     } else {
       None
     }
@@ -88,7 +88,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     ps.executeUpdate()
     val rs = ps.getGeneratedKeys
     val createdSensor = if (rs.next()) {
-      Some(getSensor(rs.getInt(1).toString))
+      getSensor(rs.getInt(1).toString)
     } else {
       None
     }
@@ -340,7 +340,7 @@ class PostgresPlugin(application: Application) extends Plugin {
     ps.executeUpdate()
     val rs = ps.getGeneratedKeys
     val createdStream = if (rs.next()) {
-      Some(getStream(rs.getInt(1).toString))
+      getStream(rs.getInt(1).toString)
     } else {
       None
     }
