@@ -74,7 +74,11 @@ class PostgresPlugin(application: Application) extends Plugin {
     }
     rs.close()
     ps.close()
-    getDatapoint(datapointID)
+    if (datapointID == "") {
+      None
+    } else {
+      getDatapoint(datapointID)
+    }
   }
 
   def createSensor(name: String, geoType: String, lat: Double, lon: Double, alt: Double, metadata: String): Option[String] = {
@@ -92,7 +96,11 @@ class PostgresPlugin(application: Application) extends Plugin {
     }
     rs.close()
     ps.close()
-    getSensor(sensorID)
+    if (sensorID == "") {
+      None
+    } else {
+      getSensor(sensorID)
+    }
   }
 
   def searchSensors(geocode: Option[String], sensor_name: Option[String]): Option[String] = {
@@ -343,7 +351,11 @@ class PostgresPlugin(application: Application) extends Plugin {
     }
     rs.close()
     ps.close()
-    getStream(streamID)
+    if (streamID == "") {
+      None
+    } else {
+      getStream(streamID)
+    }
   }
 
   def searchStreams(geocode: Option[String], stream_name: Option[String]): Option[String] = {
