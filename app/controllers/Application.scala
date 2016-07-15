@@ -371,6 +371,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Metadata.deleteDefinition,
         api.routes.javascript.Metadata.removeMetadata,
         api.routes.javascript.Events.sendExceptionEmail,
+        api.routes.javascript.Extractions.submitToExtractor,
         api.routes.javascript.Folders.createFolder,
         api.routes.javascript.Folders.deleteFolder,
         api.routes.javascript.Folders.updateFolderName,
@@ -402,8 +403,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.CurationObjects.deleteCuration,
         controllers.routes.javascript.CurationObjects.getStatusFromRepository,
         controllers.routes.javascript.Events.getEvents,
-        controllers.routes.javascript.Collections.collection,
-        api.routes.javascript.Extractions.submitToExtractor
+        controllers.routes.javascript.Collections.collection
       )
     ).as(JSON) 
   }

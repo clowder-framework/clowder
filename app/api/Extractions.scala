@@ -513,49 +513,53 @@ class Extractions @Inject()(
     list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
   }
 
-  def submitToExtractor(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file, file_id)))(parse.json) { implicit request =>
-    Logger.debug(s"Submitting file for extraction with body $request.body" )
+  @ApiOperation(value = "Submit file for extraction by a specific extractor", notes = "  ", responseClass = "None",
+    httpMethod = "POST")
+  def submitToExtractor(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file,
+    file_id)))(parse.json) { implicit request =>
+    Logger.debug(s"Submitting file for extraction with body $request.body")
+    // send file to rabbitmq for processing
+    current.plugin[RabbitmqPlugin] match {
+      case Some(p) =>
     val extractor = (request.body \ "extractor").as[String]
     val parameters = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
-    files.get(file_id) match {
-      case Some(file) => {
-        val id = file.id
-        val fileType = file.contentType
-        val idAndFlags = ""
-        val host = Utils.baseUrl(request)
+      files.get(file_id) match {
+        case Some(file) => {
+          val id = file.id
+          val fileType = file.contentType
+          val idAndFlags = ""
+          val host = Utils.baseUrl(request)
 
-        // Log request
-        val clientIP = request.remoteAddress
-        val serverIP = request.host
-        dtsrequests.insertRequest(serverIP, clientIP, file.filename, id, fileType, file.length, file.uploadDate)
+          // Log request
+          val clientIP = request.remoteAddress
+          val serverIP = request.host
+          dtsrequests.insertRequest(serverIP, clientIP, file.filename, id, fileType, file.length, file.uploadDate)
 
-        val key = "extractors." + extractor
-        val extra = Map("filename" -> file.filename, "parameters" -> parameters.toString)
-        val showPreviews = file.showPreviews
+          val key = "extractors." + extractor
+          val extra = Map("filename" -> file.filename, "parameters" -> parameters.toString)
+          val showPreviews = file.showPreviews
 
-        val newFlags = if (showPreviews.equals("FileLevel"))
-          idAndFlags + "+filelevelshowpreviews"
-        else if (showPreviews.equals("None"))
-          idAndFlags + "+nopreviews"
-        else
-          idAndFlags
+          val newFlags = if (showPreviews.equals("FileLevel"))
+            idAndFlags + "+filelevelshowpreviews"
+          else if (showPreviews.equals("None"))
+            idAndFlags + "+nopreviews"
+          else
+            idAndFlags
 
-        val originalId = if (!file.isIntermediate) {
-          file.id.toString()
-        } else {
-          idAndFlags
+          val originalId = if (!file.isIntermediate) {
+            file.id.toString()
+          } else {
+            idAndFlags
+          }
+
+          p.extract(ExtractorMessage(new UUID(originalId), file.id, host, key, extra, file.length.toString, null, newFlags))
+          Ok(Json.obj("status" -> "OK"))
         }
-
-        // send file to rabbitmq for processing
-        current.plugin[RabbitmqPlugin] match {
-          case Some(p) =>
-            p.extract(ExtractorMessage(new UUID(originalId), file.id, host, key, extra, file.length.toString, null, newFlags))
-            Ok(Json.obj("status" -> "OK"))
-          case None =>
-            Ok(Json.obj("status" -> "error", "msg"-> "RabbitmqPlugin disabled"))
-        }
+        case None =>
+          BadRequest(toJson(Map("request" -> "File not found")))
       }
-      case None => BadRequest(toJson(Map("request" -> "File not found")))
+      case None =>
+        Ok(Json.obj("status" -> "error", "msg"-> "RabbitmqPlugin disabled"))
     }
   }
 }
