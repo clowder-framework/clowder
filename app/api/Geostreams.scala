@@ -67,7 +67,7 @@ object Geostreams extends ApiController {
             case Some(plugin) => {
               plugin.createSensor(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata)) match {
                 case Some(d) => jsonp(d, request)
-                case None => jsonp(Json.parse("""{"status":"Failed to create sensor"}"""), request)
+                case None => BadRequest(s"Failed to create sensor $name")
               }
             }
             case None => pluginNotEnabled
@@ -219,7 +219,7 @@ object Geostreams extends ApiController {
             case Some(plugin) => {
               plugin.createStream(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata), sensor_id) match {
                 case Some(d) => jsonp(d, request)
-                case None => jsonp(Json.parse( """{"status":"Failed to create stream"}"""), request)
+                case None => BadRequest(s"Failed to create a stream $name")
               }
             }
             case None => pluginNotEnabled
@@ -332,7 +332,7 @@ object Geostreams extends ApiController {
                   }
                   jsonp(d, request)
                 }
-                case None => jsonp(Json.obj("status"->"error"), request)
+                case None => BadRequest("Failed to create datapoint")
               }
             } else {
               plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), 0.0, streamId) match {
@@ -342,7 +342,7 @@ object Geostreams extends ApiController {
                   }
                   jsonp(d, request)
                 }
-                case None => jsonp(Json.obj("status" -> "error"), request)
+                case None => BadRequest("Failed to create datapoint")
               }
             }
           }
