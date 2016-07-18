@@ -54,7 +54,9 @@
 
           @helper.inputRadioGroup(myForm("access"),
             options = options(SpaceStatus.PRIVATE.toString->SpaceStatus.PRIVATE.toString,SpaceStatus.PUBLIC.toString->SpaceStatus.PUBLIC.toString),
-            '_label -> "Access")
+            '_label -> "Dataset Access")
+          This sets the privacy level for all of the datasets in the @spaces.spaceTitle(), except those for which you individually set access permissions.
+
           @helper.input(myForm("space_id"), 'class -> "form-control", '_label ->"") {(id, name, value, args) =>
           <input type="hidden" name="@id" value="@value">
           }
