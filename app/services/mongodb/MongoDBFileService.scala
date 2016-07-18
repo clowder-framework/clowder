@@ -187,8 +187,7 @@ class MongoDBFileService @Inject() (
   def save(inputStream: InputStream, filename: String, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File] = {
     ByteStorageService.save(inputStream, FileDAO.COLLECTION) match {
       case Some(x) => {
-
-        val file = File(UUID.generate(), x._1, filename, author, new Date(), util.FileUtils.getContentType(filename, contentType), x._4, x._3, x._2, showPreviews = showPreviews, licenseData = License.fromAppConfig())
+        val file = File(UUID.generate(), x._1, filename, author, new Date(), util.FileUtils.getContentType(filename, contentType), x._3, x._2, showPreviews = showPreviews, licenseData = License.fromAppConfig())
         FileDAO.save(file)
         Some(file)
       }
