@@ -229,6 +229,25 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     }
   }
 
+
+  @ApiOperation(value = "List UUIDs of all datasets in a space",
+    notes = "",
+    responseClass = "List", httpMethod = "GET")
+  def listDatasets(spaceId: UUID, limit: Integer) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+    val datasetList = datasets.listSpace(limit, spaceId.stringify)
+    Ok(toJson(datasetList))
+  }
+
+
+  @ApiOperation(value = "List UUIDs of all collections in a space",
+    notes = "",
+    responseClass = "List", httpMethod = "GET")
+  def listCollections(spaceId: UUID, limit: Integer) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+    val collectionList = collectionService.listSpace(limit, spaceId.stringify)
+    Ok(toJson(collectionList))
+  }
+
+
   @ApiOperation(value = "Remove a dataset from a space",
   notes = "",
   responseClass = "None", httpMethod = "POST")
@@ -521,7 +540,6 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   }
 
 
-
   @ApiOperation(value = "Unfollow space",
     notes = "Remove user from space followers and remove space from user followed spaces.",
     responseClass = "None", httpMethod = "POST")
@@ -547,6 +565,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       }
     }
   }
+
 
   def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
     val followeeModel = spaces.get(followeeUUID)

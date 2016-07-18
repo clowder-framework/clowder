@@ -376,9 +376,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //add private (the default status) flag for each dataset/collection/space
     updateMongo("add-trial-flag", addTrialFlag)
-
-
-    // instead of user agreeent we now have a temrms of services
+    
+    // instead of user agreeent we now have a terms of services
     updateMongo("switch-user-agreement-to-terms-of-services", switchToTermsOfServices)
 
     updateMongo("fix-metadata-count", fixMetadataCount)
@@ -391,6 +390,10 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     updateMongo("add-trial-flag2",addTrialFlag2)
 
+    // Make sure all email addresses of userpassword are lowercase
+    updateMongo("user-emails-to-lowercase", updateMongoEmailCase)
+
+    // Move SHA512 from File object into file.digest metadata
     updateMongo("copy-sha512-to-metadata-and-remove", copySha512ToMetadataAndRemove)
   }
 
@@ -1222,11 +1225,44 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("spaces.projects").update(q ,s, multi=true)
   }
 
+  private def updateMongoEmailCase(): Unit = {
+    val userpasses = collection("social.users").find(MongoDBObject("identityId.providerId" -> "userpass"))
+    userpasses.foreach { user =>
+      (user.getAs[ObjectId]("_id"), user.getAs[String]("email"),
+        user.getAsOrElse[DBObject]("identityId", new MongoDBObject()).getAs[String]("userId")) match {
+        case (Some(userId), Some(email), Some(username)) => {
+          try {
+            // Find if user exists with lowercase email already
+            val conflicts = collection("social.users").count(MongoDBObject(
+              "_id" -> MongoDBObject("$ne" -> userId),
+              "identityId" -> MongoDBObject("userId" -> username.toLowerCase, "providerId" -> "userpass")
+            ))
+
+            if (conflicts == 0) {
+              collection("social.users").update(MongoDBObject("_id" -> userId),
+                MongoDBObject("$set" -> MongoDBObject(
+                  "email" -> email.toLowerCase,
+                  "identityId" -> MongoDBObject("userId" -> username.toLowerCase, "providerId" -> "userpass")
+                )), upsert = false, multi = true)
+            } else {
+              // If there's already an account with lowercase email, deactivate this account
+              collection("social.users").update(MongoDBObject("_id" -> userId),
+                MongoDBObject("$set" -> MongoDBObject("active" -> false)), upsert = false, multi = true)
+            }
+          } catch {
+            case e: BSONException => Logger.error("Unable to update email for user with id: " + user)
+          }
+        }
+        case _ => Logger.error("Missing user fields when updating email case")
+      }
+    }
+  }
+
   private def copySha512ToMetadataAndRemove(): Unit = {
     for (colln <- List[String]("uploads")) {
       // Iteracte across all files that have a sha512 entry
       collection(colln).find(MongoDBObject("loader" -> classOf[MongoDBByteStorage].getName,
-                  "sha512" -> MongoDBObject("$exists" -> true))).snapshot().foreach { file =>
+        "sha512" -> MongoDBObject("$exists" -> true))).snapshot().foreach { file =>
         val id = file.getAsOrElse[ObjectId]("_id", new ObjectId())
         file.getAs[String]("sha512") match {
           case Some(sha) => {
@@ -1241,9 +1277,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                 md.getAs[DBObject]("content") match {
                   case Some(content) => {
                     if (sha != content.get("sha512").toString)
-                      Logger.error("Old SHA512 does not match metadata digest for file "+id.toString)
+                      Logger.error("Old SHA512 does not match metadata digest for file " + id.toString)
                   }
-                  case None => Logger.error("no extractorId found in md for file "+id.toString)
+                  case None => Logger.error("no extractorId found in md for file " + id.toString)
                 }
               }
             } else {
@@ -1260,7 +1296,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                   Some("ncsa.file.digest"),
                   Some(new URL("http://clowder.ncsa.illinois.edu/clowder/api/extractors/ncsa.file.digest"))
                 ),
-                Json.parse("{\"sha512\": \""+sha+"\"}"),
+                Json.parse("{\"sha512\": \"" + sha + "\"}"),
                 None
               )
               val dbmd = com.novus.salat.grater[Metadata].asDBObject(mdObj)
@@ -1268,7 +1304,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
               try {
                 val mdCount = file.getAsOrElse[Long]("metadataCount", 0L)
-                file.put("metadataCount", mdCount+1)
+                file.put("metadataCount", mdCount + 1)
               }
               catch {
                 case e: Exception => {
@@ -1282,7 +1318,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
             // Overwrite if not, give error flag if so and they dont match
             file.remove("sha512")
           }
-          case None => Logger.error("SHA512 is None for file: "+id.toString)
+          case None => Logger.error("SHA512 is None for file: " + id.toString)
         }
 
         try {

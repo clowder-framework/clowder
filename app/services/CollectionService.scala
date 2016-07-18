@@ -38,7 +38,7 @@ trait CollectionService {
   /**
    * Return the count of collections the user has access to.
    */
-  def countAccess(permisions: Set[Permission], user: Option[User], showAll: Boolean): Long
+  def countAccess(permissions: Set[Permission], user: Option[User], showAll: Boolean): Long
 
   /**
    * Return a list of collections the user has access to.
@@ -84,6 +84,11 @@ trait CollectionService {
    * Return a list of collections the user has access to starting at a specific date with matching title.
    */
   def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[Collection]
+
+  /**
+    * List All Collections (Including childs) a user can view.
+    */
+  def listAllCollections(user: User, showAll: Boolean, limit: Int): List[Collection]
 
   def updateAuthorFullName(userId: UUID, fullName: String)
   /**
