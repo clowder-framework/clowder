@@ -3,6 +3,7 @@ package services
 import java.io.InputStream
 
 import models.UUID
+import play.api.Logger
 
 /**
  * Interface to store bytes. This is used by other services that store the metadata
@@ -45,7 +46,14 @@ object ByteStorageService {
 
   /** delete the blob */
   def delete(loader: String, path: String, prefix: String): Boolean = {
-    val bss = Class.forName(loader).newInstance.asInstanceOf[ByteStorageService]
-    bss.delete(path, prefix)
+    try {
+      val bss = Class.forName(loader).newInstance.asInstanceOf[ByteStorageService]
+      bss.delete(path, prefix)
+    } catch {
+      case t: Throwable => {
+        Logger.error(s"Error deleting : loader=${loader} path=${path} prefix=${prefix}", t)
+        throw t
+      }
+    }
   }
 }
