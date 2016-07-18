@@ -389,6 +389,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("add-metadata-per-space", addMetadataPerSpace)
 
     updateMongo("add-trial-flag2",addTrialFlag2)
+
+    // Make sure all email addresses of userpassword are lowercase
+    updateMongo("user-emails-to-lowercase", updateMongoEmailCase)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1217,5 +1220,38 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     }
     collection("datasets").update(q ,d, multi=true)
     collection("spaces.projects").update(q ,s, multi=true)
+  }
+
+  private def updateMongoEmailCase(): Unit ={
+    val userpasses = collection("social.users").find(MongoDBObject("identityId.providerId" -> "userpass"))
+    userpasses.foreach{ user =>
+      (user.getAs[ObjectId]("_id"), user.getAs[String]("email"),
+                user.getAsOrElse[DBObject]("identityId", new MongoDBObject()).getAs[String]("userId")) match {
+        case (Some(userId), Some(email), Some(username)) => {
+          try {
+            // Find if user exists with lowercase email already
+            val conflicts = collection("social.users").count(MongoDBObject(
+              "_id" -> MongoDBObject("$ne" -> userId),
+              "identityId" -> MongoDBObject("userId" -> username.toLowerCase, "providerId" -> "userpass")
+            ))
+
+            if (conflicts == 0) {
+              collection("social.users").update(MongoDBObject("_id" -> userId),
+                MongoDBObject("$set" -> MongoDBObject(
+                  "email" -> email.toLowerCase,
+                  "identityId" -> MongoDBObject("userId" -> username.toLowerCase, "providerId" -> "userpass")
+                )), upsert=false, multi=true)
+            } else {
+              // If there's already an account with lowercase email, deactivate this account
+              collection("social.users").update(MongoDBObject("_id" -> userId),
+                MongoDBObject("$set" -> MongoDBObject("active" -> false)), upsert=false, multi=true)
+            }
+          } catch {
+            case e: BSONException => Logger.error("Unable to update email for user with id: " + user)
+          }
+        }
+        case _ => Logger.error("Missing user fields when updating email case")
+      }
+    }
   }
 }
