@@ -28,7 +28,7 @@ class MongoDBByteStorage extends ByteStorageService {
       }
       case Some(x) => {
         val files = new GridFS(x.getDB.underlying, collection)
-        val file = files.createFile()
+        val file = files.createFile(inputStream)
         file.save()
         Some((file.getId.toString, file.getLength))
       }
