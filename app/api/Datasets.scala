@@ -526,7 +526,13 @@ class  Datasets @Inject()(
 
   @ApiOperation(value = "List all datasets in a collection", notes = "Returns list of datasets and descriptions.", responseClass = "None", httpMethod = "GET")
   def listInCollection(collectionId: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
-    Ok(toJson(datasets.listCollection(collectionId.stringify)))
+    val datasets_in_collection = request.user match {
+      case Some(user) => {
+        datasets.listCollection(collectionId.stringify, Some(user))
+      }
+      case None => List.empty
+    }
+    Ok(toJson(datasets_in_collection))
   }
 
   @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
