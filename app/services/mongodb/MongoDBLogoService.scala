@@ -31,7 +31,7 @@ class MongoDBLogoService extends LogoService {
   override def save(inputStream: InputStream, path: String, name: String, showText: Boolean, contentType: Option[String], author: User): Option[Logo] = {
     ByteStorageService.save(inputStream, LogoDAO.COLLECTION) match {
       case Some(x) => {
-        val logo = Logo(UUID.generate(), x._1, x._3, x._4, x._2, path, name, FileUtils.getContentType(name, contentType), author)
+        val logo = Logo(UUID.generate(), x._1, x._3, x._2, path, name, FileUtils.getContentType(name, contentType), author)
         LogoDAO.save(logo)
         Some(logo)
       }

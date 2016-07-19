@@ -17,9 +17,9 @@ import services.ByteStorageService
  */
 class DiskByteStorageService extends ByteStorageService {
   /**
-   * Save the bytes to disk, returns (path, sha512, length)
+   * Save the bytes to disk, returns (path, length)
    */
-  def save(inputStream: InputStream, prefix: String): Option[(String, String, Long)] = {
+  def save(inputStream: InputStream, prefix: String): Option[(String, Long)] = {
     Play.current.configuration.getString("medici2.diskStorage.path") match {
       case Some(root) => {
         var depth = Play.current.configuration.getInt("medici2.diskStorage.depth").getOrElse(3)
@@ -51,18 +51,16 @@ class DiskByteStorageService extends ByteStorageService {
         }
 
         // save actual bytes
-        val md = MessageDigest.getInstance("SHA-512")
         val cis = new CountingInputStream(inputStream)
-        val dis = new DigestInputStream(cis, md)
-        Logger.debug("Saving file to " + filePath)
-        Files.copy(dis, Paths.get(filePath))
-        dis.close()
 
-        val sha512 = Hex.encodeHexString(md.digest())
+        Logger.debug("Saving file to " + filePath)
+        Files.copy(cis, Paths.get(filePath))
+        cis.close()
+
         val length = cis.getByteCount
 
         // store metadata to mongo
-        Some((filePath, sha512, length))
+        Some((filePath, length))
       }
       case None => None
     }
