@@ -362,9 +362,8 @@ class Files @Inject()(
       case Some(file) => {
         //get metadata and also fetch context information
         val listOfMetadata = extFilter match {
-          case Some(f) => metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+          case Some(f) => metadataService.getExtractedMetadataByAttachTo(ResourceRef(ResourceRef.file, id), Some(f))
             .map(JSONLD.jsonMetadataWithContext(_))
-            .filter(md => (md \ "agent" \ "name").toString.replace("\"", "").endsWith(f))
           case None => metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
             .map(JSONLD.jsonMetadataWithContext(_))
         }
@@ -391,7 +390,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file  " + id);
-        InternalServerError
+        InternalServerError("Error getting file  " + id)
       }
     }
   }

@@ -686,7 +686,7 @@ class  Datasets @Inject()(
       }
       case None => {
         Logger.error("Error getting dataset  " + id);
-        InternalServerError
+        InternalServerError("Error getting dataset  " + id)
       }
     }
   }
