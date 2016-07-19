@@ -7,7 +7,7 @@ home.title=My {0}
 list.title= {0}
 datasets.title=Datasets
 collections.title=Collections
-spaces.title=play.Play.application().configuration().getString("spaceTitle").trim
+spaces.titasdasd
 
 #Login page
 securesocial.login.useEmailAndPassword=Or login using an email and password.
