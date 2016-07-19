@@ -20,7 +20,7 @@ class IRODSByteStorageService extends ByteStorageService {
   /**
    * Save the bytes to IRODS
    */
-  def save(inputStream: InputStream, prefix: String): Option[(String, String, Long)] = {
+  def save(inputStream: InputStream, prefix: String): Option[(String, Long)] = {
     current.plugin[IRODSPlugin] match {
       case None => {
         Logger.error("No IRODSPlugin")
@@ -61,22 +61,19 @@ class IRODSByteStorageService extends ByteStorageService {
           }
 
           // fill a buffer Array
-          val md = MessageDigest.getInstance("SHA-512")
           val cis = new CountingInputStream(inputStream)
-          val dis = new DigestInputStream(cis, md)
           val fos = ipg.getFileFactory().instanceIRODSFileOutputStream(file)
           val buffer = new Array[Byte](16384)
           var count: Int  = -1
-          while({count = dis.read(buffer); count > 0}) {
+          while({count = cis.read(buffer); count > 0}) {
             fos.write(buffer, 0, count)
           }
           fos.close()
 
-          val sha512 = Hex.encodeHexString(md.digest())
           val length = cis.getByteCount
 
           // finished
-          Some(relativePath, sha512, length)
+          Some(relativePath, length)
         } catch {
           case e: JargonException => {
             Logger.error("Could not save file " + filePath)

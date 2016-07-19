@@ -467,8 +467,6 @@ class Extractions @Inject()(
               js = js :+ toJson(ex)
           }
 
-        } else {
-          Logger.debug("----Else block")
         }
 
         jarr = jarr :+ (Json.obj("clientIP" -> dtsreq.clientIP, "fileid" -> dtsreq.fileId.stringify, "filename" -> dtsreq.fileName, "fileType" -> dtsreq.fileType, "filesize" -> dtsreq.fileSize, "uploadDate" -> dtsreq.uploadDate, "extractors" -> js, "startTime" -> dtsreq.startTime, "endTime" -> dtsreq.endTime))

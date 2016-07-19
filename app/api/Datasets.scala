@@ -2255,7 +2255,7 @@ class  Datasets @Inject()(
                         files.get(fileId) match {
                           case Some(file) => {
                             val newFile = File(loader_id = file.loader_id, filename = file.filename, author = file.author,
-                              uploadDate = file.uploadDate, contentType = file.contentType, length = file.length, sha512 = file.sha512,
+                              uploadDate = file.uploadDate, contentType = file.contentType, length = file.length,
                               loader = file.loader, showPreviews = file.showPreviews, previews = file.previews, thumbnail_id = file.thumbnail_id,
                               description = file.description, licenseData = file.licenseData, status = file.status)
                             files.save(newFile)
@@ -2292,7 +2292,7 @@ class  Datasets @Inject()(
           files.get(fileId) match {
             case Some(file) => {
               val newFile = File(loader_id = file.loader_id, filename = file.filename, author = file.author,
-                uploadDate = file.uploadDate, contentType = file.contentType, length = file.length, sha512 = file.sha512,
+                uploadDate = file.uploadDate, contentType = file.contentType, length = file.length,
                 loader = file.loader, showPreviews = file.showPreviews, previews = file.previews, thumbnail_id = file.thumbnail_id,
                 description = file.description, licenseData = file.licenseData, status = file.status)
               files.save(newFile)
