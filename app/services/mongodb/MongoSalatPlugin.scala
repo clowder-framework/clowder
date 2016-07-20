@@ -580,12 +580,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
                 val userURI = "https://clowder.ncsa.illinois.edu/clowder/api/users/" + user.id
                 val creatorUser = UserAgent(user.id, "cat:user", MiniUser(user.id, user.fullName, user.avatarUrl.getOrElse(""), user.email), Some(new URL(userURI)))
                 val metadataUser = models.Metadata(UUID.generate(), attachedTo.get, contextID, contextURL, createdAt, creatorUser, userMD, version)
-                // insert new metadata into database and try to attach to resource
-                collection("metadata").insert(metadataUser.asInstanceOf[DBObject], WriteConcern.Safe)
-                collection(metadataUser.attachedTo) match {
-                  case Some(c) => c.update(MongoDBObject("_id" -> new ObjectId(metadataUser.attachedTo.id.stringify)), $inc("metadataCount" -> +1))
-                  case None => Logger.error(s"Could not increase counter for ${metadataUser.attachedTo}")
-                }
+                metadataService.addMetadata(metadataUser, None)
               }
             }
             case None => {}
