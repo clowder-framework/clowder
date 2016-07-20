@@ -371,7 +371,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file  " + id);
-        InternalServerError
+        BadRequest(toJson("Error getting file  " + id))
       }
     }
   }
@@ -390,7 +390,7 @@ class Files @Inject()(
       }
       case None => {
         Logger.error("Error getting file  " + id);
-        InternalServerError("Error getting file  " + id)
+        BadRequest(toJson("Error getting file  " + id))
       }
     }
   }
