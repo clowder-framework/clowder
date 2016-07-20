@@ -437,6 +437,8 @@ POST           /api/spaces/:id/follow                                           
 POST           /api/spaces/:id/unfollow                                                 @api.Spaces.unfollow(id: UUID)
 POST           /api/spaces/:id/metadata                                                 @api.Metadata.addDefinitionToSpace(id: UUID)
 PUT            /api/spaces/:id/verify                                                   @api.Spaces.verifySpace(id:UUID)
+GET            /api/spaces/:id/datasets                                                 @api.Spaces.listDatasets(id: UUID, limit: Integer ?= 0)
+GET            /api/spaces/:id/collections                                              @api.Spaces.listCollections(id: UUID, limit: Integer ?= 0)
 
 # ----------------------------------------------------------------------
 # COLLECTIONS ENDPOINT
@@ -686,7 +688,7 @@ GET            /users/followers                                                 
 GET            /users/following                                                         @controllers.Users.getFollowing(index: Int ?= 0, limit: Int ?=12)
 
 # ----------------------------------------------------------------------
-# MEDICI STATUS API
+# Clowder STATUS API
 # ----------------------------------------------------------------------
 GET            /api/version                                                             @api.Status.version
 GET            /api/status                                                              @api.Status.status
