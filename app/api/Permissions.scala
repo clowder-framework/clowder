@@ -256,10 +256,7 @@ object Permission extends Enumeration {
               checkPermission(user, permission, ResourceRef(ResourceRef.collection, p.collection_id.get))
             } else if (p.vocabulary_id.isDefined) {
               checkPermission(user, permission, ResourceRef(ResourceRef.vocabulary, p.vocabulary_id.get))
-            } else if (p.vocabularyterm_id.isDefined) {
-                checkPermission(user, permission, ResourceRef(ResourceRef.vocabularyterm, p.vocabularyterm_id.get))
-
-            } else  {
+            }  else  {
               true
             }
           }
