@@ -62,7 +62,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "Mimetype" -> Json.toJson(file.contentType),
               "Publication Date" -> Json.toJson(""),
               "External Identifier" -> Json.toJson(""),
-              "SHA512 Hash" -> Json.toJson(files.get(file.fileId).map{ f => f.sha512}),
+              "SHA512 Hash" -> Json.toJson(file.sha512),
               "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2015/File")),
               "Is Version Of" -> Json.toJson(controllers.routes.Files.file(file.fileId).absoluteURL(https) + "?key=" + key),
               "similarTo" -> Json.toJson(api.routes.Files.download(file.fileId).absoluteURL(https)  + "?key=" + key)

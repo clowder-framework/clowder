@@ -467,8 +467,6 @@ class Extractions @Inject()(
               js = js :+ toJson(ex)
           }
 
-        } else {
-          Logger.debug("----Else block")
         }
 
         jarr = jarr :+ (Json.obj("clientIP" -> dtsreq.clientIP, "fileid" -> dtsreq.fileId.stringify, "filename" -> dtsreq.fileName, "fileType" -> dtsreq.fileType, "filesize" -> dtsreq.fileSize, "uploadDate" -> dtsreq.uploadDate, "extractors" -> js, "startTime" -> dtsreq.startTime, "endTime" -> dtsreq.endTime))
@@ -508,10 +506,65 @@ class Extractions @Inject()(
     )
   }
 
-  /*convert list of JsObject to JsArray*/
-  def getJsonArray(list: List[JsObject]): JsArray = {
-    list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
+  @ApiOperation(value = "Submit file for extraction by a specific extractor", notes = "  ", responseClass = "None",
+    httpMethod = "POST")
+  def submitToExtractor(file_id: UUID) = PermissionAction(Permission.EditFile, Some(ResourceRef(ResourceRef.file,
+    file_id)))(parse.json) { implicit request =>
+    Logger.debug(s"Submitting file for extraction with body $request.body")
+    // send file to rabbitmq for processing
+    current.plugin[RabbitmqPlugin] match {
+      case Some(p) =>
+        files.get(file_id) match {
+          case Some(file) => {
+            val id = file.id
+            val fileType = file.contentType
+            val idAndFlags = ""
+            val host = Utils.baseUrl(request)
+
+            // if extractor_id is not specified default to execution of all extractors matching mime type
+            val key = (request.body \ "extractor").asOpt[String] match {
+              case Some(extractorId) => "extractors." + extractorId
+              case None => "unknown." + "file." + fileType.replace(".", "_").replace("/", ".")
+            }
+            // parameters for execution
+            val parameters = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
+
+            // Log request
+            val clientIP = request.remoteAddress
+            val serverIP = request.host
+            dtsrequests.insertRequest(serverIP, clientIP, file.filename, id, fileType, file.length, file.uploadDate)
+
+            val extra = Map("filename" -> file.filename,
+              "parameters" -> parameters.toString,
+              "action" -> "manual-submission")
+            val showPreviews = file.showPreviews
+
+            val newFlags = if (showPreviews.equals("FileLevel"))
+              idAndFlags + "+filelevelshowpreviews"
+            else if (showPreviews.equals("None"))
+              idAndFlags + "+nopreviews"
+            else
+              idAndFlags
+
+            val originalId = if (!file.isIntermediate) {
+              file.id.toString()
+            } else {
+              idAndFlags
+            }
+
+            p.extract(ExtractorMessage(new UUID(originalId), file.id, host, key, extra, file.length.toString, null, newFlags))
+            Ok(Json.obj("status" -> "OK"))
+          }
+          case None =>
+            BadRequest(toJson(Map("request" -> "File not found")))
+        }
+      case None =>
+        Ok(Json.obj("status" -> "error", "msg"-> "RabbitmqPlugin disabled"))
+    }
   }
 
-
+  /*convert list of JsObject to JsArray*/
+  private def getJsonArray(list: List[JsObject]): JsArray = {
+    list.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
+  }
 }
