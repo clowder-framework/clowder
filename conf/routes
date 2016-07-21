@@ -543,14 +543,6 @@ POST           /api/datasets/:id/addFileEvent                                   
 
 
 # ----------------------------------------------------------------------
-# VOCABULARIES ENDPOINT
-# ----------------------------------------------------------------------
-
-#GET             /vocabularies/new                                                       @controllers.Vocabularies.newVocabulary(space : Option[String])
-#POST            /vocabularies/submit                                                    @controllers.Vocabularies.submit()
-#GET             /vocabularies/:id                                                       @controllers.Vocabularies.vocabulary(id : UUID)
-
-# ----------------------------------------------------------------------
 # PREVIEWS ENDPOINT
 # ----------------------------------------------------------------------
 GET            /api/previews/:preview_id/textures/dataset/:datasetid/json               @api.Previews.downloadPreview(preview_id: UUID, datasetid: UUID)
