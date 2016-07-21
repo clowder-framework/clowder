@@ -297,7 +297,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   // CODE TO UPDATE THE DATABASE
   // ----------------------------------------------------------------------
   def updateDatabase() {
-    updateMongo("add-dataset-collection-spaces",addDatasetToCollectionSpaces)
 
     // migrate users to new model
     updateMongo("fixing-typehint-users", updateMongoChangeUserType)
@@ -309,7 +308,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("fixing-taglength", updateTagLength)
 
     // remove datasets from collection
-    //updateMongo("removed-datasets-collection", updateMongoRemoveDatasetCollection)
+    updateMongo("removed-datasets-collection", updateMongoRemoveDatasetCollection)
 
     // replace collection id strings with UUID in datasets
     updateMongo("replace-dataset-collections-string-uuid", updateMongoCollectionsInDatasetStringToUUID)
@@ -391,6 +390,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("add-metadata-per-space", addMetadataPerSpace)
 
     updateMongo("add-trial-flag2",addTrialFlag2)
+
+    //add datasets to collection spaces
+    updateMongo("add-dataset-collection-spaces",addDatasetToCollectionSpaces)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
