@@ -297,6 +297,27 @@ class MongoDBCollectionService @Inject() (
     (filterAccess ++ filterDate ++ filterTitle ++ filterSpace ++ filterOwner, sort)
   }
 
+  def listAllCollections(user: User, showAll: Boolean, limit: Int): List[Collection] ={
+    if(showAll) {
+      Collection.find(MongoDBObject()).limit(limit).toList
+    } else {
+      val publicSpaces= spaces.listByStatus(SpaceStatus.PUBLIC.toString).map(s => new ObjectId(s.id.stringify))
+      val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
+      orlist += ("spaces" $in publicSpaces)
+      orlist += MongoDBObject("author._id" -> new ObjectId(user.id.stringify))
+      val permissionsString = Set[Permission](Permission.ViewCollection).map(_.toString)
+      val okspaces = user.spaceandrole.filter(_.role.permissions.intersect(permissionsString).nonEmpty)
+      if (okspaces.nonEmpty) {
+        orlist += ("spaces" $in okspaces.map(x => new ObjectId(x.spaceId.stringify)))
+      }
+      if (orlist.isEmpty) {
+        orlist += MongoDBObject("doesnotexist" -> true)
+      }
+
+      Collection.find($or(orlist.map(_.asDBObject))).limit(limit).toList
+    }
+  }
+
   /**
    * List collections in the system.
    */

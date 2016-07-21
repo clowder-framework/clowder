@@ -26,10 +26,15 @@
                                     @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
                                         <!-- ids don't like spaces, you can use regex for removing different characters in metadata names (key) as well -->
                                         @defining(contextId.get + key.replaceAll("[() ]","") + resourceId.toString()) { mid =>
-                                            <a id='@mid' href="javascript:void(0)"
-                                                onmouseover="getMetadataContext('@mid','@contextId.get','@key');"
-                                                onmouseout="leaveMetadataContext('@mid');">
-                                            <strong>@key:</strong></a> @printContent(agent,value,contextId,contextURL,resourceId)
+                                                @if(user.isDefined) {
+                                                    <a id='@mid' href="javascript:void(0)"
+                                                    onmouseover="getMetadataContext('@mid','@contextId.get','@key');"
+                                                    onmouseout="leaveMetadataContext('@mid');">
+                                                        <strong>@key:</strong></a>
+                                                } else {
+                                                    <strong>@key:</strong>
+                                                }
+                                           @printContent(agent,value,contextId,contextURL,resourceId)
                                         }
                                     } else {
                                         @contextURL match {
@@ -51,10 +56,15 @@
                                     </a>
                                     @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
                                         @defining(contextId.get + key.replaceAll("[() ]","") + resourceId.toString()) { mid =>
-                                            <a id='@mid' href="javascript:void(0)"
-                                            onmouseover="getMetadataContext('@mid','@contextId.get','@key');"
-                                            onmouseout="leaveMetadataContext('@mid');">
-                                                <strong>@key:</strong></a> @printContent(agent,value,contextId,contextURL,resourceId)
+                                                @if(user.isDefined) {
+                                                    <a id='@mid' href="javascript:void(0)"
+                                                    onmouseover="getMetadataContext('@mid','@contextId.get','@key');"
+                                                    onmouseout="leaveMetadataContext('@mid');">
+                                                        <strong>@key:</strong></a>
+                                                } else {
+                                                    <strong>@key:</strong>
+                                                }
+                                            @printContent(agent,value,contextId,contextURL,resourceId)
                                         }
                                     } else {
                                         @contextURL match {
@@ -73,10 +83,15 @@
                                 <li class="md-block">
                                 @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
                                     @defining(contextId.get + key.replaceAll("[() ]","") + resourceId.toString()) { mid =>
-                                        <a id='@mid' href="javascript:void(0)"
-                                            onmouseover="getMetadataContext('@mid','@contextId.get','@key');"
-                                            onmouseout="leaveMetadataContext('@mid');">
-                                        <strong>@key:</strong></a> @printContent(agent,value,contextId,contextURL,resourceId)
+                                            @if(user.isDefined) {
+                                                <a id='@mid' href="javascript:void(0)"
+                                                onmouseover="getMetadataContext('@mid','@contextId.get','@key');"
+                                                onmouseout="leaveMetadataContext('@mid');">
+                                                    <strong>@key:</strong></a>
+                                            } else {
+                                                <strong>@key:</strong>
+                                            }
+                                        @printContent(agent,value,contextId,contextURL,resourceId)
                                     }
                                 } else {
                                     @contextURL match {
@@ -117,9 +132,14 @@
         @if(agent.displayName.length > 0) {
             @if(agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
                 @defining(resourceId.toString() + mid.toString()) { aid =>
-                    <a id='@aid' href="@routes.Profile.viewProfileUUID(agent.id)"
-                    onmouseover="getAgentContext('@aid','@agent.id');"
-                    onmouseout="leaveAgentContext('@aid');">@agent.displayName</a>
+                        @if(user.isDefined) {
+                            <a id='@aid' href="@routes.Profile.viewProfileUUID(agent.id)"
+                            onmouseover="getAgentContext('@aid','@agent.id');"
+                            onmouseout="leaveAgentContext('@aid');">@agent.displayName</a>
+                        } else {
+                            @agent.displayName
+                        }
+
                 }
             } else {
                 @if(!agent.url.isDefined) {

@@ -526,7 +526,7 @@ class  Datasets @Inject()(
 
   @ApiOperation(value = "List all datasets in a collection", notes = "Returns list of datasets and descriptions.", responseClass = "None", httpMethod = "GET")
   def listInCollection(collectionId: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
-    Ok(toJson(datasets.listCollection(collectionId.stringify)))
+    Ok(toJson(datasets.listCollection(collectionId.stringify, request.user)))
   }
 
   @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
@@ -2254,7 +2254,7 @@ class  Datasets @Inject()(
                         files.get(fileId) match {
                           case Some(file) => {
                             val newFile = File(loader_id = file.loader_id, filename = file.filename, author = file.author,
-                              uploadDate = file.uploadDate, contentType = file.contentType, length = file.length, sha512 = file.sha512,
+                              uploadDate = file.uploadDate, contentType = file.contentType, length = file.length,
                               loader = file.loader, showPreviews = file.showPreviews, previews = file.previews, thumbnail_id = file.thumbnail_id,
                               description = file.description, licenseData = file.licenseData, status = file.status)
                             files.save(newFile)
@@ -2291,7 +2291,7 @@ class  Datasets @Inject()(
           files.get(fileId) match {
             case Some(file) => {
               val newFile = File(loader_id = file.loader_id, filename = file.filename, author = file.author,
-                uploadDate = file.uploadDate, contentType = file.contentType, length = file.length, sha512 = file.sha512,
+                uploadDate = file.uploadDate, contentType = file.contentType, length = file.length,
                 loader = file.loader, showPreviews = file.showPreviews, previews = file.previews, thumbnail_id = file.thumbnail_id,
                 description = file.description, licenseData = file.licenseData, status = file.status)
               files.save(newFile)

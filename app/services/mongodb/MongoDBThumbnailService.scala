@@ -44,7 +44,7 @@ class MongoDBThumbnailService @Inject()(storage: ByteStorageService) extends Thu
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
     ByteStorageService.save(inputStream, ThumbnailDAO.COLLECTION) match {
       case Some(x) => {
-        val thumbnail = Thumbnail(UUID.generate(), x._1, x._2, x._4, Some(filename), FileUtils.getContentType(filename, contentType), new Date())
+        val thumbnail = Thumbnail(UUID.generate(), x._1, x._2, x._3, Some(filename), FileUtils.getContentType(filename, contentType), new Date())
         ThumbnailDAO.save(thumbnail)
         thumbnail.id.stringify
       }

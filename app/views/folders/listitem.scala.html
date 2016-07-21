@@ -1,15 +1,15 @@
 @(folder: Folder, parentDataset: UUID)(implicit user: Option[models.User])
 
 @import api.Permission
-<div class="panel panel-default" id="@folder.id-listitem">
+<div class="panel panel-default folder-panel" id="@folder.id-listitem">
     <div class="panel-body">
         <div class="row">
             <div class="col-md-2 col-sm-2 col-lg-2">
-                <h1 class="text-center">
+
                     <a href="javascript:updatePageAndFolder(0, '@folder.id.stringify')">
-                        <span class="glyphicon glyphicon-folder-close"></span>
+                        <span class="bigicon glyphicon glyphicon-folder-close"></span>
                     </a>
-                </h1>
+
             </div>
             <div class="col-md-10 col-sm-10 col-lg-10">
                 <div id="folder-title-@folder.id">

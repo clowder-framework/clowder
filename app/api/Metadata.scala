@@ -6,6 +6,7 @@ import javax.inject.{Inject, Singleton}
 
 import com.wordnik.swagger.annotations.ApiOperation
 import models.{ResourceRef, UUID, UserAgent, _}
+import play.api.Play.current
 import play.api.Logger
 import play.api.libs.json.Json._
 import play.api.libs.json._
@@ -288,6 +289,19 @@ class Metadata @Inject()(
 
             //add metadata to mongo
             metadataService.addMetadata(metadata, Some(request.host))
+            attachedTo match {
+              case Some(resource) => {
+                resource.resourceType match {
+                  case ResourceRef.dataset => {
+                    datasets.index(resource.id)
+                  }
+                  case ResourceRef.file => {
+                    files.index(resource.id)
+                  }
+                }
+              }
+              case None => {}
+            }
 
             Ok(views.html.metadatald.view(List(metadata), true)(request.user))
           } else {
@@ -310,6 +324,25 @@ class Metadata @Inject()(
               BadRequest("Curation Object has already submitted")
             } else {
               metadataService.removeMetadata(id, Some(request.host))
+
+              Logger.debug("re-indexing after metadata removal")
+              current.plugin[ElasticsearchPlugin].foreach { p =>
+                // Delete existing index entry and re-index
+                m.attachedTo.resourceType match {
+                  case ResourceRef.file => {
+                    p.delete("data", "file", m.attachedTo.id.stringify)
+                    files.index(m.attachedTo.id)
+                  }
+                  case ResourceRef.dataset => {
+                    p.delete("data", "dataset", m.attachedTo.id.stringify)
+                    datasets.index(m.attachedTo.id)
+                  }
+                  case _ => {
+                    Logger.error("unknown attached resource type for metadata - not reindexing")
+                  }
+                }
+              }
+
               Ok(JsObject(Seq("status" -> JsString("ok"))))
             }
           }

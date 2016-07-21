@@ -296,7 +296,7 @@ object FileUtils {
                           showPreviews: String = "DatasetLevel", originalZipFile: String = "",
                           flagsFromPrevious: String = "", intermediateUpload: Boolean = false, multipleFile:Boolean): Option[File] = {
     val file = File(UUID.generate(), "", f.filename, user, new Date(),
-      FileUtils.getContentType(f.filename, f.contentType), f.ref.file.length(), "", "",
+      FileUtils.getContentType(f.filename, f.contentType), f.ref.file.length(), "",
       isIntermediate = intermediateUpload, showPreviews = showPreviews,
       licenseData = License.fromAppConfig(), status = FileStatus.CREATED.toString)
     files.save(file)
@@ -339,7 +339,7 @@ object FileUtils {
     val path = url.getPath
     val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
     val file = File(UUID.generate(), path, filename, user, new Date(),
-      FileUtils.getContentType(filename, None), -1, "", "",
+      FileUtils.getContentType(filename, None), -1, "",
       isIntermediate=intermediateUpload, showPreviews=showPreviews,
       licenseData=License.fromAppConfig(), status = FileStatus.CREATED.toString)
     files.save(file)
@@ -398,7 +398,7 @@ object FileUtils {
       val length = new java.io.File(path).length()
       val loader = classOf[services.filesystem.DiskByteStorageService].getName
       val file = File(UUID.generate(), path, filename, user, new Date(),
-        FileUtils.getContentType(filename, None), length, "", loader,
+        FileUtils.getContentType(filename, None), length, loader,
         isIntermediate=intermediateUpload, showPreviews=showPreviews,
         licenseData=License.fromAppConfig(), status = FileStatus.CREATED.toString)
       files.save(file)
@@ -538,10 +538,10 @@ object FileUtils {
 
     // actually save the file
     ByteStorageService.save(new FileInputStream(path), "uploads") match {
-      case Some((loader_id, loader, sha512, length)) => {
+      case Some((loader_id, loader, length)) => {
         files.get(file.id) match {
           case Some(f) => {
-            val fixedfile = f.copy(filename=nameOfFile, contentType=fileType, loader=loader, loader_id=loader_id, sha512=sha512, length=length, author=realUser)
+            val fixedfile = f.copy(filename=nameOfFile, contentType=fileType, loader=loader, loader_id=loader_id, length=length, author=realUser)
             files.save(fixedfile)
             Logger.info("Uploading Completed")
             Some(fixedfile)
@@ -562,16 +562,9 @@ object FileUtils {
 
   /** Fix file object based on path file, no uploading just compute sha512 */
   private def savePath(file: File, path: String): Option[File] = {
-    // Calculate SHA-512 hash
-    val filestream = new java.io.BufferedInputStream(new FileInputStream(path))
-    val sha512 = DigestUtils.sha512Hex(filestream)
-    filestream.close()
     files.get(file.id) match {
       case Some(f) => {
-        val fixedfile = f.copy(sha512 = sha512)
-        files.save(fixedfile)
-        Logger.info("Uploading Completed")
-        Some(fixedfile)
+        return Some(f)
       }
       case None => {
         Logger.error("File was not found anymore")
@@ -585,10 +578,10 @@ object FileUtils {
     // actually save the file
     val conn = url.openConnection()
     ByteStorageService.save(conn.getInputStream, "uploads") match {
-      case Some((loader_id, loader, sha512, length)) => {
+      case Some((loader_id, loader, length)) => {
         files.get(file.id) match {
           case Some(f) => {
-            val fixedfile = f.copy(contentType=conn.getContentType, loader=loader, loader_id=loader_id, sha512=sha512, length=length)
+            val fixedfile = f.copy(contentType=conn.getContentType, loader=loader, loader_id=loader_id, length=length)
             files.save(fixedfile)
             Logger.info("Uploading Completed")
             Some(fixedfile)

@@ -1477,7 +1477,7 @@ class Files @Inject()(
           }
 
           //this stmt has to be before files.removeFile
-          Logger.debug("Deleting file from indexes" + file.filename)
+          Logger.debug("Deleting file from indexes " + file.filename)
           current.plugin[VersusPlugin].foreach {        
             _.removeFromIndexes(id)        
           }

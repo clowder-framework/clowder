@@ -20,7 +20,7 @@ class MongoDBByteStorage extends ByteStorageService {
    * Save the bytes to mongo, the prefix is used for the collection and id is
    * ignored.
    */
-  def save(inputStream: InputStream, collection: String): Option[(String, String, Long)] = {
+  def save(inputStream: InputStream, collection: String): Option[(String, Long)] = {
     current.plugin[MongoSalatPlugin] match {
       case None => {
         Logger.error("No MongoSalatPlugin")
@@ -28,11 +28,9 @@ class MongoDBByteStorage extends ByteStorageService {
       }
       case Some(x) => {
         val files = new GridFS(x.getDB.underlying, collection)
-        val md = MessageDigest.getInstance("SHA-512")
-        val dis = new DigestInputStream(inputStream, md)
-        val file = files.createFile(dis)
+        val file = files.createFile(inputStream)
         file.save()
-        Some((file.getId.toString, Hex.encodeHexString(md.digest()), file.getLength))
+        Some((file.getId.toString, file.getLength))
       }
     }
   }

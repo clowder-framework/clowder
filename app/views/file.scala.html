@@ -25,7 +25,7 @@
 			Configuration.fileSize = @p._7;
 		}
 		else if("@p._2" === "X3d"){
-			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(UUID(p._1)))";
+			Configuration.annotationsEditPath = "@api.routes.Previews.editAnnotation(UUID(p._1))";
 			Configuration.annotationsListPath = "@api.routes.Previews.listAnnotations(UUID(p._1))";
 			Configuration.annotationsAttachPath = "@api.routes.Previews.attachAnnotation(UUID(p._1))";
 			Configuration.wasPTM = "@(filename.endsWith(".ptm") || contentType.contains("ptmimages"))";
@@ -151,10 +151,12 @@
 
 	<div class="row">
 		<div class="col-md-8 col-sm-8 col-lg-8">
+			<div class="row">
+			<div id="file-name-div" class="file-title-div col-xs-12">
 			@if(datasets.length > 0) {
 				@datasets.map {dataset =>
 					<span class="h1">
-						<a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id'>@Html(dataset.name)</a>
+						<a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id'> <span class="glyphicon glyphicon-briefcase"></span> @Html(dataset.name)</a>
 					</span>
 					<span class="glyphicon glyphicon-chevron-right" style="font-size: 150%;"></span>
 				}
@@ -162,13 +164,13 @@
 			@if(folders.length > 0) {
 				@folders.map { folder =>
 					<span class="h1">
-						<a href="@routes.Datasets.dataset(folder.parentDatasetId)#folderId=@folder.id">@folder.displayName</a>
+						<a href="@routes.Datasets.dataset(folder.parentDatasetId)#folderId=@folder.id"> <span class="glyphicon glyphicon-folder-close"></span> @folder.displayName</a>
 					</span>
 					<span class="glyphicon glyphicon-chevron-right" style="font-size: 150%;"></span>
 				}
 			}
 			<div id="prf-file-name" class="text-left inline">
-				<h1 id="file-name-title" class="inline">@Html(file.filename)</h1>
+				<h1 id="file-name-title" class="inline"> <span class="glyphicon glyphicon-file"></span> @Html(file.filename)</h1>
 				@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
 					<div id="h-edit-file" class="hiddencomplete">
 						<a id ="edit-file" href="javascript:updateFileName()" title="Click to edit file name.">
@@ -176,6 +178,8 @@
 						</a>
 					</div>
 				}
+			</div>
+			</div>
 			</div>
 			<div class="row bottom-padding">
 				<div class="col-md-12 box-white-space" id="aboutdesc">
@@ -535,11 +539,13 @@
 					<h4>Metadata</h4>
 				</div>
 			</div>
-			<div class="row">
-				<div class="col-md-12">
+			@if(user.isDefined) {
+				<div class="row">
+					<div class="col-md-12">
 					@metadatald.addMetadata("file", file.id.toString, "metadata-content")
+					</div>
 				</div>
-			</div>
+			}
 			<div class="row bottom-padding">
 				<div class="col-md-12" id="metadata-content">
 					@metadatald.view(mds, true)
@@ -551,8 +557,11 @@
 				<div class="col-md-12">
 					<h4>Extractions</h4>
 					<a class="btn btn-link" data-toggle="collapse" href="#extractions" aria-expanded="false"
-					aria-controls="collapseExample">
+						aria-controls="listExtractions">
 						<span class="glyphicon glyphicon-list" aria-hidden="true"></span> List extraction events
+					</a>
+					<a href="@routes.Extractors.submitExtraction(UUID(id))" class="btn btn-link" >
+						<span class="glyphicon glyphicon glyphicon-send" aria-hidden="true"></span> Submit file for extraction
 					</a>
 					<div class="collapse" id="extractions">
 						@extractions.extractionsByFile(extractionsStatus)
@@ -577,10 +586,10 @@
 						fileName = $('#file-name-title').text();
 						$('<div class="inline file_name_div h3"> </div>').insertAfter($('#prf-file-name'));
 						$('.file_name_div').append('<input type="text" id="file_name_input" class="form-control" />');
-						$('.file_name_div').append('<button class="btn btn-sm btn-primary edit-tab" onclick="saveFileName()"> <span class="glyphicon glyphicon-send"></span> Save</button>');
-						$('.file_name_div').append('<button class="btn btn-sm btn-link" onclick="cancelFileName()"> <span class="glyphicon glyphicon-remove"></span> Cancel</button>');
+						$('.file_name_div').append('<button class="btn btn-sm btn-primary edit-tab btn-margins" onclick="saveFileName()"> <span class="glyphicon glyphicon-send"></span> Save</button>');
+						$('.file_name_div').append('<button class="btn btn-sm btn-link btn-margins" onclick="cancelFileName()"> <span class="glyphicon glyphicon-remove"></span> Cancel</button>');
 						$('.file_name_div').append('<div class="hiddencomplete" id="file-name-error"> <span class="small error">File name is required.</span></div>');
-
+						$('#file-name-div').removeClass("file-title-div");
 						$('#file_name_input').val(fileName);
 						$('#file-name-title').text("");
 						$('#h-edit-file').css("display", "none");
@@ -604,7 +613,9 @@
 						request.done(function(response, textStatus, jqXHR) {
 							$('.file_name_div').remove();
 							$('#file-name-title').text(htmlEncode(name).replace(/\n/g, "<br />"));
+							$('#file-name-title').prepend('<span class="glyphicon glyphicon-file"></span>');
 							$('#prf-file-name').mouseleave();
+							$('#file-name-div').addClass("file-title-div");
 							$('#h-edit-file').css("display", "");
 						});
 						request.fail(function(jqXHR, textStatus, errorThrown) {
@@ -617,10 +628,12 @@
 					}
 
 					function cancelFileName() {
-						$('#file-name-title').html(fileName);
+						$('#file-name-title').text(fileName);
+						$('#file-name-title').prepend('<span class="glyphicon glyphicon-file"></span> ');
 						$('.file_name_div').remove();
 						$('#prf-file-name').css("display", "inline");
 						$('#h-edit-file').css("display", "");
+						$('#file-name-div').addClass("file-title-div");
 						$('#prf-file-name').mouseleave();
 					}
 
@@ -662,14 +675,6 @@
 						}
 						</tr>
 					}
-					<tr><td><b>SHA&nbsp;512:</b></td><td>
-						@if(file.sha512.length > 10) {
-							<span title="@file.sha512">...@file.sha512.substring(file.sha512.length-10, file.sha512.length)</span>
-						} else {
-							@file.sha512
-						}
-						<a class="btn btn-link btn-sm clipboard" data-copy="@file.sha512" title="Copy SHA to clipboard"><span class="glyphicon glyphicon-edit"></span> copy</a></td></tr>
-
 					<tr><td><b>Uploaded&nbsp;on:</b></td><td> @file.uploadDate.format("MMM dd, yyyy HH:mm:ss")</td></tr>
                     <tr><td><b>Uploaded&nbsp;by:</b></td><td> <a href = "@routes.Profile.viewProfileUUID(file.author.id)"> @file.author.fullName</a></td></tr>
 					@if( play.Play.application().configuration().getBoolean("enablePublic")) {

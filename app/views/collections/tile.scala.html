@@ -2,7 +2,10 @@
 @import _root_.util.Formatters.ellipsize
 @import api.Permission
 <div class="post-box @classes" id="@collection.id-tile">
-    <div class="panel panel-default">
+    <div class="panel panel-default collection-panel">
+        <div class="pull-left">
+            <span class="glyphicon glyphicon-th-large"></span>
+        </div>
         <div class="panel-body">
             @if(!collection.thumbnail_id.isEmpty){
                 <a href="@(routes.Collections.collection(collection.id))">
@@ -16,7 +19,7 @@
         </div>
             <!-- Collection Info -->
         <ul class="list-group">
-            <li class="list-group-item">
+            <li class="list-group-item collection-panel-footer">
                 <span class="glyphicon glyphicon-briefcase" title="@collection.datasetCount datasets"></span> @collection.datasetCount
                 <span class="glyphicon glyphicon-th-large" title="@collection.childCollectionsCount child collections"></span> @collection.childCollectionsCount
                 @if(user.isDefined) {

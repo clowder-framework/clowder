@@ -888,6 +888,10 @@ table.borderless tbody tr td, table.borderless tbody tr th {
     margin: 20px 0px;
 }
 
+.panel .pull-left .glyphicon{
+    margin-left: 5px;
+}
+
 /* custom class for noty notification, position of a close x */
 .close-notify {
     font-weight:bold;
