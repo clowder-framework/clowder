@@ -6,6 +6,7 @@ import java.util.{Calendar, Date}
 import com.mongodb.{BasicDBObject, CommandFailureException}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
+import MongoContext.context
 import models._
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.input.CountingInputStream
@@ -389,14 +390,14 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     updateMongo("add-trial-flag2",addTrialFlag2)
 
-    //add datasets to collection spaces
-    updateMongo("add-dataset-collection-spaces",addDatasetToCollectionSpaces)
-
     // Make sure all email addresses of userpassword are lowercase
     updateMongo("user-emails-to-lowercase", updateMongoEmailCase)
 
     // Move SHA512 from File object into file.digest metadata
     updateMongo("copy-sha512-to-metadata-and-remove", copySha512ToMetadataAndRemove)
+
+    //add datasets to collection spaces
+    updateMongo("add-dataset-collection-spaces",addDatasetToCollectionSpaces)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
