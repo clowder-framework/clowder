@@ -94,9 +94,17 @@ class CurationObjects @Inject()(
               for ( fileId <- dataset.files) {
                 files.get(fileId) match {
                   case Some(f) => {
+                    // Pull sha512 from metadata of file rather than file object itself
+                    var sha512 = ""
+                    metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map { md =>
+                      val sha = (md.content \\ "sha512")
+                      if (sha.length > 0)
+                        sha512 = sha(0).toString
+                    }
+
                     val cf = CurationFile(fileId = f.id, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
                       contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
-                      thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = f.sha512)
+                      thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = sha512)
                     curations.insertFile(cf)
                     newFiles = cf.id :: newFiles
                     metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id))))
@@ -147,9 +155,17 @@ class CurationObjects @Inject()(
         for ( fileId <- folder.files) {
           files.get(fileId) match {
             case Some(f) => {
+              // Pull sha512 from metadata of file rather than file object itself
+              var sha512 = ""
+              metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map { md =>
+                val sha = (md.content \\ "sha512")
+                if (sha.length > 0)
+                  sha512 = sha(0).toString
+              }
+
               val cf = CurationFile(fileId = f.id, author = f.author, filename = f.filename, uploadDate = f.uploadDate,
                 contentType = f.contentType, length = f.length, showPreviews = f.showPreviews, sections = f.sections, previews = f.previews, tags = f.tags,
-                thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = f.sha512)
+                thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = sha512)
               curations.insertFile(cf)
               newFiles = cf.id :: newFiles
               metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id))

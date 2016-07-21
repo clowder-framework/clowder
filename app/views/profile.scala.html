@@ -103,6 +103,10 @@
                     Profile Source : <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
                     <a href="https://www.facebook.com/app_scoped_user_id/@profile.identityId.userId">Facebook</a>
                 }
+                case "orcid" => {
+                    Profile Source : <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
+                    <a href="https://orcid.org/@profile.identityId.userId">ORCID</a>
+                }
                 case provider => {
                     Profile Source : <img height="16px" src="@routes.Assets.at("securesocial/images/providers/" + profile.identityId.providerId + ".png")" alt="@profile.identityId.providerId" />
                     @provider.capitalize

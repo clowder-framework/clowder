@@ -73,6 +73,12 @@ class MongoDBUserService @Inject() (
     } else {
       user.removeField("_id")
     }
+
+    // always set orcid id if logged in with orcid
+    if (model.identityId.providerId == ORCIDProvider.ORCID) {
+      user.put("profile.orcidID", model.identityId.userId)
+    }
+
     UserDAO.update(query, MongoDBObject("$set" -> user), upsert = true, multi = false, WriteConcern.Safe)
     UserDAO.findOne(query)
   }
@@ -597,11 +603,18 @@ class MongoDBUserService @Inject() (
 
 class MongoDBSecureSocialUserService(application: Application) extends UserServicePlugin(application) {
   override def find(id: IdentityId): Option[User] = {
-    UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> id.userId, "identityId.providerId" -> id.providerId))
+    // Convert userpass to lowercase so emails aren't case sensitive
+    if (id.providerId == "userpass")
+      UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> id.userId.toLowerCase, "identityId.providerId" -> id.providerId))
+    else
+      UserDAO.dao.findOne(MongoDBObject("identityId.userId" -> id.userId, "identityId.providerId" -> id.providerId))
   }
 
   override def findByEmailAndProvider(email: String, providerId: String): Option[User] = {
-    UserDAO.dao.findOne(MongoDBObject("email" -> email, "identityId.providerId" -> providerId))
+    if (providerId == "userpass")
+      UserDAO.dao.findOne(MongoDBObject("email" -> email.toLowerCase, "identityId.providerId" -> providerId))
+    else
+      UserDAO.dao.findOne(MongoDBObject("email" -> email, "identityId.providerId" -> providerId))
   }
 
   override def save(user: Identity): User = {
@@ -611,6 +624,13 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
 
     // replace _typeHint with the right model type so it will get correctly deserialized
     userobj.put("_typeHint", "models.ClowderUser")
+    // replace email with forced lowercase for userpass provider
+    if (user.identityId.providerId == "userpass") {
+      userobj.put("email", user.email.map(_.toLowerCase))
+      val identobj = MongoDBObject("userId" -> user.identityId.userId.toLowerCase(),
+        "providerId" -> user.identityId.providerId)
+      userobj.put("identityId", identobj)
+    }
 
     // query to find the user based on identityId
     val query = MongoDBObject("identityId.userId" -> user.identityId.userId, "identityId.providerId" -> user.identityId.providerId)
@@ -633,6 +653,11 @@ class MongoDBSecureSocialUserService(application: Application) extends UserServi
       if (user.authMethod == AuthenticationMethod.UserPassword) {
         userobj.put("termsOfServices", MongoDBObject("accepted" -> true, "acceptedDate" -> new Date, "acceptedVersion" -> AppConfiguration.getTermsOfServicesVersionString))
       }
+    }
+
+    // always set orcid id if logged in with orcid
+    if (user.identityId.providerId == ORCIDProvider.ORCID) {
+      userobj.put("profile.orcidID", user.identityId.userId)
     }
 
     // update all fields from past in user object
