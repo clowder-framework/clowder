@@ -16,7 +16,6 @@ case class Preview(
   dataset_id: Option[UUID] = None,
   collection_id: Option[UUID] = None,
   vocabulary_id: Option[UUID] = None,
-  vocabularyterm_id: Option[UUID] = None,
   filename: Option[String] = None,
   contentType: String,
   preview_type: Option[String] = None,
