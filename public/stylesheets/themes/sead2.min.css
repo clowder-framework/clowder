@@ -6926,3 +6926,111 @@ fieldset[disabled] .btn-default:active,
 fieldset[disabled] .btn-default.active {
       background-color: #cb4f00;
 }
+
+/*
+ * Section for the panel specifc colors
+ */
+.space-panel-footer {
+  background-color: #0b5ca3;
+  color: #fff
+}
+
+.space-panel-footer .glyphicon {
+  color: #fff
+}
+
+.space-panel {
+  border-color: #0b5ca3
+}
+
+.space-panel .glyphicon-tent {
+  color: #0b5ca3
+}
+
+.dataset-panel-footer {
+  background-color: #cb4f00;
+  color: #fff
+}
+
+.dataset-panel-footer .glyphicon {
+  color: #fff
+}
+
+.dataset-panel {
+  border-color: #cb4f00
+}
+
+.dataset-panel .glyphicon-briefcase {
+  color: #cb4f00
+}
+
+.dataset-title,
+#search-dataset-title {
+  background-color: #cb4f00;
+  color: #fff
+}
+
+.collection-panel-footer {
+  background-color: #8a0529;
+  color: #fff
+}
+
+.collection-panel .glyphicon-th-large {
+  color: #8a0529
+}
+
+.collection-title,
+#search-collection-title {
+  background-color: #8a0529;
+  color: #fff
+}
+
+.collection-panel-footer .glyphicon {
+  color: #fff
+}
+
+.collection-panel {
+  border-color: #8a0529
+}
+
+.file-panel,
+.folder-panel {
+  border-color: #000
+}
+
+.file-title-div,
+#search-file-title {
+  background-color: #000;
+  color: #fff;
+  padding-bottom: 5px;
+}
+
+.file-panel .glyphicon-file {
+  color: #000
+}
+
+.file-panel-footer {
+  background-color: #000;
+  color: #fff
+}
+
+.file-panel-footer .glyphicon {
+  color: #fff
+}
+
+.folder-panel .glyphicon-folder-close {
+  color: #000
+}
+
+.space-panel-footer .btn-link,
+.dataset-panel-footer .btn-link,
+.collection-panel-footer .btn-link,
+.file-panel-footer .btn-link,
+.dataset-title a,
+.collection-title a,
+.file-title-div span.h1 a,
+#edit-file {
+  color: #fff;
+  text-decoration: underline;
+  padding-bottom: 5px;
+}
