@@ -118,10 +118,6 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
           }
           case None => Logger.debug("No host provided; not sending metadata.removed to RabbitMQ")
         }
-        current.plugin[RabbitmqPlugin].foreach { p =>
-
-
-        }
 
         //update metadata count for resource
         current.plugin[MongoSalatPlugin] match {
