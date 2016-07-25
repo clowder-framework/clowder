@@ -658,7 +658,7 @@ class  Datasets @Inject()(
       case Some(dataset) => {
         //get metadata and also fetch context information
         val listOfMetadata = extFilter match {
-          case Some(f) => metadataService.getExtractedMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id), Some(f))
+          case Some(f) => metadataService.getExtractedMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id), f)
                                     .map(JSONLD.jsonMetadataWithContext(_))
           case None => metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
                                     .map(JSONLD.jsonMetadataWithContext(_))
@@ -682,7 +682,7 @@ class  Datasets @Inject()(
           case Some(f) => metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.dataset, id), f)
           case None => metadataService.removeMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
         }
-        Ok
+        Ok(toJson(Map("status" -> "success")))
       }
       case None => {
         Logger.error("Error getting dataset  " + id);

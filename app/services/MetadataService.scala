@@ -18,7 +18,7 @@ trait MetadataService {
   def getMetadataByAttachTo(resourceRef: ResourceRef): List[Metadata]
 
   /** Get Extractor metadata by attachTo, from a specific extractor if given */
-  def getExtractedMetadataByAttachTo(resourceRef: ResourceRef, extractor: Option[String]): List[Metadata]
+  def getExtractedMetadataByAttachTo(resourceRef: ResourceRef, extractor: String): List[Metadata]
 
   /** Get metadata based on type i.e. user generated metadata or technical metadata  */
   def getMetadataByCreator(resourceRef: ResourceRef, typeofAgent:String): List[Metadata]

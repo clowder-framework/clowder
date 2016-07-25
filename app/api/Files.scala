@@ -362,7 +362,7 @@ class Files @Inject()(
       case Some(file) => {
         //get metadata and also fetch context information
         val listOfMetadata = extFilter match {
-          case Some(f) => metadataService.getExtractedMetadataByAttachTo(ResourceRef(ResourceRef.file, id), Some(f))
+          case Some(f) => metadataService.getExtractedMetadataByAttachTo(ResourceRef(ResourceRef.file, id), f)
             .map(JSONLD.jsonMetadataWithContext(_))
           case None => metadataService.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
             .map(JSONLD.jsonMetadataWithContext(_))
@@ -386,7 +386,7 @@ class Files @Inject()(
           case Some(f) => metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.file, id), f)
           case None => metadataService.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
         }
-        Ok
+        Ok(toJson(Map("status" -> "success")))
       }
       case None => {
         Logger.error("Error getting file  " + id);

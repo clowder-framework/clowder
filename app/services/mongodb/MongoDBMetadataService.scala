@@ -67,13 +67,15 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
   }
 
   /** Get Extractor metadata by attachTo, from a specific extractor if given */
-  def getExtractedMetadataByAttachTo(resourceRef: ResourceRef, extractor: Option[String]): List[Metadata] = {
+  def getExtractedMetadataByAttachTo(resourceRef: ResourceRef, extractor: String): List[Metadata] = {
+    val regex = ".*extractors/"+extractor
+
     val order = MongoDBObject("createdAt" -> -1)
     MetadataDAO.find(MongoDBObject(
       "attachedTo.resourceType" -> resourceRef.resourceType.name,
       "attachedTo._id" -> new ObjectId(resourceRef.id.stringify),
       // Get only extractors metadata even if specific extractor not given
-      "creator.extractorId" -> (".*extractors/" + extractor.getOrElse("")).r
+      "creator.extractorId" -> (regex).r
     )).sort(order).toList
   }
 
@@ -144,9 +146,9 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     }
   }
 
-  /** Remove metadata by attached ID and extractor name**/
+  /** Remove metadata by attached ID and extractor name **/
   def removeMetadataByAttachToAndExtractor(resourceRef: ResourceRef, extractorName: String) = {
-    val regex = ".*"+extractorName
+    val regex = ".*extractors/"+extractorName
 
     MetadataDAO.remove(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
       "attachedTo._id" -> new ObjectId(resourceRef.id.stringify),
