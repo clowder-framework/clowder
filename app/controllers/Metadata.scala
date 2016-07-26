@@ -42,7 +42,7 @@ class Metadata @Inject() (
     }
   }
 
-  def dataset(dataset_id: UUID) = PermissionAction(Permission.ViewMetadata) { implicit request =>
+  def dataset(dataset_id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, dataset_id))) { implicit request =>
     implicit val user = request.user
     datasets.get(dataset_id) match {
       case Some(dataset) => {

@@ -40,7 +40,7 @@ GET            /profile/viewProfile                                             
 # deprecated use profile/:uuid
 GET            /profile/viewProfile/:uuid                                               @controllers.Profile.viewProfileUUID(uuid: UUID)
 GET            /profile/editProfile                                                     @controllers.Profile.editProfile
-GET            /profile/submitChanges                                                   @controllers.Profile.submitChanges
+POST           /profile/submitChanges                                                   @controllers.Profile.submitChanges
 GET            /profile/:uuid                                                           @controllers.Profile.viewProfileUUID(uuid: UUID)
 
 # ----------------------------------------------------------------------
