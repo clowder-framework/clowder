@@ -26,7 +26,7 @@
             <div class="col-md-10 col-sm-10 col-lg-10">
                 <h3><a href="@(routes.Files.file(file.id, dataset, space, folder))">@file.filename</a></h3>
                 <div class="row">
-                    <div class="col-md-6 col-lg-6 col-sm-6">
+                    <div class="col-md-8 col-lg-8 col-sm-8">
                         <ul class="list-unstyled">
                             <li>@(if(file.contentType != null) file.contentType else "N/A")</li>
                             <li>@file.uploadDate.format("MMM dd, yyyy")</li>
@@ -54,7 +54,7 @@
                             </li>
                         </ul>
                     </div>
-                    <div class="col-md-6 col-lg-6 col-sm-6">
+                    <div class="col-md-4 col-lg-4 col-sm-4">
                         <ul class="list-unstyled">
                             @if( Permission.checkPermission(Permission.DownloadFiles, ResourceRef(ResourceRef.file, file.id))) {
                                 <li>
