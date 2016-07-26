@@ -254,8 +254,6 @@ object Permission extends Enumeration {
               checkPermission(user, permission, ResourceRef(ResourceRef.dataset, p.dataset_id.get))
             } else if (p.collection_id.isDefined) {
               checkPermission(user, permission, ResourceRef(ResourceRef.collection, p.collection_id.get))
-            } else if (p.vocabulary_id.isDefined) {
-              checkPermission(user, permission, ResourceRef(ResourceRef.vocabulary, p.vocabulary_id.get))
             }  else  {
               true
             }
