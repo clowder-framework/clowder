@@ -701,7 +701,7 @@
                                     <td id="rightsholderdata" style="padding-left:10px;">blank</td>
                                 </tr>
                             </table>
-                                @if(user.isDefined) {
+							@if(Permission.checkPermission(Permission.EditLicense, ResourceRef(ResourceRef.file, file.id))) {
                                 <a class="btn btn-link btn-sm accordion-toggle collapsed" data-toggle="collapse"
                                    data-parent="#accordion6" href="#collapseSix" id="editlicense"
                                    title="Edit License Information">
