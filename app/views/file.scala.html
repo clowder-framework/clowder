@@ -562,7 +562,7 @@
 					</a>
 					@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
 						<a href="@routes.Extractors.submitExtraction(UUID(id))" class="btn btn-link" >
-							<span class="glyphicon glyphicon glyphicon-send" aria-hidden="true"></span>
+							<span class="glyphicon glyphicon-send"></span>
 							Submit file for extraction
 						</a>
 					}
