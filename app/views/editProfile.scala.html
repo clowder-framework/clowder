@@ -21,7 +21,7 @@
           <p>@message</p>
         </div>
       }
-      @form(action = routes.Profile.submitChanges, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {   
+      @form(action = routes.Profile.submitChanges, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
         <fieldset  class="editProfileInput">
           @select(myForm("institution"), options(allInstitutionOptions), '_label -> "Institution", 'class -> "chosen-select", 'placeholder -> "Select an institution...")
           @inputText(myForm("position"), 'class -> "form-control", '_label -> "Position")
