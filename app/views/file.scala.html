@@ -560,9 +560,12 @@
 						aria-controls="listExtractions">
 						<span class="glyphicon glyphicon-list" aria-hidden="true"></span> List extraction events
 					</a>
-					<a href="@routes.Extractors.submitExtraction(UUID(id))" class="btn btn-link" >
-						<span class="glyphicon glyphicon glyphicon-send" aria-hidden="true"></span> Submit file for extraction
-					</a>
+					@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
+						<a href="@routes.Extractors.submitExtraction(UUID(id))" class="btn btn-link" >
+							<span class="glyphicon glyphicon-send"></span>
+							Submit file for extraction
+						</a>
+					}
 					<div class="collapse" id="extractions">
 						@extractions.extractionsByFile(extractionsStatus)
 					</div>
@@ -701,7 +704,7 @@
                                     <td id="rightsholderdata" style="padding-left:10px;">blank</td>
                                 </tr>
                             </table>
-                                @if(user.isDefined) {
+							@if(Permission.checkPermission(Permission.EditLicense, ResourceRef(ResourceRef.file, file.id))) {
                                 <a class="btn btn-link btn-sm accordion-toggle collapsed" data-toggle="collapse"
                                    data-parent="#accordion6" href="#collapseSix" id="editlicense"
                                    title="Edit License Information">

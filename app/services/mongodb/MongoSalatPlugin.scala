@@ -1171,7 +1171,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
   private def switchToTermsOfServices(): Unit = {
     val ua = collection("app.configuration").findOne(MongoDBObject("key" -> "userAgreement.message"))
-    if (ua.get("value").toString != "") {
+    if (ua.isDefined && ua.get("value").toString != "") {
       collection("app.configuration").insert(MongoDBObject("key" -> "tos.date") ++ MongoDBObject("value" -> new Date()))
     }
     collection("app.configuration").update(MongoDBObject("key" -> "userAgreement.message"), $set(("key", "tos.text")))
@@ -1303,14 +1303,14 @@ class MongoSalatPlugin(app: Application) extends Plugin {
               collection("metadata").insert(dbmd, WriteConcern.Safe)
 
               try {
-                val mdCount = file.getAsOrElse[Long]("metadataCount", 0L)
+                val mdCount = file.getOrElse("metadataCount", "0").toString.toLong
                 file.put("metadataCount", mdCount + 1)
               }
               catch {
                 case e: Exception => {
                   // If we can't get metadataCount from file correctly, just set to 1 for newly added md
+                  Logger.error("Unable to update metadataCount; setting to 1", e)
                   file.put("metadataCount", 1L)
-                  Logger.error("Unable to update metadataCount; setting to 1")
                 }
               }
             }
