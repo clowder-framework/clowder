@@ -80,19 +80,19 @@ class  Datasets @Inject()(
   @ApiOperation(value = "List all datasets in the space the user can edit and thus move the file to",
     notes = "This will check for Permission.AddResourceToDataset and Permission.EditDataset",
     responseClass = "None", httpMethod = "GET")
-  def listMoveFileToDataset(file_id: UUID, limit: Int) = PrivateServerAction { implicit request =>
+  def listMoveFileToDataset(file_id: UUID, title: Option[String], limit: Int) = PrivateServerAction { implicit request =>
     if (play.Play.application().configuration().getBoolean("datasetFileWithinSpace")) {
-      Ok(toJson(listDatasetsInSpace(file_id, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+      Ok(toJson(listDatasetsInSpace(file_id, title, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
     } else {
-      Ok(toJson(listDatasets(None, None, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+      Ok(toJson(listDatasets(title, None, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
     }
   }
 
   /**
     * Returns list of datasets based on space restrictions and permissions. The spaceId is obtained from the file itself
     */
-  private def listDatasetsInSpace(file_id: UUID, limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Dataset] = {
-    var spaceId: Option[String] = None
+  private def listDatasetsInSpace(file_id: UUID, title: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Dataset] = {
+    var datasetAll = List[Dataset]()
     val datasetList = datasets.findByFileId(file_id)
     datasetList match {
       case Nil => {
@@ -101,7 +101,28 @@ class  Datasets @Inject()(
           case f :: fs => {
             datasets.get(f.parentDatasetId) match {
               case Some(d) => {
-                if (d.spaces.length == 1) spaceId = Some(d.spaces.head.toString())
+                if (d.spaces.isEmpty) {
+                  title match {
+                    case Some(t) => {
+                      datasetAll = datasets.listAccess(limit, t, permission, user, superAdmin, true)
+                    }
+                    case None => {
+                      datasetAll = datasets.listAccess(limit, permission, user, superAdmin, true)
+                    }
+                  }
+                } else {
+                  for (sid <- d.spaces) {
+                    title match {
+                      case Some(t) => {
+                        //merge two lists with dataset objects
+                        datasetAll = datasetAll ++ datasets.listSpaceAccess(limit, t, permission, sid.toString(), user, superAdmin, true)
+                      }
+                      case None => {
+                        datasetAll = datasetAll ++ datasets.listSpaceAccess(limit, permission, sid.toString(), user, superAdmin, true)
+                      }
+                    }
+                  }
+                }
               }
               case None =>
             }
@@ -109,13 +130,30 @@ class  Datasets @Inject()(
         }
       }
       case x :: xs => {
-        if (x.spaces.length == 1) spaceId = Some(x.spaces.head.toString())
+        if (x.spaces.isEmpty) {
+          title match {
+            case Some(t) => {
+              datasetAll = datasets.listAccess(limit, t, permission, user, superAdmin, true)
+            }
+            case None => {
+              datasetAll = datasets.listAccess(limit, permission, user, superAdmin, true)
+            }
+          }
+        } else {
+          for (sid <- x.spaces) {
+            title match {
+              case Some(t) => {
+                datasetAll = datasetAll ++ datasets.listSpaceAccess(limit, t, permission, sid.toString(), user, superAdmin, true)
+              }
+              case None => {
+                datasetAll = datasetAll ++ datasets.listSpaceAccess(limit, permission, sid.toString(), user, superAdmin, true)
+              }
+            }
+          }
+        }
       }
     }
-    spaceId match {
-      case Some(sid) => datasets.listSpaceAccess(limit, permission, sid, user, superAdmin, true)
-      case None => datasets.listAccess(limit, permission, user, superAdmin, true)
-    }
+    datasetAll
   }
 
   /**

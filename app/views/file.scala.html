@@ -845,7 +845,7 @@
 							allowClear: true,
 							ajax: {
 								url: function(params) {
-									return jsRoutes.api.Datasets.listMoveFileToDataset("@file.id", 15).url;
+									return jsRoutes.api.Datasets.listMoveFileToDataset("@file.id", null, 15).url;
 								},
 								data: function(params) {
 									return { title: params.term };
