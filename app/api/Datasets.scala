@@ -153,7 +153,7 @@ class  Datasets @Inject()(
         }
       }
     }
-    datasetAll
+    datasetAll.distinct
   }
 
   /**
