@@ -395,11 +395,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Move SHA512 from File object into file.digest metadata
     updateMongo("copy-sha512-to-metadata-and-remove", copySha512ToMetadataAndRemove)
-
-    //add datasets to collection spaces
-    if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
-      updateMongo("add-dataset-collection-spaces",addDatasetToCollectionSpaces)
-    }
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -550,39 +545,6 @@ class MongoSalatPlugin(app: Application) extends Plugin {
       }
     }
   }
-
-  private def addDatasetToCollectionSpaces() {
-    collection("datasets").foreach { ds =>
-      val ds_collections = ds.getAsOrElse[MongoDBList]("collections", MongoDBList.empty)
-      ds_collections.foreach { ds_col =>
-        collection("collections").findOneByID(new ObjectId(ds_col.toString)) match {
-          case Some(col) => {
-            val col_spaces = col.getAsOrElse[MongoDBList]("spaces",MongoDBList.empty)
-            val ds_spaces = ds.getAsOrElse[MongoDBList]("spaces",MongoDBList.empty)
-            col_spaces.foreach { col_space =>
-              val col_space_id = col_space.toString
-              if (!ds_spaces.contains(new ObjectId(col_space.toString))){
-
-                collection("spaces.projects").findOneByID(new ObjectId(col_space.toString)) match {
-                  case Some(space) => {
-
-                    val q = MongoDBObject("_id" -> new ObjectId(ds._id.get.toString))
-                    collection("datasets").update(q, $push("spaces" -> new ObjectId(col_space.toString)))
-                  }
-                  case None => Logger.error("No space found for " + col_space)
-                }
-              } else {
-                Logger.info("dataset already in space")
-              }
-            }
-          }
-          case None => Logger.error("No collection for found " + ds_col)
-        }
-      }
-    }
-    updateCountsInSpaces()
-  }
-
 
   /**
    * Replaces the files in the datasets from a copy of the files to just the file UUID's.
