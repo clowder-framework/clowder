@@ -231,7 +231,7 @@
         var cur_title;
 
         function updateTitle() {
-            cur_title = $('#datasettitle').text();
+            cur_title = $('#datasettitle').text().trim();
             $('<span class="inline edit_title_div"> </span>').insertAfter($('#datasettitle'));
             $('.edit_title_div').append('<input type="text" id = "title_input" class="form-control" required/>');
             $('.edit_title_div').append('<div class="hiddencomplete" aria-hidden="true" id="title-error"> <span class="error"> Title is required </span> </div>');
@@ -323,7 +323,7 @@
 
         function cancelTitle() {
           $('#datasettitle').text( cur_title);
-          $('#datasettitle').prepend('<span class="glyphicon glyphicon-briefcase" ></span>');
+          $('#datasettitle').prepend('<span class="glyphicon glyphicon-briefcase"></span> ');
           $('.edit_title_div').remove();
           $('#datasettitle').css("display", "inline");
           $('#h-edit-title').removeClass("inline");
@@ -349,7 +349,7 @@
 
             request.done(function(response, textStatus, jqXHR){
                 $('#datasettitle').text(encName.replace(/\n/g, "<br>"));
-                $('#datasettitle').prepend('<span class="glyphicon glyphicon-briefcase" ></span>');
+                $('#datasettitle').prepend('<span class="glyphicon glyphicon-briefcase"></span> ');
                 $('.edit_title_div').remove();
                 $('#datasettitle').css("display", "inline");
                 $('#h-edit-title').removeClass("inline");
