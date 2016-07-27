@@ -114,7 +114,7 @@ class  Datasets @Inject()(
                   for (sid <- d.spaces) {
                     title match {
                       case Some(t) => {
-                        //merge two lists with dataset objects
+                        //merge two lists, both with dataset objects from different spaces
                         datasetAll = datasetAll ++ datasets.listSpaceAccess(limit, t, permission, sid.toString(), user, superAdmin, true)
                       }
                       case None => {
