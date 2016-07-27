@@ -197,7 +197,7 @@
 	var collectionId = "@collection.id.stringify";
 	var cur_title;
 	function updateTitle() {
-	 cur_title = $('#collectiontitle').text();
+	 cur_title = $('#collectiontitle').text().trim();
 	 $('<div class="inline edit_title_div"> </span>').insertAfter($('#collectiontitle'));
 	 $('.edit_title_div').append('<input type = "text" id="title_input" class="form-control"/>');
 	 $('.edit_title_div').append('<div class="hiddencomplete" id="title-error"> <span class="error"> Title is required </span> </div>');
@@ -230,7 +230,7 @@
 
 		request.done(function(response, textStatus, jqXHR) {
 			$('#collectiontitle').text(encName.replace(/\n/g, "<br>"));
-			$('#collectiontitle').prepend('<span class="glyphicon glyphicon-th-large"></span>');
+			$('#collectiontitle').prepend('<span class="glyphicon glyphicon-th-large"></span> ');
             $('.edit_title_div').remove();
 			$('#collectiontitle').css("display", "inline");
 			$('#h-edit-title').removeClass("inline");
@@ -250,7 +250,7 @@
 	}
 	function cancelTitle() {
 		$('#collectiontitle').text(cur_title);
-		$('#collectiontitle').prepend('<span class="glyphicon glyphicon-th-large"></span>');
+		$('#collectiontitle').prepend('<span class="glyphicon glyphicon-th-large"></span> ');
         $('.edit_title_div').remove();
 		$('#collectiontitle').css("display", "inline");
 		$('#h-edit-title').removeClass("inline");
