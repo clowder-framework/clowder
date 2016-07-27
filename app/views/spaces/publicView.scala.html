@@ -19,40 +19,24 @@
     <div class="col-md-12 col-lg-12 col-sm-12">
       <h1 id="spacenamedisplay">@space.name</h1>
       <p><span id="spacedescdisplay">@space.description</span></p>
-
-
     </div>
   </div>
-  @if(space.homePage.length>0) {
-    @spaces.externalLinks(space.homePage)
-  } else {
-    <hr>
-  }
+  <hr>
+
+  @spaces.externalLinks(space.homePage, space, "row")
   <div class="row">
     <div class="col-md-12 col-lg-12 col-sm-12">
-      <p>@space.collectionCount
-        @if(space.collectionCount > 1) {
-           Collections
-         }   else {
-           Collection
-         }
-        @space.datasetCount
-        @if(space.datasetCount > 1) {
-           Datasets
-        }   else {
-           Dataset
-        }
-        @space.userCount
-        @if(space.userCount > 1) {
-          Users
-        }   else {
-          User
-        }
-      </p>
+
+      <h3>Project Space Stats</h3>
+      <p><span class="glyphicon glyphicon-user"></span> Members: @space.userCount</p>
+      <p><span class="glyphicon glyphicon-th-list"></span> Collections: @space.collectionCount</p>
+      <p><span class="glyphicon glyphicon-briefcase"></span> Datasets: @space.datasetCount</p>
+
     <p>@msg</p>
-      @if(!msg.contains("pending")) {
-        @spaces.requestAuthorization(space.id)
-      }
+        @if(!msg.contains("pending")) {
+          @spaces.requestAuthorization(space.id)
+        }
+
       </div>
   </div>
 }

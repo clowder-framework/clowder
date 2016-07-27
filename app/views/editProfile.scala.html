@@ -21,8 +21,7 @@
           <p>@message</p>
         </div>
       }
-      
-      @form(action = routes.Profile.submitChanges, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {   
+      @form(action = routes.Profile.submitChanges, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
         <fieldset  class="editProfileInput">
           @select(myForm("institution"), options(allInstitutionOptions), '_label -> "Institution", 'class -> "chosen-select", 'placeholder -> "Select an institution...")
           @inputText(myForm("position"), 'class -> "form-control", '_label -> "Position")
@@ -37,6 +36,9 @@
           @select(myForm("emailsettings"), options(emailtimes), '_label -> "Email Settings")
 
         </fieldset>
+        @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
+          <div class="profile-disclaimer small">@play.api.i18n.Messages("profile.disclaimer")</div>
+        }
         <div class="form-actions" style="margin-top: 16px;">
           <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-saved"></span> Submit Changes</button>
         </div>

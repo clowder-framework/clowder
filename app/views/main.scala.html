@@ -66,12 +66,86 @@
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li><a href="@routes.Spaces.list()">Spaces</a></li>
-                    <li><a href="@routes.Datasets.list("")">Datasets</a></li>
-                    <li><a href="@routes.Collections.list("")">Collections</a></li>
-                    @if(user.isDefined){
-                        <li><a href="@routes.Users.getUsers()">Users</a></li>
-                    }
+                @if(user.isDefined) {
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            You <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="@routes.Application.index"><span class="glyphicon glyphicon-user"></span> Dashboard</a></li>
+                            @if(play.Play.application().configuration().getBoolean("enablePublic")) {
+                                <li><a href="@routes.Spaces.list(showPublic=false)"><span class="glyphicon glyphicon-tent"></span> @{spaces.spaceTitle()}s</a></li>
+                                <li><a href="@routes.Datasets.list(showPublic=false)"><span class="glyphicon glyphicon-briefcase"></span> Datasets</a></li>
+                                <li><a href="@routes.Collections.list(showPublic=false)"><span class="glyphicon glyphicon-th-list"></span> Collections</a></li>
+                            } else {
+                                <li><a href="@routes.Spaces.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-tent"></span> @{spaces.spaceTitle()}s</a></li>
+                                <li><a href="@routes.Datasets.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-briefcase"></span> Datasets</a></li>
+                                <li><a href="@routes.Collections.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-th-list"></span> Collections</a></li>
+
+                            }
+
+                        </ul>
+                    </li>
+                }
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            Explore <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="@routes.Spaces.list()"><span class="glyphicon glyphicon-tent"> </span> @{spaces.spaceTitle()}s</a></li>
+                            @user match {
+                                case Some(x) => {
+                                    @if(play.Play.application().configuration().getBoolean("verifySpaces") && api.Permission.checkServerAdmin(user)) {
+                                        <li><a href="@routes.Spaces.list(onlyTrial=true)"><span class="glyphicon glyphicon-tent"> </span> Trial @{spaces.spaceTitle()}s</a></li>
+                                    }
+                                }
+                                case None => {
+
+                                }
+                            }
+                            <li><a href="@routes.Datasets.list("")"><span class="glyphicon glyphicon-briefcase"> </span> Datasets</a></li>
+                            <li><a href="@routes.Collections.list("")"><span class="glyphicon glyphicon-th-list"> </span> Collections</a></li>
+                            @if(user.isDefined){
+                                <li><a href="@routes.Users.getUsers()"><span class="glyphicon glyphicon-user"></span> Users</a></li>
+                            }
+                            <li><a href="@routes.Tags.tagListOrdered"> <span class="glyphicon glyphicon-tags"> </span>  Ordered Tags</a></li>
+                            <li><a href="@routes.Tags.tagListWeighted"><span class="glyphicon glyphicon-tags"> </span>  Weighted Tags</a></li>
+                            <li><a href="@routes.Metadata.search"> <span class="glyphicon glyphicon-search"> </span> Advanced Search</a></li>
+                        </ul>
+                    </li>
+                @if(user.isDefined) {
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            Create <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="@routes.Spaces.newSpace()"><span class="glyphicon glyphicon-tent"> </span>@{
+                                spaces.spaceTitle()
+                            }s</a></li>
+                            <li><a href="@routes.Datasets.newDataset(None, None)"><span class="glyphicon glyphicon-briefcase"> </span>
+                                Datasets</a></li>
+                            <li><a href="@routes.Collections.newCollection(None)"><span class="glyphicon glyphicon-th-list"> </span>
+                                Collections</a></li>
+
+                        </ul>
+                    </li>
+                }
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle nav-icon" data-toggle="dropdown" title="Help">Help<b class="caret"></b></a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href="https://clowder.ncsa.illinois.edu/" target="_blank">About Clowder</a></li>
+                            <li><a href="@routes.Application.about">About this instance</a></li>
+                            @if(user.isDefined) {
+                                <li><a href="@routes.Application.email("")">Contact server admins</a></li>
+                            }
+                            <li><a targe"tos" href="@routes.Application.tos(None)">Terms of Service</a></li>
+                            <li><a href="@routes.Assets.at("docs/api/index.html")" target="_blank">API</a></li>
+                            @play.Play.application.configuration.getConfigList("helpMenu").map { helpItem =>
+                              <li><a href="@helpItem.getString("url")" target="_blank">@helpItem.getString("label")</a></li>
+
+                            }
+                        </ul>
+                    </li>
                     @if(play.api.Play.current.plugin[services.PostgresPlugin].isDefined) {
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">@(AppConfiguration.getSensorsTitle) <b class="caret"></b></a>
@@ -82,16 +156,7 @@
                             </ul>
                         </li>
                     }
-                    <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                            Search<b class="caret"></b>
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a href="@routes.Metadata.search">Metadata</a></li>
-                            <li><a href="@routes.Tags.tagListOrdered">Tags (Ordered)</a></li>
-                            <li><a href="@routes.Tags.tagListWeighted">Tags (Weighted)</a></li>
-                        </ul>
-                    </li>
+
                 </ul>
 
                 <ul class="nav navbar-nav navbar-right">
@@ -110,18 +175,7 @@
                         </li>
                     }
 
-                    <li class="dropdown">
-                        <a href="#" class="dropdown-toggle nav-icon" data-toggle="dropdown" title="Help"><span class="glyphicon glyphicon-question-sign"></span><b class="caret"></b></a>
-                        <ul class="dropdown-menu" role="menu">
-                            <li><a href="https://clowder.ncsa.illinois.edu/" target="_blank">About Clowder</a></li>
-                            <li><a href="@routes.Application.about">About this instance</a></li>
-                            @if(user.isDefined) {
-                                <li><a href="@routes.Application.email("")">Contact server admins</a></li>
-                            }
-                            <li><a targe"tos" href="@routes.Application.tos(None)">Terms of Services</a></li>
-                            <li><a href="@routes.Assets.at("docs/api/index.html")" target="_blank">API</a></li>
-                        </ul>
-                    </li>
+
 
                     @user match {
                         case Some(x) => {
@@ -131,7 +185,7 @@
                                         <span class="glyphicon glyphicon-cog"></span><b class="caret"></b></a>
                                     <ul class="dropdown-menu" role="menu">
                                         <li><a href="@routes.Admin.customize">Customize</a></li>
-                                        <li><a href="@routes.Admin.tos">Terms of Services</a></li>
+                                        <li><a href="@routes.Admin.tos">Terms of Service</a></li>
                                         <li><a href="@routes.Admin.users">Users</a></li>
                                         <li><a href="@routes.Admin.listRoles">List Roles</a></li>
                                         <li><a href="@routes.Admin.createRole">Add Role</a></li>

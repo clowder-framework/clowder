@@ -5,7 +5,6 @@ import play.api.libs.json.{Json, JsValue, Writes}
 
 case class Logo(id: UUID = UUID.generate,
                 loader_id: String,
-                sha512: String,
                 length: Long,
                 loader: String,
                 path: String,
@@ -19,7 +18,6 @@ object Logo {
   implicit val logostWrites = new Writes[Logo] {
     def writes(logo: Logo): JsValue = {
       Json.obj("id" -> logo.id.toString,
-        "sha512" -> logo.sha512,
         "length" -> logo.length,
         "path" -> logo.path,
         "name" -> logo.name,

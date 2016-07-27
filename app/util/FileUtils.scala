@@ -132,6 +132,10 @@ object FileUtils {
         }
       }
     }
+    val multipleFile = request.body.asFormUrlEncoded.getOrElse("multiple", null) match {
+      case null => true
+      case m =>  m(0)  == "true"
+    }
 
     // container for list of uploaded files
     val uploadedFiles = new mutable.MutableList[File]()
@@ -164,7 +168,7 @@ object FileUtils {
           }
         }
       }
-      processFile(f, metadata, user, creator, clowderurl, dataset, folder, key, index, showPreviews, originalZipFile, flagsFromPrevious, intermediateUpload).foreach(uploadedFiles += _)
+      processFile(f, metadata, user, creator, clowderurl, dataset, folder, key, index, showPreviews, originalZipFile, flagsFromPrevious, intermediateUpload, multipleFile).foreach(uploadedFiles += _ )
     }
 
     // ------------------------------------------------------------
@@ -290,16 +294,16 @@ object FileUtils {
                           dataset: Option[Dataset] = None, folder:Option[Folder] = None,
                           key: String = "", index: Boolean = true,
                           showPreviews: String = "DatasetLevel", originalZipFile: String = "",
-                          flagsFromPrevious: String = "", intermediateUpload: Boolean = false): Option[File] = {
+                          flagsFromPrevious: String = "", intermediateUpload: Boolean = false, multipleFile:Boolean): Option[File] = {
     val file = File(UUID.generate(), "", f.filename, user, new Date(),
-      FileUtils.getContentType(f.filename, f.contentType), f.ref.file.length(), "", "",
+      FileUtils.getContentType(f.filename, f.contentType), f.ref.file.length(), "",
       isIntermediate = intermediateUpload, showPreviews = showPreviews,
       licenseData = License.fromAppConfig(), status = FileStatus.CREATED.toString)
     files.save(file)
     Logger.info(s"created file ${file.id}")
 
     associateMetaData(creator, file, metadata)
-    associateDataset(file, dataset, folder, user)
+    associateDataset(file, dataset, folder, user, multipleFile)
 
     // process rest of file in background
     val fileExecutionContext: ExecutionContext = Akka.system().dispatchers.lookup("akka.actor.contexts.file-processing")
@@ -335,7 +339,7 @@ object FileUtils {
     val path = url.getPath
     val filename = path.slice(path.lastIndexOfSlice("/")+1, path.length)
     val file = File(UUID.generate(), path, filename, user, new Date(),
-      FileUtils.getContentType(filename, None), -1, "", "",
+      FileUtils.getContentType(filename, None), -1, "",
       isIntermediate=intermediateUpload, showPreviews=showPreviews,
       licenseData=License.fromAppConfig(), status = FileStatus.CREATED.toString)
     files.save(file)
@@ -394,7 +398,7 @@ object FileUtils {
       val length = new java.io.File(path).length()
       val loader = classOf[services.filesystem.DiskByteStorageService].getName
       val file = File(UUID.generate(), path, filename, user, new Date(),
-        FileUtils.getContentType(filename, None), length, "", loader,
+        FileUtils.getContentType(filename, None), length, loader,
         isIntermediate=intermediateUpload, showPreviews=showPreviews,
         licenseData=License.fromAppConfig(), status = FileStatus.CREATED.toString)
       files.save(file)
@@ -466,17 +470,21 @@ object FileUtils {
   }
 
   /** dataset processning */
-  private def associateDataset(file: File, dataset: Option[Dataset], folder: Option[Folder], user: User): Unit = {
+  private def associateDataset(file: File, dataset: Option[Dataset], folder: Option[Folder], user: User, multipleFile:Boolean=true): Unit = {
     // add metadata to dataset
     dataset.foreach{ds =>
       // add file to folder or dataset
       folder match {
         case Some(folder) => {
-          events.addObjectEvent(Some(user), ds.id, ds.name, "add_file_folder")
+          if(!multipleFile) {
+            events.addObjectEvent(Some(user), ds.id, ds.name, "add_file_folder")
+          }
           folders.addFile(folder.id, file.id)
         }
         case None => {
-          events.addObjectEvent(Some(user), ds.id, ds.name, "add_file")
+          if(!multipleFile) {
+            events.addObjectEvent(Some(user), ds.id, ds.name, "add_file")
+          }
           datasets.addFile(ds.id, file)
         }
       }
@@ -530,10 +538,10 @@ object FileUtils {
 
     // actually save the file
     ByteStorageService.save(new FileInputStream(path), "uploads") match {
-      case Some((loader_id, loader, sha512, length)) => {
+      case Some((loader_id, loader, length)) => {
         files.get(file.id) match {
           case Some(f) => {
-            val fixedfile = f.copy(filename=nameOfFile, contentType=fileType, loader=loader, loader_id=loader_id, sha512=sha512, length=length, author=realUser)
+            val fixedfile = f.copy(filename=nameOfFile, contentType=fileType, loader=loader, loader_id=loader_id, length=length, author=realUser)
             files.save(fixedfile)
             Logger.info("Uploading Completed")
             Some(fixedfile)
@@ -554,16 +562,9 @@ object FileUtils {
 
   /** Fix file object based on path file, no uploading just compute sha512 */
   private def savePath(file: File, path: String): Option[File] = {
-    // Calculate SHA-512 hash
-    val filestream = new java.io.BufferedInputStream(new FileInputStream(path))
-    val sha512 = DigestUtils.sha512Hex(filestream)
-    filestream.close()
     files.get(file.id) match {
       case Some(f) => {
-        val fixedfile = f.copy(sha512 = sha512)
-        files.save(fixedfile)
-        Logger.info("Uploading Completed")
-        Some(fixedfile)
+        return Some(f)
       }
       case None => {
         Logger.error("File was not found anymore")
@@ -577,10 +578,10 @@ object FileUtils {
     // actually save the file
     val conn = url.openConnection()
     ByteStorageService.save(conn.getInputStream, "uploads") match {
-      case Some((loader_id, loader, sha512, length)) => {
+      case Some((loader_id, loader, length)) => {
         files.get(file.id) match {
           case Some(f) => {
-            val fixedfile = f.copy(contentType=conn.getContentType, loader=loader, loader_id=loader_id, sha512=sha512, length=length)
+            val fixedfile = f.copy(contentType=conn.getContentType, loader=loader, loader_id=loader_id, length=length)
             files.save(fixedfile)
             Logger.info("Uploading Completed")
             Some(fixedfile)

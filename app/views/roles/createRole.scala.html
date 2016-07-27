@@ -7,6 +7,8 @@
 @main("Create Role") {
     <div class="page-header">
         <h1>Create new role</h1>
+        <p>Roles are used to moderate access to @{spaces.spaceTitle()}s, the top data Spaces.
+            Select the permissions from the list and add it to the new role.</p>
     </div>
     <div class="row">
         <div class="col-md-12">
@@ -22,7 +24,7 @@
                 <fieldset id="nameDescrFieldSet">
                     @inputText(newRoleForm("name"), 'class-> "form-control", '_label -> "Name")
                     @textarea(newRoleForm("description"), 'class-> "form-control", '_label -> "Description")
-                    @checkboxes(newRoleForm("permissions"), label = "Permissions", checkboxMap = permissionsMap, help ="Select the permissions you want to add to this role" )
+                    @checkboxes(newRoleForm("permissions"), label = "Permissions", checkboxMap = permissionsMap, help ="" )
                 </fieldset>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary" name = "submitValue"><span class="glyphicon glyphicon-ok"></span> Create</button>

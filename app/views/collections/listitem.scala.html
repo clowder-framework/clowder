@@ -1,12 +1,23 @@
 @(collection: models.Collection, redirect: Call)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 @import api.Permission
-<div class="panel panel-default" id="@collection.id-listitem">
+<div class="panel panel-default collection-panel" id="@collection.id-listitem">
+    @if(!collection.thumbnail_id.isEmpty) {
+        <div class="row">
+            <div class="pull-left col-xs-12">
+                <span class="glyphicon glyphicon-th-large"></span>
+            </div>
+        </div>
+    }
     <div class="panel-body">
         <div class="row">
             <div class="col-md-2 col-sm-2 col-lg-2">
             @if(!collection.thumbnail_id.isEmpty){
                 <a href="@(routes.Collections.collection(collection.id))">
                     <img class="img-responsive fit-in-space" src="@(routes.Files.thumbnail(UUID(collection.thumbnail_id.toString().substring(5,collection.thumbnail_id.toString().length-1))))" alt="Thumbnail of @Html(collection.name)">
+                </a>
+            } else {
+                <a href="@(routes.Collections.collection(collection.id))">
+                    <span class="bigicon glyphicon glyphicon-th-large"></span>
                 </a>
             }
             </div>
@@ -22,7 +33,7 @@
                                 @if(user.isDefined) {
                                         <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
                                     @if( user.get.id.equals(collection.author.id) || Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
-                                        <button onclick="confirmDeleteResource('collection','@(collection.id)','@(collection.name.replace("'","&#39;"))',false, '@redirect')" class="btn btn-link" title="Delete the collection but not its contents">
+                                        <button onclick="confirmDeleteResource('collection','collection','@(collection.id)','@(collection.name.replace("'","&#39;"))',false, '@redirect')" class="btn btn-link" title="Delete the collection but not its contents">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     } else {
                                         <div class="inline" title="No permission to delete the collection">

@@ -24,7 +24,7 @@
             <div id="selected_field" class="row"></div>
         </div>
     </div>
-}
+
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/jquery-ui-timepicker-addon.css")">
 <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
@@ -32,6 +32,8 @@
 <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
 <script src="@routes.Assets.at("javascripts/jquery-ui-timepicker-addon.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/terraformer/terraformer-1.0.5.min.js")"></script>
+<script src="@routes.Assets.at("javascripts/terraformer/terraformer-wkt-parser-1.1.0.min.js")"></script>
 
 <style>
 .ui-autocomplete-category {
@@ -103,7 +105,8 @@ line-height: 1.5;
         var field_id = $("#@id  #field-value").data("id");
         var field_type = $("#@id  #add-metadata-select option:selected").data("type");
         var field_value = "";
-        var field_types_with_simple_values = {"string": 1, "listjquery": 1, "listgeocode": 1, "scientific_variable": 1, "datetime": 1};
+        var field_types_with_simple_values = {"string": 1, "listjquery": 1, "listgeocode": 1, "scientific_variable": 1,
+            "datetime": 1, "wktlocation": 1};
         if (field_type in field_types_with_simple_values) {
             field_value = $("#@id  #field-value").val();
         } else if (field_type === "list") {
@@ -111,7 +114,10 @@ line-height: 1.5;
         }  else {
             console.log("Wrong field type: " + field_type);
         }
+
+        // submit metadata to server
         // console.log("field type: " + field_type + ", field_value: " + field_value);
+        var error = false;
         if (field_value != "") {
             var context = {};
             context[field_label] = field_id;
@@ -129,15 +135,26 @@ line-height: 1.5;
                 if (unit_val) {
                     content["Unit"] = unit_val;
                 }
+            } else if (field_type === "wktlocation") {
+                try {
+                    var primitive = Terraformer.WKT.parse(field_value);
+                    console.log("Parse wkt " + primitive);
+                    content["GeoJSON"] = primitive;
+                } catch(err) {
+                    notify("There is an error in your WKT. " + err, "error", false, 2000);
+                    error = true;
+                }
             } else {
                 content[field_label] = field_value;
             }
 
-                var body = {
-                        "@@context": context,
-                        "@(resType)_id": "@id",
-                        "content": content
-                    };
+            var body = {
+                    "@@context": context,
+                    "@(resType)_id": "@id",
+                    "content": content
+            };
+
+            if (!error) {
 
                 var request = jsRoutes.api.Metadata.addUserMetadata().ajax({
                     data: JSON.stringify(body),
@@ -163,6 +180,7 @@ line-height: 1.5;
                       notify("Metadata was not added due to : " + errorThrown, "error");
                     }
                 });
+            }
 
         }
     }
@@ -226,7 +244,8 @@ line-height: 1.5;
                      "listjquery": "add_metadata_listjquery",
                      "listgeocode": "add_metadata_string",
                      "scientific_variable": "add_metadata_scientific_variable",
-                     "datetime": "add_metadata_datetime"
+                     "datetime": "add_metadata_datetime",
+                     "wktlocation": "add_metadata_wktlocation"
                     };
                 var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/")" + template_map[field_type]);
                 var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type});
@@ -407,3 +426,4 @@ line-height: 1.5;
         });
     });
 </script>
+}

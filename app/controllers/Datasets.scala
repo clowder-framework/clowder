@@ -8,14 +8,16 @@ import api.Permission
 import api.Permission.Permission
 import fileutils.FilesUtils
 import models._
+import org.apache.commons.lang.StringEscapeUtils._
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json._
 import services._
-import util.{FileUtils, Formatters, RequiredFieldsConfig}
+import util.{License, FileUtils, Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
 import scala.collection.mutable.{ListBuffer, Map => MutableMap}
+import scala.util.matching.Regex
 
 /**
  * A dataset is a collection of files and streams.
@@ -41,6 +43,11 @@ class Datasets @Inject()(
   object ActivityFound extends Exception {}
 
   /**
+    * String name of the Space such as 'Project space' etc., parsed from the config file
+    */
+  val spaceTitle: String = escapeJava(play.Play.application().configuration().getString("spaceTitle").trim)
+
+  /**
    * Display the page that allows users to create new datasets
    */
   def newDataset(space: Option[String], collection: Option[String]) = PermissionAction(Permission.CreateDataset) { implicit request =>
@@ -54,10 +61,15 @@ class Datasets @Inject()(
           decodedSpaceList += Utils.decodeSpaceElements(aSpace)
         }
       }
+
+    var hasVerifiedSpace = false
     val spaceId = space match {
       case Some(s) => {
         spaceService.get(UUID(s)) match {
-          case Some(space) =>  Some(space.id.toString)
+          case Some(space) => {
+            hasVerifiedSpace = !space.isTrial
+            Some(space.id.toString)
+          }
           case None => None
         }
       }
@@ -73,9 +85,11 @@ class Datasets @Inject()(
       }
       case None => None
     }
+    val showAccess = play.Play.application().configuration().getBoolean("enablePublic") &&
+      (!play.Play.application().configuration().getBoolean("verifySpaces") || hasVerifiedSpace)
 
     Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected))
+      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected, showAccess))
 
   }
 
@@ -169,21 +183,21 @@ class Datasets @Inject()(
   /**
    * List datasets.
    */
-  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String]) = PrivateServerAction { implicit request =>
+  def list(when: String, date: String, limit: Int, space: Option[String], mode: String, owner: Option[String], showPublic: Boolean) = UserAction(needActive=false) { implicit request =>
     implicit val user = request.user
 
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
     val datasetSpace = space.flatMap(o => spaceService.get(UUID(o)))
-    var title: Option[String] = Some("Datasets")
+    var title: Option[String] = Some(play.api.i18n.Messages("list.title", "Datasets"))
 
     val datasetList = person match {
       case Some(p) => {
         space match {
-          case Some(s) => {
-            title = Some(person.get.fullName + "'s Datasets in Space <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
+          case Some(s) if datasetSpace.isDefined=> {
+            title = Some(person.get.fullName + "'s Datasets in " + spaceTitle + " <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
           }
-          case None => {
+          case _ => {
             title = Some(person.get.fullName + "'s Datasets")
           }
         }
@@ -195,19 +209,19 @@ class Datasets @Inject()(
       }
       case None => {
         space match {
-          case Some(s) => {
-            title = Some("Datasets in Space <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
+          case Some(s) if datasetSpace.isDefined => {
+            title = Some("Datasets in " + spaceTitle + " <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
             if (date != "") {
-              datasets.listSpace(date, nextPage, limit, s)
+              datasets.listSpace(date, nextPage, limit, s, user)
             } else {
-              datasets.listSpace(limit, s)
+              datasets.listSpace(limit, s, user)
             }
           }
-          case None => {
+          case _ => {
             if (date != "") {
-              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
+              datasets.listAccess(date, nextPage, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
             } else {
-              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
+              datasets.listAccess(limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
             }
 
           }
@@ -222,8 +236,8 @@ class Datasets @Inject()(
         case Some(p) => datasets.listUser(first, nextPage=false, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
-            case Some(s) => datasets.listSpace(first, nextPage = false, 1, s)
-            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
+            case Some(s) => datasets.listSpace(first, nextPage = false, 1, s, user)
+            case None => datasets.listAccess(first, nextPage = false, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
           }
         }
       }
@@ -243,8 +257,8 @@ class Datasets @Inject()(
         case Some(p) => datasets.listUser(last, nextPage=true, 1, request.user, request.user.fold(false)(_.superAdminMode), p)
         case None => {
           space match {
-            case Some(s) => datasets.listSpace(last, nextPage=true, 1, s)
-            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))
+            case Some(s) => datasets.listSpace(last, nextPage=true, 1, s, user)
+            case None => datasets.listAccess(last, nextPage=true, 1, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode), showPublic)
           }
         }
       }
@@ -287,9 +301,19 @@ class Datasets @Inject()(
       } else {
         Some(mode)
       }
-
+    if(!showPublic) {
+      title = Some(play.api.i18n.Messages("you.title", "Datasets"))
+    }
     //Pass the viewMode into the view
-    Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title, owner, when, date))
+    space match {
+      case Some(s) if datasetSpace.isEmpty =>{
+        NotFound(views.html.notFound(spaceTitle+ " not found."))
+      }
+      case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
+        BadRequest(views.html.notAuthorized("You are not authorized to access the "+spaceTitle+".", s, "space"))
+      }
+      case _ => Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title, owner, when, date))
+    }
   }
 
   def addViewer(id: UUID, user: Option[User]) = {
@@ -404,12 +428,15 @@ class Datasets @Inject()(
           var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
 
           var decodedSpaces_canRemove : Map[ProjectSpace, Boolean] = Map.empty;
-
+          var isInPublicSpace = false
           dataset.spaces.map{
             sp => spaceService.get(sp) match {
               case Some(s) => {
                 decodedSpaces_canRemove +=  (Utils.decodeSpaceElements(s) -> true)
                 datasetSpaces = s :: datasetSpaces
+                if(s.isPublic) {
+                  isInPublicSpace = true
+                }
               }
               case None => Logger.error(s"space with id $sp on dataset $id doesn't exist.")
             }
@@ -432,9 +459,37 @@ class Datasets @Inject()(
               if(folder.files.length > 0) { showDownload = true}
             }
           }
+          var showAccess = false
+
+          if(play.Play.application().configuration().getBoolean("verifySpaces")) {
+            showAccess = !dataset.isTRIAL
+          } else {
+            showAccess = play.Play.application().configuration().getBoolean("enablePublic")
+          }
+          var access=if(showAccess) {
+            if(dataset.isDefault && isInPublicSpace) {
+              "Public (" + spaceTitle + " Default)"
+            } else if (dataset.isDefault && !isInPublicSpace) {
+              "Private (" + spaceTitle + " Default)"
+            } else {
+              dataset.status(0).toUpper + dataset.status.substring(1).toLowerCase()
+            }
+          } else {
+            ""
+          }
+          var accessOptions = new ListBuffer[String]();
+          if(isInPublicSpace){
+            accessOptions.append(spaceTitle + " Default (Public)")
+          } else {
+            accessOptions.append(spaceTitle + " Default (Private)")
+          }
+          accessOptions.append(DatasetStatus.PRIVATE.toString.substring(0,1).toUpperCase() + DatasetStatus.PRIVATE.toString.substring(1).toLowerCase())
+          accessOptions.append(DatasetStatus.PUBLIC.toString.substring(0,1).toUpperCase() + DatasetStatus.PUBLIC.toString.substring(1).toLowerCase())
+
+
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
             decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove),fileList,
-            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload))
+            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess, access, accessOptions.toList))
         }
         case None => {
           Logger.error("Error getting dataset" + id)
@@ -530,6 +585,7 @@ class Datasets @Inject()(
    */
   def submit(folderId: Option[String]) = PermissionAction(Permission.CreateDataset)(parse.multipartFormData) { implicit request =>
     implicit val user = request.user
+    Logger.debug("------- in Datasets.submit ---------")
 
     val folder = folderId.flatMap(id => folders.get(UUID(id)))
     val retMap = request.body.asFormUrlEncoded.get("datasetid").flatMap(_.headOption) match {
@@ -589,7 +645,7 @@ class Datasets @Inject()(
         dataset.spaces.foreach { spaceId =>
           spaceService.get(spaceId) match {
             case Some(spc) => userList = spaceService.getUsersInSpace(spaceId) ::: userList
-            case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No spaces found for dataset $id.")
+            case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No $spaceTitle found for dataset $id.")
           }
         }
         userList = userList.distinct.sortBy(_.fullName.toLowerCase)
@@ -611,7 +667,7 @@ class Datasets @Inject()(
 
               }
             }
-            case None => Redirect (routes.Datasets.dataset(id)).flashing ("error" -> s"Error: No spaces found for dataset $id.");
+            case None => Redirect (routes.Datasets.dataset(id)).flashing ("error" -> s"Error: No $spaceTitle found for dataset $id.");
           }
         }
         // Clean-up, and sort space-names per user
@@ -638,140 +694,4 @@ class Datasets @Inject()(
       implicit val user = request.user
       Ok(views.html.generalMetadataSearch())
   }
-
-
-  // TOOL MANAGER METHODS ----------------------------------------------------------------
-  /**
-    * With permission, prepare Tool Manager page with list of currently running tool instances.
-    */
-  def toolManager() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
-    implicit val user = request.user
-
-    var instanceMap = MutableMap[UUID, ToolInstance]()
-    var toolList: JsObject = JsObject(Seq[(String, JsValue)]())
-    // Get mapping of instanceIDs to URLs API has returned
-    current.plugin[ToolManagerPlugin].map( mgr => {
-      mgr.refreshActiveInstanceListFromServer()
-      toolList = mgr.toolList
-      instanceMap = mgr.instanceMap
-    })
-
-    Ok(views.html.datasets.toolManager(toolList, instanceMap.keys.toList, instanceMap))
-  }
-
-  /**
-    * Construct the sidebar listing active tools relevant to the given datasetId
- *
-    * @param datasetId UUID of dataset that is currently displayed
-    */
-  def refreshToolSidebar(datasetId: UUID, datasetName: String) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
-    implicit val user = request.user
-
-    // Get mapping of instanceIDs to returned URLs
-    var instanceMap = MutableMap[UUID, ToolInstance]()
-    // Get mapping of instanceID -> ToolInstance if datasetID is in uploadHistory
-    current.plugin[ToolManagerPlugin].map( mgr => instanceMap = mgr.getInstancesWithDataset(datasetId))
-    Ok(views.html.datasets.tools(instanceMap.keys.toList, instanceMap, datasetId, datasetName))
-  }
-
-  /**
-    * Send request to ToolManagerPlugin to launch a new tool instance and upload datasetID.
-    */
-  def launchTool(instanceName: String, tooltype: String, datasetId: UUID, datasetName: String) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
-    implicit val user = request.user
-
-    val hostURL = request.headers.get("Host").getOrElse("")
-    val userId: Option[UUID] = user match {
-      case Some(u) => Some(u.id)
-      case None => None
-    }
-
-    current.plugin[ToolManagerPlugin] match {
-      case Some(mgr) => {
-        val instanceID = mgr.launchTool(hostURL, instanceName, tooltype, datasetId, datasetName, userId)
-        Ok(instanceID.toString)
-      }
-      case None => BadRequest("No ToolManagerPlugin found.")
-    }
-  }
-
-  /**
-    * Fetch list of launchable tools from Plugin.
-    */
-  def getLaunchableTools() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
-    implicit val user = request.user
-
-    current.plugin[ToolManagerPlugin] match {
-      case Some(mgr) => {
-        val tools = mgr.getLaunchableTools()
-        Ok(tools)
-      }
-      case None => BadRequest("No ToolManagerPlugin found.")
-    }
-  }
-
-  /**
-    * Upload a dataset to an existing tool instance. Does not check for or prevent against duplication.
-    */
-  def uploadDatasetToTool(instanceID: UUID, datasetID: UUID, datasetName: String) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
-    implicit val user = request.user
-
-    val hostURL = request.headers.get("Host").getOrElse("")
-    val userId: Option[UUID] = user match {
-      case Some(u) => Some(u.id)
-      case None => None
-    }
-
-    current.plugin[ToolManagerPlugin] match {
-      case Some(mgr) => {
-        mgr.uploadDatasetToInstance(hostURL, instanceID, datasetID, datasetName, userId)
-        Ok("request sent")
-      }
-      case None => BadRequest("No ToolManagerPlugin found.")
-    }
-  }
-
-  /**
-    * Get full list of running instances from Plugin.
-    */
-  def getInstances() = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
-    implicit val user = request.user
-
-    current.plugin[ToolManagerPlugin] match {
-      case Some(mgr) => {
-        val instances = mgr.getInstances()
-        Ok(toJson(instances.toMap))
-      }
-      case None => BadRequest("No ToolManagerPlugin found.")
-    }
-  }
-
-  /**
-    * Get remote URL of running instance, if available.
-    */
-  def getInstanceURL(instanceID: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
-    implicit val user = request.user
-
-    val url = current.plugin[ToolManagerPlugin] match {
-      case Some(mgr) => mgr.checkForInstanceURL(instanceID)
-      case None => ""
-    }
-    Ok(url)
-  }
-
-  /**
-    * Send request to server to destroy instance, and remove from Plugin.
-    */
-  def removeInstance(toolPath: String, instanceID: UUID) = PermissionAction(Permission.ExecuteOnDataset) { implicit request =>
-    implicit val user = request.user
-
-    current.plugin[ToolManagerPlugin] match {
-      case Some(mgr) => {
-        mgr.removeInstance(toolPath, instanceID)
-        Ok(instanceID.toString)
-      }
-      case None => BadRequest("No ToolManagerPlugin found.")
-    }
-  }
-  // END TOOL MANAGER METHODS ---------------------------------------------------------------
 }

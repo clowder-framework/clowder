@@ -358,11 +358,6 @@ code {
    /* line-height: 200px; */
 }
 
-.panel .bookmark-link {
-    padding: 0px;
-    margin: 0px;
-}
-
 .panel .bookmark {
     padding-right: 2px;
 }
@@ -486,11 +481,7 @@ p.error, span.error{
 }
 
 .space-col-right {
-
-}
-
-.space-col-left {
-    border-right: 1px solid #E1E1E8;
+    padding-left: 50px;
 }
 
 .tag-first-char {
@@ -893,6 +884,14 @@ table.borderless tbody tr td, table.borderless tbody tr th {
     margin-bottom: 20px !important;
 }
 
+.button-margins {
+    margin: 20px 0px;
+}
+
+.panel .pull-left .glyphicon{
+    margin-left: 5px;
+}
+
 /* custom class for noty notification, position of a close x */
 .close-notify {
     font-weight:bold;
@@ -934,3 +933,16 @@ table.borderless tbody tr td, table.borderless tbody tr th {
 .valign-link {
     padding-top: 20px;
 }
+
+.profile-section {
+    margin-top: 5px;
+}
+
+.profile-disclaimer {
+    margin: 30px 0px;
+}
+
+.more-events {
+    margin: 50px 0px;
+}
+

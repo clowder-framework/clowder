@@ -1,15 +1,32 @@
 @(space: models.ProjectSpace, redirect: Call)(implicit user: Option[models.User])
 @import api.Permission
-<div class="panel panel-default" id="@space.id-listitem">
+<div class="panel panel-default space-panel" id="@space.id-listitem">
+    @if(!space.logoURL.isEmpty) {
+        <div class="row">
+            <div class="pull-left col-xs-12">
+                <span class="glyphicon glyphicon-tent"></span>
+            </div>
+        </div>
+
+    }
     <div class="panel-body">
         <div class = "row">
-            <div class="col-md-2 col-sm-2 col-lg-2">
+            <div class="col-xs-2">
                 @if(!space.logoURL.isEmpty) {
-                    <img class="fit-in-space" src="@(space.logoURL)" alt="Thumbnail of @(space.name)">
+                    <a href="@routes.Spaces.getSpace(space.id)"> <img class="fit-in-space" src="@(space.logoURL)" alt="Thumbnail of @(space.name)"></a>
+                } else {
+                    <a href="@routes.Spaces.getSpace(space.id)">
+                        <span class="bigicon glyphicon glyphicon-tent"></span>
+                    </a>
                 }
             </div>
-            <div class="col-md-10 col-sm-10 col-lg-10">
-                <h3><a href="@routes.Spaces.getSpace(space.id)">@space.name</a></h3>
+            <div class="col-xs-10 ">
+                <div class="row">
+                    <div class="col-xs-12">
+                        <h3><a href="@routes.Spaces.getSpace(space.id)">@space.name</a></h3>
+                    </div>
+                </div>
+
                 <div class= "row">
                     <div class="col-md-6 col-sm-6 col-lg-6">
                         <div>@space.description</div>
@@ -19,15 +36,17 @@
                             <span class="glyphicon glyphicon-th-large" title="@space.collectionCount collections"></span> @space.collectionCount
                             <span class="glyphicon glyphicon-user" title="@space.userCount users"></span> @space.userCount
                             @if(user.isDefined) {
+                                @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
                                     <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                                @if(Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id)) || user.get.identityId.userId.equals(space.creator)){
-                                    <button onclick="confirmDeleteResource('space','@(space.id)','@(space.name.replace("'","&#39;"))',false, '@redirect')" class="btn btn-link" title="Delete the space but not its contents">
-                                        <span class="glyphicon glyphicon-trash"></span>
-                                    </button>
-                                } else {
-                                    <div class="inline" title="No permission to delete the space">
-                                        <button disabled class="btn btn-link"><span class="glyphicon glyphicon-trash"></span></button>
-                                    </div>
+                                    @if(Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id)) || user.get.identityId.userId.equals(space.creator)){
+                                        <button onclick="confirmDeleteResource('space','@(spaceTitle)','@(space.id)','@(space.name.replace("'","&#39;"))',false, '@redirect')" class="btn btn-link" title="Delete the @spaceTitle but not its contents">
+                                            <span class="glyphicon glyphicon-trash"></span>
+                                        </button>
+                                    } else {
+                                        <div class="inline" title="Not enough permission to delete the @spaceTitle">
+                                            <button disabled class="btn btn-link"><span class="glyphicon glyphicon-trash"></span></button>
+                                        </div>
+                                    }
                                 }
                             }
                         </div>
@@ -36,11 +55,11 @@
                         <ul class="list-unstyled">
                             <li><a href="@(routes.Collections.list("", "", 12, Some(space.id.stringify)))" class="btn btn-link">
                                 <span class="glyphicon glyphicon-hand-right"></span>
-                                Collections in Space
+                                Collections in @{spaces.spaceTitle()}
                             </a></li>
                             <li><a href="@(routes.Datasets.list("", "", 12, Some(space.id.stringify)))" class="btn btn-link">
                                 <span class="glyphicon glyphicon-hand-right"></span>
-                                Datasets in Space
+                                Datasets in @{spaces.spaceTitle()}
                             </a></li>
                             <li>
                             @if(user.isDefined) {
@@ -81,7 +100,7 @@
                             }
                             @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
                                 <li><a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-link">
-                                    <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit Space
+                                    <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit @{spaces.spaceTitle()}
                                 </a></li>
                                 <li><a href="@routes.Spaces.selectExtractors(space.id)" class="btn btn-link">
                                     <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Extractors

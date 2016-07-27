@@ -95,7 +95,11 @@ object MetadataDefinition {
         Json.parse("""
           {"label":"Primary/Initial Publication",
             "uri":"http://sead-data.net/terms/PrimaryPublication",
-            "type":"string"}""")
+            "type":"string"}"""),
+        Json.parse("""
+          {"label":"GeoJSON",
+            "uri":"http://geojson.org/geojson-spec.html",
+            "type":"wkt"}""")
       )
     // Add the default definitions, do not update if they already exist.
     if(metadataService.getDefinitions().size == 0) {

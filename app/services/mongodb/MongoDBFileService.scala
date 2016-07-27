@@ -187,8 +187,7 @@ class MongoDBFileService @Inject() (
   def save(inputStream: InputStream, filename: String, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File] = {
     ByteStorageService.save(inputStream, FileDAO.COLLECTION) match {
       case Some(x) => {
-
-        val file = File(UUID.generate(), x._1, filename, author, new Date(), util.FileUtils.getContentType(filename, contentType), x._4, x._3, x._2, showPreviews = showPreviews, licenseData = License.fromAppConfig())
+        val file = File(UUID.generate(), x._1, filename, author, new Date(), util.FileUtils.getContentType(filename, contentType), x._3, x._2, showPreviews = showPreviews, licenseData = License.fromAppConfig())
         FileDAO.save(file)
         Some(file)
       }
@@ -223,23 +222,31 @@ class MongoDBFileService @Inject() (
 
         val tagsJson = new JSONArray(tagListBuffer.toList)
 
-        Logger.debug("tagStr=" + tagsJson);
-
         val commentsByFile = for (comment <- comments.findCommentsByFileId(id)) yield {
           comment.text
         }
         val commentJson = new JSONArray(commentsByFile)
 
-        Logger.debug("commentStr=" + commentJson.toString())
-
         val usrMd = getUserMetadataJSON(id)
-        Logger.debug("usrmd=" + usrMd)
-
         val techMd = getTechnicalMetadataJSON(id)
-        Logger.debug("techmd=" + techMd)
-
         val xmlMd = getXMLMetadataJSON(id)
-        Logger.debug("xmlmd=" + xmlMd)
+
+
+        // Create mapping in JSON-LD metadata from name -> contents
+        val metadataMap = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+        var allMd = Map[String, JsArray]()
+        for (md <- metadataMap) {
+          if (allMd.keySet.exists(_ == md.creator.displayName)) {
+            // If we already have metadata from this creator, add this metadata to their array
+            var existingMd = allMd(md.creator.displayName).as[JsArray]
+            existingMd = existingMd :+ md.content
+            allMd += (md.creator.displayName -> existingMd)
+          } else {
+            // Otherwise add a new entry for this creator
+            allMd += (md.creator.displayName -> new JsArray(Seq(md.content)))
+          }
+        }
+        val allMdStr = Json.toJson(allMd).toString()
 
         var fileDsId = ""
         var fileDsName = ""
@@ -253,7 +260,7 @@ class MongoDBFileService @Inject() (
 
         current.plugin[ElasticsearchPlugin].foreach {
           _.index("data", "file", id,
-            List(("filename", file.filename), ("contentType", file.contentType),("author",file.author.fullName),("uploadDate",formatter.format(file.uploadDate)),("datasetId",fileDsId),("datasetName",fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)))
+            List(("filename", file.filename), ("contentType", file.contentType),("author",file.author.fullName),("uploadDate",formatter.format(file.uploadDate)),("datasetId",fileDsId),("datasetName",fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd), ("metadata", allMdStr)))
         }
         
       }
@@ -723,20 +730,19 @@ class MongoDBFileService @Inject() (
             if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty){            
               if(file.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){ 
                 datasets.newThumbnail(fileDataset.id)
-                
                 	for(collectionId <- fileDataset.collections){
-		                          collections.get(collectionId) match{
-		                            case Some(collection) =>{		                              
-		                            	if(!collection.thumbnail_id.isEmpty){	                            	  
-		                            		if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
-		                            			collections.createThumbnail(collection.id)
-		                            		}		                        
-		                            	}
-		                            }
-		                            case None=>Logger.debug(s"Could not find collection $collectionId") 
-		                          }
-		                        }		        	  
-		        }
+                    collections.get(collectionId) match{
+                      case Some(collection) =>{
+                        if(!collection.thumbnail_id.isEmpty){
+                          if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
+                            collections.createThumbnail(collection.id)
+                          }
+                        }
+                      }
+                      case None=>Logger.debug(s"Could not find collection $collectionId")
+                    }
+                  }
+		          }
             }
                      
           }
@@ -765,13 +771,20 @@ class MongoDBFileService @Inject() (
         }
 
         // finally delete the actual file
-        ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
+        if(isLastPointingToLoader(file.loader, file.loader_id)) {
+          ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
+        }
+
         FileDAO.remove(file)
       }
       case None => Logger.debug("File not found")
     }
   }
 
+  def isLastPointingToLoader(loader: String, loader_id: String): Boolean = {
+    val result = FileDAO.find(MongoDBObject("loader" -> loader, "loader_id" -> loader_id))
+    result.size == 1
+  }
   def removeTemporaries(){
     val cal = Calendar.getInstance()
     val timeDiff = play.Play.application().configuration().getInt("rdfTempCleanup.removeAfter")

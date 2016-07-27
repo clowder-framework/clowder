@@ -72,8 +72,8 @@
 
                 @helper.checkbox(
                     signUpForm("agreementAcknowledged"),
-                    '_label -> Html("Check the box to accept the <a target=\"tos\" href=\"../tos\">Terms of Service</a>"),
-                    'class -> "form-control",
+                    '_label -> "Terms of Service",
+                    '_text -> Html("Check the box to accept the <a target=\"tos\" href=\"../tos\">Terms of Service</a>"),
                     '_help -> "",
                     '_showErrors -> true
                 )

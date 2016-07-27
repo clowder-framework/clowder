@@ -6,6 +6,7 @@ import java.util.{Calendar, Date}
 import com.mongodb.{BasicDBObject, CommandFailureException}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
+import MongoContext.context
 import models._
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.input.CountingInputStream
@@ -373,7 +374,10 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     updateMongo("update-counts-spaces", updateCountsInSpaces)
 
-    // instead of user agreeent we now have a temrms of services
+    //add private (the default status) flag for each dataset/collection/space
+    updateMongo("add-trial-flag", addTrialFlag)
+    
+    // instead of user agreeent we now have a terms of services
     updateMongo("switch-user-agreement-to-terms-of-services", switchToTermsOfServices)
 
     updateMongo("fix-metadata-count", fixMetadataCount)
@@ -383,6 +387,14 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     // Duplicate all clowder instance metadata to all existing spaces
     updateMongo("add-metadata-per-space", addMetadataPerSpace)
+
+    updateMongo("add-trial-flag2",addTrialFlag2)
+
+    // Make sure all email addresses of userpassword are lowercase
+    updateMongo("user-emails-to-lowercase", updateMongoEmailCase)
+
+    // Move SHA512 from File object into file.digest metadata
+    updateMongo("copy-sha512-to-metadata-and-remove", copySha512ToMetadataAndRemove)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1159,7 +1171,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
   private def switchToTermsOfServices(): Unit = {
     val ua = collection("app.configuration").findOne(MongoDBObject("key" -> "userAgreement.message"))
-    if (ua.get("value").toString != "") {
+    if (ua.isDefined && ua.get("value").toString != "") {
       collection("app.configuration").insert(MongoDBObject("key" -> "tos.date") ++ MongoDBObject("value" -> new Date()))
     }
     collection("app.configuration").update(MongoDBObject("key" -> "userAgreement.message"), $set(("key", "tos.text")))
@@ -1186,6 +1198,134 @@ class MongoSalatPlugin(app: Application) extends Plugin {
           collection("metadata.definitions").insert(md, WriteConcern.Safe)
         } catch {
           case e: BSONException => Logger.error("Unable to add the metadata definition for space with id: " + spaceId)
+        }
+      }
+    }
+  }
+
+  private def addTrialFlag(): Unit ={
+      val q = MongoDBObject()
+      val s = MongoDBObject("$set" -> MongoDBObject("status" -> SpaceStatus.TRIAL.toString))
+      val d = MongoDBObject("$set" -> MongoDBObject("status" -> DatasetStatus.PRIVATE.toString))
+      collection("datasets").update(q ,d, multi=true)
+      collection("spaces.projects").update(q ,s, multi=true)
+  }
+
+  private def addTrialFlag2(): Unit ={
+    val q = MongoDBObject()
+
+    val (s ,d ) = if(play.Play.application().configuration().getBoolean("verifySpaces")){
+       (MongoDBObject("$set" -> MongoDBObject("status" -> SpaceStatus.TRIAL.toString)),
+        MongoDBObject("$set" -> MongoDBObject("status" -> DatasetStatus.TRIAL.toString)) )
+    } else {
+       (MongoDBObject("$set" -> MongoDBObject("status" -> SpaceStatus.PRIVATE.toString)),
+        MongoDBObject("$set" -> MongoDBObject("status" -> DatasetStatus.DEFAULT.toString)))
+    }
+    collection("datasets").update(q ,d, multi=true)
+    collection("spaces.projects").update(q ,s, multi=true)
+  }
+
+  private def updateMongoEmailCase(): Unit = {
+    val userpasses = collection("social.users").find(MongoDBObject("identityId.providerId" -> "userpass"))
+    userpasses.foreach { user =>
+      (user.getAs[ObjectId]("_id"), user.getAs[String]("email"),
+        user.getAsOrElse[DBObject]("identityId", new MongoDBObject()).getAs[String]("userId")) match {
+        case (Some(userId), Some(email), Some(username)) => {
+          try {
+            // Find if user exists with lowercase email already
+            val conflicts = collection("social.users").count(MongoDBObject(
+              "_id" -> MongoDBObject("$ne" -> userId),
+              "identityId" -> MongoDBObject("userId" -> username.toLowerCase, "providerId" -> "userpass")
+            ))
+
+            if (conflicts == 0) {
+              collection("social.users").update(MongoDBObject("_id" -> userId),
+                MongoDBObject("$set" -> MongoDBObject(
+                  "email" -> email.toLowerCase,
+                  "identityId" -> MongoDBObject("userId" -> username.toLowerCase, "providerId" -> "userpass")
+                )), upsert = false, multi = true)
+            } else {
+              // If there's already an account with lowercase email, deactivate this account
+              collection("social.users").update(MongoDBObject("_id" -> userId),
+                MongoDBObject("$set" -> MongoDBObject("active" -> false)), upsert = false, multi = true)
+            }
+          } catch {
+            case e: BSONException => Logger.error("Unable to update email for user with id: " + user)
+          }
+        }
+        case _ => Logger.error("Missing user fields when updating email case")
+      }
+    }
+  }
+
+  private def copySha512ToMetadataAndRemove(): Unit = {
+    for (colln <- List[String]("uploads")) {
+      // Iteracte across all files that have a sha512 entry
+      collection(colln).find(MongoDBObject("loader" -> classOf[MongoDBByteStorage].getName,
+        "sha512" -> MongoDBObject("$exists" -> true))).snapshot().foreach { file =>
+        val id = file.getAsOrElse[ObjectId]("_id", new ObjectId())
+        file.getAs[String]("sha512") match {
+          case Some(sha) => {
+            // Check for extractor metadata for a newer SHA512
+            val mdQuery = MongoDBObject("attachedTo._id" -> file._id, "creator.extractorId" -> ".*ncsa.file.digest".r)
+            val attachedMdCount = collection("metadata").count(mdQuery)
+
+            if (attachedMdCount > 0) {
+              // There is file digest metadata for this file, so check it
+              val mdResponse = collection("metadata").find(mdQuery).snapshot()
+              mdResponse.foreach { md =>
+                md.getAs[DBObject]("content") match {
+                  case Some(content) => {
+                    if (sha != content.get("sha512").toString)
+                      Logger.error("Old SHA512 does not match metadata digest for file " + id.toString)
+                  }
+                  case None => Logger.error("no extractorId found in md for file " + id.toString)
+                }
+              }
+            } else {
+              // No file digest metadata for this file, so we will use current SHA512 to imitate extractor
+              val mdObj = Metadata(
+                UUID.generate,
+                ResourceRef(ResourceRef.file, UUID(id.toString)),
+                None, //contextId
+                None, //contentURL,
+                new Date(),
+                new ExtractorAgent(
+                  UUID.generate,
+                  "extractor",
+                  Some("ncsa.file.digest"),
+                  Some(new URL("http://clowder.ncsa.illinois.edu/clowder/api/extractors/ncsa.file.digest"))
+                ),
+                Json.parse("{\"sha512\": \"" + sha + "\"}"),
+                None
+              )
+              val dbmd = com.novus.salat.grater[Metadata].asDBObject(mdObj)
+              collection("metadata").insert(dbmd, WriteConcern.Safe)
+
+              try {
+                val mdCount = file.getOrElse("metadataCount", "0").toString.toLong
+                file.put("metadataCount", mdCount + 1)
+              }
+              catch {
+                case e: Exception => {
+                  // If we can't get metadataCount from file correctly, just set to 1 for newly added md
+                  Logger.error("Unable to update metadataCount; setting to 1", e)
+                  file.put("metadataCount", 1L)
+                }
+              }
+            }
+
+            // Overwrite if not, give error flag if so and they dont match
+            file.remove("sha512")
+          }
+          case None => Logger.error("SHA512 is None for file: " + id.toString)
+        }
+
+        try {
+          collection(colln).save(file, WriteConcern.Safe)
+        }
+        catch {
+          case e: Exception => Logger.error("Unable to update file :" + id.toString, e)
         }
       }
     }
