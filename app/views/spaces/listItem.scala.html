@@ -93,12 +93,10 @@
                     </div>
                     <div class="col-md-3 col-sm-6 col-lg-3">
                         <ul class="list-unstyled">
-                            @if(Permission.checkPermission(Permission.EditUser, ResourceRef(ResourceRef.space, space.id))) {
+                            @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
                                 <li><a href="@routes.Spaces.manageUsers(space.id)" class="btn btn-link">
                                     <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
                                 </a></li>
-                            }
-                            @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
                                 <li><a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-link">
                                     <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit @{spaces.spaceTitle()}
                                 </a></li>
