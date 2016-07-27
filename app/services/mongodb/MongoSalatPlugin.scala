@@ -397,7 +397,9 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("copy-sha512-to-metadata-and-remove", copySha512ToMetadataAndRemove)
 
     //add datasets to collection spaces
-    updateMongo("add-dataset-collection-spaces",addDatasetToCollectionSpaces)
+    if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
+      updateMongo("add-dataset-collection-spaces",addDatasetToCollectionSpaces)
+    }
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
