@@ -225,7 +225,6 @@ line-height: 1.5;
         }
         // chosen pulldown configuration
         $("#@id  #add-metadata-select").chosen({
-            no_results_text: "Not found. Press enter to add ",
             search_contains: true,
             width: "100%",
             placeholder_text_single: "Select field"});
@@ -402,6 +401,7 @@ line-height: 1.5;
                         // chosen pulldown configuration
                         $("#@id  #field-value").chosen({
                             no_results_text: "Not found. Press enter to add ",
+                            add_search_option: true,
                             search_contains: true,
                             width: "100%",
                             placeholder_text_single: "Select field"});
