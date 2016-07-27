@@ -6930,7 +6930,7 @@ fieldset[disabled] .btn-default.active {
 /*
  * Section for the panel specifc colors
  */
-.space-panel-footer {
+.space-panel-footer, .space-title {
   background-color: #0b5ca3;
   color: #fff
 }
@@ -6975,7 +6975,7 @@ fieldset[disabled] .btn-default.active {
   color: #fff
 }
 
-.collection-panel .glyphicon-th-large {
+.collection-panel .collection-background {
   color: #8a0529
 }
 

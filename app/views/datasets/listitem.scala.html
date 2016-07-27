@@ -22,7 +22,7 @@
             </div>
             <div class="col-xs-10">
                 <div class="row">
-                    <div class="col-xs-8">
+                    <div class="col-md-8 col-lg-8 col-sm-8">
                         <div class="row">
                             <div class="col-xs-12">
                                 <span class="h2"><a href="@(routes.Datasets.dataset(dataset.id))">@Html(dataset.name)</a></span>
@@ -40,7 +40,7 @@
                             <div class="col-xs-12">Created on @dataset.created.format("MMM dd, yyyy")</div>
                         </div>
                     </div>
-                    <div class="col-xs-4">
+                    <div class="col-md-4 col-lg-4 col-sm-4">
                         @if(user.isDefined) {
                             @if(!dataset.followers.contains(user.get.id)) {
                                 <div>

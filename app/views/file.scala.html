@@ -586,7 +586,7 @@
 
 			<script language="javascript">
 					function updateFileName() {
-						fileName = $('#file-name-title').text();
+						fileName = $('#file-name-title').text().trim();
 						$('<div class="inline file_name_div h3"> </div>').insertAfter($('#prf-file-name'));
 						$('.file_name_div').append('<input type="text" id="file_name_input" class="form-control" />');
 						$('.file_name_div').append('<button class="btn btn-sm btn-primary edit-tab btn-margins" onclick="saveFileName()"> <span class="glyphicon glyphicon-send"></span> Save</button>');
@@ -616,7 +616,7 @@
 						request.done(function(response, textStatus, jqXHR) {
 							$('.file_name_div').remove();
 							$('#file-name-title').text(htmlEncode(name).replace(/\n/g, "<br />"));
-							$('#file-name-title').prepend('<span class="glyphicon glyphicon-file"></span>');
+							$('#file-name-title').prepend('<span class="glyphicon glyphicon-file"></span> ');
 							$('#prf-file-name').mouseleave();
 							$('#file-name-div').addClass("file-title-div");
 							$('#h-edit-file').css("display", "");
