@@ -6,37 +6,42 @@
         <div class="panel panel-default">
             <div class="panel-body">
                 <form class="form top-padding" id="metadata-search">
-                    <div id="metadata-search-rows">
-                        <div id="metadata-clause-1">
-                            <div class="form-group col-lg-4 col-md-4">
-                                <select id="add-metadata-select-1">
-                                    <option value=""></option>
-                                </select>
-                            </div>
-                            <div class="form-group col-lg-2 col-md-2">
-                                <select id="add-metadata-operator-1">
-                                    <option value="contains">contains</option>
-                                    <option value="equals">equals</option>
-                                    <option value="notequals">does not equal</option>
-                                    <option value="greaterthan">greater than</option>
-                                    <option value="lessthan">less than</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-lg-4 col-md-4">
-                                <input type="text" class="form-control" id="v-1" placeholder="Type value here">
-                            </div>
-                        </div>
-                        <div class="form-group col-lg-2 col-md-2">
-                            <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-search"></span> Search</button>
-                            <span id="mt-search-feedback"></span>
+
+                    <!-- ANY/ALL DROPDOWN -->
+                    <div class='form-group col-lg-4 col-md-4'>
+                        <select id='add-metadata-grouping'>
+                            <option value='AND'>Match ALL of the selected terms</option>
+                            <option value='OR'>Match ANY of the selected terms</option>
+                        </select>
+                    </div>
+
+                    <!-- ADD TERM BTN -->
+                    <div class="form-group col-lg-8 col-md-8">
+                        <a class='btn btn-default' id='add-clause' onclick='getBasicDefinitions(2)'>
+                            <span class='glyphicon glyphicon-plus'></span> Add term</a>
+                    </div>
+
+                    <!-- SET OF TERM ROWS (populated in script below) -->
+                    <div id="metadata-search-rows"></div>
+
+                    <!-- ADVANCED SEARCH BOX -->
+                    <div class="form-group col-lg-10 col-md-10">
+                        <br/>
+                        <a id="adv-search-label" onclick='toggleAdvanced()'>Show Advanced Search</a><br/>
+                        <div id="adv-search-container" hidden=True>
+                            You can use grouping syntax in the Advanced Search box that is not possible with the GUI interface.
+                            GUI will be hidden if incompatible search sytax is entered (see below for examples).
+                            <textarea type="text" rows=3 class="form-control" id="adv-search" placeholder="Type query here"></textarea>
                         </div>
                     </div>
+
+                    <!-- SUBMIT BTN -->
+                    <div class="form-group col-lg-4 col-md-4">
+                        <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-search"></span> Search</button>
+                        <span id="mt-search-feedback"></span>
+                    </div>
                 </form>
-                <div class="form-group col-lg-4 col-md-4">
-                    <button class='btn' id='add-clause' onclick='getBasicDefinitions(2)'>
-                        <span class='glyphicon glyphicon-plus'></span>
-                    </button>
-                </div>
+
             </div>
         </div>
     </div>
@@ -52,66 +57,69 @@
     <script src="@routes.Assets.at("javascripts/handlebars-v1.3.0.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
     <script>
+        var row_list = [];
+        $("#adv-search").hide()
+        $("#add-metadata-grouping").select2({
+            theme: "bootstrap",
+            allowClear: false,
+            width: "100%"
+        }).on("change", function(e) { console.log("change"); updateAdvancedSearchFromBasic(); });
         getBasicDefinitions(1)
 
+        // Add a new row to the set of criteria
         function getBasicDefinitions(rowId) {
-            console.log("GET BASIC "+String(rowId))
-            if (rowId > 1) {
-                // Add Remove button to previous row and append new row of field/value select
-                $("#metadata-search-rows").append(
-                    $("<p><div id='metadata-clause-"+String(rowId)+"'>" +
-                        "<div class='form-group col-lg-2 col-md-2'><select id='add-metadata-grouping-"+String(rowId)+"'>" +
-                            "<option value='and'>AND</option>" +
-                            "<option value='or'>OR</option>" +
-                        "</select></div>" +
+            var rowStr = String(rowId);
 
-                        "<div class='form-group col-lg-4 col-md-4'>" +
-                            "<select id='add-metadata-select-"+String(rowId)+"'><option value=''></option></select></div>" +
-
-                        "<div class='form-group col-lg-2 col-md-2'> <select id='add-metadata-operator-"+String(rowId)+"'>" +
-                            "<option value='contains'>contains</option>" +
-                            "<option value='equals'>equals</option>" +
-                            "<option value='notequals'>does not equal</option>" +
-                            "<option value='greaterthan'>greater than</option>" +
-                            "<option value='lessthan'>less than</option>" +
-                        "</select></div>" +
-
-                        "<div class='form-group col-lg-3 col-md-3'>" +
-                            "<input type='text' class='form-control' id='v-"+String(rowId)+"' placeholder='Type value here'>" +
-                        "</div>" +
-
-                        "<div class='form-group col-lg-1 col-md-1'>" +
-                        "<button class='btn' id='remove-"+String(rowId)+"' onclick='removeClause("+String(rowId)+")'>" +
-                        "<span class='glyphicon glyphicon-minus'></span></button></div>" +
-                    "</div>"
-                    )
-                );
-
-                document.getElementById("add-clause").onclick = function () { getBasicDefinitions(rowId+1) };
-            }
+            // Basic row definition
+            $("#metadata-search-rows").append(
+                $("<p><div id='metadata-clause-"+rowStr+"'>" +
+                    <!-- FIELD SELECTOR DROPDOWN -->
+                    "<div class='form-group col-lg-4 col-md-4'>" +
+                        "<select id='add-metadata-select-"+rowStr+"'><option value=''></option></select></div>" +
+                    <!-- OPERATOR DROPDOWN -->
+                    "<div class='form-group col-lg-2 col-md-2'> <select id='add-metadata-operator-"+rowStr+"'>" +
+                        "<option value=':'>contains</option>" +
+                        "<option value='=='>equals</option>" +
+                        "<option value='!='>does not equal</option>" +
+                        "<option value='>'>greater than</option>" +
+                        "<option value='<'>less than</option>" +
+                    "</select></div>" +
+                    <!-- VALUE FIELD -->
+                    "<div class='form-group col-lg-4 col-md-4'>" +
+                        "<input type='text' class='form-control' id='v-"+rowStr+"' placeholder='Type value here'>" +
+                    "</div>" +
+                    <!-- REMOVE ROW BUTTON -->
+                    "<div class='form-group col-lg-2 col-md-2'>" +
+                    "<button class='btn' id='remove-"+rowStr+"' onclick='removeClause("+rowStr+")'>" +
+                    "<span class='glyphicon glyphicon-minus'></span></button></div>" +
+                "</div>"
+                )
+            );
+            document.getElementById("add-clause").onclick = function () { getBasicDefinitions(rowId+1); };
+            document.getElementById("v-"+rowStr).onkeyup = function() { updateAdvancedSearchFromBasic(); };
+            row_list.push(rowStr);
 
             // Add theme to operator/grouping dropdowns
-            $("#add-metadata-operator-"+String(rowId)).select2({
+            $("#add-metadata-operator-"+rowStr).select2({
                 theme: "bootstrap",
                 allowClear: false,
                 width: "100%"
-            });
-            $("#add-metadata-grouping-"+String(rowId)).select2({
+            }).on("change", function(e) { updateAdvancedSearchFromBasic() });
+            $("#add-metadata-grouping-"+rowStr).select2({
                 theme: "bootstrap",
                 allowClear: false,
                 width: "100%"
-            });
+            }).on("change", function(e) { updateAdvancedSearchFromBasic() });
 
-            // metadata definitions
+            // fetch metadata definitions
             var request = jsRoutes.api.Metadata.getDefinitionsDistinctName().ajax({
                 type: 'GET',
                 contentType: "application/json"
             });
-
             request.done(function (response, textStatus, jqXHR) {
                 var fields = response;
 
-                $("#add-metadata-select-"+String(rowId)).empty()
+                $("#add-metadata-select-"+rowStr).empty()
                 for (var i = 0; i < fields.length; i++) {
                     var elem = $("<option></option>");
                     elem.attr("data-type", fields[i].json.type);
@@ -122,7 +130,7 @@
                 }
 
                 // Select box will populate as user types, with metadata field autocomplete suggestions
-                $("#add-metadata-select-"+String(rowId)).select2({
+                $("#add-metadata-select-"+rowStr).select2({
                     theme: "bootstrap",
                     placeholder: "Select a type or field key",
                     allowClear: true,
@@ -148,7 +156,7 @@
                                         return {text: x, id: x}
                         }})};}
                     }
-                })
+                }).on("change", function(e) { updateAdvancedSearchFromBasic() })
             });
 
             request.fail(function (jqXHR, textStatus, errorThrown){
@@ -158,6 +166,19 @@
                     notify("Metadata was not added due to : " + errorThrown, "error");
                 }
             });
+        }
+
+        // Construct a JSON object with search information
+        function generateSearchObject() {
+            var searchObj = [];
+            for (var row=0; row<row_list.length; row++) {
+                var rowkey = $("#add-metadata-select-"+row_list[row]+" :selected").text();
+                var rowop = $("#add-metadata-operator-"+row_list[row]).val();
+                var rowval = $("#v-"+row_list[row]).val();
+
+                searchObj.push([rowkey, rowop, rowval]);
+            }
+            return searchObj;
         }
 
         function search(key, value, count) {
@@ -192,6 +213,8 @@
                         var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/search_file_result")");
                         var html = modalTemplate({'url': jsRoutes.controllers.Files.file(files[i].id).url, 'name': files[i].name});
                         $('#files-results').append(html);
+                        // TODO: example search strings
+                        // TODO: Support API direct calls
                     }
                     $('#getmore').html('<a id="showmore" class="btn btn-link"><span class="glyphicon glyphicon-hand-down"></span> Show more results</a>');
                     $('#showmore').click( function() { search(key, value, count+10); } );
@@ -204,12 +227,57 @@
                 return;
             }
 
-            $( "#mt-search-feedback" ).text( "Not valid!" ).show().fadeOut( 2000 );
+            $( "#mt-search-feedback" ).text( " Not valid!" ).show().fadeOut( 2000 );
         }
 
         function removeClause(rowId) {
-            $("#metadata-clause-"+String(rowId)).remove()
+            var rowStr = String(rowId);
+            $("#metadata-clause-"+rowStr).remove();
+            row_list.splice(row_list.indexOf(rowStr), 1);
+            updateAdvancedSearchFromBasic();
         }
+
+        function toggleAdvanced() {
+            var asc = $("#adv-search-container");
+            if (asc.is(':visible')) {
+                $("#adv-search").hide()
+                asc.hide();
+                $("#adv-search-label").text("Show Advanced Search");
+            } else {
+                asc.show();
+                $("#adv-search").show()
+                updateAdvancedSearchFromBasic();
+                $("#adv-search-label").text("Hide Advanced Search");
+            }
+        }
+
+        // When Advanced goes from hidden to visible, or it is visible and basic dropdowns change, repopulate it
+        function updateAdvancedSearchFromBasic() {
+            var asc = $("#adv-search");
+            var groupType = $("#add-metadata-grouping").val(); // AND, OR
+            var searchTerms = generateSearchObject()
+
+            var searchStr = ""
+            for (var term=0; term<searchTerms.length; term++) {
+                var field_key = searchTerms[term][0];
+                var operator = searchTerms[term][1];
+                var field_val = searchTerms[term][2];
+
+                // Ignore any terms without a value
+                if (field_val!=null && field_val!="") {
+                    if (term > 0) {
+                        searchStr += groupType+" ";
+                    }
+
+                    // Wrap multi-term strings in quotes
+                    if (field_key.indexOf(" ") > -1) { field_key = '"'+field_key+'"'; }
+                    if (field_val.indexOf(" ") > -1) { field_val = '"'+field_val+'"'; }
+                    searchStr += "("+field_key + operator + field_val+") ";
+                }
+            }
+            asc.val(searchStr);
+        }
+
         // form submission
         $( "form[id='metadata-search']").submit(function( event ) {
             event.preventDefault();
