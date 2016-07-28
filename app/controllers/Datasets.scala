@@ -208,7 +208,7 @@ class Datasets @Inject()(
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
     val datasetSpace = space.flatMap(o => spaceService.get(UUID(o)))
-    var title: Option[String] = Some(play.api.i18n.Messages("list.title", "Datasets"))
+    var title: Option[String] = Some(play.api.i18n.Messages("list.title", play.api.i18n.Messages("datasets.title")))
 
     val datasetList = person match {
       case Some(p) => {
@@ -321,7 +321,7 @@ class Datasets @Inject()(
         Some(mode)
       }
     if(!showPublic) {
-      title = Some(play.api.i18n.Messages("you.title", "Datasets"))
+      title = Some(play.api.i18n.Messages("you.title", play.api.i18n.Messages("datasets.title")))
     }
     //Pass the viewMode into the view
     space match {

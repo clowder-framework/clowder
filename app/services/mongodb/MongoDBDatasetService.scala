@@ -176,6 +176,34 @@ class MongoDBDatasetService @Inject() (
   }
 
   /**
+    * Return a list of datasets in a space the user has access to.
+    */
+  def listSpaceAccess(limit: Integer, permissions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
+    list(None, false, limit, None, None, Some(space), permissions, user, showAll, None, showPublic)
+  }
+
+  /**
+    * Return a list of datasets in a space the user has access to.
+    */
+  def listSpaceAccess(limit: Integer, title: String, permissions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
+    list(None, false, limit, Some(title), None, Some(space), permissions, user, showAll, None, showPublic)
+  }
+
+  /**
+    * Return a list of datasets in a space the user has access to starting at a specific date.
+    */
+  def listSpaceAccess(date: String, nextPage: Boolean, limit: Integer, permissions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
+    list(Some(date), nextPage, limit, None, None, Some(space), permissions, user, showAll, None, showPublic)
+  }
+
+  /**
+    * Return a list of datasets in a space the user has access to starting at a specific date.
+    */
+  def listSpaceAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
+    list(Some(date), nextPage, limit, Some(title), None, Some(space), permissions, user, showAll, None, showPublic)
+  }
+
+  /**
    * Count all datasets the user has created.
    */
   def countUser(user: Option[User], showAll: Boolean, owner: User): Long = {

@@ -147,7 +147,7 @@ case class ClowderUser(
   //staging area
   repositoryPreferences: Map[String,Any] = Map.empty,
 
-  // terms of services
+  // terms of service
   termsOfServices: Option[UserTermsOfServices] = None
 
 ) extends User

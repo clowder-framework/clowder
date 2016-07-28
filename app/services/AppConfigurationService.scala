@@ -140,11 +140,11 @@ object AppConfiguration {
   def getParameterTitle: String = appConfig.getProperty("parameter.title", "Parameter")
 
   // ----------------------------------------------------------------------
-  // Terms of Services
+  // Terms of Service
   // ----------------------------------------------------------------------
   lazy val defaultToSDate = new SimpleDateFormat("yyyy-MM-dd").parse("2016-06-06")
 
-  /** Set the Terms of Services */
+  /** Set the Terms of Service */
   def setTermsOfServicesText(tos: String) = {
     if (tos == "") {
       setTermsOfServicesVersionDate(defaultToSDate)
@@ -160,7 +160,7 @@ object AppConfiguration {
     }
   }
 
-  /** Get the Terms of Services */
+  /** Get the Terms of Service */
   def getTermsOfServicesTextRaw: String = appConfig.getProperty("tos.text", "")
 
   def getTermsOfServicesText: String = {
@@ -170,11 +170,11 @@ object AppConfiguration {
           case Some(inp) => {
             IOUtils.toString(inp, "UTF-8")
           }
-          case None => "missing Terms of Services"
+          case None => "missing Terms of Service"
         }
       }
       case x:String => x
-      case _ => "missing Terms of Services"
+      case _ => "missing Terms of Service"
     }
     tos.replace("@@NAME", getDisplayName)
   }
@@ -191,13 +191,13 @@ object AppConfiguration {
     tos.exists(t => t.accepted && t.acceptedDate.after(getTermsOfServicesVersionDate))
   }
 
-  /** Set the version of the Terms of Services and returns the version */
+  /** Set the version of the Terms of Service and returns the version */
   def setTermsOfServicesVersionDate(date: Date) = {
     DI.injector.getInstance(classOf[UserService]).newTermsOfServices()
     appConfig.setProperty("tos.date", date)
   }
 
-  /** get the version of the Terms of Services */
+  /** get the version of the Terms of Service */
   def getTermsOfServicesVersionDate: Date = appConfig.getProperty("tos.date", new Date())
 
   def getTermsOfServicesVersionString: String = {

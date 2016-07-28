@@ -24,7 +24,7 @@
             <div id="selected_field" class="row"></div>
         </div>
     </div>
-}
+
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
 <link rel="stylesheet" href="@routes.Assets.at("stylesheets/jquery-ui-timepicker-addon.css")">
 <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
@@ -225,7 +225,6 @@ line-height: 1.5;
         }
         // chosen pulldown configuration
         $("#@id  #add-metadata-select").chosen({
-            no_results_text: "Not found. Press enter to add ",
             search_contains: true,
             width: "100%",
             placeholder_text_single: "Select field"});
@@ -402,6 +401,7 @@ line-height: 1.5;
                         // chosen pulldown configuration
                         $("#@id  #field-value").chosen({
                             no_results_text: "Not found. Press enter to add ",
+                            add_search_option: true,
                             search_contains: true,
                             width: "100%",
                             placeholder_text_single: "Select field"});
@@ -426,3 +426,4 @@ line-height: 1.5;
         });
     });
 </script>
+}
