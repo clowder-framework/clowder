@@ -41,8 +41,7 @@ class MongoDBSpaceService @Inject() (
 
   /** count all spaces */
   def count(): Long = {
-    count(None, nextPage=false, Set[Permission](Permission.ViewSpace), None, showAll=true, None)
-  }
+    ProjectSpaceDAO.count(MongoDBObject())  }
 
   /** list all spaces */
   def list(): List[ProjectSpace] = {
