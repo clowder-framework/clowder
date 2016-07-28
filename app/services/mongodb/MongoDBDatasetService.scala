@@ -287,10 +287,12 @@ class MongoDBDatasetService @Inject() (
 
           val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
           if (permissions.contains(Permission.ViewDataset) && enablePublic && showPublic) {
+            // if enablePublic == true, only list the dataset user can access, in a space page or /datasets
             if(!u.superAdminMode) {
               orlist += MongoDBObject("status" -> DatasetStatus.PUBLIC.toString)
               orlist += MongoDBObject("status" -> DatasetStatus.DEFAULT.toString) ++ ("spaces" $in publicSpaces)
             } else {
+              // superAdmin can access all datasets, in a space page or /datasets
               orlist += MongoDBObject()
             }
           }
