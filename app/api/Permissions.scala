@@ -82,12 +82,24 @@ object Permission extends Enumeration {
     ViewRelation,
     DeleteRelation,
 
+    //vocabularies
+    ViewVocabulary,
+    CreateVocabulary,
+    DeleteVocabulary,
+    EditVocabulary,
+
+    //VocabularyTerms
+    ViewVocabularyTerm,
+    CreateVocabularyTerm,
+    DeleteVocabularyTerm,
+    EditVocabularyTerm,
+
     // users
     ViewUser,
     EditUser = Value
 
   var READONLY = Set[Permission](ViewCollection, ViewComments, ViewDataset, ViewFile, ViewGeoStream, ViewMetadata,
-    ViewSection, ViewSpace, ViewTags, ViewUser )
+    ViewSection, ViewSpace, ViewTags, ViewUser , ViewVocabulary, ViewVocabularyTerm)
   if( play.Play.application().configuration().getBoolean("allowAnonymousDownload")) {
      READONLY += DownloadFiles
   }
@@ -104,6 +116,8 @@ object Permission extends Enumeration {
   lazy val curations: services.CurationService = DI.injector.getInstance(classOf[services.CurationService])
   lazy val sections: SectionService = DI.injector.getInstance(classOf[SectionService])
   lazy val metadatas: MetadataService = DI.injector.getInstance(classOf[MetadataService])
+  lazy val vocabularies: VocabularyService = DI.injector.getInstance(classOf[VocabularyService])
+  lazy val vocabularyterms: VocabularyTermService = DI.injector.getInstance(classOf[VocabularyTermService])
 
   /** Returns true if the user is listed as a server admin */
 	def checkServerAdmin(user: Option[User]): Boolean = {
@@ -126,6 +140,7 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.curationObject, id) => curations.get(id).exists(x => users.findById(x.author.id).exists(_.id == user.id))
       case ResourceRef(ResourceRef.curationFile, id) => curations.getCurationFiles(List(id)).exists(x => users.findById(x.author.id).exists(_.id == user.id))
       case ResourceRef(ResourceRef.metadata, id) => metadatas.getMetadataById(id).exists(_.creator.id == user.id)
+      case ResourceRef(ResourceRef.vocabulary, id) => vocabularies.get(id).exists(x => users.findByIdentity(x.author.get).exists(_.id == user.id))
       case ResourceRef(_, _) => false
     }
   }
@@ -239,7 +254,7 @@ object Permission extends Enumeration {
               checkPermission(user, permission, ResourceRef(ResourceRef.dataset, p.dataset_id.get))
             } else if (p.collection_id.isDefined) {
               checkPermission(user, permission, ResourceRef(ResourceRef.collection, p.collection_id.get))
-            } else {
+            }  else  {
               true
             }
           }
@@ -336,6 +351,38 @@ object Permission extends Enumeration {
                                                       if role.permissions.contains(permission.toString)
             } yield true
             hasPermission getOrElse(false)
+          }
+        }
+      }
+      case ResourceRef(ResourceRef.vocabulary, id) => {
+        vocabularies.get(id) match {
+          case None => false
+          case Some(vocab) => {
+            for (clowderUser <- getUserByIdentity(user)) {
+              vocab.spaces.map {
+                vocabId => for (role <- users.getUserRoleInSpace(clowderUser.id, vocabId)) {
+                  if (role.permissions.contains(permission.toString))
+                    return true
+                }
+              }
+            }
+            false
+          }
+        }
+      }
+      case ResourceRef(ResourceRef.vocabularyterm, id) => {
+        vocabularyterms.get(id) match {
+          case None => false
+          case Some(vocabterm) => {
+            for (clowderUser <- getUserByIdentity(user)) {
+              vocabterm.spaces.map {
+                vocabTermId => for (role <- users.getUserRoleInSpace(clowderUser.id, vocabTermId)) {
+                  if (role.permissions.contains(permission.toString))
+                    return true
+                }
+              }
+            }
+            false
           }
         }
       }
