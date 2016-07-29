@@ -18,6 +18,7 @@ import util.{License, FileUtils, Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
 import scala.collection.mutable.{ListBuffer, Map => MutableMap}
 import scala.util.matching.Regex
+import play.api.i18n.Messages
 
 /**
  * A dataset is a collection of files and streams.
@@ -45,7 +46,7 @@ class Datasets @Inject()(
   /**
     * String name of the Space such as 'Project space' etc., parsed from the config file
     */
-  val spaceTitle: String = escapeJava(play.Play.application().configuration().getString("spaceTitle").trim)
+  val spaceTitle: String = Messages("space.title")
 
   /**
    * Display the page that allows users to create new datasets
@@ -189,16 +190,16 @@ class Datasets @Inject()(
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
     val datasetSpace = space.flatMap(o => spaceService.get(UUID(o)))
-    var title: Option[String] = Some(play.api.i18n.Messages("list.title", play.api.i18n.Messages("datasets.title")))
+    var title: Option[String] = Some(Messages("list.title", Messages("datasets.title")))
 
     val datasetList = person match {
       case Some(p) => {
         space match {
           case Some(s) if datasetSpace.isDefined=> {
-            title = Some(person.get.fullName + "'s Datasets in " + spaceTitle + " <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
+            title = Some(Messages("owner.in.resource.title", p.fullName, Messages("datasets.title"), spaceTitle, routes.Spaces.getSpace(datasetSpace.get.id), datasetSpace.get.name))
           }
           case _ => {
-            title = Some(person.get.fullName + "'s Datasets")
+            title = Some(Messages("owner.title", p.fullName, play.api.i18n.Messages("datasets.title")))
           }
         }
         if (date != "") {
@@ -210,7 +211,7 @@ class Datasets @Inject()(
       case None => {
         space match {
           case Some(s) if datasetSpace.isDefined => {
-            title = Some("Datasets in " + spaceTitle + " <a href=" + routes.Spaces.getSpace(datasetSpace.get.id) + ">" + datasetSpace.get.name + "</a>")
+            title = Some(Messages("resource.in.title", Messages("datasets.title"), spaceTitle, routes.Spaces.getSpace(datasetSpace.get.id), datasetSpace.get.name))
             if (date != "") {
               datasets.listSpace(date, nextPage, limit, s, user)
             } else {
@@ -302,7 +303,7 @@ class Datasets @Inject()(
         Some(mode)
       }
     if(!showPublic) {
-      title = Some(play.api.i18n.Messages("you.title", play.api.i18n.Messages("datasets.title")))
+      title = Some(Messages("you.title", Messages("datasets.title")))
     }
     //Pass the viewMode into the view
     space match {
