@@ -122,7 +122,7 @@ class Datasets @Inject()(
     implicit val user = request.user
     user match {
       case Some(clowderUser)  => {
-        val title: Option[String] = Some("Following Datasets")
+        val title: Option[String] = Some(Messages("following.title", Messages("datasets.title")))
         var datasetList =  new ListBuffer[Dataset]()
         val datasetIds = clowderUser.followedEntities.filter(_.objectType == "dataset")
         val datasetIdsToUse = datasetIds.slice(index*limit, (index+1)*limit)

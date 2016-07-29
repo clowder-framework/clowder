@@ -5,6 +5,7 @@ verify.email.content=Your team now has access to the full suite of Clowder funct
 you.title= My {0}
 home.title=My {0}
 following.title=Following {0}
+trial.title = Trial {0}
 owner.title = {0}''s {1}
 owner.in.resource.title={0}''s {1} in {2}  <a href="{3}">{4}</a>
 resource.in.title= {0} in {1} <a href="{2}">{3}</a>
@@ -14,7 +15,7 @@ collections.title=Collections
 collection.parent.title=Parent Collection
 spaces.title=Spaces
 space.title=Space
-trial.title = Trial {0}
+
 #Login page
 securesocial.login.useEmailAndPassword=Or login using an email and password.
 securesocial.login.useEmailAndPasswordOnly=Login using an email and password.
