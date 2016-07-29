@@ -465,7 +465,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
     implicit val user = request.user
     user match {
       case Some(clowderUser) => {
-        val title: Option[String] = Some(Messages("following.title", Messages(spaces.title)))
+        val title: Option[String] = Some(Messages("following.title", Messages("spaces.title")))
 
         var spaceList = new ListBuffer[ProjectSpace]()
         val spaceIds = clowderUser.followedEntities.filter(_.objectType == "'space")
