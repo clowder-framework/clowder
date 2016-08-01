@@ -1,5 +1,5 @@
 @(links: List[java.net.URL], space:models.ProjectSpace, classes: String)(implicit user: Option[models.User])
-
+@import play.api.i18n.Messages
 @import api.Permission
 
 <div class="@classes">
@@ -7,7 +7,7 @@
 <h3>External Links</h3>
 @if(links.size == 0) {
     @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
-        <p>Edit @{spaces.spaceTitle()} to add links</p>
+        <p>Edit @Messages("space.title") to add links</p>
     } else {
         <p>No External Links</p>
     }

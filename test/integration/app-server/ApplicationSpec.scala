@@ -4,6 +4,7 @@ import org.scalatestplus.play.{PlaySpec, _}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import play.api.{Application, Play}
+import play.api.i18n.Messages
 
 /**
  * Functional test. This throws an java.lang.IllegalStateException: cannot enqueue after timer shutdown due to the Akka timer
@@ -47,7 +48,7 @@ class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUplo
       /**
         * String name of the Space such as 'Project space' etc., parsed from the config file
         */
-      val spaceTitle: String = play.Play.application().configuration().getString("spaceTitle").trim.filter(_ >= ' ')
+      val spaceTitle: String = Messages("space.title")
 
       contentType(html) mustEqual ("text/html")
 

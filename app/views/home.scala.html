@@ -15,8 +15,8 @@
         <div class="button-margins">
             <a href="@routes.Profile.viewProfileUUID(profile.id)" class="btn btn-link" title="Show profile">
                 <span class="glyphicon glyphicon-user"></span> Profile</a>
-            <a href="@routes.Spaces.newSpace()" class="btn btn-link" title="Create a new @{spaces.spaceTitle()}">
-                <span class="glyphicon glyphicon-ok"></span> Create @{spaces.spaceTitle()}</a>
+            <a href="@routes.Spaces.newSpace()" class="btn btn-link" title="Create a new @Messages("space.title")">
+                <span class="glyphicon glyphicon-ok"></span> Create @Messages("space.title")</a>
             <a href="@routes.Datasets.newDataset(None, None)" class="btn btn-link" title="Create a new dataset">
                 <span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
             <a href="@routes.Collections.newCollection(None)" class="btn btn-link" title="Create a new collection">
@@ -51,7 +51,7 @@
                 @* spaces *@
                 <div class="row top-padding">
                     <div class="col-xs-12">
-                        <p>Use @{spaces.spaceTitle()}s to collaboratively work with your team to manage and annotate data.</p>
+                        <p>Use @Messages("spaces.title") to collaboratively work with your team to manage and annotate data.</p>
                     </div>
                     <div class="col-xs-6">
                     </div>
@@ -178,7 +178,7 @@
                             <h4 class="panel-title">
                                 <div class="row">
                                     <div class="col-xs-6">
-                                        <a data-toggle="collapse" data-parent="#accordion" href="#collapseSpaces">@{spaces.spaceTitle()}s</a>
+                                        <a data-toggle="collapse" data-parent="#accordion" href="#collapseSpaces">@Messages("spaces.title")</a>
                                     </div>
                                     <div class="col-xs-6">
                                         <span class="pull-right"> <a href="@routes.Spaces.followingSpaces(0, 12, "")">See More</a></span>

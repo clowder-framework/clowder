@@ -1,6 +1,8 @@
 @(spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection], showAccess: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import models.DatasetStatus
+@import play.api.i18n.Messages
+
 @main("Create Dataset") {
     <!-- Custom items for the create dataset workflow -->
     <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
@@ -16,8 +18,8 @@
     </div>
     <div class="row">
         <div class="col-md-12">
-            <p>Datasets are the primary way to organize files. Share the dataset with a @{spaces.spaceTitle()} to work with your team.
-                Permissions will be applied according to your @{spaces.spaceTitle()}'s settings.</p>
+            <p>Datasets are the primary way to organize files. Share the dataset with a @Messages("space.title") to work with your team.
+                Permissions will be applied according to your @Messages("space.title")'s settings.</p>
 
             @if(collection.isDefined){
                 <p>This dataset will be added to collection <a href="@routes.Collections.collection(collection.get.id)">@collection.get.name</a></p>
@@ -44,14 +46,14 @@
             <div class="form-group">
                 <label id="spacelabel" for="space">Share with
                     @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
-                        @{spaces.spaceTitle()}s
+                        @Messages("spaces.title")
                      } else {
-                        a @{spaces.spaceTitle()}
+                        a @Messages("space.title")
                     }
                 </label>
                 <select name="space" id="spaceid" class ="chosen-select" @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined){multiple}>
                 @if(!play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
-                    <option value="">Select a @spaces.spaceTitle().toString().filter(_ >= ' ') to share the dataset with (Optional)</option>
+                    <option value="">Select a @Messages("space.title") to share the dataset with (Optional)</option>
                 }
                 @spaceList.map { space =>
                         <option id="@(space.id)" value="@(space.id)">@(space.name)</option>
@@ -59,10 +61,10 @@
                     </select>
                 @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
                     <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
-                        this dataset with members of one @{spaces.spaceTitle()}. This is optional.</p>
+                        this dataset with members of one @Messages("space.title"). This is optional.</p>
                 } else {
                     <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
-                        this dataset with members of one or more @{spaces.spaceTitle()}s. This is optional.</p>
+                        this dataset with members of one or more @Messages("spaces.title"). This is optional.</p>
                 }
 
             </div>
