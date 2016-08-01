@@ -48,7 +48,7 @@ class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUplo
       /**
         * String name of the Space such as 'Project space' etc., parsed from the config file
         */
-      val spaceTitle: String = Messages("space.title")
+      val spaceTitle: String = Messages("spaces.title")
 
       contentType(html) mustEqual ("text/html")
 
