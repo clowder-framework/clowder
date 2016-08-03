@@ -14,6 +14,7 @@ import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
 import java.text.SimpleDateFormat
 import play.api.Play.current
+import play.api.libs.json.JsValue
 import org.elasticsearch.index.query.QueryStringQueryBuilder
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest
 
@@ -130,6 +131,47 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           .actionGet()
         Logger.info("Search hits: " + response.getHits().getTotalHits())
         response
+      }
+      case None => {
+        Logger.error("Could not call search because we are not connected.")
+        new SearchResponse()
+      }
+    }
+  }
+
+  def searchComplex(index: String, fields: Array[String], query: List[JsValue]): SearchResponse = {
+    connect
+    client match {
+      case Some(x) => {
+        Logger.info("Searching ElasticSearch for " + query)
+        //var qbqs = QueryBuilders.queryString(query)
+        //for (f <- fields) {
+        //  qbqs.field(f.trim())
+        //}
+
+        val qb = QueryBuilders.boolQuery()
+        query.foreach(jsq => {
+          val key = (jsq \ "field_key").toString
+          val operator = (jsq \ "operator").toString
+          val value = (jsq \ "field_value").toString
+          // Parse out key if it contains dot notation - of the format extractorName.{...nested fields...}.fieldName
+          var extractor = ""
+          var fieldKey = key
+          if (key contains '.') {
+            val keyTerms = key.split('.')
+            extractor = keyTerms.head + " AND " // "extractorName AND "
+            fieldKey = keyTerms.last // "fieldName"
+          }
+
+          operator match {
+            case ":" => qb.must(QueryBuilders.termQuery(fieldKey, value))
+            case "==" => qb.must(QueryBuilders.matchQuery(fieldKey, value))
+            case "!=" => qb.mustNot(QueryBuilders.termQuery(fieldKey, value))
+            case _ => {}
+          }
+        })
+
+        new SearchResponse()
       }
       case None => {
         Logger.error("Could not call search because we are not connected.")

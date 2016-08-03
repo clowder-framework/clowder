@@ -42,27 +42,50 @@ class Metadata @Inject()(
   }
 
   def searchByKeyValue(key: Option[String], value: Option[String], extractorName: Option[String], count: Int = 0) = PermissionAction(Permission.ViewDataset) {
-      implicit request =>
-        implicit val user = request.user
+    implicit request =>
+      implicit val user = request.user
 
-        val response = for {
-          k <- key
-          v <- value
-          e <- extractorName
-        } yield {
-          val results = metadataService.search(k, v, e, count, user)
-          val datasetsResults = results.flatMap { d =>
-            if (d.resourceType == ResourceRef.dataset) datasets.get(d.id) else None
-          }
-          val filesResults = results.flatMap { f =>
-            if (f.resourceType == ResourceRef.file) files.get(f.id) else None
-          }
-          import Dataset.datasetWrites
-          import File.FileWrites
-          // Use "distinct" to remove duplicate results.
-          Ok(JsObject(Seq("datasets" -> toJson(datasetsResults.distinct), "files" -> toJson(filesResults.distinct))))
+      val response = for {
+        k <- key
+        v <- value
+        e <- extractorName
+      } yield {
+        val results = metadataService.search(k, v, e, count, user)
+        val datasetsResults = results.flatMap { d =>
+          if (d.resourceType == ResourceRef.dataset) datasets.get(d.id) else None
         }
-        response getOrElse BadRequest(toJson("You must specify key and value"))
+        val filesResults = results.flatMap { f =>
+          if (f.resourceType == ResourceRef.file) files.get(f.id) else None
+        }
+        import Dataset.datasetWrites
+        import File.FileWrites
+        // Use "distinct" to remove duplicate results.
+        Ok(JsObject(Seq("datasets" -> toJson(datasetsResults.distinct), "files" -> toJson(filesResults.distinct))))
+      }
+      response getOrElse BadRequest(toJson("You must specify key and value"))
+  }
+
+  def searchByMultipleKeyValue(kvJson: String, joinType: String, count: Int = 0) = PermissionAction(Permission.ViewDataset) {
+    implicit request =>
+      implicit val user = request.user
+
+      Logger.debug("SBMKV")
+      Logger.debug(kvJson)
+      val queryList = Json.parse(kvJson).as[List[JsValue]]
+
+      val results = metadataService.searchMultiple(queryList, joinType, count, user)
+      val datasetsResults = results.flatMap { d =>
+        if (d.resourceType == ResourceRef.dataset) datasets.get(d.id) else None
+      }
+      val filesResults = results.flatMap { f =>
+        if (f.resourceType == ResourceRef.file) files.get(f.id) else None
+      }
+      import Dataset.datasetWrites
+      import File.FileWrites
+      // Use "distinct" to remove duplicate results.
+      Ok(JsObject(Seq("datasets" -> toJson(datasetsResults.distinct), "files" -> toJson(filesResults.distinct))))
+
+      //response getOrElse BadRequest(toJson("You must specify key and value"))
   }
 
   def getDefinitions() = PermissionAction(Permission.ViewDataset) {

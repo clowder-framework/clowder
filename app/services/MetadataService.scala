@@ -1,6 +1,6 @@
 package services
 
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsArray, JsValue}
 import models.{MetadataDefinition, ResourceRef, UUID, Metadata, User}
 
 /**
@@ -67,6 +67,9 @@ trait MetadataService {
 
   /** Search for resources by key value pairs in the content of the metadata document **/
   def search(key: String, value: String, extractorName: String, count: Int, user: Option[User]): List[ResourceRef]
+
+  /** Search for resources by key value pairs in the content of the metadata document **/
+  def searchMultiple(query: List[JsValue], joinType: String, count: Int, user: Option[User]): List[ResourceRef]
 
   /** Search for metadata that have a key in a dataset **/
   def searchbyKeyInDataset(key: String, datasetId: UUID): List[Metadata]

@@ -300,6 +300,8 @@ DELETE         /api/metadata.jsonld/:id                                         
 
 GET            /api/metadata/search                                                     @api.Metadata.searchByKeyValue(mdkey: Option[String], mdvalue: Option[String], extractorName: Option[String], count: Int ?= 10)
 GET            /api/metadata/search                                                     @api.Metadata.search()
+GET            /api/metadata/searchMulti                                                @api.Metadata.searchByMultipleKeyValue(kvJson: String, joinType: String, count: Int ?= 10)
+
 
 GET            /api/metadata/definitions                                                @api.Metadata.getDefinitions()
 GET            /api/metadata/distinctdefinitions                                        @api.Metadata.getDefinitionsDistinctName()

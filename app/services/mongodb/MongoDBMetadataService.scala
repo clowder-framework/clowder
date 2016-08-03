@@ -1,7 +1,7 @@
 package services.mongodb
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.util.JSON
-import org.bson.types.ObjectId
+import org.elasticsearch.action.search.SearchResponse
 import play.api.Logger
 import play.api.Play._
 import models._
@@ -13,9 +13,10 @@ import play.api.libs.json.{JsObject, JsString, Json, JsValue, JsArray}
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
-import services.MetadataService
-import services.{ContextLDService, DatasetService, FileService, FolderService, ExtractorMessage, RabbitmqPlugin}
+import services.{ContextLDService, DatasetService, FileService, FolderService, ExtractorMessage, RabbitmqPlugin, MetadataService, ElasticsearchPlugin}
 import api.Permission
+import scala.collection.mutable
+import scala.util.control.Breaks._
 
 /**
  * MongoDB Metadata Service Implementation
@@ -300,6 +301,67 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     }
     val resources: List[ResourceRef] = MetadataDAO.find(filter).limit(count).map(_.attachedTo).toList
     resources
+  }
+
+  def searchMultiple(query: List[JsValue], joinType: String, count: Int, user: Option[User]): List[ResourceRef] = {
+    Logger.debug("search multiple")
+    var results = mutable.MutableList[ResourceRef]()
+
+    current.plugin[ElasticsearchPlugin] match {
+      case Some(plugin) => {
+        var qString = ""
+
+        query.foreach(jsq => {
+          val extr = (jsq \ "extractor_key").toString
+          val key = (jsq \ "field_leaf_key").toString
+          val operator = (jsq \ "operator").toString
+          val value = (jsq \ "field_value").toString
+
+          // Prepend AND/OR if this is 2nd+ term of query
+          if (qString != "")
+            qString += joinType+" "
+          // Include extractor name in query if provided
+          if (extr == "null")
+            qString += "("+key+" AND "+value+") "
+          else
+            qString += "("+extr+" AND "+key+" AND "+value+") "
+        })
+
+        Logger.debug(qString)
+        plugin.searchComplex("data", Array[String]("metadata"), query)
+
+        val result: SearchResponse = plugin.search("data", Array[String]("metadata"), qString)
+        for (hit <- result.getHits().getHits()) {
+          // Check if search result has any metadata
+          // TODO: For 'Advanced Search' should this no longer be restricted to Metadata?
+          Logger.debug("HIT")
+          Logger.debug(hit.getSourceAsString)
+          val md = hit.getSource().get("metadata")
+          if (md != null) {
+            // Check if metadata has chosen key, filtering to specified extractor sub-metadata if necessary
+            var jtest = Json.parse(md.toString)
+            breakable {
+              query.foreach(jsq => {
+                val key = (jsq \ "field_leaf_key").toString.replace("\"", "")
+                val value = (jsq \ "field_value").toString.replace("\"", "")
+                val values: Seq[JsValue] = (jtest \\ key)
+
+                // Check if any keys found contain the value and add to results if so
+                values.map(v => {
+                  if (v.toString contains value) {
+                    // TODO: Check permissions of this resource before adding to list
+                    results += new ResourceRef(Symbol(hit.getType()), UUID(hit.getId()))
+                    break
+                  }
+                })
+              })
+            }
+          }
+        }
+      }
+      case None => Logger.error("ElasticSearch plugin could not be reached for metadata search")
+    }
+    results.toList
   }
 
   def searchbyKeyInDataset(key: String, datasetId: UUID): List[Metadata] = {
