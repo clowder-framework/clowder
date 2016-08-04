@@ -3,7 +3,7 @@
 @import models.DatasetStatus
 @import play.api.i18n.Messages
 
-@main("Create Dataset") {
+@main(Messages("create.title", Messages("dataset.title"))) {
     <!-- Custom items for the create dataset workflow -->
     <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
     <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
@@ -14,15 +14,14 @@
             var isDescRequired = @isDescriptionRequired;
     </script>
     <div class="page-header">
-        <h1>Create New Dataset</h1>
+        <h1>@Messages("create.header", Messages("dataset.title"))</h1>
     </div>
     <div class="row">
         <div class="col-md-12">
-            <p>Datasets are the primary way to organize files. Share the dataset with a @Messages("space.title") to work with your team.
-                Permissions will be applied according to your @Messages("space.title")'s settings.</p>
+            <p>@Messages("dataset.create.message", Messages("datasets.title"), Messages("dataset.title").toLowerCase, Messages("space.title"))</p>
 
             @if(collection.isDefined){
-                <p>This dataset will be added to collection <a href="@routes.Collections.collection(collection.get.id)">@collection.get.name</a></p>
+                <p>@Messages("dataset.create.collection.message", Messages("collection.title").toLowerCase) <a href="@routes.Collections.collection(collection.get.id)">@collection.get.name</a></p>
             }
         </div>
     </div>
@@ -53,18 +52,18 @@
                 </label>
                 <select name="space" id="spaceid" class ="chosen-select" @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined){multiple}>
                 @if(!play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
-                    <option value="">Select a @Messages("space.title") to share the dataset with (Optional)</option>
+                    <option value="">Select a @Messages("space.title") to share the @Messages("dataset.title").toLowerCase with (Optional)</option>
                 }
                 @spaceList.map { space =>
                         <option id="@(space.id)" value="@(space.id)">@(space.name)</option>
                     }
                     </select>
                 @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
-                    <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
-                        this dataset with members of one @Messages("space.title"). This is optional.</p>
+                    <p class="help-block">By default the @Messages("dataset.title").toLowerCase is only accessible to the user who created it. You can share
+                        this @Messages("dataset.title").toLowerCase  with members of one @Messages("space.title"). This is optional.</p>
                 } else {
-                    <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
-                        this dataset with members of one or more @Messages("spaces.title"). This is optional.</p>
+                    <p class="help-block">By default the @Messages("dataset.title").toLowerCase is only accessible to the user who created it. You can share
+                        this @Messages("dataset.title").toLowerCase  with members of one or more @Messages("spaces.title"). This is optional.</p>
                 }
 
             </div>

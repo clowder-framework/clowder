@@ -4,6 +4,8 @@ verify.email.contact.link=@routes.Application.email().absoluteURL(controllers.Ut
 verify.email.content=Your team now has access to the full suite of Clowder functionality, including publishing and making your data public.
 you.title= My {0}
 home.title=My {0}
+create.title= Create {0}
+create.header = Create New {0}
 following.title=Following {0}
 trial.title = Trial {0}
 owner.title = {0}''s {1}
@@ -11,10 +13,19 @@ owner.in.resource.title={0}''s {1} in {2}  <a href="{3}">{4}</a>
 resource.in.title= {0} in {1} <a href="{2}">{3}</a>
 list.title= {0}
 datasets.title=Datasets
+dataset.title=Dataset
 collections.title=Collections
+collection.title=Collection
 collection.parent.title=Parent Collection
 spaces.title=Spaces
 space.title=Space
+dataset.create.message={0} are the primary way to organize files. Share the {1} with a {2} to work with your team.  Permissions will be applied according to your {2}''s settings.
+dataset.create.collection.message=This dataset will be added to {0}
+collection.create.message={0} allow you to bring together multiple {1} and their associated files in an almost unlimited number of ways. Share a {2} to a {3} to work with your team. Permissions will be applied according to the {3}''s settings.
+dataset.home.message=
+collection.home.message=
+space.home.message=
+
 
 #Login page
 securesocial.login.useEmailAndPassword=Or login using an email and password.
