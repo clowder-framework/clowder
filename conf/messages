@@ -6,7 +6,7 @@ you.title= My {0}
 home.title=My {0}
 create.title= Create {0}
 create.header = Create New {0}
-following.title=Following {0}
+following.title=Following {0}c
 trial.title = Trial {0}
 owner.title = {0}''s {1}
 owner.in.resource.title={0}''s {1} in {2}  <a href="{3}">{4}</a>
@@ -22,9 +22,15 @@ space.title=Space
 dataset.create.message={0} are the primary way to organize files. Share the {1} with a {2} to work with your team.  Permissions will be applied according to your {2}''s settings.
 dataset.create.collection.message=This dataset will be added to {0}
 collection.create.message={0} allow you to bring together multiple {1} and their associated files in an almost unlimited number of ways. Share a {2} to a {3} to work with your team. Permissions will be applied according to the {3}''s settings.
-dataset.home.message=
-collection.home.message=
-space.home.message=
+space.create.message={0} are collaborative workspaces that contain people (with designated permissions), branding, and {1}.
+dataset.list.message=Create {0}s to upload and publish data. Further organize your data using folders and assign metadata at both the file and {0} level.
+collection.list.message=Use {0} to bring together multiple {1} and their associated files in an almost unlimited number of ways.
+space.list.message=Use {0} to collaboratively work with your team to manage and annotate data.
+home.empty.message=This area will show all {0}  you've created.
+recent.message=Viewing most recent {0}
+view.all = View All {0}
+a.in.b = {0} in the {1}
+a.contains.b= {0} containing the {1}
 
 
 #Login page

@@ -6,10 +6,10 @@
 @import models.SpaceStatus
 @import api.Permission
 
-@main("Space") {
+@main(title) {
   <div class="page-header">
     <h1>@title</h1>
-    <p>@Messages("spaces.title") are collaborative workspaces that contain people (with designated permissions), branding, and datasets.</p>
+    <p>@Messages("space.create.message", Messages("spaces.title"), Messages("datasets.title"))</p>
   </div>
   <div class="row">
     <div class="col-md-12">

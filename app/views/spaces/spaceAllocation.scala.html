@@ -7,16 +7,16 @@
         <div class="col-md-12">
         @if(resourceType == ResourceRef.collection) {
             @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
-                <h4> @Messages("space.title") containing the collection</h4>
+                <h4> @Messages("a.contains.b", Messages("space.title"), Messages("collection.title"))</h4>
             } else {
-                <h4>@Messages("spaces.title") containing the collection</h4>
+                <h4>@Messages("a.contains.b", Messages("spaces.title"), Messages("collection.title"))</h4>
             }
 
         } else {
             @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
-                <h4>@Messages("space.title") containing the dataset</h4>
+                <h4>@Messages("a.contains.b", Messages("space.title"), Messages("dataset.title"))</h4>
             } else {
-                <h4>@Messages("spaces.title") containing the dataset</h4>
+                <h4>@Messages("a.contains.b", Messages("spaces.title"), Messages("dataset.title"))</h4>
             }
         }
         </div>

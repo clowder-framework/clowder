@@ -1,7 +1,7 @@
 @(collections: List[Collection], space: String)(implicit user: Option[models.User])
 @import api.Permission
 @import play.api.i18n.Messages
-<h3>Collections in the @Messages("space.title")</h3>
+<h3>@Messages("a.in.b", Messages("collections.title"), Messages("space.title"))</h3>
 @if(collections.size == 0) {
     @if(user.isDefined && !Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
         <p>Please request access to add collections to this @Messages("space.title")</p>
