@@ -60,8 +60,11 @@
                         <option id = "@(space.id)" value="@(space.id)">@(space.name)</option>
                     }
                 </select>
-                <p class="help-block">By default the collection is only accessible to the user who created it. You can share
-                    this collection with members of one or more @Messages("spaces.title"). This is optional.</p>
+                @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+                    <p class="help-block">@Messages("create.share.multiple.message", Messages("collecion.title").toLowerCase, Messages("spaces.title"))</p>
+                } else {
+                    <p class="help-block">@Messages("create.share.one.message", Messages("collection.title").toLowerCase, Messages("space.title"))</p>
+                }
             </td>
         </tr>
         <tr>
@@ -69,7 +72,7 @@
             </td>
             <td>
                 <button style="margin-top: 10px; margin-right: 10px;" class="btn btn-primary" title="Create the collection" onclick="return createCollection();">
-                  <span class="glyphicon glyphicon-ok"></span> Create
+                  <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")
                 </button>
                 <button style="margin-top: 10px;" class="btn btn-default" title="Clear the input fields" onclick="return clearFields();">
                   <span class="glyphicon glyphicon-unchecked"></span> Reset

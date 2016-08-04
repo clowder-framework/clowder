@@ -59,11 +59,9 @@
                     }
                     </select>
                 @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
-                    <p class="help-block">By default the @Messages("dataset.title").toLowerCase is only accessible to the user who created it. You can share
-                        this @Messages("dataset.title").toLowerCase  with members of one @Messages("space.title"). This is optional.</p>
+                    <p class="help-block">@Messages("create.share.multiple.message", Messages("dataset.title").toLowerCase, Messages("spaces.title"))</p>
                 } else {
-                    <p class="help-block">By default the @Messages("dataset.title").toLowerCase is only accessible to the user who created it. You can share
-                        this @Messages("dataset.title").toLowerCase  with members of one or more @Messages("spaces.title"). This is optional.</p>
+                    <p class="help-block">@Messages("create.share.one.message", Messages("dataset.title").toLowerCase, Messages("space.title"))</p>
                 }
 
             </div>
@@ -80,7 +78,7 @@
     <div class="row">
         <div class="col-md-12">
             <button type="submit" class="btn btn-primary start"  id="createdataset" title="Create the Dataset">
-                <span class="glyphicon glyphicon-ok"></span> Create Dataset
+                <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")
             </button>
             <button class="btn btn-default" title="Start the dataset creation process over" onclick="return resetValues();">
                 <span class="glyphicon glyphicon-unchecked"></span> Reset

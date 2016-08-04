@@ -31,8 +31,8 @@ recent.message=Viewing most recent {0}
 view.all = View All {0}
 a.in.b = {0} in the {1}
 a.contains.b= {0} containing the {1}
-
-
+create.share.multiple.message=By default the {0} is only accessible to the user who created it. You can share this {0} with members of one or more {1}. This is optional.
+create.share.one.message=By default the {0} is only accessible to the user who created it. You can share this {0}  with members of one {1}. This is optional.
 #Login page
 securesocial.login.useEmailAndPassword=Or login using an email and password.
 securesocial.login.useEmailAndPasswordOnly=Login using an email and password.
