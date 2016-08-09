@@ -2153,7 +2153,8 @@ class  Datasets @Inject()(
       space.name
     }
     var desc = dataset.description.replaceAll("&nbsp;"," ")
-    desc = desc.replaceAll("\n"," ")
+    desc = desc.replaceAll("[\\n\\S]"," ")
+    desc = desc.replaceAll("\n","")
     val licenseInfo = Json.obj("licenseText"->dataset.licenseData.m_licenseText,"rightsHolder"->rightsHolder)
     Json.obj("id"->dataset.id,"name"->dataset.name,"author"->dataset.author.email,"description"->desc, "spaces"->spaceNames.mkString(","),"lastModified"->dataset.lastModifiedDate.toString,"license"->licenseInfo)
   }
