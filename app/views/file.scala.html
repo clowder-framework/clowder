@@ -575,7 +575,7 @@
 			<div class="row bottom-padding">
 				<div class="col-md-12">
 					<h4>Comments</h4>
-					@if(user.isDefined) {
+					@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
 						@commentform(file.id.toString, "file")
 					}
 					<ol class="list-unstyled" id="reply_@file.id.toString">
