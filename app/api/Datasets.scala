@@ -2154,12 +2154,16 @@ class  Datasets @Inject()(
     }
 
     var desc = dataset.description.replaceAll("&nbsp;"," ")
-    val orign = desc
     val first_pattern = "[\\n][\\S]".r
     val matches = first_pattern.findAllIn(desc)
     for (each <-matches){
       var current = each
-      current = current.replace("\n",", ")
+      if (play.Play.application().configuration().getBoolean("4ceedProject",false)){
+        current = current.replace("\n", ", ")
+      } else {
+        current = current.replace("\n"," ")
+      }
+
       desc = desc.replaceAll(each,current)
     }
     desc = desc.replaceAll("\n","")
