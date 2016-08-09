@@ -62,7 +62,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
               "Mimetype" -> Json.toJson(file.contentType),
               "Publication Date" -> Json.toJson(""),
               "External Identifier" -> Json.toJson(""),
-              "SHA512 Hash" -> Json.toJson(files.get(file.fileId).map{ f => f.sha512}),
+              "SHA512 Hash" -> Json.toJson(file.sha512),
               "@type" -> Json.toJson(Seq("AggregatedResource", "http://cet.ncsa.uiuc.edu/2015/File")),
               "Is Version Of" -> Json.toJson(controllers.routes.Files.file(file.fileId).absoluteURL(https) + "?key=" + key),
               "similarTo" -> Json.toJson(api.routes.Files.download(file.fileId).absoluteURL(https)  + "?key=" + key)
@@ -126,7 +126,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
             metadataJson = metadataJson ++ Map(key -> Json.toJson(metadataList.filter(_.label == key).map{item => item.content}toList))
           }
           val metadataDefsMap = scala.collection.mutable.Map.empty[String, JsValue]
-          for(md <- metadatas.getDefinitions()) {
+          for(md <- metadatas.getDefinitions(Some(c.space))) {
             metadataDefsMap((md.json\ "label").asOpt[String].getOrElse("").toString()) = Json.toJson((md.json \ "uri").asOpt[String].getOrElse(""))
           }
           if(metadataJson.contains("Creator")) {
@@ -430,7 +430,7 @@ class CurationObjects @Inject()(datasets: DatasetService,
                   Ok(toJson(Map("status" -> "OK")))
                 }
                 //multiple status
-                case _ => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object has unrecognized status .")))
+                case _ => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object has unrecognized status.")))
               }
 
             }
@@ -438,6 +438,28 @@ class CurationObjects @Inject()(datasets: DatasetService,
         }
         case None => BadRequest(toJson(Map("status" -> "ERROR", "message" -> "Curation object not found.")))
       }
+  }
+
+  def getMetadataDefinitions(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.curationObject, id))) { implicit request =>
+    implicit val user = request.user
+    curations.get(id) match {
+      case Some(curationObject) => {
+        val metadataDefinitions  = metadatas.getDefinitions(Some(curationObject.space))
+        Ok(toJson(metadataDefinitions.toList))
+      }
+      case None => BadRequest(toJson("The requested curation object does not exist"))
+    }
+  }
+
+  def getMetadataDefinitionsByFile(id: UUID) = PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.curationFile, id))) { implicit request =>
+    implicit val user = request.user
+    curations.getCurationByCurationFile(id) match {
+      case Some(curationObject) => {
+        val metadataDefinitions = metadatas.getDefinitions(Some(curationObject.space))
+        Ok(toJson(metadataDefinitions.toList))
+      }
+      case None => BadRequest(toJson("There is no curation object associated with that curationFile"))
+    }
   }
 
 }

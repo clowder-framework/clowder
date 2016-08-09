@@ -6,13 +6,16 @@ import api.Permission
 import models.{ResourceRef, UUID}
 import services._
 
+
 /**
  * View JSON-LD metadata for all resources.
  */
 class Metadata @Inject() (
   files: FileService,
   datasets: DatasetService,
-  metadata: MetadataService, contextLDService: ContextLDService) extends SecuredController {
+  spaces: SpaceService,
+  metadata: MetadataService,
+  contextLDService: ContextLDService) extends SecuredController {
 
   def view(id: UUID) = PermissionAction(Permission.ViewMetadata) { implicit request =>
     implicit val user = request.user
@@ -39,7 +42,7 @@ class Metadata @Inject() (
     }
   }
 
-  def dataset(dataset_id: UUID) = PermissionAction(Permission.ViewMetadata) { implicit request =>
+  def dataset(dataset_id: UUID) = PermissionAction(Permission.ViewMetadata, Some(ResourceRef(ResourceRef.dataset, dataset_id))) { implicit request =>
     implicit val user = request.user
     datasets.get(dataset_id) match {
       case Some(dataset) => {
@@ -54,4 +57,17 @@ class Metadata @Inject() (
     implicit val user = request.user
     Ok(views.html.metadatald.search())
   }
+
+  def getMetadataBySpace(id: UUID) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+    implicit val user = request.user
+    spaces.get(id) match {
+      case Some(space) => {
+        val metadataResults = metadata.getDefinitions(Some(id))
+        Ok(views.html.manageMetadataDefinitions(metadataResults.toList, Some(id), Some(space.name)))
+      }
+      case None => BadRequest("The requested space does not exist. Space Id: " + id)
+    }
+
+  }
+
 }

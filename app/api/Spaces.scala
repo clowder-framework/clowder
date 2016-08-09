@@ -11,7 +11,7 @@ import play.api.Play._
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import play.api.libs.json.Json.toJson
-import services.{EventService, AdminsNotifierPlugin, SpaceService, UserService, DatasetService, CollectionService}
+import services._
 import util.Mail
 import play.api.libs.json.JsResult
 import play.api.libs.json.JsSuccess
@@ -24,7 +24,7 @@ import scala.util.Try
  */
 @Api(value = "/spaces", listingPath = "/api-docs.json/spaces", description = "Spaces are groupings of collections and datasets.")
 class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetService: DatasetService,
-  collectionService: CollectionService, events: EventService) extends ApiController {
+  collectionService: CollectionService, events: EventService, datasets: DatasetService) extends ApiController {
 
   @ApiOperation(value = "Create a space",
     notes = "",
@@ -85,26 +85,26 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   @ApiOperation(value = "List spaces the user can view",
     notes = "Retrieves information about spaces",
     responseClass = "None", httpMethod = "GET")
-  def list(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true) { implicit request =>
-    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.ViewSpace), false, request.user, request.user.fold(false)(_.superAdminMode)).map(spaceToJson)))
+  def list(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=false) { implicit request =>
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.ViewSpace), false, request.user, request.user.fold(false)(_.superAdminMode), true).map(spaceToJson)))
   }
 
   @ApiOperation(value = "List spaces the user can add to",
     notes = "Retrieves a list of spaces that the user has permission to add to",
     responseClass = "None", httpMethod = "GET")
   def listCanEdit(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true) { implicit request =>
-    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.user.fold(false)(_.superAdminMode)).map(spaceToJson)))
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.user.fold(false)(_.superAdminMode), true).map(spaceToJson)))
   }
 
   def listCanEditNotAlreadyIn(collectionId : UUID, title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true ){ implicit request =>
-    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.user.fold(false)(_.superAdminMode)).map(spaceToJson)))
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.user.fold(false)(_.superAdminMode), true).map(spaceToJson)))
   }
 
   /**
    * Returns list of collections based on parameters and permissions.
    * TODO this needs to be cleaned up when do permissions for adding to a resource
    */
-  private def listSpaces(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], mine: Boolean, user: Option[User], superAdmin: Boolean) : List[ProjectSpace] = {
+  private def listSpaces(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], mine: Boolean, user: Option[User], superAdmin: Boolean, showPublic: Boolean, onlyTrial: Boolean = false) : List[ProjectSpace] = {
     if (mine && user.isEmpty) return List.empty[ProjectSpace]
 
     (title, date) match {
@@ -112,25 +112,25 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         if (mine)
           spaces.listUser(d, true, limit, t, user, superAdmin, user.get)
         else
-          spaces.listAccess(d, true, limit, t, permission, user, superAdmin)
+          spaces.listAccess(d, true, limit, t, permission, user, superAdmin, showPublic)
       }
       case (Some(t), None) => {
         if (mine)
           spaces.listUser(limit, t, user, superAdmin, user.get)
         else
-          spaces.listAccess(limit, t, permission, user, superAdmin)
+          spaces.listAccess(limit, t, permission, user, superAdmin, showPublic)
       }
       case (None, Some(d)) => {
         if (mine)
           spaces.listUser(d, true, limit, user, superAdmin, user.get)
         else
-          spaces.listAccess(d, true, limit, permission, user, superAdmin)
+          spaces.listAccess(d, true, limit, permission, user, superAdmin, showPublic, onlyTrial)
       }
       case (None, None) => {
         if (mine)
           spaces.listUser(limit, user, superAdmin, user.get)
         else
-          spaces.listAccess(limit, permission, user, superAdmin)
+          spaces.listAccess(limit, permission, user, superAdmin, showPublic, onlyTrial)
       }
     }
   }
@@ -229,6 +229,25 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     }
   }
 
+
+  @ApiOperation(value = "List UUIDs of all datasets in a space",
+    notes = "",
+    responseClass = "List", httpMethod = "GET")
+  def listDatasets(spaceId: UUID, limit: Integer) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+    val datasetList = datasets.listSpace(limit, spaceId.stringify)
+    Ok(toJson(datasetList))
+  }
+
+
+  @ApiOperation(value = "List UUIDs of all collections in a space",
+    notes = "",
+    responseClass = "List", httpMethod = "GET")
+  def listCollections(spaceId: UUID, limit: Integer) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+    val collectionList = collectionService.listSpace(limit, spaceId.stringify)
+    Ok(toJson(collectionList))
+  }
+
+
   @ApiOperation(value = "Remove a dataset from a space",
   notes = "",
   responseClass = "None", httpMethod = "POST")
@@ -237,7 +256,8 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       case (Some(s), Some(d)) => {
         spaces.removeDataset(datasetId, spaceId)
         events.addSourceEvent(request.user ,  d.id, d.name, s.id, s.name, "remove_dataset_space")
-        Ok(toJson("success"))
+
+        Ok(Json.obj("isTrial"-> datasets.get(datasetId).exists(_.isTRIAL).toString))
       }
       case (_, _) => NotFound
     }
@@ -268,6 +288,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       var name: String = null
       var timeAsString: String = null
       var enabled: Boolean = false
+      var access: String = SpaceStatus.PRIVATE.toString
 
       var aResult: JsResult[String] = (request.body \ "description").validate[String]
 
@@ -319,14 +340,28 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         }
       }
 
-      Logger.debug(s"updateInformation for dataset with id  $spaceid. Args are $description, $name, $enabled, and $timeAsString")
+      (request.body \ "access").validate[String] match {
+        case b: JsSuccess[String] => {
+          access = b.get
+        }
+        case e: JsError => {
+          Logger.error("Errors: " + JsError.toFlatJson(e).toString())
+          BadRequest(toJson("access data is missing from the updateSpace call."))
+        }
+      }
+
+      if (spaces.get(spaceid).map(_.isTrial).getOrElse(true) == true ){
+        access = SpaceStatus.TRIAL.toString
+      }
+
+      Logger.debug(s"updateInformation for space with id  $spaceid. Args are $description, $name, $enabled, $timeAsString and $access")
 
       //Generate the expiration time and the boolean flag
       val timeToLive = timeAsString.toInt * 60 * 60 * 1000L
       //val expireEnabled = enabledAsString.toBoolean
       Logger.debug("converted values are " + timeToLive + " and " + enabled)
 
-      spaces.updateSpaceConfiguration(spaceid, name, description, timeToLive, enabled)
+      spaces.updateSpaceConfiguration(spaceid, name, description, timeToLive, enabled, access)
       events.addObjectEvent(request.user, spaceid, name, "update_space_information")
       Ok(Json.obj("status" -> "success"))
     }
@@ -458,7 +493,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
 
 
   @ApiOperation(value = "Remove a user from a space", notes = "",
-    responseClass = "None", httpMethod = "GET")
+    responseClass = "None", httpMethod = "POST")
   def removeUser(spaceId: UUID, removeUser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
     val user = request.user
     if(spaces.getRoleForUserInSpace(spaceId, UUID(removeUser)) != None){
@@ -505,7 +540,6 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   }
 
 
-
   @ApiOperation(value = "Unfollow space",
     notes = "Remove user from space followers and remove space from user followed spaces.",
     responseClass = "None", httpMethod = "POST")
@@ -532,6 +566,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     }
   }
 
+
   def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
     val followeeModel = spaces.get(followeeUUID)
     followeeModel match {
@@ -543,6 +578,100 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       }
       case None => {
         List.empty
+      }
+    }
+  }
+
+
+  @ApiOperation(value = "Accept Request",
+    notes = "Accept user's request to the space and assign a specific Role, remove the request and send email to the request user",
+    responseClass = "None", httpMethod = "POST")
+  def acceptRequest(id:UUID, requestuser:String, role:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+    implicit val user = request.user
+    spaces.get(id) match {
+      case Some(s) => {
+        Logger.debug("request submitted in api.Space.acceptrequest ")
+        userService.get(UUID(requestuser)) match {
+          case Some(requestUser) => {
+            events.addRequestEvent(user, requestUser, id, s.name, "acceptrequest_space")
+            spaces.removeRequest(id, requestUser.id)
+            userService.findRoleByName(role) match {
+              case Some(r) => spaces.addUser(requestUser.id, r, id)
+              case _ => Logger.debug("Role not found" + role)
+            }
+            if(requestUser.email.isDefined) {
+              val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Accepted"
+              val recipient: String = requestUser.email.get.toString
+              val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "accepted your request and assigned you as " + role + " to")
+              Mail.sendEmail(subject, request.user, recipient, body)
+            }
+            Ok(Json.obj("status" -> "success"))
+          }
+          case None => InternalServerError("Request user not found")
+        }
+      }
+      case None => NotFound("Space not found")
+    }
+  }
+
+  @ApiOperation(value = "Reject Request",
+    notes = "Reject user's request to the space, remove the request and send email to the request user",
+    responseClass = "None", httpMethod = "POST")
+  def rejectRequest(id:UUID, requestuser:String) = PermissionAction(Permission.EditSpace, Some(ResourceRef(ResourceRef.space, id))) { implicit request =>
+    implicit val user = request.user
+    spaces.get(id) match {
+      case Some(s) => {
+        Logger.debug("request submitted in api.Space.rejectRequest")
+        userService.get(UUID(requestuser)) match {
+          case Some(requestUser) => {
+            events.addRequestEvent(user, requestUser, id, spaces.get(id).get.name, "rejectrequest_space")
+            spaces.removeRequest(id, requestUser.id)
+            if(requestUser.email.isDefined) {
+              val subject: String = "Authorization Request from " + AppConfiguration.getDisplayName + " Rejected"
+              val recipient: String = requestUser.email.get.toString
+              val body = views.html.spaces.requestresponseemail(user.get, id.toString, s.name, "rejected your request to")
+              Mail.sendEmail(subject, request.user, recipient, body)
+            }
+            Ok(Json.obj("status" -> "success"))
+          }
+          case None => InternalServerError("Request user not found")
+        }
+      }
+      case None => NotFound("Space not found")
+    }
+  }
+
+  @ApiOperation(value = "change the access of dataset",
+    notes = "Downloads all files contained in a dataset.",
+    responseClass = "None", httpMethod = "PUT")
+  def verifySpace(id:UUID) = ServerAdminAction { implicit request =>
+    implicit val user = request.user
+    user match {
+      case Some(loggedInUser) => {
+        spaces.get(id) match {
+          case Some(s) if s.isTrial => {
+            spaces.update(s.copy(status = SpaceStatus.PRIVATE.toString))
+            //set datasets in this space as verified status
+            datasetService.listSpace(0, s.id.toString()).map{ d =>
+              if(d.isTRIAL) {
+                datasetService.update(d.copy(status = DatasetStatus.DEFAULT.toString))
+              }
+            }
+
+            userService.listUsersInSpace(s.id).map { member =>
+              val theHtml = views.html.spaces.verifySpaceEmail(s.id.stringify, s.name, member.getMiniUser.fullName)
+              Mail.sendEmail("Space Status update", request.user, member, theHtml)
+            }
+            Ok(toJson(Map("status" -> "success")))
+          }
+          // If the space wasn't found by ID
+          case _ => {
+            BadRequest("Verify space failed")
+          }
+        }
+      }
+      case None => {
+        Unauthorized
       }
     }
   }

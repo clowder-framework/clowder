@@ -3,6 +3,7 @@ package services
 import java.io.InputStream
 
 import models.UUID
+import play.api.Logger
 
 /**
  * Interface to store bytes. This is used by other services that store the metadata
@@ -11,10 +12,10 @@ import models.UUID
  */
 trait ByteStorageService {
   /**
-   * Save the inputstream, returns a (path, sha512, length) to where the bytes are stored. The
+   * Save the inputstream, returns a (path, length) to where the bytes are stored. The
    * path can be later used to load/delete the bytes
    */
-  def save(inputStream: InputStream, prefix: String): Option[(String, String, Long)]
+  def save(inputStream: InputStream, prefix: String): Option[(String, Long)]
 
   /**
    * Load the bytes from the backing storage, returns an InputStream. The path
@@ -32,9 +33,9 @@ trait ByteStorageService {
 object ByteStorageService {
   lazy val storage: ByteStorageService = DI.injector.getInstance(classOf[ByteStorageService])
 
-  /** returns (loader_id, loader, sha1512, length) */
+  /** returns (loader_id, loader, length) */
   def save(inputStream: InputStream, prefix: String) = {
-    storage.save(inputStream, prefix).map(x => (x._1, storage.getClass.getName, x._2, x._3))
+    storage.save(inputStream, prefix).map(x => (x._1, storage.getClass.getName, x._2))
   }
 
   /** returns the inputstream */
@@ -45,7 +46,14 @@ object ByteStorageService {
 
   /** delete the blob */
   def delete(loader: String, path: String, prefix: String): Boolean = {
-    val bss = Class.forName(loader).newInstance.asInstanceOf[ByteStorageService]
-    bss.delete(path, prefix)
+    try {
+      val bss = Class.forName(loader).newInstance.asInstanceOf[ByteStorageService]
+      bss.delete(path, prefix)
+    } catch {
+      case t: Throwable => {
+        Logger.error(s"Error deleting : loader=${loader} path=${path} prefix=${prefix}", t)
+        throw t
+      }
+    }
   }
 }

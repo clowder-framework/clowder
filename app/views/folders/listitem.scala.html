@@ -1,15 +1,15 @@
 @(folder: Folder, parentDataset: UUID)(implicit user: Option[models.User])
 
 @import api.Permission
-<div class="panel panel-default" id="@folder.id-listitem">
+<div class="panel panel-default folder-panel" id="@folder.id-listitem">
     <div class="panel-body">
         <div class="row">
             <div class="col-md-2 col-sm-2 col-lg-2">
-                <h1 class="text-center">
+
                     <a href="javascript:updatePageAndFolder(0, '@folder.id.stringify')">
-                        <span class="glyphicon glyphicon-folder-close"></span>
+                        <span class="bigicon glyphicon glyphicon-folder-close"></span>
                     </a>
-                </h1>
+
             </div>
             <div class="col-md-10 col-sm-10 col-lg-10">
                 <div id="folder-title-@folder.id">
@@ -33,7 +33,7 @@
                                 <span class="glyphicon glyphicon-file"></span> @folder.files.length
                                 @if(user.isDefined) {
                                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, parentDataset))){
-                                        <button onclick="confirmDeleteResource('folder','@(folder.id)','@(folder.displayName.replace("'","&#39;"))', '@parentDataset', '/')" class="btn btn-link" title="Delete folder">
+                                        <button onclick="confirmDeleteResource('folder','folder','@(folder.id)','@(folder.displayName.replace("'","&#39;"))', '@parentDataset', '/')" class="btn btn-link" title="Delete folder">
                                             <span class="glyphicon glyphicon-trash"></span></button>
                                     } else {
                                         <div class="inline" title="No permission to delete the folder">

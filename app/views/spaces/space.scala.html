@@ -19,18 +19,21 @@
         </div>
     }
 
-    <div class="row space-head vertical-align">
-        <div class="col-md-12 col-lg-12 col-sm-12">
-            <h1 id="spacenamedisplay">@space.name</h1>
+    <div class="row vertical-align">
+
+            <div class="col-md-12 col-lg-12 col-sm-12">
+                <h1 id="spacenamedisplay" class="space-title"><span class="glyphicon glyphicon-tent"></span> @space.name</h1>
             <p><span id="spacedescdisplay">@space.description</span></p>
-            <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-            @if(user.isDefined && Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
-                <button id="deleteButton" onclick="confirmDeleteResource('space','@(space.id)','@(space.name.replace("'","&#39;"))',true, '@(routes.Spaces.list(""))')"
-                    class="btn btn-link btn-sm" title="Delete the space but not its contents">
+            <hr/>
+            @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
+                @if(user.isDefined && Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
+                    <button id="deleteButton" onclick="confirmDeleteResource('space','@(spaceTitle)','@(space.id)','@(space.name.replace("'","&#39;"))',true, '@(routes.Spaces.list(""))')"
+                        class="btn btn-link" title="Delete the @spaceTitle but not its contents">
+                              <span class="glyphicon glyphicon-trash"></span> Delete</button>
+                } else {
+                    <button disabled id="deleteButton" class="btn btn-link" title="Delete the @spaceTitle but not its contents">
                         <span class="glyphicon glyphicon-trash"></span> Delete</button>
-            } else {
-                <button disabled id="deleteButton" class="btn btn-link btn-sm" title="Delete the space but not its contents">
-                        <span class="glyphicon glyphicon-trash"></span> Delete</button>
+                }
             }
             @if(user.isDefined && Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))){
                 <a id="create_dataset" href="@routes.Datasets.newDataset(Some(space.id.toString()), None)" class="btn btn-link" title="Create dataset">
@@ -40,15 +43,15 @@
             }
         </div>
     </div>
-
+    <hr/>
     <div class="row">
-        <div class="col-md-8 col-lg-8 col-sm-8 space-col-left">
-            @spaces.collectionsBySpace(collections, space.id.stringify)
+        <div class="col-md-8 col-lg-8 col-sm-8">
             @spaces.datasetsBySpace(datasets, space.id.stringify)
+            @spaces.collectionsBySpace(collections, space.id.stringify)
         </div>
-        <div class="col-md-4 col-lg-4 col-sm-4 space-col-right">
+        <div class="col-md-4 col-lg-4 col-sm-4">
             @spaces.otherActions(space, userRoleMap)
-            @spaces.externalLinks(space.homePage)
+            @spaces.externalLinks(space.homePage, space, "row ds-section-sm break-word space-col-right")
             @if(play.api.Play.configuration.getBoolean("enable_expiration").getOrElse(false)) {
                 @spaces.spaceConfiguration(space)
             }
@@ -76,6 +79,7 @@
 
         $(document).ready(function () {
             activate();
+
         });
 
         // fire when showing from tab

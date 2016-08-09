@@ -35,7 +35,7 @@
     <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
     <script>
         // metadata definitions
-        var request = jsRoutes.api.Metadata.getDefinitions().ajax({
+        var request = jsRoutes.api.Metadata.getDefinitionsDistinctName().ajax({
             type: 'GET',
             contentType: "application/json"
         });
@@ -52,6 +52,7 @@
             }
             // chosen pulldown configuration
             $("#add-metadata-select").chosen({
+                add_search_option: true,
                 no_results_text: "Press enter to define new key",
                 search_contains: true,
                 width: "100%",

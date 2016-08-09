@@ -135,7 +135,10 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
   }
 
   def getCurationByCurationFile(curationFileId: UUID): Option[CurationObject] = {
-    CurationDAO.findOne(MongoDBObject("files" ->  new ObjectId(curationFileId.stringify)))
+    CurationFolderDAO.findOne(MongoDBObject("files" ->  new ObjectId(curationFileId.stringify))) match {
+      case Some(cf) =>  CurationDAO.findOne(MongoDBObject("_id" ->  new ObjectId(cf.parentCurationObjectId.stringify)))
+      case None => CurationDAO.findOne(MongoDBObject("files" ->  new ObjectId(curationFileId.stringify)))
+    }
   }
 
   def addCurationFile(parentType: String, parentId: UUID, curationFileId: UUID) = {

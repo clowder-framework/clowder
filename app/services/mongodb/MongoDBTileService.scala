@@ -63,7 +63,7 @@ class MongoDBTileService @Inject() (previews: PreviewService, storage: ByteStora
   def save(inputStream: InputStream, filename: String, contentType: Option[String]): String = {
     ByteStorageService.save(inputStream, TileDAO.COLLECTION) match {
       case Some(x) => {
-        val tile = Tile(UUID.generate(), x._1, x._2, None, Some(filename), FileUtils.getContentType(filename, contentType), None, x._4)
+        val tile = Tile(UUID.generate(), x._1, x._2, None, Some(filename), FileUtils.getContentType(filename, contentType), None, x._3)
         TileDAO.save(tile)
         tile.id.stringify
       }

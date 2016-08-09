@@ -17,6 +17,7 @@ object Permission extends Enumeration {
     CreateSpace,
     DeleteSpace,
     EditSpace,
+    PublicSpace,
     AddResourceToSpace,
     EditStagingArea,
 
@@ -25,6 +26,7 @@ object Permission extends Enumeration {
     CreateDataset,
     DeleteDataset,
     EditDataset,
+    PublicDataset,
     AddResourceToDataset,
     ExecuteOnDataset,
 
@@ -84,8 +86,11 @@ object Permission extends Enumeration {
     ViewUser,
     EditUser = Value
 
-  val READONLY = Set[Permission](ViewCollection, ViewComments, ViewDataset, ViewFile, ViewGeoStream, ViewMetadata,
-    ViewSection, ViewSpace, ViewTags, ViewUser)
+  var READONLY = Set[Permission](ViewCollection, ViewComments, ViewDataset, ViewFile, ViewGeoStream, ViewMetadata,
+    ViewSection, ViewSpace, ViewTags, ViewUser )
+  if( play.Play.application().configuration().getBoolean("allowAnonymousDownload")) {
+     READONLY += DownloadFiles
+  }
 
   lazy val files: FileService = DI.injector.getInstance(classOf[FileService])
   lazy val previews: PreviewService = DI.injector.getInstance(classOf[PreviewService])
@@ -154,7 +159,7 @@ object Permission extends Enumeration {
       }
       case (Some(u), "private", Some(r)) => checkPermission(u, permission, r)
       case (Some(_), _, None) => true
-      case (None, "private", Some(res)) => checkPrivatePermissions(permission, res)
+      case (None, "private", Some(res)) => checkAnonymousPrivatePermissions(permission, res)
       case (None, "public", _) => READONLY.contains(permission)
       case (_, p, _) => {
         Logger.error("Invalid permission scheme " + p)
@@ -162,19 +167,54 @@ object Permission extends Enumeration {
       }
     }
   }
-
-  def checkPrivatePermissions(permission: Permission, resourceRef: ResourceRef): Boolean = {
+  //check the permisssion when permission = private & user is anonymous.
+  def checkAnonymousPrivatePermissions(permission: Permission, resourceRef: ResourceRef): Boolean = {
     // if not readonly, don't let user in
     if (!READONLY.contains(permission)) return false
     // check specific resource
     resourceRef match {
-      case ResourceRef(ResourceRef.file, id) => false
-      case ResourceRef(ResourceRef.dataset, id) => false // TODO check if dataset is public datasets.get(r.id).isPublic()
-      case ResourceRef(ResourceRef.collection, id) => false
-      case ResourceRef(ResourceRef.space, id) => false
-      case ResourceRef(ResourceRef.comment, id) => false
-      case ResourceRef(ResourceRef.section, id) => false
-      case ResourceRef(ResourceRef.preview, id) => false
+      case ResourceRef(ResourceRef.file, id) => { val dataset =
+        (folders.findByFileId(id).map(folder => datasets.get(folder.parentDatasetId)).flatten ++ datasets.findByFileId(id)).head
+        dataset.isPublic || (dataset.isDefault && dataset.spaces.find(sId => spaces.get(sId).exists(_.isPublic)).nonEmpty)
+      }
+      case ResourceRef(ResourceRef.dataset, id) => datasets.get(id).exists(dataset => dataset.isPublic || (dataset.isDefault && dataset.spaces.find(sId => spaces.get(sId).exists(_.isPublic)).nonEmpty)) // TODO check if dataset is public datasets.get(r.id).isPublic()
+      case ResourceRef(ResourceRef.collection, id) =>  collections.get(id).exists(collection => collection.spaces.find(sId => spaces.get(sId).exists(_.isPublic)).nonEmpty)
+      case ResourceRef(ResourceRef.space, id) => spaces.get(id).exists(s=>s.isPublic)
+      case ResourceRef(ResourceRef.comment, id) => {
+        comments.get(id) match {
+          case Some(comment) => {
+            (comment.dataset_id, comment.file_id) match {
+              case (Some(d_id), None) => checkAnonymousPrivatePermissions(permission, ResourceRef(ResourceRef.dataset, d_id))
+              case (None, Some(f_id)) => checkAnonymousPrivatePermissions(permission, ResourceRef(ResourceRef.file, f_id))
+              case (_, _) => false
+            }
+          }
+          case None => false
+        }
+      }
+      case ResourceRef(ResourceRef.section, id) => {
+        sections.get(id) match {
+          case Some(s) => {
+            checkAnonymousPrivatePermissions(permission, ResourceRef(ResourceRef.file, s.file_id))
+          }
+          case None => false
+        }
+      }
+      case ResourceRef(ResourceRef.preview, id) => {
+        previews.get(id) match {
+          case Some(preview) => {
+            (preview.file_id, preview.dataset_id, preview.collection_id, preview.section_id) match {
+              case (Some(f_id), None, None, None) => checkAnonymousPrivatePermissions(permission, ResourceRef(ResourceRef.file, f_id))
+              case (None, Some(d_id), None, None) => checkAnonymousPrivatePermissions(permission, ResourceRef(ResourceRef.dataset, d_id))
+              case (None, None, Some(c_id), None) => checkAnonymousPrivatePermissions(permission, ResourceRef(ResourceRef.collection, c_id))
+              case (None, None, None, Some(p_id)) => checkAnonymousPrivatePermissions(permission, ResourceRef(ResourceRef.section, p_id))
+              case (_, _, _, _) => false
+            }
+          }
+          case None => false
+        }
+      }
+      case ResourceRef(ResourceRef.thumbnail, id) => true
       case ResourceRef(resType, id) => {
         Logger.error("Unrecognized resource type " + resType)
         false
@@ -225,6 +265,8 @@ object Permission extends Enumeration {
       case ResourceRef(ResourceRef.file, id) => {
         for (clowderUser <- getUserByIdentity(user)) {
           datasets.findByFileId(id).foreach { dataset =>
+            if ((dataset.isPublic || (dataset.isDefault && dataset.spaces.find(sid => spaces.get(sid).exists(_.isPublic)).nonEmpty))
+              && READONLY.contains(permission)) return true
             dataset.spaces.map{
               spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
                 if(role.permissions.contains(permission.toString))
@@ -234,6 +276,8 @@ object Permission extends Enumeration {
           }
           folders.findByFileId(id).foreach { folder =>
             datasets.get(folder.parentDatasetId).foreach { dataset =>
+              if ((dataset.isPublic || (dataset.isDefault && dataset.spaces.find(sid => spaces.get(sid).exists(_.isPublic)).nonEmpty))
+                && READONLY.contains(permission)) return true
               dataset.spaces.map {
                 spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
                   if(role.permissions.contains(permission.toString))
@@ -249,6 +293,8 @@ object Permission extends Enumeration {
         datasets.get(id) match {
           case None => false
           case Some(dataset) => {
+            if ((dataset.isPublic || (dataset.isDefault && dataset.spaces.find(sid => spaces.get(sid).exists(_.isPublic)).nonEmpty))
+              && READONLY.contains(permission)) return true
             for (clowderUser <- getUserByIdentity(user)) {
               dataset.spaces.map {
                 spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
@@ -265,7 +311,10 @@ object Permission extends Enumeration {
         collections.get(id) match {
           case None => false
           case Some(collection) => {
-            for (clowderUser <- getUserByIdentity(user)) {
+            if ((collection.spaces.find(sid => spaces.get(sid).exists(_.isPublic)).nonEmpty)
+              && READONLY.contains(permission)) return true
+
+              for (clowderUser <- getUserByIdentity(user)) {
               collection.spaces.map {
                 spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
                   if (role.permissions.contains(permission.toString))
@@ -281,6 +330,7 @@ object Permission extends Enumeration {
         spaces.get(id) match {
           case None => false
           case Some(space) => {
+            if (space.isPublic && READONLY.contains(permission)) return true
             val hasPermission: Option[Boolean] = for {clowderUser <- getUserByIdentity(user)
                                                       role <- users.getUserRoleInSpace(clowderUser.id, space.id)
                                                       if role.permissions.contains(permission.toString)
@@ -290,34 +340,16 @@ object Permission extends Enumeration {
         }
       }
       case ResourceRef(ResourceRef.comment, id) => {
-        val comment = comments.get(id)
-        if(comment.get.dataset_id.isDefined) {
-          for (clowderUser <- getUserByIdentity(user)) {
-            for (dataset <- datasets.get(comment.get.dataset_id.get)) {
-              dataset.spaces.map {
-                spaceId => for (role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
-                  if (role.permissions.contains(permission.toString)) {
-                    return true
-                  }
-                }
-              }
+        comments.get(id) match {
+          case Some(comment) => {
+            (comment.dataset_id, comment.file_id) match {
+              case (Some(d_id), None) => checkPermission(user, permission, ResourceRef(ResourceRef.dataset, d_id))
+              case (None, Some(f_id)) => checkPermission(user, permission, ResourceRef(ResourceRef.file, f_id))
+              case (_, _) => false
             }
           }
+          case None => false
         }
-        else if(comment.get.file_id.isDefined) {
-          val datasetList = datasets.findByFileId(comment.get.file_id.get)
-          for (clowderUser <- getUserByIdentity(user)) {
-            datasetList.flatMap(_.spaces).map {
-              spaceId => for(role <- users.getUserRoleInSpace(clowderUser.id, spaceId)) {
-                  if(role.permissions.contains(permission.toString)) {
-                    return true
-                  }
-                }
-
-            }
-          }
-        }
-        false
       }
 
       case ResourceRef(ResourceRef.curationObject, id) => {
@@ -348,12 +380,13 @@ object Permission extends Enumeration {
             if (id == user.id) {
               true
             } else {
+              var returnValue = false
               u.spaceandrole.map { space_role =>
                 if (space_role.role.permissions.contains(permission.toString)) {
-                  true
+                  returnValue =  true
                 }
               }
-              false
+              returnValue
             }
           }
           case None => false

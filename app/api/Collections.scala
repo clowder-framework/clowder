@@ -82,9 +82,11 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
                 case Some(dataset) => {
                   events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "attach_dataset_collection")
                 }
+                case None =>
               }
               datasetsInCollection = collection.datasetCount
             }
+            case None =>
           }
           //datasetsInCollection is the number of datasets in this collection
           Ok(Json.obj("datasetsInCollection" -> Json.toJson(datasetsInCollection) ))
@@ -129,8 +131,10 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
             case Some(dataset) => {
               events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "remove_dataset_collection")
             }
+            case None =>
           }
         }
+        case None =>
       }
       Ok(toJson(Map("status" -> "success")))
     }
@@ -164,12 +168,36 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
     Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.ViewCollection), false, request.user, request.user.fold(false)(_.superAdminMode))))
   }
-
   @ApiOperation(value = "List all collections the user can edit",
     notes = "This will check for Permission.AddResourceToCollection and Permission.EditCollection",
     responseClass = "None", httpMethod = "GET")
   def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
     Ok(toJson(lisCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.user.fold(false)(_.superAdminMode))))
+  }
+
+  def addDatasetToCollectionOptions(datasetId: UUID, title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+    implicit val user = request.user
+    var listAll = false
+    var collectionList: List[Collection] = List.empty
+    if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+      listAll = true
+    } else {
+      datasets.get(datasetId) match {
+        case Some(dataset) => {
+          if(dataset.spaces.length > 0) {
+            collectionList = collections.listInSpaceList(title, date, limit, dataset.spaces, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), user)
+          } else {
+            listAll = true
+          }
+
+        }
+        case None => Logger.debug("The dataset was not found")
+      }
+    }
+    if(listAll) {
+      collectionList = lisCollections(title, date, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.user.fold(false)(_.superAdminMode))
+    }
+    Ok(toJson(collectionList))
   }
 
 
@@ -180,7 +208,23 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     val selfAndAncestors = collections.getSelfAndAncestors(UUID(currentCollectionId))
     val descendants = collections.getAllDescendants(UUID(currentCollectionId)).toList
     val allCollections = lisCollections(None, None, limit, Set[Permission](Permission.AddResourceToCollection, Permission.EditCollection), false, request.user, request.user.fold(false)(_.superAdminMode))
-    val possibleNewParents = allCollections.filter((c: Collection) => (!selfAndAncestors.contains(c) && !descendants.contains(c)))
+    val possibleNewParents = allCollections.filter((c: Collection) =>
+      if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
+        (!selfAndAncestors.contains(c) && !descendants.contains(c))
+      } else {
+            collections.get(UUID(currentCollectionId)) match {
+              case Some(coll) => {
+                if(coll.spaces.length == 0) {
+                   (!selfAndAncestors.contains(c) && !descendants.contains(c))
+
+                } else {
+                   (!selfAndAncestors.contains(c) && !descendants.contains(c) && c.spaces.intersect(coll.spaces).length > 0)
+                }
+              }
+              case None => (!selfAndAncestors.contains(c) && !descendants.contains(c))
+            }
+      }
+    )
     Ok(toJson(possibleNewParents))
   }
 
@@ -198,25 +242,25 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
         if (mine)
           collections.listUser(d, true, limit, t, user, superAdmin, user.get)
         else
-          collections.listAccess(d, true, limit, t, permission, user, superAdmin)
+          collections.listAccess(d, true, limit, t, permission, user, superAdmin, true)
       }
       case (Some(t), None) => {
         if (mine)
           collections.listUser(limit, t, user, superAdmin, user.get)
         else
-          collections.listAccess(limit, t, permission, user, superAdmin)
+          collections.listAccess(limit, t, permission, user, superAdmin, true)
       }
       case (None, Some(d)) => {
         if (mine)
           collections.listUser(d, true, limit, user, superAdmin, user.get)
         else
-          collections.listAccess(d, true, limit, permission, user, superAdmin)
+          collections.listAccess(d, true, limit, permission, user, superAdmin, true)
       }
-      case (None, None) => {
+       case (None, None) => {
         if (mine)
           collections.listUser(limit, user, superAdmin, user.get)
         else
-          collections.listAccess(limit, permission, user, superAdmin)
+          collections.listAccess(limit, permission, user, superAdmin, true)
       }
     }
   }
@@ -593,7 +637,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     notes = "",
     responseClass = "None", httpMethod = "GET")
   def getRootCollections() = PermissionAction(Permission.ViewCollection) { implicit request =>
-    val root_collections_list = for (collection <- collections.listAccess(100,Set[Permission](Permission.ViewCollection),request.user,true); if collections.hasRoot(collection)  )
+    val root_collections_list = for (collection <- collections.listAccess(100,Set[Permission](Permission.ViewCollection),request.user,true, true); if collections.hasRoot(collection)  )
       yield jsonCollection(collection)
 
     Ok(toJson(root_collections_list))
@@ -602,12 +646,14 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Get all collections",
     notes = "",
     responseClass = "None", httpMethod = "GET")
-  def getAllCollections() = PermissionAction(Permission.ViewCollection) { implicit request =>
-    implicit val user = request.user
-    val count : Long  = collections.countAccess(Set[Permission](Permission.ViewCollection),user,true)
-    val limit = count.toInt
-    val all_collections_list = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection),request.user,false))
-      yield jsonCollection(collection)
+  def getAllCollections(limit : Int, showAll: Boolean) = PermissionAction(Permission.ViewCollection) { implicit request =>
+    val all_collections_list = request.user match {
+      case Some(usr) => {
+        for (collection <- collections.listAllCollections(usr, showAll, limit))
+          yield jsonCollection(collection)
+      }
+      case None => List.empty
+    }
     Ok(toJson(all_collections_list))
   }
 
@@ -620,7 +666,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     implicit val user = request.user
     val count = collections.countAccess(Set[Permission](Permission.ViewCollection),user,true)
     val limit = count.toInt
-    val top_level_collections = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection),request.user,true); if (collections.hasRoot(collection) || collection.parent_collection_ids.isEmpty))
+    val top_level_collections = for (collection <- collections.listAccess(limit,Set[Permission](Permission.ViewCollection),request.user,true, true); if (collections.hasRoot(collection) || collection.parent_collection_ids.isEmpty))
       yield jsonCollection(collection)
     Ok(toJson(top_level_collections))
   }

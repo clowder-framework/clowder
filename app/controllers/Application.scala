@@ -54,7 +54,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
       case Some(clowderUser) if clowderUser.active => {
         newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(20)))
         .sorted(Ordering.by((_: Event).created).reverse).distinct.take(20)
-        val datasetsUser = datasets.listUser(4, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
+        val datasetsUser = datasets.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
         val datasetcommentMap = datasetsUser.map { dataset =>
           var allComments = comments.findCommentsByDatasetId(dataset.id)
           dataset.files.map { file =>
@@ -65,7 +65,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
           }
           dataset.id -> allComments.size
         }.toMap
-        val collectionList = collections.listUser(4, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
+        val collectionList = collections.listUser(12, Some(clowderUser), request.user.fold(false)(_.superAdminMode), clowderUser)
         val collectionsWithThumbnails = collectionList.map {c =>
           if (c.thumbnail_id.isDefined) {
             c
@@ -81,7 +81,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         for (aCollection <- collectionsWithThumbnails) {
           decodedCollections += Utils.decodeCollectionElements(aCollection)
         }
-        val spacesUser = spaces.listUser(4, Some(clowderUser),request.user.fold(false)(_.superAdminMode), clowderUser)
+        val spacesUser = spaces.listUser(12, Some(clowderUser),request.user.fold(false)(_.superAdminMode), clowderUser)
         var followers: List[(UUID, String, String, String)] = List.empty
         for (followerID <- clowderUser.followers.take(3)) {
           val userFollower = users.findById(followerID)
@@ -142,8 +142,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
             }
           }
         }
-        Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser, datasetcommentMap, decodedCollections.toList, spacesUser, true, followers, followedUsers.take(3),
-       followedFiles.take(3), followedDatasets.take(3), followedCollections.take(3),followedSpaces.take(3), Some(true)))
+        Ok(views.html.home(AppConfiguration.getDisplayName, newsfeedEvents, clowderUser, datasetsUser, datasetcommentMap, decodedCollections.toList, spacesUser, true, followers, followedUsers.take(12),
+       followedFiles.take(8), followedDatasets.take(8), followedCollections.take(8),followedSpaces.take(8), Some(true)))
       }
       case _ => Ok(views.html.index(latestFiles, datasetsCount, datasetsCountAccess, filesCount, filesBytes, collectionsCount, collectionsCountAccess,
         spacesCount, spacesCountAccess, usersCount, AppConfiguration.getDisplayName, AppConfiguration.getWelcomeMessage))
@@ -174,6 +174,12 @@ class Application @Inject() (files: FileService, collections: CollectionService,
       implicit val user = request.user
       Ok(views.html.emailAdmin(subject))
     }
+  }
+
+  /** Show the Terms of Service */
+  def tos(redirect: Option[String]) = UserAction(needActive = false) { implicit request =>
+    implicit val user = request.user
+    Ok(views.html.tos(redirect))
   }
 
   def options(path:String) = UserAction(needActive = false) { implicit request =>
@@ -230,6 +236,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Datasets.get,
         api.routes.javascript.Datasets.list,
         api.routes.javascript.Datasets.listCanEdit,
+        api.routes.javascript.Datasets.listMoveFileToDataset,
         api.routes.javascript.Datasets.comment,
         api.routes.javascript.Datasets.createEmptyDataset,
         api.routes.javascript.Datasets.attachExistingFile,
@@ -242,6 +249,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Datasets.listInCollection,
         api.routes.javascript.Datasets.getTags,
         api.routes.javascript.Datasets.addTags,
+        api.routes.javascript.Datasets.copyDatasetToSpace,
         api.routes.javascript.Datasets.removeTag,
         api.routes.javascript.Datasets.removeTags,
         api.routes.javascript.Datasets.removeAllTags,
@@ -254,6 +262,10 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Datasets.detachFile,
         api.routes.javascript.Datasets.download,
         api.routes.javascript.Datasets.getPreviews,
+        api.routes.javascript.Datasets.updateAccess,
+        api.routes.javascript.Datasets.addFileEvent,
+        api.routes.javascript.Datasets.getMetadataDefinitions,
+        api.routes.javascript.Datasets.moveFileBetweenDatasets,
         api.routes.javascript.Files.download,
         api.routes.javascript.Files.comment,
         api.routes.javascript.Files.getTags,
@@ -271,6 +283,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Files.filePreviewsList,
         api.routes.javascript.Files.updateMetadata,
         api.routes.javascript.Files.addMetadata,
+        api.routes.javascript.Files.getMetadataDefinitions,
         api.routes.javascript.Previews.upload,
         api.routes.javascript.Previews.uploadMetadata,
         api.routes.javascript.Previews.download,
@@ -294,6 +307,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Geostreams.patchStreamMetadata,
         api.routes.javascript.Collections.list,
         api.routes.javascript.Collections.listCanEdit,
+        api.routes.javascript.Collections.addDatasetToCollectionOptions,
         api.routes.javascript.Collections.listPossibleParents,
         api.routes.javascript.Collections.attachPreview,
         api.routes.javascript.Collections.attachDataset,
@@ -320,6 +334,9 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Spaces.removeUser,
         api.routes.javascript.Spaces.follow,
         api.routes.javascript.Spaces.unfollow,
+        api.routes.javascript.Spaces.acceptRequest,
+        api.routes.javascript.Spaces.rejectRequest,
+        api.routes.javascript.Spaces.verifySpace,
         api.routes.javascript.Users.getUser,
         api.routes.javascript.Users.findById,
         api.routes.javascript.Users.follow,
@@ -337,6 +354,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.CurationObjects.deleteCurationFile,
         api.routes.javascript.CurationObjects.deleteCurationFolder,
         api.routes.javascript.CurationObjects.savePublishedObject,
+        api.routes.javascript.CurationObjects.getMetadataDefinitionsByFile,
+        api.routes.javascript.CurationObjects.getMetadataDefinitions,
         api.routes.javascript.ContextLD.addContext,
         api.routes.javascript.ContextLD.getContextByName,
         api.routes.javascript.ContextLD.removeById,
@@ -345,32 +364,36 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Metadata.searchByKeyValue,
         api.routes.javascript.Metadata.getDefinitions,
         api.routes.javascript.Metadata.getDefinition,
+        api.routes.javascript.Metadata.getDefinitionsDistinctName,
         api.routes.javascript.Metadata.getUrl,
         api.routes.javascript.Metadata.addDefinition,
+        api.routes.javascript.Metadata.addDefinitionToSpace,
         api.routes.javascript.Metadata.editDefinition,
         api.routes.javascript.Metadata.deleteDefinition,
         api.routes.javascript.Metadata.removeMetadata,
         api.routes.javascript.Events.sendExceptionEmail,
+        api.routes.javascript.Extractions.submitToExtractor,
         api.routes.javascript.Folders.createFolder,
         api.routes.javascript.Folders.deleteFolder,
         api.routes.javascript.Folders.updateFolderName,
+        api.routes.javascript.Folders.getAllFoldersByDatasetId,
+        api.routes.javascript.Folders.moveFileBetweenFolders,
+        api.routes.javascript.Folders.moveFileToDataset,
         controllers.routes.javascript.Files.file,
         controllers.routes.javascript.Datasets.dataset,
         controllers.routes.javascript.Datasets.newDataset,
         controllers.routes.javascript.Datasets.createStep2,
-        controllers.routes.javascript.Datasets.launchTool,
-        controllers.routes.javascript.Datasets.getLaunchableTools,
-        controllers.routes.javascript.Datasets.uploadDatasetToTool,
-        controllers.routes.javascript.Datasets.getInstances,
-        controllers.routes.javascript.Datasets.refreshToolSidebar,
-        controllers.routes.javascript.Datasets.removeInstance,
+        controllers.routes.javascript.ToolManager.launchTool,
+        controllers.routes.javascript.ToolManager.getLaunchableTools,
+        controllers.routes.javascript.ToolManager.uploadDatasetToTool,
+        controllers.routes.javascript.ToolManager.getInstances,
+        controllers.routes.javascript.ToolManager.refreshToolSidebar,
+        controllers.routes.javascript.ToolManager.removeInstance,
         controllers.routes.javascript.Folders.createFolder,
         controllers.routes.javascript.Datasets.getUpdatedFilesAndFolders,
         controllers.routes.javascript.Collections.collection,
         controllers.routes.javascript.Collections.newCollection,
         controllers.routes.javascript.Collections.newCollectionWithParent,
-        controllers.routes.javascript.Spaces.acceptRequest,
-        controllers.routes.javascript.Spaces.rejectRequest,
         controllers.routes.javascript.Spaces.stagingArea,
         controllers.routes.javascript.CurationObjects.submit,
         controllers.routes.javascript.CurationObjects.getCurationObject,
@@ -380,7 +403,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.CurationObjects.compareToRepository,
         controllers.routes.javascript.CurationObjects.deleteCuration,
         controllers.routes.javascript.CurationObjects.getStatusFromRepository,
-        controllers.routes.javascript.Events.getEvents
+        controllers.routes.javascript.Events.getEvents,
+        controllers.routes.javascript.Collections.collection
       )
     ).as(JSON) 
   }

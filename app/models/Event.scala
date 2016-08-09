@@ -22,7 +22,7 @@ import services.DI
  	source_id: Option[UUID] = None,
  	source_name: Option[String] = None,
  	event_type: String,
- 	created: Date
+ 	created: Date = new Date()
  )
 
 
@@ -61,6 +61,7 @@ import services.DI
  *
  * download_file => "user downladed object_name" (not working)
  *
+ * tos_update => "Terms of Service were updated"
  *
  * To get all events use:
  * var events = events.getAllEvents(muser.followedUsers, muser.followedCollections, muser.followedDatasets, muser.followedFiles)

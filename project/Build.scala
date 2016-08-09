@@ -13,7 +13,7 @@ import NativePackagerKeys._
 object ApplicationBuild extends Build {
 
   val appName = "clowder"
-  val version = "0.9.3"
+  val version = "0.9.4.2"
   val jvm = "1.7"
 
   def appVersion: String = {

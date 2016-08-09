@@ -5,32 +5,39 @@ import services._
 import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
-import _root_.util.{Parsers, License}
+
+import _root_.util.{License, Parsers}
 
 import scala.collection.mutable.ListBuffer
 import Transformation.LidoToCidocConvertion
-import java.util.{Calendar, ArrayList}
+import java.util.{ArrayList, Calendar}
 import java.io._
+
 import org.apache.commons.io.FileUtils
 import org.json.JSONObject
-import play.api.libs.json.{Json, JsValue}
+import play.api.libs.json.{JsValue, Json}
 import com.mongodb.util.JSON
 import java.nio.file.{FileSystems, Files}
 import java.nio.file.attribute.BasicFileAttributes
+
 import collection.JavaConverters._
 import scala.collection.JavaConversions._
 import javax.inject.{Inject, Singleton}
+
 import com.mongodb.casbah.WriteConcern
 import play.api.Logger
+
 import scala.util.parsing.json.JSONArray
 import play.api.libs.json.JsArray
 import models.File
 import play.api.libs.json.JsObject
 import java.util.Date
+
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play._
 import com.mongodb.casbah.Imports._
+import models.FileStatus.FileStatus
 
 
 /**
@@ -61,6 +68,12 @@ class MongoDBFileService @Inject() (
    */
   def count(): Long = {
     FileDAO.count(MongoDBObject())
+  }
+
+  def statusCount(): Map[FileStatus, Long] = {
+    val results = FileDAO.dao.collection.aggregate(MongoDBObject("$group" ->
+      MongoDBObject("_id" -> "$status", "count" -> MongoDBObject("$sum" -> 1L))))
+    results.results.map(x => FileStatus.withName(x.getAsOrElse[String]("_id", FileStatus.UNKNOWN.toString)) -> x.getAsOrElse[Long]("count", 0L)).toMap
   }
 
   def bytes(): Long = {
@@ -174,8 +187,7 @@ class MongoDBFileService @Inject() (
   def save(inputStream: InputStream, filename: String, contentType: Option[String], author: MiniUser, showPreviews: String = "DatasetLevel"): Option[File] = {
     ByteStorageService.save(inputStream, FileDAO.COLLECTION) match {
       case Some(x) => {
-
-        val file = File(UUID.generate(), x._1, filename, author, new Date(), util.FileUtils.getContentType(filename, contentType), x._4, x._3, x._2, showPreviews = showPreviews, licenseData = License.fromAppConfig())
+        val file = File(UUID.generate(), x._1, filename, author, new Date(), util.FileUtils.getContentType(filename, contentType), x._3, x._2, showPreviews = showPreviews, licenseData = License.fromAppConfig())
         FileDAO.save(file)
         Some(file)
       }
@@ -210,23 +222,31 @@ class MongoDBFileService @Inject() (
 
         val tagsJson = new JSONArray(tagListBuffer.toList)
 
-        Logger.debug("tagStr=" + tagsJson);
-
         val commentsByFile = for (comment <- comments.findCommentsByFileId(id)) yield {
           comment.text
         }
         val commentJson = new JSONArray(commentsByFile)
 
-        Logger.debug("commentStr=" + commentJson.toString())
-
         val usrMd = getUserMetadataJSON(id)
-        Logger.debug("usrmd=" + usrMd)
-
         val techMd = getTechnicalMetadataJSON(id)
-        Logger.debug("techmd=" + techMd)
-
         val xmlMd = getXMLMetadataJSON(id)
-        Logger.debug("xmlmd=" + xmlMd)
+
+
+        // Create mapping in JSON-LD metadata from name -> contents
+        val metadataMap = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
+        var allMd = Map[String, JsArray]()
+        for (md <- metadataMap) {
+          if (allMd.keySet.exists(_ == md.creator.displayName)) {
+            // If we already have metadata from this creator, add this metadata to their array
+            var existingMd = allMd(md.creator.displayName).as[JsArray]
+            existingMd = existingMd :+ md.content
+            allMd += (md.creator.displayName -> existingMd)
+          } else {
+            // Otherwise add a new entry for this creator
+            allMd += (md.creator.displayName -> new JsArray(Seq(md.content)))
+          }
+        }
+        val allMdStr = Json.toJson(allMd).toString()
 
         var fileDsId = ""
         var fileDsName = ""
@@ -240,7 +260,7 @@ class MongoDBFileService @Inject() (
 
         current.plugin[ElasticsearchPlugin].foreach {
           _.index("data", "file", id,
-            List(("filename", file.filename), ("contentType", file.contentType),("author",file.author.fullName),("uploadDate",formatter.format(file.uploadDate)),("datasetId",fileDsId),("datasetName",fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)))
+            List(("filename", file.filename), ("contentType", file.contentType),("author",file.author.fullName),("uploadDate",formatter.format(file.uploadDate)),("datasetId",fileDsId),("datasetName",fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd), ("metadata", allMdStr)))
         }
         
       }
@@ -475,10 +495,15 @@ class MongoDBFileService @Inject() (
     }
   }
 
+  override def setStatus(id: UUID, status: FileStatus): Unit = {
+    FileDAO.dao.update(MongoDBObject("_id" -> new ObjectId(id.toString())), $set("status" -> status.toString))
+  }
+
+
   def listOutsideDataset(dataset_id: UUID): List[File] = {
     datasets.get(dataset_id) match{
       case Some(dataset) => {
-        val list = for (file <- FileDAO.findAll(); if(!isInDataset(file,dataset) && !file.isIntermediate.getOrElse(false))) yield file
+        val list = for (file <- FileDAO.findAll(); if(!isInDataset(file,dataset) && !file.isIntermediate)) yield file
         return list.toList
       }
       case None =>{
@@ -694,7 +719,7 @@ class MongoDBFileService @Inject() (
   def removeFile(id: UUID){
     get(id) match{
       case Some(file) => {
-        if(file.isIntermediate.isEmpty){
+        if(!file.isIntermediate){
           val fileDatasets = datasets.findByFileId(file.id)
           for(fileDataset <- fileDatasets){
             datasets.removeFile(fileDataset.id, id)
@@ -705,20 +730,19 @@ class MongoDBFileService @Inject() (
             if(!file.thumbnail_id.isEmpty && !fileDataset.thumbnail_id.isEmpty){            
               if(file.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){ 
                 datasets.newThumbnail(fileDataset.id)
-                
                 	for(collectionId <- fileDataset.collections){
-		                          collections.get(collectionId) match{
-		                            case Some(collection) =>{		                              
-		                            	if(!collection.thumbnail_id.isEmpty){	                            	  
-		                            		if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
-		                            			collections.createThumbnail(collection.id)
-		                            		}		                        
-		                            	}
-		                            }
-		                            case None=>Logger.debug(s"Could not find collection $collectionId") 
-		                          }
-		                        }		        	  
-		        }
+                    collections.get(collectionId) match{
+                      case Some(collection) =>{
+                        if(!collection.thumbnail_id.isEmpty){
+                          if(collection.thumbnail_id.get.equals(fileDataset.thumbnail_id.get)){
+                            collections.createThumbnail(collection.id)
+                          }
+                        }
+                      }
+                      case None=>Logger.debug(s"Could not find collection $collectionId")
+                    }
+                  }
+		          }
             }
                      
           }
@@ -747,13 +771,20 @@ class MongoDBFileService @Inject() (
         }
 
         // finally delete the actual file
-        ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
+        if(isLastPointingToLoader(file.loader, file.loader_id)) {
+          ByteStorageService.delete(file.loader, file.loader_id, FileDAO.COLLECTION)
+        }
+
         FileDAO.remove(file)
       }
       case None => Logger.debug("File not found")
     }
   }
 
+  def isLastPointingToLoader(loader: String, loader_id: String): Boolean = {
+    val result = FileDAO.find(MongoDBObject("loader" -> loader, "loader_id" -> loader_id))
+    result.size == 1
+  }
   def removeTemporaries(){
     val cal = Calendar.getInstance()
     val timeDiff = play.Play.application().configuration().getInt("rdfTempCleanup.removeAfter")

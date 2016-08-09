@@ -3,7 +3,7 @@
         item_id: String // What is the UUID of the resource (for the Collection, Dataset, or File)
         )(implicit user: Option[models.User])
 
-<div class="row ds-section-sm border-top">
+<div class="row ds-section-sm">
     <h4>Sensors</h4>
     <ul class="list-unstyled" id="sensors-list">
         @for(s <- sensors) {

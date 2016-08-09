@@ -26,6 +26,11 @@ trait CollectionService {
   def listSpace(limit: Integer, space: String): List[Collection]
 
   /**
+    * Return a list of collections in a space and checks for permissions
+    */
+  def listInSpaceList(title: Option[String], date: Option[String], limit: Integer, spaces: List[UUID], permissions: Set[Permission], user: Option[User]): List[Collection]
+
+  /**
    * Return a list of collections in a space starting at a specific date, this does not check for permissions
    */
   def listSpace(date: String, nextPage: Boolean, limit: Integer, space: String): List[Collection]
@@ -33,27 +38,27 @@ trait CollectionService {
   /**
    * Return the count of collections the user has access to.
    */
-  def countAccess(permisions: Set[Permission], user: Option[User], showAll: Boolean): Long
+  def countAccess(permissions: Set[Permission], user: Option[User], showAll: Boolean): Long
 
   /**
    * Return a list of collections the user has access to.
    */
-  def listAccess(limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection]
+  def listAccess(limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Collection]
 
   /**
    * Return a list of collections the user has access to.
    */
-  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection]
+  def listAccess(limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Collection]
 
   /**
    * Return a list of collections the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Collection]
 
   /**
    * Return a list of collections the user has access to starting at a specific date.
    */
-  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean): List[Collection]
+  def listAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permisions: Set[Permission], user: Option[User], showAll: Boolean, showPublic: Boolean): List[Collection]
 
   /**
    * Return the count of collections the user has created.
@@ -79,6 +84,11 @@ trait CollectionService {
    * Return a list of collections the user has access to starting at a specific date with matching title.
    */
   def listUser(date: String, nextPage: Boolean, limit: Integer, title: String, user: Option[User], showAll: Boolean, owner: User): List[Collection]
+
+  /**
+    * List All Collections (Including childs) a user can view.
+    */
+  def listAllCollections(user: User, showAll: Boolean, limit: Int): List[Collection]
 
   def updateAuthorFullName(userId: UUID, fullName: String)
   /**
