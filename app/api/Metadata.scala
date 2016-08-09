@@ -298,6 +298,7 @@ class Metadata @Inject()(
                   case ResourceRef.file => {
                     files.index(resource.id)
                   }
+                  case _ => {}
                 }
               }
               case None => {}
