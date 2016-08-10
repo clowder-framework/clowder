@@ -163,8 +163,10 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
 
     // send extractor message after attached to resource
     current.plugin[RabbitmqPlugin].foreach { p =>
-      val dtkey = s"${p.exchange}.${resourceRef.resourceType.name}.metadata.removed"
-      p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, Map[String, Any](), "", resourceRef.id, ""))
+      val dtkey = s"${p.exchange}.metadata.removed"
+      p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, Map[String, Any](
+        "resourceType"->resourceRef.resourceType.name,
+        "resourceId"->resourceRef.id.toString), "", resourceRef.id, ""))
     }
 
     //update metadata count for resource
