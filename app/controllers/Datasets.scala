@@ -189,7 +189,7 @@ class Datasets @Inject()(
     val nextPage = (when == "a")
     val person = owner.flatMap(o => users.get(UUID(o)))
     val datasetSpace = space.flatMap(o => spaceService.get(UUID(o)))
-    var title: Option[String] = Some(play.api.i18n.Messages("list.title", "Datasets"))
+    var title: Option[String] = Some(play.api.i18n.Messages("list.title", play.api.i18n.Messages("datasets.title")))
 
     val datasetList = person match {
       case Some(p) => {
@@ -302,7 +302,7 @@ class Datasets @Inject()(
         Some(mode)
       }
     if(!showPublic) {
-      title = Some(play.api.i18n.Messages("you.title", "Datasets"))
+      title = Some(play.api.i18n.Messages("you.title", play.api.i18n.Messages("datasets.title")))
     }
     //Pass the viewMode into the view
     space match {
@@ -477,10 +477,19 @@ class Datasets @Inject()(
           } else {
             ""
           }
+          var accessOptions = new ListBuffer[String]();
+          if(isInPublicSpace){
+            accessOptions.append(spaceTitle + " Default (Public)")
+          } else {
+            accessOptions.append(spaceTitle + " Default (Private)")
+          }
+          accessOptions.append(DatasetStatus.PRIVATE.toString.substring(0,1).toUpperCase() + DatasetStatus.PRIVATE.toString.substring(1).toLowerCase())
+          accessOptions.append(DatasetStatus.PUBLIC.toString.substring(0,1).toUpperCase() + DatasetStatus.PUBLIC.toString.substring(1).toLowerCase())
+
 
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
             decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove),fileList,
-            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess, access))
+            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess, access, accessOptions.toList))
         }
         case None => {
           Logger.error("Error getting dataset" + id)

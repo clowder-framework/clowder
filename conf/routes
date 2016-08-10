@@ -40,7 +40,7 @@ GET            /profile/viewProfile                                             
 # deprecated use profile/:uuid
 GET            /profile/viewProfile/:uuid                                               @controllers.Profile.viewProfileUUID(uuid: UUID)
 GET            /profile/editProfile                                                     @controllers.Profile.editProfile
-GET            /profile/submitChanges                                                   @controllers.Profile.submitChanges
+POST           /profile/submitChanges                                                   @controllers.Profile.submitChanges
 GET            /profile/:uuid                                                           @controllers.Profile.viewProfileUUID(uuid: UUID)
 
 # ----------------------------------------------------------------------
@@ -491,6 +491,7 @@ GET            /api/collections/:coll_id/removeFromSpaceAllowed/:space_id       
 # ----------------------------------------------------------------------
 GET            /api/datasets                                                            @api.Datasets.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 GET            /api/datasets/canEdit                                                    @api.Datasets.listCanEdit(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
+GET            /api/datasets/moveFileToDataset                                          @api.Datasets.listMoveFileToDataset(file_id: UUID, title: Option[String] ?= None, limit: Int ?= 12)
 POST           /api/datasets                                                            @api.Datasets.createDataset
 POST           /api/datasets/createempty                                                @api.Datasets.createEmptyDataset
 POST           /api/datasets/attachmultiple                                             @api.Datasets.attachMultipleFiles
@@ -589,7 +590,7 @@ GET            /api/search/multimediasearch                                     
 # ----------------------------------------------------------------------
 # GEOSTREAMS ENDPOINT
 # ----------------------------------------------------------------------
-POST           /api/geostreams/datapoints                                               api.Geostreams.addDatapoint
+POST           /api/geostreams/datapoints                                               api.Geostreams.addDatapoint(invalidateCache: Boolean ?= true)
 DELETE         /api/geostreams/datapoints/:id                                           api.Geostreams.deleteDatapoint(id: String)
 GET            /api/geostreams/datapoints                                               api.Geostreams.searchDatapoints(operator = "", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
 GET            /api/geostreams/datapoints/averages                                      api.Geostreams.searchDatapoints(operator = "averages", since: Option[String] ?= None, until: Option[String] ?= None, geocode: Option[String] ?= None,  stream_id: Option[String] ?= None, sensor_id: Option[String] ?= None, sources: List[String] ?= List.empty, attributes: List[String] ?= List.empty, format: String ?= "json", semi: Option[String])
@@ -722,3 +723,29 @@ GET            /spaces/curations/:id/getMetadataDefinitionsByFile               
 GET            /spaces/curations/:id/metadataDefinitions                                @api.CurationObjects.getMetadataDefinitions(id: UUID)
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()
 GET            /getEvents                                                               @controllers.Events.getEvents(index: Int)
+
+# ----------------------------------------------------------------------
+# VOCABULARIES API
+# ----------------------------------------------------------------------
+
+GET         /api/vocabularies/list                                                      @api.Vocabularies.list()
+POST        /api/vocabularies/createVocabularyFromJson                                  @api.Vocabularies.createVocabularyFromJson(isPublic : Boolean ?= false)
+POST        /api/vocabularies/createVocabulary                                          @api.Vocabularies.createVocabularyFromForm()
+GET         /api/vocabularies/getByAuthor                                               @api.Vocabularies.getByAuthor()
+GET         /api/vocabularies/getPublic                                                 @api.Vocabularies.getPublicVocabularies()
+
+
+GET         /api/vocabularies/:vocab_id                                                 @api.Vocabularies.get(vocab_id : UUID)
+PUT         /api/editVocabulary/:vocab_id                                               @api.Vocabularies.editVocabulary(vocab_id : UUID)
+GET         /api/vocabularies/:name                                                     @api.Vocabularies.getByName(name : String)
+GET         /api/vocabularies/:name/getByNameAuthor                                     @api.Vocabularies.getByNameAndAuthor(name: String)
+
+POST        /api/vocabularies/:vocab_id/addToSpace/:space_id                            @api.Vocabularies.addToSpace(vocab_id: UUID, space_id : UUID)
+POST        /api/vocabuliaries/:vocab_id/removeFromSpace/:space_id                      @api.Vocabularies.removeFromSpace(vocab_id: UUID, space_id : UUID)
+
+# ----------------------------------------------------------------------
+# VOCABULARYTERMS API
+# ----------------------------------------------------------------------
+
+GET         /api/vocabterms/list                                                        @api.VocabularyTerms.list()
+GET         /api/vocabterms/:id                                                         @api.VocabularyTerms.get(id : UUID)

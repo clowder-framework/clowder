@@ -56,7 +56,7 @@ object Dataset {
         dataset.thumbnail_id.toString().substring(5,dataset.thumbnail_id.toString().length-1)
       }
       Json.obj("id" -> dataset.id.toString, "name" -> dataset.name, "description" -> dataset.description,
-        "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail, "authorId" -> dataset.author.id)
+        "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail, "authorId" -> dataset.author.id, "spaces" -> dataset.spaces)
     }
   }
 }

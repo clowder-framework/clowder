@@ -3,4 +3,12 @@ trial.space=New Spaces are in trial mode, allowing you to take advantage of all 
 verify.email.contact.link=@routes.Application.email().absoluteURL(controllers.Utils.https(request))
 verify.email.content=Your team now has access to the full suite of Clowder functionality, including publishing and making your data public.
 you.title= My {0}
+home.title=My {0}
 list.title= {0}
+datasets.title=Datasets
+collections.title=Collections
+spaces.title=Spaces
+
+#Login page
+securesocial.login.useEmailAndPassword=Or login using an email and password.
+securesocial.login.useEmailAndPasswordOnly=Login using an email and password.

@@ -67,20 +67,99 @@ class  Datasets @Inject()(
     notes = "This will check for Permission.ViewDataset",
     responseClass = "None", multiValueResponse=true, httpMethod = "GET")
   def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(lisDatasets(title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+    Ok(toJson(listDatasets(title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))))
   }
 
   @ApiOperation(value = "List all datasets the user can edit",
     notes = "This will check for Permission.AddResourceToDataset and Permission.EditDataset",
     responseClass = "None", httpMethod = "GET")
   def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(lisDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+      Ok(toJson(listDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+  }
+
+  @ApiOperation(value = "List all datasets in the space the user can edit and thus move the file to",
+    notes = "This will check for Permission.AddResourceToDataset and Permission.EditDataset",
+    responseClass = "None", httpMethod = "GET")
+  def listMoveFileToDataset(file_id: UUID, title: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+    if (play.Play.application().configuration().getBoolean("datasetFileWithinSpace")) {
+      Ok(toJson(listDatasetsInSpace(file_id, title, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+    } else {
+      Ok(toJson(listDatasets(title, None, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+    }
+  }
+
+  /**
+    * Returns list of datasets based on space restrictions and permissions. The spaceId is obtained from the file itself
+    */
+  private def listDatasetsInSpace(file_id: UUID, title: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Dataset] = {
+    var datasetAll = List[Dataset]()
+    val datasetList = datasets.findByFileId(file_id)
+    datasetList match {
+      case Nil => {
+        val folderList = folders.findByFileId(file_id)
+        folderList match {
+          case f :: fs => {
+            datasets.get(f.parentDatasetId) match {
+              case Some(d) => {
+                if (d.spaces.isEmpty) {
+                  title match {
+                    case Some(t) => {
+                      datasetAll = datasets.listAccess(limit, t, permission, user, superAdmin, true)
+                    }
+                    case None => {
+                      datasetAll = datasets.listAccess(limit, permission, user, superAdmin, true)
+                    }
+                  }
+                } else {
+                  for (sid <- d.spaces) {
+                    title match {
+                      case Some(t) => {
+                        //merge two lists, both with dataset objects from different spaces
+                        datasetAll = datasetAll ++ datasets.listSpaceAccess(limit, t, permission, sid.toString(), user, superAdmin, true)
+                      }
+                      case None => {
+                        datasetAll = datasetAll ++ datasets.listSpaceAccess(limit, permission, sid.toString(), user, superAdmin, true)
+                      }
+                    }
+                  }
+                }
+              }
+              case None =>
+            }
+          }
+        }
+      }
+      case x :: xs => {
+        if (x.spaces.isEmpty) {
+          title match {
+            case Some(t) => {
+              datasetAll = datasets.listAccess(limit, t, permission, user, superAdmin, true)
+            }
+            case None => {
+              datasetAll = datasets.listAccess(limit, permission, user, superAdmin, true)
+            }
+          }
+        } else {
+          for (sid <- x.spaces) {
+            title match {
+              case Some(t) => {
+                datasetAll = datasetAll ++ datasets.listSpaceAccess(limit, t, permission, sid.toString(), user, superAdmin, true)
+              }
+              case None => {
+                datasetAll = datasetAll ++ datasets.listSpaceAccess(limit, permission, sid.toString(), user, superAdmin, true)
+              }
+            }
+          }
+        }
+      }
+    }
+    datasetAll.distinct
   }
 
   /**
     * Returns list of datasets based on parameters and permissions.
     */
-  private def lisDatasets(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Dataset] = {
+  private def listDatasets(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Dataset] = {
     (title, date) match {
       case (Some(t), Some(d)) => {
         datasets.listAccess(d, true, limit, t, permission, user, superAdmin, true)
@@ -526,7 +605,7 @@ class  Datasets @Inject()(
 
   @ApiOperation(value = "List all datasets in a collection", notes = "Returns list of datasets and descriptions.", responseClass = "None", httpMethod = "GET")
   def listInCollection(collectionId: UUID) = PermissionAction(Permission.ViewCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
-    Ok(toJson(datasets.listCollection(collectionId.stringify)))
+    Ok(toJson(datasets.listCollection(collectionId.stringify, request.user)))
   }
 
   @ApiOperation(value = "Add metadata to dataset", notes = "Returns success of failure", responseClass = "None", httpMethod = "POST")
@@ -2255,7 +2334,7 @@ class  Datasets @Inject()(
                         files.get(fileId) match {
                           case Some(file) => {
                             val newFile = File(loader_id = file.loader_id, filename = file.filename, author = file.author,
-                              uploadDate = file.uploadDate, contentType = file.contentType, length = file.length, sha512 = file.sha512,
+                              uploadDate = file.uploadDate, contentType = file.contentType, length = file.length,
                               loader = file.loader, showPreviews = file.showPreviews, previews = file.previews, thumbnail_id = file.thumbnail_id,
                               description = file.description, licenseData = file.licenseData, status = file.status)
                             files.save(newFile)
@@ -2292,7 +2371,7 @@ class  Datasets @Inject()(
           files.get(fileId) match {
             case Some(file) => {
               val newFile = File(loader_id = file.loader_id, filename = file.filename, author = file.author,
-                uploadDate = file.uploadDate, contentType = file.contentType, length = file.length, sha512 = file.sha512,
+                uploadDate = file.uploadDate, contentType = file.contentType, length = file.length,
                 loader = file.loader, showPreviews = file.showPreviews, previews = file.previews, thumbnail_id = file.thumbnail_id,
                 description = file.description, licenseData = file.licenseData, status = file.status)
               files.save(newFile)

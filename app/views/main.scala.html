@@ -76,11 +76,11 @@
                             @if(play.Play.application().configuration().getBoolean("enablePublic")) {
                                 <li><a href="@routes.Spaces.list(showPublic=false)"><span class="glyphicon glyphicon-tent"></span> @{spaces.spaceTitle()}s</a></li>
                                 <li><a href="@routes.Datasets.list(showPublic=false)"><span class="glyphicon glyphicon-briefcase"></span> Datasets</a></li>
-                                <li><a href="@routes.Collections.list(showPublic=false)"><span class="glyphicon glyphicon-th-list"></span> Collections</a></li>
+                                <li><a href="@routes.Collections.list(showPublic=false)"><span class="glyphicon glyphicon-th-large"></span> Collections</a></li>
                             } else {
                                 <li><a href="@routes.Spaces.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-tent"></span> @{spaces.spaceTitle()}s</a></li>
                                 <li><a href="@routes.Datasets.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-briefcase"></span> Datasets</a></li>
-                                <li><a href="@routes.Collections.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-th-list"></span> Collections</a></li>
+                                <li><a href="@routes.Collections.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-th-large"></span> Collections</a></li>
 
                             }
 
@@ -104,7 +104,7 @@
                                 }
                             }
                             <li><a href="@routes.Datasets.list("")"><span class="glyphicon glyphicon-briefcase"> </span> Datasets</a></li>
-                            <li><a href="@routes.Collections.list("")"><span class="glyphicon glyphicon-th-list"> </span> Collections</a></li>
+                            <li><a href="@routes.Collections.list("")"><span class="glyphicon glyphicon-th-large"> </span> Collections</a></li>
                             @if(user.isDefined){
                                 <li><a href="@routes.Users.getUsers()"><span class="glyphicon glyphicon-user"></span> Users</a></li>
                             }
@@ -124,7 +124,7 @@
                             }s</a></li>
                             <li><a href="@routes.Datasets.newDataset(None, None)"><span class="glyphicon glyphicon-briefcase"> </span>
                                 Datasets</a></li>
-                            <li><a href="@routes.Collections.newCollection(None)"><span class="glyphicon glyphicon-th-list"> </span>
+                            <li><a href="@routes.Collections.newCollection(None)"><span class="glyphicon glyphicon-th-large"> </span>
                                 Collections</a></li>
 
                         </ul>
@@ -138,7 +138,7 @@
                             @if(user.isDefined) {
                                 <li><a href="@routes.Application.email("")">Contact server admins</a></li>
                             }
-                            <li><a targe"tos" href="@routes.Application.tos(None)">Terms of Services</a></li>
+                            <li><a targe"tos" href="@routes.Application.tos(None)">Terms of Service</a></li>
                             <li><a href="@routes.Assets.at("docs/api/index.html")" target="_blank">API</a></li>
                             @play.Play.application.configuration.getConfigList("helpMenu").map { helpItem =>
                               <li><a href="@helpItem.getString("url")" target="_blank">@helpItem.getString("label")</a></li>
@@ -185,7 +185,7 @@
                                         <span class="glyphicon glyphicon-cog"></span><b class="caret"></b></a>
                                     <ul class="dropdown-menu" role="menu">
                                         <li><a href="@routes.Admin.customize">Customize</a></li>
-                                        <li><a href="@routes.Admin.tos">Terms of Services</a></li>
+                                        <li><a href="@routes.Admin.tos">Terms of Service</a></li>
                                         <li><a href="@routes.Admin.users">Users</a></li>
                                         <li><a href="@routes.Admin.listRoles">List Roles</a></li>
                                         <li><a href="@routes.Admin.createRole">Add Role</a></li>

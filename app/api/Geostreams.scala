@@ -65,8 +65,10 @@ object Geostreams extends ApiController {
         case (name, geoType, longlat, metadata) => {
           current.plugin[PostgresPlugin] match {
             case Some(plugin) => {
-              plugin.createSensor(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata))
-              jsonp(toJson("success"), request)
+              plugin.createSensor(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata)) match {
+                case Some(d) => jsonp(d, request)
+                case None => BadRequest(s"Failed to create sensor $name")
+              }
             }
             case None => pluginNotEnabled
           }
@@ -215,8 +217,10 @@ object Geostreams extends ApiController {
         case (name, geoType, longlat, metadata, sensor_id) => {
           current.plugin[PostgresPlugin] match {
             case Some(plugin) => {
-              val id = plugin.createStream(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata), sensor_id)
-              jsonp(Json.obj("status"->"ok","id"->id), request)
+              plugin.createStream(name, geoType, longlat(1), longlat(0), longlat(2), Json.stringify(metadata), sensor_id) match {
+                case Some(d) => jsonp(d, request)
+                case None => BadRequest(s"Failed to create a stream $name")
+              }
             }
             case None => pluginNotEnabled
           }
@@ -310,22 +314,37 @@ object Geostreams extends ApiController {
       }
     }
 
-  def addDatapoint()  = PermissionAction(Permission.DeleteGeoStream)(parse.json) { implicit request =>
+  def addDatapoint(invalidateCache: Boolean)  = PermissionAction(Permission.DeleteGeoStream)(parse.json) { implicit request =>
     Logger.debug("Adding datapoint: " + request.body)
     request.body.validate[(String, Option[String], String, List[Double], JsValue, String)].map {
       case (start_time, end_time, geoType, longlat, data, streamId) =>
+
         current.plugin[PostgresPlugin] match {
           case Some(plugin) => {
             val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
             val start_timestamp = new Timestamp(formatter.parse(start_time).getTime())
             val end_timestamp = if (end_time.isDefined) Some(new Timestamp(formatter.parse(end_time.get).getTime())) else None
             if (longlat.length == 3) {
-              plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), longlat(2), streamId)
+              plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), longlat(2), streamId) match {
+                case Some(d) => {
+                  if (invalidateCache) {
+                    cacheInvalidate(((Json.parse(d)) \ "sensor_id").asOpt[String], None)
+                  }
+                  jsonp(d, request)
+                }
+                case None => BadRequest("Failed to create datapoint")
+              }
             } else {
-              plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), 0.0, streamId)
+              plugin.addDatapoint(start_timestamp, end_timestamp, geoType, Json.stringify(data), longlat(1), longlat(0), 0.0, streamId) match {
+                case Some(d) => {
+                  if (invalidateCache) {
+                    cacheInvalidate(((Json.parse(d)) \ "sensor_id").asOpt[String], None)
+                  }
+                  jsonp(d, request)
+                }
+                case None => BadRequest("Failed to create datapoint")
+              }
             }
-            cacheInvalidate(None, None)
-            jsonp(toJson("success"), request)
           }
           case None => pluginNotEnabled
         }

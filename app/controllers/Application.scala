@@ -176,7 +176,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     }
   }
 
-  /** Show the Terms of Services */
+  /** Show the Terms of Service */
   def tos(redirect: Option[String]) = UserAction(needActive = false) { implicit request =>
     implicit val user = request.user
     Ok(views.html.tos(redirect))
@@ -236,6 +236,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Datasets.get,
         api.routes.javascript.Datasets.list,
         api.routes.javascript.Datasets.listCanEdit,
+        api.routes.javascript.Datasets.listMoveFileToDataset,
         api.routes.javascript.Datasets.comment,
         api.routes.javascript.Datasets.createEmptyDataset,
         api.routes.javascript.Datasets.attachExistingFile,

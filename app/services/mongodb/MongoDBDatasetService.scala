@@ -22,7 +22,7 @@ import org.json.JSONObject
 import play.api.Logger
 import play.api.Play._
 import play.api.libs.json.Json._
-import play.api.libs.json.JsValue
+import play.api.libs.json.{Json, JsValue, JsArray}
 import services._
 import services.mongodb.MongoContext.context
 
@@ -176,6 +176,34 @@ class MongoDBDatasetService @Inject() (
   }
 
   /**
+    * Return a list of datasets in a space the user has access to.
+    */
+  def listSpaceAccess(limit: Integer, permissions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
+    list(None, false, limit, None, None, Some(space), permissions, user, showAll, None, showPublic)
+  }
+
+  /**
+    * Return a list of datasets in a space the user has access to.
+    */
+  def listSpaceAccess(limit: Integer, title: String, permissions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
+    list(None, false, limit, Some(title), None, Some(space), permissions, user, showAll, None, showPublic)
+  }
+
+  /**
+    * Return a list of datasets in a space the user has access to starting at a specific date.
+    */
+  def listSpaceAccess(date: String, nextPage: Boolean, limit: Integer, permissions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
+    list(Some(date), nextPage, limit, None, None, Some(space), permissions, user, showAll, None, showPublic)
+  }
+
+  /**
+    * Return a list of datasets in a space the user has access to starting at a specific date.
+    */
+  def listSpaceAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
+    list(Some(date), nextPage, limit, Some(title), None, Some(space), permissions, user, showAll, None, showPublic)
+  }
+
+  /**
    * Count all datasets the user has created.
    */
   def countUser(user: Option[User], showAll: Boolean, owner: User): Long = {
@@ -259,8 +287,14 @@ class MongoDBDatasetService @Inject() (
 
           val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
           if (permissions.contains(Permission.ViewDataset) && enablePublic && showPublic) {
-            orlist += MongoDBObject("status" -> DatasetStatus.PUBLIC.toString)
-            orlist += MongoDBObject("status" -> DatasetStatus.DEFAULT.toString) ++ ("spaces" $in publicSpaces)
+            // if enablePublic == true, only list the dataset user can access, in a space page or /datasets
+            if(!u.superAdminMode) {
+              orlist += MongoDBObject("status" -> DatasetStatus.PUBLIC.toString)
+              orlist += MongoDBObject("status" -> DatasetStatus.DEFAULT.toString) ++ ("spaces" $in publicSpaces)
+            } else {
+              // superAdmin can access all datasets, in a space page or /datasets
+              orlist += MongoDBObject()
+            }
           }
           //if you are viewing other user's datasets, return the ones you have permission. otherwise filterAccess should
           // including your own datasets. the if condition here is mainly for efficiency.
@@ -1170,23 +1204,30 @@ class MongoDBDatasetService @Inject() (
 
         val tagsJson = new JSONArray(tagListBuffer.toList)
 
-        Logger.debug("tagStr=" + tagsJson)
-
         val commentsByDataset = for (comment <- comments.findCommentsByDatasetId(id, false)) yield {
           comment.text
         }
         val commentJson = new JSONArray(commentsByDataset)
 
-        Logger.debug("commentStr=" + commentJson.toString())
-
         val usrMd = getUserMetadataJSON(id)
-        Logger.debug("usrmd=" + usrMd)
-
         val techMd = getTechnicalMetadataJSON(id)
-        Logger.debug("techmd=" + techMd)
-
         val xmlMd = getXMLMetadataJSON(id)
-        Logger.debug("xmlmd=" + xmlMd)
+
+        // Create mapping in JSON-LD metadata from name -> contents
+        val metadataMap = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
+        var allMd = Map[String, JsArray]()
+        for (md <- metadataMap) {
+          if (allMd.keySet.exists(_ == md.creator.displayName)) {
+            // If we already have metadata from this creator, add this metadata to their array
+            var existingMd = allMd(md.creator.displayName).as[JsArray]
+            existingMd = existingMd :+ md.content
+            allMd += (md.creator.displayName -> existingMd)
+          } else {
+            // Otherwise add a new entry for this creator
+            allMd += (md.creator.displayName -> new JsArray(Seq(md.content)))
+          }
+        }
+        val allMdStr = Json.toJson(allMd).toString()
 
         var fileDsId = ""
         var fileDsName = ""
@@ -1213,7 +1254,7 @@ class MongoDBDatasetService @Inject() (
 
         current.plugin[ElasticsearchPlugin].foreach {
           _.index("data", "dataset", id,
-            List(("name", dataset.name), ("description", dataset.description), ("author",dataset.author.fullName),("created",formatter.format(dataset.created)), ("fileId",fileDsId),("fileName",fileDsName), ("collId",dsCollsId),("collName",dsCollsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)  ))
+            List(("name", dataset.name), ("description", dataset.description), ("author",dataset.author.fullName),("created",formatter.format(dataset.created)), ("fileId",fileDsId),("fileName",fileDsName), ("collId",dsCollsId),("collName",dsCollsName), ("tag", tagsJson.toString), ("comments", commentJson.toString), ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd), ("metadata", allMdStr)))
         }
       }
       case None => Logger.error("Dataset not found: " + id)
