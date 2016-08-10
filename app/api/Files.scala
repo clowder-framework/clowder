@@ -382,11 +382,11 @@ class Files @Inject()(
   def removeMetadataJsonLD(id: UUID, extFilter: Option[String]) = PermissionAction(Permission.DeleteMetadata, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     files.get(id) match {
       case Some(file) => {
-        extFilter match {
+        val num_removed = extFilter match {
           case Some(f) => metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.file, id), f)
           case None => metadataService.removeMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
         }
-        Ok(toJson(Map("status" -> "success")))
+        Ok(toJson(Map("status" -> "success", "count" -> num_removed.toString)))
       }
       case None => {
         Logger.error("Error getting file  " + id);

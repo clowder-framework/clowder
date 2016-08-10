@@ -147,18 +147,34 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
   }
 
   /** Remove metadata by attached ID and extractor name **/
-  def removeMetadataByAttachToAndExtractor(resourceRef: ResourceRef, extractorName: String) = {
-    val regex = ".*extractors/"+extractorName
+  def removeMetadataByAttachToAndExtractor(resourceRef: ResourceRef, extractorName: String): Long = {
+    val regex = ".*extractors/"+(extractorName.trim)
 
-    MetadataDAO.remove(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
+    val result = MetadataDAO.remove(MongoDBObject("attachedTo.resourceType" -> resourceRef.resourceType.name,
       "attachedTo._id" -> new ObjectId(resourceRef.id.stringify),
       "creator.extractorId" -> (regex.r)), WriteConcern.Safe)
+    val num_removed = result.getField("n").toString.toLong
 
     // send extractor message after attached to resource
     current.plugin[RabbitmqPlugin].foreach { p =>
       val dtkey = s"${p.exchange}.${resourceRef.resourceType.name}.metadata.removed"
       p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, Map[String, Any](), "", resourceRef.id, ""))
     }
+
+    //update metadata count for resource
+    current.plugin[MongoSalatPlugin] match {
+      case None => throw new RuntimeException("No MongoSalatPlugin")
+      case Some(x) => x.collection(resourceRef) match {
+        case Some(c) => {
+          c.update(MongoDBObject("_id" -> new ObjectId(resourceRef.id.stringify)), $inc("metadataCount" -> (-1*num_removed)))
+        }
+        case None => {
+          Logger.error(s"Could not decrease counter for ${resourceRef}")
+        }
+      }
+    }
+
+    return num_removed
   }
 
   /** Get metadata context if available  **/
