@@ -21,7 +21,7 @@
           <p>@message</p>
         </div>
       }
-      @form(action = routes.Profile.submitChanges, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {   
+      @form(action = routes.Profile.submitChanges, 'enctype -> "multipart/form-data", 'class -> "form-horizontal") {
         <fieldset  class="editProfileInput">
           @select(myForm("institution"), options(allInstitutionOptions), '_label -> "Institution", 'class -> "chosen-select", 'placeholder -> "Select an institution...")
           @inputText(myForm("position"), 'class -> "form-control", '_label -> "Position")
@@ -47,7 +47,11 @@
   </div>
 <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
 <script language="javascript">
-  $(".chosen-select").chosen({no_results_text: "Not found. Press enter to add", allow_single_deselect: true});
+  $(".chosen-select").chosen({
+    add_search_option: true,
+    no_results_text: "Not found. Press enter to add",
+    allow_single_deselect: true
+  });
   $(document).ready(function() {
     $(".chosen-choices").addClass("form-control");
    });

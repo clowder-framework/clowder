@@ -86,25 +86,25 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
     notes = "Retrieves information about spaces",
     responseClass = "None", httpMethod = "GET")
   def list(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=false) { implicit request =>
-    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.ViewSpace), false, request.user, request.user.fold(false)(_.superAdminMode)).map(spaceToJson)))
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.ViewSpace), false, request.user, request.user.fold(false)(_.superAdminMode), true).map(spaceToJson)))
   }
 
   @ApiOperation(value = "List spaces the user can add to",
     notes = "Retrieves a list of spaces that the user has permission to add to",
     responseClass = "None", httpMethod = "GET")
   def listCanEdit(title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true) { implicit request =>
-    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.user.fold(false)(_.superAdminMode)).map(spaceToJson)))
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.user.fold(false)(_.superAdminMode), true).map(spaceToJson)))
   }
 
   def listCanEditNotAlreadyIn(collectionId : UUID, title: Option[String], date: Option[String], limit: Int) = UserAction(needActive=true ){ implicit request =>
-    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.user.fold(false)(_.superAdminMode)).map(spaceToJson)))
+    Ok(toJson(listSpaces(title, date, limit, Set[Permission](Permission.AddResourceToSpace, Permission.EditSpace), false, request.user, request.user.fold(false)(_.superAdminMode), true).map(spaceToJson)))
   }
 
   /**
    * Returns list of collections based on parameters and permissions.
    * TODO this needs to be cleaned up when do permissions for adding to a resource
    */
-  private def listSpaces(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], mine: Boolean, user: Option[User], superAdmin: Boolean) : List[ProjectSpace] = {
+  private def listSpaces(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], mine: Boolean, user: Option[User], superAdmin: Boolean, showPublic: Boolean, onlyTrial: Boolean = false) : List[ProjectSpace] = {
     if (mine && user.isEmpty) return List.empty[ProjectSpace]
 
     (title, date) match {
@@ -112,25 +112,25 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
         if (mine)
           spaces.listUser(d, true, limit, t, user, superAdmin, user.get)
         else
-          spaces.listAccess(d, true, limit, t, permission, user, superAdmin)
+          spaces.listAccess(d, true, limit, t, permission, user, superAdmin, showPublic)
       }
       case (Some(t), None) => {
         if (mine)
           spaces.listUser(limit, t, user, superAdmin, user.get)
         else
-          spaces.listAccess(limit, t, permission, user, superAdmin)
+          spaces.listAccess(limit, t, permission, user, superAdmin, showPublic)
       }
       case (None, Some(d)) => {
         if (mine)
           spaces.listUser(d, true, limit, user, superAdmin, user.get)
         else
-          spaces.listAccess(d, true, limit, permission, user, superAdmin)
+          spaces.listAccess(d, true, limit, permission, user, superAdmin, showPublic, onlyTrial)
       }
       case (None, None) => {
         if (mine)
           spaces.listUser(limit, user, superAdmin, user.get)
         else
-          spaces.listAccess(limit, permission, user, superAdmin)
+          spaces.listAccess(limit, permission, user, superAdmin, showPublic, onlyTrial)
       }
     }
   }
@@ -228,6 +228,25 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       case None => Logger.error("no collection found with id " + collectionId)
     }
   }
+
+
+  @ApiOperation(value = "List UUIDs of all datasets in a space",
+    notes = "",
+    responseClass = "List", httpMethod = "GET")
+  def listDatasets(spaceId: UUID, limit: Integer) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+    val datasetList = datasets.listSpace(limit, spaceId.stringify)
+    Ok(toJson(datasetList))
+  }
+
+
+  @ApiOperation(value = "List UUIDs of all collections in a space",
+    notes = "",
+    responseClass = "List", httpMethod = "GET")
+  def listCollections(spaceId: UUID, limit: Integer) = PermissionAction(Permission.ViewSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+    val collectionList = collectionService.listSpace(limit, spaceId.stringify)
+    Ok(toJson(collectionList))
+  }
+
 
   @ApiOperation(value = "Remove a dataset from a space",
   notes = "",
@@ -521,7 +540,6 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   }
 
 
-
   @ApiOperation(value = "Unfollow space",
     notes = "Remove user from space followers and remove space from user followed spaces.",
     responseClass = "None", httpMethod = "POST")
@@ -547,6 +565,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
       }
     }
   }
+
 
   def getTopRecommendations(followeeUUID: UUID, follower: User): List[MiniEntity] = {
     val followeeModel = spaces.get(followeeUUID)

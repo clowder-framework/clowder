@@ -176,7 +176,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
     }
   }
 
-  /** Show the Terms of Services */
+  /** Show the Terms of Service */
   def tos(redirect: Option[String]) = UserAction(needActive = false) { implicit request =>
     implicit val user = request.user
     Ok(views.html.tos(redirect))
@@ -236,6 +236,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Datasets.get,
         api.routes.javascript.Datasets.list,
         api.routes.javascript.Datasets.listCanEdit,
+        api.routes.javascript.Datasets.listMoveFileToDataset,
         api.routes.javascript.Datasets.comment,
         api.routes.javascript.Datasets.createEmptyDataset,
         api.routes.javascript.Datasets.attachExistingFile,
@@ -371,6 +372,7 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         api.routes.javascript.Metadata.deleteDefinition,
         api.routes.javascript.Metadata.removeMetadata,
         api.routes.javascript.Events.sendExceptionEmail,
+        api.routes.javascript.Extractions.submitToExtractor,
         api.routes.javascript.Folders.createFolder,
         api.routes.javascript.Folders.deleteFolder,
         api.routes.javascript.Folders.updateFolderName,
@@ -401,7 +403,8 @@ class Application @Inject() (files: FileService, collections: CollectionService,
         controllers.routes.javascript.CurationObjects.compareToRepository,
         controllers.routes.javascript.CurationObjects.deleteCuration,
         controllers.routes.javascript.CurationObjects.getStatusFromRepository,
-        controllers.routes.javascript.Events.getEvents
+        controllers.routes.javascript.Events.getEvents,
+        controllers.routes.javascript.Collections.collection
       )
     ).as(JSON) 
   }

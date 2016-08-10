@@ -61,7 +61,7 @@ import services.DI
  *
  * download_file => "user downladed object_name" (not working)
  *
- * tos_update => "Terms of Services were updated"
+ * tos_update => "Terms of Service were updated"
  *
  * To get all events use:
  * var events = events.getAllEvents(muser.followedUsers, muser.followedCollections, muser.followedDatasets, muser.followedFiles)
