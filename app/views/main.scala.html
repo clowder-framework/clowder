@@ -276,5 +276,53 @@
         location.reload();
     }
 </script>
+
+<script>
+    function setLastActivity() {
+        var nowTime = new Date();
+        $.cookie('session-time', nowTime.getTime(), { path: '/' });
+    }
+    //removeCookie();
+    function removeCookie() {
+        $.removeCookie('session-time', { path: '/' });
+    }
+
+    var repeatInt = 0.1; // how frequently to check for session expiration in minutes
+    // expiration - minutes the session is valid for
+    var expiration = @{play.Play.application().configuration().getString("securesocial.cookie.idleTimeoutInMinutes").trim};
+
+   //expiration = 0.2;
+    console.log(expiration);
+
+    if (@user.isDefined) {
+        setLastActivity();  // set cookie
+    } else {
+        removeCookie();
+    }
+    //console.log($.cookie());
+    var sessionTime = $.cookie("session-time");
+    //console.log(sessionTime);
+
+    repeatInt = repeatInt * 60000; // ms
+    expiration = expiration * 60000; // ms
+
+    if (typeof sessionTime !== 'undefined') {
+        var intervalCount = setInterval(function(){checkSession()}, repeatInt);
+    }
+
+    function checkSession() {
+        var nowTime = new Date();
+        var diff =  nowTime.getTime() - sessionTime;
+        //console.log(nowTime.getTime(), sessionTime, diff);
+
+        if (diff > expiration) {
+            alert('Your session has expired as of ' + nowTime.toTimeString() + '.\nPress OK to log in again.');
+            clearInterval(intervalCount);    //stop the timer
+            window.location.assign('@securesocial.controllers.routes.LoginPage.logout');
+        } else {
+            setLastActivity();  //reset inactivity timer
+        }
+    }
+</script>
 </body>
 </html>
