@@ -32,12 +32,8 @@
                         <h5>@prop</h5>
                         @for(cur<-value) {
                             @if((userPreferences.contains(prop.replace(" ", "_")) && userPreferences(prop.replace(" ", "_")).contains(cur))) {
-                                <input type="checkbox" name="@prop" value="@cur" checked> @cur <br/>
-
-                            } else {
-                                <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
+                                @cur
                             }
-
                         }
                     }
                 </div>
