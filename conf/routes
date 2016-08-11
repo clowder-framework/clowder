@@ -384,9 +384,9 @@ GET            /api/extractions/extractors_names                                
 GET            /api/extractions/supported_input_types                                   @api.Extractions.getExtractorInputTypes()
 #API for temporary fix for BD-289
 GET            /api/extractions/extractors_details                                      @api.Extractions.getExtractorDetails()
-POST           /api/extractions/upload_url                                              @api.Extractions.uploadByURL(run_extractors: Boolean ?= true)
+POST           /api/extractions/upload_url                                              @api.Extractions.uploadByURL(extract: Boolean ?= true)
 POST           /api/extractions/multiple_uploadby_url                                   @api.Extractions.multipleUploadByURL()
-POST           /api/extractions/upload_file                                             @api.Extractions.uploadExtract(showPreviews: String ?= "DatasetLevel", run_extractors: Boolean ?= true)
+POST           /api/extractions/upload_file                                             @api.Extractions.uploadExtract(showPreviews: String ?= "DatasetLevel", extract: Boolean ?= true)
 GET            /api/extractions/:id/status                                              @api.Extractions.checkExtractorsStatus(id:UUID)
 GET            /api/extractions/:id/metadata                                            @api.Extractions.fetch(id:UUID)
 GET            /api/extractions/:id/statuses                                            @api.Extractions.checkExtractionsStatuses(id:UUID)
