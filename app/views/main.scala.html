@@ -278,50 +278,40 @@
 </script>
 
 <script>
-    function setLastActivity() {
-        var nowTime = new Date();
-        $.cookie('session-time', nowTime.getTime(), { path: '/' });
-    }
-    //removeCookie();
-    function removeCookie() {
-        $.removeCookie('session-time', { path: '/' });
-    }
-
-    var repeatInt = 0.1; // how frequently to check for session expiration in minutes
-    // expiration - minutes the session is valid for
-    var expiration = @{play.Play.application().configuration().getString("securesocial.cookie.idleTimeoutInMinutes").trim};
-
-   //expiration = 0.2;
-    console.log(expiration);
+    var repeatInt = 1; // check for session expiration in minutes
 
     if (@user.isDefined) {
-        setLastActivity();  // set cookie
-    } else {
-        removeCookie();
-    }
-    //console.log($.cookie());
-    var sessionTime = $.cookie("session-time");
-    //console.log(sessionTime);
-
-    repeatInt = repeatInt * 60000; // ms
-    expiration = expiration * 60000; // ms
-
-    if (typeof sessionTime !== 'undefined') {
-        var intervalCount = setInterval(function(){checkSession()}, repeatInt);
+        var intervalCount = setInterval(function(){checkSession()}, repeatInt*60000);
     }
 
     function checkSession() {
-        var nowTime = new Date();
-        var diff =  nowTime.getTime() - sessionTime;
-        //console.log(nowTime.getTime(), sessionTime, diff);
+        nowTime = new Date();
+        var request = jsRoutes.api.Users.getUser().ajax({
+            type: 'GET'
+        });
+        request.done(function(response, textStatus, jqXHR) {
+            //console.log(response);
+        });
+        request.fail(function(jqXHR, textStatus, errorThrown) {
+            console.error("The following error occurred: " + textStatus, errorThrown);
 
-        if (diff > expiration) {
-            alert('Your session has expired as of ' + nowTime.toTimeString() + '.\nPress OK to log in again.');
             clearInterval(intervalCount);    //stop the timer
-            window.location.assign('@securesocial.controllers.routes.LoginPage.logout');
-        } else {
-            setLastActivity();  //reset inactivity timer
-        }
+            var modalHTML = '<div class="modal" role="dialog">';
+            modalHTML += '<div class="modal-dialog">';
+            modalHTML += '<div class="modal-content">';
+            modalHTML += '<div class="modal-body">';
+            modalHTML += '<p>Your session has expired as of ' + nowTime.toTimeString() + '.<br />Press OK to log in again.</p>';
+            modalHTML += '</div>';
+            modalHTML += '<div class="modal-footer">';
+            modalHTML += '<a type="button" class="btn btn-primary" href="@securesocial.controllers.routes.LoginPage.logout"><span class="glyphicon glyphicon-ok"></span> OK</a>';
+            modalHTML += '</div>';
+            modalHTML += '</div>';
+            modalHTML += '</div>';
+            modalHTML += '</div>';
+            var confirmModal = $(modalHTML);
+            confirmModal.modal();
+            confirmModal.modal("show");
+        });
     }
 </script>
 </body>
