@@ -28,7 +28,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
   /**
    * Add metadata to the metadata collection and attach to a section /file/dataset/collection
    */
-  def addMetadata(metadata: Metadata, requestHost: Option[String]): UUID = {
+  def addMetadata(metadata: Metadata): (UUID, Map[String, Object]) = {
     // TODO: Update context
     val mid = MetadataDAO.insert(metadata, WriteConcern.Safe)
     current.plugin[MongoSalatPlugin] match {
@@ -46,16 +46,8 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     val mdMap = Map("metadata"->metadata.content,
       "resourceType"->metadata.attachedTo.resourceType.name,
       "resourceID"->metadata.attachedTo.id.toString)
-    requestHost match {
-      case Some(host) => {
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          val dtkey = s"${p.exchange}.metadata.added"
-          p.extract(ExtractorMessage(UUID(""), UUID(""), host, dtkey, mdMap, "", metadata.attachedTo.id, ""))
-        }
-      }
-      case None => Logger.debug("No host provided; not sending metadata.added to RabbitMQ")
-    }
-    UUID(mid.get.toString())
+
+    (UUID(mid.get.toString()), mdMap)
   }
 
   def getMetadataById(id: UUID): Option[Metadata] = {
@@ -93,11 +85,11 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
    */
   def updateMetadata(metadataId: UUID, json: JsValue) = {}
 
-  /** Remove metadata, if this metadata does exit, nothing is executed */
-  def removeMetadata(id: UUID, requestHost: Option[String]) = {
+  /** Remove metadata, if this metadata does not exist, nothing is executed. Return removed metadata */
+  def removeMetadata(id: UUID): Map[String, Object] = {
     getMetadataById(id) match {
-      case Some(md) =>
-        md.contextId.foreach{cid =>
+      case Some(md) => {
+        md.contextId.foreach { cid =>
           if (getMetadataBycontextId(cid).length == 1) {
             contextService.removeContext(cid)
           }
@@ -105,19 +97,9 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
         MetadataDAO.remove(md, WriteConcern.Safe)
 
         // send extractor message after removed from resource
-        val mdMap = Map("metadata"->md.content,
-          "resourceType"->md.attachedTo.resourceType.name,
-          "resourceId"->md.attachedTo.id.toString)
-
-        requestHost match {
-          case Some(host) => {
-            current.plugin[RabbitmqPlugin].foreach { p =>
-              val dtkey = s"${p.exchange}.metadata.removed"
-              p.extract(ExtractorMessage(UUID(""), UUID(""), host, dtkey, mdMap, "", md.attachedTo.id, ""))
-            }
-          }
-          case None => Logger.debug("No host provided; not sending metadata.removed to RabbitMQ")
-        }
+        val mdMap = Map("metadata" -> md.content,
+          "resourceType" -> md.attachedTo.resourceType.name,
+          "resourceId" -> md.attachedTo.id.toString)
 
         //update metadata count for resource
         current.plugin[MongoSalatPlugin] match {
@@ -131,6 +113,9 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
             }
           }
         }
+        mdMap
+      }
+      case None => Map[String, Object]()
     }
   }
 

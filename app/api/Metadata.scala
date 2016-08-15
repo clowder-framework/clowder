@@ -288,7 +288,14 @@ class Metadata @Inject()(
               content, version)
 
             //add metadata to mongo
-            metadataService.addMetadata(metadata, Some(request.host))
+            val mdResults = metadataService.addMetadata(metadata)
+
+            //send RabbitMQ message
+            current.plugin[RabbitmqPlugin].foreach { p =>
+              val dtkey = s"${p.exchange}.metadata.added"
+              p.extract(ExtractorMessage(UUID(""), UUID(""), request.host, dtkey, mdResults._2, "", metadata.attachedTo.id, ""))
+            }
+
             attachedTo match {
               case Some(resource) => {
                 resource.resourceType match {
@@ -323,7 +330,12 @@ class Metadata @Inject()(
             || m.attachedTo.resourceType == ResourceRef.curationFile && curations.getCurationByCurationFile(m.attachedTo.id).map(_.status != "In Curation").getOrElse(false)) {
               BadRequest("Curation Object has already submitted")
             } else {
-              metadataService.removeMetadata(id, Some(request.host))
+              val removedMd = metadataService.removeMetadata(id)
+
+              current.plugin[RabbitmqPlugin].foreach { p =>
+                val dtkey = s"${p.exchange}.metadata.removed"
+                p.extract(ExtractorMessage(UUID(""), UUID(""), request.host, dtkey, removedMd, "", id, ""))
+              }
 
               Logger.debug("re-indexing after metadata removal")
               current.plugin[ElasticsearchPlugin].foreach { p =>

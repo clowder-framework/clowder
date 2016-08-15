@@ -288,7 +288,13 @@ class Files @Inject()(
               json, version)
 
             //add metadata to mongo
-            metadataService.addMetadata(metadata, Some(request.host))
+            val mdResults = metadataService.addMetadata(metadata)
+
+            //send RabbitMQ message
+            current.plugin[RabbitmqPlugin].foreach { p =>
+              val dtkey = s"${p.exchange}.metadata.added"
+              p.extract(ExtractorMessage(UUID(""), UUID(""), request.host, dtkey, mdResults._2, "", metadata.attachedTo.id, ""))
+            }
 
             files.index(id)
             Ok(toJson(Map("status" -> "success")))
@@ -340,7 +346,14 @@ class Files @Inject()(
                 content, version)
 
               //add metadata to mongo
-              metadataService.addMetadata(metadata, Some(request.host))
+              val mdResults = metadataService.addMetadata(metadata)
+
+              //send RabbitMQ message
+              current.plugin[RabbitmqPlugin].foreach { p =>
+                val dtkey = s"${p.exchange}.metadata.added"
+                p.extract(ExtractorMessage(UUID(""), UUID(""), request.host, dtkey, mdResults._2, "", metadata.attachedTo.id, ""))
+              }
+
               files.index(id)
               Ok(toJson("Metadata successfully added to db"))
             }
