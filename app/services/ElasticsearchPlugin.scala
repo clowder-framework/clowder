@@ -40,11 +40,14 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   def connect(): Boolean = {
     if (client.isDefined) {
-      Logger.debug("Already Connected to Elasticsearch")
       return true
     }
     try {
-      val settings = Settings.settingsBuilder().put("cluster.name", nameOfCluster).build()
+      val settings = if (nameOfCluster != "") {
+        Settings.settingsBuilder().put("cluster.name", nameOfCluster).build()
+      } else {
+        Settings.settingsBuilder().build()
+      }
       client = Some(TransportClient.builder().settings(settings).build()
     		  .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(serverAddress), serverPort)))
       Logger.debug("--- ElasticSearch Client is being created----")

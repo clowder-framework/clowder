@@ -71,7 +71,7 @@ object ApplicationBuild extends Build {
     "com.rabbitmq" % "amqp-client" % "3.0.0",
 
     // indexing
-    "org.elasticsearch" % "elasticsearch" % "2.3.5",
+    "org.elasticsearch" % "elasticsearch" % "2.3.5" exclude("io.netty", "netty"),
 
     // mongo storage
     "com.novus" %% "salat" % "1.9.5" exclude("org.scala-stm", "scala-stm_2.10.0"),
