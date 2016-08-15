@@ -293,7 +293,7 @@ class Metadata @Inject()(
             //send RabbitMQ message
             current.plugin[RabbitmqPlugin].foreach { p =>
               val dtkey = s"${p.exchange}.metadata.added"
-              p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.routes.Application.index().absoluteURL(),
+              p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request),
                 dtkey, mdResults._2, "", metadata.attachedTo.id, ""))
             }
 

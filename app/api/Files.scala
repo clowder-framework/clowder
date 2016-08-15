@@ -293,7 +293,7 @@ class Files @Inject()(
             //send RabbitMQ message
             current.plugin[RabbitmqPlugin].foreach { p =>
               val dtkey = s"${p.exchange}.metadata.added"
-              p.extract(ExtractorMessage(UUID(""), UUID(""), request.host, dtkey, mdResults._2, "", metadata.attachedTo.id, ""))
+              p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request), dtkey, mdResults._2, "", metadata.attachedTo.id, ""))
             }
 
             files.index(id)
@@ -351,7 +351,7 @@ class Files @Inject()(
               //send RabbitMQ message
               current.plugin[RabbitmqPlugin].foreach { p =>
                 val dtkey = s"${p.exchange}.metadata.added"
-                p.extract(ExtractorMessage(UUID(""), UUID(""), request.host, dtkey, mdResults._2, "", metadata.attachedTo.id, ""))
+                p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request), dtkey, mdResults._2, "", metadata.attachedTo.id, ""))
               }
 
               files.index(id)
