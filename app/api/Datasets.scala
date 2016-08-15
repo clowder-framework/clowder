@@ -2257,7 +2257,7 @@ class  Datasets @Inject()(
             // Use a 1MB in memory byte array
             Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression,bagit,user)).withHeaders(
               "Content-Type" -> "application/zip",
-              "Content-Disposition" -> ("attachment; filename=" + dataset.name + ".zip")
+              "Content-Disposition" -> ("attachment; filename=\"" + dataset.name+ ".zip\"")
             )
           }
           // If the dataset wasn't found by ID
