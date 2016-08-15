@@ -59,4 +59,15 @@ object Dataset {
         "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail, "authorId" -> dataset.author.id)
     }
   }
+
+  implicit def datasetToElasticSearchObject(ds: Dataset): ElasticSearchObject = {
+    new ElasticSearchObject(
+      ResourceRef('dataset, ds.id),
+      ds.author.id.toString,
+      ds.created,
+      ds.tags.map( (t:Tag) => t.as[ElasticSearchTag] ),
+      List.empty,
+      ds.metadata
+    )
+  }
 }

@@ -159,12 +159,16 @@ class  Datasets @Inject()(
                     val xmlToJSON = files.getXMLMetadataJSON(UUID(file_id))
                     datasets.addXMLMetadata(UUID(id), UUID(file_id), xmlToJSON)
                     current.plugin[ElasticsearchPlugin].foreach {
-                      _.index("data", "dataset", UUID(id),
-                        List(("name", d.name), ("description", d.description), ("xmlmetadata", xmlToJSON)))
+                      _.index("data", "dataset", UUID(id), List(
+                        ("name", Json.toJson(d.name)),
+                        ("description", Json.toJson(d.description)),
+                        ("xmlmetadata", Json.toJson(xmlToJSON))))
                     }
                   } else {
                     current.plugin[ElasticsearchPlugin].foreach {
-                      _.index("data", "dataset", UUID(id), List(("name", d.name), ("description", d.description)))
+                      _.index("data", "dataset", UUID(id), List(
+                        ("name", Json.toJson(d.name)),
+                        ("description", Json.toJson(d.description))))
                     }
                   }
 

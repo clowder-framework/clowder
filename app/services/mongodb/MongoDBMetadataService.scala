@@ -309,52 +309,72 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
 
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
-        var qString = ""
 
+        // Prepare query string from JSON objects
+        var qString = ""
         query.foreach(jsq => {
           val extr = (jsq \ "extractor_key").toString
           val key = (jsq \ "field_leaf_key").toString
-          val operator = (jsq \ "operator").toString
-          val value = (jsq \ "field_value").toString
+          val operator = (jsq \ "operator").toString.replace("\"", "")
+          val value = (jsq \ "field_value").toString.replace("\"", "")
 
           // Prepend AND/OR if this is 2nd+ term of query
           if (qString != "")
             qString += joinType+" "
-          // Include extractor name in query if provided
-          if (extr == "null")
-            qString += "("+key+" AND "+value+") "
+          // Add extractor to query if provided
+          val qKey = if (extr == "null") key
+                     else extr+" AND "+key
+
+          if ((operator == "!=") || (operator == "<") || (operator == ">"))
+            // Don't include value if "not equals", "greater/less than" operators - we don't want to match specific value
+            qString += "("+key+") "
+          else if (operator == ":")
+            // Add wildcards if "contains" operator
+            qString += "("+qKey+" AND *"+value+"*) "
           else
-            qString += "("+extr+" AND "+key+" AND "+value+") "
+            qString += "("+qKey+" AND "+value+") "
         })
 
-        Logger.debug(qString)
-        plugin.searchComplex("data", Array[String]("metadata"), query)
+        //plugin.searchComplex("data", Array[String]("metadata"), query)
 
         val result: SearchResponse = plugin.search("data", Array[String]("metadata"), qString)
         for (hit <- result.getHits().getHits()) {
           // Check if search result has any metadata
           // TODO: For 'Advanced Search' should this no longer be restricted to Metadata?
-          Logger.debug("HIT")
-          Logger.debug(hit.getSourceAsString)
           val md = hit.getSource().get("metadata")
           if (md != null) {
-            // Check if metadata has chosen key, filtering to specified extractor sub-metadata if necessary
             var jtest = Json.parse(md.toString)
-            breakable {
-              query.foreach(jsq => {
-                val key = (jsq \ "field_leaf_key").toString.replace("\"", "")
-                val value = (jsq \ "field_value").toString.replace("\"", "")
-                val values: Seq[JsValue] = (jtest \\ key)
+            // Check if this document matches any/all criteria as required
+            var hitMatchesAllQueryTerms = true
+            var hitMatchesAnyQueryTerm = false
+            query.foreach(jsq => {
+              val key = (jsq \ "field_leaf_key").toString.replace("\"", "")
+              val value = (jsq \ "field_value").toString.replace("\"", "")
+              var oper = (jsq \ "operator").toString.replace("\"", "")
 
-                // Check if any keys found contain the value and add to results if so
-                values.map(v => {
-                  if (v.toString contains value) {
-                    // TODO: Check permissions of this resource before adding to list
-                    results += new ResourceRef(Symbol(hit.getType()), UUID(hit.getId()))
-                    break
-                  }
-                })
+              // Check if metadata has chosen key, filtering to specified extractor sub-metadata if necessary
+              val values: Seq[JsValue] = (jtest \\ key)
+              // Check if any keys found contain the value and add to results if so
+              values.map(v => {
+                val cval = v.toString.replace("\"","")
+
+                Logger.debug("check "+cval+oper+value)
+
+                if (  ((cval == value) && oper == "==") ||
+                      ((cval contains value) && oper == ":") ||
+                      (!(cval == value) && oper == "!=") ||
+                      ((cval < value) && oper == "<") ||
+                      ((cval > value) && oper == ">")
+                )
+                  hitMatchesAnyQueryTerm = true
+                else
+                  hitMatchesAllQueryTerms = false
               })
+            })
+            if (  (hitMatchesAnyQueryTerm && (joinType == "OR")) ||
+                  (hitMatchesAllQueryTerms && (joinType == "AND"))) {
+              // TODO: Check permissions of this resource before adding to list
+              results += new ResourceRef(Symbol(hit.getType()), UUID(hit.getId()))
             }
           }
         }

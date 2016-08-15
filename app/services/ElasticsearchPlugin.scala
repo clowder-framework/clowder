@@ -14,9 +14,7 @@ import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
 import java.text.SimpleDateFormat
 import play.api.Play.current
-import play.api.libs.json.JsValue
-import org.elasticsearch.index.query.QueryStringQueryBuilder
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest
+import play.api.libs.json.{JsValue, JsObject}
 
 
 /**
@@ -125,7 +123,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         val response = x.prepareSearch(index)
           .setTypes("file", "dataset","collection")
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-          .setQuery(qbqs.analyzer("snowball"))
+          .setQuery(qbqs.analyzer("snowball").analyzeWildcard(true))
           .setFrom(0).setSize(60).setExplain(true)
           .execute()
           .actionGet()
@@ -143,7 +141,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     connect
     client match {
       case Some(x) => {
-        Logger.info("Searching ElasticSearch for " + query)
+        Logger.info("Searching complex ElasticSearch for " + query)
         //var qbqs = QueryBuilders.queryString(query)
         //for (f <- fields) {
         //  qbqs.field(f.trim())
@@ -171,6 +169,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           }
         })
 
+        Logger.debug(qb.toString)
+
         new SearchResponse()
       }
       case None => {
@@ -183,7 +183,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   /**
    * Index document using an arbitrary map of fields.
    */
-  def index(index: String, docType: String, id: UUID, fields: List[(String, String)]) {
+  def index(index: String, docType: String, id: UUID, fields: List[(String, JsValue)]) {
     connect
     client match {
       case Some(x) => {

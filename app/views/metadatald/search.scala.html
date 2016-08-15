@@ -180,22 +180,25 @@
                 var rowop = $("#add-metadata-operator-"+row_list[row]).val();
                 var rowval = $("#v-"+row_list[row]).val();
 
-                if (rowkey.indexOf('.') > -1) {
-                    var keyvals = rowkey.split('.')
-                    var extractorKey = keyvals[0]
-                    var leafKey = keyvals[keyvals.length-1]
-                } else {
-                    var extractorKey = null
-                    var leafKey = rowkey
-                }
+                // Ignore any terms without a value
+                if (rowval != "") {
+                    if (rowkey.indexOf('.') > -1) {
+                        var keyvals = rowkey.split('.')
+                        var extractorKey = keyvals[0]
+                        var leafKey = keyvals[keyvals.length-1]
+                    } else {
+                        var extractorKey = null
+                        var leafKey = rowkey
+                    }
 
-                searchObj.push({
-                    "field_key": rowkey,
-                    "operator": rowop,
-                    "field_value": rowval,
-                    "extractor_key": extractorKey,
-                    "field_leaf_key": leafKey
-                });
+                    searchObj.push({
+                        "field_key": rowkey,
+                        "operator": rowop,
+                        "field_value": rowval,
+                        "extractor_key": extractorKey,
+                        "field_leaf_key": leafKey
+                    });
+                }
             }
             return searchObj;
         }
@@ -276,17 +279,14 @@
                 var operator = searchTerms[term]["operator"];
                 var field_val = searchTerms[term]["field_value"];
 
-                // Ignore any terms without a value
-                if (field_val!=null && field_val!="") {
-                    if (term > 0) {
-                        searchStr += groupType+" ";
-                    }
-
-                    // Wrap multi-term strings in quotes
-                    if (field_key.indexOf(" ") > -1) { field_key = '"'+field_key+'"'; }
-                    if (field_val.indexOf(" ") > -1) { field_val = '"'+field_val+'"'; }
-                    searchStr += "("+field_key + operator + field_val+") ";
+                if (term > 0) {
+                    searchStr += groupType+" ";
                 }
+
+                // Wrap multi-term strings in quotes
+                if (field_key.indexOf(" ") > -1) { field_key = '"'+field_key+'"'; }
+                if (field_val.indexOf(" ") > -1) { field_val = '"'+field_val+'"'; }
+                searchStr += "("+field_key + operator + field_val+") ";
             }
             asc.val(searchStr);
         }
