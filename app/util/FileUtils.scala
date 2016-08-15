@@ -104,7 +104,7 @@ object FileUtils {
                            key: String = "", index: Boolean = true,
                            showPreviews: String = "DatasetLevel", originalZipFile: String = "",
                            flagsFromPrevious: String = "", intermediateUpload: Boolean = false,
-                           runExtractors: Boolean = true) : List[File] = {
+                           runExtractors: Boolean = true, insertDTSRequests: Boolean = false) : List[File] = {
     if (request.user.isEmpty) {
       Logger.error ("No user object given, should not happen.")
       return List.empty[File]
@@ -193,7 +193,7 @@ object FileUtils {
     }
 
     /*---- Insert DTS Request to database---*/
-    if (runExtractors) {
+    if (insertDTSRequests) {
       uploadedFiles.foreach { file =>
         dtsrequests.insertRequest(serverIP, clientIP, file.filename, file.id, file.contentType, file.length, file.uploadDate)
       }
@@ -234,7 +234,7 @@ object FileUtils {
                         key: String = "", index: Boolean = true,
                         showPreviews: String = "DatasetLevel", originalZipFile: String = "",
                         flagsFromPrevious: String = "", intermediateUpload: Boolean = false,
-                        runExtractors: Boolean = true) : List[File] = {
+                        runExtractors: Boolean = true, insertDTSRequests: Boolean = false) : List[File] = {
 
     if (request.user.isEmpty) {
       Logger.error ("No user object given, should not happen.")
@@ -285,7 +285,7 @@ object FileUtils {
     }}
 
     /*---- Insert DTS Request to database---*/
-    if (runExtractors) {
+    if (insertDTSRequests) {
       uploadedFiles.foreach { file =>
         dtsrequests.insertRequest(serverIP, clientIP, file.filename, file.id, file.contentType, file.length, file.uploadDate)
       }

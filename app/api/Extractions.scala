@@ -46,7 +46,7 @@ class Extractions @Inject()(
     notes = "Saves the uploaded file and sends it for extraction to Rabbitmq. If the optional URL parameter extract is set to false, it does not send the file for extraction. Does not index the file. Same as upload() except for upload()",
     responseClass = "None", httpMethod = "POST")
   def uploadExtract(showPreviews: String = "DatasetLevel", extract: Boolean = true) = PermissionAction(Permission.AddFile)(parse.multipartFormData) { implicit request =>
-    val uploadedFiles = _root_.util.FileUtils.uploadFilesMultipart(request, key="File", index=false, showPreviews=showPreviews, runExtractors=extract)
+    val uploadedFiles = _root_.util.FileUtils.uploadFilesMultipart(request, key="File", index=false, showPreviews=showPreviews, runExtractors=extract, insertDTSRequests = true)
     uploadedFiles.length match {
       case 0 => BadRequest("No files uploaded")
       case 1 => Ok(toJson(Map("id" -> uploadedFiles.head.id)))
@@ -62,7 +62,7 @@ class Extractions @Inject()(
     notes = "Saves the uploaded file and sends it for extraction. If the optional URL parameter extract is set to false, it does not send the file for extraction. Does not index the file. ",
     responseClass = "None", httpMethod = "POST")
   def uploadByURL(extract: Boolean = true) = PermissionAction(Permission.AddFile)(parse.json) { implicit request =>
-    val uploadedFiles = _root_.util.FileUtils.uploadFilesJSON(request, key="fileurl", index=false, runExtractors=extract)
+    val uploadedFiles = _root_.util.FileUtils.uploadFilesJSON(request, key="fileurl", index=false, runExtractors=extract, insertDTSRequests = true)
     uploadedFiles.length match {
       case 0 => BadRequest("No fileurls uploaded")
       case 1 => Ok(toJson(Map("id" -> uploadedFiles.head.id)))
