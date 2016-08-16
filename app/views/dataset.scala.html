@@ -189,6 +189,16 @@
                                 @metadatald.view(m, true)
                             </div>
                         </div>
+
+                        <div class="row bottom-padding">
+                            <div class="col-md-12">
+                                <h4>Extractions</h4>
+                                <a href="@routes.Extractors.submitDatasetExtraction(dataset.id)" class="btn btn-link" >
+                                    <span class="glyphicon glyphicon glyphicon-send" aria-hidden="true"></span> Submit dataset for extraction
+                                </a>
+                            </div>
+                        </div>
+
                     </div>
                     <div role="tabpanel" class="tab-pane fade" id="tab-visua">
                         @datasets.previews(dataset, previewers)
