@@ -1,6 +1,6 @@
 @(spacesList: List[models.ProjectSpace], when: String, date: String, limit: Int, owner: Option[String], showAll: Boolean, mode: Option[String], prev: String, next: String, title: Option[String], showPublic: Boolean, onlyTrial: Boolean)(implicit user: Option[models.User])
 @import play.api.i18n.Messages
-@main("Spaces") {
+@main(Messages("spaces.title")) {
 
         @util.masonry()
 

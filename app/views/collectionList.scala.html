@@ -1,6 +1,6 @@
 @(collectionsList: List[models.Collection], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String], title: Option[String], owner:Option[String], when: String, date: String)(implicit flash: play.api.mvc.Flash,  user: Option[models.User])
 
-@main("Collections") {
+@main( Messages("collections.title")) {
 
 @util.masonry()
     

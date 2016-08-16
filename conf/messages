@@ -6,7 +6,7 @@ you.title= My {0}
 home.title=My {0}
 create.title= Create {0}
 create.header = Create New {0}
-following.title=Following {0}c
+following.title=Following {0}
 trial.title = Trial {0}
 owner.title = {0}''s {1}
 owner.in.resource.title={0}''s {1} in {2}  <a href="{3}">{4}</a>
@@ -23,7 +23,7 @@ dataset.create.message={0} are the primary way to organize files. Share the {1} 
 dataset.create.collection.message=This dataset will be added to {0}
 collection.create.message={0} allow you to bring together multiple {1} and their associated files in an almost unlimited number of ways. Share a {2} to a {3} to work with your team. Permissions will be applied according to the {3}''s settings.
 space.create.message={0} are collaborative workspaces that contain people (with designated permissions), branding, and {1}.
-dataset.list.message=Create {0}s to upload and publish data. Further organize your data using folders and assign metadata at both the file and {0} level.
+dataset.list.message=Create {0} to upload and publish data. Further organize your data using folders and assign metadata at both the file and {1} level.
 collection.list.message=Use {0} to bring together multiple {1} and their associated files in an almost unlimited number of ways.
 space.list.message=Use {0} to collaboratively work with your team to manage and annotate data.
 home.empty.message=This area will show all {0}  you've created.
@@ -33,6 +33,10 @@ a.in.b = {0} in the {1}
 a.contains.b= {0} containing the {1}
 create.share.multiple.message=By default the {0} is only accessible to the user who created it. You can share this {0} with members of one or more {1}. This is optional.
 create.share.one.message=By default the {0} is only accessible to the user who created it. You can share this {0}  with members of one {1}. This is optional.
+add.to = Add Files to {0}
+create.step2.message=  The {0}
+create.step2.message.2 = was successfully created. Please follow the instructions below to add files to the {0} or view the {0}.
+
 #Login page
 securesocial.login.useEmailAndPassword=Or login using an email and password.
 securesocial.login.useEmailAndPasswordOnly=Login using an email and password.

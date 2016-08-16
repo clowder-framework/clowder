@@ -463,7 +463,7 @@
 
                     var encName  = htmlEncode(name.val());
                     var jsonData = JSON.stringify({"name": encName, "parentId": parentId, "parentType": parentType, "currentSpace": "@currentSpace"});
-                    var request = jsRoutes.controllers.Folders.createFolder("@dataset.id").ajax({
+                    var request = jsRoutes.controllers.Folders.createFolder("@dataset.id").ajax({da
                         data:jsonData,
                         type: 'POST',
                         contentType: "application/json"
