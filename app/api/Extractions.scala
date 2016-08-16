@@ -585,16 +585,11 @@ class Extractions @Inject()(
             // parameters for execution
             val parameters = (request.body \ "parameters").asOpt[JsObject].getOrElse(JsObject(Seq.empty[(String, JsValue)]))
 
-            // Log request
-            val clientIP = request.remoteAddress
-            val serverIP = request.host
-            //dtsrequests.insertRequest(serverIP, clientIP, file.filename, id, fileType, file.length, file.uploadDate)
-
             val extra = Map("datasetname" -> ds.name,
               "parameters" -> parameters.toString,
               "action" -> "manual-submission")
 
-            p.extract(ExtractorMessage(id, id, host, key, extra, ds.files.length.toString, null, ""))
+            p.extract(ExtractorMessage(id, id, host, key, extra, ds.files.length.toString, ds_id, ""))
             Ok(Json.obj("status" -> "OK"))
           }
           case None =>
