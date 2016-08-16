@@ -2165,7 +2165,7 @@ class  Datasets @Inject()(
       current = current.replace("\n",description_separator)
       desc = desc.replaceAll(each,current)
     }
-    
+
     desc = desc.replaceAll("\n","")
     val licenseInfo = Json.obj("licenseText"->dataset.licenseData.m_licenseText,"rightsHolder"->rightsHolder)
     Json.obj("id"->dataset.id,"name"->dataset.name,"author"->dataset.author.email,"description"->desc, "spaces"->spaceNames.mkString(","),"lastModified"->dataset.lastModifiedDate.toString,"license"->licenseInfo)
