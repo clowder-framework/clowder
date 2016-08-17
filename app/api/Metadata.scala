@@ -288,13 +288,14 @@ class Metadata @Inject()(
               content, version)
 
             //add metadata to mongo
-            val mdResults = metadataService.addMetadata(metadata)
+            metadataService.addMetadata(metadata)
+            val mdMap = metadata.getExtractionSummary
 
             //send RabbitMQ message
             current.plugin[RabbitmqPlugin].foreach { p =>
               val dtkey = s"${p.exchange}.metadata.added"
               p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request),
-                dtkey, mdResults._2, "", metadata.attachedTo.id, ""))
+                dtkey, mdMap, "", metadata.attachedTo.id, ""))
             }
 
             attachedTo match {
@@ -331,11 +332,12 @@ class Metadata @Inject()(
             || m.attachedTo.resourceType == ResourceRef.curationFile && curations.getCurationByCurationFile(m.attachedTo.id).map(_.status != "In Curation").getOrElse(false)) {
               BadRequest("Curation Object has already submitted")
             } else {
-              val removedMd = metadataService.removeMetadata(id)
+              metadataService.removeMetadata(id)
+              val mdMap = m.getExtractionSummary
 
               current.plugin[RabbitmqPlugin].foreach { p =>
                 val dtkey = s"${p.exchange}.metadata.removed"
-                p.extract(ExtractorMessage(UUID(""), UUID(""), request.host, dtkey, removedMd, "", id, ""))
+                p.extract(ExtractorMessage(UUID(""), UUID(""), request.host, dtkey, mdMap, "", id, ""))
               }
 
               Logger.debug("re-indexing after metadata removal")

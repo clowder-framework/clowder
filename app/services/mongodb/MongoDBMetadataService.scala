@@ -28,7 +28,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
   /**
    * Add metadata to the metadata collection and attach to a section /file/dataset/collection
    */
-  def addMetadata(metadata: Metadata): (UUID, Map[String, Object]) = {
+  def addMetadata(metadata: Metadata): UUID = {
     // TODO: Update context
     val mid = MetadataDAO.insert(metadata, WriteConcern.Safe)
     current.plugin[MongoSalatPlugin] match {
@@ -42,12 +42,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
         }
       }
     }
-    // send extractor message after attached to resource
-    val mdMap = Map("metadata"->metadata.content,
-      "resourceType"->metadata.attachedTo.resourceType.name,
-      "resourceID"->metadata.attachedTo.id.toString)
-
-    (UUID(mid.get.toString()), mdMap)
+    UUID(mid.get.toString())
   }
 
   def getMetadataById(id: UUID): Option[Metadata] = {
@@ -86,7 +81,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
   def updateMetadata(metadataId: UUID, json: JsValue) = {}
 
   /** Remove metadata, if this metadata does not exist, nothing is executed. Return removed metadata */
-  def removeMetadata(id: UUID): Map[String, Object] = {
+  def removeMetadata(id: UUID) = {
     getMetadataById(id) match {
       case Some(md) => {
         md.contextId.foreach { cid =>
@@ -113,9 +108,8 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
             }
           }
         }
-        mdMap
       }
-      case None => Map[String, Object]()
+      case None => Logger.debug("No metadata found to remove with UUID "+id.toString)
     }
   }
 

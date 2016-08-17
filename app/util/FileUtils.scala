@@ -465,12 +465,13 @@ object FileUtils {
       val metadata = models.Metadata(UUID.generate(), attachedTo, contextID, contextURL, createdAt, agent, content, version)
 
       //add metadata to mongo
-      val mdResults = metadataService.addMetadata(metadata)
+      metadataService.addMetadata(metadata)
+      val mdMap = metadata.getExtractionSummary
 
       //send RabbitMQ message
       current.plugin[RabbitmqPlugin].foreach { p =>
         val dtkey = s"${p.exchange}.metadata.added"
-        p.extract(ExtractorMessage(UUID(""), UUID(""), requestHost, dtkey, mdResults._2, "", metadata.attachedTo.id, ""))
+        p.extract(ExtractorMessage(UUID(""), UUID(""), requestHost, dtkey, mdMap, "", metadata.attachedTo.id, ""))
       }
     }
   }

@@ -558,12 +558,13 @@ class  Datasets @Inject()(
           json, version)
 
         //add metadata to mongo
-        val mdResults = metadataService.addMetadata(metadata)
+        metadataService.addMetadata(metadata)
+        val mdMap = metadata.getExtractionSummary
 
         //send RabbitMQ message
         current.plugin[RabbitmqPlugin].foreach { p =>
           val dtkey = s"${p.exchange}.metadata.added"
-          p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request), dtkey, mdResults._2, "", metadata.attachedTo.id, ""))
+          p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request), dtkey, mdMap, "", metadata.attachedTo.id, ""))
         }
 
 
@@ -610,12 +611,13 @@ class  Datasets @Inject()(
                   content, version)
 
                 //add metadata to mongo
-                val mdResults = metadataService.addMetadata(metadata)
+                metadataService.addMetadata(metadata)
+                val mdMap = metadata.getExtractionSummary
 
                 //send RabbitMQ message
                 current.plugin[RabbitmqPlugin].foreach { p =>
                   val dtkey = s"${p.exchange}.metadata.added"
-                  p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request), dtkey, mdResults._2, "", metadata.attachedTo.id, ""))
+                  p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request), dtkey, mdMap, "", metadata.attachedTo.id, ""))
                 }
 
                 datasets.index(id)
