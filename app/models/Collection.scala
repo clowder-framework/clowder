@@ -36,4 +36,17 @@ object Collection {
         "created" -> collection.created.toString, "thumbnail" -> collectionThumbnail, "authorId" -> collectionAuthor)
     }
   }
+
+  implicit def collectionToElasticSearchObject(c: Collection): ElasticSearchObject = {
+    new ElasticSearchObject(
+      ResourceRef('collection, c.id),
+      c.author.id.toString,
+      c.created,
+      c.parent_collection_ids.map( pc_id => pc_id.toString ),
+      c.child_collection_ids.map( cc_id => cc_id.toString),
+      List.empty,
+      List.empty,
+      Map()
+    )
+  }
 }

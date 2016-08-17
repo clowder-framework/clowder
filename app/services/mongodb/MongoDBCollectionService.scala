@@ -774,8 +774,7 @@ class MongoDBCollectionService @Inject() (
 	    val formatter = new SimpleDateFormat("dd/MM/yyyy")
 
         current.plugin[ElasticsearchPlugin].foreach {
-          _.index("data", "collection", id,
-            List(("name", collection.name), ("description", collection.description), ("created",formatter.format(collection.created)), ("datasetId",dsCollsId),("datasetName",dsCollsName)))
+          _.index("data", id, collection)
         }
       }
       case None => Logger.error("Collection not found: " + id.stringify)

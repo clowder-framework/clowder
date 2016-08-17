@@ -52,4 +52,17 @@ object File {
         "status" -> file.status)
     }
   }
+
+  implicit def fileToElasticSearchObject(f: File): ElasticSearchObject = {
+    new ElasticSearchObject(
+      ResourceRef('file, f.id),
+      f.author.id.toString,
+      f.uploadDate,
+      List.empty,
+      List.empty,
+      f.tags.map( (t:Tag) => t.asInstanceOf[ElasticSearchTag] ),
+      List.empty,
+      f.xmlMetadata.map( (m:(String,Any)) => (m._1 -> Json.parse(m._2.toString)))
+    )
+  }
 }

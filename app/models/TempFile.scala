@@ -2,6 +2,8 @@ package models
 
 import java.util.Date
 
+import play.api.libs.json.Json
+
 /**
  * Temporary files used when uploading query images for image based searches.
  *
@@ -17,3 +19,17 @@ case class TempFile(
   thumbnail_id: Option[UUID] = None
   )
 
+object TempFile {
+  implicit def fileToElasticSearchObject(tf: TempFile): ElasticSearchObject = {
+    new ElasticSearchObject(
+      ResourceRef('file, tf.id),
+      "",
+      tf.uploadDate,
+      List.empty,
+      List.empty,
+      List.empty,
+      List.empty,
+      Map()
+    )
+  }
+}

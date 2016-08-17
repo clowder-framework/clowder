@@ -1614,10 +1614,7 @@ class Files @Inject()(
         val formatter = new SimpleDateFormat("dd/MM/yyyy")
 
         current.plugin[ElasticsearchPlugin].foreach {
-          _.index("data", "file", id,
-            List(("filename", file.filename), ("contentType", file.contentType),("author",file.author.fullName),("uploadDate",formatter.format(file.uploadDate)), ("datasetId", fileDsId),
-              ("datasetName", fileDsName), ("tag", tagsJson.toString), ("comments", commentJson.toString),
-              ("usermetadata", usrMd), ("technicalmetadata", techMd), ("xmlmetadata", xmlMd)))
+          _.index("data", id, file)
         }
       }
       case None => Logger.error("File not found: " + id)

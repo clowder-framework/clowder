@@ -181,8 +181,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /**
-   * Index document using an arbitrary map of fields.
-   */
+    * Index document using an arbitrary map of fields.
+    */
   def index(index: String, docType: String, id: UUID, fields: List[(String, JsValue)]) {
     connect
     client match {
@@ -192,6 +192,35 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         fields.map(fv => builder.field(fv._1, fv._2))
         builder.endObject()
         val response = x.prepareIndex(index, docType, id.toString())
+          .setSource(builder)
+          .execute()
+          .actionGet()
+        Logger.info("Indexing document: " + response.getId)
+      }
+      case None => Logger.error("Could not call index because we are not connected.")
+    }
+  }
+
+  /**
+    * Index document using an arbitrary map of fields.
+    */
+  def index(index: String, id: UUID, eso: models.ElasticSearchObject) {
+    connect
+    client match {
+      case Some(x) => {
+        val builder = jsonBuilder()
+          .startObject()
+
+        builder.field("creator", eso.creator)
+        builder.field("created", eso.created)
+        builder.field("parent_of", eso.parent_of)
+        builder.field("child_of", eso.child_of)
+        builder.field("tags", eso.tags)
+        builder.field("comments", eso.comments)
+        builder.field("metadata", eso.metadata)
+
+        builder.endObject()
+        val response = x.prepareIndex(index, eso.doctype.resourceType.name, id.toString())
           .setSource(builder)
           .execute()
           .actionGet()
@@ -246,12 +275,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     val formatter = new SimpleDateFormat("dd/MM/yyyy")
 
-    index("data", "collection", collection.id,
-      List(("name", collection.name),
-        ("description", collection.description),
-        ("created", formatter.format(collection.created)),
-        ("datasetId", dsCollsId),
-        ("datasetName", dsCollsName)))
+    index("data", collection.id, collection)
   }
 
   /**
@@ -314,20 +338,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     val formatter = new SimpleDateFormat("dd/MM/yyyy")
 
-    index("data", "dataset", dataset.id,
-      List(("name", dataset.name),
-        ("description", dataset.description),
-        ("author", dataset.author.fullName),
-        ("created", formatter.format(dataset.created)),
-        ("fileId", fileDsId),
-        ("fileName", fileDsName),
-        ("collId", dsCollsId),
-        ("collName", dsCollsName),
-        ("tag", tagsJson.toString()),
-        ("comments", commentJson.toString()),
-        ("usermetadata", usrMd),
-        ("technicalmetadata", techMd),
-        ("xmlmetadata", xmlMd)))
+    index("data", dataset.id,dataset)
   }
 
   /**
@@ -371,18 +382,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
     val formatter = new SimpleDateFormat("dd/MM/yyyy")
 
-    index("data", "file", file.id,
-      List(("filename", file.filename),
-        ("contentType", file.contentType),
-        ("author", file.author.fullName),
-        ("uploadDate", formatter.format(file.uploadDate)),
-        ("datasetId", fileDsId),
-        ("datasetName", fileDsName),
-        ("tag", tagsJson.toString()),
-        ("comments", commentJson.toString()),
-        ("usermetadata", usrMd),
-        ("technicalmetadata", techMd),
-        ("xmlmetadata", xmlMd)))
+    index("data", file.id, file)
   }
 
   override def onStop() {

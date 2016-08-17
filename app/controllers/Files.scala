@@ -428,12 +428,12 @@ def uploadExtract() =
                   Logger.debug("xmlmd=" + xmlToJSON)
 
                   current.plugin[ElasticsearchPlugin].foreach {
-                    _.index("data", "file", id, List(("filename", f.filename), ("contentType", f.contentType), ("datasetId", ""), ("datasetName", ""), ("xmlmetadata", xmlToJSON)))
+                    _.index("data", id, f)
                   }
                 }
                 else {
                   current.plugin[ElasticsearchPlugin].foreach {
-                    _.index("data", "file", id, List(("filename", f.filename), ("contentType", f.contentType), ("datasetId", ""), ("datasetName", "")))
+                    _.index("data", id, f)
                   }
                 }
                 current.plugin[VersusPlugin].foreach {
@@ -568,13 +568,13 @@ def uploadExtract() =
 	              Logger.debug("xmlmd=" + xmlToJSON)
 	              
 	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",""),("datasetName",""), ("xmlmetadata", xmlToJSON)))
-		            }
+		              _.index("data", id, f)
+                }
 	            }
 	            else{
 		            current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", "file", id, List(("filename",f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())),("datasetId",""),("datasetName","")))
-		            }
+		              _.index("data", id, f)
+                }
 	            }
 
 	             current.plugin[VersusPlugin].foreach{ _.indexFile(f.id, fileType) }
@@ -962,13 +962,14 @@ def uploadExtract() =
               val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
               files.addXMLMetadata(id, xmlToJSON)
               Logger.debug("xmlmd=" + xmlToJSON)
+              // TODO: Why do TempFiles write to "files" instead of "data"? Should we actually index these?
               current.plugin[ElasticsearchPlugin].foreach {
-                _.index("files", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
+                _.index("files", id, f)
               }
             }
             else {
               current.plugin[ElasticsearchPlugin].foreach {
-                _.index("files", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date()))))
+                _.index("files", id, f)
               }
             }
             //add file to RDF triple store if triple store is used
@@ -1066,12 +1067,12 @@ def uploadExtract() =
               files.addXMLMetadata(id, xmlToJSON)
               Logger.debug("xmlmd=" + xmlToJSON)
               current.plugin[ElasticsearchPlugin].foreach {
-                _.index("data", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date())), ("xmlmetadata", xmlToJSON)))
+                _.index("data", id, f)
               }
             }
             else {
               current.plugin[ElasticsearchPlugin].foreach {
-                _.index("data", "file", id, List(("filename", nameOfFile), ("contentType", f.contentType), ("uploadDate", dateFormat.format(new Date()))))
+                _.index("data", id, f)
               }
             }
             //add file to RDF triple store if triple store is used
@@ -1196,12 +1197,12 @@ def uploadExtract() =
                       Logger.debug("xmlmd=" + xmlToJSON)
 
                       current.plugin[ElasticsearchPlugin].foreach {
-                        _.index("data", "file", id, List(("filename", f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId", dataset.id.toString()), ("datasetName", dataset.name), ("xmlmetadata", xmlToJSON)))
+                        _.index("data", id, f)
                       }
                     }
                     else {
                       current.plugin[ElasticsearchPlugin].foreach {
-                        _.index("data", "file", id, List(("filename", f.filename), ("contentType", f.contentType), ("author", identity.fullName), ("uploadDate", dateFormat.format(new Date())), ("datasetId", dataset.id.toString()), ("datasetName", dataset.name)))
+                        _.index("data", id, f)
                       }
                     }
 

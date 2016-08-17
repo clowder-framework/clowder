@@ -344,8 +344,9 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           //index collection
             val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-            current.plugin[ElasticsearchPlugin].foreach{_.index("data", "collection", collection.id,
-            List(("name",collection.name), ("description", collection.description), ("created",dateFormat.format(new Date()))))}
+            current.plugin[ElasticsearchPlugin].foreach{
+              _.index("data", collection.id, collection)
+            }
 
           //Add to Events Table
           val option_user = users.findByIdentity(identity)

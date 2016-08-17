@@ -61,13 +61,18 @@ object Dataset {
   }
 
   implicit def datasetToElasticSearchObject(ds: Dataset): ElasticSearchObject = {
+    val dsComments = List.empty
+    val dsMetadata = ds.metadata.map( (m:(String,Any)) => (m._1 -> Json.parse(m._2.toString)))
+
     new ElasticSearchObject(
       ResourceRef('dataset, ds.id),
       ds.author.id.toString,
       ds.created,
-      ds.tags.map( (t:Tag) => t.as[ElasticSearchTag] ),
       List.empty,
-      ds.metadata
+      List.empty,
+      ds.tags.map( (t:Tag) => t.asInstanceOf[ElasticSearchTag] ),
+      dsComments,
+      dsMetadata
     )
   }
 }
