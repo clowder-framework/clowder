@@ -4,11 +4,13 @@
 function confirmDeleteResource(resourceType, resourceTypeName, resourceId, resourceName, isreload, url) {
     var msg = "Are you sure you want to delete the " + resourceTypeName + " '" + resourceName + "'?";
     if (resourceType == "space") {
-        msg = msg + " When you delete a " + resourceTypeName + ", the collections, datasets and files will still be available.";
+        msg = msg + " When you delete a " + resourceTypeName + ", the collections, datasets, folders and files will still be available.";
     } else if (resourceType == "collection") {
-        msg = msg + " When you delete a collection, the datasets and files will still be available.";
+        msg = msg + " When you delete a collection, the datasets, folders and files will still be available.";
     } else if (resourceType == "dataset") {
-        msg += " When you delete a dataset you also delete the files contained within it.";
+        msg += " When you delete a dataset you also delete the folders and files contained within it.";
+    } else if (resourceType == "folder") {
+        msg += " When you delete a folder you also delete the files contained within it.";
     }
     var modalHTML = confirmDeleteTemplate(msg, resourceType, resourceId, isreload, url);
     var confirmModal = $(modalHTML);
