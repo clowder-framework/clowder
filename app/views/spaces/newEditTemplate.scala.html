@@ -55,7 +55,9 @@
           @helper.inputRadioGroup(myForm("access"),
             options = options(SpaceStatus.PRIVATE.toString->SpaceStatus.PRIVATE.toString,SpaceStatus.PUBLIC.toString->SpaceStatus.PUBLIC.toString),
             '_label -> "Access")
-          <p id="help_access">This sets the privacy level for collections, datasets, and files in the @spaces.spaceTitle(). Access can be overwritten at the individual dataset level. By marking access "Public" you make the @spaces.spaceTitle()'s content available to users outside of your project team.</p>
+          <p id="help_access">
+            @Messages("crate.space.access.message", Messages("collections.title").toLowerCase(), Messages("datasets.title").toLowerCase, Messages("space.title").toLowerCase, Messages("dataset.title").toLowerCase)
+          </p>
           @helper.input(myForm("space_id"), 'class -> "form-control", '_label ->"") {(id, name, value, args) =>
           <input type="hidden" name="@id" value="@value">
           }
