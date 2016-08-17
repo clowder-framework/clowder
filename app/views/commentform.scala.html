@@ -72,10 +72,8 @@ function postComment(id, resourceType) {
   var encText = htmlEncode(text);
   $('#commentField_' + id).val("");
 
-  console.log("Posting " + text);
+  //console.log("Posting " + text);
   if (text !== "") {
-    console.log ( "Submitting comment " + text ) ;
-
     var request;
     if (resourceType == "comment") {
         request = jsRoutes.api.Comments.comment(id).ajax({
@@ -107,18 +105,22 @@ function postComment(id, resourceType) {
     }
 
     request.done ( function ( response, textStatus, jqXHR ) {
-      // TODO - figure out how to get hour:minute:second on the date format as well...
-      var formatted = $.datepicker.formatDate ( 'MM dd, yy', new Date());
+      var dateNow = new Date();
+      var hour = ('0'+dateNow.getHours()).slice(-2);
+      var minute = ('0'+dateNow.getMinutes()).slice(-2)
+      var second = ('0'+dateNow.getSeconds()).slice(-2)
+
+      var formatted = $.datepicker.formatDate('MM dd, yy', dateNow) + " " + hour+":"+minute+":"+second;
       var post = "<div class=\"comment\" id=\"comment_" + response + "\">";
       post += "<div class=\"media\">";
-      post += "<a class='pull-left' href='#'>";
+      post += "<a class='pull-left' href='@routes.Profile.viewProfileUUID(user.get.id)'>";
       post += "<div class='thumbnail'>";
-      post += "<img class='avatar' src='@(user.get.avatarUrl.getOrElse(""))'>";
+      post += "<img class='avatar' src='@(user.get.getAvatarUrl())'>";
       post += "</div></a>";
       post += "<div class='media-body'>";
       post += "<div class=\"comment-header\">";
       post += "<a href=\"@routes.Profile.viewProfileUUID(user.get.id)\">@user.get.fullName</a>";
-      post += "<span>•</span>";
+      post += "<span> • </span>";
       post += "<span>" + formatted + "</span>";
       post += "</div>";
       post += "<div class=\"comment-body\" id=\"comment-body_" + response + "\">" + encText.replace(/\n/g, "<br>") + "</div>";

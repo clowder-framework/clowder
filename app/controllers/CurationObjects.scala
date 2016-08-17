@@ -339,20 +339,29 @@ class CurationObjects @Inject()(
       implicit val user = request.user
           curations.get(curationId) match {
             case Some(cOld) => {
-              val c = cOld.copy( datasets = datasets.get(cOld.datasets(0).id).toList)
-              val propertiesMap: Map[String, List[String]] = Map("Purpose" -> List("Testing-Only"))
-              val mmResp = callMatchmaker(c, user)(request)
-              user match {
-                case Some(usr) => {
-                  val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
-                  val isTrial = spaces.get(c.space) match {
-                    case None => true
-                    case Some(s) => s.isTrial
+              spaces.get(cOld.space) match {
+                case Some(s) => {
+                  val c = cOld.copy( datasets = datasets.get(cOld.datasets(0).id).toList)
+                  val propertiesMap: Map[String, List[String]] =
+                    if(s.isTrial) {
+                      Map("Purpose" -> List("Testing-Only"))
+                    } else {
+                      Map("Purpose" -> List("Testing-Only", "Production"))
+                    }
+
+                  val mmResp = callMatchmaker(c, user)(request)
+                  user match {
+                    case Some(usr) => {
+                      val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
+
+                      Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences, mmResp))
+                    }
+                    case None =>Results.Redirect(routes.Error.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
                   }
-                  Ok(views.html.spaces.matchmakerResult(c, propertiesMap, repPreferences, mmResp, isTrial))
                 }
-                case None =>Results.Redirect(routes.Error.authenticationRequiredMessage("You must be logged in to perform that action.", request.uri ))
+                case None => BadRequest(views.html.notFound("Space does not exist."))
               }
+
             }
             case None => BadRequest(views.html.notFound("Curation Object does not exist."))
           }
@@ -524,8 +533,6 @@ class CurationObjects @Inject()(
           curations.get(curationId) match {
             case Some(cOld) => {
               val c = cOld.copy( datasets = datasets.get(cOld.datasets(0).id).toList)
-              val propertiesMap: Map[String, List[String]] = Map("Purpose" -> List("Testing-Only"))
-              val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
               val repository = request.body.asFormUrlEncoded.getOrElse("repository", null)
               val purpose = request.body.asFormUrlEncoded.getOrElse("purpose", null)
               curations.updateRepository(c.id, repository(0))
@@ -534,7 +541,15 @@ class CurationObjects @Inject()(
                 val userPreferences:Map[String, String] = Map("Purpose" -> purpose(0))
                 userService.updateRepositoryPreferences(usr.id, userPreferences)
               }
-              Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository(0), propertiesMap, repPreferences))
+              var repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
+              val isTrial = spaces.get(c.space) match {
+                case None => true
+                case Some(s) => s.isTrial
+              }
+              if(isTrial)  {
+                repPreferences = repPreferences ++ Map("Purpose" -> List("Testing-Only"))
+              }
+              Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository(0), repPreferences))
             }
             case None => InternalServerError(spaceTitle + " not found")
           }
@@ -552,9 +567,8 @@ class CurationObjects @Inject()(
             case Some(c) => {
               curations.updateRepository(c.id, repository)
               val mmResp = callMatchmaker(c, user).filter(_.orgidentifier == repository)
-              val propertiesMap: Map[String, List[String]] = Map("Purpose" -> List("Testing-Only"))
               val repPreferences = usr.repositoryPreferences.map{ value => value._1 -> value._2.toString().split(",").toList}
-              Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository, propertiesMap, repPreferences))
+              Ok(views.html.spaces.curationDetailReport( c, mmResp(0), repository, repPreferences))
             }
             case None => InternalServerError("Curation Object not found")
           }

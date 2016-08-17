@@ -1,4 +1,4 @@
-@(curationObject: models.CurationObject, mmResponse: models.MatchMakerResponse, repository: String, properties: Map[String, List[String]],  userPreferences:  Map[String,List[String]])(implicit user: Option[models.User] )
+@(curationObject: models.CurationObject, mmResponse: models.MatchMakerResponse, repository: String, userPreferences:  Map[String,List[String]])(implicit user: Option[models.User] )
 @main("Submit to Repository") {
     <div class="row">
         <div class="col-md-12">
@@ -28,16 +28,12 @@
             <div class="panel panel-default">
                 <div class="panel-body">
                     <h4>Preferences</h4>
-                    @for((prop, value) <- properties) {
+                    @for((prop, value) <- userPreferences) {
                         <h5>@prop</h5>
                         @for(cur<-value) {
                             @if((userPreferences.contains(prop.replace(" ", "_")) && userPreferences(prop.replace(" ", "_")).contains(cur))) {
-                                <input type="checkbox" name="@prop" value="@cur" checked> @cur <br/>
-
-                            } else {
-                                <input type="checkbox" name="@prop" value="@cur"> @cur <br/>
+                                @cur
                             }
-
                         }
                     }
                 </div>
