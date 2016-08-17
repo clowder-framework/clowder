@@ -2153,7 +2153,10 @@ class  Datasets @Inject()(
       space.name
     }
 
+    var decodedDesc = Utils.decodeString(dataset.description)
+
     var desc = dataset.description.replaceAll("&nbsp;"," ")
+
 
     //make it de-html - ized
 

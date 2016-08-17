@@ -60,6 +60,11 @@ object Utils {
     vocabularyTerm.copy(key = decodedKey, default_value = decodedDefaultValue)
   }
 
+  def decodeString(string : String) : String ={
+    val decodedString = StringEscapeUtils.unescapeHtml(string)
+    return decodedString
+  }
+
   /**
    * Default formatter for the `String` type.
    */
