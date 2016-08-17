@@ -78,9 +78,10 @@ function removeCollectionFromSpace(spaceId, id, event){
 }
 
 //Method to remove the collection from space and redirect back to a specific URL on completion
-function removeCollectionFromSpaceAndRedirect(spaceId, collectionId, isreload, url){
+function removeCollectionFromSpaceAndRedirect(spaceId, collectionId, isreload, url) {
     console.log(url);
-    var request = jsRoutes.api.Spaces.removeCollection(spaceId, collectionId).ajax({
+    var removeDatasets =$('#removedatasets').is(':checked');
+    var request = jsRoutes.api.Spaces.removeCollection(spaceId, collectionId, removeDatasets).ajax({
         type: 'POST'
     });
 

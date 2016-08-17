@@ -49,8 +49,8 @@ class Users @Inject()(users: UserService, events: EventService) extends ApiContr
               Unauthorized("Not authenticated")
           }
       }
-  }  
-  
+  }
+
   /**
    * Returns a single user based on the id specified.
    */

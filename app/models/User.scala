@@ -61,7 +61,7 @@ trait User extends Identity {
   }
 
   def getFollowedObjectList(objectType : String) : List[TypedID] = {
-    followedEntities.filter { x => x.objectType == objectType }  
+    followedEntities.filter { x => x.objectType == objectType }
   }
 
   /**
