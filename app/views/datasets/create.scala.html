@@ -21,7 +21,7 @@
             <p>@Messages("dataset.create.message", Messages("datasets.title"), Messages("dataset.title").toLowerCase, Messages("space.title"))</p>
 
             @if(collection.isDefined){
-                <p>@Messages("dataset.create.collection.message", Messages("collection.title").toLowerCase) <a href="@routes.Collections.collection(collection.get.id)">@collection.get.name</a></p>
+                <p>@Messages("dataset.create.collection.message", Messages("dataset.title").toLowerCase, Messages("collection.title").toLowerCase) <a href="@routes.Collections.collection(collection.get.id)">@collection.get.name</a></p>
             }
         </div>
     </div>
@@ -107,7 +107,7 @@
         var idNameObj = {};
 
         function isUndefined(value) {
-            return typeof value === 'undefined';
+            return typeof value === 'undefined';f
         }
 
         function getName(id) {
