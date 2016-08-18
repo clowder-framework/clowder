@@ -376,7 +376,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //add private (the default status) flag for each dataset/collection/space
     updateMongo("add-trial-flag", addTrialFlag)
-    
+
     // instead of user agreeent we now have a terms of services
     updateMongo("switch-user-agreement-to-terms-of-services", switchToTermsOfServices)
 

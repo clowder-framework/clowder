@@ -261,7 +261,7 @@ class MongoDBSpaceService @Inject() (
   def getDatasetsInSpace(space: Option[String], limit: Option[Integer]): List[Dataset] = {
       datasets.listSpace(limit.getOrElse(12), space.getOrElse(""))
   }
-  
+
   def insert(space: ProjectSpace): Option[String] = {
     ProjectSpaceDAO.insert(space).map(_.toString)
   }
@@ -305,18 +305,28 @@ class MongoDBSpaceService @Inject() (
    * @param collection collection id
    * @param space space id
    */
-  def addCollection(collection: UUID, space: UUID): Unit = {
+  def addCollection(collection: UUID, space: UUID, user : Option[User]): Unit = {
     log.debug(s"Adding $collection to $space")
 
     collections.addToSpace(collection, space)
     collections.get(collection) match {
       case Some(current_collection) => {
+
+        if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
+          val datasetsInCollection = datasets.listCollection(current_collection.id.stringify, user)
+          for (dataset <- datasetsInCollection){
+            if (!dataset.spaces.contains(space)){
+              addDataset(dataset.id,space)
+            }
+          }
+        }
+
         val childCollectionIds = current_collection.child_collection_ids
         for (childCollectionId <- childCollectionIds){
           collections.get(childCollectionId) match {
             case Some(child_collection) => {
               if (!child_collection.spaces.contains(space)){
-                addCollection(childCollectionId, space)
+                addCollection(childCollectionId, space, user)
               }
               collections.syncUpRootSpaces(child_collection.id, child_collection.root_spaces)
             }
@@ -481,7 +491,7 @@ class MongoDBSpaceService @Inject() (
       case Some(s) if name != s.name => {
         events.updateObjectName(spaceId, name)
       }
-      case _ => 
+      case _ =>
     }
     ProjectSpaceDAO.update(MongoDBObject("_id" -> new ObjectId(spaceId.stringify)),
       $set("description" -> description, "name" -> name, "resourceTimeToLive" -> timeToLive, "isTimeToLiveEnabled" -> expireEnabled, "status" -> access),

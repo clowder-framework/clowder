@@ -75,7 +75,12 @@
                     </ul>
                 </div>
                 <div class="col-md-12 box-white-space" id="aboutdesc">
-                    <p id ="ds_description" class="inline">@if(dataset.description.length > 0) { @Html(dataset.description) } else {Add a description}</p>
+                    <p id ="ds_description" class="inline">
+                    @if(dataset.description.length > 0) {
+                        @Html(dataset.description)
+                    } else {
+                        @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))){Add a description}
+                        }</p>
                     @if(Permission.checkPermission(Permission.EditDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
                         <a id="edit-description" class="hiddencomplete" href="javascript:updateDescription()" title="Click to edit description">
                             <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
