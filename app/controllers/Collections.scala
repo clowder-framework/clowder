@@ -3,7 +3,7 @@ package controllers
 import api.Permission._
 import models._
 import org.apache.commons.lang.StringEscapeUtils._
-import util.{Formatters, RequiredFieldsConfig}
+import util.{Formatters, RequiredFieldsConfig, SearchUtils}
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.{Inject, Singleton}
@@ -343,9 +343,8 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           }
 
           //index collection
-            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
             current.plugin[ElasticsearchPlugin].foreach{
-              _.index("data", collection.id, collection)
+              _.index("data", collection.id, SearchUtils.getElasticSearchObject(collection))
             }
 
           //Add to Events Table

@@ -18,18 +18,3 @@ case class TempFile(
   length: Long = 0,
   thumbnail_id: Option[UUID] = None
   )
-
-object TempFile {
-  implicit def fileToElasticSearchObject(tf: TempFile): ElasticSearchObject = {
-    new ElasticSearchObject(
-      ResourceRef('file, tf.id),
-      "",
-      tf.uploadDate,
-      List.empty,
-      List.empty,
-      List.empty,
-      List.empty,
-      Map()
-    )
-  }
-}

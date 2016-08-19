@@ -6,7 +6,7 @@ import models._
 import com.mongodb.casbah.commons.MongoDBObject
 import java.text.SimpleDateFormat
 
-import _root_.util.{License, Parsers}
+import _root_.util.{License, Parsers, SearchUtils}
 
 import scala.collection.mutable.ListBuffer
 import Transformation.LidoToCidocConvertion
@@ -214,52 +214,8 @@ class MongoDBFileService @Inject() (
   def index(id: UUID) {
     get(id) match {
       case Some(file) => {
-        var tagListBuffer = new ListBuffer[String]()
-
-        for (tag <- file.tags) {
-          tagListBuffer += tag.name
-        }
-
-        val tagsJson = new JSONArray(tagListBuffer.toList)
-
-        val commentsByFile = for (comment <- comments.findCommentsByFileId(id)) yield {
-          comment.text
-        }
-        val commentJson = new JSONArray(commentsByFile)
-
-        val usrMd = getUserMetadataJSON(id)
-        val techMd = getTechnicalMetadataJSON(id)
-        val xmlMd = getXMLMetadataJSON(id)
-
-
-        // Create mapping in JSON-LD metadata from name -> contents
-        val metadataMap = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))
-        var allMd = Map[String, JsArray]()
-        for (md <- metadataMap) {
-          if (allMd.keySet.exists(_ == md.creator.displayName)) {
-            // If we already have metadata from this creator, add this metadata to their array
-            var existingMd = allMd(md.creator.displayName).as[JsArray]
-            existingMd = existingMd :+ md.content
-            allMd += (md.creator.displayName -> existingMd)
-          } else {
-            // Otherwise add a new entry for this creator
-            allMd += (md.creator.displayName -> new JsArray(Seq(md.content)))
-          }
-        }
-        val allMdStr = Json.toJson(allMd).toString()
-
-        var fileDsId = ""
-        var fileDsName = ""
-
-        for (dataset <- datasets.findByFileId(file.id)) {
-          fileDsId = fileDsId + dataset.id.stringify + " %%% "
-          fileDsName = fileDsName + dataset.name + " %%% "
-        }
-        
-        val formatter = new SimpleDateFormat("dd/MM/yyyy")
-
         current.plugin[ElasticsearchPlugin].foreach {
-          _.index("data", id, file)
+          _.index("data", id, SearchUtils.getElasticSearchObject(file))
         }
         
       }

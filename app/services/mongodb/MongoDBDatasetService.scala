@@ -6,7 +6,7 @@ import java.util.{ArrayList, Date}
 import javax.inject.{Inject, Singleton}
 
 import Transformation.LidoToCidocConvertion
-import util.{Parsers, Formatters}
+import util.{Parsers, Formatters, SearchUtils}
 import api.Permission
 import api.Permission.Permission
 import com.mongodb.casbah.Imports._
@@ -1162,64 +1162,8 @@ class MongoDBDatasetService @Inject() (
   def index(id: UUID) {
     Dataset.findOneById(new ObjectId(id.stringify)) match {
       case Some(dataset) => {
-        var tagListBuffer = new ListBuffer[String]()
-
-        for (tag <- dataset.tags) {
-          tagListBuffer += tag.name
-        }
-
-        val tagsJson = new JSONArray(tagListBuffer.toList)
-
-        val commentsByDataset = for (comment <- comments.findCommentsByDatasetId(id, false)) yield {
-          comment.text
-        }
-        val commentJson = new JSONArray(commentsByDataset)
-
-        val usrMd = getUserMetadataJSON(id)
-        val techMd = getTechnicalMetadataJSON(id)
-        val xmlMd = getXMLMetadataJSON(id)
-
-        // Create mapping in JSON-LD metadata from name -> contents
-        val metadataMap = metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
-        var allMd = Map[String, JsArray]()
-        for (md <- metadataMap) {
-          if (allMd.keySet.exists(_ == md.creator.displayName)) {
-            // If we already have metadata from this creator, add this metadata to their array
-            var existingMd = allMd(md.creator.displayName).as[JsArray]
-            existingMd = existingMd :+ md.content
-            allMd += (md.creator.displayName -> existingMd)
-          } else {
-            // Otherwise add a new entry for this creator
-            allMd += (md.creator.displayName -> new JsArray(Seq(md.content)))
-          }
-        }
-        val allMdStr = Json.toJson(allMd).toString()
-
-        var fileDsId = ""
-        var fileDsName = ""
-        for(fileId <- dataset.files){
-          fileDsId = fileDsId + fileId.stringify + "  "
-          files.get(fileId).foreach(file =>  fileDsName = fileDsName + file.filename + "  ")
-
-        }
-
-        var dsCollsId = ""
-        var dsCollsName = ""
-
-        dataset.collections.foreach(c => {
-          collections.get(c) match {
-            case Some(collection) => {
-              dsCollsId = dsCollsId + collection.id.stringify + " %%% "
-              dsCollsName = dsCollsName + collection.name + " %%% "
-            }
-            case None =>
-          }
-        })
-
-        val formatter = new SimpleDateFormat("dd/MM/yyyy")
-
         current.plugin[ElasticsearchPlugin].foreach {
-          _.index("data", id, dataset)
+          _.index("data", id, SearchUtils.getElasticSearchObject(dataset))
         }
       }
       case None => Logger.error("Dataset not found: " + id)

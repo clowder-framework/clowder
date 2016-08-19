@@ -14,7 +14,8 @@ import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json.JSONArray
 import java.text.SimpleDateFormat
 import play.api.Play.current
-import play.api.libs.json.{JsValue, JsObject}
+import play.api.libs.json.JsValue
+import _root_.util.SearchUtils
 
 
 /**
@@ -204,30 +205,36 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   /**
     * Index document using an arbitrary map of fields.
     */
-  def index(index: String, id: UUID, eso: models.ElasticSearchObject) {
-    connect
-    client match {
-      case Some(x) => {
-        val builder = jsonBuilder()
-          .startObject()
+  def index(index: String, id: UUID, esObj: Option[models.ElasticSearchObject]) {
+    esObj match {
+      case Some(eso) => {
+        connect
+        client match {
+          case Some(x) => {
+            val builder = jsonBuilder()
+            .startObject()
 
-        builder.field("creator", eso.creator)
-        builder.field("created", eso.created)
-        builder.field("parent_of", eso.parent_of)
-        builder.field("child_of", eso.child_of)
-        builder.field("tags", eso.tags)
-        builder.field("comments", eso.comments)
-        builder.field("metadata", eso.metadata)
+            builder.field("creator", eso.creator)
+            builder.field("created", eso.created)
+            builder.field("parent_of", eso.parent_of)
+            builder.field("child_of", eso.child_of)
+            builder.field("tags", eso.tags)
+            builder.field("comments", eso.comments)
+            builder.field("metadata", eso.metadata)
 
-        builder.endObject()
-        val response = x.prepareIndex(index, eso.doctype.resourceType.name, id.toString())
-          .setSource(builder)
-          .execute()
-          .actionGet()
-        Logger.info("Indexing document: " + response.getId)
+            builder.endObject()
+            val response = x.prepareIndex(index, eso.doctype.resourceType.name, id.toString())
+            .setSource(builder)
+            .execute()
+            .actionGet()
+            Logger.info("Indexing document: " + response.getId)
+          }
+          case None => Logger.error("Could not call index because we are not connected.")
+        }
       }
-      case None => Logger.error("Could not call index because we are not connected.")
+      case None => Logger.error("No ElasticSearchObject given; could not index "+id.toString)
     }
+
   }
 
   /** delete all indices */
@@ -262,20 +269,13 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
    */
   def index(collection: Collection, recursive: Boolean) {
     connect
-    var dsCollsId = ""
-    var dsCollsName = ""
-
-    for (dataset <- datasets.listCollection(collection.id.stringify)) {
+    // Perform recursion first if necessary
+    for (dataset <- datasets.listCollection(collection.id.toString)) {
       if (recursive) {
         index(dataset, recursive)
       }
-      dsCollsId = dsCollsId + dataset.id.stringify + " %%% "
-      dsCollsName = dsCollsName + dataset.name + " %%% "
     }
-
-    val formatter = new SimpleDateFormat("dd/MM/yyyy")
-
-    index("data", collection.id, collection)
+    index("data", collection.id, SearchUtils.getElasticSearchObject(collection))
   }
 
   /**
@@ -284,61 +284,18 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
    */
   def index(dataset: Dataset, recursive: Boolean) {
     connect
-    var tagListBuffer = new ListBuffer[String]()
-
-    for (tag <- dataset.tags) {
-      tagListBuffer += tag.name
-    }
-
-    val tagsJson = new JSONArray(tagListBuffer.toList)
-
-    Logger.debug("tagStr=" + tagsJson)
-
-    val commentsByDataset = for (comment <- comments.findCommentsByDatasetId(dataset.id, false)) yield {
-      comment.text
-    }
-    val commentJson = new JSONArray(commentsByDataset)
-
-    Logger.debug("commentStr=" + commentJson.toString())
-
-    val usrMd = datasets.getUserMetadataJSON(dataset.id)
-    Logger.debug("usrmd=" + usrMd)
-
-    val techMd = datasets.getTechnicalMetadataJSON(dataset.id)
-    Logger.debug("techmd=" + techMd)
-
-    val xmlMd = datasets.getXMLMetadataJSON(dataset.id)
-    Logger.debug("xmlmd=" + xmlMd)
-
-    var fileDsId = ""
-    var fileDsName = ""
+    // Perform recursion first if necessary
     for (fileId <- dataset.files) {
       files.get(fileId) match {
         case Some(f) => {
           if (recursive) {
             index(f)
           }
-          fileDsId = fileDsId + f.id.stringify + "  "
-          fileDsName = fileDsName + f.filename + "  "
         }
-        case None => Logger.error(s"Error getting file $fileId")
-
+        case None => Logger.error(s"Error getting file $fileId for recursive indexing")
       }
     }
-
-    var dsCollsId = ""
-    var dsCollsName = ""
-
-    dataset.collections.foreach(c => {
-      collections.get(c).foreach(collection => {
-        dsCollsId = dsCollsId + collection.id.stringify + " %%% "
-        dsCollsName = dsCollsName + collection.name + " %%% "
-      })
-    })
-
-    val formatter = new SimpleDateFormat("dd/MM/yyyy")
-
-    index("data", dataset.id,dataset)
+    index("data", dataset.id, SearchUtils.getElasticSearchObject(dataset))
   }
 
   /**
@@ -346,43 +303,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
    */
   def index(file: File) {
     connect
-    var tagListBuffer = new ListBuffer[String]()
-
-    for (tag <- file.tags) {
-      tagListBuffer += tag.name
-    }
-
-    val tagsJson = new JSONArray(tagListBuffer.toList)
-
-    Logger.debug("tagStr=" + tagsJson)
-
-    val commentsByFile = for (comment <- comments.findCommentsByFileId(file.id)) yield {
-      comment.text
-    }
-    val commentJson = new JSONArray(commentsByFile)
-
-    Logger.debug("commentStr=" + commentJson.toString())
-
-    val usrMd = files.getUserMetadataJSON(file.id)
-    Logger.debug("usrmd=" + usrMd)
-
-    val techMd = files.getTechnicalMetadataJSON(file.id)
-    Logger.debug("techmd=" + techMd)
-
-    val xmlMd = files.getXMLMetadataJSON(file.id)
-    Logger.debug("xmlmd=" + xmlMd)
-
-    var fileDsId = ""
-    var fileDsName = ""
-
-    for (dataset <- datasets.findByFileId(file.id)) {
-      fileDsId = fileDsId + dataset.id.stringify + " %%% "
-      fileDsName = fileDsName + dataset.name + " %%% "
-    }
-
-    val formatter = new SimpleDateFormat("dd/MM/yyyy")
-
-    index("data", file.id, file)
+    index("data", file.id, SearchUtils.getElasticSearchObject(file))
   }
 
   override def onStop() {

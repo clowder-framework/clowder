@@ -2,14 +2,10 @@ package controllers
 
 import java.io._
 import java.net.URLEncoder
-import java.text.SimpleDateFormat
-import java.util.Date
 import javax.inject.Inject
 import javax.mail.internet.MimeUtility
 
 import api.Permission
-import com.mongodb.DBObject
-import com.wordnik.swagger.annotations.ApiOperation
 import fileutils.FilesUtils
 import models._
 import org.apache.commons.lang.StringEscapeUtils._
@@ -17,16 +13,15 @@ import play.api.Logger
 import play.api.Play.{current, configuration}
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee._
-import play.api.libs.json.Json
 import play.api.libs.json.Json._
-import services._
 import play.api.libs.concurrent.Execution.Implicits._
 import services._
 import java.text.SimpleDateFormat
 import views.html.defaultpages.badRequest
+import util.SearchUtils
 
+import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 
@@ -425,15 +420,13 @@ def uploadExtract() =
                   val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
                   files.addXMLMetadata(id, xmlToJSON)
 
-                  Logger.debug("xmlmd=" + xmlToJSON)
-
                   current.plugin[ElasticsearchPlugin].foreach {
-                    _.index("data", id, f)
+                    _.index("data", id, SearchUtils.getElasticSearchObject(f))
                   }
                 }
                 else {
                   current.plugin[ElasticsearchPlugin].foreach {
-                    _.index("data", id, f)
+                    _.index("data", id, SearchUtils.getElasticSearchObject(f))
                   }
                 }
                 current.plugin[VersusPlugin].foreach {
@@ -556,24 +549,19 @@ def uploadExtract() =
 	           /****************************/ 
               // TODO replace null with None
 	            current.plugin[RabbitmqPlugin].foreach{_.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))}
-
-	            val dateFormat = new SimpleDateFormat("dd/MM/yyyy") 
-
 	            
 	            //for metadata files
 	            if(fileType.equals("application/xml") || fileType.equals("text/xml")){
 	              val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
 	              files.addXMLMetadata(id, xmlToJSON)
 	              
-	              Logger.debug("xmlmd=" + xmlToJSON)
-	              
 	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", id, f)
+		              _.index("data", id, SearchUtils.getElasticSearchObject(f))
                 }
 	            }
 	            else{
 		            current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", id, f)
+		              _.index("data", id, SearchUtils.getElasticSearchObject(f))
                 }
 	            }
 
@@ -906,8 +894,7 @@ def uploadExtract() =
         }
         Logger.debug("Controllers/Files Uploading file " + nameOfFile)
 
-        // store file       
-        Logger.info("uploadSelectQuery")
+        // store file
         val file = queries.save(new FileInputStream(f.ref.file), nameOfFile, f.contentType)
         val uploadedFile = f
 
@@ -948,28 +935,25 @@ def uploadExtract() =
             val key = "unknown." + "query." + fileType.replace("/", ".")
             val host = Utils.baseUrl(request)
             val id = f.id
-            val path = f.path
 
             // TODO replace null with None
             current.plugin[RabbitmqPlugin].foreach {
               _.extract(ExtractorMessage(id, id, host, key, Map.empty, f.length.toString, null, flags))
             }
 
-            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-
             //for metadata files
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
               val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
               files.addXMLMetadata(id, xmlToJSON)
-              Logger.debug("xmlmd=" + xmlToJSON)
+
               // TODO: Why do TempFiles write to "files" instead of "data"? Should we actually index these?
               current.plugin[ElasticsearchPlugin].foreach {
-                _.index("files", id, f)
+                _.index("files", id, SearchUtils.getElasticSearchObject(f))
               }
             }
             else {
               current.plugin[ElasticsearchPlugin].foreach {
-                _.index("files", id, f)
+                _.index("files", id, SearchUtils.getElasticSearchObject(f))
               }
             }
             //add file to RDF triple store if triple store is used
@@ -1059,20 +1043,18 @@ def uploadExtract() =
               _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, null, flags))
             }
 
-            val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-
             //for metadata files
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
               val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
               files.addXMLMetadata(id, xmlToJSON)
-              Logger.debug("xmlmd=" + xmlToJSON)
+
               current.plugin[ElasticsearchPlugin].foreach {
-                _.index("data", id, f)
+                _.index("data", id, SearchUtils.getElasticSearchObject(f))
               }
             }
             else {
               current.plugin[ElasticsearchPlugin].foreach {
-                _.index("data", id, f)
+                _.index("data", id, SearchUtils.getElasticSearchObject(f))
               }
             }
             //add file to RDF triple store if triple store is used
@@ -1187,22 +1169,18 @@ def uploadExtract() =
                       _.extract(ExtractorMessage(id, id, host, key, extra, f.length.toString, dataset_id, flags))
                     }
 
-                    val dateFormat = new SimpleDateFormat("dd/MM/yyyy")
-
                     //for metadata files
                     if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
                       val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
                       files.addXMLMetadata(id, xmlToJSON)
 
-                      Logger.debug("xmlmd=" + xmlToJSON)
-
                       current.plugin[ElasticsearchPlugin].foreach {
-                        _.index("data", id, f)
+                        _.index("data", id, SearchUtils.getElasticSearchObject(f))
                       }
                     }
                     else {
                       current.plugin[ElasticsearchPlugin].foreach {
-                        _.index("data", id, f)
+                        _.index("data", id, SearchUtils.getElasticSearchObject(f))
                       }
                     }
 

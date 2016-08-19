@@ -5,11 +5,11 @@ import java.net.{URL, URLEncoder}
 import javax.inject.Inject
 import javax.mail.internet.MimeUtility
 
-import _root_.util.{FileUtils, Parsers, JSONLD}
+import _root_.util.{FileUtils, Parsers, JSONLD, SearchUtils}
 
 import com.mongodb.casbah.Imports._
 import com.wordnik.swagger.annotations.{Api, ApiOperation}
-import controllers.{Previewers}
+import controllers.Previewers
 import jsonutils.JsonUtil
 import models._
 import play.api.Logger
@@ -1578,43 +1578,8 @@ class Files @Inject()(
   def index(id: UUID) {
     files.get(id) match {
       case Some(file) => {
-        var tagListBuffer = new ListBuffer[String]()
-
-        for (tag <- file.tags) {
-          tagListBuffer += tag.name
-        }
-
-        val tagsJson = new JSONArray(tagListBuffer.toList)
-
-        Logger.debug("tagStr=" + tagsJson);
-
-        val commentsByFile = for (comment <- comments.findCommentsByFileId(id)) yield comment.text
-
-        val commentJson = new JSONArray(commentsByFile)
-
-        Logger.debug("commentStr=" + commentJson.toString())
-
-        val usrMd = files.getUserMetadataJSON(id)
-        Logger.debug("usrmd=" + usrMd)
-
-        val techMd = files.getTechnicalMetadataJSON(id)
-        Logger.debug("techmd=" + techMd)
-
-        val xmlMd = files.getXMLMetadataJSON(id)
-        Logger.debug("xmlmd=" + xmlMd)
-
-        var fileDsId = ""
-        var fileDsName = ""
-
-        for (dataset <- datasets.findByFileId(file.id)) {
-          fileDsId = fileDsId + dataset.id.toString + " %%% "
-          fileDsName = fileDsName + dataset.name + " %%% "
-        }
-        
-        val formatter = new SimpleDateFormat("dd/MM/yyyy")
-
         current.plugin[ElasticsearchPlugin].foreach {
-          _.index("data", id, file)
+          _.index("data", id, SearchUtils.getElasticSearchObject(file))
         }
       }
       case None => Logger.error("File not found: " + id)

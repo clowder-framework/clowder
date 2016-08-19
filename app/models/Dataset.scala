@@ -4,7 +4,6 @@ import com.mongodb.casbah.Imports._
 import java.util.Date
 import play.api.libs.json.{Writes, Json}
 import play.api.libs.json._
-import play.api.libs.functional.syntax._
 
 /**
  * A dataset is a collection of files, and streams.
@@ -58,21 +57,5 @@ object Dataset {
       Json.obj("id" -> dataset.id.toString, "name" -> dataset.name, "description" -> dataset.description,
         "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail, "authorId" -> dataset.author.id)
     }
-  }
-
-  implicit def datasetToElasticSearchObject(ds: Dataset): ElasticSearchObject = {
-    val dsComments = List.empty
-    val dsMetadata = ds.metadata.map( (m:(String,Any)) => (m._1 -> Json.parse(m._2.toString)))
-
-    new ElasticSearchObject(
-      ResourceRef('dataset, ds.id),
-      ds.author.id.toString,
-      ds.created,
-      List.empty,
-      List.empty,
-      ds.tags.map( (t:Tag) => t.asInstanceOf[ElasticSearchTag] ),
-      dsComments,
-      dsMetadata
-    )
   }
 }
