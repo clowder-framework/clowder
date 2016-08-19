@@ -122,8 +122,9 @@ class Metadata @Inject()(
     user match {
       case Some(u) => {
         val body = request.body
-        if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
-          val uri = (body \ "uri").as[String]
+        Logger.info(body.toString())
+        if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined ) {
+          val uri = (body \ "uri").asOpt[String].getOrElse("")
           spaceService.get(spaceId) match {
             case Some(space) => {
               addDefinitionHelper(uri, body, Some(space.id), u, Some(space))
@@ -143,8 +144,8 @@ class Metadata @Inject()(
       request.user match {
         case Some(user) => {
           val body = request.body
-          if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined && (body \ "uri").asOpt[String].isDefined) {
-            val uri = (body \ "uri").as[String]
+          if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined ) {
+            val uri = (body \ "uri").asOpt[String].getOrElse("")
             addDefinitionHelper(uri, body, None, user, None)
           } else {
             BadRequest(toJson("Invalid Resource type"))
@@ -154,10 +155,13 @@ class Metadata @Inject()(
       }
   }
 
-  def addDefinitionHelper(uri: String, body: JsValue, spaceId: Option[UUID], user: User, space: Option[ProjectSpace]): Result = {
-    metadataService.getDefinitionByUri(uri) match {
-      case Some(metadata) => BadRequest(toJson("Metadata definition with same uri exists."))
-      case None => {
+  private def addDefinitionHelper(uri: String, body: JsValue, spaceId: Option[UUID], user: User, space: Option[ProjectSpace]): Result = {
+
+    uri match {
+      case x if x.length > 0 && metadataService.getDefinitionByUri(x).isDefined =>
+        BadRequest(toJson("Metadata definition with same uri exists."))
+      case _ => {
+
         val definition = MetadataDefinition(json = body, spaceId = spaceId)
         metadataService.addDefinition(definition)
         space match {
@@ -171,7 +175,7 @@ class Metadata @Inject()(
         Ok(JsObject(Seq("status" -> JsString("ok"))))
       }
     }
-  }
+    }
 
   def editDefinition(id:UUID, spaceId: Option[String]) = ServerAdminAction (parse.json) {
     implicit request =>
