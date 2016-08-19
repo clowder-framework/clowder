@@ -421,12 +421,12 @@ def uploadExtract() =
                   files.addXMLMetadata(id, xmlToJSON)
 
                   current.plugin[ElasticsearchPlugin].foreach {
-                    _.index("data", id, SearchUtils.getElasticSearchObject(f))
+                    _.index("data", id, SearchUtils.getElasticsearchObject(f))
                   }
                 }
                 else {
                   current.plugin[ElasticsearchPlugin].foreach {
-                    _.index("data", id, SearchUtils.getElasticSearchObject(f))
+                    _.index("data", id, SearchUtils.getElasticsearchObject(f))
                   }
                 }
                 current.plugin[VersusPlugin].foreach {
@@ -556,12 +556,12 @@ def uploadExtract() =
 	              files.addXMLMetadata(id, xmlToJSON)
 	              
 	              current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", id, SearchUtils.getElasticSearchObject(f))
+		              _.index("data", id, SearchUtils.getElasticsearchObject(f))
                 }
 	            }
 	            else{
 		            current.plugin[ElasticsearchPlugin].foreach{
-		              _.index("data", id, SearchUtils.getElasticSearchObject(f))
+		              _.index("data", id, SearchUtils.getElasticsearchObject(f))
                 }
 	            }
 
@@ -948,12 +948,12 @@ def uploadExtract() =
 
               // TODO: Why do TempFiles write to "files" instead of "data"? Should we actually index these?
               current.plugin[ElasticsearchPlugin].foreach {
-                _.index("files", id, SearchUtils.getElasticSearchObject(f))
+                _.index("files", id, SearchUtils.getElasticsearchObject(f))
               }
             }
             else {
               current.plugin[ElasticsearchPlugin].foreach {
-                _.index("files", id, SearchUtils.getElasticSearchObject(f))
+                _.index("files", id, SearchUtils.getElasticsearchObject(f))
               }
             }
             //add file to RDF triple store if triple store is used
@@ -1049,12 +1049,12 @@ def uploadExtract() =
               files.addXMLMetadata(id, xmlToJSON)
 
               current.plugin[ElasticsearchPlugin].foreach {
-                _.index("data", id, SearchUtils.getElasticSearchObject(f))
+                _.index("data", id, SearchUtils.getElasticsearchObject(f))
               }
             }
             else {
               current.plugin[ElasticsearchPlugin].foreach {
-                _.index("data", id, SearchUtils.getElasticSearchObject(f))
+                _.index("data", id, SearchUtils.getElasticsearchObject(f))
               }
             }
             //add file to RDF triple store if triple store is used
@@ -1175,12 +1175,12 @@ def uploadExtract() =
                       files.addXMLMetadata(id, xmlToJSON)
 
                       current.plugin[ElasticsearchPlugin].foreach {
-                        _.index("data", id, SearchUtils.getElasticSearchObject(f))
+                        _.index("data", id, SearchUtils.getElasticsearchObject(f))
                       }
                     }
                     else {
                       current.plugin[ElasticsearchPlugin].foreach {
-                        _.index("data", id, SearchUtils.getElasticSearchObject(f))
+                        _.index("data", id, SearchUtils.getElasticsearchObject(f))
                       }
                     }
 

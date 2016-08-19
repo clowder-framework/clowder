@@ -5,17 +5,17 @@ import play.api.libs.json.Json._
 import play.api.libs.json._
 
 
-case class ElasticSearchTag (
+case class ElasticsearchTag (
   creator: String,
   created: Date,
   tag: String
 )
-object ElasticSearchTag {
+object ElasticsearchTag {
   /**
-    * Serializer for ElasticSearchTag
+    * Serializer for ElasticsearchTag
     */
-  implicit object ElasticSearchTagWrites extends Writes[ElasticSearchTag] {
-    def writes(est: ElasticSearchTag): JsValue = JsObject(Seq(
+  implicit object ElasticsearchTagWrites extends Writes[ElasticsearchTag] {
+    def writes(est: ElasticsearchTag): JsValue = JsObject(Seq(
       "creator" -> JsString(est.creator),
       "created" -> JsString(est.created.toString),
       "tag" -> JsString(est.tag)
@@ -23,10 +23,10 @@ object ElasticSearchTag {
   }
 
   /**
-    * Deserializer for ElasticSearchTag
+    * Deserializer for ElasticsearchTag
     */
-  implicit object ElasticSearchTagReads extends Reads[ElasticSearchTag] {
-    def reads(json: JsValue): JsResult[ElasticSearchTag] = JsSuccess(new ElasticSearchTag(
+  implicit object ElasticsearchTagReads extends Reads[ElasticsearchTag] {
+    def reads(json: JsValue): JsResult[ElasticsearchTag] = JsSuccess(new ElasticsearchTag(
       (json \ "creator").as[String],
       (json \ "created").as[Date],
       (json \ "tag").as[String]
@@ -34,17 +34,17 @@ object ElasticSearchTag {
   }
 }
 
-case class ElasticSearchComment (
+case class ElasticsearchComment (
   creator: String,
   created: Date,
   text: String
 )
-object ElasticSearchComment {
+object ElasticsearchComment {
   /**
-    * Serializer for ElasticSearchComment
+    * Serializer for ElasticsearchComment
     */
-  implicit object ElasticSearchCommentWrites extends Writes[ElasticSearchComment] {
-    def writes(esc: ElasticSearchComment): JsValue = JsObject(Seq(
+  implicit object ElasticsearchCommentWrites extends Writes[ElasticsearchComment] {
+    def writes(esc: ElasticsearchComment): JsValue = JsObject(Seq(
       "creator" -> JsString(esc.creator),
       "created" -> JsString(esc.created.toString),
       "text" -> JsString(esc.text)
@@ -52,10 +52,10 @@ object ElasticSearchComment {
   }
 
   /**
-    * Deserializer for ElasticSearchComment
+    * Deserializer for ElasticsearchComment
     */
-  implicit object ElasticSearchCommentReads extends Reads[ElasticSearchComment] {
-    def reads(json: JsValue): JsResult[ElasticSearchComment] = JsSuccess(new ElasticSearchComment(
+  implicit object ElasticsearchCommentReads extends Reads[ElasticsearchComment] {
+    def reads(json: JsValue): JsResult[ElasticsearchComment] = JsSuccess(new ElasticsearchComment(
       (json \ "creator").as[String],
       (json \ "created").as[Date],
       (json \ "text").as[String]
@@ -63,33 +63,33 @@ object ElasticSearchComment {
   }
 }
 
-case class ElasticSearchObject (
+case class ElasticsearchObject (
   doctype: ResourceRef,
   creator: String,
   created: Date,
   parent_of: List[String] = List.empty,
   child_of: List[String] = List.empty,
-  tags: List[ElasticSearchTag] = List.empty,
-  comments: List[ElasticSearchComment] = List.empty, // TODO: are these actually used? might need to fetch like Metadata
+  tags: List[ElasticsearchTag] = List.empty,
+  comments: List[ElasticsearchComment] = List.empty, // TODO: are these actually used? might need to fetch like Metadata
   metadata: Map[String, JsValue] = Map()
 )
 
-object ElasticSearchObject {
-  import ElasticSearchTag._
-  import ElasticSearchComment._
+object ElasticsearchObject {
+  import ElasticsearchTag._
+  import ElasticsearchComment._
 
   /**
-    * Serializer for ElasticSearchObject
+    * Serializer for ElasticsearchObject
     */
-  implicit object ElasticSearchWrites extends Writes[ElasticSearchObject] {
-    def writes(eso: ElasticSearchObject): JsValue = Json.obj(
+  implicit object ElasticsearchWrites extends Writes[ElasticsearchObject] {
+    def writes(eso: ElasticsearchObject): JsValue = Json.obj(
       "type" -> JsString(eso.doctype.toString),
       "creator" -> JsString(eso.creator),
       "created" -> JsString(eso.created.toString),
       "parent_of" -> JsArray(eso.parent_of.toSeq.map( (p:String) => Json.toJson(p)): Seq[JsValue]),
       "child_of" -> JsArray(eso.child_of.toSeq.map( (c:String) => Json.toJson(c)): Seq[JsValue]),
-      "tags" -> JsArray(eso.tags.toSeq.map( (t:ElasticSearchTag) => Json.toJson(t)): Seq[JsValue]),
-      "comments" -> JsArray(eso.comments.toSeq.map( (c:ElasticSearchComment) => Json.toJson(c)): Seq[JsValue]),
+      "tags" -> JsArray(eso.tags.toSeq.map( (t:ElasticsearchTag) => Json.toJson(t)): Seq[JsValue]),
+      "comments" -> JsArray(eso.comments.toSeq.map( (c:ElasticsearchComment) => Json.toJson(c)): Seq[JsValue]),
       "metadata" -> JsArray(eso.metadata.toSeq.map(
         (m:(String,JsValue)) => new JsObject(Seq(m._1 -> m._2)) )
       ) // TODO: Fetch metadata from MD collection rather than from dataset/file
@@ -97,17 +97,17 @@ object ElasticSearchObject {
   }
 
   /**
-    * Deserializer for ElasticSearchObject
+    * Deserializer for ElasticsearchObject
     */
-  implicit object ElasticSearchReads extends Reads[ElasticSearchObject] {
-    def reads(json: JsValue): JsResult[ElasticSearchObject] = JsSuccess(new ElasticSearchObject(
+  implicit object ElasticsearchReads extends Reads[ElasticsearchObject] {
+    def reads(json: JsValue): JsResult[ElasticsearchObject] = JsSuccess(new ElasticsearchObject(
       (json \ "type").as[ResourceRef],
       (json \ "creator").as[String],
       (json \ "created").as[Date],
       (json \ "parent_of").as[List[String]],
       (json \ "child_of").as[List[String]],
-      (json \ "tags").as[List[ElasticSearchTag]],
-      (json \ "comments").as[List[ElasticSearchComment]],
+      (json \ "tags").as[List[ElasticsearchTag]],
+      (json \ "comments").as[List[ElasticsearchComment]],
       (json \ "metadata").as[Map[String, JsValue]]
     ))
   }

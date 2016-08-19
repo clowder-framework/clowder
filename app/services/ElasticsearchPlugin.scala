@@ -33,18 +33,18 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   val serverPort = play.api.Play.configuration.getInt("elasticsearchSettings.serverPort").getOrElse(9300)
 
   override def onStart() {
-    Logger.debug("Elasticsearchplugin started but not yet connected to Elasticsearch")
+    Logger.debug("ElasticsearchPlugin started but not yet connected to Elasticsearch")
   }
 
   def connect(): Boolean = {
     if (client.isDefined) {
-      Logger.debug("Already Connected to Elasticsearch")
+      Logger.debug("Already connected to Elasticsearch")
       return true
     }
     try {
       val settings = ImmutableSettings.settingsBuilder().put("cluster.name", nameOfCluster).build()
       client = Some(new TransportClient(settings).addTransportAddress(new InetSocketTransportAddress(serverAddress, serverPort)))
-      Logger.debug("--- ElasticSearch Client is being created----")
+      Logger.debug("--- Elasticsearch Client is being created----")
       client match {
         case Some(x) => {
           Logger.debug("Index \"data\"  is being created if it does not exist ---")
@@ -89,11 +89,11 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   def search(index: String, query: String): SearchResponse = {
     connect
-    Logger.info("Searching ElasticSearch for " + query)
+    Logger.info("Searching Elasticsearch for " + query)
 
     client match {
       case Some(x) => {
-        Logger.info("Searching ElasticSearch for " + query)
+        Logger.info("Searching Elasticsearch for " + query)
         val response = x.prepareSearch(index)
           .setTypes("file", "dataset","collection")
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
@@ -113,10 +113,10 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   def search(index: String, fields: Array[String], query: String): SearchResponse = {
     connect
-    Logger.info("Searching ElasticSearch for " + query)
+    Logger.info("Searching Elasticsearch for " + query)
     client match {
       case Some(x) => {
-        Logger.info("Searching ElasticSearch for " + query)
+        Logger.info("Searching Elasticsearch for " + query)
         var qbqs = QueryBuilders.queryString(query)
         for (f <- fields) {
           qbqs.field(f.trim())
@@ -142,7 +142,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     connect
     client match {
       case Some(x) => {
-        Logger.info("Searching complex ElasticSearch for " + query)
+        Logger.info("Searching complex Elasticsearch for " + query)
         //var qbqs = QueryBuilders.queryString(query)
         //for (f <- fields) {
         //  qbqs.field(f.trim())
@@ -205,7 +205,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   /**
     * Index document using an arbitrary map of fields.
     */
-  def index(index: String, id: UUID, esObj: Option[models.ElasticSearchObject]) {
+  def index(index: String, id: UUID, esObj: Option[models.ElasticsearchObject]) {
     esObj match {
       case Some(eso) => {
         connect
@@ -232,7 +232,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           case None => Logger.error("Could not call index because we are not connected.")
         }
       }
-      case None => Logger.error("No ElasticSearchObject given; could not index "+id.toString)
+      case None => Logger.error("No ElasticsearchObject given; could not index "+id.toString)
     }
 
   }
@@ -275,7 +275,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         index(dataset, recursive)
       }
     }
-    index("data", collection.id, SearchUtils.getElasticSearchObject(collection))
+    index("data", collection.id, SearchUtils.getElasticsearchObject(collection))
   }
 
   /**
@@ -295,7 +295,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         case None => Logger.error(s"Error getting file $fileId for recursive indexing")
       }
     }
-    index("data", dataset.id, SearchUtils.getElasticSearchObject(dataset))
+    index("data", dataset.id, SearchUtils.getElasticsearchObject(dataset))
   }
 
   /**
@@ -303,7 +303,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
    */
   def index(file: File) {
     connect
-    index("data", file.id, SearchUtils.getElasticSearchObject(file))
+    index("data", file.id, SearchUtils.getElasticsearchObject(file))
   }
 
   override def onStop() {
