@@ -205,7 +205,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
 
   /** Add vocabulary definitions, leaving it unchanged if the update argument is set to false **/
   def addDefinition(definition: MetadataDefinition, update: Boolean = true): Unit = {
-    val uri = (definition.json \ "uri").asOpt[String]
+    val uri = (definition.json \ "uri").as[String]
     MetadataDefinitionDAO.findOne(MongoDBObject("json.uri" -> uri)) match {
       case Some(md) => {
         if (update) {

@@ -122,7 +122,6 @@ class Metadata @Inject()(
     user match {
       case Some(u) => {
         val body = request.body
-        Logger.info(body.toString())
         if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined ) {
           val uri = (body \ "uri").asOpt[String].getOrElse("")
           spaceService.get(spaceId) match {
