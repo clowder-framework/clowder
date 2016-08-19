@@ -278,7 +278,7 @@
 </script>
 
 <script>
-    var repeatInt = 1; // check for session expiration in minutes
+    var repeatInt = 0.1; // check for session expiration in minutes
 
     if (@user.isDefined) {
         var intervalCount = setInterval(function(){checkSession()}, repeatInt*60000);
@@ -286,31 +286,32 @@
 
     function checkSession() {
         nowTime = new Date();
-        var request = jsRoutes.api.Users.getUser().ajax({
+        var request = jsRoutes.controllers.Login.isLogged().ajax({
             type: 'GET'
         });
         request.done(function(response, textStatus, jqXHR) {
-            //console.log(response);
+            console.log(response);
+            if (response === "no") {
+                clearInterval(intervalCount);    //stop the timer
+                var modalHTML = '<div class="modal" role="dialog">';
+                modalHTML += '<div class="modal-dialog">';
+                modalHTML += '<div class="modal-content">';
+                modalHTML += '<div class="modal-body">';
+                modalHTML += '<p>Your session has expired as of ' + nowTime.toTimeString() + '.<br />Press OK to log in again.</p>';
+                modalHTML += '</div>';
+                modalHTML += '<div class="modal-footer">';
+                modalHTML += '<a type="button" class="btn btn-primary" href="@securesocial.controllers.routes.LoginPage.logout"><span class="glyphicon glyphicon-ok"></span> OK</a>';
+                modalHTML += '</div>';
+                modalHTML += '</div>';
+                modalHTML += '</div>';
+                modalHTML += '</div>';
+                var confirmModal = $(modalHTML);
+                confirmModal.modal({backdrop: "static", keyboard: false});
+                confirmModal.modal("show");
+            }
         });
         request.fail(function(jqXHR, textStatus, errorThrown) {
             console.error("The following error occurred: " + textStatus, errorThrown);
-
-            clearInterval(intervalCount);    //stop the timer
-            var modalHTML = '<div class="modal" role="dialog">';
-            modalHTML += '<div class="modal-dialog">';
-            modalHTML += '<div class="modal-content">';
-            modalHTML += '<div class="modal-body">';
-            modalHTML += '<p>Your session has expired as of ' + nowTime.toTimeString() + '.<br />Press OK to log in again.</p>';
-            modalHTML += '</div>';
-            modalHTML += '<div class="modal-footer">';
-            modalHTML += '<a type="button" class="btn btn-primary" href="@securesocial.controllers.routes.LoginPage.logout"><span class="glyphicon glyphicon-ok"></span> OK</a>';
-            modalHTML += '</div>';
-            modalHTML += '</div>';
-            modalHTML += '</div>';
-            modalHTML += '</div>';
-            var confirmModal = $(modalHTML);
-            confirmModal.modal();
-            confirmModal.modal("show");
         });
     }
 </script>

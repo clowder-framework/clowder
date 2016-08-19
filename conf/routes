@@ -31,6 +31,7 @@ GET            /assets/*file                                                    
 # ----------------------------------------------------------------------
 GET            /users                                                                   @controllers.Users.getUsers(when: String ?= "", id: String ?= "", limit: Int ?=24)
 GET            /users/acceptTermsOfServices                                             @controllers.Users.acceptTermsOfServices(redirect: Option[String] ?= None)
+GET            /login/isLogged                                                          @controllers.Login.isLogged
 
 # ----------------------------------------------------------------------
 # PROFILE
