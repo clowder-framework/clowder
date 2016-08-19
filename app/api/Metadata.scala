@@ -291,21 +291,26 @@ class Metadata @Inject()(
             metadataService.addMetadata(metadata)
             val mdMap = metadata.getExtractionSummary
 
-            //send RabbitMQ message
-            current.plugin[RabbitmqPlugin].foreach { p =>
-              val dtkey = s"${p.exchange}.metadata.added"
-              p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request),
-                dtkey, mdMap, "", metadata.attachedTo.id, ""))
-            }
-
             attachedTo match {
               case Some(resource) => {
                 resource.resourceType match {
                   case ResourceRef.dataset => {
                     datasets.index(resource.id)
+                    //send RabbitMQ message
+                    current.plugin[RabbitmqPlugin].foreach { p =>
+                      val dtkey = s"${p.exchange}.metadata.added"
+                      p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request),
+                        dtkey, mdMap, "", metadata.attachedTo.id, ""))
+                    }
                   }
                   case ResourceRef.file => {
                     files.index(resource.id)
+                    //send RabbitMQ message
+                    current.plugin[RabbitmqPlugin].foreach { p =>
+                      val dtkey = s"${p.exchange}.metadata.added"
+                      p.extract(ExtractorMessage(metadata.attachedTo.id, UUID(""), controllers.Utils.baseUrl(request),
+                        dtkey, mdMap, "", UUID(""), ""))
+                    }
                   }
                 }
               }
