@@ -23,12 +23,9 @@ import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.mvc.AnyContent
 import services._
-import _root_.util.{FileUtils, JSONLD, License}
-import _root_.util.{JSONLD, License}
-import views.html.dataset
+import _root_.util.{FileUtils, JSONLD, License, SearchUtils}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.mutable.ListBuffer
-import org.apache.commons.io.input.CountingInputStream
 
 /**
  * Dataset API.
@@ -159,16 +156,11 @@ class  Datasets @Inject()(
                     val xmlToJSON = files.getXMLMetadataJSON(UUID(file_id))
                     datasets.addXMLMetadata(UUID(id), UUID(file_id), xmlToJSON)
                     current.plugin[ElasticsearchPlugin].foreach {
-                      _.index("data", "dataset", UUID(id), List(
-                        ("name", Json.toJson(d.name)),
-                        ("description", Json.toJson(d.description)),
-                        ("xmlmetadata", Json.toJson(xmlToJSON))))
+                      _.index(SearchUtils.getElasticsearchObject(d))
                     }
                   } else {
                     current.plugin[ElasticsearchPlugin].foreach {
-                      _.index("data", "dataset", UUID(id), List(
-                        ("name", Json.toJson(d.name)),
-                        ("description", Json.toJson(d.description))))
+                      _.index(SearchUtils.getElasticsearchObject(d))
                     }
                   }
 

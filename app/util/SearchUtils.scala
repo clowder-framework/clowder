@@ -47,10 +47,12 @@ object SearchUtils {
 
     Some(new ElasticsearchObject(
       ResourceRef('file, id),
+      f.filename,
       f.author.id.toString,
       f.uploadDate,
       List.empty,
       child_of,
+      f.description,
       f.tags.map( (t:Tag) => t.asInstanceOf[ElasticsearchTag] ),
       fcomments,
       metadata
@@ -74,10 +76,12 @@ object SearchUtils {
 
     Some(new ElasticsearchObject(
       ResourceRef('dataset, id),
+      ds.name,
       ds.author.id.toString,
       ds.created,
       ds.files.map(fileId => fileId.toString),
       ds.collections.map(collId => collId.toString),
+      ds.description,
       ds.tags.map( (t:Tag) => t.asInstanceOf[ElasticsearchTag] ),
       dscomments,
       metadata
@@ -94,10 +98,12 @@ object SearchUtils {
 
     Some(new ElasticsearchObject(
       ResourceRef('collection, c.id),
+      c.name,
       c.author.id.toString,
       c.created,
       parent_of,
       c.child_collection_ids.map( cc_id => cc_id.toString),
+      c.description,
       List.empty,
       List.empty,
       Map()
@@ -108,10 +114,12 @@ object SearchUtils {
   def getElasticsearchObject(file: TempFile): Option[ElasticsearchObject] = {
     Some(new ElasticsearchObject(
       ResourceRef('file, file.id),
+      file.filename,
       "",
       file.uploadDate,
       List.empty,
       List.empty,
+      "",
       List.empty,
       List.empty,
       Map()

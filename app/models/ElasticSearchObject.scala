@@ -65,10 +65,12 @@ object ElasticsearchComment {
 
 case class ElasticsearchObject (
   resource: ResourceRef,
+  name: String,
   creator: String,
   created: Date,
   parent_of: List[String] = List.empty,
   child_of: List[String] = List.empty,
+  description: String,
   tags: List[ElasticsearchTag] = List.empty,
   comments: List[ElasticsearchComment] = List.empty, // TODO: are these actually used? might need to fetch like Metadata
   metadata: Map[String, JsValue] = Map()
@@ -84,10 +86,12 @@ object ElasticsearchObject {
   implicit object ElasticsearchWrites extends Writes[ElasticsearchObject] {
     def writes(eso: ElasticsearchObject): JsValue = Json.obj(
       "resource" -> JsString(eso.resource.toString),
+      "name" -> JsString(eso.name),
       "creator" -> JsString(eso.creator),
       "created" -> JsString(eso.created.toString),
       "parent_of" -> JsArray(eso.parent_of.toSeq.map( (p:String) => Json.toJson(p)): Seq[JsValue]),
       "child_of" -> JsArray(eso.child_of.toSeq.map( (c:String) => Json.toJson(c)): Seq[JsValue]),
+      "description" -> JsString(eso.description),
       "tags" -> JsArray(eso.tags.toSeq.map( (t:ElasticsearchTag) => Json.toJson(t)): Seq[JsValue]),
       "comments" -> JsArray(eso.comments.toSeq.map( (c:ElasticsearchComment) => Json.toJson(c)): Seq[JsValue]),
       "metadata" -> JsArray(eso.metadata.toSeq.map(
@@ -102,10 +106,12 @@ object ElasticsearchObject {
   implicit object ElasticsearchReads extends Reads[ElasticsearchObject] {
     def reads(json: JsValue): JsResult[ElasticsearchObject] = JsSuccess(new ElasticsearchObject(
       (json \ "resource").as[ResourceRef],
+      (json \ "name").as[String],
       (json \ "creator").as[String],
       (json \ "created").as[Date],
       (json \ "parent_of").as[List[String]],
       (json \ "child_of").as[List[String]],
+      (json \ "description").as[String],
       (json \ "tags").as[List[ElasticsearchTag]],
       (json \ "comments").as[List[ElasticsearchComment]],
       (json \ "metadata").as[Map[String, JsValue]]

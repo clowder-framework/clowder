@@ -186,27 +186,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   /**
     * Index document using an arbitrary map of fields.
     */
-  def index(index: String, docType: String, id: UUID, fields: List[(String, JsValue)]) {
-    connect
-    client match {
-      case Some(x) => {
-        val builder = jsonBuilder()
-          .startObject()
-        fields.map(fv => builder.field(fv._1, fv._2))
-        builder.endObject()
-        val response = x.prepareIndex(index, docType, id.toString())
-          .setSource(builder)
-          .execute()
-          .actionGet()
-        Logger.info("Indexing document: " + response.getId)
-      }
-      case None => Logger.error("Could not call index because we are not connected.")
-    }
-  }
-
-  /**
-    * Index document using an arbitrary map of fields.
-    */
   def index(esObj: Option[models.ElasticsearchObject], index: String = "data") {
     esObj match {
       case Some(eso) => {
@@ -215,7 +194,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           case Some(x) => {
             val builder = jsonBuilder()
             .startObject()
-
             builder.field("creator", eso.creator)
             builder.field("created", eso.created)
             builder.field("parent_of", eso.parent_of)
@@ -223,8 +201,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             builder.field("tags", eso.tags)
             builder.field("comments", eso.comments)
             builder.field("metadata", eso.metadata)
-
             builder.endObject()
+
             val response = x.prepareIndex(index, eso.resource.resourceType.name, eso.resource.id.toString)
             .setSource(builder)
             .execute()
