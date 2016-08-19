@@ -174,7 +174,7 @@ class Metadata @Inject()(
         Ok(JsObject(Seq("status" -> JsString("ok"))))
       }
     }
-    }
+  }
 
   def editDefinition(id:UUID, spaceId: Option[String]) = ServerAdminAction (parse.json) {
     implicit request =>
