@@ -89,42 +89,18 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     }
   }
 
-  def search(query: String, index: String = "data"): SearchResponse = {
-    connect
-    Logger.info("Searching Elasticsearch for " + query)
-
-    client match {
-      case Some(x) => {
-        Logger.info("Searching Elasticsearch for " + query)
-        val response = x.prepareSearch(index)
-          .setTypes("file", "dataset", "collection")
-          .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-          .setQuery(QueryBuilders.queryString(query).analyzer("snowball").analyzeWildcard(true))
-          .setFrom(0).setSize(60).setExplain(true)
-          .execute()
-          .actionGet()
-        Logger.info("Search hits: " + response.getHits().getTotalHits())
-        response
-      }
-      case None => {
-        Logger.error("Could not call search because we are not connected.")
-        new SearchResponse()
-      }
-    }
-  }
-
-  def search(index: String, fields: Array[String], query: String): SearchResponse = {
+  def search(query: String, fields: Array[String] = Array(), index: String = "data"): SearchResponse = {
     connect
     Logger.info("Searching Elasticsearch for " + query)
     client match {
       case Some(x) => {
         Logger.info("Searching Elasticsearch for " + query)
-        var qbqs = QueryBuilders.queryString(query)
+        val qbqs = QueryBuilders.queryString(query)
         for (f <- fields) {
           qbqs.field(f.trim())
         }
         val response = x.prepareSearch(index)
-          .setTypes("file", "dataset", "collection")
+          .setTypes("file", "dataset", "collection") // TODO: can this be removed?
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
           .setQuery(qbqs.analyzer("snowball").analyzeWildcard(true))
           .setFrom(0).setSize(60).setExplain(true)

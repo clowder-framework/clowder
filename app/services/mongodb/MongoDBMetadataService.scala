@@ -337,7 +337,7 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
 
         //plugin.searchComplex("data", Array[String]("metadata"), query)
 
-        val result: SearchResponse = plugin.search("data", Array[String]("metadata"), qString)
+        val result: SearchResponse = plugin.search(qString, Array[String]("metadata"))
         for (hit <- result.getHits().getHits()) {
           // Check if search result has any metadata
           // TODO: For 'Advanced Search' should this no longer be restricted to Metadata?

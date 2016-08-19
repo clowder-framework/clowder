@@ -49,7 +49,7 @@ class Search @Inject() (
             } else {
               Logger.debug("field(0)=" + fields(0) + "  fields(1)= " + fields(1).replaceAll("([+:/\\\\])", "\\\\$1"))
               val fieldsArray = fields(0).split(",")
-              current.plugin[ElasticsearchPlugin].map { _.search("data", fieldsArray, fields(1).replaceAll("([+:/\\\\])", "\\\\$1")) }
+              current.plugin[ElasticsearchPlugin].map { _.search(fields(1).replaceAll("([+:/\\\\])", "\\\\$1"), fieldsArray) }
             }
           } else
             current.plugin[ElasticsearchPlugin].map { _.search(query.replaceAll("([+:/\\\\])", "\\\\$1")) }
