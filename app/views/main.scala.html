@@ -278,7 +278,7 @@
 </script>
 
 <script>
-    var repeatInt = 0.1; // check for session expiration in minutes
+    var repeatInt = 1; // check for session expiration in minutes
 
     if (@user.isDefined) {
         var intervalCount = setInterval(function(){checkSession()}, repeatInt*60000);
