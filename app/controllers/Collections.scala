@@ -24,7 +24,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
                             spaceService: SpaceService, users: UserService, events: EventService) extends SecuredController {
 
   /**
-    * String name of the Space such as 'Project space' etc. parsed from the config file
+    * String name of the Space such as 'Project space' etc. parsed from conf/messages
     */
   val spaceTitle: String = Messages("space.title")
 
@@ -268,7 +268,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
     space match {
         //space id is not correct
       case Some(s) if collectionSpace.isEmpty =>{
-        NotFound(views.html.notFound(play.Play.application().configuration().getString("spaceTitle") + " not found."))
+        NotFound(views.html.notFound(Messages("space.title")  + " not found."))
       }
         // view the list of collection in a space that you should not access
       case Some(s) if !Permission.checkPermission(Permission.ViewSpace, ResourceRef(ResourceRef.space, UUID(s))) => {
@@ -534,7 +534,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
         }
         Ok(views.html.collections.datasetsInCollection(decodedDatasetsInside.toList, commentMap, id, prev, next))
       }
-      case None => Logger.error("Error getting collection " + id); BadRequest("Collection not found")
+      case None => Logger.error("Error getting "+ Messages("collection.title") + " " + id); BadRequest(Messages("collection.title") + " not found")
     }
   }
 
@@ -565,7 +565,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
         Ok(views.html.collections.childCollections(decodedChildCollections.toList, collection, prev, next))
       }
-      case None => Logger.error("Error getting collection " + id); BadRequest("Collection not found")
+      case None => Logger.error("Error getting" + Messages("collection.title")  + " " + id); BadRequest(Messages("collection.title") + " not found")
     }
   }
 
@@ -631,8 +631,8 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           Ok(views.html.collectionPreviews(collection_id.toString, previewsByCol, Previewers.findCollectionPreviewers))
         }
         case None => {
-          Logger.error("Error getting collection " + collection_id);
-          BadRequest("Collection not found")
+          Logger.error("Error getting " + Messages("collection.title")  + " " + collection_id);
+          BadRequest(Messages("collection.title") + " not found")
         }
       }
   }

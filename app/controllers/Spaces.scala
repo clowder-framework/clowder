@@ -84,7 +84,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   )
 
   /**
-    * String name of the Space such as 'Project space' etc., parsed from the config file
+    * String name of the Space such as 'Project space' etc., parsed from conf/messages
     */
   val spaceTitle: String = Messages("space.title")
 

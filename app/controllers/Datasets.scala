@@ -44,7 +44,7 @@ class Datasets @Inject()(
   object ActivityFound extends Exception {}
 
   /**
-    * String name of the Space such as 'Project space' etc., parsed from the config file
+    * String name of the Space such as 'Project space' etc., from conf/messages
     */
   val spaceTitle: String = Messages("space.title")
 
@@ -101,7 +101,7 @@ class Datasets @Inject()(
         Ok(views.html.datasets.createStep2(dataset))
       }
       case None => {
-        InternalServerError(s"Dataset $id not found")
+        InternalServerError(s"$Messages('dataset.title') $id not found")
       }
     }
   }
@@ -113,7 +113,7 @@ class Datasets @Inject()(
         Ok(views.html.datasets.addFiles(dataset, None))
       }
       case None => {
-        InternalServerError(s"Dataset $id not found")
+        InternalServerError(s"$Messages('dataset.title')  $id not found")
       }
     }
   }
@@ -439,7 +439,7 @@ class Datasets @Inject()(
                   isInPublicSpace = true
                 }
               }
-              case None => Logger.error(s"space with id $sp on dataset $id doesn't exist.")
+              case None => Logger.error(s"space with id $sp on $Messages('dataset.title') $id doesn't exist.")
             }
           }
 
@@ -467,7 +467,7 @@ class Datasets @Inject()(
           } else {
             showAccess = play.Play.application().configuration().getBoolean("enablePublic")
           }
-          var access=if(showAccess) {
+          val access=if(showAccess) {
             if(dataset.isDefault && isInPublicSpace) {
               "Public (" + spaceTitle + " Default)"
             } else if (dataset.isDefault && !isInPublicSpace) {
@@ -478,7 +478,7 @@ class Datasets @Inject()(
           } else {
             ""
           }
-          var accessOptions = new ListBuffer[String]();
+          var accessOptions = new ListBuffer[String]()
           if(isInPublicSpace){
             accessOptions.append(spaceTitle + " Default (Public)")
           } else {
@@ -494,7 +494,7 @@ class Datasets @Inject()(
         }
         case None => {
           Logger.error("Error getting dataset" + id)
-          BadRequest(views.html.notFound("Dataset does not exist."))
+          BadRequest(views.html.notFound(Messages("dataset.title") + " does not exist."))
         }
     }
   }
@@ -571,7 +571,7 @@ class Datasets @Inject()(
         case Some(section) => {
           datasets.findOneByFileId(section.file_id) match {
             case Some(dataset) => Redirect(routes.Datasets.dataset(dataset.id))
-            case None => InternalServerError("Dataset not found")
+            case None => InternalServerError(Messages("dataset.title") + " not found")
           }
         }
         case None => InternalServerError("Section not found")
@@ -607,9 +607,9 @@ class Datasets @Inject()(
               Seq(
                 toJson(
                   Map(
-                    "name" -> toJson("Dataset ID Invalid."),
+                    "name" -> toJson(Messages("dataset.title") + " ID Invalid."),
                     "size" -> toJson(0),
-                    "error" -> toJson(s"Dataset with the specified ID=${ds} was not found. Please try again.")
+                    "error" -> toJson(s"${Messages("dataset.title")} with the specified ID=${ds} was not found. Please try again.")
                   )
                 )
               )
@@ -622,9 +622,9 @@ class Datasets @Inject()(
           Seq(
             toJson(
               Map(
-                "name" -> toJson("Missing dataset ID."),
+                "name" -> toJson("Missing "+ Messages("dataset.title") +"  ID."),
                 "size" -> toJson(0),
-                "error" -> toJson("No datasetid found. Please try again.")
+                "error" -> toJson("No "+ Messages("dataset.title")+"id found. Please try again.")
               )
             )
           )
@@ -646,7 +646,7 @@ class Datasets @Inject()(
         dataset.spaces.foreach { spaceId =>
           spaceService.get(spaceId) match {
             case Some(spc) => userList = spaceService.getUsersInSpace(spaceId) ::: userList
-            case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No $spaceTitle found for dataset $id.")
+            case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No $spaceTitle found for $Messages('dataset.title') $id.")
           }
         }
         userList = userList.distinct.sortBy(_.fullName.toLowerCase)
@@ -662,13 +662,13 @@ class Datasets @Inject()(
                 usersInCurrSpace.foreach { usr =>
                   spaceService.getRoleForUserInSpace(spaceId, usr.id) match {
                     case Some(role) => userListSpaceRoleTupleMap += ( usr.id -> ((spc.name,role.name) :: userListSpaceRoleTupleMap(usr.id)) )
-                    case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: Role not found for dataset $id user $usr.")
+                    case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: Role not found for $Messages('dataset.title') $id user $usr.")
                   }
                 }
 
               }
             }
-            case None => Redirect (routes.Datasets.dataset(id)).flashing ("error" -> s"Error: No $spaceTitle found for dataset $id.");
+            case None => Redirect (routes.Datasets.dataset(id)).flashing ("error" -> s"Error: No $spaceTitle found for $Messages('dataset.title') $id.");
           }
         }
         // Clean-up, and sort space-names per user
@@ -679,9 +679,9 @@ class Datasets @Inject()(
           val currUserIsAuthor = user.get.id.equals(dataset.author.id)
           Ok(views.html.datasets.users(dataset, userListSpaceRoleTupleMap, currUserIsAuthor, userList))
         }
-        else Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No users found for dataset $id.")
+        else Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: No users found for $Messages('dataset.title') $id.")
       }
-      case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: Dataset $id not found.")
+      case None => Redirect(routes.Datasets.dataset(id)).flashing("error" -> s"Error: $Messages('dataset.title') $id not found.")
     }
 
   }
