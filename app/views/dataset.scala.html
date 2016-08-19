@@ -134,13 +134,13 @@
                     }
                     @if(Permission.checkPermission(Permission.AddResourceToDataset, ResourceRef(ResourceRef.dataset, dataset.id))) {
                         <a data-toggle="modal" data-target="#folder-modal" class="btn btn-link">
-                            <span class="glyphicon glyphicon-ok"></span> Create Folder
+                            <span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", "Folder")
                         </a>
                         <div class="modal fade" id="folder-modal" tabindex="-1" role ="dialog" aria-labelledby="folder-modal-label">
                             <div class="modal-dialog" role="document">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h4 class="modal-title" id="folder-modal-label"> Create new Folder</h4>
+                                        <h4 class="modal-title" id="folder-modal-label">  @Messages("create.header.title", "Folder")</h4>
                                     </div>
                                     <div class="modal-body">
                                         <div class="form-group">
@@ -151,7 +151,7 @@
                                     </div>
                                     <div class="modal-footer">
                                         <button type="submit" class="btn btn-primary start"  id="createFolder" title="Create the folder">
-                                            <span class="glyphicon glyphicon-ok"></span> Create Folder
+                                            <span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", "Folder")
                                         </button>
                                         <button class="btn btn-default" title="Cancel creation of folder" data-dismiss="modal" onclick="$('.error').hide();">
                                             <span class="glyphicon glyphicon-remove"></span> Cancel

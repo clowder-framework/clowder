@@ -150,7 +150,7 @@
 						@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
 							<a id="create_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))"
 							class="btn btn-link pull-right" title="Create Dataset">
-								<span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
+								<span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("dataset.title"))</a>
 						}
 						</div>
 					</div>
@@ -170,7 +170,7 @@
 								<a id="create_childcollection"
 								href="@routes.Collections.newCollectionWithParent(collection.id)"
 								class="btn btn-link pull-right" title="Create Child Collection">
-									<span class="glyphicon glyphicon-ok"></span> Create Child Collection</a>
+									<span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("collection.child.title"))</a>
 							}
 						</div>
 					</div>

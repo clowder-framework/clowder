@@ -785,7 +785,7 @@
 			<!-- Move the file to a dataset -->
 			<div class="row ds-section-sm border-top">
 				@if(datasets.length > 0) {
-					<h4>@Messages("a.contain.b", Messages("dataset.title"), "file")</h4>
+					<h4>@Messages("a.contains.b", Messages("dataset.title"), "file")</h4>
 						<!-- A file cannot be part of more datasets as of June 2016. The code, however supports datasets sharing  -->
 					@datasets.map { dataset =>
 						<div id="dat_@dataset.id" class="row bottom-padding">
@@ -834,7 +834,7 @@
 								<select id="datasetAddSelect" class="form-control add-resource"></select>
 								<span class="input-group-btn">
 									<a href="#" class="btn btn-default btn-large" id="moveFileBtn" title="Move file from folder to a dataset" onclick="moveFromDatasetToDataset('@folder.id','@folder.parentDatasetId','@file.id')">
-										<span class="glyphicon glyphicon-move"></span> Move to dataset
+										<span class="glyphicon glyphicon-move"></span> Move to @Messages("dataset.title")
 									</a>
 								</span>
 							</div>

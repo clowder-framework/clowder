@@ -23,7 +23,7 @@
                 </div>
 
                 @if(user.isDefined) {
-                    <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new @Messages("space.title")"><span class="glyphicon glyphicon-ok"></span> Create</a>
+                    <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new @Messages("space.title")"><span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", "")</a>
                 }
 
             </div>

@@ -17,6 +17,7 @@ dataset.title=Dataset
 collections.title=Collections
 collection.title=Collection
 collection.parent.title=Parent Collection
+collection.child.title = Child Collection
 spaces.title=Spaces
 space.title=Space
 dataset.create.message={0} are the primary way to organize files. Share the {1} with a {2} to work with your team.  Permissions will be applied according to your {2}''s settings.
