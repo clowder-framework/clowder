@@ -41,18 +41,18 @@ class Search @Inject() (
         var mapdatasetIds = new scala.collection.mutable.HashMap[String, ListBuffer[(String, String)]]
         var mapcollectionIds = new scala.collection.mutable.HashMap[String, ListBuffer[(String, String)]]
         if (query != "") {
-          var result: Option[SearchResponse] = if (query.contains(":")) {
-            var fields = query.split(":")
+          val result: Option[SearchResponse] = if (query.contains(":")) {
+            val fields = query.split(":")
             if (fields(0).isEmpty()) {
               Logger.debug("field(0) is empty and field 1 =" + query.replaceAll("([+:/\\\\])", "\\\\$1"))
-              current.plugin[ElasticsearchPlugin].map { _.search("data", query.replaceAll("([+:/\\\\])", "\\\\$1")) }
+              current.plugin[ElasticsearchPlugin].map { _.search(query.replaceAll("([+:/\\\\])", "\\\\$1")) }
             } else {
               Logger.debug("field(0)=" + fields(0) + "  fields(1)= " + fields(1).replaceAll("([+:/\\\\])", "\\\\$1"))
               val fieldsArray = fields(0).split(",")
               current.plugin[ElasticsearchPlugin].map { _.search("data", fieldsArray, fields(1).replaceAll("([+:/\\\\])", "\\\\$1")) }
             }
           } else
-            current.plugin[ElasticsearchPlugin].map { _.search("data", query.replaceAll("([+:/\\\\])", "\\\\$1")) }
+            current.plugin[ElasticsearchPlugin].map { _.search(query.replaceAll("([+:/\\\\])", "\\\\$1")) }
 
           result match {
             case Some(searchResponse) => {

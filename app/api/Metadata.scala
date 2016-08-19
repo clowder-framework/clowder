@@ -156,7 +156,7 @@ class Metadata @Inject()(
 
         if (filter != "") {
           val result: Option[SearchResponse] = current.plugin[ElasticsearchPlugin].map {
-            _.search("data", "*"+filter.replaceAll("([+:/\\\\])", "\\\\$1")+"*")
+            _.search("*"+filter.replaceAll("([+:/\\\\])", "\\\\$1")+"*")
           }
 
           // PARSE RESPONSES
