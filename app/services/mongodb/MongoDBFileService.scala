@@ -215,7 +215,7 @@ class MongoDBFileService @Inject() (
     get(id) match {
       case Some(file) => {
         current.plugin[ElasticsearchPlugin].foreach {
-          _.index("data", id, SearchUtils.getElasticsearchObject(file))
+          _.index(SearchUtils.getElasticsearchObject(file))
         }
         
       }

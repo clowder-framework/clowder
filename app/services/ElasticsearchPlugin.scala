@@ -47,7 +47,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       Logger.debug("--- Elasticsearch Client is being created----")
       client match {
         case Some(x) => {
-          Logger.debug("Index \"data\"  is being created if it does not exist ---")
           val indexSettings = ImmutableSettings.settingsBuilder().loadFromSource(jsonBuilder()
             .startObject()
             .startObject("analysis")
@@ -60,26 +59,29 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             .endObject().string())
           val indexExists = x.admin().indices().prepareExists("data").execute().actionGet().isExists()
           if (!indexExists) {
+            Logger.debug("Index \"data\" does not exist; creating now ---")
             x.admin().indices().prepareCreate("data").setSettings(indexSettings).execute().actionGet()
+          } else {
+            Logger.debug("Index \"data\" already exists ---")
           }
           Logger.info("Connected to Elasticsearch")
           true
         }
         case None => {
-          Logger.error("Error connecting to elasticsearch: No Client Created")
+          Logger.error("Error connecting to Elasticsearch: No client created")
           false
         }
       }
 
     } catch {
       case nn: NoNodeAvailableException => {
-        Logger.error("Error connecting to elasticsearch: " + nn)
+        Logger.error("Error connecting to Elasticsearch: " + nn)
         client.map(_.close())
         client = None
         false
       }
       case _: Throwable => {
-        Logger.error("Unknown exception connecting to elasticsearch")
+        Logger.error("Unknown exception connecting to Elasticsearch")
         client.map(_.close())
         client = None
         false
@@ -205,7 +207,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   /**
     * Index document using an arbitrary map of fields.
     */
-  def index(index: String, id: UUID, esObj: Option[models.ElasticsearchObject]) {
+  def index(esObj: Option[models.ElasticsearchObject], index: String = "data") {
     esObj match {
       case Some(eso) => {
         connect
@@ -223,16 +225,16 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             builder.field("metadata", eso.metadata)
 
             builder.endObject()
-            val response = x.prepareIndex(index, eso.doctype.resourceType.name, id.toString())
+            val response = x.prepareIndex(index, eso.resource.resourceType.name, eso.resource.id.toString)
             .setSource(builder)
             .execute()
             .actionGet()
             Logger.info("Indexing document: " + response.getId)
           }
-          case None => Logger.error("Could not call index because we are not connected.")
+          case None => Logger.error("Could not index because Elasticsearch is not connected.")
         }
       }
-      case None => Logger.error("No ElasticsearchObject given; could not index "+id.toString)
+      case None => Logger.error("No ElasticsearchObject found to index")
     }
 
   }
@@ -275,7 +277,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         index(dataset, recursive)
       }
     }
-    index("data", collection.id, SearchUtils.getElasticsearchObject(collection))
+    index(SearchUtils.getElasticsearchObject(collection))
   }
 
   /**
@@ -295,7 +297,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         case None => Logger.error(s"Error getting file $fileId for recursive indexing")
       }
     }
-    index("data", dataset.id, SearchUtils.getElasticsearchObject(dataset))
+    index(SearchUtils.getElasticsearchObject(dataset))
   }
 
   /**
@@ -303,7 +305,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
    */
   def index(file: File) {
     connect
-    index("data", file.id, SearchUtils.getElasticsearchObject(file))
+    index(SearchUtils.getElasticsearchObject(file))
   }
 
   override def onStop() {

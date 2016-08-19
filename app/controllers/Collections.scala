@@ -344,7 +344,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
 
           //index collection
             current.plugin[ElasticsearchPlugin].foreach{
-              _.index("data", collection.id, SearchUtils.getElasticsearchObject(collection))
+              _.index(SearchUtils.getElasticsearchObject(collection))
             }
 
           //Add to Events Table

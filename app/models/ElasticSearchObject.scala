@@ -64,7 +64,7 @@ object ElasticsearchComment {
 }
 
 case class ElasticsearchObject (
-  doctype: ResourceRef,
+  resource: ResourceRef,
   creator: String,
   created: Date,
   parent_of: List[String] = List.empty,
@@ -83,7 +83,7 @@ object ElasticsearchObject {
     */
   implicit object ElasticsearchWrites extends Writes[ElasticsearchObject] {
     def writes(eso: ElasticsearchObject): JsValue = Json.obj(
-      "type" -> JsString(eso.doctype.toString),
+      "resource" -> JsString(eso.resource.toString),
       "creator" -> JsString(eso.creator),
       "created" -> JsString(eso.created.toString),
       "parent_of" -> JsArray(eso.parent_of.toSeq.map( (p:String) => Json.toJson(p)): Seq[JsValue]),
@@ -92,7 +92,7 @@ object ElasticsearchObject {
       "comments" -> JsArray(eso.comments.toSeq.map( (c:ElasticsearchComment) => Json.toJson(c)): Seq[JsValue]),
       "metadata" -> JsArray(eso.metadata.toSeq.map(
         (m:(String,JsValue)) => new JsObject(Seq(m._1 -> m._2)) )
-      ) // TODO: Fetch metadata from MD collection rather than from dataset/file
+      )
     )
   }
 
@@ -101,7 +101,7 @@ object ElasticsearchObject {
     */
   implicit object ElasticsearchReads extends Reads[ElasticsearchObject] {
     def reads(json: JsValue): JsResult[ElasticsearchObject] = JsSuccess(new ElasticsearchObject(
-      (json \ "type").as[ResourceRef],
+      (json \ "resource").as[ResourceRef],
       (json \ "creator").as[String],
       (json \ "created").as[Date],
       (json \ "parent_of").as[List[String]],

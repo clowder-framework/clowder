@@ -1163,7 +1163,7 @@ class MongoDBDatasetService @Inject() (
     Dataset.findOneById(new ObjectId(id.stringify)) match {
       case Some(dataset) => {
         current.plugin[ElasticsearchPlugin].foreach {
-          _.index("data", id, SearchUtils.getElasticsearchObject(dataset))
+          _.index(SearchUtils.getElasticsearchObject(dataset))
         }
       }
       case None => Logger.error("Dataset not found: " + id)
