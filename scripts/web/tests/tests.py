@@ -229,7 +229,13 @@ def run_test(host, hostname, port, key, input_filename, output, POSITIVE, count,
 			print(input_filename + ' -> !"' + output + '"\t'),
 
 	#Run test
-	metadata = extract(host, port, key, input_filename, 60)
+	try:
+		metadata = extract(host, port, key, input_filename, 60)
+	except RequestException as e:
+		if POSITIVE:
+			metadata = str(e)
+		else:
+			metadata = "MISSING " + output + "\n" + str(e)
 	#print '\n' + metadata
 				
 	#Write derived data to a file for later reference
