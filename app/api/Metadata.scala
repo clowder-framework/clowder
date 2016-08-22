@@ -128,11 +128,9 @@ class Metadata @Inject()(
           var uri = (body \ "uri").asOpt[String].getOrElse("")
           spaceService.get(spaceId) match {
             case Some(space) => {
-              if(uri == "" && Messages("metadata.uri").contains("SEAD")) {
-                uri = "http://sead-data.net/terms/" + WordUtils.capitalize(space.name).replaceAll("\\s", "") + '/' + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
-              }
-              body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
 
+              uri =  play.Play.application().configuration().getString("metadata.uri.prefix") + WordUtils.capitalize(space.name).replaceAll("\\s", "") + '/' + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
+              body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
               addDefinitionHelper(uri, body, Some(space.id), u, Some(space))
             }
             case None => BadRequest("The space does not exist")
@@ -152,9 +150,7 @@ class Metadata @Inject()(
           var body = request.body
           if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined ) {
             var uri = (body \ "uri").asOpt[String].getOrElse("")
-            if(uri == "" && Messages("metadata.uri").contains("SEAD")) {
-              uri = "http://sead-data.net/terms/" + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
-            }
+            uri = play.Play.application().configuration().getString("metadata.uri.prefix") + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
             body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
             addDefinitionHelper(uri, body, None, user, None)
           } else {
@@ -165,13 +161,11 @@ class Metadata @Inject()(
       }
   }
 
+  //On GUI, URI is not required, however URI is required in DB. a default one will be generated when needed.
   private def addDefinitionHelper(uri: String, body: JsValue, spaceId: Option[UUID], user: User, space: Option[ProjectSpace]): Result = {
-
-    uri match {
-      case x if x.length > 0 && metadataService.getDefinitionByUri(x).isDefined =>
-        BadRequest(toJson("Metadata definition with same uri exists."))
-      case _ => {
-
+    metadataService.getDefinitionByUri(uri) match {
+      case Some(metadata) => BadRequest(toJson("Metadata definition with same uri exists."))
+      case None => {
         val definition = MetadataDefinition(json = body, spaceId = spaceId)
         metadataService.addDefinition(definition)
         space match {

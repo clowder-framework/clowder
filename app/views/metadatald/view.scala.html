@@ -236,7 +236,7 @@
             });
         })
 
-        // get metadata definitions, the popover showing the URI of metadata definitions
+        // get metadata definitions
         function getMetadataContext(mid, uuid, key) {
             var request = jsRoutes.api.ContextLD.getContextById(uuid).ajax({
                 type: 'GET',
@@ -246,14 +246,10 @@
             request.done(function (response, textStatus, jqXHR) {
                 var fields = response;
                 var context = "Context is not defined.";
-                if (fields['@@context'] ){
-                    if(fields['@@context'][key] !== "") {
-                        context = JSON.stringify(fields['@@context'][key]);
-                    } else {
-                        context = "URI is not defined.";
-                    }
+                if (fields['@@context']) {
+                    context = JSON.stringify(fields['@@context'][key]);
                 }
-
+                //console.log(context);
                 $("#"+mid).popover({
                     content:context,
                     trigger:'hover',
