@@ -268,7 +268,9 @@
             });
         }
         function leaveMetadataContext(mid) {
-            $("#"+mid).popover('hide');
+            $('.popover').each(function(){
+                $("#"+mid).popover('hide');
+            });
         }
 
         // get agent author definitions
