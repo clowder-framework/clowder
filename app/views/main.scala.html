@@ -286,7 +286,7 @@
 
     function checkSession() {
         nowTime = new Date();
-        var request = jsRoutes.controllers.Login.isLogged().ajax({
+        var request = jsRoutes.controllers.Login.isLoggedIn().ajax({
             type: 'GET'
         });
         request.done(function(response, textStatus, jqXHR) {
