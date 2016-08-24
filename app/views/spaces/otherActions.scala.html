@@ -1,5 +1,6 @@
 @(space: ProjectSpace, userRoleMap: Map[User, String])(implicit user: Option[models.User])
 @import api.Permission
+@import play.api.i18n.Messages
 <div class="row ds-section-sm space-col-right">
     <ul class="list-unstyled">
         @if(Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))) {
@@ -7,7 +8,7 @@
                 <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
             </a></li>
             <li><a href="@routes.Spaces.updateSpace(space.id)" class="btn btn-link btn-xs btn-margins">
-                <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit @{spaces.spaceTitle()}
+                <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit @Messages("space.title")
             </a></li>
             <li><a href="@routes.Metadata.getMetadataBySpace(space.id)" class="btn btn-link btn-xs btn-margins">
                 <span class = "glyphicon glyphicon-list" aria-hidden="true"></span> Manage Metadata Terms & Definitions
@@ -20,7 +21,7 @@
                 <span class = "glyphicon glyphicon-user" aria-hidden="true"></span> Manage Users
             </a></li>
             <li><a class="btn btn-link btn-xs disabled btn-margins">
-                <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit @{spaces.spaceTitle()}
+                <span class = "glyphicon glyphicon-edit" aria-hidden="true"></span> Edit @Messages("space.title")
             </a></li>
             <li><a class="btn btn-link btn-xs disabled btn-margins">
                 <span class = "glyphicon glyphicon-list" aria-hidden="true"></span> Manage Metadata Terms & Definitions

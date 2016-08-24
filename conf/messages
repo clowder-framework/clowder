@@ -4,11 +4,40 @@ verify.email.contact.link=@routes.Application.email().absoluteURL(controllers.Ut
 verify.email.content=Your team now has access to the full suite of Clowder functionality, including publishing and making your data public.
 you.title= My {0}
 home.title=My {0}
+create.title= Create {0}
+create.header = Create New {0}
+following.title=Following {0}
+trial.title = Trial {0}
+owner.title = {0}''s {1}
+owner.in.resource.title={0}''s {1} in {2}  <a href="{3}">{4}</a>
+resource.in.title= {0} in {1} <a href="{2}">{3}</a>
 list.title= {0}
 datasets.title=Datasets
+dataset.title=Dataset
 collections.title=Collections
+collection.title=Collection
+collection.parent.title=Parent Collection
+collection.child.title = Child Collection
 spaces.title=Spaces
-
+space.title=Space
+dataset.create.message={0} are the primary way to organize files. Share the {1} with a {2} to work with your team.  Permissions will be applied according to your {2}''s settings.
+dataset.create.collection.message=This {0} will be added to {1}
+collection.create.message={0} allow you to bring together multiple {1} and their associated files in an almost unlimited number of ways. Share a {2} to a {3} to work with your team. Permissions will be applied according to the {3}''s settings.
+space.create.message={0} are collaborative workspaces that contain people (with designated permissions), branding, and {1}.
+dataset.list.message=Create {0} to upload and publish data. Further organize your data using folders and assign metadata at both the file and {1} level.
+collection.list.message=Use {0} to bring together multiple {1} and their associated files in an almost unlimited number of ways.
+space.list.message=Use {0} to collaboratively work with your team to manage and annotate data.
+home.empty.message=This area will show all {0}  you've created.
+recent.message=Viewing most recent {0}
+view.all = View All {0}
+a.in.b = {0} in the {1}
+a.contains.b= {0} containing the {1}
+create.share.multiple.message=By default the {0} is only accessible to the user who created it. You can share this {0} with members of one or more {1}. This is optional.
+create.share.one.message=By default the {0} is only accessible to the user who created it. You can share this {0}  with members of one {1}. This is optional.
+add.to = Add Files to {0}
+create.step2.message=  The {0}
+create.step2.message.2 = was successfully created. Please follow the instructions below to add files to the {0} or view the {0}.
+crate.space.access.message=This sets the privacy level for {0}, {1}, and files in the {2}. Access can be overwritten at the individual {3} level. By marking access "Public" you make the {2}''s content available to users outside of your project team.
 #Login page
 securesocial.login.useEmailAndPassword=Or login using an email and password.
 securesocial.login.useEmailAndPasswordOnly=Login using an email and password.
