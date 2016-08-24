@@ -309,7 +309,7 @@ object FileUtils {
     files.save(file)
     Logger.info(s"created file ${file.id}")
 
-    associateMetaData(creator, file, metadata)
+    associateMetaData(creator, file, metadata, clowderurl)
     associateDataset(file, dataset, folder, user, multipleFile)
 
     // process rest of file in background
@@ -365,7 +365,7 @@ object FileUtils {
       }
       case x => Some(Seq(Json.stringify(x), source))
     }
-    associateMetaData(creator, file, metadata)
+    associateMetaData(creator, file, metadata, clowderurl)
     associateDataset(file, fileds, folder, user)
 
     // process rest of file in background
@@ -424,7 +424,7 @@ object FileUtils {
       }
 
 
-      associateMetaData(creator, file, metadata)
+      associateMetaData(creator, file, metadata, clowderurl)
       associateDataset(file, fileds, folder, user)
 
       // process rest of file in background
@@ -447,7 +447,7 @@ object FileUtils {
   }
 
   /** Associate all metadata with file, added by agent */
-  private def associateMetaData(agent: Agent, file: File, mds: Option[Seq[String]]): Unit = {
+  private def associateMetaData(agent: Agent, file: File, mds: Option[Seq[String]], requestHost: String): Unit = {
     mds.getOrElse(List.empty[String]).foreach { md =>
       // TODO: should do a metadata validity check first
       // Extract context from metadata object and remove it so it isn't repeated twice
@@ -475,6 +475,13 @@ object FileUtils {
 
       //add metadata to mongo
       metadataService.addMetadata(metadata)
+      val mdMap = metadata.getExtractionSummary
+
+      //send RabbitMQ message
+      current.plugin[RabbitmqPlugin].foreach { p =>
+        val dtkey = s"${p.exchange}.metadata.added"
+        p.extract(ExtractorMessage(metadata.attachedTo.id, UUID(""), requestHost, dtkey, mdMap, "", UUID(""), ""))
+      }
     }
   }
 
