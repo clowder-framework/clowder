@@ -31,7 +31,6 @@ class Search @Inject() (
     implicit val user = request.user
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
-        Logger.debug("Searching for: " + query)
         var listOfFiles = ListBuffer.empty[models.File]
         var listOfdatasets = ListBuffer.empty[models.Dataset]
         var listOfcollections = ListBuffer.empty[models.Collection]
@@ -108,7 +107,6 @@ class Search @Inject() (
         Ok(views.html.pluginNotEnabled("Text search"))
       }
     }
-
   }
 
   def multimediasearch() = PermissionAction(Permission.ViewDataset) { implicit request =>

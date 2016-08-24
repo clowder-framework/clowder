@@ -252,7 +252,6 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     }
   }
 
-
   def editDefinition(id: UUID, json: JsValue) = {
     MetadataDefinitionDAO.update(MongoDBObject("_id" ->new ObjectId(id.stringify)),
       $set("json" -> JSON.parse(json.toString()).asInstanceOf[DBObject]) , false, false, WriteConcern.Safe)

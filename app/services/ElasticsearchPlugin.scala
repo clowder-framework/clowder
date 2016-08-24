@@ -6,6 +6,7 @@ import play.api.libs.concurrent.Akka
 import scala.concurrent.duration._
 import scala.util.Try
 import scala.collection.mutable.{MutableList, ListBuffer}
+import scala.collection.immutable.List
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.{Plugin, Logger, Application}
 import org.elasticsearch.common.settings.ImmutableSettings
@@ -36,6 +37,10 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   val serverPort = play.api.Play.configuration.getInt("elasticsearchSettings.serverPort").getOrElse(9300)
   val nameOfIndex = play.api.Play.configuration.getString("elasticsearchSettings.indexNamePrefix").getOrElse("clowder")
 
+  val mustOperators = List(":", "==", "<", ">")
+  val mustNotOperators = List("!=")
+
+
   override def onStart() {
     Logger.debug("ElasticsearchPlugin started but not yet connected")
     connect
@@ -59,11 +64,11 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
                   .startObject("default")
                     .field("type", "snowball")
             .endObject().endObject().endObject().endObject().string())
-          val indexExists = x.admin().indices().prepareExists(nameOfIndex+"-data").execute().actionGet().isExists()
+          val indexExists = x.admin().indices().prepareExists(nameOfIndex).execute().actionGet().isExists()
 
           if (!indexExists) {
-            Logger.debug("Index \""+nameOfIndex+"-data\" does not exist; creating now ---")
-            x.admin().indices().prepareCreate(nameOfIndex+"-data").setSettings(indexSettings).execute().actionGet()
+            Logger.debug("Index \""+nameOfIndex+"\" does not exist; creating now ---")
+            x.admin().indices().prepareCreate(nameOfIndex).setSettings(indexSettings).execute().actionGet()
 
             //TODO: use something like api.routes.Admin.reindex() instead?
             Akka.system.scheduler.scheduleOnce(1 seconds) {
@@ -73,13 +78,14 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
               files.index(None)
             }
           } else {
-            // Check whether this still has deprecated mappaing in "-data" index and delete if so
-            val mappings = x.admin().indices().prepareGetMappings(nameOfIndex+"-data").execute().actionGet().getMappings()
-            // TODO: if (mappings.get(nameOfIndex+"-data").containsKey("dataset")) {
-            if (mappings.get(nameOfIndex+"-data").containsKey("clowder_object")) {
-              Logger.debug("Index \""+nameOfIndex+"-data\" already exists but requires update and reindexing ---")
+            // Check whether this still has deprecated mappaing in index and delete if so
+            // TODO: Make people do this manually, don't auto reindex
+            val mappings = x.admin().indices().prepareGetMappings(nameOfIndex).execute().actionGet().getMappings()
+            // TODO: if (mappings.get(nameOfIndex).containsKey("dataset")) {
+            if (mappings.get(nameOfIndex).containsKey("clowder_object")) {
+              Logger.debug("Index \""+nameOfIndex+"\" already exists but requires update and reindexing ---")
               deleteAll
-              x.admin().indices().prepareCreate(nameOfIndex+"-data").setSettings(indexSettings).execute().actionGet()
+              x.admin().indices().prepareCreate(nameOfIndex).setSettings(indexSettings).execute().actionGet()
 
               //TODO: use something like api.routes.Admin.reindex() instead?
               Akka.system.scheduler.scheduleOnce(1 seconds) {
@@ -127,7 +133,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       *   "extractor_key":  name of extractor component only, e.g. 'extractors.wordCount'
       *   "field_leaf_key": name of immediate field only, e.g. 'lines'
       */
-    val queryObj = SearchUtils.prepareElasticJsonQuery(query)
+    val queryObj = prepareElasticJsonQuery(query)
     val response: SearchResponse = _search(queryObj)
 
     var results = MutableList[ResourceRef]()
@@ -140,11 +146,11 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /** Search using a simple text string */
-  def search(query: String, index: String = nameOfIndex+"-data"): List[ResourceRef] = {
+  def search(query: String, index: String = nameOfIndex): List[ResourceRef] = {
     val specialOperators = List(":", "==", "!=", "<", ">")
     val queryObj = if (specialOperators.exists(query.contains(_))) {
       // Parse search string into object based on special operators
-      SearchUtils.prepareElasticJsonQuery(query)
+      prepareElasticJsonQuery(query)
     } else {
       // Plain text search with no field qualifiers
       jsonBuilder().startObject()
@@ -155,16 +161,22 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     val response = _search(queryObj, index)
 
     var results = MutableList[ResourceRef]()
-    for (hit <- response.getHits().getHits()) {
-      val resource_type = hit.getSource().get("resource_type").toString
-      results += new ResourceRef(Symbol(resource_type), UUID(hit.getId()))
+    Option(response.getHits()) match {
+      case Some(hits) => {
+        for (hit <- hits.getHits()) {
+          val resource_type = hit.getSource().get("resource_type").toString
+          results += new ResourceRef(Symbol(resource_type), UUID(hit.getId()))
+        }
+      }
+      case None => {}
     }
+
 
     results.toList
   }
 
   /*** Execute query */
-  def _search(queryObj: XContentBuilder, index: String = nameOfIndex+"-data"): SearchResponse = {
+  def _search(queryObj: XContentBuilder, index: String = nameOfIndex, from: Int = 0, to: Int = 0): SearchResponse = {
     connect
     client match {
       case Some(x) => {
@@ -173,7 +185,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         val response = x.prepareSearch(index)
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
           .setQuery(queryObj)
-          .setFrom(0).setSize(60).setExplain(true)
+          .setFrom(from).setSize(to).setExplain(true)
           .execute()
           .actionGet()
         Logger.info("Search hits: " + response.getHits().getTotalHits())
@@ -185,6 +197,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       }
     }
   }
+
 
   /** Delete all indices */
   def deleteAll {
@@ -213,37 +226,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   }
 
-  /** Flatten json object to have a single level of key/values with dot notation for nesting */
-  def flattenJson(js: JsValue, prefix: String = ""): JsObject = {
-    // From http://stackoverflow.com/questions/24273433/play-scala-how-to-flatten-a-json-object
-
-    // We will use this substring to trim extractor names from key strings
-    //    e.g. "http://localhost:9000/clowder/api/extractors/wordCount.lines" -> "wordCount.lines"
-    val extractorString = "/extractors/"
-
-    js.as[JsObject].fields.foldLeft(Json.obj()) {
-      // value is sub-object so recursively handle
-      case (acc, (k, v: JsObject)) => {
-        val key = if (k contains extractorString) {
-          k.substring(k.indexOf(extractorString)+extractorString.length())
-        } else k
-
-        if(prefix.isEmpty) acc.deepMerge(flattenJson(v, key))
-        else acc.deepMerge(flattenJson(v, s"$prefix.$key"))
-      }
-      case (acc, (k, v)) => {
-        val key = if (k contains extractorString) {
-          k.substring(k.indexOf(extractorString)+extractorString.length())
-        } else k
-
-        if(prefix.isEmpty) acc + (key -> v)
-        else acc + (s"$prefix.$key" -> v)
-      }
-    }
-  }
-
   /** Traverse metadata field mappings to get unique list for autocomplete */
-  def getAutocompleteFields(query: String, index: String = nameOfIndex+"-data"): List[String] = {
+  def getAutocompleteFields(query: String, index: String = nameOfIndex): List[String] = {
     connect
 
     var listOfTerms = ListBuffer.empty[String]
@@ -309,7 +293,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /** Index document using an arbitrary map of fields. */
-  def index(esObj: Option[models.ElasticsearchObject], index: String = nameOfIndex+"-data") {
+  def index(esObj: Option[models.ElasticsearchObject], index: String = nameOfIndex) {
     esObj match {
       case Some(eso) => {
         connect
@@ -373,6 +357,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       case None => Logger.error("No ElasticsearchObject found to index")
     }
   }
+
 
   /** Take a JsObject and parse into an XContentBuilder JSON object for Elasticsearch */
   def convertJsObjectToBuilder(builder: XContentBuilder, json: JsObject): XContentBuilder = {
@@ -445,10 +430,189 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     fields.toList
   }
 
+  /** Flatten json object to have a single level of key/values with dot notation for nesting */
+  def flattenJson(js: JsValue, prefix: String = ""): JsObject = {
+    // From http://stackoverflow.com/questions/24273433/play-scala-how-to-flatten-a-json-object
+
+    // We will use this substring to trim extractor names from key strings
+    //    e.g. "http://localhost:9000/clowder/api/extractors/wordCount.lines" -> "wordCount.lines"
+    val extractorString = "/extractors/"
+
+    js.as[JsObject].fields.foldLeft(Json.obj()) {
+      // value is sub-object so recursively handle
+      case (acc, (k, v: JsObject)) => {
+        val key = if (k contains extractorString) {
+          k.substring(k.indexOf(extractorString)+extractorString.length())
+        } else k
+
+        if(prefix.isEmpty) acc.deepMerge(flattenJson(v, key))
+        else acc.deepMerge(flattenJson(v, s"$prefix.$key"))
+      }
+      case (acc, (k, v)) => {
+        val key = if (k contains extractorString) {
+          k.substring(k.indexOf(extractorString)+extractorString.length())
+        } else k
+
+        if(prefix.isEmpty) acc + (key -> v)
+        else acc + (s"$prefix.$key" -> v)
+      }
+    }
+  }
+
   /**Attempt to cast String into Double, returning None if not possible**/
   def parseDouble(s: String): Option[Double] = {
     // From http://stackoverflow.com/questions/9542126/scala-is-a-string-parseable-as-a-double
     Try { s.toDouble }.toOption
+  }
+
+  /** Create appropriate search object based on operator */
+  def parseMustOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
+    operator match {
+      case ":" => {
+        // WILDCARD - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-wildcard-query.html
+        // TODO: Elasticsearch recommends not starting query with wildcard
+        // TODO: Consider inverted index? https://www.elastic.co/blog/found-elasticsearch-from-the-bottom-up
+        //builder.startObject("wildcard").field(key, value+"*").endObject()
+        builder.startObject("match").field(key, value).endObject()
+      }
+      case "==" => {
+        // MATCH - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html
+        builder.startObject("match").field(key, value).endObject()
+      }
+      case "<" => {
+        // RANGE - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-range-query.html
+        builder.startObject("range").startObject(key).field("lt", value).endObject().endObject()
+      }
+      case ">" => {
+        // TODO: Suppert lte, gte (<=, >=)
+        builder.startObject("range").startObject(key).field("gt", value).endObject().endObject()
+      }
+      case _ => {}
+    }
+    builder
+  }
+
+  /** Create appropriate search object based on operator */
+  def parseMustNotOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
+    operator match {
+      case "!=" => {
+        // MATCH - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html
+        builder.startObject("match").field(key, value).endObject()
+      }
+      case _ => {}
+    }
+    builder
+  }
+
+  /**Convert list of search term JsValues into an Elasticsearch-ready JSON query object**/
+  def prepareElasticJsonQuery(query: List[JsValue]): XContentBuilder = {
+    /** OPERATORS
+      *  :   contains (partial match)
+      *  ==  equals (exact match)
+      *  !=  not equals (partial matches OK)
+      *  <   less than
+      *  >   greater than
+      **/
+    // BOOL - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
+    var builder = jsonBuilder().startObject().startObject("bool")
+
+    // First, populate the MUST portion of Bool query
+    var populatedMust = false
+    query.foreach(jv => {
+      val key = (jv \ "field_key").toString.replace("\"","")
+      val operator = (jv \ "operator").toString.replace("\"", "")
+      val value = (jv \ "field_value").toString.replace("\"", "")
+
+      // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
+      if (mustOperators.contains(operator) && !populatedMust) {
+        builder.startObject("must")
+        populatedMust = true
+      }
+
+      builder = parseMustOperators(builder, key, value, operator)
+    })
+    if (populatedMust) builder.endObject()
+
+    // Second, populate the MUST NOT portion of Bool query
+    var populatedMustNot = false
+    query.foreach(jv => {
+      val key = (jv \ "field_key").toString.replace("\"","")
+      val operator = (jv \ "operator").toString.replace("\"", "")
+      val value = (jv \ "field_value").toString.replace("\"", "")
+
+      // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
+      if (mustNotOperators.contains(operator) && !populatedMustNot) {
+        builder.startObject("must_not")
+        populatedMustNot = true
+      }
+
+      builder = parseMustNotOperators(builder, key, value, operator)
+    })
+    if (populatedMustNot) builder.endObject()
+
+    // Close the bool/query objects and return
+    builder.endObject().endObject()
+    builder
+  }
+
+  /**Convert search string into an Elasticsearch-ready JSON query object**/
+  def prepareElasticJsonQuery(query: String): XContentBuilder = {
+    /** OPERATORS
+      *  :   contains (partial match)
+      *  ==  equals (exact match)
+      *  !=  not equals (partial matches OK)
+      *  <   less than
+      *  >   greater than
+      **/
+    // TODO: Make this more robust, perhaps with some RegEx or something, to support quoted phrases
+    val terms = query.split(" ")
+
+    // BOOL - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
+    var builder = jsonBuilder().startObject().startObject("bool")
+
+    // First, populate the MUST portion of Bool query
+    var populatedMust = false
+    terms.map(term => {
+      for (operator <- mustOperators) {
+        if (term.contains(operator)) {
+          val key = term.substring(0, term.indexOf(operator))
+          val value = term.substring(term.indexOf(operator)+1, term.length)
+
+          // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
+          if (mustOperators.contains(operator) && !populatedMust) {
+            builder.startObject("must")
+            populatedMust = true
+          }
+
+          builder = parseMustOperators(builder, key, value, operator)
+        }
+      }
+    })
+    if (populatedMust) builder.endObject()
+
+    // Second, populate the MUST NOT portion of Bool query
+    var populatedMustNot = false
+    terms.map(term => {
+      for (operator <- mustNotOperators) {
+        if (term.contains(operator)) {
+          val key = term.substring(0, term.indexOf(operator))
+          val value = term.substring(term.indexOf(operator), term.length)
+
+          // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
+          if (mustNotOperators.contains(operator) && !populatedMustNot) {
+            builder.startObject("must_not")
+            populatedMustNot = true
+          }
+
+          builder = parseMustNotOperators(builder, key, value, operator)
+        }
+      }
+    })
+    if (populatedMustNot) builder.endObject()
+
+    // Close the bool/query objects and return
+    builder.endObject().endObject()
+    builder
   }
 
   override def onStop() {

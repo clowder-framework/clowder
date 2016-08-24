@@ -48,11 +48,7 @@ class Metadata @Inject()(
       Ok(toJson(vocabularies))
   }
 
-
-
-  /**
-    * Get set of metadata fields containing filter substring for autocomplete - uses ElasticSearch
-    */
+  /** Get set of metadata fields containing filter substring for autocomplete */
   def getAutocompleteName(query: String) = PermissionAction(Permission.ViewDataset) { implicit request =>
     implicit val user = request.user
 

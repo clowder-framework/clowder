@@ -17,9 +17,6 @@ object SearchUtils {
   lazy val metadatas: MetadataService = DI.injector.getInstance(classOf[MetadataService])
   lazy val comments = DI.injector.getInstance(classOf[CommentService])
 
-  val mustOperators = List(":", "==", "<", ">")
-  val mustNotOperators = List("!=")
-
   /**Convert File to ElasticsearchObject and return, fetching metadata as necessary**/
   def getElasticsearchObject(f: File): Option[ElasticsearchObject] = {
     val id = f.id
@@ -84,10 +81,6 @@ object SearchUtils {
         metadata += (creator -> md.content.as[JsObject])
       }
     }
-    // TODO: Can these be removed? MongoSalat process to migrate them to Metadata collection?
-    //val usrMd = datasets.getUserMetadataJSON(dataset.id)
-    //val techMd = datasets.getTechnicalMetadataJSON(dataset.id)
-    //val xmlMd = datasets.getXMLMetadataJSON(dataset.id)
 
     Some(new ElasticsearchObject(
       ResourceRef('dataset, id),
@@ -124,6 +117,7 @@ object SearchUtils {
   }
 
   /**Convert TempFile to ElasticsearchObject and return, fetching metadata as necessary**/
+  // TODO: Can we remove the indexing on this TempFile entirely? comment out indexing after asking Inna/Smruti
   def getElasticsearchObject(file: TempFile): Option[ElasticsearchObject] = {
     Some(new ElasticsearchObject(
       ResourceRef('file, file.id),
@@ -137,155 +131,5 @@ object SearchUtils {
       List.empty,
       Map()
     ))
-  }
-
-  /**Convert list of search term JsValues into an Elasticsearch-ready JSON query object**/
-  def prepareElasticJsonQuery(query: List[JsValue]): XContentBuilder = {
-    /** OPERATORS
-      *  :   contains (partial match)
-      *  ==  equals (exact match)
-      *  !=  not equals (partial matches OK)
-      *  <   less than
-      *  >   greater than
-      **/
-    // BOOL - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
-    var builder = jsonBuilder().startObject().startObject("bool")
-
-    // First, populate the MUST portion of Bool query
-    var populatedMust = false
-    query.foreach(jv => {
-      val key = (jv \ "field_key").toString.replace("\"","")
-      val operator = (jv \ "operator").toString.replace("\"", "")
-      val value = (jv \ "field_value").toString.replace("\"", "")
-
-      // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
-      if (mustOperators.contains(operator) && !populatedMust) {
-        builder.startObject("must")
-        populatedMust = true
-      }
-
-      builder = parseMustOperators(builder, key, value, operator)
-    })
-    if (populatedMust) builder.endObject()
-
-    // Second, populate the MUST NOT portion of Bool query
-    var populatedMustNot = false
-    query.foreach(jv => {
-      val key = (jv \ "field_key").toString.replace("\"","")
-      val operator = (jv \ "operator").toString.replace("\"", "")
-      val value = (jv \ "field_value").toString.replace("\"", "")
-
-      // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
-      if (mustNotOperators.contains(operator) && !populatedMustNot) {
-        builder.startObject("must_not")
-        populatedMustNot = true
-      }
-
-      builder = parseMustNotOperators(builder, key, value, operator)
-    })
-    if (populatedMustNot) builder.endObject()
-
-    // Close the bool/query objects and return
-    builder.endObject().endObject()
-    builder
-  }
-
-  /**Convert search string into an Elasticsearch-ready JSON query object**/
-  def prepareElasticJsonQuery(query: String): XContentBuilder = {
-    /** OPERATORS
-      *  :   contains (partial match)
-      *  ==  equals (exact match)
-      *  !=  not equals (partial matches OK)
-      *  <   less than
-      *  >   greater than
-      **/
-    // TODO: Make this more robust, perhaps with some RegEx or something, to support quoted phrases
-    val terms = query.split(" ")
-
-    // BOOL - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
-    var builder = jsonBuilder().startObject().startObject("bool")
-
-    // First, populate the MUST portion of Bool query
-    var populatedMust = false
-    terms.map(term => {
-      for (operator <- mustOperators) {
-        if (term.contains(operator)) {
-          val key = term.substring(0, term.indexOf(operator))
-          val value = term.substring(term.indexOf(operator)+1, term.length)
-
-          // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
-          if (mustOperators.contains(operator) && !populatedMust) {
-            builder.startObject("must")
-            populatedMust = true
-          }
-
-          builder = parseMustOperators(builder, key, value, operator)
-        }
-      }
-    })
-    if (populatedMust) builder.endObject()
-
-    // Second, populate the MUST NOT portion of Bool query
-    var populatedMustNot = false
-    terms.map(term => {
-      for (operator <- mustNotOperators) {
-        if (term.contains(operator)) {
-          val key = term.substring(0, term.indexOf(operator))
-          val value = term.substring(term.indexOf(operator), term.length)
-
-          // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
-          if (mustNotOperators.contains(operator) && !populatedMustNot) {
-            builder.startObject("must_not")
-            populatedMustNot = true
-          }
-
-          builder = parseMustNotOperators(builder, key, value, operator)
-        }
-      }
-    })
-    if (populatedMustNot) builder.endObject()
-
-    // Close the bool/query objects and return
-    builder.endObject().endObject()
-    builder
-  }
-
-  /** Create appropriate search object based on operator */
-  def parseMustOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
-    operator match {
-      case ":" => {
-        // WILDCARD - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-wildcard-query.html
-        // TODO: Elasticsearch recommends not starting query with wildcard
-        // TODO: Consider inverted index? https://www.elastic.co/blog/found-elasticsearch-from-the-bottom-up
-        //builder.startObject("wildcard").field(key, value+"*").endObject()
-        builder.startObject("match").field(key, value).endObject()
-      }
-      case "==" => {
-        // MATCH - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html
-        builder.startObject("match").field(key, value).endObject()
-      }
-      case "<" => {
-        // RANGE - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-range-query.html
-        builder.startObject("range").startObject(key).field("lt", value).endObject().endObject()
-      }
-      case ">" => {
-        // TODO: Suppert lte, gte (<=, >=)
-        builder.startObject("range").startObject(key).field("gt", value).endObject().endObject()
-      }
-      case _ => {}
-    }
-    builder
-  }
-
-  /** Create appropriate search object based on operator */
-  def parseMustNotOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
-    operator match {
-      case "!=" => {
-        // MATCH - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html
-        builder.startObject("match").field(key, value).endObject()
-      }
-      case _ => {}
-    }
-    builder
   }
 }

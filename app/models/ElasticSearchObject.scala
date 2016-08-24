@@ -72,7 +72,7 @@ case class ElasticsearchObject (
   child_of: List[String] = List.empty,
   description: String,
   tags: List[ElasticsearchTag] = List.empty,
-  comments: List[ElasticsearchComment] = List.empty, // TODO: are these actually used? might need to fetch like Metadata
+  comments: List[ElasticsearchComment] = List.empty,
   metadata: Map[String, JsObject] = Map()
 )
 
