@@ -1,9 +1,12 @@
 package integration
 
 import org.scalatestplus.play.{PlaySpec, _}
-import play.api.test.FakeRequest
+import play.api.mvc.AnyContent
+import play.api.test.{ PlaySpecification, FakeApplication, FakeRequest }
 import play.api.test.Helpers._
 import play.api.{Application, Play}
+import org.specs2.matcher.ShouldMatchers
+import play.api.http.HeaderNames
 
 /**
  * Functional test. This throws an java.lang.IllegalStateException: cannot enqueue after timer shutdown due to the Akka timer
@@ -14,7 +17,7 @@ import play.api.{Application, Play}
  * @author Luigi Marini
  */
 //@DoNotDiscover
-class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpload {
+class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUpload  {
 
   implicit val user: Option[models.User] = None
 
@@ -23,7 +26,7 @@ class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUplo
       app.configuration.getString("ehcacheplugin") mustBe Some("disabled")
     }
     "make the FakeApplication available implicitly" in {
-      def getConfig(key: String)(implicit app: Application) = app.configuration.getString(key)
+      def getConfig(key: String)(implicit app: play.api.Application) = app.configuration.getString(key)
       getConfig("ehcacheplugin") mustBe Some("disabled")
     }
     "start the FakeApplication" in {
@@ -59,5 +62,12 @@ class ApplicationSpec extends PlaySpec with ConfiguredApp with FakeMultipartUplo
       contentAsString(html) must include("Access to 6 collections")
       contentAsString(html) must include("Access to 2 datasets")
     }
-  }
+
+    "render index template login" in {
+      val creds1 = cookies(route(FakeRequest(POST, "/authenticate/userpass").withTextBody("user")).get)
+      //When
+      val Some(response)=route(FakeRequest(GET, "/").withCookies(creds1.get("id").get))
+      info(status(response).toString )
+    }
+    }
 }
