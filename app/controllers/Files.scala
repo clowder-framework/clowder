@@ -29,7 +29,7 @@ import views.html.defaultpages.badRequest
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
-
+import play.api.i18n.Messages
 
 
 /**
@@ -62,7 +62,7 @@ class Files @Inject() (
       "userid" -> nonEmptyText
     )(FileMD.apply)(FileMD.unapply)
   )
-  val spaceTitle: String = escapeJava(play.Play.application().configuration().getString("spaceTitle").trim)
+  val spaceTitle: String = Messages("space.title")
   /**
    * File info.
    */

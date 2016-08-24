@@ -4,6 +4,7 @@ import api.Permission.Permission
 import api.{Permission, UserRequest}
 import models.{ClowderUser, RequestResource, ResourceRef, User}
 import org.apache.commons.lang.StringEscapeUtils._
+import play.api.i18n.Messages
 import play.api.mvc._
 import securesocial.core.{Authenticator, SecureSocial, UserService}
 import services._
@@ -148,7 +149,7 @@ trait SecuredController extends Controller {
       }
 
       case Some(ResourceRef(ResourceRef.space, id)) => {
-        val spaceTitle: String = escapeJava(play.Play.application().configuration().getString("spaceTitle").trim)
+        val spaceTitle: String = Messages("space.title")
         val spaces: SpaceService = DI.injector.getInstance(classOf[SpaceService])
         spaces.get(id) match {
           case None => Future.successful(BadRequest(views.html.notFound(spaceTitle + " does not exist.")(user)))

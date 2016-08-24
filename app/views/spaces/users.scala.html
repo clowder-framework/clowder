@@ -1,5 +1,5 @@
 @(myForm: Form[controllers.spaceInviteData], space: ProjectSpace, creator: Option[User], userRoleMap: Map[User, String], externalUsers: List[User], roleList: List[String], invite:List[SpaceInvite], roleDescription:Map[String, String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
-
+@import play.api.i18n.Messages
 @import api.Permission
 
 @main(space.name) {
@@ -7,7 +7,7 @@
         <div class="col-md-12">
             <div class="row">
                 <div class="col-md-12" id="s-title">
-                    <h1 id="space-title" class="inline">Manage Users of @{spaces.spaceTitle()}
+                    <h1 id="space-title" class="inline">Manage Users of @Messages("space.title")
                         <a href= "@routes.Spaces.getSpace(space.id)" title="@space.name"> @space.name</a>
                     </h1>
                 </div>

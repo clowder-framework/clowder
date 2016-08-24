@@ -1,15 +1,15 @@
 @(myForm: Form[controllers.spaceFormData], title:String, submitButton: Html, spaceId: Option[UUID])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
-
+@import play.api.i18n.Messages
 @import helper._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f)}
 @import play.api.Play.current
 @import models.SpaceStatus
 @import api.Permission
 
-@main("Space") {
+@main(title) {
   <div class="page-header">
     <h1>@title</h1>
-    <p>@{spaces.spaceTitle()}s are collaborative workspaces that contain people (with designated permissions), branding, and datasets.</p>
+    <p>@Messages("space.create.message", Messages("spaces.title"), Messages("datasets.title"))</p>
   </div>
   <div class="row">
     <div class="col-md-12">
@@ -55,7 +55,9 @@
           @helper.inputRadioGroup(myForm("access"),
             options = options(SpaceStatus.PRIVATE.toString->SpaceStatus.PRIVATE.toString,SpaceStatus.PUBLIC.toString->SpaceStatus.PUBLIC.toString),
             '_label -> "Access")
-          <p id="help_access">This sets the privacy level for collections, datasets, and files in the @spaces.spaceTitle(). Access can be overwritten at the individual dataset level. By marking access "Public" you make the @spaces.spaceTitle()'s content available to users outside of your project team.</p>
+          <p id="help_access">
+            @Messages("crate.space.access.message", Messages("collections.title").toLowerCase(), Messages("datasets.title").toLowerCase, Messages("space.title").toLowerCase, Messages("dataset.title").toLowerCase)
+          </p>
           @helper.input(myForm("space_id"), 'class -> "form-control", '_label ->"") {(id, name, value, args) =>
           <input type="hidden" name="@id" value="@value">
           }
@@ -92,7 +94,7 @@
       }
     }
   } else {
-    // enablePublic == fasle
+    // enablePublic == false
       $('#access').closest(".control-group").hide();
       $('#help_access').hide();
       document.getElementById('access_PRIVATE').checked= true;
@@ -130,7 +132,6 @@
 
 
   var title = $('.page-header h1').text();
-  //console.log(title);
   if(title.indexOf("Edit ") >= 0)
   {
     if(!$('.help-inline').text())
