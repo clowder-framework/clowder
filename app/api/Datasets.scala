@@ -2153,7 +2153,7 @@ class  Datasets @Inject()(
       space.name
     }
 
-    var dataset_description = Utils.decodeString(dataset.description)
+    val dataset_description = Utils.decodeString(dataset.description)
 
     val licenseInfo = Json.obj("licenseText"->dataset.licenseData.m_licenseText,"rightsHolder"->rightsHolder)
     Json.obj("id"->dataset.id,"name"->dataset.name,"author"->dataset.author.email,"description"->dataset_description, "spaces"->spaceNames.mkString(","),"lastModified"->dataset.lastModifiedDate.toString,"license"->licenseInfo)
