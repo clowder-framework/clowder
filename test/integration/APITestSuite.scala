@@ -14,7 +14,6 @@ class APITestSuite extends Suites (
 		new DatasetsAPIAppSpec ,
 		new CollectionsAPIAppSpec ,
 		new PreviewsAPIAppSpec,
-	  new CurationObjectsSpec,
 		new ApplicationSpec
 	) with OneAppPerSuite
 {

@@ -542,7 +542,6 @@ GET            /api/datasets/:id                                                
 DELETE         /api/datasets/:id                                                        @api.Datasets.deleteDataset(id: UUID)
 POST           /api/datasets/:id/detachdelete                                           @api.Datasets.detachAndDeleteDataset(id: UUID)
 POST           /api/datasets/:parentDatasetId/newFolder                                 @api.Folders.createFolder(parentDatasetId: UUID)
-
 PUT            /api/datasets/:id/access                                                 @api.Datasets.updateAccess(id:UUID, aceess:String ?="PRIVATE")
 POST           /api/datasets/:id/addFileEvent                                           @api.Datasets.addFileEvent(id:UUID, inFolder:Boolean, fileCount: Int )
 
@@ -700,8 +699,8 @@ GET            /rss/:etype                                                      
 # CURATIONS ENDPOINT
 # ----------------------------------------------------------------------
 
-GET            /datasets/:id/curations/new                                               @controllers.CurationObjects.newCO(id:UUID, space:String ?= "")
-POST           /datasets/:id/curations/spaces/:spaceId/submit                            @controllers.CurationObjects.submit(id:UUID, spaceId:UUID)
+GET            /dataset/:id/curations/new                                               @controllers.CurationObjects.newCO(id:UUID, space:String ?= "")
+POST           /dataset/:id/curations/spaces/:spaceId/submit                            @controllers.CurationObjects.submit(id:UUID, spaceId:UUID)
 GET            /spaces/:id/stagingArea                                                  @controllers.Spaces.stagingArea(id: UUID, index: Int ?=0, limit: Int ?= 12)
 GET            /spaces/curations/:id                                                    @controllers.CurationObjects.getCurationObject(id: UUID, limit: Int ?=5)
 DELETE         /spaces/curations/retract/:id                                            @api.CurationObjects.retractCurationObject(id: UUID)
