@@ -334,7 +334,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
           collection.spaces.map{
             sp => spaceService.get(sp) match {
               case Some(s) => {
-                spaces.addCollection(collection.id, s.id)
+                spaces.addCollection(collection.id, s.id, user)
                 collections.addToRootSpaces(collection.id, s.id)
                 events.addSourceEvent(request.user, collection.id, collection.name, s.id, s.name, "add_collection_space")
               }
@@ -357,7 +357,7 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             try {
               collections.get(UUID(colParentColId(0))) match {
                 case Some(parentCollection) => {
-                  collections.addSubCollection(UUID(colParentColId(0)), collection.id)
+                  collections.addSubCollection(UUID(colParentColId(0)), collection.id, user)
                   Redirect(routes.Collections.collection(UUID(colParentColId(0))))
                 }
                 case None => {

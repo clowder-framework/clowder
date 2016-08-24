@@ -2,12 +2,13 @@ package controllers
 
 import java.util.Date
 import javax.inject.Inject
-import api.Permission
+import api.{UserRequest, Permission}
 import com.fasterxml.jackson.annotation.JsonValue
 import models._
 import org.apache.commons.lang.StringEscapeUtils._
 import play.api.Logger
 import play.api.i18n.Messages
+import play.api.libs.Files
 import play.api.libs.json._
 import play.api.libs.json.Json._
 import play.api.libs.json.JsArray
@@ -17,7 +18,7 @@ import play.api.Play._
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 import scala.concurrent.Await
-import play.api.mvc.{Request, Action, Results}
+import play.api.mvc.{MultipartFormData, Request, Action, Results}
 import play.api.libs.ws._
 import scala.concurrent.duration._
 import play.api.libs.json.Reads._
@@ -108,7 +109,16 @@ class CurationObjects @Inject()(
                       thumbnail_id = f.thumbnail_id, metadataCount = 0, licenseData = f.licenseData, sha512 = sha512)
                     curations.insertFile(cf)
                     newFiles = cf.id :: newFiles
-                    metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id))))
+                    metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id)).map(m => {
+                      metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id)))
+                      val mdMap = m.getExtractionSummary
+
+                      //send RabbitMQ message
+                      current.plugin[RabbitmqPlugin].foreach { p =>
+                        val dtkey = s"${p.exchange}.metadata.added"
+                        p.extract(ExtractorMessage(cf.id, UUID(""), controllers.Utils.baseUrl(request), dtkey, mdMap, "", UUID(""), ""))
+                      }
+                    })
                   }
                 }
               }
@@ -133,9 +143,20 @@ class CurationObjects @Inject()(
               Logger.debug("create curation object: " + newCuration.id)
               curations.insert(newCuration)
 
-              dataset.folders.map(f => copyFolders(f, newCuration.id, "dataset",  newCuration.id))
+              dataset.folders.map(f => copyFolders(f, newCuration.id, "dataset",  newCuration.id, request.host))
               metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, dataset.id))
-                .map(m => if((m.content\"Creator").isInstanceOf[JsUndefined]) metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id))))
+                .map(m => {
+                  if((m.content\"Creator").isInstanceOf[JsUndefined]) {
+                    metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationObject, newCuration.id)))
+                    val mdMap = m.getExtractionSummary
+
+                    //send RabbitMQ message
+                    current.plugin[RabbitmqPlugin].foreach { p =>
+                      val dtkey = s"${p.exchange}.metadata.added"
+                      p.extract(ExtractorMessage(newCuration.id, UUID(""), controllers.Utils.baseUrl(request), dtkey, mdMap, "", UUID(""), ""))
+                    }
+                  }
+                })
               Redirect(routes.CurationObjects.getCurationObject(newCuration.id))
             }
             else {
@@ -149,7 +170,7 @@ class CurationObjects @Inject()(
     }
   }
 
-  private def copyFolders(id:UUID, parentId: UUID, parentType:String, parentCurationObjectId:UUID):Unit = {
+  private def copyFolders(id:UUID, parentId: UUID, parentType:String, parentCurationObjectId:UUID, requestHost: String):Unit = {
     folders.get(id) match {
       case Some(folder) =>{
         var newFiles: List[UUID]= List.empty
@@ -170,7 +191,16 @@ class CurationObjects @Inject()(
               curations.insertFile(cf)
               newFiles = cf.id :: newFiles
               metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, f.id))
-                .map(m => metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id))))
+                .map(m => {
+                  metadatas.addMetadata(m.copy(id = UUID.generate(), attachedTo = ResourceRef(ResourceRef.curationFile, cf.id)))
+                  val mdMap = m.getExtractionSummary
+
+                  //send RabbitMQ message
+                  current.plugin[RabbitmqPlugin].foreach { p =>
+                    val dtkey = s"${p.exchange}.metadata.added"
+                    p.extract(ExtractorMessage(cf.id, UUID(""), requestHost, dtkey, mdMap, "", UUID(""), ""))
+                  }
+                })
             }
           }
         }
@@ -190,7 +220,7 @@ class CurationObjects @Inject()(
         curations.insertFolder(newCurationFolder)
         curations.addCurationFolder(parentType, parentId, newCurationFolder.id)
 
-        folder.folders.map(f => copyFolders(f,newCurationFolder.id, "folder", parentCurationObjectId ))
+        folder.folders.map(f => copyFolders(f,newCurationFolder.id, "folder", parentCurationObjectId, requestHost))
       }
       case None => {
         Logger.error("Curation Folder Not found")

@@ -77,10 +77,29 @@ class Datasets @Inject()(
       case None => None
     }
 
+
+    var collectionSpaces : ListBuffer[String] = ListBuffer.empty[String]
+
+
     val collectionSelected = collection match {
       case Some(c) => {
         collections.get(UUID(c)) match {
-          case Some(collection) =>  Some(collection)
+          case Some(collection) =>  {
+            //if the spaces of the collection are not automatically added to the dataset spaces
+            //they will be preselected in the view, but the user can choose
+            //not to share the dataset with those spaces
+            if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
+              for (collection_space <- collection.spaces){
+                spaceService.get(collection_space) match {
+                  case Some(col_space) => {
+                    collectionSpaces += col_space.id.stringify
+                  }
+                  case None => Logger.error("No space found for id " + collection_space)
+                }
+              }
+            }
+            Some(collection)
+          }
           case None => None
         }
       }
@@ -90,7 +109,7 @@ class Datasets @Inject()(
       (!play.Play.application().configuration().getBoolean("verifySpaces") || hasVerifiedSpace)
 
     Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected, showAccess))
+      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected,collectionSpaces.toList ,showAccess))
 
   }
 

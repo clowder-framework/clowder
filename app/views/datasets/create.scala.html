@@ -1,4 +1,4 @@
-@(spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection], showAccess: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection],collectionSpaces : List[String], showAccess: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import models.DatasetStatus
 @import play.api.i18n.Messages
@@ -150,6 +150,15 @@
             $('#@spaceId').prop('selected','selected');
             $('#spaceid').trigger("chosen:updated");
         }
+
+        //todd_n add for loop to select id
+        if(!@collectionSpaces.isEmpty){
+            @for(eachId <- collectionSpaces){
+            $('#@eachId').prop('selected','selected');
+            $('#spaceid').trigger("chosen:updated");
+            }
+        }
+
 
         $(function () {
             $('#createdataset').click(function () {
