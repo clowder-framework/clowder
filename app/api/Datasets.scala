@@ -2153,25 +2153,10 @@ class  Datasets @Inject()(
       space.name
     }
 
-    var decodedDesc = Utils.decodeString(dataset.description)
+    var dataset_description = Utils.decodeString(dataset.description)
 
-    var desc = dataset.description.replaceAll("&nbsp;"," ")
-
-
-    //make it de-html - ized
-
-    val description_separator = play.Play.application().configuration().getString("descriptionSeparatorOnDownload"," ")
-    val first_pattern = "[\\n][\\S]".r
-    val matches = first_pattern.findAllIn(desc)
-    for (each <-matches){
-      var current = each
-      current = current.replace("\n",description_separator)
-      desc = desc.replaceAll(each,current)
-    }
-
-    desc = desc.replaceAll("\n","")
     val licenseInfo = Json.obj("licenseText"->dataset.licenseData.m_licenseText,"rightsHolder"->rightsHolder)
-    Json.obj("id"->dataset.id,"name"->dataset.name,"author"->dataset.author.email,"description"->desc, "spaces"->spaceNames.mkString(","),"lastModified"->dataset.lastModifiedDate.toString,"license"->licenseInfo)
+    Json.obj("id"->dataset.id,"name"->dataset.name,"author"->dataset.author.email,"description"->dataset_description, "spaces"->spaceNames.mkString(","),"lastModified"->dataset.lastModifiedDate.toString,"license"->licenseInfo)
   }
 
   private def addDatasetInfoToZip(folderName: String, dataset: models.Dataset, zip: ZipOutputStream): Option[InputStream] = {
