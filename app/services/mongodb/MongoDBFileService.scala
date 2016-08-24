@@ -217,7 +217,6 @@ class MongoDBFileService @Inject() (
         current.plugin[ElasticsearchPlugin].foreach {
           _.index(SearchUtils.getElasticsearchObject(file))
         }
-        
       }
       case None => Logger.error("File not found: " + id)
     }

@@ -8,7 +8,7 @@ import play.api.libs.json._
 case class ElasticsearchTag (
   creator: String,
   created: Date,
-  tag: String
+  name: String
 )
 object ElasticsearchTag {
   /**
@@ -18,7 +18,7 @@ object ElasticsearchTag {
     def writes(est: ElasticsearchTag): JsValue = JsObject(Seq(
       "creator" -> JsString(est.creator),
       "created" -> JsString(est.created.toString),
-      "tag" -> JsString(est.tag)
+      "tag" -> JsString(est.name)
     ))
   }
 
@@ -29,7 +29,7 @@ object ElasticsearchTag {
     def reads(json: JsValue): JsResult[ElasticsearchTag] = JsSuccess(new ElasticsearchTag(
       (json \ "creator").as[String],
       (json \ "created").as[Date],
-      (json \ "tag").as[String]
+      (json \ "name").as[String]
     ))
   }
 }
@@ -73,13 +73,10 @@ case class ElasticsearchObject (
   description: String,
   tags: List[ElasticsearchTag] = List.empty,
   comments: List[ElasticsearchComment] = List.empty, // TODO: are these actually used? might need to fetch like Metadata
-  metadata: Map[String, JsValue] = Map()
+  metadata: Map[String, JsObject] = Map()
 )
 
 object ElasticsearchObject {
-  import ElasticsearchTag._
-  import ElasticsearchComment._
-
   /**
     * Serializer for ElasticsearchObject
     */
@@ -114,7 +111,7 @@ object ElasticsearchObject {
       (json \ "description").as[String],
       (json \ "tags").as[List[ElasticsearchTag]],
       (json \ "comments").as[List[ElasticsearchComment]],
-      (json \ "metadata").as[Map[String, JsValue]]
+      (json \ "metadata").as[Map[String, JsObject]]
     ))
   }
 }

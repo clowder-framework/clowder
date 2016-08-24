@@ -9,14 +9,13 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import com.mongodb.casbah.Imports._
-import play.api.libs.json.{JsObject, JsString, Json, JsValue, JsArray}
+import play.api.libs.json.{JsObject, Json, JsValue, JsArray}
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
 import services.{ContextLDService, DatasetService, FileService, FolderService, ExtractorMessage, RabbitmqPlugin, MetadataService, ElasticsearchPlugin}
 import api.Permission
 import scala.collection.mutable
-import scala.util.control.Breaks._
 
 /**
  * MongoDB Metadata Service Implementation
@@ -261,127 +260,6 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
 
   def deleteDefinition(id :UUID): Unit = {
     MetadataDefinitionDAO.remove(MongoDBObject("_id" ->new ObjectId(id.stringify)))
-  }
-
-  /**
-    * Search by metadata. Uses mongodb query structure.
-    */
-  def search(query: JsValue): List[ResourceRef] = {
-    val doc = JSON.parse(Json.stringify(query)).asInstanceOf[DBObject]
-    val resources: List[ResourceRef] = MetadataDAO.find(doc).map(_.attachedTo).toList
-    resources
-  }
-
-  def search(key: String, value: String, extractorName: String, count: Int, user: Option[User]): List[ResourceRef] = {
-    val field = "content." + key.trim
-    val trimOr = value.trim().replaceAll(" ", "|")
-    // for some reason "/"+value+"/i" doesn't work because it gets translate to
-    // { "content.Abstract" : { "$regex" : "/test/i"}}
-    val regexp = (s"""(?i)$trimOr""").r
-    val doc = if (extractorName != "")
-      MongoDBObject(field -> regexp, "creator.extractorId" -> (extractorName+"$").r)
-    else
-      MongoDBObject(field -> regexp)
-
-    var filter = doc
-    Logger.debug(filter.toString)
-    if (!(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public")) {
-      user match {
-        case Some(u) => {
-          val datasetsList = datasets.listUser(u)
-          val foldersList = folders.findByParentDatasetIds(datasetsList.map(x => x.id))
-          val fileIds = datasetsList.map(x => x.files) ++ foldersList.map(x => x.files)
-          val orlist = collection.mutable.ListBuffer.empty[MongoDBObject]
-          datasetsList.map { x => orlist += MongoDBObject("attachedTo.resourceType" -> "dataset") ++ MongoDBObject("attachedTo._id" -> new ObjectId(x.id.stringify)) }
-          fileIds.flatten.map { x => orlist += MongoDBObject("attachedTo.resourceType" -> "file") ++ MongoDBObject("attachedTo._id" -> new ObjectId(x.stringify)) }
-          filter = $or(orlist.map(_.asDBObject)) ++ doc
-        }
-        case None => List.empty
-      }
-    }
-    val resources: List[ResourceRef] = MetadataDAO.find(filter).limit(count).map(_.attachedTo).toList
-    resources
-  }
-
-  def searchMultiple(query: List[JsValue], joinType: String, count: Int, user: Option[User]): List[ResourceRef] = {
-    Logger.debug("search multiple")
-    var results = mutable.MutableList[ResourceRef]()
-
-    current.plugin[ElasticsearchPlugin] match {
-      case Some(plugin) => {
-
-        // Prepare query string from JSON objects
-        var qString = ""
-        query.foreach(jsq => {
-          val extr = (jsq \ "extractor_key").toString
-          val key = (jsq \ "field_leaf_key").toString
-          val operator = (jsq \ "operator").toString.replace("\"", "")
-          val value = (jsq \ "field_value").toString.replace("\"", "")
-
-          // Prepend AND/OR if this is 2nd+ term of query
-          if (qString != "")
-            qString += joinType+" "
-          // Add extractor to query if provided
-          val qKey = if (extr == "null") key
-                     else extr+" AND "+key
-
-          if ((operator == "!=") || (operator == "<") || (operator == ">"))
-            // Don't include value if "not equals", "greater/less than" operators - we don't want to match specific value
-            qString += "("+key+") "
-          else if (operator == ":")
-            // Add wildcards if "contains" operator
-            qString += "("+qKey+" AND *"+value+"*) "
-          else
-            qString += "("+qKey+" AND "+value+") "
-        })
-
-        //plugin.searchComplex("data", Array[String]("metadata"), query)
-
-        val result: SearchResponse = plugin.search(qString, Array[String]("metadata"))
-        for (hit <- result.getHits().getHits()) {
-          // Check if search result has any metadata
-          // TODO: For 'Advanced Search' should this no longer be restricted to Metadata?
-          val md = hit.getSource().get("metadata")
-          if (md != null) {
-            var jtest = Json.parse(md.toString)
-            // Check if this document matches any/all criteria as required
-            var hitMatchesAllQueryTerms = true
-            var hitMatchesAnyQueryTerm = false
-            query.foreach(jsq => {
-              val key = (jsq \ "field_leaf_key").toString.replace("\"", "")
-              val value = (jsq \ "field_value").toString.replace("\"", "")
-              var oper = (jsq \ "operator").toString.replace("\"", "")
-
-              // Check if metadata has chosen key, filtering to specified extractor sub-metadata if necessary
-              val values: Seq[JsValue] = (jtest \\ key)
-              // Check if any keys found contain the value and add to results if so
-              values.map(v => {
-                val cval = v.toString.replace("\"","")
-
-                Logger.debug("check "+cval+oper+value)
-
-                if (  ((cval == value) && oper == "==") ||
-                      ((cval contains value) && oper == ":") ||
-                      (!(cval == value) && oper == "!=") ||
-                      ((cval < value) && oper == "<") ||
-                      ((cval > value) && oper == ">")
-                )
-                  hitMatchesAnyQueryTerm = true
-                else
-                  hitMatchesAllQueryTerms = false
-              })
-            })
-            if (  (hitMatchesAnyQueryTerm && (joinType == "OR")) ||
-                  (hitMatchesAllQueryTerms && (joinType == "AND"))) {
-              // TODO: Check permissions of this resource before adding to list
-              results += new ResourceRef(Symbol(hit.getType()), UUID(hit.getId()))
-            }
-          }
-        }
-      }
-      case None => Logger.error("ElasticSearch plugin could not be reached for metadata search")
-    }
-    results.toList
   }
 
   def searchbyKeyInDataset(key: String, datasetId: UUID): List[Metadata] = {

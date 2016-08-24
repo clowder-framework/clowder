@@ -34,59 +34,6 @@ class Metadata @Inject()(
   curations:CurationService,
   events: EventService,
   spaceService: SpaceService) extends ApiController {
-  
-  def search() = PermissionAction(Permission.ViewDataset)(parse.json) { implicit request =>
-    Logger.debug("Searching metadata")
-    val results = metadataService.search(request.body)
-    Ok(toJson(results))
-  }
-
-  def searchByKeyValue(key: Option[String], value: Option[String], extractorName: Option[String], count: Int = 0) = PermissionAction(Permission.ViewDataset) {
-    implicit request =>
-      implicit val user = request.user
-
-      val response = for {
-        k <- key
-        v <- value
-        e <- extractorName
-      } yield {
-        val results = metadataService.search(k, v, e, count, user)
-        val datasetsResults = results.flatMap { d =>
-          if (d.resourceType == ResourceRef.dataset) datasets.get(d.id) else None
-        }
-        val filesResults = results.flatMap { f =>
-          if (f.resourceType == ResourceRef.file) files.get(f.id) else None
-        }
-        import Dataset.datasetWrites
-        import File.FileWrites
-        // Use "distinct" to remove duplicate results.
-        Ok(JsObject(Seq("datasets" -> toJson(datasetsResults.distinct), "files" -> toJson(filesResults.distinct))))
-      }
-      response getOrElse BadRequest(toJson("You must specify key and value"))
-  }
-
-  def searchByMultipleKeyValue(kvJson: String, joinType: String, count: Int = 0) = PermissionAction(Permission.ViewDataset) {
-    implicit request =>
-      implicit val user = request.user
-
-      Logger.debug("SBMKV")
-      Logger.debug(kvJson)
-      val queryList = Json.parse(kvJson).as[List[JsValue]]
-
-      val results = metadataService.searchMultiple(queryList, joinType, count, user)
-      val datasetsResults = results.flatMap { d =>
-        if (d.resourceType == ResourceRef.dataset) datasets.get(d.id) else None
-      }
-      val filesResults = results.flatMap { f =>
-        if (f.resourceType == ResourceRef.file) files.get(f.id) else None
-      }
-      import Dataset.datasetWrites
-      import File.FileWrites
-      // Use "distinct" to remove duplicate results.
-      Ok(JsObject(Seq("datasets" -> toJson(datasetsResults.distinct), "files" -> toJson(filesResults.distinct))))
-
-      //response getOrElse BadRequest(toJson("You must specify key and value"))
-  }
 
   def getDefinitions() = PermissionAction(Permission.ViewDataset) {
     implicit request =>
@@ -101,41 +48,12 @@ class Metadata @Inject()(
       Ok(toJson(vocabularies))
   }
 
-  /**
-    * Flatten json object to have a single level of key/values with dot notation for nesting
-    */
-  def flattenJson(js: JsValue, prefix: String = ""): JsObject = {
-    // From http://stackoverflow.com/questions/24273433/play-scala-how-to-flatten-a-json-object
 
-    // We will use this substring to trim extractor names from key strings
-    //    e.g. "http://localhost:9000/clowder/api/extractors/wordCount.lines" -> "wordCount.lines"
-    val extractorString = "/extractors/"
-
-    js.as[JsObject].fields.foldLeft(Json.obj()) {
-      // value is sub-object so recursively handle
-      case (acc, (k, v: JsObject)) => {
-        val key = if (k contains extractorString) {
-          k.substring(k.indexOf(extractorString)+extractorString.length())
-        } else k
-
-        if(prefix.isEmpty) acc.deepMerge(flattenJson(v, key))
-        else acc.deepMerge(flattenJson(v, s"$prefix.$key"))
-      }
-      case (acc, (k, v)) => {
-        val key = if (k contains extractorString) {
-          k.substring(k.indexOf(extractorString)+extractorString.length())
-        } else k
-
-        if(prefix.isEmpty) acc + (key -> v)
-        else acc + (s"$prefix.$key" -> v)
-      }
-    }
-  }
 
   /**
     * Get set of metadata fields containing filter substring for autocomplete - uses ElasticSearch
     */
-  def getAutocompleteName(filter: String) = PermissionAction(Permission.ViewDataset) { implicit request =>
+  def getAutocompleteName(query: String) = PermissionAction(Permission.ViewDataset) { implicit request =>
     implicit val user = request.user
 
     var listOfTerms = ListBuffer.empty[String]
@@ -144,7 +62,7 @@ class Metadata @Inject()(
     val vocabularies = metadataService.getDefinitionsDistinctName(user)
     for (md_def <- vocabularies) {
       val currVal = (md_def.json \ "label").as[String]
-      if (currVal contains filter) {
+      if (currVal.toLowerCase startsWith query.toLowerCase) {
         listOfTerms.append(currVal)
       }
     }
@@ -152,52 +70,7 @@ class Metadata @Inject()(
     // Next get ElasticSeach metadata fields if plugin available
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
-        Logger.debug("Getting autocomplete suggestions for: " + filter)
-
-        if (filter != "") {
-          val result: Option[SearchResponse] = current.plugin[ElasticsearchPlugin].map {
-            _.search("*"+filter.replaceAll("([+:/\\\\])", "\\\\$1")+"*")
-          }
-
-          // PARSE RESPONSES
-          result match {
-            case Some(searchResponse) => {
-              for (hit <- searchResponse.getHits().getHits()) {
-                hit.getSource.get("metadata") match {
-                  case md: String => {
-                    val json: JsValue = Json.parse(md)
-                    val flat = flattenJson(json)
-
-                    val fieldList: Seq[(String,JsValue)] = flat.as[JsObject].fields
-                    fieldList.foreach[Unit]( (tuple: Tuple2[String,JsValue]) => {
-                      // Check key of metadata for the currently targeted search strong
-                      if ((tuple._1 contains filter) && !(listOfTerms contains tuple._1)) {
-                        listOfTerms += tuple._1
-                      }
-                    })
-                  }
-                  case md: JsValue => {
-                    val flat = flattenJson(md)
-                    val fieldList: Seq[(String,JsValue)] = flat.as[JsObject].fields
-                    fieldList.foreach[Unit]( (tuple: Tuple2[String,JsValue]) => {
-                      // Check key of metadata for the currently targeted search strong
-                      if ((tuple._1 contains filter) && !(listOfTerms contains tuple._1)) {
-                        listOfTerms += tuple._1
-                      }
-                    })
-                  }
-                  case _ => {
-                    Logger.debug("encountered unexpected ES hit type")
-                  }
-                  case None => Logger.debug("no md hits found from ES")
-                }
-              }
-            }
-            case None => {
-              Logger.debug("Search returned no results")
-            }
-          }
-        }
+        listOfTerms = listOfTerms ++ plugin.getAutocompleteFields(query)
         Ok(toJson(listOfTerms))
       }
       case None => {

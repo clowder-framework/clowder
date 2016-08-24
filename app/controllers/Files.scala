@@ -864,6 +864,7 @@ def uploadExtract() =
    * Gets type of index and list of sections, and passes on to the Search controller
   */
   def uploadSelectQuery() = PermissionAction(Permission.ViewDataset)(parse.multipartFormData) { implicit request =>
+    val nameOfIndex = play.api.Play.configuration.getString("elasticsearchSettings.indexNamePrefix").getOrElse("clowder")
     //=== processing searching within files or sections of files or both ===
     //dataParts are from the seach form in view/multimediasearch
     //get type of index and list of sections, and pass on to the Search controller
@@ -946,14 +947,13 @@ def uploadExtract() =
               val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
               files.addXMLMetadata(id, xmlToJSON)
 
-              // TODO: Why do TempFiles write to "files" instead of "data"? Should we actually index these?
               current.plugin[ElasticsearchPlugin].foreach {
-                _.index(SearchUtils.getElasticsearchObject(f), "files")
+                _.index(SearchUtils.getElasticsearchObject(f), nameOfIndex+"multimedia")
               }
             }
             else {
               current.plugin[ElasticsearchPlugin].foreach {
-                _.index(SearchUtils.getElasticsearchObject(f), "files")
+                _.index(SearchUtils.getElasticsearchObject(f), nameOfIndex+"multimedia")
               }
             }
             //add file to RDF triple store if triple store is used

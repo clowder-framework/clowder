@@ -14,7 +14,7 @@ case class Tag(
   created: Date)
 
 object Tag {
-  implicit def tagToElasticSearchTag(t: Tag): ElasticsearchTag = {
+  implicit def toElasticsearchTag(t: Tag): ElasticsearchTag = {
     new ElasticsearchTag(
       t.userId.getOrElse(""),
       t.created,

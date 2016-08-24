@@ -62,15 +62,6 @@ trait MetadataService {
   /** Delete vocabulary definitions**/
   def deleteDefinition(id: UUID)
 
-  /** Search for resources matching a particular query **/
-  def search(query: JsValue): List[ResourceRef]
-
-  /** Search for resources by key value pairs in the content of the metadata document **/
-  def search(key: String, value: String, extractorName: String, count: Int, user: Option[User]): List[ResourceRef]
-
-  /** Search for resources by key value pairs in the content of the metadata document **/
-  def searchMultiple(query: List[JsValue], joinType: String, count: Int, user: Option[User]): List[ResourceRef]
-
   /** Search for metadata that have a key in a dataset **/
   def searchbyKeyInDataset(key: String, datasetId: UUID): List[Metadata]
 

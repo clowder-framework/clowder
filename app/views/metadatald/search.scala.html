@@ -82,7 +82,7 @@
                         "<select id='add-metadata-select-"+rowStr+"'><option value=''></option></select></div>" +
                     <!-- OPERATOR DROPDOWN -->
                     "<div class='form-group col-lg-2 col-md-2'> <select id='add-metadata-operator-"+rowStr+"'>" +
-                        "<option value=':'>contains</option>" +
+                        // "<option value=':'>contains</option>" +
                         "<option value='=='>equals</option>" +
                         "<option value='!='>does not equal</option>" +
                         "<option value='>'>greater than</option>" +
@@ -150,15 +150,45 @@
                             }
                         },
                         processResults: function(data, page) {
-                            return {
-                                results: data.map(function(x) {
-                                    if (typeof(x) == 'object') {
-                                        // MetadataDefinitions
-                                        return {text: x.json.label, id: x.id}
+                            var outMap = {}
+                            for (var rez=0; rez<data.length; rez++) {
+                                var entry = data[rez];
+
+                                // MetadataDefinitions
+                                if (typeof(entry) == 'object') {
+                                    var entryGroup = "Metadata Definitions";
+                                    var entryData = {text: entry.json.label, id: entry.id}
+                                } else {
+                                    if (entry.indexOf('.') > -1) {
+                                        // TODO: How to differentiate extractor dot notation from Metadata Definitions with periods?
+                                        var entryGroup = entry.substring(0, entry.indexOf('.')) + " extractor";
+                                        var entryData = {id: entry, text: entry.substring(entry.indexOf('.')+1, entry.length)}
                                     } else {
-                                        // autocomplete fields
-                                        return {text: x, id: x}
-                        }})};}
+                                        // Simple entry
+                                        var entryGroup = ""
+                                        var entryData = {text: entry, id: entry}
+                                    }
+                                }
+                                if (!outMap.hasOwnProperty(entryGroup))
+                                    outMap[entryGroup] = [];
+                                outMap[entryGroup].push(entryData)
+                            }
+                            console.log(outMap)
+
+                            var outList = []
+                            for (var group in outMap) {
+                                if (group == "") {
+                                    for (var ungrouped=0; ungrouped<outMap[group].length; ungrouped++)
+                                        outList.push(outMap[group][ungrouped])
+                                } else
+                                    outList.push({"text":group, "children": outMap[group]})
+                            }
+
+                            console.log(outList)
+                            return {
+                                results: outList
+                            };
+                        }
                     }
                 }).on("change", function(e) { updateAdvancedSearchFromBasic() })
             });
@@ -207,7 +237,9 @@
             count = count || 10;
             if ( key != "" && value != "" ) {
                 var test = generateSearchObject();
-                var request = jsRoutes.api.Metadata.searchByMultipleKeyValue(JSON.stringify(test), $("#add-metadata-grouping").val(), count).ajax({
+                console.log("GSO")
+                console.log(test)
+                var request = jsRoutes.api.Search.search(JSON.stringify(test), $("#add-metadata-grouping").val(), count).ajax({
                     type: 'GET',
                     contentType: "application/json"
                 });
