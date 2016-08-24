@@ -138,7 +138,6 @@ line-height: 1.5;
             } else if (field_type === "wkt") {
                 try {
                     var primitive = Terraformer.WKT.parse(field_value);
-                    console.log("Parse wkt " + primitive);
                     content["GeoJSON"] = primitive;
                 } catch(err) {
                     notify("There is an error in your WKT. " + err, "error", false, 2000);
