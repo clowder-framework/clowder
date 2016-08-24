@@ -290,7 +290,7 @@
             type: 'GET'
         });
         request.done(function(response, textStatus, jqXHR) {
-            console.log(response);
+            //console.log(response);
             if (response === "no") {
                 clearInterval(intervalCount);    //stop the timer
                 var modalHTML = '<div class="modal" role="dialog">';
