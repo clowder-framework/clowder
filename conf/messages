@@ -20,7 +20,7 @@ collection.parent.title=Parent Collection
 collection.child.title = Child Collection
 spaces.title=Spaces
 
-metadata.uri =
+metadata.uri =If URI is not defined, clowder will generate a URI for the new term which will appear in the listing above.
 
 space.title=Space
 dataset.create.message={0} are the primary way to organize files. Share the {1} with a {2} to work with your team.  Permissions will be applied according to your {2}''s settings.
