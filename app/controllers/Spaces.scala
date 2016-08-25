@@ -10,6 +10,7 @@ import play.api.{Play, Logger}
 import play.api.data.Forms._
 import play.api.data.{Form, Forms}
 import play.api.libs.json.Json
+import play.api.i18n.Messages
 import services._
 import securesocial.core.providers.{Token, UsernamePasswordProvider}
 import org.joda.time.DateTime
@@ -83,9 +84,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
   )
 
   /**
-    * String name of the Space such as 'Project space' etc., parsed from the config file
+    * String name of the Space such as 'Project space' etc., parsed from conf/messages
     */
-  val spaceTitle: String = escapeJava(play.Play.application().configuration().getString("spaceTitle").trim)
+  val spaceTitle: String = Messages("space.title")
 
   /**
    * Gets list of extractors from mongo. Displays the page to add/remove extractors.
@@ -464,7 +465,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
     implicit val user = request.user
     user match {
       case Some(clowderUser) => {
-        val title: Option[String] = Some("Following " + spaceTitle + "s")
+        val title: Option[String] = Some(Messages("following.title", Messages("spaces.title")))
 
         var spaceList = new ListBuffer[ProjectSpace]()
         val spaceIds = clowderUser.followedEntities.filter(_.objectType == "'space")
@@ -514,11 +515,11 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
 
      val nextPage = (when == "a")
      val person = owner.flatMap(o => users.get(UUID(o)))
-     var title: Option[String] = Some(play.api.i18n.Messages("list.title", spaceTitle+"s"))
+     var title: Option[String] = Some(Messages("list.title", Messages("spaces.title")))
 
      val spaceList = person match {
        case Some(p) => {
-         title = Some(person.get.fullName + "'s " + spaceTitle + "s")
+         title = Some(Messages("owner.title", p.fullName, Messages("spaces.title")))
          if (date != "") {
            spaces.listUser(date, nextPage, limit, request.user, showAll, p)
          } else {
@@ -528,7 +529,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
        case None => {
          val trialValue  = onlyTrial && Permission.checkServerAdmin(user)
          if(trialValue) {
-           title = Some( "Trial " + spaceTitle+ "s")
+           title = Some(Messages("trial.title", Messages("spaces.title")))
          }
          if (date != "") {
            spaces.listAccess (date, nextPage, limit, Set[Permission] (Permission.ViewSpace), request.user, showAll, showPublic, trialValue)
@@ -586,7 +587,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
          Some(mode)
        }
      if(!showPublic) {
-       title = Some(play.api.i18n.Messages("you.title", spaceTitle+ "s"))
+       title = Some(Messages("you.title", Messages("spaces.title")))
      }
 
 

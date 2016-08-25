@@ -515,6 +515,65 @@ class MongoDBCollectionService @Inject() (
     }
   }
 
+  //adds datasest to the spaces of the collection
+  def addDatasetToCollectionSpaces(collectionId: UUID, datasetId: UUID, user : Option[User]) = Try {
+    Logger.debug(s"Adding dataset $datasetId to spaces of collection $collectionId")
+    Collection.findOneById(new ObjectId(collectionId.stringify)) match {
+      case Some(collection) => {
+        datasets.get(datasetId) match {
+          case Some(dataset) => {
+            for (collectionSpace <- collection.spaces) {
+              spaceService.get(collectionSpace) match {
+                case Some(space) => {
+                  if (!dataset.spaces.contains(space.id)) {
+                    //check permission for space
+                    if (Permission.checkPermission(user, Permission.AddResourceToSpace,ResourceRef(ResourceRef.space, space.id))){
+                      spaceService.addDataset(datasetId, collectionSpace)
+                    } else
+                      Logger.info("User does not have permission to add datasets to space " + space.id)
+                  }
+                }
+                case None => Logger.error("No space found for : " + collectionSpace)
+              }
+            }
+          }
+          case None => {
+            Logger.error("Error getting dataset " + datasetId)
+            Failure
+          }
+        }
+      }
+      case None => {
+        Logger.error("Error getting collection" + collectionId);
+        Failure
+      }
+    }
+  }
+
+  def addDatasetsInCollectionAndChildCollectionsToCollectionSpaces(collectionId : UUID, user : Option[User]) = Try {
+    addDatasetsToCollectionSpaces(collectionId,user)
+    val allDescendants = getAllDescendants(collectionId)
+    for (collection <- allDescendants){
+      addDatasetsToCollectionSpaces(collection.id, user)
+    }
+  }
+
+  private def addDatasetsToCollectionSpaces(collectionId : UUID, user : Option[User]) = Try {
+    Collection.findOneById(new ObjectId(collectionId.stringify)) match {
+      case Some(collection) => {
+        val datasetsInCollection = datasets.listCollection(collection.id.stringify, user)
+        for (dataset <- datasetsInCollection){
+          for (space <- collection.spaces){
+            if (!dataset.spaces.contains(space)){
+              spaceService.addDataset(dataset.id,space)
+            }
+          }
+        }
+      }
+      case None => Logger.error("Error getting collection" + collectionId)
+    }
+  }
+
   def listChildCollections(parentCollectionId : UUID): List[Collection] = {
     val childCollections = List.empty[Collection]
     get(parentCollectionId) match {
@@ -852,7 +911,7 @@ class MongoDBCollectionService @Inject() (
     }
   }
 
-  def addSubCollection(collectionId :UUID, subCollectionId: UUID) = Try{
+  def addSubCollection(collectionId :UUID, subCollectionId: UUID, user : Option[User]) = Try{
     Collection.findOneById(new ObjectId(collectionId.stringify)) match {
       case Some(collection) => {
         get(subCollectionId) match {
@@ -865,7 +924,7 @@ class MongoDBCollectionService @Inject() (
                 if (!sub_collection.spaces.contains(parentSpaceId)) {
                   spaceService.get(parentSpaceId) match {
                     case Some(parentSpace) => {
-                      spaceService.addCollection(subCollectionId, parentSpaceId)
+                      spaceService.addCollection(subCollectionId, parentSpaceId, user)
                     }
                     case None => Logger.error("No space found for " + parentSpaceId)
                   }

@@ -1,7 +1,7 @@
 @(title: String)(content: Html)(implicit user: Option[models.User] = None)
 
 @import services.AppConfiguration
-
+@import play.api.i18n.Messages
 <!DOCTYPE html>
 
 <html lang="en">
@@ -74,13 +74,13 @@
                         <ul class="dropdown-menu">
                             <li><a href="@routes.Application.index"><span class="glyphicon glyphicon-user"></span> Dashboard</a></li>
                             @if(play.Play.application().configuration().getBoolean("enablePublic")) {
-                                <li><a href="@routes.Spaces.list(showPublic=false)"><span class="glyphicon glyphicon-tent"></span> @{spaces.spaceTitle()}s</a></li>
-                                <li><a href="@routes.Datasets.list(showPublic=false)"><span class="glyphicon glyphicon-briefcase"></span> Datasets</a></li>
-                                <li><a href="@routes.Collections.list(showPublic=false)"><span class="glyphicon glyphicon-th-list"></span> Collections</a></li>
+                                <li><a href="@routes.Spaces.list(showPublic=false)"><span class="glyphicon glyphicon-tent"></span> @Messages("spaces.title")</a></li>
+                                <li><a href="@routes.Datasets.list(showPublic=false)"><span class="glyphicon glyphicon-briefcase"></span> @Messages("datasets.title")</a></li>
+                                <li><a href="@routes.Collections.list(showPublic=false)"><span class="glyphicon glyphicon-th-large"></span>@Messages("collections.title")</a></li>
                             } else {
-                                <li><a href="@routes.Spaces.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-tent"></span> @{spaces.spaceTitle()}s</a></li>
-                                <li><a href="@routes.Datasets.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-briefcase"></span> Datasets</a></li>
-                                <li><a href="@routes.Collections.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-th-list"></span> Collections</a></li>
+                                <li><a href="@routes.Spaces.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-tent"></span> @Messages("spaces.title")s</a></li>
+                                <li><a href="@routes.Datasets.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-briefcase"></span> @Messages("datasets.title")</a></li>
+                                <li><a href="@routes.Collections.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-th-large"></span> @Messages("collections.title")</a></li>
 
                             }
 
@@ -92,19 +92,19 @@
                             Explore <b class="caret"></b>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="@routes.Spaces.list()"><span class="glyphicon glyphicon-tent"> </span> @{spaces.spaceTitle()}s</a></li>
+                            <li><a href="@routes.Spaces.list()"><span class="glyphicon glyphicon-tent"> </span> @Messages("spaces.title")</a></li>
                             @user match {
                                 case Some(x) => {
                                     @if(play.Play.application().configuration().getBoolean("verifySpaces") && api.Permission.checkServerAdmin(user)) {
-                                        <li><a href="@routes.Spaces.list(onlyTrial=true)"><span class="glyphicon glyphicon-tent"> </span> Trial @{spaces.spaceTitle()}s</a></li>
+                                        <li><a href="@routes.Spaces.list(onlyTrial=true)"><span class="glyphicon glyphicon-tent"> </span> Trial @Messages("spaces.title")</a></li>
                                     }
                                 }
                                 case None => {
 
                                 }
                             }
-                            <li><a href="@routes.Datasets.list("")"><span class="glyphicon glyphicon-briefcase"> </span> Datasets</a></li>
-                            <li><a href="@routes.Collections.list("")"><span class="glyphicon glyphicon-th-list"> </span> Collections</a></li>
+                            <li><a href="@routes.Datasets.list("")"><span class="glyphicon glyphicon-briefcase"> </span> @Messages("datasets.title")</a></li>
+                            <li><a href="@routes.Collections.list("")"><span class="glyphicon glyphicon-th-large"> </span> @Messages("collections.title")</a></li>
                             @if(user.isDefined){
                                 <li><a href="@routes.Users.getUsers()"><span class="glyphicon glyphicon-user"></span> Users</a></li>
                             }
@@ -119,13 +119,13 @@
                             Create <b class="caret"></b>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="@routes.Spaces.newSpace()"><span class="glyphicon glyphicon-tent"> </span>@{
-                                spaces.spaceTitle()
-                            }s</a></li>
+                            <li><a href="@routes.Spaces.newSpace()"><span class="glyphicon glyphicon-tent"> </span>
+                                @Messages("spaces.title")
+                            </a></li>
                             <li><a href="@routes.Datasets.newDataset(None, None)"><span class="glyphicon glyphicon-briefcase"> </span>
-                                Datasets</a></li>
-                            <li><a href="@routes.Collections.newCollection(None)"><span class="glyphicon glyphicon-th-list"> </span>
-                                Collections</a></li>
+                                @Messages("datasets.title")</a></li>
+                            <li><a href="@routes.Collections.newCollection(None)"><span class="glyphicon glyphicon-th-large"> </span>
+                                @Messages("collections.title")</a></li>
 
                         </ul>
                     </li>
@@ -274,6 +274,45 @@
     function toggelServerAdmin() {
         $.cookie("superAdmin", $.cookie("superAdmin") != "true", { path: '/' });
         location.reload();
+    }
+</script>
+
+<script>
+    var repeatInt = 1; // check for session expiration in minutes
+
+    if (@user.isDefined) {
+        var intervalCount = setInterval(function(){checkSession()}, repeatInt*60000);
+    }
+
+    function checkSession() {
+        nowTime = new Date();
+        var request = jsRoutes.controllers.Login.isLoggedIn().ajax({
+            type: 'GET'
+        });
+        request.done(function(response, textStatus, jqXHR) {
+            //console.log(response);
+            if (response === "no") {
+                clearInterval(intervalCount);    //stop the timer
+                var modalHTML = '<div class="modal" role="dialog">';
+                modalHTML += '<div class="modal-dialog">';
+                modalHTML += '<div class="modal-content">';
+                modalHTML += '<div class="modal-body">';
+                modalHTML += '<p>Your session has expired as of ' + nowTime.toTimeString() + '.<br />Press OK to log in again.</p>';
+                modalHTML += '</div>';
+                modalHTML += '<div class="modal-footer">';
+                modalHTML += '<a type="button" class="btn btn-primary" href="@securesocial.controllers.routes.LoginPage.logout"><span class="glyphicon glyphicon-ok"></span> OK</a>';
+                modalHTML += '</div>';
+                modalHTML += '</div>';
+                modalHTML += '</div>';
+                modalHTML += '</div>';
+                var confirmModal = $(modalHTML);
+                confirmModal.modal({backdrop: "static", keyboard: false});
+                confirmModal.modal("show");
+            }
+        });
+        request.fail(function(jqXHR, textStatus, errorThrown) {
+            console.error("The following error occurred: " + textStatus, errorThrown);
+        });
     }
 </script>
 </body>

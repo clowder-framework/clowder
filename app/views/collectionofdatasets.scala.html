@@ -140,18 +140,37 @@
 					}
 				</div>
 			</div>
+			<div class="row">
+				<div class="col-xs-12">
+					<div class="row">
+						<div class="col-xs-8">
+							<h2>@Messages("a.in.b", Messages("datasets.title"), Messages("collection.title"))</h2>
+						</div>
+						<div class="col-xs-4 valign-link">
+						@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
+							<a id="create_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))"
+							class="btn btn-link pull-right" title="Create Dataset">
+								<span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("dataset.title"))</a>
+						}
+						</div>
+					</div>
+					<div id="datasets">
+					@collections.datasetsInCollection(datasetsInCollection, commentMap, collection.id, prevd, nextd)
+					</div>
+				</div>
+			</div>
 			<div class="row top-padding">
 				<div class="col-xs-12" id="childCollectionsDiv">
 					<div class="row">
 						<div class="col-xs-8">
-							<h2>Child Collections in the collection</h2>
+							<h2>@Messages("a.in.b", "Child " +Messages("collections.title"), Messages("collection.title"))</h2>
 						</div>
 						<div class="col-xs-4 valign-link">
 							@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
 								<a id="create_childcollection"
 								href="@routes.Collections.newCollectionWithParent(collection.id)"
 								class="btn btn-link pull-right" title="Create Child Collection">
-									<span class="glyphicon glyphicon-ok"></span> Create Child Collection</a>
+									<span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("collection.child.title"))</a>
 							}
 						</div>
 					</div>
@@ -160,25 +179,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="row">
-				<div class="col-xs-12">
-					<div class="row">
-						<div class="col-xs-8">
-							<h2>Datasets in the collection</h2>
-						</div>
-						<div class="col-xs-4 valign-link">
-							@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))){
-								<a id="create_dataset" href="@routes.Datasets.newDataset(None, Some(collection.id.toString()))"
-								class="btn btn-link pull-right" title="Create Dataset">
-									<span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
-							}
-						</div>
-					</div>
-					<div id="datasets">
-						@collections.datasetsInCollection(datasetsInCollection, commentMap, collection.id, prevd, nextd)
-					</div>
-				</div>
-			</div>
+
 		</div>
 
 		<!-- right column -->
@@ -196,7 +197,7 @@
 	var collectionId = "@collection.id.stringify";
 	var cur_title;
 	function updateTitle() {
-	 cur_title = $('#collectiontitle').text();
+	 cur_title = $('#collectiontitle').text().trim();
 	 $('<div class="inline edit_title_div"> </span>').insertAfter($('#collectiontitle'));
 	 $('.edit_title_div').append('<input type = "text" id="title_input" class="form-control"/>');
 	 $('.edit_title_div').append('<div class="hiddencomplete" id="title-error"> <span class="error"> Title is required </span> </div>');
@@ -229,7 +230,7 @@
 
 		request.done(function(response, textStatus, jqXHR) {
 			$('#collectiontitle').text(encName.replace(/\n/g, "<br>"));
-			$('#collectiontitle').prepend('<span class="glyphicon glyphicon-th-large"></span>');
+			$('#collectiontitle').prepend('<span class="glyphicon glyphicon-th-large"></span> ');
             $('.edit_title_div').remove();
 			$('#collectiontitle').css("display", "inline");
 			$('#h-edit-title').removeClass("inline");
@@ -249,7 +250,7 @@
 	}
 	function cancelTitle() {
 		$('#collectiontitle').text(cur_title);
-		$('#collectiontitle').prepend('<span class="glyphicon glyphicon-th-large"></span>');
+		$('#collectiontitle').prepend('<span class="glyphicon glyphicon-th-large"></span> ');
         $('.edit_title_div').remove();
 		$('#collectiontitle').css("display", "inline");
 		$('#h-edit-title').removeClass("inline");

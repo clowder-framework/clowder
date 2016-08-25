@@ -31,6 +31,7 @@ GET            /assets/*file                                                    
 # ----------------------------------------------------------------------
 GET            /users                                                                   @controllers.Users.getUsers(when: String ?= "", id: String ?= "", limit: Int ?=24)
 GET            /users/acceptTermsOfServices                                             @controllers.Users.acceptTermsOfServices(redirect: Option[String] ?= None)
+GET            /login/isLoggedIn                                                        @controllers.Login.isLoggedIn
 
 # ----------------------------------------------------------------------
 # PROFILE
@@ -382,9 +383,9 @@ GET            /api/extractions/extractors_names                                
 GET            /api/extractions/supported_input_types                                   @api.Extractions.getExtractorInputTypes()
 #API for temporary fix for BD-289
 GET            /api/extractions/extractors_details                                      @api.Extractions.getExtractorDetails()
-POST           /api/extractions/upload_url                                              @api.Extractions.uploadByURL()
+POST           /api/extractions/upload_url                                              @api.Extractions.uploadByURL(extract: Boolean ?= true)
 POST           /api/extractions/multiple_uploadby_url                                   @api.Extractions.multipleUploadByURL()
-POST           /api/extractions/upload_file                                             @api.Extractions.uploadExtract(showPreviews: String ?= "DatasetLevel")
+POST           /api/extractions/upload_file                                             @api.Extractions.uploadExtract(showPreviews: String ?= "DatasetLevel", extract: Boolean ?= true)
 GET            /api/extractions/:id/status                                              @api.Extractions.checkExtractorsStatus(id:UUID)
 GET            /api/extractions/:id/metadata                                            @api.Extractions.fetch(id:UUID)
 GET            /api/extractions/:id/statuses                                            @api.Extractions.checkExtractionsStatuses(id:UUID)
@@ -425,7 +426,7 @@ GET            /api/spaces/canEdit                                              
 GET            /api/spaces/:id                                                          @api.Spaces.get(id: UUID)
 POST           /api/spaces                                                              @api.Spaces.createSpace()
 DELETE         /api/spaces/:id                                                          @api.Spaces.removeSpace(id: UUID)
-POST           /api/spaces/:spaceId/removeCollection/:collectionId                      @api.Spaces.removeCollection(spaceId: UUID, collectionId: UUID)
+POST           /api/spaces/:spaceId/removeCollection/:collectionId                      @api.Spaces.removeCollection(spaceId: UUID, collectionId: UUID, removeDatasets : Boolean)
 POST           /api/spaces/:spaceId/removeDataset/:datasetId                            @api.Spaces.removeDataset(spaceId: UUID, datasetId: UUID)
 POST           /api/spaces/:id/update                                                   @api.Spaces.updateSpace(id: UUID)
 POST           /api/spaces/:id/updateUsers                                              @api.Spaces.updateUsers(id: UUID)
@@ -489,6 +490,7 @@ GET            /api/collections/:coll_id/removeFromSpaceAllowed/:space_id       
 # ----------------------------------------------------------------------
 GET            /api/datasets                                                            @api.Datasets.list(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
 GET            /api/datasets/canEdit                                                    @api.Datasets.listCanEdit(title: Option[String] ?= None, date: Option[String] ?= None, limit: Int ?= 12)
+GET            /api/datasets/moveFileToDataset                                          @api.Datasets.listMoveFileToDataset(file_id: UUID, title: Option[String] ?= None, limit: Int ?= 12)
 POST           /api/datasets                                                            @api.Datasets.createDataset
 POST           /api/datasets/createempty                                                @api.Datasets.createEmptyDataset
 POST           /api/datasets/attachmultiple                                             @api.Datasets.attachMultipleFiles
@@ -720,3 +722,29 @@ GET            /spaces/curations/:id/getMetadataDefinitionsByFile               
 GET            /spaces/curations/:id/metadataDefinitions                                @api.CurationObjects.getMetadataDefinitions(id: UUID)
 POST           /sendEmail                                                               @api.Events.sendExceptionEmail()
 GET            /getEvents                                                               @controllers.Events.getEvents(index: Int)
+
+# ----------------------------------------------------------------------
+# VOCABULARIES API
+# ----------------------------------------------------------------------
+
+GET         /api/vocabularies/list                                                      @api.Vocabularies.list()
+POST        /api/vocabularies/createVocabularyFromJson                                  @api.Vocabularies.createVocabularyFromJson(isPublic : Boolean ?= false)
+POST        /api/vocabularies/createVocabulary                                          @api.Vocabularies.createVocabularyFromForm()
+GET         /api/vocabularies/getByAuthor                                               @api.Vocabularies.getByAuthor()
+GET         /api/vocabularies/getPublic                                                 @api.Vocabularies.getPublicVocabularies()
+
+
+GET         /api/vocabularies/:vocab_id                                                 @api.Vocabularies.get(vocab_id : UUID)
+PUT         /api/editVocabulary/:vocab_id                                               @api.Vocabularies.editVocabulary(vocab_id : UUID)
+GET         /api/vocabularies/:name                                                     @api.Vocabularies.getByName(name : String)
+GET         /api/vocabularies/:name/getByNameAuthor                                     @api.Vocabularies.getByNameAndAuthor(name: String)
+
+POST        /api/vocabularies/:vocab_id/addToSpace/:space_id                            @api.Vocabularies.addToSpace(vocab_id: UUID, space_id : UUID)
+POST        /api/vocabuliaries/:vocab_id/removeFromSpace/:space_id                      @api.Vocabularies.removeFromSpace(vocab_id: UUID, space_id : UUID)
+
+# ----------------------------------------------------------------------
+# VOCABULARYTERMS API
+# ----------------------------------------------------------------------
+
+GET         /api/vocabterms/list                                                        @api.VocabularyTerms.list()
+GET         /api/vocabterms/:id                                                         @api.VocabularyTerms.get(id : UUID)

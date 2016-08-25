@@ -106,7 +106,7 @@ line-height: 1.5;
         var field_type = $("#@id  #add-metadata-select option:selected").data("type");
         var field_value = "";
         var field_types_with_simple_values = {"string": 1, "listjquery": 1, "listgeocode": 1, "scientific_variable": 1,
-            "datetime": 1, "wktlocation": 1};
+            "datetime": 1, "wkt": 1};
         if (field_type in field_types_with_simple_values) {
             field_value = $("#@id  #field-value").val();
         } else if (field_type === "list") {
@@ -135,10 +135,9 @@ line-height: 1.5;
                 if (unit_val) {
                     content["Unit"] = unit_val;
                 }
-            } else if (field_type === "wktlocation") {
+            } else if (field_type === "wkt") {
                 try {
                     var primitive = Terraformer.WKT.parse(field_value);
-                    console.log("Parse wkt " + primitive);
                     content["GeoJSON"] = primitive;
                 } catch(err) {
                     notify("There is an error in your WKT. " + err, "error", false, 2000);
@@ -225,7 +224,6 @@ line-height: 1.5;
         }
         // chosen pulldown configuration
         $("#@id  #add-metadata-select").chosen({
-            no_results_text: "Not found. Press enter to add ",
             search_contains: true,
             width: "100%",
             placeholder_text_single: "Select field"});
@@ -245,7 +243,7 @@ line-height: 1.5;
                      "listgeocode": "add_metadata_string",
                      "scientific_variable": "add_metadata_scientific_variable",
                      "datetime": "add_metadata_datetime",
-                     "wktlocation": "add_metadata_wktlocation"
+                     "wkt": "add_metadata_wktlocation"
                     };
                 var modalTemplate = Handlebars.getTemplate("@routes.Assets.at("templates/metadata/")" + template_map[field_type]);
                 var html = modalTemplate({'field_label': field_label, 'field_id': field_id, 'field_type': field_type});
@@ -402,6 +400,7 @@ line-height: 1.5;
                         // chosen pulldown configuration
                         $("#@id  #field-value").chosen({
                             no_results_text: "Not found. Press enter to add ",
+                            add_search_option: true,
                             search_contains: true,
                             width: "100%",
                             placeholder_text_single: "Select field"});

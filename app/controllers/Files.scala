@@ -24,7 +24,7 @@ import util.SearchUtils
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
-
+import play.api.i18n.Messages
 
 
 /**
@@ -57,7 +57,7 @@ class Files @Inject() (
       "userid" -> nonEmptyText
     )(FileMD.apply)(FileMD.unapply)
   )
-  val spaceTitle: String = escapeJava(play.Play.application().configuration().getString("spaceTitle").trim)
+  val spaceTitle: String = Messages("space.title")
   /**
    * File info.
    */
@@ -681,7 +681,7 @@ def uploadExtract() =
                             }
                             Ok.chunked(Enumerator.fromStream(inputStream))
                               .withHeaders(CONTENT_TYPE -> contentType)
-                              .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename*=UTF-8''" + filenameStar))
+                              .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename*=\"UTF-8''" + filenameStar + "\""))
 
                           }
                           }

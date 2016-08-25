@@ -1,7 +1,9 @@
-@(spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection], showAccess: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection],collectionSpaces : List[String], showAccess: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import models.DatasetStatus
-@main("Create Dataset") {
+@import play.api.i18n.Messages
+
+@main(Messages("create.title", Messages("dataset.title"))) {
     <!-- Custom items for the create dataset workflow -->
     <script src="@routes.Assets.at("javascripts/htmlEncodeDecode.js")" language="javascript"></script>
     <script src="@routes.Assets.at("javascripts/errorRedirect.js")" type="text/javascript"></script>
@@ -12,15 +14,14 @@
             var isDescRequired = @isDescriptionRequired;
     </script>
     <div class="page-header">
-        <h1>Create New Dataset</h1>
+        <h1>@Messages("create.header", Messages("dataset.title"))</h1>
     </div>
     <div class="row">
         <div class="col-md-12">
-            <p>Datasets are the primary way to organize files. Share the dataset with a @{spaces.spaceTitle()} to work with your team.
-                Permissions will be applied according to your @{spaces.spaceTitle()}'s settings.</p>
+            <p>@Messages("dataset.create.message", Messages("datasets.title"), Messages("dataset.title").toLowerCase, Messages("space.title"))</p>
 
             @if(collection.isDefined){
-                <p>This dataset will be added to collection <a href="@routes.Collections.collection(collection.get.id)">@collection.get.name</a></p>
+                <p>@Messages("dataset.create.collection.message", Messages("dataset.title").toLowerCase, Messages("collection.title").toLowerCase) <a href="@routes.Collections.collection(collection.get.id)">@collection.get.name</a></p>
             }
         </div>
     </div>
@@ -44,25 +45,23 @@
             <div class="form-group">
                 <label id="spacelabel" for="space">Share with
                     @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
-                        @{spaces.spaceTitle()}s
+                        @Messages("spaces.title")
                      } else {
-                        a @{spaces.spaceTitle()}
+                        a @Messages("space.title")
                     }
                 </label>
                 <select name="space" id="spaceid" class ="chosen-select" @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined){multiple}>
                 @if(!play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
-                    <option value="">Select a @spaces.spaceTitle().toString().filter(_ >= ' ') to share the dataset with (Optional)</option>
+                    <option value="">Select a @Messages("space.title") to share the @Messages("dataset.title").toLowerCase with (Optional)</option>
                 }
                 @spaceList.map { space =>
                         <option id="@(space.id)" value="@(space.id)">@(space.name)</option>
                     }
                     </select>
                 @if(play.api.Play.current.plugin[services.SpaceSharingPlugin].isDefined) {
-                    <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
-                        this dataset with members of one @{spaces.spaceTitle()}. This is optional.</p>
+                    <p class="help-block">@Messages("create.share.multiple.message", Messages("dataset.title").toLowerCase, Messages("spaces.title"))</p>
                 } else {
-                    <p class="help-block">By default the dataset is only accessible to the user who created it. You can share
-                        this dataset with members of one or more @{spaces.spaceTitle()}s. This is optional.</p>
+                    <p class="help-block">@Messages("create.share.one.message", Messages("dataset.title").toLowerCase, Messages("space.title"))</p>
                 }
 
             </div>
@@ -79,7 +78,7 @@
     <div class="row">
         <div class="col-md-12">
             <button type="submit" class="btn btn-primary start"  id="createdataset" title="Create the Dataset">
-                <span class="glyphicon glyphicon-ok"></span> Create Dataset
+                <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", "")
             </button>
             <button class="btn btn-default" title="Start the dataset creation process over" onclick="return resetValues();">
                 <span class="glyphicon glyphicon-unchecked"></span> Reset
@@ -151,6 +150,15 @@
             $('#@spaceId').prop('selected','selected');
             $('#spaceid').trigger("chosen:updated");
         }
+
+        //todd_n add for loop to select id
+        if(!@collectionSpaces.isEmpty){
+            @for(eachId <- collectionSpaces){
+            $('#@eachId').prop('selected','selected');
+            $('#spaceid').trigger("chosen:updated");
+            }
+        }
+
 
         $(function () {
             $('#createdataset').click(function () {

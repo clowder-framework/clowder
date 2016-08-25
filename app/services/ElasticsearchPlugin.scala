@@ -9,9 +9,11 @@ import scala.collection.mutable.{MutableList, ListBuffer}
 import scala.collection.immutable.List
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.{Plugin, Logger, Application}
-import org.elasticsearch.common.settings.ImmutableSettings
+import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.client.transport.TransportClient
 import org.elasticsearch.common.transport.InetSocketTransportAddress
+import java.net.InetAddress;
+import org.elasticsearch.common.transport.TransportAddress
 import org.elasticsearch.common.xcontent.XContentFactory._
 import org.elasticsearch.action.search.SearchType
 import org.elasticsearch.client.transport.NoNodeAvailableException
@@ -52,8 +54,13 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       return true
     }
     try {
-      val settings = ImmutableSettings.settingsBuilder().put("cluster.name", nameOfCluster).build()
-      client = Some(new TransportClient(settings).addTransportAddress(new InetSocketTransportAddress(serverAddress, serverPort)))
+      val settings = if (nameOfCluster != "") {
+        Settings.settingsBuilder().put("cluster.name", nameOfCluster).build()
+      } else {
+        Settings.settingsBuilder().build()
+      }
+      client = Some(TransportClient.builder().settings(settings).build()
+        .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(serverAddress), serverPort)))
       Logger.debug("--- Elasticsearch Client is being created----")
       client match {
         case Some(x) => {
@@ -146,14 +153,13 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     client match {
       case Some(x) => {
         Logger.info("Searching Elasticsearch")
-
         val response = x.prepareSearch(index)
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
           .setQuery(queryObj)
           .setFrom(from).setSize(to).setExplain(true)
           .execute()
           .actionGet()
-        Logger.info("Search hits: " + response.getHits().getTotalHits())
+        Logger.debug("Search hits: " + response.getHits().getTotalHits())
         response
       }
       case None => {
@@ -166,13 +172,16 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /** Create a new index with preconfigured mappgin */
   def createIndex(index: String = nameOfIndex): Unit = {
-    val indexSettings = ImmutableSettings.settingsBuilder().loadFromSource(jsonBuilder()
+    val indexSettings = Settings.settingsBuilder().loadFromSource(jsonBuilder()
       .startObject()
       .startObject("analysis")
       .startObject("analyzer")
       .startObject("default")
       .field("type", "snowball")
-      .endObject().endObject().endObject().endObject().string())
+      .endObject()
+      .endObject()
+      .endObject()
+      .endObject().string())
 
     client match {
       case Some(x) => {
@@ -206,7 +215,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     client match {
       case Some(x) => {
         val response = x.prepareDelete(index, docType, id).execute().actionGet()
-        Logger.info("Deleting document: " + response.getId)
+        Logger.debug("Deleting document: " + response.getId)
 
       }
       case None => Logger.error("Could not call index because we are not connected.")

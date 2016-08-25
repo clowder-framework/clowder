@@ -64,20 +64,99 @@ class  Datasets @Inject()(
     notes = "This will check for Permission.ViewDataset",
     responseClass = "None", multiValueResponse=true, httpMethod = "GET")
   def list(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(lisDatasets(title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+    Ok(toJson(listDatasets(title, date, limit, Set[Permission](Permission.ViewDataset), request.user, request.user.fold(false)(_.superAdminMode))))
   }
 
   @ApiOperation(value = "List all datasets the user can edit",
     notes = "This will check for Permission.AddResourceToDataset and Permission.EditDataset",
     responseClass = "None", httpMethod = "GET")
   def listCanEdit(title: Option[String], date: Option[String], limit: Int) = PrivateServerAction { implicit request =>
-    Ok(toJson(lisDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+      Ok(toJson(listDatasets(title, date, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+  }
+
+  @ApiOperation(value = "List all datasets in the space the user can edit and thus move the file to",
+    notes = "This will check for Permission.AddResourceToDataset and Permission.EditDataset",
+    responseClass = "None", httpMethod = "GET")
+  def listMoveFileToDataset(file_id: UUID, title: Option[String], limit: Int) = PrivateServerAction { implicit request =>
+    if (play.Play.application().configuration().getBoolean("datasetFileWithinSpace")) {
+      Ok(toJson(listDatasetsInSpace(file_id, title, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+    } else {
+      Ok(toJson(listDatasets(title, None, limit, Set[Permission](Permission.AddResourceToDataset, Permission.EditDataset), request.user, request.user.fold(false)(_.superAdminMode))))
+    }
+  }
+
+  /**
+    * Returns list of datasets based on space restrictions and permissions. The spaceId is obtained from the file itself
+    */
+  private def listDatasetsInSpace(file_id: UUID, title: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Dataset] = {
+    var datasetAll = List[Dataset]()
+    val datasetList = datasets.findByFileId(file_id)
+    datasetList match {
+      case Nil => {
+        val folderList = folders.findByFileId(file_id)
+        folderList match {
+          case f :: fs => {
+            datasets.get(f.parentDatasetId) match {
+              case Some(d) => {
+                if (d.spaces.isEmpty) {
+                  title match {
+                    case Some(t) => {
+                      datasetAll = datasets.listAccess(limit, t, permission, user, superAdmin, true)
+                    }
+                    case None => {
+                      datasetAll = datasets.listAccess(limit, permission, user, superAdmin, true)
+                    }
+                  }
+                } else {
+                  for (sid <- d.spaces) {
+                    title match {
+                      case Some(t) => {
+                        //merge two lists, both with dataset objects from different spaces
+                        datasetAll = datasetAll ++ datasets.listSpaceAccess(limit, t, permission, sid.toString(), user, superAdmin, true)
+                      }
+                      case None => {
+                        datasetAll = datasetAll ++ datasets.listSpaceAccess(limit, permission, sid.toString(), user, superAdmin, true)
+                      }
+                    }
+                  }
+                }
+              }
+              case None =>
+            }
+          }
+        }
+      }
+      case x :: xs => {
+        if (x.spaces.isEmpty) {
+          title match {
+            case Some(t) => {
+              datasetAll = datasets.listAccess(limit, t, permission, user, superAdmin, true)
+            }
+            case None => {
+              datasetAll = datasets.listAccess(limit, permission, user, superAdmin, true)
+            }
+          }
+        } else {
+          for (sid <- x.spaces) {
+            title match {
+              case Some(t) => {
+                datasetAll = datasetAll ++ datasets.listSpaceAccess(limit, t, permission, sid.toString(), user, superAdmin, true)
+              }
+              case None => {
+                datasetAll = datasetAll ++ datasets.listSpaceAccess(limit, permission, sid.toString(), user, superAdmin, true)
+              }
+            }
+          }
+        }
+      }
+    }
+    datasetAll.distinct
   }
 
   /**
     * Returns list of datasets based on parameters and permissions.
     */
-  private def lisDatasets(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Dataset] = {
+  private def listDatasets(title: Option[String], date: Option[String], limit: Int, permission: Set[Permission], user: Option[User], superAdmin: Boolean) : List[Dataset] = {
     (title, date) match {
       case (Some(t), Some(d)) => {
         datasets.listAccess(d, true, limit, t, permission, user, superAdmin, true)
@@ -555,6 +634,14 @@ class  Datasets @Inject()(
 
         //add metadata to mongo
         metadataService.addMetadata(metadata)
+        val mdMap = metadata.getExtractionSummary
+
+        //send RabbitMQ message
+        current.plugin[RabbitmqPlugin].foreach { p =>
+          val dtkey = s"${p.exchange}.metadata.added"
+          p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request), dtkey, mdMap, "", metadata.attachedTo.id, ""))
+        }
+
 
         datasets.index(id)
         Ok(toJson(Map("status" -> "success")))
@@ -570,39 +657,46 @@ class  Datasets @Inject()(
     notes = "Metadata in attached JSON-LD object will be added to metadata Mongo db collection.",
     responseClass = "None", httpMethod = "POST")
   def addMetadataJsonLD(id: UUID) =
-    PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
-      datasets.get(id) match {
-        case Some(x) => {
-          val json = request.body
-          //parse request for agent/creator info
-          //creator can be UserAgent or ExtractorAgent
-          var creator: models.Agent = null
-          json.validate[Agent] match {
-            case s: JsSuccess[Agent] => {
-              creator = s.get
+     PermissionAction(Permission.AddMetadata, Some(ResourceRef(ResourceRef.dataset, id)))(parse.json) { implicit request =>
+        datasets.get(id) match {
+          case Some(x) => {
+            val json = request.body
+            //parse request for agent/creator info
+            //creator can be UserAgent or ExtractorAgent
+            var creator: models.Agent = null
+            json.validate[Agent] match {
+              case s: JsSuccess[Agent] => {
+                creator = s.get
 
-              // check if the context is a URL to external endpoint
-              val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
+                // check if the context is a URL to external endpoint
+                val contextURL: Option[URL] = (json \ "@context").asOpt[String].map(new URL(_))
 
-              // check if context is a JSON-LD document
-              val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
-                .map(contextService.addContext(new JsString("context name"), _))
+                // check if context is a JSON-LD document
+                val contextID: Option[UUID] = (json \ "@context").asOpt[JsObject]
+                  .map(contextService.addContext(new JsString("context name"), _))
 
-              // when the new metadata is added
-              val createdAt = new Date()
+                // when the new metadata is added
+                val createdAt = new Date()
 
-              //parse the rest of the request to create a new models.Metadata object
-              val attachedTo = ResourceRef(ResourceRef.dataset, id)
-              val content = (json \ "content")
-              val version = None
-              val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
-                content, version)
+                //parse the rest of the request to create a new models.Metadata object
+                val attachedTo = ResourceRef(ResourceRef.dataset, id)
+                val content = (json \ "content")
+                val version = None
+                val metadata = models.Metadata(UUID.generate, attachedTo, contextID, contextURL, createdAt, creator,
+                  content, version)
 
-              //add metadata to mongo
-              metadataService.addMetadata(metadata)
-              datasets.index(id)
-              Ok(toJson("Metadata successfully added to db"))
+                //add metadata to mongo
+                metadataService.addMetadata(metadata)
+                val mdMap = metadata.getExtractionSummary
 
+                //send RabbitMQ message
+                current.plugin[RabbitmqPlugin].foreach { p =>
+                  val dtkey = s"${p.exchange}.metadata.added"
+                  p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request), dtkey, mdMap, "", metadata.attachedTo.id, ""))
+                }
+
+                datasets.index(id)
+                Ok(toJson("Metadata successfully added to db"))
             }
             case e: JsError => {
               Logger.error("Error getting creator");
@@ -2174,7 +2268,7 @@ class  Datasets @Inject()(
             // Use a 1MB in memory byte array
             Ok.chunked(enumeratorFromDataset(dataset,1024*1024, compression,bagit,user)).withHeaders(
               "Content-Type" -> "application/zip",
-              "Content-Disposition" -> ("attachment; filename=" + dataset.name + ".zip")
+              "Content-Disposition" -> ("attachment; filename=\"" + dataset.name+ ".zip\"")
             )
           }
           // If the dataset wasn't found by ID

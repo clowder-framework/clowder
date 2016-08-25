@@ -294,15 +294,30 @@ class Metadata @Inject()(
 
             //add metadata to mongo
             metadataService.addMetadata(metadata)
+            val mdMap = metadata.getExtractionSummary
+
             attachedTo match {
               case Some(resource) => {
                 resource.resourceType match {
                   case ResourceRef.dataset => {
                     datasets.index(resource.id)
+                    //send RabbitMQ message
+                    current.plugin[RabbitmqPlugin].foreach { p =>
+                      val dtkey = s"${p.exchange}.metadata.added"
+                      p.extract(ExtractorMessage(UUID(""), UUID(""), controllers.Utils.baseUrl(request),
+                        dtkey, mdMap, "", metadata.attachedTo.id, ""))
+                    }
                   }
                   case ResourceRef.file => {
                     files.index(resource.id)
+                    //send RabbitMQ message
+                    current.plugin[RabbitmqPlugin].foreach { p =>
+                      val dtkey = s"${p.exchange}.metadata.added"
+                      p.extract(ExtractorMessage(metadata.attachedTo.id, UUID(""), controllers.Utils.baseUrl(request),
+                        dtkey, mdMap, "", UUID(""), ""))
+                    }
                   }
+                  case _ => {}
                 }
               }
               case None => {}
@@ -329,6 +344,12 @@ class Metadata @Inject()(
               BadRequest("Curation Object has already submitted")
             } else {
               metadataService.removeMetadata(id)
+              val mdMap = m.getExtractionSummary
+
+              current.plugin[RabbitmqPlugin].foreach { p =>
+                val dtkey = s"${p.exchange}.metadata.removed"
+                p.extract(ExtractorMessage(UUID(""), UUID(""), request.host, dtkey, mdMap, "", id, ""))
+              }
 
               Logger.debug("re-indexing after metadata removal")
               current.plugin[ElasticsearchPlugin].foreach { p =>
@@ -347,7 +368,6 @@ class Metadata @Inject()(
                   }
                 }
               }
-
 
               Ok(JsObject(Seq("status" -> JsString("ok"))))
             }

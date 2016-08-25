@@ -45,7 +45,7 @@ class Thumbnails @Inject() (thumbnails: ThumbnailService) extends Controller wit
 
   /**
    * Upload a file thumbnail.
-   */  
+   */
   def uploadThumbnail() = PermissionAction(Permission.CreatePreview)(parse.multipartFormData) { implicit request =>
     request.body.file("File").map { f =>
       f.ref.file.length() match{

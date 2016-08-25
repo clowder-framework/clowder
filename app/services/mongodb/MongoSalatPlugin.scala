@@ -19,6 +19,7 @@ import com.mongodb.casbah.MongoConnection
 import com.mongodb.casbah.MongoDB
 import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.gridfs.GridFS
+import com.mongodb.casbah.Imports.DBObject
 import org.bson.types.ObjectId
 import services.filesystem.DiskByteStorageService
 import services.{ByteStorageService, MetadataService, DI, AppConfigurationService}
@@ -376,7 +377,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
 
     //add private (the default status) flag for each dataset/collection/space
     updateMongo("add-trial-flag", addTrialFlag)
-    
+
     // instead of user agreeent we now have a terms of services
     updateMongo("switch-user-agreement-to-terms-of-services", switchToTermsOfServices)
 
@@ -394,7 +395,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     updateMongo("user-emails-to-lowercase", updateMongoEmailCase)
 
     // Move SHA512 from File object into file.digest metadata
-    updateMongo("copy-sha512-to-metadata-and-remove", copySha512ToMetadataAndRemove)
+    updateMongo("copy-sha512-to-metadata-and-remove-all", copySha512ToMetadataAndRemove)
   }
 
   private def updateMongo(updateKey: String, block: () => Unit): Unit = {
@@ -1261,7 +1262,7 @@ class MongoSalatPlugin(app: Application) extends Plugin {
   private def copySha512ToMetadataAndRemove(): Unit = {
     for (colln <- List[String]("uploads")) {
       // Iteracte across all files that have a sha512 entry
-      collection(colln).find(MongoDBObject("loader" -> classOf[MongoDBByteStorage].getName,
+      collection(colln).find(MongoDBObject(
         "sha512" -> MongoDBObject("$exists" -> true))).snapshot().foreach { file =>
         val id = file.getAsOrElse[ObjectId]("_id", new ObjectId())
         file.getAs[String]("sha512") match {

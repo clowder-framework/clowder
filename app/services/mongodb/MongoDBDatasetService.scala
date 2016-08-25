@@ -176,6 +176,34 @@ class MongoDBDatasetService @Inject() (
   }
 
   /**
+    * Return a list of datasets in a space the user has access to.
+    */
+  def listSpaceAccess(limit: Integer, permissions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
+    list(None, false, limit, None, None, Some(space), permissions, user, showAll, None, showPublic)
+  }
+
+  /**
+    * Return a list of datasets in a space the user has access to.
+    */
+  def listSpaceAccess(limit: Integer, title: String, permissions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
+    list(None, false, limit, Some(title), None, Some(space), permissions, user, showAll, None, showPublic)
+  }
+
+  /**
+    * Return a list of datasets in a space the user has access to starting at a specific date.
+    */
+  def listSpaceAccess(date: String, nextPage: Boolean, limit: Integer, permissions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
+    list(Some(date), nextPage, limit, None, None, Some(space), permissions, user, showAll, None, showPublic)
+  }
+
+  /**
+    * Return a list of datasets in a space the user has access to starting at a specific date.
+    */
+  def listSpaceAccess(date: String, nextPage: Boolean, limit: Integer, title: String, permissions: Set[Permission], space: String, user: Option[User], showAll: Boolean, showPublic: Boolean): List[Dataset] = {
+    list(Some(date), nextPage, limit, Some(title), None, Some(space), permissions, user, showAll, None, showPublic)
+  }
+
+  /**
    * Count all datasets the user has created.
    */
   def countUser(user: Option[User], showAll: Boolean, owner: User): Long = {
@@ -259,8 +287,14 @@ class MongoDBDatasetService @Inject() (
 
           val orlist = scala.collection.mutable.ListBuffer.empty[MongoDBObject]
           if (permissions.contains(Permission.ViewDataset) && enablePublic && showPublic) {
-            orlist += MongoDBObject("status" -> DatasetStatus.PUBLIC.toString)
-            orlist += MongoDBObject("status" -> DatasetStatus.DEFAULT.toString) ++ ("spaces" $in publicSpaces)
+            // if enablePublic == true, only list the dataset user can access, in a space page or /datasets
+            if(!u.superAdminMode) {
+              orlist += MongoDBObject("status" -> DatasetStatus.PUBLIC.toString)
+              orlist += MongoDBObject("status" -> DatasetStatus.DEFAULT.toString) ++ ("spaces" $in publicSpaces)
+            } else {
+              // superAdmin can access all datasets, in a space page or /datasets
+              orlist += MongoDBObject()
+            }
           }
           //if you are viewing other user's datasets, return the ones you have permission. otherwise filterAccess should
           // including your own datasets. the if condition here is mainly for efficiency.
@@ -1204,46 +1238,46 @@ class MongoDBDatasetService @Inject() (
 
   def dumpAllDatasetMetadata(): List[String] = {
 		    Logger.debug("Dumping metadata of all datasets.")
-		    
+
 		    val fileSep = System.getProperty("file.separator")
 		    val lineSep = System.getProperty("line.separator")
 		    var dsMdDumpDir = play.api.Play.configuration.getString("datasetdump.dir").getOrElse("")
 			if(!dsMdDumpDir.endsWith(fileSep))
 				dsMdDumpDir = dsMdDumpDir + fileSep
-			var dsMdDumpMoveDir = play.api.Play.configuration.getString("datasetdumpmove.dir").getOrElse("")	
+			var dsMdDumpMoveDir = play.api.Play.configuration.getString("datasetdumpmove.dir").getOrElse("")
 			if(dsMdDumpMoveDir.equals("")){
-				Logger.warn("Will not move dumped datasets metadata to staging directory. No staging directory set.")	  
+				Logger.warn("Will not move dumped datasets metadata to staging directory. No staging directory set.")
 			}
 			else{
 			    if(!dsMdDumpMoveDir.endsWith(fileSep))
 				  dsMdDumpMoveDir = dsMdDumpMoveDir + fileSep
-			}	
-		    
-			var unsuccessfulDumps: ListBuffer[String] = ListBuffer.empty 	
-				
+			}
+
+			var unsuccessfulDumps: ListBuffer[String] = ListBuffer.empty
+
 			for(dataset <- Dataset.findAll){
 			  try{
 				  val dsId = dataset.id.toString
-				  
+
 				  val dsTechnicalMetadata = getTechnicalMetadataJSON(dataset.id)
 				  val dsUserMetadata = getUserMetadataJSON(dataset.id)
 				  val dsXMLMetadata = getXMLMetadataJSON(dataset.id)
 				  if(dsTechnicalMetadata != "{}" || dsUserMetadata != "{}" || dsXMLMetadata != "{}"){
-				    
+
 				    val datasetnameNoSpaces = dataset.name.replaceAll("\\s+","_")
 				    val filePathInDirs = dsId.charAt(dsId.length()-3)+ fileSep + dsId.charAt(dsId.length()-2)+dsId.charAt(dsId.length()-1)+ fileSep + dsId + fileSep + datasetnameNoSpaces + "__metadata.txt"
 				    val mdFile = new java.io.File(dsMdDumpDir + filePathInDirs)
 				    mdFile.getParentFile().mkdirs()
-				    
+
 				    val fileWriter =  new BufferedWriter(new FileWriter(mdFile))
 					fileWriter.write(dsTechnicalMetadata + lineSep + lineSep + dsUserMetadata + lineSep + lineSep + dsXMLMetadata)
 					fileWriter.close()
-					
+
 					if(!dsMdDumpMoveDir.equals("")){
 					  try{
 						  val mdMoveFile = new java.io.File(dsMdDumpMoveDir + filePathInDirs)
 					      mdMoveFile.getParentFile().mkdirs()
-					      
+
 						  if(mdFile.renameTo(mdMoveFile)){
 			            	Logger.info("Dataset metadata dumped and moved to staging directory successfully.")
 						  }else{
@@ -1256,7 +1290,7 @@ class MongoDBDatasetService @Inject() (
 						  unsuccessfulDumps += badDatasetId
 					  }}
 					}
-				    
+
 				  }
 			  }catch {case ex:Exception =>{
 			    val badDatasetId = dataset.id.toString
@@ -1264,39 +1298,39 @@ class MongoDBDatasetService @Inject() (
 			    unsuccessfulDumps += badDatasetId
 			  }}
 			}
-		    
+
 		    return unsuccessfulDumps.toList
 	}
-  
+
     def dumpAllDatasetGroupings(): List[String] = {
-		    
+
 		    Logger.debug("Dumping dataset groupings of all datasets.")
-		    
+
 		    val fileSep = System.getProperty("file.separator")
 		    val lineSep = System.getProperty("line.separator")
 		    var datasetsDumpDir = play.api.Play.configuration.getString("datasetdump.dir").getOrElse("")
 			if(!datasetsDumpDir.endsWith(fileSep))
 				datasetsDumpDir = datasetsDumpDir + fileSep
-			var dsDumpMoveDir = play.api.Play.configuration.getString("datasetdumpmove.dir").getOrElse("")	
+			var dsDumpMoveDir = play.api.Play.configuration.getString("datasetdumpmove.dir").getOrElse("")
 			if(dsDumpMoveDir.equals("")){
-				Logger.warn("Will not move dumped dataset groupings to staging directory. No staging directory set.")	  
+				Logger.warn("Will not move dumped dataset groupings to staging directory. No staging directory set.")
 			}
 			else{
 			    if(!dsDumpMoveDir.endsWith(fileSep))
 				  dsDumpMoveDir = dsDumpMoveDir + fileSep
 			}
-				
+
 			var unsuccessfulDumps: ListBuffer[String] = ListBuffer.empty
-			
+
 			for(dataset <- Dataset.findAll){
 			  try{
 				  val dsId = dataset.id.toString
 				  val datasetnameNoSpaces = dataset.name.replaceAll("\\s+","_")
 				  val filePathInDirs = dsId.charAt(dsId.length()-3)+ fileSep + dsId.charAt(dsId.length()-2)+dsId.charAt(dsId.length()-1)+ fileSep + dsId + fileSep + datasetnameNoSpaces + ".txt"
-				  
+
 				  val groupingFile = new java.io.File(datasetsDumpDir + filePathInDirs)
 				  groupingFile.getParentFile().mkdirs()
-				  
+
 				  val filePrintStream =  new PrintStream(groupingFile)
 				  for(fileId <- dataset.files){
             files.get(fileId).foreach(file =>
@@ -1304,12 +1338,12 @@ class MongoDBDatasetService @Inject() (
             )
 				  }
 				  filePrintStream.close()
-				  
+
 				  if(!dsDumpMoveDir.equals("")){
 					  try{
 						  val groupingMoveFile = new java.io.File(dsDumpMoveDir + filePathInDirs)
 					      groupingMoveFile.getParentFile().mkdirs()
-					      
+
 						  if(groupingFile.renameTo(groupingMoveFile)){
 			            	Logger.info("Dataset file grouping dumped and moved to staging directory successfully.")
 						  }else{
@@ -1328,7 +1362,7 @@ class MongoDBDatasetService @Inject() (
 			    unsuccessfulDumps += badDatasetId
 			  }}
 			}
-			
+
 		    return unsuccessfulDumps.toList
 	}
 
