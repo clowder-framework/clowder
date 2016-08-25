@@ -61,7 +61,8 @@ object Utils {
   }
 
   def decodeString(string : String) : String ={
-    val decodedString = StringEscapeUtils.unescapeHtml(string)
+    val decodedString = StringEscapeUtils.unescapeHtml(string).replace("\n"," ")
+
     return decodedString
   }
 
