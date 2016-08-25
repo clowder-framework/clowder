@@ -345,7 +345,7 @@ class CurationObjects @Inject()(
                     if(s.isTrial) {
                       Map("Purpose" -> List("Testing-Only"))
                     } else {
-                      Map("Purpose" -> List("Testing-Only", "Production"))
+                      Map("Purpose" -> List("Production", "Testing-Only"))
                     }
 
                   val mmResp = callMatchmaker(c, user)(request)
