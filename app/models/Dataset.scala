@@ -59,5 +59,4 @@ object Dataset {
         "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail, "authorId" -> dataset.author.id)
     }
   }
-  
 }
