@@ -181,11 +181,21 @@ class Admin @Inject()(userService: UserService,
     responseClass = "None", httpMethod = "POST")
   def reindex = ServerAdminAction { implicit request =>
     Akka.system.scheduler.scheduleOnce(1 seconds) {
-      //current.plugin[ElasticsearchPlugin].map(_.deleteAll)
-      collections.index(None)
-      datasets.index(None)
-      files.index(None)
+      current.plugin[ElasticsearchPlugin] match {
+        case Some(plugin) => {
+          // Delete & recreate index
+          plugin.deleteAll
+          plugin.createIndex()
+
+          // Reindex everything
+          collections.index(None)
+          datasets.index(None)
+          files.index(None)
+        }
+        case None => { BadRequest(toJson(Map("error" -> "Elasticsearch not connected"))) }
+      }
     }
+
     Ok(toJson(Map("status" -> "Success")))
   }
 }

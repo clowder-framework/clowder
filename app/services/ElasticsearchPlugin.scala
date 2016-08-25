@@ -57,23 +57,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       Logger.debug("--- Elasticsearch Client is being created----")
       client match {
         case Some(x) => {
-          val indexSettings = ImmutableSettings.settingsBuilder().loadFromSource(jsonBuilder()
-            .startObject()
-              .startObject("analysis")
-                .startObject("analyzer")
-                  .startObject("default")
-                    .field("type", "snowball")
-            .endObject().endObject().endObject().endObject().string())
           val indexExists = x.admin().indices().prepareExists(nameOfIndex).execute().actionGet().isExists()
-
-          if (!indexExists) {
-            Logger.debug("Index \""+nameOfIndex+"\" does not exist; creating now ---")
-            x.admin().indices().prepareCreate(nameOfIndex)
-              .setSettings(indexSettings)
-              .addMapping("clowder_object", getElasticsearchObjectMappings())
-              .execute().actionGet()
-          }
-
+          if (!indexExists) createIndex()
           Logger.info("Connected to Elasticsearch")
           true
         }
@@ -173,6 +158,29 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     }
   }
 
+
+  /** Create a new index with preconfigured mappgin */
+  def createIndex(index: String = nameOfIndex): Unit = {
+    val indexSettings = ImmutableSettings.settingsBuilder().loadFromSource(jsonBuilder()
+      .startObject()
+      .startObject("analysis")
+      .startObject("analyzer")
+      .startObject("default")
+      .field("type", "snowball")
+      .endObject().endObject().endObject().endObject().string())
+
+    client match {
+      case Some(x) => {
+        Logger.debug("Index \""+index+"\" does not exist; creating now ---")
+        x.admin().indices().prepareCreate(index)
+          .setSettings(indexSettings)
+          .addMapping("clowder_object", getElasticsearchObjectMappings())
+          .execute().actionGet()
+      }
+      case None =>
+    }
+
+  }
 
   /** Delete all indices */
   def deleteAll {

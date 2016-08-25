@@ -2,9 +2,6 @@ package controllers
 
 import javax.inject.Inject
 
-import api.Permission
-import api.Permission
-import api.Permission.Permission
 import models.User
 import play.api.Logger
 import play.api.Play.current
