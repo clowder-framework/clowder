@@ -1,7 +1,7 @@
 @()(implicit user: Option[models.User])
 
 @main("Search metadata") {
-    <h2>Search by metadata</h2>
+    <h2>Advanced Search</h2>
     <div class="row">
         <div class="panel panel-default">
             <div class="panel-body">
@@ -24,17 +24,6 @@
 
                         <!-- SET OF TERM ROWS (populated in script below) -->
                         <div id="metadata-search-rows"></div>
-                    </div>
-
-                    <!-- ADVANCED SEARCH BOX -->
-                    <div class="form-group col-lg-10 col-md-10">
-                        <br/>
-                        <a id="adv-search-label" onclick='toggleAdvanced()'>Show Advanced Search</a><br/>
-                        <div id="adv-search-container" hidden=True>
-                            You can use grouping syntax in the Advanced Search box that is not possible with the basic interface.
-                            Basic search will be hidden when you start typing directly into the Advanced Search box.
-                            <textarea type="text" rows=3 class="form-control" id="adv-search" placeholder="Type query here"></textarea>
-                        </div>
                     </div>
 
                     <!-- SUBMIT BTN -->
@@ -60,13 +49,11 @@
     <script src="@routes.Assets.at("javascripts/handlebars-loader.js")" type="text/javascript"></script>
     <script>
         var row_list = [];
-        $("#adv-search").hide()
         $("#add-metadata-grouping").select2({
             theme: "bootstrap",
             allowClear: false,
             width: "100%"
-        }).on("change", function(e) { console.log("change"); updateAdvancedSearchFromBasic(); });
-        document.getElementById("adv-search").onkeyup = function() { toggleBasic(false); };
+        })
 
         getBasicDefinitions(1)
 
@@ -100,7 +87,13 @@
                 )
             );
             document.getElementById("add-clause").onclick = function () { getBasicDefinitions(rowId+1); };
-            document.getElementById("v-"+rowStr).onkeyup = function() { updateAdvancedSearchFromBasic(); };
+            document.getElementById("v-"+rowStr).onkeydown = function(evt) {
+                // Allow Enter key to perform search on any value box
+                if (evt.keyCode == 13) {
+                    search()
+                    return false
+                } else return true
+            };
             row_list.push(rowStr);
 
             // Add theme to operator/grouping dropdowns
@@ -108,12 +101,12 @@
                 theme: "bootstrap",
                 allowClear: false,
                 width: "100%"
-            }).on("change", function(e) { updateAdvancedSearchFromBasic() });
+            });
             $("#add-metadata-grouping-"+rowStr).select2({
                 theme: "bootstrap",
                 allowClear: false,
                 width: "100%"
-            }).on("change", function(e) { updateAdvancedSearchFromBasic() });
+            });
 
             // fetch metadata definitions
             var request = jsRoutes.api.Metadata.getDefinitionsDistinctName().ajax({
@@ -190,7 +183,7 @@
                             };
                         }
                     }
-                }).on("change", function(e) { updateAdvancedSearchFromBasic() })
+                })
             });
 
             request.fail(function (jqXHR, textStatus, errorThrown){
@@ -233,11 +226,13 @@
             return searchObj;
         }
 
+        // Submit contents of basic search rows
         function search(key, value, count) {
             count = count || 10;
-            if ( key != "" && value != "" ) {
-                var test = generateSearchObject();
-                var request = jsRoutes.api.Search.searchJson(JSON.stringify(test), $("#add-metadata-grouping").val(), count).ajax({
+            var query = generateSearchObject();
+            var grouping = $("#add-metadata-grouping").val()
+            if (query != []) {
+                var request = jsRoutes.api.Search.searchJson(JSON.stringify(query), grouping, count).ajax({
                     type: 'GET',
                     contentType: "application/json"
                 });
@@ -258,67 +253,6 @@
             var rowStr = String(rowId);
             $("#metadata-clause-"+rowStr).remove();
             row_list.splice(row_list.indexOf(rowStr), 1);
-            updateAdvancedSearchFromBasic();
-        }
-
-        // Show or hide basic search elements; default is to toggle between
-        function toggleBasic(mode) {
-            // mode true=show, false=hide
-            var bsc = $("#basic-search-container");
-            if (mode==null) { mode = !bsc.is(':visible'); }
-
-            //
-            if (mode==false && bsc.is(':visible')) {
-                bsc.hide();
-                toggleAdvanced(true);
-            } else if (mode==true && !bsc.is(':visible')) {
-                bsc.show();
-                toggleAdvanced(false);
-            }
-        }
-
-        // Show or hide advanced search box; default is to toggle between
-        function toggleAdvanced(mode) {
-            // mode true=show, false=hide
-            var asc = $("#adv-search-container");
-            if (mode==null) { mode = !asc.is(':visible'); }
-
-            if (mode==false && asc.is(':visible')) {
-                // If we're hiding advanced, make sure basic is visible
-                toggleBasic(true);
-                $("#adv-search").hide();
-                asc.hide();
-                $("#adv-search-label").text("Show Advanced Search");
-            } else if (mode==true && !asc.is(':visible')) {
-                asc.show();
-                $("#adv-search").show();
-                updateAdvancedSearchFromBasic();
-                $("#adv-search-label").text("Hide Advanced Search");
-            }
-        }
-
-        // When Advanced goes from hidden to visible, or it is visible and basic dropdowns change, repopulate it
-        function updateAdvancedSearchFromBasic() {
-            var asc = $("#adv-search");
-            var groupType = $("#add-metadata-grouping").val(); // AND, OR
-            var searchTerms = generateSearchObject()
-
-            var searchStr = ""
-            for (var term=0; term<searchTerms.length; term++) {
-                var field_key = searchTerms[term]["field_key"];
-                var operator = searchTerms[term]["operator"];
-                var field_val = searchTerms[term]["field_value"];
-
-                if (term > 0) {
-                    searchStr += groupType+" ";
-                }
-
-                // Wrap multi-term strings in quotes
-                if (field_key.indexOf(" ") > -1) { field_key = '"'+field_key+'"'; }
-                if (field_val.indexOf(" ") > -1) { field_val = '"'+field_val+'"'; }
-                searchStr += "("+field_key + operator + field_val+") ";
-            }
-            asc.val(searchStr);
         }
 
         function parseSearchResults(response, textStatus, jqXHR) {
@@ -350,23 +284,7 @@
         // form submission
         $( "form[id='metadata-search']").submit(function( event ) {
             event.preventDefault();
-            if ($("#adv-search-container").is(':visible')) {
-                // Submit advanced search string directly - user responsible for syntax correctness
-                var query = $("#adv-search").val();
-
-                var k = $("#add-metadata-select-1 option:selected").text();
-                var predicate = $("#add-metadata-select-1 option:selected").val();
-                var v = $( "#v-1" ).val();
-                search(k, v);
-            } else {
-                // Submit contents of basic search rows
-                var query = generateSearchObject();
-
-                var k = $("#add-metadata-select-1 option:selected").text();
-                var predicate = $("#add-metadata-select-1 option:selected").val();
-                var v = $( "#v-1" ).val();
-                search(k, v);
-            }
+            search();
 
         });
     </script>
