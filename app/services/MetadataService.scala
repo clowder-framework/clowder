@@ -38,9 +38,6 @@ trait MetadataService {
   /** Vocabulary definitions with distinct names **/
   def getDefinitionsDistinctName(user: Option[User] = None): List[MetadataDefinition]
 
-  /** Vocabularies from metadata names besides definitions **/
-  def getAutocompleteName(user: Option[User], filter: String): List[String]
-
   /** Get vocabulary based on id **/
   def getDefinition(id: UUID): Option[MetadataDefinition]
 

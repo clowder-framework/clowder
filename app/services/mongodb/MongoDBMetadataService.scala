@@ -184,28 +184,6 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
     MetadataDefinitionDAO.find(filterAccess).toList.groupBy(_.json).map(_._2.head).toList.sortWith( _.json.\("label").asOpt[String].getOrElse("") < _.json.\("label").asOpt[String].getOrElse("") )
   }
 
-  def extractJsonKeys(json: JsValue): collection.Set[String] = json match {
-    // from http://stackoverflow.com/questions/26650354/get-all-keys-of-play-api-libs-json-jsvalue
-    case o: JsObject => o.keys ++ o.values.flatMap(extractJsonKeys)
-    case JsArray(as) => as.flatMap(extractJsonKeys).toSet
-    case _ => Set()
-  }
-
-  def getAutocompleteName(user: Option[User], filter: String): List[String] = {
-    // Get list of metadata objects where this field name appears
-    val mdlist = MetadataDAO.find("content."+filter $exists true).toList
-
-    var allKeys = List[String]()
-
-    // Filter only to those keys
-    mdlist.map(md => {
-      val mdkeys = extractJsonKeys(md.content).toList
-      allKeys = allKeys.union(mdkeys).filter(k => k matches filter).distinct
-    })
-
-    return allKeys
-  }
-
   def getDefinition(id: UUID): Option[MetadataDefinition] = {
     MetadataDefinitionDAO.findOne(MongoDBObject("_id" -> new ObjectId(id.stringify)))
   }
