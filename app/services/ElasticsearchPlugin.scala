@@ -2,8 +2,8 @@ package services
 
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest
 import org.elasticsearch.common.xcontent.XContentBuilder
-import play.api.libs.concurrent.Akka
-import scala.concurrent.duration._
+import org.elasticsearch.search.aggregations.AggregationBuilders
+import org.elasticsearch.search.aggregations.bucket.terms.StringTerms.Bucket
 import scala.util.Try
 import scala.collection.mutable.{MutableList, ListBuffer}
 import scala.collection.immutable.List
@@ -68,35 +68,10 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
           if (!indexExists) {
             Logger.debug("Index \""+nameOfIndex+"\" does not exist; creating now ---")
-            x.admin().indices().prepareCreate(nameOfIndex).setSettings(indexSettings).execute().actionGet()
-
-            //TODO: use something like api.routes.Admin.reindex() instead?
-            Akka.system.scheduler.scheduleOnce(1 seconds) {
-              Logger.debug("Reindexing all documents")
-              collections.index(None)
-              datasets.index(None)
-              files.index(None)
-            }
-          } else {
-            // Check whether this still has deprecated mappaing in index and delete if so
-            // TODO: Make people do this manually, don't auto reindex
-            val mappings = x.admin().indices().prepareGetMappings(nameOfIndex).execute().actionGet().getMappings()
-            // TODO: if (mappings.get(nameOfIndex).containsKey("dataset")) {
-            if (mappings.get(nameOfIndex).containsKey("clowder_object")) {
-              Logger.debug("Index \""+nameOfIndex+"\" already exists but requires update and reindexing ---")
-              deleteAll
-              x.admin().indices().prepareCreate(nameOfIndex).setSettings(indexSettings).execute().actionGet()
-
-              //TODO: use something like api.routes.Admin.reindex() instead?
-              Akka.system.scheduler.scheduleOnce(1 seconds) {
-                Logger.debug("Reindexing all documents")
-                collections.index(None)
-                datasets.index(None)
-                files.index(None)
-              }
-            } else {
-              Logger.debug("Index \"data\" already exists ---")
-            }
+            x.admin().indices().prepareCreate(nameOfIndex)
+              .setSettings(indexSettings)
+              .addMapping("clowder_object", getElasticsearchObjectMappings())
+              .execute().actionGet()
           }
 
           Logger.info("Connected to Elasticsearch")
@@ -358,6 +333,39 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     }
   }
 
+  /** Return map of distinct value/count for tags **/
+  def listTags(resourceType: String = "", index: String = nameOfIndex): Map[String, Long] = {
+    val results = scala.collection.mutable.Map[String, Long]()
+
+    connect
+    client match {
+      case Some(x) => {
+        val searcher = x.prepareSearch(index)
+          .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+            .addAggregation(AggregationBuilders.terms("by_tag").field("tags.name"))
+            // Don't return actual documents; we only care about aggregation here
+            .setSize(0)
+        // Filter to tags on a particular type of resource if given
+        if (resourceType != "") searcher.setQuery(prepareElasticJsonQuery("resource_type:"+resourceType+""))
+        val response = searcher.execute().actionGet()
+
+        // Extract value/counts from Aggregation object
+        val aggr = response.getAggregations
+          .get[org.elasticsearch.search.aggregations.bucket.terms.StringTerms]("by_tag")
+        aggr.getBuckets().toArray().foreach(bucket => {
+          val term = bucket.asInstanceOf[Bucket].getKey
+          val count = bucket.asInstanceOf[Bucket].getDocCount
+          results.update(term, count)
+        })
+        results.toMap
+      }
+      case None => {
+        Logger.error("Could not call search because we are not connected.")
+        Map[String, Long]()
+      }
+    }
+  }
+
 
   /** Take a JsObject and parse into an XContentBuilder JSON object for Elasticsearch */
   def convertJsObjectToBuilder(builder: XContentBuilder, json: JsObject): XContentBuilder = {
@@ -457,6 +465,34 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         else acc + (s"$prefix.$key" -> v)
       }
     }
+  }
+
+  /** Return string-encoded JSON object describing field types */
+  def getElasticsearchObjectMappings(): String = {
+    """{"clowder_object": {
+          |"properties": {
+            |"resource_type": {"type": "string"},
+            |"child_of": {"type": "string"},
+            |"parent_of": {"type": "string"},
+            |"creator": {"type": "string"},
+            |"created": {"type": "date", "format": "dateOptionalTime"},
+            |"metadata": {"type": "object"},
+            |"comments": {
+              |"properties": {
+                |"created": {"type": "date", "format": "dateOptionalTime"},
+                |"creator": {"type": "string"},
+                |"name": {"type": "string", "index": "not_analyzed"}
+              |}
+            |},
+            |"tags": {
+              |"properties": {
+                |"created": {"type":"date", "format":"dateOptionalTime"},
+                |"creator": {"type": "string"},
+                |"name": {"type": "string", "index":"not_analyzed"}
+              |}
+            |}
+          |}
+    |}}""".stripMargin
   }
 
   /**Attempt to cast String into Double, returning None if not possible**/

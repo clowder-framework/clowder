@@ -8,7 +8,7 @@ import api.Permission.Permission
 import models.User
 import play.api.Logger
 import play.api.Play.current
-import services.{CollectionService, DatasetService, FileService, SectionService}
+import services.{CollectionService, DatasetService, FileService, SectionService, ElasticsearchPlugin}
 import util.Parsers
 
 import scala.collection.mutable.ListBuffer
@@ -139,51 +139,22 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
   def createTagList(user: Option[User]) = {
     val tagMap = collection.mutable.Map.empty[Char, collection.mutable.Map[String, Long]]
 
-    // TODO allow for tags in collections
-    //    for(collection <- collections.listCollections(); tag <- collection.tags) {
-    //      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.collection").getOrElse(1)
-    //    }
-
-    datasets.getTags(user).foreach { case (tag: String, count: Long) =>
-      if (tag.length == 0) {
-        Logger.error("tag with length 0 : " + tag + " " + count)
-      } else {
-        val firstChar = if (tag(0).isLetter) tag(0).toUpper else '#'
-        if (!tagMap.contains(firstChar)) {
-          val map = collection.mutable.Map[String, Long]((tag, count)).withDefaultValue(0)
-          tagMap(firstChar) = map
-        } else {
-          val map = tagMap(firstChar)
-          map(tag) = map(tag) + count
+    current.plugin[ElasticsearchPlugin] match {
+      case Some(plugin) => {
+        val results = plugin.listTags()
+        for ((k,v) <- results) {
+          val firstChar = if (k(0).isLetter) k(0).toUpper else '#'
+          if (!tagMap.contains(firstChar)) {
+            val map = collection.mutable.Map[String, Long]((k, v)).withDefaultValue(0)
+            tagMap(firstChar) = map
+          } else {
+            val map = tagMap(firstChar)
+            map(k) = map(k) + v
+          }
         }
       }
-    }
-    files.getTags(user).foreach { case (tag: String, count: Long) =>
-      if (tag.length == 0) {
-        Logger.error("tag with length 0 : " + tag + " " + count)
-      } else {
-        val firstChar = if (tag(0).isLetter) tag(0).toUpper else '#'
-        if (!tagMap.contains(firstChar)) {
-          val map = collection.mutable.Map[String, Long]((tag, count)).withDefaultValue(0)
-          tagMap(firstChar) = map
-        } else {
-          val map = tagMap(firstChar)
-          map(tag) = map(tag) + count
-        }
-      }
-    }
-    sections.getTags(user).foreach { case (tag: String, count: Long) =>
-      if (tag.length == 0) {
-        Logger.error("tag with length 0 : " + tag + " " + count)
-      } else {
-        val firstChar = if (tag(0).isLetter) tag(0).toUpper else '#'
-        if (!tagMap.contains(firstChar)) {
-          val map = collection.mutable.Map[String, Long]((tag, count)).withDefaultValue(0)
-          tagMap(firstChar) = map
-        } else {
-          val map = tagMap(firstChar)
-          map(tag) = map(tag) + count
-        }
+      case None => {
+        Logger.error("ElasticSearch plugin could not be reached for tag search")
       }
     }
 
@@ -193,19 +164,21 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
   def computeTagWeights(user: Option[User]) = {
     val weightedTags = collection.mutable.Map.empty[String, Long].withDefaultValue(0)
 
-    // TODO allow for tags in collections
-//    for(collection <- collections.listCollections(); tag <- collection.tags) {
-//      weightedTags(tag.name) = weightedTags(tag.name) + current.configuration.getInt("tags.weight.collection").getOrElse(1)
-//    }
-
-    datasets.getTags(user).foreach { case (tag: String, count: Long) =>
-      weightedTags(tag) = weightedTags(tag) + count * current.configuration.getInt("tags.weight.dataset").getOrElse(1)
+    current.plugin[ElasticsearchPlugin] match {
+      case Some(plugin) => {
+        for ((k, v) <- plugin.listTags("dataset")) {
+          weightedTags(k) = weightedTags(k) + v * current.configuration.getInt("tags.weight.dataset").getOrElse(1)
+        }
+        for ((k, v) <- plugin.listTags("file")) {
+          weightedTags(k) = weightedTags(k) + v * current.configuration.getInt("tags.weight.files").getOrElse(1)
+        }
+      }
+      case None => {
+        Logger.error("ElasticSearch plugin could not be reached for tag search")
+      }
     }
 
-    files.getTags(user).foreach { case (tag: String, count: Long) =>
-      weightedTags(tag) = weightedTags(tag) + count * current.configuration.getInt("tags.weight.files").getOrElse(1)
-    }
-
+    // TODO: Index sections in Elasticsearch somehow?
     sections.getTags(user).foreach { case (tag: String, count: Long) =>
       weightedTags(tag) = weightedTags(tag) + count * current.configuration.getInt("tags.weight.sections").getOrElse(1)
     }
