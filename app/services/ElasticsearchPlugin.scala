@@ -450,35 +450,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     fields.toList
   }
 
-  /** Flatten json object to have a single level of key/values with dot notation for nesting */
-  def flattenJson(js: JsValue, prefix: String = ""): JsObject = {
-    // From http://stackoverflow.com/questions/24273433/play-scala-how-to-flatten-a-json-object
-
-    // We will use this substring to trim extractor names from key strings
-    //    e.g. "http://localhost:9000/clowder/api/extractors/wordCount.lines" -> "wordCount.lines"
-    val extractorString = "/extractors/"
-
-    js.as[JsObject].fields.foldLeft(Json.obj()) {
-      // value is sub-object so recursively handle
-      case (acc, (k, v: JsObject)) => {
-        val key = if (k contains extractorString) {
-          k.substring(k.indexOf(extractorString)+extractorString.length())
-        } else k
-
-        if(prefix.isEmpty) acc.deepMerge(flattenJson(v, key))
-        else acc.deepMerge(flattenJson(v, s"$prefix.$key"))
-      }
-      case (acc, (k, v)) => {
-        val key = if (k contains extractorString) {
-          k.substring(k.indexOf(extractorString)+extractorString.length())
-        } else k
-
-        if(prefix.isEmpty) acc + (key -> v)
-        else acc + (s"$prefix.$key" -> v)
-      }
-    }
-  }
-
   /** Return string-encoded JSON object describing field types */
   def getElasticsearchObjectMappings(): String = {
     """{"clowder_object": {
@@ -509,32 +480,22 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /**Attempt to cast String into Double, returning None if not possible**/
   def parseDouble(s: String): Option[Double] = {
-    // From http://stackoverflow.com/questions/9542126/scala-is-a-string-parseable-as-a-double
     Try { s.toDouble }.toOption
   }
 
   /** Create appropriate search object based on operator */
   def parseMustOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
+    // TODO: Suppert lte, gte (<=, >=)
     operator match {
       case ":" => {
-        // WILDCARD - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-wildcard-query.html
         // TODO: Elasticsearch recommends not starting query with wildcard
         // TODO: Consider inverted index? https://www.elastic.co/blog/found-elasticsearch-from-the-bottom-up
         //builder.startObject("wildcard").field(key, value+"*").endObject()
         builder.startObject().startObject("match").field(key, value).endObject().endObject()
       }
-      case "==" => {
-        // MATCH - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html
-        builder.startObject().startObject("match").field(key, value).endObject().endObject()
-      }
-      case "<" => {
-        // RANGE - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-range-query.html
-        builder.startObject().startObject("range").startObject(key).field("lt", value).endObject().endObject().endObject()
-      }
-      case ">" => {
-        // TODO: Suppert lte, gte (<=, >=)
-        builder.startObject().startObject("range").startObject(key).field("gt", value).endObject().endObject().endObject()
-      }
+      case "==" => builder.startObject().startObject("match").field(key, value).endObject().endObject()
+      case "<" => builder.startObject().startObject("range").startObject(key).field("lt", value).endObject().endObject().endObject()
+      case ">" => builder.startObject().startObject("range").startObject(key).field("gt", value).endObject().endObject().endObject()
       case _ => {}
     }
     builder
@@ -543,10 +504,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   /** Create appropriate search object based on operator */
   def parseMustNotOperators(builder: XContentBuilder, key: String, value: String, operator: String): XContentBuilder = {
     operator match {
-      case "!=" => {
-        // MATCH - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html
-        builder.startObject().startObject("match").field(key, value).endObject().endObject()
-      }
+      case "!=" => builder.startObject().startObject("match").field(key, value).endObject().endObject()
       case _ => {}
     }
     builder
