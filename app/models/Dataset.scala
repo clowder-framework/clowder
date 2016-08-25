@@ -4,6 +4,7 @@ import com.mongodb.casbah.Imports._
 import java.util.Date
 import play.api.libs.json.{Writes, Json}
 import play.api.libs.json._
+import play.api.libs.functional.syntax._
 
 /**
  * A dataset is a collection of files, and streams.
@@ -58,4 +59,5 @@ object Dataset {
         "created" -> dataset.created.toString, "thumbnail" -> datasetThumbnail, "authorId" -> dataset.author.id)
     }
   }
+  
 }

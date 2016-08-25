@@ -1,6 +1,6 @@
 package services
 
-import play.api.libs.json.{JsArray, JsValue}
+import play.api.libs.json.JsValue
 import models.{MetadataDefinition, ResourceRef, UUID, Metadata, User}
 
 /**
