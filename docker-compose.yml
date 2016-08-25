@@ -13,6 +13,11 @@ clowder:
     - elasticsearch
 
 # extractors
+file-digest:
+  image: clowder/extractors-digest
+  links:
+    - rabbitmq
+
 audio-preview:
   image: clowder/extractors-audio-preview
   links:
