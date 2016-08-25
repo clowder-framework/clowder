@@ -237,9 +237,7 @@
             count = count || 10;
             if ( key != "" && value != "" ) {
                 var test = generateSearchObject();
-                console.log("GSO")
-                console.log(test)
-                var request = jsRoutes.api.Search.search(JSON.stringify(test), $("#add-metadata-grouping").val(), count).ajax({
+                var request = jsRoutes.api.Search.searchJson(JSON.stringify(test), $("#add-metadata-grouping").val(), count).ajax({
                     type: 'GET',
                     contentType: "application/json"
                 });

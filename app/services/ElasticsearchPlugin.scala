@@ -85,7 +85,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /** Prepare and execute Elasticsearch query, and return list of matching ResourceRefs */
-  def search(query: List[JsValue]): List[ResourceRef] = {
+  def search(query: List[JsValue], grouping: String): List[ResourceRef] = {
     /** Each item in query list has properties:
       *   "field_key":      full name of field to query, e.g. 'extractors.wordCount.lines'
       *   "operator":       type of query for this term, e.g. '=='
@@ -93,13 +93,18 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       *   "extractor_key":  name of extractor component only, e.g. 'extractors.wordCount'
       *   "field_leaf_key": name of immediate field only, e.g. 'lines'
       */
-    val queryObj = prepareElasticJsonQuery(query)
+    val queryObj = prepareElasticJsonQuery(query, grouping)
     val response: SearchResponse = _search(queryObj)
 
     var results = MutableList[ResourceRef]()
-    for (hit <- response.getHits().getHits()) {
-      val resource_type = hit.getSource().get("resource_type").toString
-      results += new ResourceRef(Symbol(resource_type), UUID(hit.getId()))
+    Option(response.getHits()) match {
+      case Some(hits) => {
+        for (hit <- hits.getHits()) {
+          val resource_type = hit.getSource().get("resource_type").toString
+          results += new ResourceRef(Symbol(resource_type), UUID(hit.getId()))
+        }
+      }
+      case None => {}
     }
 
     results.toList
@@ -136,7 +141,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /*** Execute query */
-  def _search(queryObj: XContentBuilder, index: String = nameOfIndex, from: Int = 0, to: Int = 0): SearchResponse = {
+  def _search(queryObj: XContentBuilder, index: String = nameOfIndex, from: Int = 0, to: Int = 60): SearchResponse = {
     connect
     client match {
       case Some(x) => {
@@ -216,7 +221,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     var listOfTerms = ListBuffer.empty[String]
     client match {
       case Some(x) => {
-        Logger.debug("Getting autocomplete suggestions for: " + query)
         if (query != "") {
           val response = x.admin.indices.getMappings(new GetMappingsRequest().indices(index)).get()
           val maps = response.getMappings().get(index).get("clowder_object")
@@ -517,19 +521,19 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         // TODO: Elasticsearch recommends not starting query with wildcard
         // TODO: Consider inverted index? https://www.elastic.co/blog/found-elasticsearch-from-the-bottom-up
         //builder.startObject("wildcard").field(key, value+"*").endObject()
-        builder.startObject("match").field(key, value).endObject()
+        builder.startObject().startObject("match").field(key, value).endObject().endObject()
       }
       case "==" => {
         // MATCH - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html
-        builder.startObject("match").field(key, value).endObject()
+        builder.startObject().startObject("match").field(key, value).endObject().endObject()
       }
       case "<" => {
         // RANGE - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-range-query.html
-        builder.startObject("range").startObject(key).field("lt", value).endObject().endObject()
+        builder.startObject().startObject("range").startObject(key).field("lt", value).endObject().endObject().endObject()
       }
       case ">" => {
         // TODO: Suppert lte, gte (<=, >=)
-        builder.startObject("range").startObject(key).field("gt", value).endObject().endObject()
+        builder.startObject().startObject("range").startObject(key).field("gt", value).endObject().endObject().endObject()
       }
       case _ => {}
     }
@@ -541,7 +545,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     operator match {
       case "!=" => {
         // MATCH - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html
-        builder.startObject("match").field(key, value).endObject()
+        builder.startObject().startObject("match").field(key, value).endObject().endObject()
       }
       case _ => {}
     }
@@ -549,7 +553,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /**Convert list of search term JsValues into an Elasticsearch-ready JSON query object**/
-  def prepareElasticJsonQuery(query: List[JsValue]): XContentBuilder = {
+  def prepareElasticJsonQuery(query: List[JsValue], grouping: String): XContentBuilder = {
     /** OPERATORS
       *  :   contains (partial match)
       *  ==  equals (exact match)
@@ -557,42 +561,66 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
       *  <   less than
       *  >   greater than
       **/
-    // BOOL - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
+
+    // Separate query terms into two groups based on operator - must know ahead of time how many of each we have
+    val mustList = ListBuffer.empty[JsValue]
+    val mustNotList = ListBuffer.empty[JsValue]
+    query.foreach(jv => {
+      val operator = (jv \ "operator").toString.replace("\"","")
+      if (mustOperators.contains(operator))
+        mustList.append(jv)
+      else if (mustNotOperators.contains(operator))
+        mustNotList.append(jv)
+    })
+
+    // 1) Wrap entire object in BOOL query - everything within must match
     var builder = jsonBuilder().startObject().startObject("bool")
 
-    // First, populate the MUST portion of Bool query
-    var populatedMust = false
-    query.foreach(jv => {
-      val key = (jv \ "field_key").toString.replace("\"","")
-      val operator = (jv \ "operator").toString.replace("\"", "")
-      val value = (jv \ "field_value").toString.replace("\"", "")
+    // -- Wrap MUST/MUST_NOT subqueries in BOOL+SHOULD query if matching ANY term and != is used
+    if (grouping == "OR" && mustNotList.length > 0)
+      builder.startArray("should").startObject().startObject("bool")
 
-      // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
-      if (mustOperators.contains(operator) && !populatedMust) {
-        builder.startObject("must")
-        populatedMust = true
+    // 2) populate the MUST/SHOULD portion
+    if (mustList.length > 0) {
+      grouping match {
+        case "AND" => builder.startArray("must")
+        case "OR" => builder.startArray("should")
       }
+      mustList.foreach(jv => {
+        val key = (jv \ "field_key").toString.replace("\"","")
+        val operator = (jv \ "operator").toString.replace("\"", "")
+        val value = (jv \ "field_value").toString.replace("\"", "")
+        builder = parseMustOperators(builder, key, value, operator)
+      })
+      builder.endArray()
+    }
 
-      builder = parseMustOperators(builder, key, value, operator)
-    })
-    if (populatedMust) builder.endObject()
+    // 3) populate the MUST_NOT portion
+    if (mustNotList.length > 0) {
+      // -- Again, special handling for mixing OR grouping with != operator so it behaves as user expects
+      if (grouping == "OR")
+        builder.endObject().endObject().startObject().startObject("bool").startArray("should")
+      else
+        builder.startArray("must_not")
 
-    // Second, populate the MUST NOT portion of Bool query
-    var populatedMustNot = false
-    query.foreach(jv => {
-      val key = (jv \ "field_key").toString.replace("\"","")
-      val operator = (jv \ "operator").toString.replace("\"", "")
-      val value = (jv \ "field_value").toString.replace("\"", "")
+      mustNotList.foreach(jv => {
+        if (grouping == "OR")
+          builder.startObject().startObject("bool").startArray("must_not")
 
-      // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
-      if (mustNotOperators.contains(operator) && !populatedMustNot) {
-        builder.startObject("must_not")
-        populatedMustNot = true
-      }
+        val key = (jv \ "field_key").toString.replace("\"","")
+        val operator = (jv \ "operator").toString.replace("\"", "")
+        val value = (jv \ "field_value").toString.replace("\"", "")
+        builder = parseMustNotOperators(builder, key, value, operator)
 
-      builder = parseMustNotOperators(builder, key, value, operator)
-    })
-    if (populatedMustNot) builder.endObject()
+        if (grouping == "OR")
+          builder.endArray().endObject().endObject()
+      })
+
+      if (grouping == "OR")
+        builder.endArray().endObject().endObject().endArray()
+      else
+        builder.endArray()
+    }
 
     // Close the bool/query objects and return
     builder.endObject().endObject()
@@ -624,7 +652,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
           // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
           if (mustOperators.contains(operator) && !populatedMust) {
-            builder.startObject("must")
+            builder.startObject("must").startArray()
             populatedMust = true
           }
 
@@ -632,7 +660,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         }
       }
     })
-    if (populatedMust) builder.endObject()
+    if (populatedMust) builder.endArray().endObject()
 
     // Second, populate the MUST NOT portion of Bool query
     var populatedMustNot = false
@@ -644,7 +672,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
           // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
           if (mustNotOperators.contains(operator) && !populatedMustNot) {
-            builder.startObject("must_not")
+            builder.startObject("must_not").startArray()
             populatedMustNot = true
           }
 
@@ -652,7 +680,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         }
       }
     })
-    if (populatedMustNot) builder.endObject()
+    if (populatedMustNot) builder.endArray().endObject()
 
     // Close the bool/query objects and return
     builder.endObject().endObject()

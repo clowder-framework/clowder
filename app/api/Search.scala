@@ -25,7 +25,7 @@ class Search @Inject() (
    sparql: RdfSPARQLService)  extends ApiController {
 
   /** Search using a simple text string */
-  def searchSimple(query: String) = PermissionAction(Permission.ViewDataset) { implicit request =>
+  def search(query: String) = PermissionAction(Permission.ViewDataset) { implicit request =>
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
         var filesFound = ListBuffer.empty[String]
@@ -57,14 +57,14 @@ class Search @Inject() (
   }
 
   /** Search using string-encoded Json object (e.g. built by Advanced Search form) */
-  def search(query: String) = PermissionAction(Permission.ViewDataset) {
+  def searchJson(query: String, grouping: String) = PermissionAction(Permission.ViewDataset) {
     implicit request =>
       implicit val user = request.user
 
       current.plugin[ElasticsearchPlugin] match {
         case Some(plugin) => {
           val queryList = Json.parse(query).as[List[JsValue]]
-          val results = plugin.search(queryList)
+          val results = plugin.search(queryList, grouping)
 
           val collectionsResults = results.flatMap { c =>
             if (c.resourceType == ResourceRef.collection) collections.get(c.id) else None
