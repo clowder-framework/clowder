@@ -35,7 +35,7 @@
                     <button disabled id="deleteButton" class="btn btn-link" title="Delete the @Messages("space.title") but not its contents">
                         <span class="glyphicon glyphicon-trash"></span> Delete</button>
                 }
-            }
+
             @if(user.isDefined && Permission.checkPermission(Permission.CreateDataset, ResourceRef(ResourceRef.space, space.id))) {
                 <a id="create_dataset" href="@routes.Datasets.newDataset(Some(space.id.toString()), None)" class="btn btn-link" title="Create dataset">
                     <span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", Messages("dataset.title"))</a>

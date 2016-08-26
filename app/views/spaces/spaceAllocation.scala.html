@@ -69,7 +69,7 @@
                             **@
                             @if(v == true){
 
-                                    @if(ermission.checkOwner(user, ResourceRef(ResourceRef.collection, resourceId)) || Permission.checkPermission(Permission.RemoveResourceFromSpace, ResourceRef(ResourceRef.space, s.id))) {
+                                    @if(Permission.checkOwner(user, ResourceRef(ResourceRef.collection, resourceId)) || Permission.checkPermission(Permission.RemoveResourceFromSpace, ResourceRef(ResourceRef.space, s.id))) {
                                         | <button onclick="confirmRemoveResourceFromResourceEvent('space','@Messages("space.title")','@(s.id)','collection','@(resourceId)',event)" class="btn btn-link btn-xs" title="Remove the collection from the @Messages("space.title")">
                                             <span class="glyphicon glyphicon-remove"></span> Remove</button>
                                     } else {
