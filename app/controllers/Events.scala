@@ -23,7 +23,7 @@ class Events @Inject()(events: EventService) extends SecuredController {
         val newEventNumber = 10
         var newsfeedEvents = user.fold(List.empty[Event])(u => events.getEvents(u.followedEntities, Some(index*newEventNumber)))
         newsfeedEvents = newsfeedEvents ::: events.getRequestEvents(user, Some(index*newEventNumber))
-        newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(index*newEventNumber)))
+        newsfeedEvents = (newsfeedEvents ::: events.getEventsByUser(clowderUser, Some(index*newEventNumber))) ::: events.getCommentEvent(clowderUser, Some(index*newEventNumber))
           if(newsfeedEvents.size > index*newEventNumber-newEventNumber ) {
             newsfeedEvents = newsfeedEvents.sorted(Ordering.by((_: Event).created).reverse).distinct.take(index * newEventNumber).takeRight(newEventNumber)
 
