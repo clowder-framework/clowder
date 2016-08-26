@@ -46,7 +46,7 @@
                                 @s.datasetCount datasets
                             }
                             @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
-                                @if(Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, s.id))) {
+                                @if(Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, resourceId)) || Permission.checkPermission(Permission.RemoveResourceFromSpace, ResourceRef(ResourceRef.space, s.id))) {
                                     | <button onclick="confirmRemoveResourceFromResourceEvent('space','@(spaceTitle)','@(s.id)','dataset','@(resourceId)',event)" class="btn btn-link btn-xs" title="Remove the dataset from the @spaceTitle">
                                         <span class="glyphicon glyphicon-remove"></span> Remove</button>
                                 } else {
@@ -69,7 +69,7 @@
                             **@
                             @if(v == true){
                                 @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
-                                    @if(Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space, s.id))) {
+                                    @if(Permission.checkOwner(user, ResourceRef(ResourceRef.collection, resourceId)) || Permission.checkPermission(Permission.RemoveResourceFromSpace, ResourceRef(ResourceRef.space, s.id))) {
                                         | <button onclick="confirmRemoveResourceFromResourceEvent('space','@(spaceTitle)','@(s.id)','collection','@(resourceId)',event)" class="btn btn-link btn-xs" title="Remove the collection from the @(spaceTitle)">
                                             <span class="glyphicon glyphicon-remove"></span> Remove</button>
                                     } else {

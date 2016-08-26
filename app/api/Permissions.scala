@@ -19,6 +19,7 @@ object Permission extends Enumeration {
     EditSpace,
     PublicSpace,
     AddResourceToSpace,
+    RemoveResourceFromSpace,
     EditStagingArea,
 
     // datasets
@@ -28,6 +29,7 @@ object Permission extends Enumeration {
     EditDataset,
     PublicDataset,
     AddResourceToDataset,
+    RemoveResourceFromDataset,
     ExecuteOnDataset,
 
     // collections
@@ -36,6 +38,7 @@ object Permission extends Enumeration {
     DeleteCollection,
     EditCollection,
     AddResourceToCollection,
+    RemoveResourceFromCollection,
 
     // files
     AddFile,

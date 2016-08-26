@@ -54,7 +54,7 @@
                                 </div>
                             }
                             <!-- If user can delete, the button is enabled, otherwise the button is present but disabled to provide consistent UE. -->
-                            @if( user.get.id.equals(collection.author.id) || Permission.checkPermission(Permission.DeleteCollection, ResourceRef(ResourceRef.collection, collection.id))){
+                            @if( user.get.id.equals(collection.author.id) || Permission.checkPermission(Permission.RemoveResourceFromCollection, ResourceRef(ResourceRef.collection, collection.id))){
                                 <button onclick="confirmRemoveResourceFromResource('collection','collection','@(parent.id)','collection','@(collection.id)','@(collection.name)',true,'@(redirect)')"
                                 class="btn btn-link" title="Remove the child collection from the collection @parent.name">
                                     <span class="glyphicon glyphicon-remove"></span> Remove</button>

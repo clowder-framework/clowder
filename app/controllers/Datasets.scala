@@ -124,7 +124,7 @@ class Datasets @Inject()(
     }
   }
 
-  def addFiles(id: UUID) = PermissionAction(Permission.EditDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
+  def addFiles(id: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, id))) { implicit request =>
     implicit val user = request.user
     datasets.get(id) match {
       case Some(dataset) => {
@@ -485,7 +485,7 @@ class Datasets @Inject()(
           } else {
             showAccess = play.Play.application().configuration().getBoolean("enablePublic")
           }
-          var access=if(showAccess) {
+          val access=if(showAccess) {
             if(dataset.isDefault && isInPublicSpace) {
               "Public (" + spaceTitle + " Default)"
             } else if (dataset.isDefault && !isInPublicSpace) {
@@ -496,7 +496,7 @@ class Datasets @Inject()(
           } else {
             ""
           }
-          var accessOptions = new ListBuffer[String]();
+          val accessOptions = new ListBuffer[String]()
           if(isInPublicSpace){
             accessOptions.append(spaceTitle + " Default (Public)")
           } else {
@@ -504,11 +504,17 @@ class Datasets @Inject()(
           }
           accessOptions.append(DatasetStatus.PRIVATE.toString.substring(0,1).toUpperCase() + DatasetStatus.PRIVATE.toString.substring(1).toLowerCase())
           accessOptions.append(DatasetStatus.PUBLIC.toString.substring(0,1).toUpperCase() + DatasetStatus.PUBLIC.toString.substring(1).toLowerCase())
-
-
+          var canAddDatasetToCollection = Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))
+          if(!canAddDatasetToCollection) {
+            datasetSpaces.map(space =>
+              if(Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.space, space.id))) {
+                canAddDatasetToCollection = true
+             }
+            )
+          }
           Ok(views.html.dataset(datasetWithFiles, commentsByDataset, filteredPreviewers.toList, m,
             decodedCollectionsInside.toList, isRDFExportEnabled, sensors, Some(decodedSpaces_canRemove),fileList,
-            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess, access, accessOptions.toList))
+            filesTags, toPublish, curPubObjects, currentSpace, limit, showDownload, showAccess, access, accessOptions.toList, canAddDatasetToCollection))
         }
         case None => {
           Logger.error("Error getting dataset" + id)

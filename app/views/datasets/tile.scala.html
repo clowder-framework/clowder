@@ -30,7 +30,7 @@
                 @if(user.isDefined) {
                     @if(space.isDefined) {
                         @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
-                            @if(user.get.id.equals(dataset.author.id) || Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space,UUID(space.get)))) {
+                            @if(user.get.id.equals(dataset.author.id) || Permission.checkPermission(Permission.RemoveResourceFromSpace, ResourceRef(ResourceRef.space,UUID(space.get)))) {
                                 <button onclick="confirmRemoveResourceFromResource('space','@(spaceTitle)','@(UUID(space.getOrElse("")))','dataset','@(dataset.id)','@(dataset.name.replace("'","&#39;"))',true,'@redirect.url')"
                                 class="btn btn-link" title="Remove the dataset from the @spaceTitle">
                                     <span class="glyphicon glyphicon-remove"></span></button>
