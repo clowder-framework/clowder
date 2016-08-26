@@ -1,4 +1,4 @@
-@(currentCollection: models.Collection, resourceId: UUID, resourceType: Symbol, parentCollections: List[models.Collection])(implicit user: Option[models.User])
+@(currentCollection: models.Collection, resourceId: UUID, resourceType: Symbol, parentCollections: List[models.Collection], canAddToParent: Boolean)(implicit user: Option[models.User])
 @import api.Permission
 @import play.api.libs.json.Json
     <div class="row bottom-padding">
@@ -36,7 +36,7 @@
 
 
     <!-- If the user can edit the dataset, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
-    @if(Permission.checkOwner(user, ResourceRef(resourceType, resourceId))) {
+    @if(canAddToParent) {
         <div class="form-inline">
             <div class="input-group input-group-sm col-md-8">
                 <select id="collectionAddSelect" class="form-control add-resource">
