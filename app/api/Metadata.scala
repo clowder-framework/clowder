@@ -68,12 +68,9 @@ class Metadata @Inject()(
       case Some(plugin) => {
         val mdTerms = plugin.getAutocompleteMetadataFields(query)
         for (term <- mdTerms) {
-          // e.g. "http://localhost:9000/clowder/api/extractors/terraPlantCV.angle", "Jane Doe.Alternative Title"
-          if (term.indexOf("extractors") > -1)
-            listOfTerms.append(term)
-          else if (!(listOfTerms contains term.split('.').last))
-            // If user/non-extractor metadata, only include if leaf field not in Metadata Definitions
-            listOfTerms.append(term)
+          // e.g. "metadata.http://localhost:9000/clowder/api/extractors/terraPlantCV.angle",
+          //      "metadata.Jane Doe.Alternative Title"
+          listOfTerms.append(term)
         }
         Ok(toJson(listOfTerms))
       }

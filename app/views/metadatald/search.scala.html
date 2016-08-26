@@ -121,7 +121,7 @@
                     var elem = $("<option></option>");
                     elem.attr("data-type", fields[i].json.type);
                     elem.attr("data-id", fields[i].json.label);
-                    elem.attr("value", fields[i].json.label);
+                    elem.attr("value", "metadata."+fields[i].json.label);
                     elem.text(fields[i].json.label);
                     $("#add-metadata-select-"+String(rowId)).append(elem);
                 }
@@ -148,18 +148,21 @@
                             for (var rez=0; rez<data.length; rez++) {
                                 var entry = data[rez];
 
-                                // MetadataDefinitions
+                                // Metadata Definitions
                                 if (typeof(entry) == 'object') {
                                     var entryGroup = "Metadata Definitions";
-                                    var entryData = {text: entry.json.label, id: entry.json.label}
+                                    var entryData = {text: entry.json.label, id: "metadata."+entry.json.label}
                                 } else {
                                     if (entry.indexOf('.') > -1) {
-                                        // TODO: How to differentiate extractor dot notation from Metadata Definitions with periods?
-                                        if (entry.indexOf('extractors') > -1)
-                                            var entryGroup = " Extractor: "+entry.substring(0, entry.indexOf('.'));
-                                        else
-                                            var entryGroup = "User: "+entry.substring(0, entry.indexOf('.'));
-                                        var entryData = {id: entry, text: entry.substring(entry.indexOf('.')+1, entry.length)}
+                                        if (entry.indexOf('/extractors/') > -1) {
+                                            var entryGroup = " Extractor: "+entry.substring(entry.indexOf('/extractors/')+12,
+                                                            entry.lastIndexOf('.'));
+                                        }
+                                        else {
+                                            var trimName = entry.replace(".metadata", "");
+                                            var entryGroup = "User: "+trimName.substring(trimName.indexOf('.')+1, trimName.lastIndexOf('.'));
+                                        }
+                                        var entryData = {id: entry, text: entry.substring(entry.lastIndexOf('.')+1, entry.length)}
                                     } else {
                                         // Simple entry
                                         var entryGroup = ""

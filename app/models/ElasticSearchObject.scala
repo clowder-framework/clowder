@@ -73,7 +73,7 @@ case class ElasticsearchObject (
   description: String,
   tags: List[ElasticsearchTag] = List.empty,
   comments: List[ElasticsearchComment] = List.empty,
-  metadata: Map[String, JsObject] = Map()
+  metadata: Map[String, JsValue] = Map()
 )
 
 object ElasticsearchObject {
@@ -111,7 +111,7 @@ object ElasticsearchObject {
       (json \ "description").as[String],
       (json \ "tags").as[List[ElasticsearchTag]],
       (json \ "comments").as[List[ElasticsearchComment]],
-      (json \ "metadata").as[Map[String, JsObject]]
+      (json \ "metadata").as[Map[String, JsValue]]
     ))
   }
 }

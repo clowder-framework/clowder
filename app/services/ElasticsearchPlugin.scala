@@ -238,7 +238,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           resultList.foreach(term => {
             val leafKey = term.split('.').last
             if ((leafKey.toLowerCase startsWith query.toLowerCase) && !(listOfTerms contains term))
-              listOfTerms += term.replace("metadata.", "")
+              listOfTerms += term
           })
         }
       }
@@ -340,9 +340,21 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             for ((k,v) <- eso.metadata) {
               // Elasticsearch 2 does not allow periods in field names
               val clean_k = k.replace(".", "_")
-              builder.startObject(clean_k)
-              convertJsObjectToBuilder(builder, v)
-              builder.endObject()
+              v match {
+                case jv: JsObject => {
+                  builder.startObject(clean_k)
+                  convertJsObjectToBuilder(builder, jv)
+                  builder.endObject()
+                }
+                case jv: JsArray => {
+                  builder.startArray(clean_k)
+                  jv.value.foreach(subv => {
+                    builder.value(subv.toString)
+                  })
+                  builder.endArray()
+                }
+                case _ => {}
+              }
             }
             builder.endObject()
               .endObject()
@@ -391,21 +403,19 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
 
-  /** Take a JsObject and parse into an XContentBuilder JSON object for Elasticsearch */
+  /** Take a JsObject and parse into an XContentBuilder JSON object for indexing into Elasticsearch */
   def convertJsObjectToBuilder(builder: XContentBuilder, json: JsObject): XContentBuilder = {
     json.keys.map(k => {
       // Iterate across keys of the JsObject to parse each value as appropriate
       (json \ k) match {
         case v: JsArray => {
-          builder.startArray(k)
+          // Elasticsearch 2 does not allow periods in field names
+          builder.startArray(k.toString.replace(".", "_"))
           v.value.foreach(jv => {
             // Try to interpret numeric value from each String if possible
             parseDouble(jv.toString) match {
               case Some(d) => builder.value(d)
-              case None => {
-                // Elasticsearch 2 does not allow periods in field names
-                builder.value(jv.toString.replace(".", "_"))
-              }
+              case None => builder.value(jv)
             }
           })
           builder.endArray()

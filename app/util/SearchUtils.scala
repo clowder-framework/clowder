@@ -30,21 +30,30 @@ object SearchUtils {
     }
 
     // Get metadata for File
-    var metadata = Map[String, JsObject]()
+    var metadata = Map[String, JsValue]()
     for (md <- metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.file, id))) {
       val creator = md.creator.displayName
-      if (metadata.keySet.exists(_ == creator)) {
-        // If we already have some metadata from this creator, merge the results
-        metadata += (creator -> (metadata(creator) ++ (md.content.as[JsObject])))
+
+      // If USER metadata, ignore the name and set the Metadata Definition field to the creator
+      if (md.creator.typeOfAgent=="cat:user") {
+        val subjson = md.content.as[JsObject]
+        subjson.keys.foreach(subkey => {
+          // If we already have some metadata from this creator, merge the results; otherwise, create new entry
+          if (metadata.keySet.exists(_ == subkey)) {
+            metadata += (subkey -> metadata(subkey).as[JsArray].append((subjson \ subkey)))
+          }
+          else {
+            metadata += (subkey -> Json.arr((subjson \ subkey)))
+          }
+        })
       } else {
-        // Otherwise create a new entry for this creator
-        metadata += (creator -> md.content.as[JsObject])
+        // If we already have some metadata from this creator, merge the results; otherwise, create new entry
+        if (metadata.keySet.exists(_ == creator))
+          metadata += (creator -> (metadata(creator).as[JsObject] ++ (md.content.as[JsObject])))
+        else
+          metadata += (creator -> md.content.as[JsObject])
       }
     }
-    // TODO: Can these be removed? MongoSalat process to migrate them to Metadata collection?
-    //val usrMd = getUserMetadataJSON(id)
-    //val techMd = getTechnicalMetadataJSON(id)
-    //val xmlMd = getXMLMetadataJSON(id)
 
     Some(new ElasticsearchObject(
       ResourceRef('file, id),
@@ -69,16 +78,29 @@ object SearchUtils {
       Comment.toElasticsearchComment(c)
     }
 
-    // Get metadata for File
-    var metadata = Map[String, JsObject]()
+    // Get metadata for Dataset
+    var metadata = Map[String, JsValue]()
     for (md <- metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))) {
       val creator = md.creator.displayName
-      if (metadata.keySet.exists(_ == creator)) {
-        // If we already have some metadata from this creator, merge the results
-        metadata += (creator -> (metadata(creator) ++ (md.content.as[JsObject])))
+
+      // If USER metadata, ignore the name and set the Metadata Definition field to the creator
+      if (md.creator.typeOfAgent=="cat:user") {
+        val subjson = md.content.as[JsObject]
+        subjson.keys.foreach(subkey => {
+          // If we already have some metadata from this creator, merge the results; otherwise, create new entry
+          if (metadata.keySet.exists(_ == subkey)) {
+            metadata += (subkey -> metadata(subkey).as[JsArray].append((subjson \ subkey)))
+          }
+          else {
+            metadata += (subkey -> Json.arr((subjson \ subkey)))
+          }
+        })
       } else {
-        // Otherwise create a new entry for this creator
-        metadata += (creator -> md.content.as[JsObject])
+        // If we already have some metadata from this creator, merge the results; otherwise, create new entry
+        if (metadata.keySet.exists(_ == creator))
+          metadata += (creator -> (metadata(creator).as[JsObject] ++ (md.content.as[JsObject])))
+        else
+          metadata += (creator -> md.content.as[JsObject])
       }
     }
 
