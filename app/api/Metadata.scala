@@ -66,7 +66,15 @@ class Metadata @Inject()(
     // Next get ElasticSeach metadata fields if plugin available
     current.plugin[ElasticsearchPlugin] match {
       case Some(plugin) => {
-        listOfTerms = listOfTerms ++ plugin.getAutocompleteFields(query)
+        val mdTerms = plugin.getAutocompleteMetadataFields(query)
+        for (term <- mdTerms) {
+          // e.g. "http://localhost:9000/clowder/api/extractors/terraPlantCV.angle", "Jane Doe.Alternative Title"
+          if (term.indexOf("extractors") > -1)
+            listOfTerms.append(term)
+          else if (!(listOfTerms contains term.split('.').last))
+            // If user/non-extractor metadata, only include if leaf field not in Metadata Definitions
+            listOfTerms.append(term)
+        }
         Ok(toJson(listOfTerms))
       }
       case None => {

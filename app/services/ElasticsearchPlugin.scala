@@ -152,7 +152,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     connect
     client match {
       case Some(x) => {
-        Logger.info("Searching Elasticsearch")
+        Logger.info("Searching Elasticsearch: "+queryObj.string())
         val response = x.prepareSearch(index)
           .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
           .setQuery(queryObj)
@@ -233,11 +233,12 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         if (query != "") {
           val response = x.admin.indices.getMappings(new GetMappingsRequest().indices(index)).get()
           val maps = response.getMappings().get(index).get("clowder_object")
-          val resultList = convertJsMappingToFields(Json.parse(maps.source().toString).as[JsObject])
+          val resultList = convertJsMappingToFields(Json.parse(maps.source().toString).as[JsObject], None, Some("metadata"))
 
           resultList.foreach(term => {
-            if ((term.toLowerCase startsWith query.toLowerCase) && !(listOfTerms contains term))
-              listOfTerms += term
+            val leafKey = term.split('.').last
+            if ((leafKey.toLowerCase startsWith query.toLowerCase) && !(listOfTerms contains term))
+              listOfTerms += term.replace("metadata.", "")
           })
         }
       }
@@ -337,7 +338,9 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             // METADATA
             builder.startObject("metadata")
             for ((k,v) <- eso.metadata) {
-              builder.startObject(k)
+              // Elasticsearch 2 does not allow periods in field names
+              val clean_k = k.replace(".", "_")
+              builder.startObject(clean_k)
               convertJsObjectToBuilder(builder, v)
               builder.endObject()
             }
@@ -376,7 +379,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         aggr.getBuckets().toArray().foreach(bucket => {
           val term = bucket.asInstanceOf[Bucket].getKey
           val count = bucket.asInstanceOf[Bucket].getDocCount
-          results.update(term, count)
+          results.update(term.toString, count)
         })
         results.toMap
       }
@@ -399,7 +402,10 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             // Try to interpret numeric value from each String if possible
             parseDouble(jv.toString) match {
               case Some(d) => builder.value(d)
-              case None => builder.value(jv.toString)
+              case None => {
+                // Elasticsearch 2 does not allow periods in field names
+                builder.value(jv.toString.replace(".", "_"))
+              }
             }
           })
           builder.endArray()
@@ -409,7 +415,10 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           // Try to interpret numeric value from String if possible
           parseDouble(v.value) match {
             case Some(d) => builder.field(k, d)
-            case None => builder.field(k, v.value)
+            case None => {
+              // Elasticsearch 2 does not allow periods in field names
+              builder.field(k.replace(".", "_"), v.value)
+            }
           }
         }
         case v: JsObject => {
@@ -421,7 +430,10 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
           // Try to interpret numeric value from String if possible
           parseDouble(v.toString) match {
             case Some(d) => builder.field(k, d)
-            case None => builder.field(k, v.toString)
+            case None => {
+              // Elasticsearch 2 does not allow periods in field names
+              builder.field(k.replace(".", "_"), v.toString)
+            }
           }
         }
         case _ => {}
@@ -430,33 +442,79 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     builder
   }
 
-  /** Take a JsObject and list all unique fields, excepting those in ignoredFields */
-  def convertJsMappingToFields(json: JsObject): List[String] = {
-    val ignoredFields = List("type", "format", "properties")
-    var fields = ListBuffer.empty[String]
+  /** Take a JsObject and list all unique fields under targetObject field, except those in ignoredFields */
+  def convertJsMappingToFields(json: JsObject, parentKey: Option[String] = None,
+                               targetObject: Option[String] = None, foundTarget: Boolean = false): List[String] = {
 
-    // TODO: capture parent relationships somehow?
+    var fields = ListBuffer.empty[String]
+    // TODO: These are Elasticsearch mapping-internal fields but might also appear in metadata...
+    val ignoredFields = List("type", "format", "properties")
+
+    // If targetObject given, only list fields from that level down
+    var foundTargetObjectRootLevel = false
+    var foundTargetObject = targetObject match {
+      case Some(targ) => foundTarget
+      case None => true
+    }
+
     json.keys.map(k => {
+      // Check whether to start collecting fields yet
+      if (!foundTargetObject) {
+        targetObject match {
+          case Some(targ) => if (k == targ) {
+            foundTargetObject = true
+            foundTargetObjectRootLevel = true
+          }
+          case None => {}
+        }
+      }
+
+      // Get fully qualified field path, with dot-notation (only generated inside metadata fields)
+      var longKey = (parentKey match {
+        case Some(pk) => {
+          if (pk contains "metadata")
+            pk+'.'+k
+          else k
+        }
+        case None => k
+      })
+
+      // Remove ignored fields
+      ignoredFields.foreach(ig => {
+          if (longKey.indexOf("."+ig+".") > -1)
+            longKey = longKey.replace("."+ig+".", ".")
+          if (longKey.endsWith("."+ig))
+            longKey = longKey.stripSuffix("."+ig)
+        }
+      )
+
+      // Process value of field depending on type
+      val okToAppend = (!(ignoredFields contains k) && foundTargetObject)
       (json \ k) match {
-        case v: JsArray => fields.append(k)
+        case v: JsArray => if (okToAppend) fields.append(longKey)
         case v: JsNumber => {}
-        case v: JsString => fields.append(k)
+        case v: JsString => if (okToAppend) fields.append(longKey)
         case v: JsObject => {
-          val subList = convertJsMappingToFields(v)
+          // For objects, recursively get keys from sub-objects
+          val subList = convertJsMappingToFields(v, Some(longKey), targetObject, foundTargetObject)
           if (subList.length > 0)
             fields = fields ++ subList
-          if (!(ignoredFields contains k))
-            fields.append(k)
+          else if (okToAppend) fields.append(longKey)
         }
-        case v: JsValue => fields.append(k)
+        case v: JsValue => if (okToAppend) fields.append(longKey)
         case _ => {}
       }
+
+      // Finally, stop capturing fields if we are done at the target object root level
+      if (foundTargetObjectRootLevel) {
+        val rootCheck = fields.indexOf(targetObject.get)
+        if (rootCheck > -1) fields.remove(rootCheck)
+        foundTargetObject = false
+      }
+
     })
-    ignoredFields.foreach(f => {
-      val pos = fields.indexOf(f)
-      if (pos > -1) fields.remove(pos)
-    })
-    fields.toList
+
+    fields.toList.distinct
   }
 
   /** Return string-encoded JSON object describing field types */
@@ -606,7 +664,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
     // TODO: Make this more robust, perhaps with some RegEx or something, to support quoted phrases
     val terms = query.split(" ")
 
-    // BOOL - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
     var builder = jsonBuilder().startObject().startObject("bool")
 
     // First, populate the MUST portion of Bool query
@@ -619,7 +676,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
           // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
           if (mustOperators.contains(operator) && !populatedMust) {
-            builder.startObject("must").startArray()
             populatedMust = true
           }
 
@@ -627,7 +683,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         }
       }
     })
-    if (populatedMust) builder.endArray().endObject()
 
     // Second, populate the MUST NOT portion of Bool query
     var populatedMustNot = false
@@ -639,7 +694,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
           // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
           if (mustNotOperators.contains(operator) && !populatedMustNot) {
-            builder.startObject("must_not").startArray()
             populatedMustNot = true
           }
 
@@ -647,7 +701,6 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         }
       }
     })
-    if (populatedMustNot) builder.endArray().endObject()
 
     // Close the bool/query objects and return
     builder.endObject().endObject()
