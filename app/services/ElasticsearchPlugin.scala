@@ -224,7 +224,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   }
 
   /** Traverse metadata field mappings to get unique list for autocomplete */
-  def getAutocompleteFields(query: String, index: String = nameOfIndex): List[String] = {
+  def getAutocompleteMetadataFields(query: String, index: String = nameOfIndex): List[String] = {
     connect
 
     var listOfTerms = ListBuffer.empty[String]
@@ -526,7 +526,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             |"parent_of": {"type": "string"},
             |"creator": {"type": "string"},
             |"created": {"type": "date", "format": "dateOptionalTime"},
-            |"metadata": {"type": "object"},
+            |"metadata": {"type": "object" },
             |"comments": {
               |"properties": {
                 |"created": {"type": "date", "format": "dateOptionalTime"},
@@ -676,6 +676,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
           // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
           if (mustOperators.contains(operator) && !populatedMust) {
+            builder.startArray("must")
             populatedMust = true
           }
 
@@ -683,6 +684,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         }
       }
     })
+    if (populatedMust) builder.endArray()
 
     // Second, populate the MUST NOT portion of Bool query
     var populatedMustNot = false
@@ -694,6 +696,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
           // Only add a MUST object if we have terms to populate it; empty objects break Elasticsearch
           if (mustNotOperators.contains(operator) && !populatedMustNot) {
+            builder.startArray("must_not")
             populatedMustNot = true
           }
 
@@ -701,6 +704,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         }
       }
     })
+    if (populatedMustNot) builder.endArray()
 
     // Close the bool/query objects and return
     builder.endObject().endObject()
