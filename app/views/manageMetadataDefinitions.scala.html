@@ -1,5 +1,5 @@
 @(metadata: List[models.MetadataDefinition], spaceId: Option[UUID], spaceName: Option[String])(implicit user: Option[models.User])
-
+@import play.api.i18n.Messages
 @main("Metadata Definitions") {
     <script src="@routes.Assets.at("javascripts/metadata/manageDefinitions.js")" type="text/javascript"></script>
 	<script>
@@ -19,7 +19,7 @@
                     validateButton.removeAttr("disabled");
                     queryParameter.attr("disabled", true);
                     queryParameterValue.attr("disabled", true);
-                } else if ($(this).val() == "wktlocation") {
+                } else if ($(this).val() == "wkt") {
                     definitions.attr("disabled", true);
                     validateButton.attr("disabled", true);
                     queryParameter.attr("disabled", true);
@@ -138,10 +138,10 @@
 		<h1>Metadata Terms & Definitions</h1>
         @(spaceName, spaceId) match {
             case (Some(space_name), Some(space_id)) => {
-                <h4><strong>@{spaces.spaceTitle()}: </strong><a href="@routes.Spaces.getSpace(space_id)">@space_name</a> </h4>
-                <p> The following metadata terms will be available for this @{spaces.spaceTitle()}'s datasets, files, and curation objects. To add a new term scroll to the bottom of the page.</p>
+                <h4><strong>@Messages("space.title"): </strong><a href="@routes.Spaces.getSpace(space_id)">@space_name</a> </h4>
+                <p> The following metadata terms will be available for this @Messages("space.title")'s datasets, files, and curation objects. To add a new term scroll to the bottom of the page.</p>
             }
-            case (_, _) => {<p>The following metadata definitions will be available in datasets and files that are not in a space, and inherited by new spaces.</p>}
+            case (_, _) => {<p>The following metadata definitions will be available in datasets and files that are not in a space, and inherited by new @Messages("spaces.title").</p>}
         }
 
 	</div>
@@ -181,7 +181,8 @@
                                 case "scientific_variable" => {Scientific Variable}
                                 case "datetime" => {Date and Time}
                                 case "listgeocode" => {Location}
-                                case "wktlocation" => {WKT Location}
+                                case "wkt" => {WKT Location}
+                                case _ => {Error: unrecognized type}
                             }
                         </td>
                         <td>
@@ -235,7 +236,7 @@
                                     <option value="list">List</option>
                                     <option value="listjquery">Queryable List</option>
                                     <option value="listgeocode">Location</option>
-                                    <option value="wktlocation">WKT Location</option>
+                                    <option value="wkt">WKT Location</option>
                                     <option value="scientific_variable">Scientific Variable</option>
                                     <option value="datetime">Date and Time</option>
                                 </select>

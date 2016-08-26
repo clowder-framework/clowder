@@ -1,11 +1,12 @@
 @(collections: List[Collection], space: String)(implicit user: Option[models.User])
 @import api.Permission
-<h3>Collections in the @{spaces.spaceTitle()}</h3>
+@import play.api.i18n.Messages
+<h3>@Messages("a.in.b", Messages("collections.title"), Messages("space.title"))</h3>
 @if(collections.size == 0) {
     @if(user.isDefined && !Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, UUID(space)))) {
-        <p>Please request access to add collections to this @{spaces.spaceTitle()}</p>
+        <p>Please request access to add collections to this @Messages("space.title")</p>
     } else {
-            <p>There are no collections associated with this @{spaces.spaceTitle()}. </p>
+            <p>There are no collections associated with this @Messages("space.title"). </p>
         }
     } else {
         @spaces.collectionsGrid(collections, space)

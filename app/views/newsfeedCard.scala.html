@@ -1,27 +1,28 @@
 @(event: models.Event)(implicit user: Option[models.User] = None)
 @import services.AppConfiguration
+@import play.api.i18n.Messages
 @linkForObject(obj_type: String, obj_id: Option[UUID], obj_name: Option[String]) = {
   @obj_type match {
     case "file" => {
       file: <a href="@routes.Files.file(obj_id.get)">@obj_name.get</a>
     }
     case "dataset" => {
-      dataset: <a href="@routes.Datasets.dataset(obj_id.get)">@obj_name.get</a>
+      @Messages("dataset.title").toLowerCase : <a href="@routes.Datasets.dataset(obj_id.get)">@obj_name.get</a>
     }
     case "collection" => {
-      collection: <a href="@routes.Collections.collection(obj_id.get)">@obj_name.get</a>
+      @Messages("collection.title").toLowerCase : <a href="@routes.Collections.collection(obj_id.get)">@obj_name.get</a>
     }
     case "user" => {
       user: <a href="@routes.Profile.viewProfileUUID(obj_id.get)">@obj_name.get</a>
     }
     case "space" => {
-      @{spaces.spaceTitle().toString()}: <a href="@routes.Spaces.getSpace(obj_id.get)">@obj_name.get</a>
+      @Messages("space.title"): <a href="@routes.Spaces.getSpace(obj_id.get)">@obj_name.get</a>
     }
     case "curation" => {
       curation object: <a href="@routes.CurationObjects.getCurationObject(obj_id.get)">@obj_name.get</a>
     }
     case "subcollection" => {
-      collection: <a href="@routes.Collections.collection(obj_id.get)">@obj_name.get</a> from collection:
+      @Messages("collection.title").toLowerCase : <a href="@routes.Collections.collection(obj_id.get)">@obj_name.get</a> from collection:
       <a href="@routes.Collections.collection(event.source_id.get)">@event.source_name.get</a>
     }
     case _ => {
