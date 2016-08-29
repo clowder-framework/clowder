@@ -765,6 +765,15 @@ class  Datasets @Inject()(
           case Some(f) => metadataService.removeMetadataByAttachToAndExtractor(ResourceRef(ResourceRef.dataset, id), f)
           case None => metadataService.removeMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))
         }
+
+        // send extractor message after attached to resource
+        current.plugin[RabbitmqPlugin].foreach { p =>
+          val dtkey = s"${p.exchange}.metadata.removed"
+          p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, Map[String, Any](
+            "resourceType"->ResourceRef.dataset,
+            "resourceId"->id.toString), "", id, ""))
+        }
+
         Ok(toJson(Map("status" -> "success", "count" -> num_removed.toString)))
       }
       case None => {

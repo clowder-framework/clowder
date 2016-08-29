@@ -14,14 +14,14 @@ import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
 import services.MetadataService
-import services.{ContextLDService, DatasetService, FileService, FolderService, ExtractorMessage, RabbitmqPlugin}
+import services.{ContextLDService, DatasetService, FileService, FolderService, ExtractorMessage, RabbitmqPlugin, CurationService}
 import api.Permission
 
 /**
  * MongoDB Metadata Service Implementation
  */
 @Singleton
-class MongoDBMetadataService @Inject() (contextService: ContextLDService, datasets: DatasetService, files: FileService, folders: FolderService) extends MetadataService {
+class MongoDBMetadataService @Inject() (contextService: ContextLDService, datasets: DatasetService, files: FileService, folders: FolderService, curations: CurationService) extends MetadataService {
 
   /**
    * Add metadata to the metadata collection and attach to a section /file/dataset/collection
@@ -160,26 +160,13 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
       "attachedTo._id" -> new ObjectId(resourceRef.id.stringify),
       "creator.extractorId" -> (regex.r)), WriteConcern.Safe)
     val num_removed = result.getField("n").toString.toLong
-
-    // send extractor message after attached to resource
-    current.plugin[RabbitmqPlugin].foreach { p =>
-      val dtkey = s"${p.exchange}.metadata.removed"
-      p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, Map[String, Any](
-        "resourceType"->resourceRef.resourceType.name,
-        "resourceId"->resourceRef.id.toString), "", resourceRef.id, ""))
-    }
-
+    
     //update metadata count for resource
-    current.plugin[MongoSalatPlugin] match {
-      case None => throw new RuntimeException("No MongoSalatPlugin")
-      case Some(x) => x.collection(resourceRef) match {
-        case Some(c) => {
-          c.update(MongoDBObject("_id" -> new ObjectId(resourceRef.id.stringify)), $inc("metadataCount" -> (-1*num_removed)))
-        }
-        case None => {
-          Logger.error(s"Could not decrease counter for ${resourceRef}")
-        }
-      }
+    resourceRef.resourceType.name match {
+      case "dataset" => datasets.updateMetadataCount(resourceRef.id, (-1*num_removed))
+      case "file" => files.updateMetadataCount(resourceRef.id, (-1*num_removed))
+      case "curationObject" => curations.updateMetadataCount(resourceRef.id, (-1*num_removed))
+      case _ => Logger.error(s"Could not decrease metadata counter for ${resourceRef}")
     }
 
     return num_removed

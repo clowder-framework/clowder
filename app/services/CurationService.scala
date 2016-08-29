@@ -59,6 +59,9 @@ trait CurationService {
     */
   def updateAuthorFullName(userId: UUID, fullName: String)
 
+  /** Change the metadataCount field for a curation object */
+  def updateMetadataCount(id: UUID, count: Long)
+
   /**
    * Save external Identifier received from repository
    */

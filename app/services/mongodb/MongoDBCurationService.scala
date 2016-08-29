@@ -90,6 +90,11 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
       $set("author.fullName" -> fullName), false, true, WriteConcern.Safe)
   }
 
+  /** Change the metadataCount field for a curation object */
+  def updateMetadataCount(id: UUID, count: Long) = {
+    CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $inc("metadataCount" -> count), false, false, WriteConcern.Safe)
+  }
+
   def getCurationObjectByDatasetId(datasetId: UUID): List[CurationObject] = {
     CurationDAO.find(MongoDBObject("datasets" -> MongoDBObject("$elemMatch" -> MongoDBObject("_id" -> new ObjectId(datasetId.stringify))))).toList
   }
