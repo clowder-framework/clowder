@@ -78,13 +78,19 @@ trait ApiController extends Controller {
   }
 
   /** call code iff user has right permission for resource */
-  def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None) = new ActionBuilder[UserRequest] {
+  def PermissionAction(permission: Permission, resourceRef: Option[ResourceRef] = None, affectedResource: Option[ResourceRef] = None) = new ActionBuilder[UserRequest] {
     def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[SimpleResult]) = {
       val userRequest = getUser(request)
       userRequest.user match {
         case Some(u) if !u.active => Future.successful(Unauthorized("Account is not activated"))
         case Some(u) if !AppConfiguration.acceptedTermsOfServices(u.termsOfServices) => Future.successful(Unauthorized("Terms of Service not accepted"))
         case Some(u) if u.superAdminMode || Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
+        case Some(u) => {
+          affectedResource match {
+            case Some(resource) if Permission.checkOwner(u, resource) => block(userRequest)
+            case _ => Future.successful(Unauthorized("Not authorized"))
+           }
+        }
         case None if Permission.checkPermission(userRequest.user, permission, resourceRef) => block(userRequest)
         case _ => Future.successful(Unauthorized("Not authorized"))
       }

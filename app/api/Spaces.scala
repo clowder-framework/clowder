@@ -196,7 +196,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   @ApiOperation(value = "Remove a collection from a space",
     notes = "",
     responseClass = "None", httpMethod = "POST")
-  def removeCollection(spaceId: UUID, collectionId: UUID, removeDatasets : Boolean) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+  def removeCollection(spaceId: UUID, collectionId: UUID, removeDatasets : Boolean) = PermissionAction(Permission.RemoveResourceFromSpace, Some(ResourceRef(ResourceRef.space, spaceId)), Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
     val user = request.user
     user match {
       case Some(loggedInUser) => {
@@ -321,7 +321,7 @@ class Spaces @Inject()(spaces: SpaceService, userService: UserService, datasetSe
   @ApiOperation(value = "Remove a dataset from a space",
   notes = "",
   responseClass = "None", httpMethod = "POST")
-  def removeDataset(spaceId: UUID, datasetId: UUID) = PermissionAction(Permission.AddResourceToSpace, Some(ResourceRef(ResourceRef.space, spaceId))) { implicit request =>
+  def removeDataset(spaceId: UUID, datasetId: UUID) = PermissionAction(Permission.RemoveResourceFromSpace, Some(ResourceRef(ResourceRef.space, spaceId)), Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     (spaces.get(spaceId), datasetService.get(datasetId)) match {
       case (Some(s), Some(d)) => {
         spaces.removeDataset(datasetId, spaceId)
