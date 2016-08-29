@@ -84,7 +84,7 @@ trait SpaceService {
     */
   def listByStatus(status: String):List[ProjectSpace]
 
-  def addCollection(collection: UUID, space: UUID)
+  def addCollection(collection: UUID, space: UUID, user : Option[User])
 
   def removeCollection(collection: UUID, space:UUID)
 

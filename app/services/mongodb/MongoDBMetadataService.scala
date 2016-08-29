@@ -9,13 +9,15 @@ import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
 import play.api.Play.current
 import com.mongodb.casbah.Imports._
+import play.api.libs.Files
 import play.api.libs.json.{JsObject, JsString, Json, JsValue}
+import play.api.mvc.MultipartFormData
 import javax.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.mongodb.casbah.WriteConcern
 import services.MetadataService
 import services.{ContextLDService, DatasetService, FileService, FolderService, ExtractorMessage, RabbitmqPlugin, CurationService}
-import api.Permission
+import api.{UserRequest, Permission}
 
 /**
  * MongoDB Metadata Service Implementation
@@ -39,14 +41,6 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
           Logger.error(s"Could not increase counter for ${metadata.attachedTo}")
         }
       }
-    }
-    // send extractor message after attached to resource
-    val mdMap = Map("metadata"->metadata.content,
-      "resourceType"->metadata.attachedTo.resourceType.name,
-      "resourceID"->metadata.attachedTo.id.toString)
-    current.plugin[RabbitmqPlugin].foreach { p =>
-      val dtkey = s"${p.exchange}.metadata.added"
-      p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, mdMap, "", metadata.attachedTo.id, ""))
     }
     UUID(mid.get.toString())
   }
@@ -99,11 +93,11 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
    */
   def updateMetadata(metadataId: UUID, json: JsValue) = {}
 
-  /** Remove metadata, if this metadata does exit, nothing is executed */
+  /** Remove metadata, if this metadata does not exist, nothing is executed. Return removed metadata */
   def removeMetadata(id: UUID) = {
     getMetadataById(id) match {
-      case Some(md) =>
-        md.contextId.foreach{cid =>
+      case Some(md) => {
+        md.contextId.foreach { cid =>
           if (getMetadataBycontextId(cid).length == 1) {
             contextService.removeContext(cid)
           }
@@ -111,13 +105,9 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
         MetadataDAO.remove(md, WriteConcern.Safe)
 
         // send extractor message after removed from resource
-        val mdMap = Map("metadata"->md.content,
-          "resourceType"->md.attachedTo.resourceType.name,
-          "resourceId"->md.attachedTo.id.toString)
-        current.plugin[RabbitmqPlugin].foreach { p =>
-          val dtkey = s"${p.exchange}.metadata.removed"
-          p.extract(ExtractorMessage(UUID(""), UUID(""), "", dtkey, mdMap, "", md.attachedTo.id, ""))
-        }
+        val mdMap = Map("metadata" -> md.content,
+          "resourceType" -> md.attachedTo.resourceType.name,
+          "resourceId" -> md.attachedTo.id.toString)
 
         //update metadata count for resource
         current.plugin[MongoSalatPlugin] match {
@@ -131,6 +121,8 @@ class MongoDBMetadataService @Inject() (contextService: ContextLDService, datase
             }
           }
         }
+      }
+      case None => Logger.debug("No metadata found to remove with UUID "+id.toString)
     }
   }
 

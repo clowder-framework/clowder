@@ -1,7 +1,10 @@
 package services
 
+import api.UserRequest
+import play.api.libs.Files
 import play.api.libs.json.JsValue
 import models.{MetadataDefinition, ResourceRef, UUID, Metadata, User}
+import play.api.mvc.MultipartFormData
 
 /**
  * MetadataService for add and query metadata

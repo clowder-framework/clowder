@@ -183,7 +183,11 @@
 			</div>
 			<div class="row bottom-padding">
 				<div class="col-md-12 box-white-space" id="aboutdesc">
-					<p id ="ds_description" class="inline">@if(file.description.length > 0) { @Html(file.description) } else {Add a description}</p>
+					<p id ="ds_description" class="inline">@if(file.description.length > 0) { @Html(file.description) } else {
+						@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))){
+							Add a description
+						}
+					}</p>
 					@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {
 						<a id="edit-description" class="hiddencomplete" href="javascript:updateFileDescription()" title="Click to edit description">
 							<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
@@ -575,7 +579,7 @@
 			<div class="row bottom-padding">
 				<div class="col-md-12">
 					<h4>Comments</h4>
-					@if(user.isDefined) {
+					@if(Permission.checkPermission(Permission.AddComment, ResourceRef(ResourceRef.file, file.id))) {
 						@commentform(file.id.toString, "file")
 					}
 					<ol class="list-unstyled" id="reply_@file.id.toString">
@@ -781,7 +785,7 @@
 			<!-- Move the file to a dataset -->
 			<div class="row ds-section-sm border-top">
 				@if(datasets.length > 0) {
-					<h4>Dataset containing the file</h4>
+					<h4>@Messages("a.contains.b", Messages("dataset.title"), "file")</h4>
 						<!-- A file cannot be part of more datasets as of June 2016. The code, however supports datasets sharing  -->
 					@datasets.map { dataset =>
 						<div id="dat_@dataset.id" class="row bottom-padding">
@@ -804,7 +808,7 @@
 								<select id="datasetAddSelect" class="form-control add-resource"></select>
 								<span class="input-group-btn">
 									<a href="#" class="btn btn-default btn-large" id="moveFileBtn" title="Move file to a dataset" onclick="moveFromDatasetToDataset(null,'@dataset.id','@file.id')">
-										<span class="glyphicon glyphicon-move"></span> Move to dataset
+										<span class="glyphicon glyphicon-move"></span> Move to @Messages("dataset.title")
 									</a>
 								</span>
 							</div>
@@ -830,7 +834,7 @@
 								<select id="datasetAddSelect" class="form-control add-resource"></select>
 								<span class="input-group-btn">
 									<a href="#" class="btn btn-default btn-large" id="moveFileBtn" title="Move file from folder to a dataset" onclick="moveFromDatasetToDataset('@folder.id','@folder.parentDatasetId','@file.id')">
-										<span class="glyphicon glyphicon-move"></span> Move to dataset
+										<span class="glyphicon glyphicon-move"></span> Move to @Messages("dataset.title")
 									</a>
 								</span>
 							</div>
@@ -841,7 +845,7 @@
 				<script language="javascript">
 						$("#datasetAddSelect").select2({
 							theme: "bootstrap",
-							placeholder: "Select a dataset",
+							placeholder: "Select a @Messages("dataset.title")",
 							allowClear: true,
 							ajax: {
 								url: function(params) {

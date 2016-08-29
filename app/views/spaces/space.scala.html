@@ -1,7 +1,7 @@
 @(space: ProjectSpace, collections: List[Collection], datasets: List[Dataset], userRoleMap: Map[User, String])(implicit user: Option[models.User])
 @import play.api.Play.current
 @import api.Permission
-
+@import play.api.i18n.Messages
 @main(space.name) {
 
 
@@ -25,21 +25,21 @@
                 <h1 id="spacenamedisplay" class="space-title"><span class="glyphicon glyphicon-tent"></span> @space.name</h1>
             <p><span id="spacedescdisplay">@space.description</span></p>
             <hr/>
-            @defining(spaces.spaceTitle().toString().filter(_ >= ' ')) { spaceTitle =>
+
                 @if(user.isDefined && Permission.checkPermission(Permission.DeleteSpace, ResourceRef(ResourceRef.space, space.id))){
-                    <button id="deleteButton" onclick="confirmDeleteResource('space','@(spaceTitle)','@(space.id)','@(space.name.replace("'","&#39;"))',true, '@(routes.Spaces.list(""))')"
-                        class="btn btn-link" title="Delete the @spaceTitle but not its contents">
+                    <button id="deleteButton" onclick="confirmDeleteResource('space','@Messages("space.title")','@(space.id)','@(space.name.replace("'","&#39;"))',true, '@(routes.Spaces.list(""))')"
+                        class="btn btn-link" title="Delete the @Messages("space.title") but not its contents">
                               <span class="glyphicon glyphicon-trash"></span> Delete</button>
                 } else {
-                    <button disabled id="deleteButton" class="btn btn-link" title="Delete the @spaceTitle but not its contents">
+                    <button disabled id="deleteButton" class="btn btn-link" title="Delete the @Messages("space.title") but not its contents">
                         <span class="glyphicon glyphicon-trash"></span> Delete</button>
                 }
-            }
+
             @if(user.isDefined && Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))){
-                <a id="create_dataset" href="@routes.Datasets.newDataset(Some(space.id.toString()), None)" class="btn btn-link" title="Create dataset">
-                    <span class="glyphicon glyphicon-ok"></span> Create Dataset</a>
-                <a id="create_collection" href="@routes.Collections.newCollection(Some(space.id.toString()))" class="btn btn-link" title="Create collection">
-                    <span class="glyphicon glyphicon-ok"></span> Create Collection</a>
+                <a id="create_dataset" href="@routes.Datasets.newDataset(Some(space.id.toString()), None)" class="btn btn-link" title="@Messages("create.title", Messages("dataset.title"))">
+                    <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("dataset.title"))</a>
+                <a id="create_collection" href="@routes.Collections.newCollection(Some(space.id.toString()))" class="btn btn-link" title="@Messages("create.title", Messages("collections.title"))">
+                    <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("collections.title"))</a>
             }
         </div>
     </div>
