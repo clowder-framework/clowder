@@ -26,7 +26,7 @@
               {{#ifCond this.score 0}}
                     <li><span class="glyphicon glyphicon-ok yellow" > </span> {{this.rule_name}} <span class="yellow">This info is not required</span> </li>
               {{else}}
-                    <li> <span class="glyphicon glyphicon-remove red" > </span>{{this.rule_name}} <span class="red">{{this.message}}</span>
+                    <li> <span class="glyphicon glyphicon-remove red" > </span> {{this.rule_name}} <span class="red">{{this.message}}</span>
                     {{#contains this.rule_name 'metadata'}}
                          <a href='{{../../../../href_metadata}}'> Edit metadata</a>
                     {{else}}
