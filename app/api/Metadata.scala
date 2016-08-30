@@ -155,7 +155,7 @@ class Metadata @Inject()(
             var uri = (body \ "uri").asOpt[String].getOrElse("")
             // assign a default uri if not specified
             if(uri == "") {
-              // http://clowder.ncsa.illinois.edu/metadata/CamelCase
+              // http://clowder.ncsa.illinois.edu/metadata#CamelCase
               uri = play.Play.application().configuration().getString("metadata.uri.prefix") + "#" + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
               body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
             }
