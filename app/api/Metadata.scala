@@ -128,9 +128,12 @@ class Metadata @Inject()(
           var uri = (body \ "uri").asOpt[String].getOrElse("")
           spaceService.get(spaceId) match {
             case Some(space) => {
-
-              uri =  play.Play.application().configuration().getString("metadata.uri.prefix") + WordUtils.capitalize(space.name).replaceAll("\\s", "") + '/' + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
-              body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
+              // assign a default uri if not specified
+              if(uri == "") {
+                // http://clowder.ncsa.illinois.edu/metadata/{uuid}#CamelCase
+                uri = play.Play.application().configuration().getString("metadata.uri.prefix") + "/" + space.id.stringify + "#" + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
+                body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
+              }
               addDefinitionHelper(uri, body, Some(space.id), u, Some(space))
             }
             case None => BadRequest("The space does not exist")
@@ -150,8 +153,12 @@ class Metadata @Inject()(
           var body = request.body
           if ((body \ "label").asOpt[String].isDefined && (body \ "type").asOpt[String].isDefined ) {
             var uri = (body \ "uri").asOpt[String].getOrElse("")
-            uri = play.Play.application().configuration().getString("metadata.uri.prefix") + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
-            body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
+            // assign a default uri if not specified
+            if(uri == "") {
+              // http://clowder.ncsa.illinois.edu/metadata/CamelCase
+              uri = play.Play.application().configuration().getString("metadata.uri.prefix") + "#" + WordUtils.capitalize((body \ "label").as[String]).replaceAll("\\s", "")
+              body = body.as[JsObject] + ("uri" -> Json.toJson(uri))
+            }
             addDefinitionHelper(uri, body, None, user, None)
           } else {
             BadRequest(toJson("Invalid Resource type"))

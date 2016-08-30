@@ -1,7 +1,4 @@
 function addDefinition(data, pageURL, spaceId){
-  if($('#uri').text().length === 0) {
-    data["uri"] = "";
-  }
   var url = jsRoutes.api.Metadata.addDefinition()
   if(spaceId != "") {
     url = jsRoutes.api.Metadata.addDefinitionToSpace(spaceId);
