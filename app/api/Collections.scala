@@ -120,7 +120,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Remove dataset from collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: String) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
+  def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: String) = PermissionAction(Permission.RemoveResourceFromCollection, Some(ResourceRef(ResourceRef.collection, collectionId)), Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     collections.removeDataset(collectionId, datasetId, Try(ignoreNotFound.toBoolean).getOrElse(true)) match {
       case Success(_) => {
 
