@@ -21,7 +21,7 @@
                     validateButton.removeAttr("disabled");
                     queryParameter.attr("disabled", true);
                     queryParameterValue.attr("disabled", true);
-                } else if ($(this).val() == "wktlocation") {
+                } else if ($(this).val() == "wkt") {
                     definitions.attr("disabled", true);
                     validateButton.attr("disabled", true);
                     queryParameter.attr("disabled", true);
@@ -183,7 +183,8 @@
                                 case "scientific_variable" => {Scientific Variable}
                                 case "datetime" => {Date and Time}
                                 case "listgeocode" => {Location}
-                                case "wktlocation" => {WKT Location}
+                                case "wkt" => {WKT Location}
+                                case _ => {Error: unrecognized type}
                             }
                         </td>
                         <td>
@@ -238,7 +239,7 @@
                                     <option value="list">List</option>
                                     <option value="listjquery">Queryable List</option>
                                     <option value="listgeocode">Location</option>
-                                    <option value="wktlocation">WKT Location</option>
+                                    <option value="wkt">WKT Location</option>
                                     <option value="scientific_variable">Scientific Variable</option>
                                     <option value="datetime">Date and Time</option>
                                 </select>

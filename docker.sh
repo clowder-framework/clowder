@@ -26,7 +26,6 @@ ${DEBUG} rm -rf docker/files
 ${DEBUG} mkdir -p docker/files
 ${DEBUG} unzip -q -d docker ${ZIPFILE}
 ${DEBUG} mv docker/$( basename ${ZIPFILE} .zip ) docker/files/clowder
-${DEBUG} mkdir docker/files/clowder/custom
 
 # find version if we are develop/latest/release and if should be pushed
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
