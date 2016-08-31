@@ -25,16 +25,13 @@
                                     <!-- only with context and user (not extractor) generated -->
                                     @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
                                         <!-- ids don't like spaces, you can use regex for removing different characters in metadata names (key) as well -->
-                                        @defining(contextId.get + key.replaceAll("[() ]","") + resourceId.toString()) { mid =>
-                                                @if(user.isDefined) {
-                                                    <a id='@mid' href="javascript:void(0)"
-                                                    onmouseover="getMetadataContext('@mid','@contextId.get','@key');"
-                                                    onmouseout="leaveMetadataContext('@mid');">
-                                                        <strong>@key:</strong></a>
-                                                } else {
-                                                    <strong>@key:</strong>
-                                                }
-                                           @printContent(agent,value,contextId,contextURL,resourceId)
+                                        @defining(contextId.get + "-" + key.replaceAll("[() ]","") + "-" + resourceId.toString()) { mid =>
+                                            @if(user.isDefined) {
+                                                <a class='context-key' id='@{mid}' href="javascript:void(0)">@key</a><span>:</span>
+                                            } else {
+                                                @key:
+                                            }
+                                            @printContent(agent,value,contextId,contextURL,resourceId)
                                         }
                                     } else {
                                         @contextURL match {
@@ -55,15 +52,12 @@
                                         <span class="glyphicon glyphicon-minus"></span>
                                     </a>
                                     @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
-                                        @defining(contextId.get + key.replaceAll("[() ]","") + resourceId.toString()) { mid =>
-                                                @if(user.isDefined) {
-                                                    <a id='@mid' href="javascript:void(0)"
-                                                    onmouseover="getMetadataContext('@mid','@contextId.get','@key');"
-                                                    onmouseout="leaveMetadataContext('@mid');">
-                                                        <strong>@key:</strong></a>
-                                                } else {
-                                                    <strong>@key:</strong>
-                                                }
+                                        @defining(contextId.get + "-" + key.replaceAll("[() ]","") + "-" + resourceId.toString()) { mid =>
+                                            @if(user.isDefined) {
+                                                <a class='context-key' id='@{mid}' href="javascript:void(0)">@key</a><span>:</span>
+                                            } else {
+                                                @key:
+                                            }
                                             @printContent(agent,value,contextId,contextURL,resourceId)
                                         }
                                     } else {
@@ -82,14 +76,11 @@
                             case _ => {
                                 <li class="md-block">
                                 @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
-                                    @defining(contextId.get + key.replaceAll("[() ]","") + resourceId.toString()) { mid =>
+                                    @defining(contextId.get + "-" + key.replaceAll("[() ]","") + "-" + resourceId.toString()) { mid =>
                                             @if(user.isDefined) {
-                                                <a id='@mid' href="javascript:void(0)"
-                                                onmouseover="getMetadataContext('@mid','@contextId.get','@key');"
-                                                onmouseout="leaveMetadataContext('@mid');">
-                                                    <strong>@key:</strong></a>
+                                                <a class='context-key' id='@{mid}' href="javascript:void(0)">@key</a><span>:</span>
                                             } else {
-                                                <strong>@key:</strong>
+                                                @key:
                                             }
                                         @printContent(agent,value,contextId,contextURL,resourceId)
                                     }
@@ -236,6 +227,20 @@
             });
         })
 
+        $(document).on('mouseenter', '.context-key',
+            function(){
+                var contextId = this.id.split("-",1)[0];
+                //console.log(this.id,contextId,this.textContent);
+                getMetadataContext(this.id, contextId, this.textContent)
+            }
+        );
+
+        $(document).on('mouseleave', '.context-key',
+                function(){
+                    leaveMetadataContext(this.id)
+                }
+        );
+
         // get metadata definitions
         function getMetadataContext(mid, uuid, key) {
             var request = jsRoutes.api.ContextLD.getContextById(uuid).ajax({
@@ -252,7 +257,7 @@
                 //console.log(context);
                 $("#"+mid).popover({
                     content:context,
-                    trigger:'hover',
+                    //trigger:'hover',
                     placement:'top',
                     template: '<div class="popover" role="tooltip" style="max-width:600px;word-break:break-all"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>'
                 });
