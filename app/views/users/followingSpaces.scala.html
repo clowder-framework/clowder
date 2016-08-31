@@ -1,5 +1,5 @@
 @(spacesList: List[models.ProjectSpace], date: String, limit: Int, owner: Option[String], showAll: Boolean, mode: Option[String], prev: Int, next: Int, title: Option[String])(implicit user: Option[models.User])
-
+@import play.api.i18n.Messages
 @main("Following Spaces") {
 
     @util.masonry()
@@ -21,7 +21,7 @@
                 <button type="button" class="btn btn-default" href="#list-view" id="list-view-btn"><span class="glyphicon glyphicon-th-list"></span></button>
             </div>
             @if(user.isDefined){
-                <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new @{spaces.spaceTitle()}"> <span class="glyphicon glyphicon-ok"></span> Create</a>
+                <a class="btn btn-primary btn-sm pull-right" id="create-space" href="@routes.Spaces.newSpace" title="Create a new @Messages("space.title")"> <span class="glyphicon glyphicon-ok"></span> Create</a>
             }
         </div>
     </div>

@@ -1,5 +1,5 @@
 @(curationObject: models.CurationObject, files :List[CurationFile], m: List[models.Metadata], limit:Int)(implicit user: Option[models.User])
-
+@import play.api.i18n.Messages
   @import helper._
   @import collection.JavaConverters._
   @import play.api.Play.current
@@ -49,7 +49,7 @@
           <b>Abstract</b>: @curationObject.description
 
         <br/>
-        <h4>Dataset <a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h4>
+        <h4> @Messages("dataset.title") <a href ="@routes.Datasets.dataset(curationObject.datasets(0).id)">@curationObject.datasets(0).name</a></h4>
         Note: The links in this page redirect to the live objects.<br/>
         <b>Size</b>: @{files.map(_.length).sum /1024} KB <br/>
         <b>File Formats</b>: @files.map(_.contentType).toSet.mkString(", ") <br/>

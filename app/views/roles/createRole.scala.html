@@ -1,5 +1,5 @@
 @(newRoleForm: Form[controllers.roleFormData], permissionsMap: Map[String, Boolean])(implicit user: Option[models.User])
-
+@import play.api.i18n.Messages
 @import helper._
 @import views.html.bootstrap3._
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f)}
@@ -7,7 +7,7 @@
 @main("Create Role") {
     <div class="page-header">
         <h1>Create new role</h1>
-        <p>Roles are used to moderate access to @{spaces.spaceTitle()}s, the top data Spaces.
+        <p>Roles are used to moderate access to @Messages("spaces.title"), the top data Spaces.
             Select the permissions from the list and add it to the new role.</p>
     </div>
     <div class="row">

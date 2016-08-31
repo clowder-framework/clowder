@@ -1,4 +1,5 @@
 @(resourceId: UUID, resourceType: Symbol, selectId: String, onClick:String, buttonText: String, buttonTitle: String, divId: String)
+@import play.api.i18n.Messages
 <div class="row bottom-padding" id="@divId">
     <div class="col-xs-12">
         <div class="form-inline">
@@ -22,7 +23,7 @@
 <script language="javascript">
         $("#@selectId").select2({
             theme: "bootstrap",
-            placeholder: "Select a @spaces.spaceTitle().toString().filter(_ >= ' ')",
+            placeholder: "Select a @Messages("space.title")",
             allowClear: true,
             ajax: {
                 url: function(params) {

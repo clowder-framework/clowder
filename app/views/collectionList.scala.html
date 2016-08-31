@@ -1,6 +1,6 @@
 @(collectionsList: List[models.Collection], prev: String, next: String, limit: Int, mode: Option[String], space: Option[String], title: Option[String], owner:Option[String], when: String, date: String)(implicit flash: play.api.mvc.Flash,  user: Option[models.User])
 
-@main("Collections") {
+@main( Messages("collections.title")) {
 
 @util.masonry()
     
@@ -12,7 +12,7 @@
 <div class="row">
     <div class="col-md-12">
         <h1>@Html(title.getOrElse("Collections"))</h1>
-        <p>Use Collections to bring together multiple datasets and their associated files in an almost unlimited number of ways.</p>
+        <p>@Messages("collection.list.message", Messages("collections.title").toLowerCase,  Messages("datasets.title").toLowerCase)</p>
     </div>
 </div>
 
@@ -21,7 +21,7 @@
     </div>
     <div class="col-md-1">
         @if(user.isDefined) {
-            <a id="create-collection" class="btn btn-primary btn-sm pull-right" href="@routes.Collections.newCollection(space)" title="Create a new collection"><span class="glyphicon glyphicon-ok"></span> Create</a>
+            <a id="create-collection" class="btn btn-primary btn-sm pull-right" href="@routes.Collections.newCollection(space)" title="Create a new collection"><span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", "")</a>
         }
 
     </div>
