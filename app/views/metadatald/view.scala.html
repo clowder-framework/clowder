@@ -122,15 +122,12 @@
         @agent.operation by
         @if(agent.displayName.length > 0) {
             @if(agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
-                @defining(resourceId.toString() + mid.toString()) { aid =>
-                        @if(user.isDefined) {
-                            <a id='@aid' href="@routes.Profile.viewProfileUUID(agent.id)"
-                            onmouseover="getAgentContext('@aid','@agent.id');"
-                            onmouseout="leaveAgentContext('@aid');">@agent.displayName</a>
-                        } else {
-                            @agent.displayName
-                        }
-
+                @defining(agent.id.toString() + "-" + resourceId.toString() + "-" + mid.toString()) { aid =>
+                    @if(user.isDefined) {
+                        <a class='agent-context-key' id='@{aid}' href="javascript:void(0)">@agent.displayName</a>
+                    } else {
+                        @agent.displayName
+                    }
                 }
             } else {
                 @if(!agent.url.isDefined) {
@@ -227,19 +224,15 @@
             });
         })
 
-        $(document).on('mouseenter', '.context-key',
-            function(){
-                var contextId = this.id.split("-",1)[0];
-                //console.log(this.id,contextId,this.textContent);
-                getMetadataContext(this.id, contextId, this.textContent)
-            }
-        );
+        $(document).on('mouseenter', '.context-key', function(){
+            var contextId = this.id.split("-",1)[0];
+            //console.log(this.id,contextId,this.textContent);
+            getMetadataContext(this.id, contextId, this.textContent)
+        });
 
-        $(document).on('mouseleave', '.context-key',
-                function(){
-                    leaveMetadataContext(this.id)
-                }
-        );
+        $(document).on('mouseleave', '.context-key', function(){
+            leaveMetadataContext(this.id)
+        });
 
         // get metadata definitions
         function getMetadataContext(mid, uuid, key) {
@@ -275,6 +268,16 @@
         function leaveMetadataContext(mid) {
             $("#"+mid).popover('hide');
         }
+
+        $(document).on('mouseenter', '.agent-context-key', function(){
+            var contextId = this.id.split("-",1)[0];
+            //console.log(this.id,contextId);
+            getAgentContext(this.id, contextId)
+        });
+
+        $(document).on('mouseleave', '.agent-context-key', function(){
+            leaveAgentContext(this.id)
+        });
 
         // get agent author definitions
         function getAgentContext(aid, uuid) {
