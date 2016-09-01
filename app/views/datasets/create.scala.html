@@ -19,9 +19,26 @@
                 case (Some(id), Some(name)) => {
                     <span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(UUID(id))"> @Html(name)</a>
                     <span class="glyphicon glyphicon-chevron-right"></span>
+                    @collection match {
+                        case Some(coll) => {
+                            <span class="glyphicon glyphicon-th-large"></span><a href="@routes.Collections.collection(coll.id)"> @Html(coll.name)</a>
+                            <span class="glyphicon glyphicon-chevron-right"></span>
+                        }
+                        case None => {}
+                     }
                     <span class="glyphicon glyphicon-briefcase"></span> @Messages("create.header", Messages("dataset.title"))
                 }
-                case (_, _) => {}
+                case (_, _) => {
+                    @collection match {
+                        case Some(coll) => {
+                            <span class="glyphicon glyphicon-th-large"></span><a href="@routes.Collections.collection(coll.id)"> @Html(coll.name)</a>
+                            <span class="glyphicon glyphicon-chevron-right"></span>
+                            <span class="glyphicon glyphicon-briefcase"></span> @Messages("create.header", Messages("dataset.title"))
+                        }
+                        case None => {}
+                    }
+
+                }
             }
         </h4>
     </div>
