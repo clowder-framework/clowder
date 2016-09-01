@@ -1,4 +1,4 @@
-@(spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], collection: Option[Collection],collectionSpaces : List[String], showAccess: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+@(spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], spaceName: Option[String], collection: Option[Collection],collectionSpaces : List[String], showAccess: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import models.DatasetStatus
 @import play.api.i18n.Messages
@@ -14,7 +14,16 @@
             var isDescRequired = @isDescriptionRequired;
     </script>
     <div>
-
+        <h4>
+            @(spaceId, spaceName) match {
+                case (Some(id), Some(name)) => {
+                    <span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(UUID(id))"> @Html(name)</a>
+                    <span class="glyphicon glyphicon-chevron-right"></span>
+                    <span class="glyphicon glyphicon-briefcase"></span> @Messages("create.header", Messages("dataset.title"))
+                }
+                case (_, _) => {}
+            }
+        </h4>
     </div>
     <div class="page-header">
         <h1>@Messages("create.header", Messages("dataset.title"))</h1>

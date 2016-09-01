@@ -58,22 +58,20 @@ class Datasets @Inject()(
       }
 
     var hasVerifiedSpace = false
-    val spaceId = space match {
+    val (spaceId, spaceName) = space match {
       case Some(s) => {
         spaceService.get(UUID(s)) match {
           case Some(space) => {
             hasVerifiedSpace = !space.isTrial
-            Some(space.id.toString)
+            (Some(space.id.toString), Some(space.name))
           }
-          case None => None
+          case None => (None, None)
         }
       }
-      case None => None
+      case None => (None, None)
     }
 
-
     var collectionSpaces : ListBuffer[String] = ListBuffer.empty[String]
-
 
     val collectionSelected = collection match {
       case Some(c) => {
@@ -103,7 +101,7 @@ class Datasets @Inject()(
       (!play.Play.application().configuration().getBoolean("verifySpaces") || hasVerifiedSpace)
 
     Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected, collectionSpaces.toList ,showAccess))
+      RequiredFieldsConfig.isDescriptionRequired, spaceId, spaceName, collectionSelected, collectionSpaces.toList ,showAccess))
 
   }
 
