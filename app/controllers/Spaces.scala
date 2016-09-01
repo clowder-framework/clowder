@@ -98,7 +98,7 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
         case Some(s) => {
           val runningExtractors: List[String] = extractors.getExtractorNames()
           val selectedExtractors: List[String] = spaces.getAllExtractors(id)
-          Ok(views.html.spaces.updateExtractors(runningExtractors, selectedExtractors, id))
+          Ok(views.html.spaces.updateExtractors(runningExtractors, selectedExtractors, id, s.name))
         }
         case None => InternalServerError(spaceTitle + " not found")
     }

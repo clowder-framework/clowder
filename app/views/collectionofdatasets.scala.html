@@ -34,6 +34,43 @@
 		<!-- left column -->
 		<div class="col-md-8">
 			<div class="row">
+				<div>
+				@collectionSpaces_canRemove match {
+					case Some(spaces_map) => {
+						@if(spaces_map.size == 1) {
+							@spaces_map.map { case (s, v) =>
+							<h4>
+								<span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(s.id)"> @Html(s.name)</a>
+								<span class="glyphicon glyphicon-chevron-right"></span>
+								<span class="glyphicon glyphicon-briefcase"></span> @Html(collection.name)
+							</h4>
+							}
+
+						} else  { @if(spaces_map.size > 1) {
+
+							<div class="dropdown">
+								<h4>
+									<button class="btn-link dropdown-toggle" type="button" id="dropdown_space_list" data-toggle="dropdown"
+									aria-haspopup="true" aria-expanded="true">
+										<span class="glyphicon glyphicon-tent"></span> <span class="caret"></span>
+									</button>
+									<ul class="dropdown-menu" arialanelledby="dropdown_space_list">
+									@spaces_map.map { case (s,v) =>
+									<li><a href="@routes.Spaces.getSpace(s.id)"><span class="glyphicon glyphicon-tent"></span> @Html(s.name)</a></li>
+									}
+									</ul>
+									<span class="glyphicon glyphicon-chevron-right"></span>
+									<span class="glyphicon glyphicon-briefcase"></span> @Html(collection.name)
+								</h4>
+							</div>
+
+						}
+						}
+
+					}
+					case None => {}
+				}
+				</div>
 				<div class="col-xs-12 collection-title" id="coll-title">
 					<h1 id ="collectiontitle" class="inline"><span class="glyphicon glyphicon-th-large"></span> @Html(collection.name)</h1>
 					@if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {

@@ -3,6 +3,12 @@
 @main("Staging Area") {
     <div class="row">
         <div class="col-md-12">
+            <h4>
+                <span class="glyphicon glyphicon-tent"></span>  <a href="@routes.Spaces.getSpace(space.id)"> @space.name</a>
+                <span class="glyphicon glyphicon-chevron-right"></span>
+                <span class="glyphicon glyphicon-book"></span> Staging Area
+
+            </h4>
             <h1>Staging Area</h1>
             <h5>@Messages("space.title"): <a href="@routes.Spaces.getSpace(space.id)">@space.name</a></h5>
         </div>

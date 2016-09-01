@@ -1,8 +1,16 @@
-@(runningExtractors: List[String], selectedExtractors: List[String], space: UUID)(implicit user: Option[models.User])
+@(runningExtractors: List[String], selectedExtractors: List[String], space: UUID, spaceName: String)(implicit user: Option[models.User])
 
 @import helper._
 
 @main("Space") {
+	<div>
+		<h4>
+			<span class="glyphicon glyphicon-tent"></span>  <a href="@routes.Spaces.getSpace(space)"> @spaceName</a>
+			<span class="glyphicon glyphicon-chevron-right"></span>
+			<span class="glyphicon glyphicon-fullscreen"></span> Extractors
+
+		</h4>
+	</div>
  @if(runningExtractors.size == 0) {
 	<div class="page-header">
         <h1> No extractors running</h1>

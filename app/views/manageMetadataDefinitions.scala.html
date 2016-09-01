@@ -135,13 +135,23 @@
     </script>
 
 	<div class="page-header">
-		<h1>Metadata Terms & Definitions</h1>
+
+
         @(spaceName, spaceId) match {
             case (Some(space_name), Some(space_id)) => {
+                <h4>
+                    <span class="glyphicon glyphicon-tent"></span><a href="@routes.Spaces.getSpace(space_id)"> @space_name</a>
+                    <span class="glyphicon glyphicon-chevron-right"></span>
+                    <span class="glyphicon glyphicon-list"></span> Metadata Definitions
+                </h4>
+                <h1>Metadata Terms & Definitions</h1>
                 <h4><strong>@Messages("space.title"): </strong><a href="@routes.Spaces.getSpace(space_id)">@space_name</a> </h4>
                 <p> The following metadata terms will be available for this @Messages("space.title")'s datasets, files, and curation objects. To add a new term scroll to the bottom of the page.</p>
             }
-            case (_, _) => {<p>The following metadata definitions will be available in datasets and files that are not in a space, and inherited by new @Messages("spaces.title").</p>}
+            case (_, _) => {
+                <h1>Metadata Terms & Definitions</h1>
+                <p>The following metadata definitions will be available in datasets and files that are not in a space, and inherited by new @Messages("spaces.title").</p>
+                }
         }
 
 	</div>

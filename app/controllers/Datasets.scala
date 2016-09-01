@@ -1,23 +1,17 @@
 package controllers
 
-import java.io.FileInputStream
-import java.text.SimpleDateFormat
-import java.util.Date
+
 import javax.inject.Inject
 import api.Permission
 import api.Permission.Permission
-import fileutils.FilesUtils
 import models._
-import org.apache.commons.lang.StringEscapeUtils._
 import play.api.Logger
 import play.api.Play.current
-import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.json.Json._
 import services._
-import util.{License, FileUtils, Formatters, RequiredFieldsConfig}
+import util.{FileUtils, Formatters, RequiredFieldsConfig}
 import scala.collection.immutable._
-import scala.collection.mutable.{ListBuffer, Map => MutableMap}
-import scala.util.matching.Regex
+import scala.collection.mutable.ListBuffer
 import play.api.i18n.Messages
 
 /**
@@ -109,7 +103,7 @@ class Datasets @Inject()(
       (!play.Play.application().configuration().getBoolean("verifySpaces") || hasVerifiedSpace)
 
     Ok(views.html.datasets.create(decodedSpaceList.toList, RequiredFieldsConfig.isNameRequired,
-      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected,collectionSpaces.toList ,showAccess))
+      RequiredFieldsConfig.isDescriptionRequired, spaceId, collectionSelected, collectionSpaces.toList ,showAccess))
 
   }
 

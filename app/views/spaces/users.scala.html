@@ -5,6 +5,13 @@
 @main(space.name) {
     <div class="row">
         <div class="col-md-12">
+            <div>
+                <h4>
+                    <span class="glyphicon glyphicon-tent"></span><a href= "@routes.Spaces.getSpace(space.id)" title="@space.name"> @space.name</a>
+                    <span class="glyphicon glyphicon-chevron-right"></span>
+                    <span class="glyphicon glyphicon-user"></span> Manage Users
+                </h4>
+            </div>
             <div class="row">
                 <div class="col-md-12" id="s-title">
                     <h1 id="space-title" class="inline">Manage Users of @Messages("space.title")
