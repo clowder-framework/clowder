@@ -3,7 +3,8 @@
 		sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset], folders: List[Folder],
 		mds: List[models.Metadata],
 		rdfExported: Boolean,
-		extractionsStatus: List[Extraction], outputFormats: Option[List[String]], spaceId: Option[String], access:String)(implicit user: Option[models.User])
+		extractionsStatus: List[Extraction], outputFormats: Option[List[String]], spaceId: Option[String], access:String,
+		folderHierarchy: List[Folder], spaces:List[ProjectSpace], allDatasets: List[Dataset])(implicit user: Option[models.User])
 
 @import helper._
 @import play.api.Play.current
@@ -152,23 +153,42 @@
 	<div class="row">
 		<div class="col-md-8 col-sm-8 col-lg-8">
 			<div class="row">
+				<div><h4>
+					@if(spaces.length == 1 ) {
+						@spaces.map { s =>
+							<span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(s.id)"> @Html(s.name)</a>
+						  	<span class="glyphicon glyphicon-chevron-right"></span>
+						}
+					} else {
+						@if(spaces.length > 1) {
+							<span class="dropdown">
+								<button class="btn-link dropdown-toggle" type="button" id="dropdown_space_list" data-toggle="dropdown"
+								aria-haspopup="true" aria-expanded="true">
+									<span class="glyphicon glyphicon-tent"></span> <span class="caret"></span>
+								</button>
+								<ul class="dropdown-menu" arialanelledby="dropdown_space_list">
+									@spaces.map{ s =>
+										<li><a href="@routes.Spaces.getSpace(s.id)"><span class="glyphicon glyphicon-tent"></span> @Html(s.name)</a></li>
+									}
+								</ul>
+								<span class="glyphicon glyphicon-chevron-right"></span>
+							</span>
+						}
+					}
+					@if(allDatasets.length == 1 ) {
+						@allDatasets.map { ds =>
+						  <span class="glyphicon glyphicon-briefcase"></span> <a href="@routes.Datasets.dataset(ds.id)"> @Html(ds.name)</a>
+							<span class="glyphicon glyphicon-chevron-right"></span>
+						}
+					}
+					@folderHierarchy.map { fd =>
+						<span class="glyphicon glyphicon-folder-close"></span> <a href="@routes.Datasets.dataset(allDatasets(0).id)#folderId=@fd.id">@fd.displayName</a>
+						<span class="glyphicon glyphicon-chevron-right"></span>
+					}
+					<span class="glyphicon glyphicon-file"></span> @Html(file.filename)
+				</h4>
+				</div>
 				<div id="file-name-div" class="file-title-div col-xs-12">
-					@if(datasets.length > 0) {
-						@datasets.map {dataset =>
-							<span class="h1">
-								<a href="@(routes.Datasets.dataset(dataset.id))" id='@dataset.id'> <span class="glyphicon glyphicon-briefcase"></span> @Html(dataset.name)</a>
-							</span>
-							<span class="glyphicon glyphicon-chevron-right" style="font-size: 150%;"></span>
-						}
-					}
-					@if(folders.length > 0) {
-						@folders.map { folder =>
-							<span class="h1">
-								<a href="@routes.Datasets.dataset(folder.parentDatasetId)#folderId=@folder.id"> <span class="glyphicon glyphicon-folder-close"></span> @folder.displayName</a>
-							</span>
-							<span class="glyphicon glyphicon-chevron-right" style="font-size: 150%;"></span>
-						}
-					}
 					<div id="prf-file-name" class="text-left inline">
 						<h1 id="file-name-title" class="inline"> <span class="glyphicon glyphicon-file"></span> @Html(file.filename)</h1>
 						@if(Permission.checkPermission(Permission.EditFile, ResourceRef(ResourceRef.file, file.id))) {

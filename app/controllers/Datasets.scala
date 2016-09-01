@@ -441,7 +441,7 @@ class Datasets @Inject()(
 
           var datasetSpaces: List[ProjectSpace]= List.empty[ProjectSpace]
 
-          var decodedSpaces_canRemove : Map[ProjectSpace, Boolean] = Map.empty;
+          var decodedSpaces_canRemove : Map[ProjectSpace, Boolean] = Map.empty
           var isInPublicSpace = false
           dataset.spaces.map{
             sp => spaceService.get(sp) match {
@@ -491,7 +491,7 @@ class Datasets @Inject()(
           } else {
             ""
           }
-          var accessOptions = new ListBuffer[String]()
+          val accessOptions = new ListBuffer[String]()
           if(isInPublicSpace){
             accessOptions.append(spaceTitle + " Default (Public)")
           } else {
