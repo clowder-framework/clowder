@@ -178,7 +178,7 @@ class MongoDBEventService @Inject() (
   }
 
   def getCommentEvent( user: User, limit: Option[Integer]): List[Event] ={
-    val datasetList = datasets.listAccess(0, Set(Permission.ViewComments), Some(user), true, true)
+    val datasetList = datasets.listAccess(0, Set(Permission.AddComment), Some(user), true, true)
     val fileIdList = (datasetList.map(_.files) ::: datasetList.map(d => Folders.findByParentDatasetId(d.id).map(_.files).flatten)).flatten
     val eventList = (Event.find(MongoDBObject(
         "event_type" -> "add_comment_dataset") ++
