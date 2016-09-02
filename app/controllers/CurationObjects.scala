@@ -848,5 +848,9 @@ class CurationObjects @Inject()(
 
     out.toMap
   }
+
+  def getPublishedData() = UserAction(needActive=false) { implicit request =>
+    Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title, owner, when, date))
+  }
 }
 
