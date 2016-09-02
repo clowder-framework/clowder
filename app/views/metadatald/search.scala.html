@@ -142,6 +142,7 @@
                                 return jsRoutes.api.Metadata.getAutocompleteName(filter.term).url
                             }
                         },
+                        // Populate autocomplete as user types
                         processResults: function(data, page) {
                             var outMap = {}
 
@@ -151,16 +152,21 @@
                                 // Metadata Definitions
                                 if (typeof(entry) == 'object') {
                                     var entryGroup = "Metadata Definitions";
-                                    var entryData = {text: entry.json.label, id: "metadata."+entry.json.label}
+                                    var entryData = {text: entry.json.label, id: "metadata."+entry.json.label};
+                                // suggestions from elasticsearch
                                 } else {
                                     if (entry.indexOf('.') > -1) {
                                         if (entry.indexOf('/extractors/') > -1) {
-                                            var entryGroup = " Extractor: "+entry.substring(entry.indexOf('/extractors/')+12,
-                                                            entry.lastIndexOf('.'));
+                                            // Group extractor-specific fields together under extractor
+                                            var entryGroup = entry.substring(entry.indexOf('/extractors/')+12, entry.lastIndexOf('.'))+" (Extractor)";
+                                        }
+                                        else if (entry.split('.').length > 2 ){
+                                            // Group user-submitted metadata under user's name
+                                            var entryGroup = entry.substring(entry.indexOf('.')+1, entry.lastIndexOf('.'))+" (User)";
                                         }
                                         else {
-                                            var trimName = entry.replace(".metadata", "");
-                                            var entryGroup = "User: "+trimName.substring(trimName.indexOf('.')+1, trimName.lastIndexOf('.'));
+                                            // This should be metadata definitions otherwise
+                                            var entryGroup = "Metadata Definitions";
                                         }
                                         var entryData = {id: entry, text: entry.substring(entry.lastIndexOf('.')+1, entry.length)}
                                     } else {

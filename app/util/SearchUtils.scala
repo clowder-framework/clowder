@@ -46,7 +46,15 @@ object SearchUtils {
             metadata += (subkey -> Json.arr((subjson \ subkey)))
           }
         })
-      } else {
+      } else if (md.creator.typeOfAgent=="user") {
+        // Override the creator if this is non-UI user-submitted metadata and group the objects together
+        val creator = "user-submitted"
+        if (metadata.keySet.exists(_ == creator))
+          metadata += (creator -> (metadata(creator).as[JsObject] ++ (md.content.as[JsObject])))
+        else
+          metadata += (creator -> md.content.as[JsObject])
+      }
+      else {
         // If we already have some metadata from this creator, merge the results; otherwise, create new entry
         if (metadata.keySet.exists(_ == creator))
           metadata += (creator -> (metadata(creator).as[JsObject] ++ (md.content.as[JsObject])))
@@ -81,6 +89,7 @@ object SearchUtils {
     // Get metadata for Dataset
     var metadata = Map[String, JsValue]()
     for (md <- metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.dataset, id))) {
+
       val creator = md.creator.displayName
 
       // If USER metadata, ignore the name and set the Metadata Definition field to the creator

@@ -946,12 +946,8 @@ def uploadExtract() =
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
               val xmlToJSON = FilesUtils.readXMLgetJSON(uploadedFile.ref.file)
               files.addXMLMetadata(id, xmlToJSON)
+            }
 
-              //current.plugin[ElasticsearchPlugin].foreach { _.index(SearchUtils.getElasticsearchObject(f), nameOfIndex+"multimedia") }
-            }
-            else {
-              //current.plugin[ElasticsearchPlugin].foreach { _.index(SearchUtils.getElasticsearchObject(f), nameOfIndex+"multimedia") }
-            }
             //add file to RDF triple store if triple store is used
             if (fileType.equals("application/xml") || fileType.equals("text/xml")) {
               play.api.Play.configuration.getString("userdfSPARQLStore").getOrElse("no") match {

@@ -59,7 +59,7 @@ class Metadata @Inject()(
     for (md_def <- vocabularies) {
       val currVal = (md_def.json \ "label").as[String]
       if (currVal.toLowerCase startsWith query.toLowerCase) {
-        listOfTerms.append(currVal)
+        listOfTerms.append("metadata."+currVal)
       }
     }
 
@@ -70,9 +70,10 @@ class Metadata @Inject()(
         for (term <- mdTerms) {
           // e.g. "metadata.http://localhost:9000/clowder/api/extractors/terraPlantCV.angle",
           //      "metadata.Jane Doe.Alternative Title"
-          listOfTerms.append(term)
+          if (!(listOfTerms contains term))
+            listOfTerms.append(term)
         }
-        Ok(toJson(listOfTerms))
+        Ok(toJson(listOfTerms.distinct))
       }
       case None => {
         BadRequest("Elasticsearch plugin is not enabled")
