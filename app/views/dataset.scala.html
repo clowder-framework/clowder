@@ -26,41 +26,40 @@
 		<div class="col-md-8">
             <div class="row">
                 <div>
+                    <h4>
                 @datasetSpaces_canRemove match {
                     case Some(spaces_map) => {
                         @if(spaces_map.size == 1) {
                             @spaces_map.map { case (s, v) =>
-                                <h4>
                                     <span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(s.id)"> @Html(s.name)</a>
-                                    <span class="glyphicon glyphicon-chevron-right"></span>
-                                    <span class="glyphicon glyphicon-briefcase"></span> @Html(dataset.name)
-                                </h4>
                             }
 
-                        } else  { @if(spaces_map.size > 1) {
+                        } else  {
+                            @if(spaces_map.size > 1) {
 
-                            <div class="dropdown">
-                            <h4>
-                                <button class="btn-link dropdown-toggle" type="button" id="dropdown_space_list" data-toggle="dropdown"
-                                aria-haspopup="true" aria-expanded="true">
-                                    <span class="glyphicon glyphicon-tent"></span> <span class="caret"></span>
-                                </button>
-                                <ul class="dropdown-menu" arialanelledby="dropdown_space_list">
-                                    @spaces_map.map { case (s,v) =>
-                                        <li><a href="@routes.Spaces.getSpace(s.id)"><span class="glyphicon glyphicon-tent"></span> @Html(s.name)</a></li>
-                                    }
-                                </ul>
-                                <span class="glyphicon glyphicon-chevron-right"></span>
-                                <span class="glyphicon glyphicon-briefcase"></span> @Html(dataset.name)
-                            </h4>
-                            </div>
+                                <span class="dropdown">
+                                    <button class="btn-link dropdown-toggle" type="button" id="dropdown_space_list" data-toggle="dropdown"
+                                    aria-haspopup="true" aria-expanded="true">
+                                        <span class="glyphicon glyphicon-tent"></span> <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu" arialanelledby="dropdown_space_list">
+                                        @spaces_map.map { case (s,v) =>
+                                            <li><a href="@routes.Spaces.getSpace(s.id)"><span class="glyphicon glyphicon-tent"></span> @Html(s.name)</a></li>
+                                        }
+                                    </ul>
+                                </span>
 
-                        }
+                            } else {
+                                <span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a>
+                            }
                         }
 
                     }
                     case None => {}
                 }
+                        <span class="glyphicon glyphicon-chevron-right"></span>
+                        <span class="glyphicon glyphicon-briefcase"></span> @Html(dataset.name)
+                    </h4>
                 </div>
                 <div class="col-md-12 caption break-word dataset-title" id="ds-title">
 

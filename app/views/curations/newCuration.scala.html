@@ -10,10 +10,44 @@
       var isDescRequired = @isDescriptionRequired;
     </script>
     @if(isNew) {
+        <h4>
+            @defaultspace match {
+                case Some(sp) => {
+                    <span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(sp.id)">@sp.name</a>
+                }
+                case None => {
+                    @user match {
+                        case Some(u) => {
+                            <span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(u.id)"> @u.fullName </a>
+                        }
+                        case None => {}
+                    }
+                }
+            }
+            <span class="glyphicon glyphicon-chevron-right"></span>
+            <span class="glyphicon glyphicon-globe"></span> Create New Curation Object
+        </h4>
         <div class="page-header">
             <h1>Create New Curation Object</h1>
         </div>
     } else {
+        <h4>
+            @defaultspace match {
+                case Some(sp) => {
+                    <span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(sp.id)">@sp.name</a>
+                }
+                case None => {
+                    @user match {
+                        case Some(u) => {
+                            <span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(u.id)"> @u.fullName </a>
+                        }
+                        case None => {}
+                    }
+                }
+            }
+            <span class="glyphicon glyphicon-chevron-right"></span>
+            <span class="glyphicon glyphicon-edit"></span> Edit Curation Object
+        </h4>
         <div class="page-header">
             <h1>Edit Curation Object</h1>
         </div>
