@@ -349,7 +349,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
                 case jv: JsArray => {
                   builder.startArray(clean_k)
                   jv.value.foreach(subv => {
-                    builder.value(subv.toString)
+                    builder.value(subv.toString.replace("\"",""))
                   })
                   builder.endArray()
                 }
@@ -427,7 +427,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             case Some(d) => builder.field(k, d)
             case None => {
               // Elasticsearch 2 does not allow periods in field names
-              builder.field(k.replace(".", "_"), v.value)
+              builder.field(k.replace(".", "_"), v.value.replace("\"",""))
             }
           }
         }
@@ -442,7 +442,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             case Some(d) => builder.field(k, d)
             case None => {
               // Elasticsearch 2 does not allow periods in field names
-              builder.field(k.replace(".", "_"), v.toString)
+              builder.field(k.replace(".", "_"), v.toString.replace("\"",""))
             }
           }
         }
@@ -536,7 +536,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
             |"parent_of": {"type": "string"},
             |"creator": {"type": "string"},
             |"created": {"type": "date", "format": "dateOptionalTime"},
-            |"metadata": {"type": "object" },
+            |"metadata": {"type": "object"},
             |"comments": {
               |"properties": {
                 |"created": {"type": "date", "format": "dateOptionalTime"},
@@ -570,7 +570,7 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
         //builder.startObject("wildcard").field(key, value+"*").endObject()
         builder.startObject().startObject("match").field(key, value).endObject().endObject()
       }
-      case "==" => builder.startObject().startObject("match").field(key, value).endObject().endObject()
+      case "==" => builder.startObject().startObject("match_phrase").field(key, value).endObject().endObject()
       case "<" => builder.startObject().startObject("range").startObject(key).field("lt", value).endObject().endObject().endObject()
       case ">" => builder.startObject().startObject("range").startObject(key).field("gt", value).endObject().endObject().endObject()
       case _ => {}
