@@ -583,10 +583,9 @@ DELETE         /api/sections/:id                                                
 # ----------------------------------------------------------------------
 # SEARCH ENDPOINT
 # ----------------------------------------------------------------------
-GET            /api/search                                                              @api.Search.search(query: String ?= "")
 GET            /api/search/json                                                         @api.Search.searchJson(query: String ?= "", grouping: String ?= "AND")
 GET            /api/search/multimediasearch                                             @api.Search.searchMultimediaIndex(section_id: UUID)
-
+GET            /api/search                                                              @api.Search.search(query: String ?= "")
 
 # ----------------------------------------------------------------------
 # GEOSTREAMS ENDPOINT

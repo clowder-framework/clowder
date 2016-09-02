@@ -75,8 +75,7 @@ class Metadata @Inject()(
         Ok(toJson(listOfTerms))
       }
       case None => {
-        Logger.debug("Search plugin not enabled")
-        Ok
+        BadRequest("Elasticsearch plugin is not enabled")
       }
     }
   }

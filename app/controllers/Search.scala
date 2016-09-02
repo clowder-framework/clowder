@@ -47,7 +47,6 @@ class Search @Inject() (
               files.get(resource.id) match {
                 case Some(f) => {
                   if (Permission.checkPermission(Permission.ViewFile, resource)) {
-                    // TODO: Can files be in more than one dataset?
                     var fileDatasets = ListBuffer(): ListBuffer[(String, String)]
                     datasets.findByFileId(f.id).map(ds => {
                       fileDatasets = fileDatasets :+ (ds.id.toString, ds.name)
