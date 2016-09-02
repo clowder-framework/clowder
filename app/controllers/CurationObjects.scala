@@ -849,8 +849,30 @@ class CurationObjects @Inject()(
     out.toMap
   }
 
-  def getPublishedData() = UserAction(needActive=false) { implicit request =>
-    Ok(views.html.datasetList(decodedDatasetList.toList, commentMap, prev, next, limit, viewMode, space, title, owner, when, date))
+  def getPublishedData(index: Int, limit: Int) = UserAction(needActive=false) { implicit request =>
+    implicit val user = request.user
+    implicit val context = scala.concurrent.ExecutionContext.Implicits.global
+
+    val endpoint = play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$", "")
+    Logger.debug(endpoint)
+    val futureResponse = WS.url(endpoint).get()
+
+    val result =  futureResponse.map {
+      case response =>
+        if(response.status >= 200 && response.status < 300 || response.status == 304) {
+//          response.json
+          Logger.debug((response.json\\ "Identifier").toString())
+        } else {
+          Logger.error("Error Getting published data: " + response.getAHCResponse.getResponseBody)
+
+        }
+      case _ =>           Logger.error("Error Getting published data" )
+
+    }
+
+    val rs = Await.result(result, Duration.Inf)
+    Ok(views.html.curations.publishedData(List.empty, 0, 0, limit))
+
   }
 }
 
