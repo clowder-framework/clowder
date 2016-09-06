@@ -946,3 +946,14 @@ table.borderless tbody tr td, table.borderless tbody tr th {
     margin: 50px 0px;
 }
 
+.glyphicon-one-fine-yellow-dot:before {
+    content:"\25cf";
+    font-size: 2em;
+    color: GoldenRod;
+}
+
+.glyphicon-one-fine-green-dot:before {
+    content:"\25cf";
+    font-size: 2em;
+    color: green;
+}

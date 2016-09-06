@@ -552,6 +552,7 @@ class CurationObjects @Inject()(
 
     val rs = Await.result(result, Duration.Inf)
 
+
     jsonResponse.as[List[MatchMakerResponse]]
   }
 
