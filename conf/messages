@@ -19,9 +19,6 @@ collection.title=Collection
 collection.parent.title=Parent Collection
 collection.child.title = Child Collection
 spaces.title=Spaces
-
-metadata.uri =If URI is not defined, clowder will generate a URI for the new term which will appear in the listing above.
-
 space.title=Space
 dataset.create.message={0} are the primary way to organize files. Share the {1} with a {2} to work with your team.  Permissions will be applied according to your {2}''s settings.
 dataset.create.collection.message=This {0} will be added to {1}
@@ -41,6 +38,8 @@ add.to = Add Files to {0}
 create.step2.message=  The {0}
 create.step2.message.2 = was successfully created. Please follow the instructions below to add files to the {0} or view the {0}.
 crate.space.access.message=This sets the privacy level for {0}, {1}, and files in the {2}. Access can be overwritten at the individual {3} level. By marking access "Public" you make the {2}''s content available to users outside of your project team.
+metadata.uri= A unique URI where this metadata is defined. This is not queried or used to populate metadata values, only for reference. If URI is not defined, Clowder will generate a URI for the new term which will appear in the listing above.
+
 #Login page
 securesocial.login.useEmailAndPassword=Or login using an email and password.
 securesocial.login.useEmailAndPasswordOnly=Login using an email and password.
