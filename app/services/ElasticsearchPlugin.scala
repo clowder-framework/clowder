@@ -529,6 +529,17 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
 
   /** Return string-encoded JSON object describing field types */
   def getElasticsearchObjectMappings(): String = {
+    """dynamic_templates": [
+    { "nonindexer": {
+      "match": "*",
+      "match_mapping_type":"string",
+      "mapping": {
+      "type": "string",
+      "index": "not_analyzed"
+    }
+    }}
+    ],"""
+
     """{"clowder_object": {
           |"properties": {
             |"resource_type": {"type": "string"},

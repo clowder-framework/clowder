@@ -118,19 +118,32 @@
         var repositoryTemplate = Handlebars.getTemplate('@routes.Assets.at("templates/spaces/mmrepository")');
         @for(curRepository <- mmResponse) {
             var rules = [];
+            var match = true;
             @for(rule <- curRepository.per_rule_score) {
                 rules.push({rule_name: "@rule.rule_name", score: "@rule.Score", message: "@rule.Message"});
+                @if(rule.Score < 0) {
+                 match = false;
+                }
             }
+            console.log(match);
             @if(curationObject.repository.isDefined && curationObject.repository.get.compareTo(curRepository.orgidentifier) == 0) {
-                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", href_profile: "@routes.Profile.viewProfileUUID(curationObject.author.id)", repositoryName: new Handlebars.SafeString("@curRepository.repositoryName"), orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules,  selected: true});
+                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", href_profile: "@routes.Profile.viewProfileUUID(curationObject.author.id)", repositoryName: new Handlebars.SafeString("@curRepository.repositoryName"), is_match:match, orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules,  selected: true});
                 $('#mmresults').append(html);
             } else {
 
-                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", href_profile: "@routes.Profile.viewProfileUUID(curationObject.author.id)", repositoryName: new Handlebars.SafeString("@curRepository.repositoryName"),  orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules, selected: false});
+                var html =repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", href_profile: "@routes.Profile.viewProfileUUID(curationObject.author.id)", repositoryName: new Handlebars.SafeString("@curRepository.repositoryName"), is_match:match, orgidentifier: "@curRepository.orgidentifier", per_rule_score: rules, selected: false});
                 $('#mmresults').append(html);
             }
         }
-
+        $('.matchmaker_link').on('click', function() {
+            if($(this).find('span').attr("class").indexOf("glyphicon-plus") > 0) {
+                $(this).find('span').removeClass("glyphicon-plus");
+                $(this).find('span').addClass("glyphicon-minus");
+            } else {
+                $(this).find('span').removeClass("glyphicon-minus");
+                $(this).find('span').addClass("glyphicon-plus");
+            }
+        });
 
         $('#updateResults').on('click', function() {
 
