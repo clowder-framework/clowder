@@ -37,7 +37,8 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
         val newbioForm = bioForm.fill(muser.profile.getOrElse(new models.Profile()))
         val allProjectOptions: List[String] = "" :: projects.getAllProjects()
         val allInstitutionOptions: List[String] = "" :: institutions.getAllInstitutions()
-        val emailtimes: List[String] = List("daily", "hourly", "weekly", "none")
+        //val emailtimes: List[String] = List("none", "hourly", "daily", "weekly")
+        val emailtimes: Map[String,String] = Map("none" -> "none", "hourly" -> "hourly (send on the hour)", "daily" -> "daily (send at 7:00 am)", "weekly" -> "weekly (send on Monday at 7:00 am)")
         Ok(views.html.editProfile(newbioForm, allInstitutionOptions, allProjectOptions, emailtimes))
       }
       case None => {
@@ -76,7 +77,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
       }
     }
   }
-                /** @deprecated use viewProfileUUID(uuid) */
+  /** @deprecated use viewProfileUUID(uuid) */
   def viewProfile(email: Option[String]) = AuthenticatedAction { implicit request =>
     implicit val user = request.user
 
@@ -94,7 +95,7 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
     user match {
       case Some(x: User) => {
         bioForm.bindFromRequest.fold(
-          errors => BadRequest(views.html.editProfile(errors, List.empty, List.empty, List.empty)),
+          errors => BadRequest(views.html.editProfile(errors, List.empty, List.empty, Map.empty)),
           profile => {
             users.updateProfile(x.id, profile)
 

@@ -2,6 +2,7 @@ package models
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import play.Logger
 import services.SchedulerService
 import services.DI
 
@@ -23,6 +24,7 @@ import services.DI
       val hour = new SimpleDateFormat("H").format(curr_time)
       val day_of_week = new SimpleDateFormat("u").format(curr_time)
       val day_of_month = new SimpleDateFormat("d").format(curr_time)
+      Logger.debug("Minute:" + minute + ", Hour:" + hour + ", Day of week:" + day_of_week + ", Day of month:" + day_of_month)
       var emailJobs = getEmailJobs(minute.toInt, hour.toInt, day_of_week.toInt)
       Events.sendEmailUser(emailJobs)
     }

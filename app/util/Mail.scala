@@ -36,6 +36,7 @@ object Mail {
    */
   def sendEmail(subject: String, user: Option[User], recipient: User, body: Html) {
     if (recipient.email.isDefined) {
+      Logger.debug("Subject:" + subject + ", From:" + emailAddress(user) + ", Recipient: " + emailAddress(Some(recipient)) + ", Body:")
       sendEmail(subject, emailAddress(user), emailAddress(Some(recipient))::Nil, body)
     }
   }
@@ -63,7 +64,7 @@ object Mail {
     val text = body.body
     if ( Logger.isDebugEnabled ) {
       Logger.debug("Sending email to %s".format(recipients.toList:_*))
-      Logger.debug("Mail = [%s]".format(text))
+      //Logger.debug("Mail = [%s]".format(text))
     }
     Akka.system.scheduler.scheduleOnce(1.seconds) {
       val mail = use[MailerPlugin].email

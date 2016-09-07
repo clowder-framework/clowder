@@ -92,15 +92,20 @@ object Events {
                case Some(date) => {
                  events.getEventsByTime(user.followedEntities, date, None) match {
                    case Nil => Logger.debug("No news specified for user " + user.fullName + " at " + date)
-                   case alist => sendDigestEmail(user, alist)
+                   case alist => {
+                     Logger.debug("Total " + alist.length + " news specified for user " + user.fullName + " at " + date)
+                     sendDigestEmail(user, alist)
+                   }
                  }
                }
-               case None => {}
+               case None => Logger.debug("LastJobTime not found")
              }
            }
+           case None => Logger.debug("User not found")
          }
-       }
          scheduler.updateLastRun("Digest[" + id + "]")
+       }
+       case None => Logger.debug("Parameters (User) not found")
      }
    }
  }
@@ -111,7 +116,8 @@ object Events {
   def sendDigestEmail(user: User, events: List[Event]) = {
     val eventsList = events.sorted(Ordering.by((_: Event).created).reverse)
     val body = views.html.emailEvents(eventsList)
-
+    Logger.debug("Events: " + eventsList)
+    //Logger.debug("Body: " + body)
     util.Mail.sendEmail("Clowder Email Digest", None, user, body)
   }
 }

@@ -75,17 +75,18 @@ class MongoDBSchedulerService extends SchedulerService {
     if (jobExists(name) == false) {
       Jobs.insert(new TimerJob(name, None, None, None, None, Option("EmailDigest"), Option(id), None, Option(new Date())))
     }
-    if (setting == "none"){
-      deleteJob(name)
-    }
-    else if (setting == "hourly"){
+
+    if (setting == "hourly"){
       updateJobTime(name, Option(0), None, None, Option(setting))
     }
     else if (setting == "daily"){
       updateJobTime(name, Option(0), Option(7), None, Option(setting))
     }
-    else {
+    else if (setting == "weekly"){
       updateJobTime(name, Option(0), Option(7), Option(1), Option(setting))
+    }
+    else {
+      deleteJob(name)
     }
   }
 
@@ -96,12 +97,35 @@ class MongoDBSchedulerService extends SchedulerService {
 
 
   def getJobByTime(minute: Integer, hour: Integer, day: Integer): List[TimerJob] ={
-    var jobs = Jobs.find(  $and( $and( $or( $and( "minute" $exists true, MongoDBObject("minute" -> minute)), "minute" $exists false), $or( $and( "hour" $exists true, MongoDBObject("hour" -> hour)), "hour" $exists false)), $or( $and( "day_of_week" $exists true, MongoDBObject("day_of_week" -> day)), "day_of_week" $exists false)))
+    Logger.debug("Minute:" + minute + ", Hour:" + hour + ", Day:" + day)
+    Logger.debug("jobList:" + listJobs())
+
+    val jobs = Jobs.find(
+      $and(
+        // either day_of_week exists AND the value is 'day' OR day_of_week does not exist
+        $or($and("day_of_week" $exists true, MongoDBObject("day_of_week" -> day)), "day_of_week" $exists false),
+        // either hour exists AND the value is 'hour' OR hour does not exist
+        $or($and("hour" $exists true, MongoDBObject("hour" -> hour)), "hour" $exists false),
+        // either minute exists AND the value is 'minute' OR minute does not exist
+        $or($and("minute" $exists true, MongoDBObject("minute" -> minute)), "minute" $exists false)
+      )
+    )
+    //val jobs = Jobs.find(
+    //  $and(
+    //    $and(
+    //      $or(
+    //        $and( "minute" $exists true, MongoDBObject("minute" -> minute)), "minute" $exists false),
+    //      $or(
+    //        $and( "hour" $exists true, MongoDBObject("hour" -> hour)), "hour" $exists false)
+    //    ),
+    //    $or(
+    //      $and( "day_of_week" $exists true, MongoDBObject("day_of_week" -> day)), "day_of_week" $exists false)
+    //  )
+    //)
     var jobList = (for (job <- jobs) yield job).toList
+    Logger.debug("jobList:" + jobList)
     jobList
   }
-
-
 }
 
   object Jobs extends ModelCompanion[TimerJob, ObjectId] {
