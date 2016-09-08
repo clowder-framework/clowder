@@ -94,41 +94,26 @@ class MongoDBSchedulerService extends SchedulerService {
     Jobs.dao.update(MongoDBObject("name" -> name), $set("lastJobTime" -> new Date()))
   }
 
-
-
-  def getJobByTime(minute: Integer, hour: Integer, day: Integer): List[TimerJob] ={
-    Logger.debug("Minute:" + minute + ", Hour:" + hour + ", Day:" + day)
-    Logger.debug("jobList:" + listJobs())
+  def getJobByTime(minute: Integer, hour: Integer, day_of_week: Integer): List[TimerJob] ={
 
     val jobs = Jobs.find(
       $and(
-        // either day_of_week exists AND the value is 'day' OR day_of_week does not exist
-        $or($and("day_of_week" $exists true, MongoDBObject("day_of_week" -> day)), "day_of_week" $exists false),
+        // either day_of_week exists AND the value is 'day_of_week' OR day_of_week does not exist
+        $or($and("day_of_week" $exists true, MongoDBObject("day_of_week" -> day_of_week)), "day_of_week" $exists false),
         // either hour exists AND the value is 'hour' OR hour does not exist
         $or($and("hour" $exists true, MongoDBObject("hour" -> hour)), "hour" $exists false),
         // either minute exists AND the value is 'minute' OR minute does not exist
         $or($and("minute" $exists true, MongoDBObject("minute" -> minute)), "minute" $exists false)
       )
     )
-    //val jobs = Jobs.find(
-    //  $and(
-    //    $and(
-    //      $or(
-    //        $and( "minute" $exists true, MongoDBObject("minute" -> minute)), "minute" $exists false),
-    //      $or(
-    //        $and( "hour" $exists true, MongoDBObject("hour" -> hour)), "hour" $exists false)
-    //    ),
-    //    $or(
-    //      $and( "day_of_week" $exists true, MongoDBObject("day_of_week" -> day)), "day_of_week" $exists false)
-    //  )
-    //)
+
     var jobList = (for (job <- jobs) yield job).toList
     Logger.debug("jobList:" + jobList)
     jobList
   }
 }
 
-  object Jobs extends ModelCompanion[TimerJob, ObjectId] {
+object Jobs extends ModelCompanion[TimerJob, ObjectId] {
   val dao = current.plugin[MongoSalatPlugin] match {
     case None => throw new RuntimeException("No MongoSalatPlugin");
     case Some(x) => new SalatDAO[TimerJob, ObjectId](collection = x.collection("jobs")) {}

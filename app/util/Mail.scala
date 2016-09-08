@@ -36,7 +36,6 @@ object Mail {
    */
   def sendEmail(subject: String, user: Option[User], recipient: User, body: Html) {
     if (recipient.email.isDefined) {
-      Logger.debug("Subject:" + subject + ", From:" + emailAddress(user) + ", Recipient: " + emailAddress(Some(recipient)) + ", Body:")
       sendEmail(subject, emailAddress(user), emailAddress(Some(recipient))::Nil, body)
     }
   }
@@ -74,10 +73,7 @@ object Mail {
 
       // the mailer plugin handles null / empty string gracefully
       mail.send("", text)
-
     }
-
-
   }
 
   private def getAdmins: List[String] = {

@@ -116,8 +116,6 @@ object Events {
   def sendDigestEmail(user: User, events: List[Event]) = {
     val eventsList = events.sorted(Ordering.by((_: Event).created).reverse)
     val body = views.html.emailEvents(eventsList)
-    Logger.debug("Events: " + eventsList)
-    //Logger.debug("Body: " + body)
     util.Mail.sendEmail("Clowder Email Digest", None, user, body)
   }
 }
