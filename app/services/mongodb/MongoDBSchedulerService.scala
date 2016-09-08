@@ -108,7 +108,6 @@ class MongoDBSchedulerService extends SchedulerService {
     )
 
     var jobList = (for (job <- jobs) yield job).toList
-    Logger.debug("jobList:" + jobList)
     jobList
   }
 }
