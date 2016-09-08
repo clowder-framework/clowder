@@ -34,6 +34,7 @@
           @select(myForm("pastprojects"), options(allProjectOptions), '_label -> "Past Projects", 'multiple -> "true", 'class -> "chosen-select form-control", 'placeholder -> "Add your projects")
 
           @select(myForm("emailsettings"), options(emailtimes), '_label -> "Email Settings")
+          <p>An e-mail digest of activities that involve your followed objects.</p>
 
         </fieldset>
         @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
