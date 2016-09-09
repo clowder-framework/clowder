@@ -16,13 +16,13 @@ import services._
 import _root_.util.RequiredFieldsConfig
 import play.api.Play._
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.Future
-import scala.concurrent.Await
+import scala.concurrent.{Promise, Future, Await}
 import play.api.mvc.{MultipartFormData, Request, Action, Results}
 import play.api.libs.ws._
 import scala.concurrent.duration._
 import play.api.libs.json.Reads._
 import java.net.{URL, URI}
+import Array._
 
 /**
  * Methods for interacting with the curation objects in the staging area.
@@ -852,26 +852,54 @@ class CurationObjects @Inject()(
   def getPublishedData(index: Int, limit: Int) = UserAction(needActive=false) { implicit request =>
     implicit val user = request.user
     implicit val context = scala.concurrent.ExecutionContext.Implicits.global
-
+    var next = index + 1
     val endpoint = play.Play.application().configuration().getString("stagingarea.uri").replaceAll("/$", "")
     Logger.debug(endpoint)
     val futureResponse = WS.url(endpoint).get()
-
+    val publishDataList: ListBuffer[Map[String, String]] = ListBuffer.empty
     val result =  futureResponse.map {
       case response =>
         if(response.status >= 200 && response.status < 300 || response.status == 304) {
-//          response.json
+
           Logger.debug((response.json\\ "Identifier").toString())
+          val tags = (response.json\\ "Identifier").toList
+          if(tags.length < (index * limit +limit ) ) next = 0
+          tags.take(limit + index * limit).takeRight(limit).foreach{
+            tag => {
+            val endpointInner = play.Play.application().configuration().getString("stagingarea.uri") + '/' + tag.toString()
+              .replaceAll("/$", "").replaceAll("\"", "")
+            Logger.debug(endpointInner)
+            val futureResponseInner: Future[Response] = WS.url(endpointInner).get()
+            val resultInner:Future[Map[String, String]] =  futureResponseInner.map {
+              case response =>
+                if(response.status >= 200 && response.status < 300 || response.status == 304) {
+
+                  Map("title" -> (response.json \ "Aggregation" \ "Title").toString,
+                    "author" -> (response.json \ "Aggregation" \ "Creator").toString,
+                    "description" -> (response.json \ "Aggregation" \ "Abstract").toString,
+                    "space" -> (response.json \ "Aggregation" \ "Publishing Project Name").toString,
+                    "DOI" -> (response.json \\ "message" ).map(_.toString()).filter(_.contains("doi")).head.toString(),
+                    "date" -> (response.json \ "Aggregation" \ "Creation Date").toString
+                  )
+                } else {
+                  Map()
+                }
+            }
+              val rsInner: Map[String, String] = Await.result(resultInner, Duration.Inf)
+              publishDataList.append(rsInner)
+            }
+          }
+
+          publishDataList
         } else {
           Logger.error("Error Getting published data: " + response.getAHCResponse.getResponseBody)
-
+          ListBuffer.empty
         }
-      case _ =>           Logger.error("Error Getting published data" )
-
     }
 
     val rs = Await.result(result, Duration.Inf)
-    Ok(views.html.curations.publishedData(List.empty, 0, 0, limit))
+
+    Ok(views.html.curations.publishedData(rs.toList, index -1 , next, limit))
 
   }
 }

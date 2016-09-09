@@ -1,43 +1,28 @@
-@(curationObjects: List[models.CurationObject], prev: Int, next: Int, limit: Int)(implicit user: Option[models.User])
-@import play.api.i18n.Messages
+@(publishedData: List[Map[String, String]], prev: Int, next: Int, limit: Int)(implicit user: Option[models.User])
+
 @main("Published Data") {
-
-  @util.masonry()
-  <div class="row" id="tile-view">
+  <div class="row">
     <div class="col-md-12">
-      <div id="masonry">
-        @curationObjects.map { curObject =>
-          <div class="post-box col-lg-3 col-md-3 coml-sm-3 col-xs-12">
-            <div class = "panel panel-default" id="@curObject.id-tile">
+      <h1>@Html("Published Data")</h1>
+    </div>
+  </div>
 
-                <div id="@curObject.id" class="panel-heading text-center submitted">
+  <div class="row">
+    @for(pd <- publishedData) {
+      <div class="panel panel-default">
+        <div class="panel-body">
 
-              @curObject.status
-            </div>
-              <div class = "panel-body">
-                <div class="caption break-word">
-                  <h4> <a href="@routes.CurationObjects.getCurationObject( curObject.id)">@curObject.name</a></h4>
+          <p><b>Title:</b> @pd("title")</p>
+          <p><b>Authors:</b> @pd("author")</p>
+          <p><b>Description:</b> @pd("description")</p>
+          <p><b>@Messages("space.title"):</b> @pd("space")</p>
+          <p><b>DOI:</b> @pd("DOI")</p>
+          <p><b>Date of publication:</b> @pd("date")</p>
 
-                  Author: @curObject.author.fullName
-                  <p>Created: @curObject.created.format("MMM dd, yyyy")</p>
-                  <p>@curObject.description</p>
-                </div>
-              </div>
-              <ul class="list-group">
-                <li class="list-group-item">
-                  <span class="glyphicon glyphicon-folder-close" title="@curObject.folders.size folders"></span> @curObject.folders.size
-                  <span class="glyphicon glyphicon-file" title="@curObject.files.size files"></span> @curObject.files.size
-                  <span class="glyphicon glyphicon-list" title="@(curObject.metadataCount) metadata fields"></span> @(curObject.metadataCount)
-
-                </li>
-              </ul>
-
-            </div>
-            </div>
-        }
+        </div>
       </div>
-      </div>
-      </div>
+    }
+  </div>
       <div class="row">
         <div class="col-md-12">
           <ul class="pager">
@@ -45,7 +30,7 @@
             @if(prev >= 0) {
               <li class="previous"><a id="prevlink" title="Page backwards" href="#"><span class="glyphicon glyphicon-chevron-left"></span>Previous</a></li>
             }
-            @if(next >= 0) {
+            @if(next > 0) {
               <li class ="next"><a id="nextlink" title="Page forwards" href="#">Next<span class="glyphicon glyphicon-chevron-right"></span></a></li>
             }
           </ul>
