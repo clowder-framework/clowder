@@ -121,7 +121,7 @@
     @printHeader(agent: Agent, date: java.util.Date, resourceId: UUID, mid: UUID) = {
         @agent.operation by
         @if(agent.displayName.length > 0) {
-            @if(agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
+            @if((agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) || (agent.displayName.indexOf("Anonymous User") == 0)) {
                 @defining(agent.id.toString() + "-" + resourceId.toString() + "-" + mid.toString()) { aid =>
                     @if(user.isDefined) {
                         <a class='agent-context-key' id='@{aid}' href="javascript:void(0)">@agent.displayName</a>
