@@ -118,19 +118,17 @@
         }
     }
 
-    @printHeader(agent: Agent, date: java.util.Date, resourceId: UUID, mid: UUID) = {
+    @printHeader(agent: Agent, date: java.util.Date) = {
         @agent.operation by
         @if(agent.displayName.length > 0) {
-            @if((agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) || (agent.displayName.indexOf("Anonymous User") == 0)) {
-                @defining(agent.id.toString() + "-" + resourceId.toString() + "-" + mid.toString()) { aid =>
-                    @if(user.isDefined) {
-                        <a class='agent-context-key' id='@{aid}' href="javascript:void(0)">@agent.displayName</a>
-                    } else {
-                        @agent.displayName
-                    }
+            @if(agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
+                @if(user.isDefined) {
+                    <a href= "@routes.Profile.viewProfileUUID(agent.id)">@agent.displayName</a>
+                } else {
+                    @agent.displayName
                 }
             } else {
-                @if(!agent.url.isDefined) {
+                @if(agent.url.isDefined) {
                     <a href="@agent.url" target="_blank">@agent.displayName</a>
                 } else {
                     @agent.displayName
@@ -156,7 +154,7 @@
                     <span class="panel-icon glyphicon glyphicon-minus"></span>
                 </a>
                 <span>
-                    @printHeader(m.creator, m.createdAt, m.attachedTo.id, m.id)
+                    @printHeader(m.creator, m.createdAt)
                 </span>
                 @if(toDelete && Permission.checkPermission(Permission.DeleteMetadata, ResourceRef(ResourceRef.metadata, m.id))) {
                         <a id="@m.id" title="Delete this metadata" class="btn btn-link delete-icon">
@@ -267,46 +265,5 @@
         }
         function leaveMetadataContext(mid) {
             $("#"+mid).popover('hide');
-        }
-
-        $(document).on('mouseenter', '.agent-context-key', function(){
-            var contextId = this.id.split("-",1)[0];
-            //console.log(this.id,contextId);
-            getAgentContext(this.id, contextId)
-        });
-
-        $(document).on('mouseleave', '.agent-context-key', function(){
-            leaveAgentContext(this.id)
-        });
-
-        // get agent author definitions
-        function getAgentContext(aid, uuid) {
-            var request = jsRoutes.api.Users.findById(uuid).ajax({
-                type: 'GET',
-                contentType: "application/json"
-            });
-
-            request.done(function (response, textStatus, jqXHR) {
-                var fields = response;
-                //console.log(fields['fullName']);
-                $("#"+aid).popover({
-                    content:fields['email'],
-                    //trigger:'hover',
-                    placement:'top',
-                    template: '<div class="popover" role="tooltip" style="max-width:600px;word-break:break-all"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>'
-                });
-                $("#"+aid).popover('show');
-            });
-
-            request.fail(function (jqXHR, textStatus, errorThrown){
-                console.error("The following error occured: " + textStatus, errorThrown);
-                var errMsg = "You must be logged in to retrieve metadata definitions";
-                if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                    notify("Agent metadata context was not shown due to : " + errorThrown, "error");
-                }
-            });
-        }
-        function leaveAgentContext(aid) {
-            $("#"+aid).popover('hide');
         }
     </script>
