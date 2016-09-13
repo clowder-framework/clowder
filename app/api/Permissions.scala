@@ -169,15 +169,21 @@ object Permission extends Enumeration {
   def checkPermission(user: Option[User], permission: Permission, resourceRef: Option[ResourceRef] = None): Boolean = {
     (user, configuration(play.api.Play.current).getString("permissions").getOrElse("public"), resourceRef) match {
       case (Some(u), "public", Some(r)) => {
-        if (READONLY.contains(permission)) return true
-        else checkPermission(u, permission, r)
+        if (READONLY.contains(permission))
+          true
+        else
+          checkPermission(u, permission, r)
       }
       case (Some(u), "private", Some(r)) => checkPermission(u, permission, r)
       case (Some(_), _, None) => true
       case (None, "private", Some(res)) => checkAnonymousPrivatePermissions(permission, res)
       case (None, "public", _) => READONLY.contains(permission)
+      case (None, "private", None) => {
+        Logger.debug(s"Private, no user, no resourceRef, permission=${permission}", new Exception())
+        false
+      }
       case (_, p, _) => {
-        Logger.error("Invalid permission scheme " + p)
+        Logger.error(s"Invalid permission scheme ${p} [user=${user}, permission=${permission}, resourceRef=${resourceRef}]")
         false
       }
     }
