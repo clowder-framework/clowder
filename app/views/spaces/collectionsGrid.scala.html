@@ -1,4 +1,4 @@
-@(collectionsList: List[Collection], space: String)(implicit user: Option[models.User])
+@(collectionsList: List[Collection], space: String, isPublic: Option[Boolean])(implicit user: Option[models.User])
 @import play.api.i18n.Messages
 @import api.Permission
 <p>
@@ -17,9 +17,18 @@
 <div class="row" id="tile-view">
     <div class="col-md-12">
         <div id="masonry-collections">
-        @collectionsList.map { collection =>
-            @collections.tile(collection, routes.Spaces.getSpace(UUID(space)), Some(space), "col-lg-4 col-md-4 col-sm-4", false)
-        }
+            @isPublic match {
+                case Some(b) => {
+                    @collectionsList.filter(_.isPublic == b).map { collection =>
+                        @collections.tile(collection, routes.Spaces.getSpace(UUID(space)), Some(space), "col-lg-4 col-md-4 col-sm-4", false)
+                    }
+                }
+                case None => {
+                    @collectionsList.map { collection =>
+                        @collections.tile(collection, routes.Spaces.getSpace(UUID(space)), Some(space), "col-lg-4 col-md-4 col-sm-4", false)
+                    }
+                }
+            }
         </div>
     </div>
 </div>

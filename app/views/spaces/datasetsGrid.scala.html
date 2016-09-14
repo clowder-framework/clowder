@@ -1,4 +1,4 @@
-@(datasetsList: List[Dataset], space: String)(implicit user: Option[models.User])
+@(datasetsList: List[Dataset], space: String, isPublic: Option[Boolean])(implicit user: Option[models.User])
 
 @import api.Permission
 @import play.api.i18n.Messages
@@ -16,10 +16,18 @@
 <div class="row" id="tile-view">
     <div class="col-md-12">
         <div id="masonry-datasets">
-        @datasetsList.map { dataset =>
-          @datasets.tile(dataset, Some(space), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space)))
-
-        }
+            @isPublic match {
+                case Some(b) => {
+                    @datasetsList.filter(_.isPublic == b).map { dataset =>
+                        @datasets.tile(dataset, Some(space), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space)))
+                    }
+                }
+                case None => {
+                    @datasetsList.map { dataset =>
+                        @datasets.tile(dataset, Some(space), Map.empty[UUID, Int], "col-lg-4 col-md-4 col-sm-4", false, true, routes.Spaces.getSpace(UUID(space)))
+                    }
+                }
+            }
         </div>
     </div>
 </div>

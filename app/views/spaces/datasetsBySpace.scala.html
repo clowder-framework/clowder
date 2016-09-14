@@ -1,4 +1,4 @@
-@(datasets: List[models.Dataset], space: String)(implicit user: Option[models.User])
+@(datasets: List[models.Dataset], space: String, isPublic: Option[Boolean])(implicit user: Option[models.User])
 @import play.api.i18n.Messages
 @import api.Permission
 <h3>@Messages("a.in.b", Messages("datasets.title"), Messages("space.title"))</h3>
@@ -9,5 +9,5 @@
         <p> There are no datasets associated with this @Messages("space.title")</p>
     }
 } else {
-    @spaces.datasetsGrid(datasets, space)
+    @spaces.datasetsGrid(datasets, space, isPublic)
 }

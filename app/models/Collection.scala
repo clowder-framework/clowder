@@ -20,7 +20,18 @@ case class Collection(
   root_spaces: List[UUID] = List.empty,
   metadataCount: Long = 0,
   childCollectionsCount: Integer = 0,
-  @deprecated("use Metadata","since the use of jsonld") jsonldMetadata : List[Metadata]= List.empty)
+  status: String = CollectionStatus.PRIVATE.toString,   //collection has four states: trial, default, private and public
+  @deprecated("use Metadata","since the use of jsonld") jsonldMetadata : List[Metadata]= List.empty
+){
+  def isPublic:Boolean = status.contains(CollectionStatus.PUBLIC.toString)
+  def isDefault:Boolean = status.contains(CollectionStatus.DEFAULT.toString)
+  def isTRIAL:Boolean = status.contains(CollectionStatus.TRIAL.toString)
+}
+
+object CollectionStatus extends Enumeration {
+  type DatasetStatus = Value
+  val PUBLIC, PRIVATE, DEFAULT, TRIAL = Value
+}
 
 object Collection {
   implicit val collectionWrites = new Writes[Collection] {

@@ -1,4 +1,4 @@
-@(collections: List[Collection], space: String)(implicit user: Option[models.User])
+@(collections: List[Collection], space: String, isPublic: Option[Boolean])(implicit user: Option[models.User])
 @import api.Permission
 @import play.api.i18n.Messages
 <h3>@Messages("a.in.b", Messages("collections.title"), Messages("space.title"))</h3>
@@ -9,5 +9,5 @@
             <p>There are no collections associated with this @Messages("space.title"). </p>
         }
     } else {
-        @spaces.collectionsGrid(collections, space)
+        @spaces.collectionsGrid(collections, space, isPublic)
 }
