@@ -7,8 +7,6 @@ import services._
 
 import java.util.Date
 import scala.collection.immutable.List
-import org.elasticsearch.common.xcontent.XContentBuilder
-import org.elasticsearch.common.xcontent.XContentFactory._
 
 
 object SearchUtils {
@@ -16,7 +14,7 @@ object SearchUtils {
   lazy val datasets: DatasetService = DI.injector.getInstance(classOf[DatasetService])
   lazy val collections: CollectionService = DI.injector.getInstance(classOf[CollectionService])
   lazy val metadatas: MetadataService = DI.injector.getInstance(classOf[MetadataService])
-  lazy val comments = DI.injector.getInstance(classOf[CommentService])
+  lazy val comments: CommentService = DI.injector.getInstance(classOf[CommentService])
 
   /**Convert File to ElasticsearchObject and return, fetching metadata as necessary**/
   def getElasticsearchObject(f: File): Option[ElasticsearchObject] = {
