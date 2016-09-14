@@ -186,7 +186,6 @@
                 });
 
             $('.tree li').on('click', function (e) {
-                //console.log("clicked");
                 var children = $(this).find('> ul > li');
                 if (children.is(":visible")) {
                     children.hide('fast');
@@ -208,7 +207,6 @@
                 });
 
                 request.done(function (response, textStatus, jqXHR) {
-                    //console.log("success");
                     delete_icon.closest(".panel").remove();
                 });
 
@@ -224,7 +222,6 @@
 
         $(document).on('mouseenter', '.context-key', function(){
             var contextId = this.id.split("-",1)[0];
-            //console.log(this.id,contextId,this.textContent);
             getMetadataContext(this.id, contextId, this.textContent)
         });
 
@@ -245,10 +242,8 @@
                 if (fields['@@context']) {
                     context = JSON.stringify(fields['@@context'][key]);
                 }
-                //console.log(context);
                 $("#"+mid).popover({
                     content:context,
-                    //trigger:'hover',
                     placement:'top',
                     template: '<div class="popover" role="tooltip" style="max-width:600px;word-break:break-all"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>'
                 });
