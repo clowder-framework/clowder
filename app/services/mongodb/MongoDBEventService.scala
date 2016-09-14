@@ -182,7 +182,7 @@ class MongoDBEventService @Inject() (
 
   def getCommentEvent( user: User, limit: Option[Integer]): List[Event] ={
     val roleList = userService.listRoles().filter(_.permissions.contains(Permission.ViewComments.toString))
-    val spaceIdList = user.spaceandrole.filter(x => roleList.contains(x.role)).map(s => spaces.get(s.spaceId))
+    val spaceIdList = user.spaceandrole.filter(x => roleList.contains(x.role)).map(_.spaceId)
     val datasetList = (datasets.listUser(0,  None, true, user) ::: spaceIdList.map(s => datasets.listSpace(0, s.toString)).flatten).distinct
     val fileIdList = (datasetList.map(_.files) ::: datasetList.map(d => Folders.findByParentDatasetId(d.id).map(_.files).flatten)).flatten
     val eventList = (Event.find(MongoDBObject(
