@@ -862,7 +862,7 @@ class CurationObjects @Inject()(
 
           val tags = (response.json\\ "Identifier").toList.reverse
           if(tags.length < (index * limit +limit ) ) next = 0
-          tags.take(limit + index * limit).takeRight(limit).foreach{
+          tags.foreach{
             tag => {
             val endpointInner = play.Play.application().configuration().getString("stagingarea.uri") + '/' + tag.toString()
               .replaceAll("/$", "").replaceAll("\"", "")
@@ -897,7 +897,7 @@ class CurationObjects @Inject()(
           }
           //sort by create time
           val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
-          publishDataList.sortBy(x => format.parse(x.get("date").getOrElse("01-01-1000"))).reverse
+          publishDataList.sortBy(x => format.parse(x.get("date").getOrElse("01-01-1000"))).reverse.take(limit + index * limit).takeRight(limit)
         } else {
           Logger.error("Error Getting published data: " + response.getAHCResponse.getResponseBody)
           ListBuffer.empty
