@@ -772,7 +772,7 @@ class MongoDBDatasetService @Inject() (
   }
 
   /** Change the metadataCount field for a dataset */
-  def updateMetadataCount(id: UUID, count: Long) = {
+  def incrementMetadataCount(id: UUID, count: Long) = {
     Dataset.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $inc("metadataCount" -> count), false, false, WriteConcern.Safe)
   }
 

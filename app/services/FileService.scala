@@ -148,7 +148,7 @@ trait FileService {
 
   def getTechnicalMetadataJSON(id: UUID): String
 
-  def updateMetadataCount(id: UUID, count: Long)
+  def incrementMetadataCount(id: UUID, count: Long)
 
   def getVersusMetadata(id:UUID): Option[JsValue]
 

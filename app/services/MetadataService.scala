@@ -30,7 +30,7 @@ trait MetadataService {
   def removeMetadata(metadataId: UUID)
 
   /** Remove metadata by attachTo*/
-  def removeMetadataByAttachTo(resourceRef: ResourceRef)
+  def removeMetadataByAttachTo(resourceRef: ResourceRef): Long
 
   /** Remove metadata by attachTo from a specific extractor */
   def removeMetadataByAttachToAndExtractor(resourceRef: ResourceRef, extractorName: String): Long

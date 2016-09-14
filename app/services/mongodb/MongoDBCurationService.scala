@@ -91,7 +91,7 @@ class MongoDBCurationService  @Inject() (metadatas: MetadataService, spaces: Spa
   }
 
   /** Change the metadataCount field for a curation object */
-  def updateMetadataCount(id: UUID, count: Long) = {
+  def incrementMetadataCount(id: UUID, count: Long) = {
     CurationDAO.update(MongoDBObject("_id" -> new ObjectId(id.stringify)), $inc("metadataCount" -> count), false, false, WriteConcern.Safe)
   }
 
