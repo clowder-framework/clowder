@@ -895,7 +895,7 @@ class CurationObjects @Inject()(
               publishDataList.append(rsInner)
             }
           }
-          //sort by create time
+          //sort by create time, don't use joda.Datatime here or you have to write a comparaison by yourself
           val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
           publishDataList.sortBy(x => format.parse(x.get("date").getOrElse("01-01-1000"))).reverse.take(limit + index * limit).takeRight(limit)
         } else {
