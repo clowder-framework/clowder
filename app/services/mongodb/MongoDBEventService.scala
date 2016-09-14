@@ -6,7 +6,7 @@ import api.Permission
 import models._
 import java.util.Date
 import org.bson.types.ObjectId
-import services.{SpaceService, DatasetService, EventService, FolderService}
+import services._
 import api.Permission.Permission
 import com.novus.salat.dao.{ModelCompanion, SalatDAO}
 import MongoContext.context
@@ -20,6 +20,7 @@ import com.novus.salat.dao.SalatMongoCursor
   * Use MongoDB for storing events.
  */
 class MongoDBEventService @Inject() (
+     userService: UserService,
      spaces:SpaceService,
      datasets: DatasetService,
      Folders:FolderService) extends EventService {
@@ -180,8 +181,9 @@ class MongoDBEventService @Inject() (
   }
 
   def getCommentEvent( user: User, limit: Option[Integer]): List[Event] ={
-    val spaceList = spaces.listAccess(0, Set(Permission.ViewComments), Some(user), true, false, false)
-    val datasetList = (datasets.listUser(0,  None, true, user) ::: spaceList.map(s => datasets.listSpace(0, s.id.toString)).flatten).distinct
+    val roleList = userService.listRoles().filter(_.permissions.contains(Permission.ViewComments.toString))
+    val spaceIdList = user.spaceandrole.filter(x => roleList.contains(x.role)).map(s => spaces.get(s.spaceId))
+    val datasetList = (datasets.listUser(0,  None, true, user) ::: spaceIdList.map(s => datasets.listSpace(0, s.toString)).flatten).distinct
     val fileIdList = (datasetList.map(_.files) ::: datasetList.map(d => Folders.findByParentDatasetId(d.id).map(_.files).flatten)).flatten
     val eventList = (Event.find(MongoDBObject(
         "event_type" -> "add_comment_dataset") ++
