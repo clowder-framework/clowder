@@ -637,6 +637,7 @@ class MongoDBDatasetService @Inject() (
     (for (dataset <- Dataset.find(MongoDBObject())) yield dataset).toList.filterNot(listContaining.toSet)
   }
 
+  // TODO: This is apparently not called anywhere, can we remove?
   def findByTag(tag: String, user: Option[User]): List[Dataset] = {
     if(configuration(play.api.Play.current).getString("permissions").getOrElse("public") == "public"){
       Dataset.dao.find(MongoDBObject("tags.name" -> tag)).toList
@@ -647,6 +648,7 @@ class MongoDBDatasetService @Inject() (
   }
 
   def findByTag(tag: String, start: String, limit: Integer, reverse: Boolean, user: Option[User]): List[Dataset] = {
+    // TODO: Re-implement this using Elasticsearch
     var filter = if (start == "") {
       MongoDBObject("tags.name" -> tag)
     } else {
@@ -1197,7 +1199,7 @@ class MongoDBDatasetService @Inject() (
     Dataset.findOneById(new ObjectId(id.stringify)) match {
       case Some(dataset) => {
         current.plugin[ElasticsearchPlugin].foreach {
-          _.index(SearchUtils.getElasticsearchObject(dataset))
+          _.index(dataset, false)
         }
       }
       case None => Logger.error("Dataset not found: " + id)

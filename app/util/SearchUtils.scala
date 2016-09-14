@@ -5,6 +5,7 @@ import play.api.Logger
 import play.api.libs.json._
 import services._
 
+import java.util.Date
 import scala.collection.immutable.List
 import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.common.xcontent.XContentFactory._
@@ -147,8 +148,62 @@ object SearchUtils {
     ))
   }
 
+  /**Convert Section to ElasticsearchObject and return**/
+  def getElasticsearchObject(s: Section): Option[ElasticsearchObject] = {
+    val id = s.id
+
+    // For Section, child_of will be a one-item list containing parent file ID
+    val child_of = List(s.id.toString)
+
+    // Get metadata for Section
+    var metadata = Map[String, JsValue]()
+    for (md <- metadatas.getMetadataByAttachTo(ResourceRef(ResourceRef.section, id))) {
+      val creator = md.creator.displayName
+
+      // If USER metadata, ignore the name and set the Metadata Definition field to the creator
+      if (md.creator.typeOfAgent=="cat:user") {
+        val subjson = md.content.as[JsObject]
+        subjson.keys.foreach(subkey => {
+          // If we already have some metadata from this creator, merge the results; otherwise, create new entry
+          if (metadata.keySet.exists(_ == subkey)) {
+            metadata += (subkey -> metadata(subkey).as[JsArray].append((subjson \ subkey)))
+          }
+          else {
+            metadata += (subkey -> Json.arr((subjson \ subkey)))
+          }
+        })
+      } else if (md.creator.typeOfAgent=="user") {
+        // Override the creator if this is non-UI user-submitted metadata and group the objects together
+        val creator = "user-submitted"
+        if (metadata.keySet.exists(_ == creator))
+          metadata += (creator -> (metadata(creator).as[JsObject] ++ (md.content.as[JsObject])))
+        else
+          metadata += (creator -> md.content.as[JsObject])
+      }
+      else {
+        // If we already have some metadata from this creator, merge the results; otherwise, create new entry
+        if (metadata.keySet.exists(_ == creator))
+          metadata += (creator -> (metadata(creator).as[JsObject] ++ (md.content.as[JsObject])))
+        else
+          metadata += (creator -> md.content.as[JsObject])
+      }
+    }
+
+    Some(new ElasticsearchObject(
+      ResourceRef('section, id),
+      "section-"+id.toString,
+      "",
+      new Date,
+      List.empty,
+      child_of,
+      s.description.getOrElse(""),
+      s.tags.map( (t:Tag) => Tag.toElasticsearchTag(t) ),
+      List.empty,
+      metadata
+    ))
+  }
+
   /**Convert TempFile to ElasticsearchObject and return, fetching metadata as necessary**/
-  // TODO: Can we remove the indexing on this TempFile entirely? comment out indexing after asking Inna/Smruti
   def getElasticsearchObject(file: TempFile): Option[ElasticsearchObject] = {
     Some(new ElasticsearchObject(
       ResourceRef('file, file.id),

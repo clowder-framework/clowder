@@ -822,7 +822,7 @@ class MongoDBCollectionService @Inject() (
     Collection.findOneById(new ObjectId(id.stringify)) match {
       case Some(collection) => {
         current.plugin[ElasticsearchPlugin].foreach {
-          _.index(SearchUtils.getElasticsearchObject(collection))
+          _.index(collection, false)
         }
       }
       case None => Logger.error("Collection not found: " + id.stringify)

@@ -18,7 +18,7 @@ import org.elasticsearch.common.xcontent.XContentFactory._
 import org.elasticsearch.action.search.SearchType
 import org.elasticsearch.client.transport.NoNodeAvailableException
 import org.elasticsearch.action.search.SearchResponse
-import models.{Collection, Dataset, File, UUID, ResourceRef}
+import models.{Collection, Dataset, File, UUID, ResourceRef, Section}
 import play.api.Play.current
 import play.api.libs.json._
 import _root_.util.SearchUtils
@@ -286,7 +286,16 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   /** Reindex the given file. */
   def index(file: File) {
     connect
+    // Index sections first so they register for tag counts
+    for (section <- file.sections) {
+      index(section)
+    }
     index(SearchUtils.getElasticsearchObject(file))
+  }
+
+  def index(section: Section) {
+    connect
+    index(SearchUtils.getElasticsearchObject(section))
   }
 
   /** Index document using an arbitrary map of fields. */
