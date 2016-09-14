@@ -16,13 +16,12 @@ import services._
 import _root_.util.RequiredFieldsConfig
 import play.api.Play._
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.{Promise, Future, Await}
+import scala.concurrent.{Future, Await}
 import play.api.mvc.{MultipartFormData, Request, Action, Results}
 import play.api.libs.ws._
 import scala.concurrent.duration._
 import play.api.libs.json.Reads._
-import java.net.{URL, URI}
-import Array._
+
 
 /**
  * Methods for interacting with the curation objects in the staging area.
@@ -861,36 +860,44 @@ class CurationObjects @Inject()(
       case response =>
         if(response.status >= 200 && response.status < 300 || response.status == 304) {
 
-          Logger.debug((response.json\\ "Identifier").toString())
-          val tags = (response.json\\ "Identifier").toList
+          val tags = (response.json\\ "Identifier").toList.reverse
           if(tags.length < (index * limit +limit ) ) next = 0
           tags.take(limit + index * limit).takeRight(limit).foreach{
             tag => {
             val endpointInner = play.Play.application().configuration().getString("stagingarea.uri") + '/' + tag.toString()
               .replaceAll("/$", "").replaceAll("\"", "")
-            Logger.debug(endpointInner)
+
             val futureResponseInner: Future[Response] = WS.url(endpointInner).get()
             val resultInner:Future[Map[String, String]] =  futureResponseInner.map {
               case response =>
                 if(response.status >= 200 && response.status < 300 || response.status == 304) {
-
-                  Map("title" -> (response.json \ "Aggregation" \ "Title").toString,
-                    "author" -> (response.json \ "Aggregation" \ "Creator").toString,
-                    "description" -> (response.json \ "Aggregation" \ "Abstract").toString,
-                    "space" -> (response.json \ "Aggregation" \ "Publishing Project Name").toString,
-                    "DOI" -> (response.json \\ "message" ).map(_.toString()).filter(_.contains("doi")).head.toString(),
-                    "date" -> (response.json \ "Aggregation" \ "Creation Date").toString
+                  val resultMap: Map[String, Option[String]] =
+                  Map("id" -> (response.json \ "Aggregation" \ "Identifier").asOpt[String],
+                    "title" -> (response.json \ "Aggregation" \ "Title").asOpt[String],
+                    "author" -> (response.json \ "Aggregation" \ "Creator").asOpt[String],
+                    "description" -> (response.json \ "Aggregation" \ "Abstract").asOpt[String],
+                    "space" -> (response.json \ "Aggregation" \ "Publishing Project Name").asOpt[String],
+                    "DOI" -> (response.json \\ "message" ).map(_.as[String]).filter(_.contains("doi") ).headOption,
+                    "date" -> (response.json \ "Aggregation" \ "Creation Date").asOpt[String]
                   )
+                  // remove value is none in the map.
+                  resultMap.collect {
+                    case (key, Some(value)) => key -> value
+                  }
+
                 } else {
                   Map()
                 }
             }
+
+              // asynchronous to synchronous
               val rsInner: Map[String, String] = Await.result(resultInner, Duration.Inf)
               publishDataList.append(rsInner)
             }
           }
-
-          publishDataList
+          //sort by create time
+          val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
+          publishDataList.sortBy(x => format.parse(x.get("date").getOrElse("01-01-1000"))).reverse
         } else {
           Logger.error("Error Getting published data: " + response.getAHCResponse.getResponseBody)
           ListBuffer.empty
