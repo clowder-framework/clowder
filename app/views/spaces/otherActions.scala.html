@@ -34,8 +34,23 @@
             <li><a class = "btn btn-xs btn-link btn-margins" href="@routes.Spaces.stagingArea(space.id)" title="Staging Area"><span class="glyphicon glyphicon-book"></span> Staging Area</a></li>
         }
         <li>@spaces.follow(space)</li>
-        @if(user.isDefined && !(userRoleMap contains user.get)) {
-            <li>@spaces.requestAuthorization(space.id)</li>
+        <!-- user has submit request -->
+        @defining("You are not authorized to access this " + Messages("space.title") + ".") { msg =>
+            @if(user.isDefined) {
+                @if(!(userRoleMap contains user.get)) {
+                    @if(space.requests.contains(RequestResource(user.get.id))) {
+                        <li style="margin-top:15px; margin-left:10px">@msg Authorization request is pending.</li>
+                    } else {
+                        <li style="margin-top:15px; margin-left:10px">@msg @spaces.requestAuthorization(space.id)</li>
+                    }
+                }
+            } else {
+                @if(space.requests.contains(RequestResource(user.get.id))) {
+                    <li style="margin-top:15px; margin-left:10px">@msg Authorization request is pending.</li>
+                } else {
+                    <li style="margin-top:15px; margin-left:10px">@msg @spaces.requestAuthorization(space.id)</li>
+                }
+            }
         }
     </ul>
 </div>
