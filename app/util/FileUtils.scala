@@ -563,13 +563,13 @@ object FileUtils {
             Some(fixedfile)
           }
           case None => {
-            Logger.error("File was not found anymore")
+            Logger.error(s"File $loader_id was not found anymore")
             None
           }
         }
       }
       case None => {
-        Logger.error("Could not save bytes, deleting file")
+        Logger.error(s"Could not save bytes, deleting file ${file.id}")
         files.removeFile(file.id)
         None
       }
@@ -583,7 +583,7 @@ object FileUtils {
         return Some(f)
       }
       case None => {
-        Logger.error("File was not found anymore")
+        Logger.error(s"File ${file.id} was not found anymore")
         None
       }
     }
@@ -603,13 +603,13 @@ object FileUtils {
             Some(fixedfile)
           }
           case None => {
-            Logger.error("File was not found anymore")
+            Logger.error(s"File $loader_id was not found anymore")
             None
           }
         }
       }
       case None => {
-        Logger.error("Could not save bytes, deleting file")
+        Logger.error(s"Could not save bytes, deleting file ${file.id}")
         files.removeFile(file.id)
         None
       }
