@@ -5,7 +5,7 @@
   previewers: List[Previewer],
   commentMap : Map[UUID, Int],
   collectionSpaces_canRemove : Option[Map[ProjectSpace, Boolean]],
-  prevd: Int, nextd: Int, prevcc: Int, nextcc: Int, limit: Int)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  prevd: Int, nextd: Int, prevcc: Int, nextcc: Int, limit: Int, canAddToParent: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import models.ResourceRef
 @import models.UUID
@@ -187,7 +187,7 @@
 			<div class="bottom-padding">
 				@spaces.spaceAllocation(collection.id, ResourceRef.collection, collectionSpaces_canRemove.getOrElse(Map.empty), Some(collection))
 			</div>
-				@collections.parentAllocation(collection,collection.id,ResourceRef.collection, parentCollections.getOrElse(List.empty))
+				@collections.parentAllocation(collection,collection.id,ResourceRef.collection, parentCollections.getOrElse(List.empty),canAddToParent)
 		</div>
 	</div>
 

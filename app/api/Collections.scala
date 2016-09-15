@@ -64,39 +64,35 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
     }.getOrElse(BadRequest(toJson("Missing parameter [name]")))
   }
 
-
   @ApiOperation(value = "Add dataset to collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
   def attachDataset(collectionId: UUID, datasetId: UUID) = PermissionAction(Permission.AddResourceToCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
-    // TODO this needs to be cleaned up when do permissions for adding to a resource
-    if (!Permission.checkOwner(request.user, ResourceRef(ResourceRef.dataset, datasetId))) {
-      Forbidden(toJson(s"You are not the owner of the dataset"))
-    } else {
-      collections.addDataset(collectionId, datasetId) match {
-        case Success(_) => {
-          var datasetsInCollection = 0
-          collections.get(collectionId) match {
-            case Some(collection) => {
-              datasets.get(datasetId) match {
-                case Some(dataset) => {
-                  if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
-                    collections.addDatasetToCollectionSpaces(collection.id,dataset.id, request.user)
-                  }
-                  events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "attach_dataset_collection")
+
+    collections.addDataset(collectionId, datasetId) match {
+      case Success(_) => {
+        var datasetsInCollection = 0
+        collections.get(collectionId) match {
+          case Some(collection) => {
+            datasets.get(datasetId) match {
+              case Some(dataset) => {
+                if (play.Play.application().configuration().getBoolean("addDatasetToCollectionSpace")){
+                  collections.addDatasetToCollectionSpaces(collection.id,dataset.id, request.user)
                 }
-                case None =>
+                events.addSourceEvent(request.user , dataset.id, dataset.name, collection.id, collection.name, "attach_dataset_collection")
               }
-              datasetsInCollection = collection.datasetCount
+              case None =>
             }
-            case None =>
+            datasetsInCollection = collection.datasetCount
           }
-          //datasetsInCollection is the number of datasets in this collection
-          Ok(Json.obj("datasetsInCollection" -> Json.toJson(datasetsInCollection) ))
+          case None =>
         }
-        case Failure(t) => InternalServerError
+        //datasetsInCollection is the number of datasets in this collection
+        Ok(Json.obj("datasetsInCollection" -> Json.toJson(datasetsInCollection) ))
       }
+      case Failure(t) => InternalServerError
     }
+
   }
 
   /**
@@ -124,7 +120,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Remove dataset from collection",
       notes = "",
       responseClass = "None", httpMethod = "POST")
-  def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: String) = PermissionAction(Permission.EditCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
+  def removeDataset(collectionId: UUID, datasetId: UUID, ignoreNotFound: String) = PermissionAction(Permission.RemoveResourceFromCollection, Some(ResourceRef(ResourceRef.collection, collectionId)), Some(ResourceRef(ResourceRef.dataset, datasetId))) { implicit request =>
     collections.removeDataset(collectionId, datasetId, Try(ignoreNotFound.toBoolean).getOrElse(true)) match {
       case Success(_) => {
 
@@ -557,7 +553,7 @@ class Collections @Inject() (datasets: DatasetService, collections: CollectionSe
   @ApiOperation(value = "Remove subcollection from collection",
     notes="",
     responseClass = "None", httpMethod = "POST")
-  def removeSubCollection(collectionId: UUID, subCollectionId: UUID, ignoreNotFound: String) = PermissionAction(Permission.AddResourceToCollection, Some(ResourceRef(ResourceRef.collection, collectionId))) { implicit request =>
+  def removeSubCollection(collectionId: UUID, subCollectionId: UUID, ignoreNotFound: String) = PermissionAction(Permission.RemoveResourceFromCollection, Some(ResourceRef(ResourceRef.collection, collectionId)), Some(ResourceRef(ResourceRef.collection, subCollectionId))) { implicit request =>
 
     collections.removeSubCollection(collectionId, subCollectionId, Try(ignoreNotFound.toBoolean).getOrElse(true)) match {
       case Success(_) => {

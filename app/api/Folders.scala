@@ -138,7 +138,7 @@ class Folders @Inject() (
   @ApiOperation(value = "Delete a folder",
     notes = "Deletes all the files and folder within a folder and then deletes itself",
     responseClass= "None", httpMethod ="DELETE")
-  def deleteFolder(parentDatasetId: UUID, folderId: UUID) = PermissionAction(Permission.AddResourceToDataset, Some(ResourceRef(ResourceRef.dataset, parentDatasetId))) { implicit request =>
+  def deleteFolder(parentDatasetId: UUID, folderId: UUID) = PermissionAction(Permission.RemoveResourceFromDataset, Some(ResourceRef(ResourceRef.dataset, parentDatasetId))) { implicit request =>
     Logger.debug("--- Api Deleting Folder ---")
     datasets.get(parentDatasetId) match {
       case Some(parentDataset) => {

@@ -2,6 +2,7 @@
 @import _root_.util.Formatters.ellipsize
 @import api.Permission
 @import play.api.i18n.Messages
+
 <div class="post-box @classes" id="@collection.id-tile">
     <div class="panel panel-default collection-panel">
         <div class="pull-left">
@@ -26,7 +27,7 @@
                 @if(user.isDefined) {
                     @if(space.isDefined) {
 
-                        @if(user.get.id.equals(collection.author.id) || Permission.checkPermission(Permission.AddResourceToSpace, ResourceRef(ResourceRef.space,UUID(space.get)))) {
+                        @if(user.get.id.equals(collection.author.id) || Permission.checkPermission(Permission.RemoveResourceFromSpace, ResourceRef(ResourceRef.space,UUID(space.get)))) {
                             <button onclick="confirmRemoveResourceFromResource('space','@Messages("space.title")','@(UUID(space.getOrElse("")))','collection','@(collection.id)','@(collection.name.replace("'","&#39;"))',true,'@redirect.url')" class="btn btn-link" title="Remove the collection from the @Messages("space.title")">
                                 <span class="glyphicon glyphicon-remove"></span></button>
                         } else {
