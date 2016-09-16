@@ -77,11 +77,14 @@ class Search @Inject() (
           }
 
           // Use "distinct" to remove duplicate results.
-          Ok(JsObject(Seq("datasets" -> toJson(datasetsResults.distinct), "files" -> toJson(filesResults.distinct))))
+          Ok(JsObject(Seq(
+            "datasets" -> toJson(datasetsResults.distinct),
+            "files" -> toJson(filesResults.distinct),
+            "collections" -> toJson(collectionsResults.distinct)
+          )))
         }
         case None => {
-          Logger.error("ElasticSearch plugin could not be reached")
-          BadRequest
+          BadRequest("Elasticsearch plugin could not be reached")
         }
       }
   }
