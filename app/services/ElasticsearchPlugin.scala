@@ -255,8 +255,8 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   def index(collection: Collection, recursive: Boolean) {
     connect
     // Perform recursion first if necessary
-    for (dataset <- datasets.listCollection(collection.id.toString)) {
-      if (recursive) {
+    if (recursive) {
+      for (dataset <- datasets.listCollection(collection.id.toString)) {
         index(dataset, recursive)
       }
     }
@@ -270,14 +270,14 @@ class ElasticsearchPlugin(application: Application) extends Plugin {
   def index(dataset: Dataset, recursive: Boolean) {
     connect
     // Perform recursion first if necessary
-    for (fileId <- dataset.files) {
-      files.get(fileId) match {
-        case Some(f) => {
-          if (recursive) {
+    if (recursive) {
+      for (fileId <- dataset.files) {
+        files.get(fileId) match {
+          case Some(f) => {
             index(f)
           }
+          case None => Logger.error(s"Error getting file $fileId for recursive indexing")
         }
-        case None => Logger.error(s"Error getting file $fileId for recursive indexing")
       }
     }
     index(SearchUtils.getElasticsearchObject(dataset))
