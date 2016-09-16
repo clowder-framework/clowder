@@ -129,8 +129,9 @@ object SearchUtils {
   /**Convert Collection to ElasticsearchObject and return, fetching metadata as necessary**/
   def getElasticsearchObject(c: Collection): Option[ElasticsearchObject] = {
     // Get parent_of relationships for Collection
-    var parent_of = datasets.listCollection(c.id.toString).map( ds => ds.id.toString )
-    parent_of = parent_of ++ c.parent_collection_ids.map( pc_id => pc_id.toString)
+    // TODO: Re-enable after listCollection implements Iterator; crashes on large databases otherwise
+    //var parent_of = datasets.listCollection(c.id.toString).map( ds => ds.id.toString )
+    var parent_of = c.parent_collection_ids.map( pc_id => pc_id.toString) //++ parent_of
 
     Some(new ElasticsearchObject(
       ResourceRef('collection, c.id),

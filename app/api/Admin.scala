@@ -188,8 +188,11 @@ class Admin @Inject()(userService: UserService,
           plugin.createIndex()
 
           // Reindex everything
+          Logger.debug("Reindexing collections...")
           collections.index(None)
+          Logger.debug("Reindexing datasets...")
           datasets.index(None)
+          Logger.debug("Reindexing files...")
           files.index(None)
         }
         case None => { BadRequest(toJson(Map("error" -> "Elasticsearch not connected"))) }
