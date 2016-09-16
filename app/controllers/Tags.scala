@@ -169,15 +169,13 @@ class Tags @Inject()(collections: CollectionService, datasets: DatasetService, f
         for ((k, v) <- plugin.listTags("file")) {
           weightedTags(k) = weightedTags(k) + v * current.configuration.getInt("tags.weight.files").getOrElse(1)
         }
+        for ((k, v) <- plugin.listTags("section")) {
+          weightedTags(k) = weightedTags(k) + v * current.configuration.getInt("tags.weight.sections").getOrElse(1)
+        }
       }
       case None => {
         Logger.error("ElasticSearch plugin could not be reached for tag search")
       }
-    }
-
-    // TODO: Index sections in Elasticsearch somehow?
-    sections.getTags(user).foreach { case (tag: String, count: Long) =>
-      weightedTags(tag) = weightedTags(tag) + count * current.configuration.getInt("tags.weight.sections").getOrElse(1)
     }
 
     weightedTags.toList
