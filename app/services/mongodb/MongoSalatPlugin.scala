@@ -135,6 +135,8 @@ class MongoSalatPlugin(app: Application) extends Plugin {
     collection("events").ensureIndex(MongoDBObject("object_id" -> 1))
     collection("events").ensureIndex(MongoDBObject("user._id" -> 1))
 
+    collection("extractions").ensureIndex(MongoDBObject("file_id" -> 1))
+
     collection("folders").ensureIndex(MongoDBObject("parentDatasetId" -> 1))
 
     collection("uploads").ensureIndex(MongoDBObject("uploadDate" -> -1))
