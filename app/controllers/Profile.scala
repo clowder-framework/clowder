@@ -37,7 +37,6 @@ class Profile @Inject() (users: UserService, files: FileService, datasets: Datas
         val newbioForm = bioForm.fill(muser.profile.getOrElse(new models.Profile()))
         val allProjectOptions: List[String] = "" :: projects.getAllProjects()
         val allInstitutionOptions: List[String] = "" :: institutions.getAllInstitutions()
-        //val emailtimes: List[String] = List("none", "hourly", "daily", "weekly")
         val emailtimes: Map[String,String] = Map("none" -> "none", "hourly" -> "hourly (send on the hour)", "daily" -> "daily (send at 7:00 am)", "weekly" -> "weekly (send on Monday at 7:00 am)")
         Ok(views.html.editProfile(newbioForm, allInstitutionOptions, allProjectOptions, emailtimes))
       }
