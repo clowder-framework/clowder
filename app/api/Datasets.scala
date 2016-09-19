@@ -801,7 +801,13 @@ class  Datasets @Inject()(
     datasets.get(id) match {
       case Some(dataset) => {
         val list: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
-          case Some(file) => jsonFile(file)
+          case Some(file) => {
+            val serveradmin = request.user match {
+              case Some(u) => u.serverAdmin
+              case None => false
+            }
+            jsonFile(file, serveradmin)
+          }
           case None => Logger.error(s"Error getting File $fileId")
         }).asInstanceOf[List[JsValue]]
         Ok(toJson(list))
@@ -817,10 +823,20 @@ class  Datasets @Inject()(
     datasets.get(id) match {
       case Some(dataset) => {
         val listFiles: List[JsValue]= dataset.files.map(fileId => files.get(fileId) match {
-          case Some(file) => jsonFile(file)
+          case Some(file) => {
+            val serveradmin = request.user match {
+              case Some(u) => u.serverAdmin
+              case None => false
+            }
+            jsonFile(file, serveradmin)
+          }
           case None => Logger.error(s"Error getting File $fileId")
         }).asInstanceOf[List[JsValue]]
-        val list = listFiles ++ getFilesWithinFolders(id)
+        val serveradmin = request.user match {
+          case Some(u) => u.serverAdmin
+          case None => false
+        }
+        val list = listFiles ++ getFilesWithinFolders(id, serveradmin)
         Ok(toJson(list))
       }
       case None => Logger.error("Error getting dataset" + id); InternalServerError
@@ -866,7 +882,7 @@ class  Datasets @Inject()(
   }
 
 
-  private def getFilesWithinFolders(id: UUID): List[JsValue] = {
+  private def getFilesWithinFolders(id: UUID, serveradmin: Boolean = false): List[JsValue] = {
     val output = new ListBuffer[JsValue]()
     datasets.get(id) match {
       case Some(dataset) => {
@@ -875,7 +891,7 @@ class  Datasets @Inject()(
           folder =>
             folder.files.map {
               fileId => files.get(fileId) match {
-                case Some(file) => output += jsonFile(file)
+                case Some(file) => output += jsonFile(file, serveradmin)
                 case None => Logger.error(s"Error getting file $fileId")
               }
             }
@@ -886,9 +902,31 @@ class  Datasets @Inject()(
     output.toList.asInstanceOf[List[JsValue]]
   }
 
-  def jsonFile(file: models.File): JsValue = {
-    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "contentType" -> file.contentType,
-      "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString))
+  def jsonFile(file: models.File, serverAdmin: Boolean = false): JsValue = {
+    val defaultMap = Map(
+      "id" -> file.id.toString,
+      "filename" -> file.filename,
+      "contentType" -> file.contentType,
+      "date-created" -> file.uploadDate.toString(),
+      "size" -> file.length.toString)
+
+    // Only include filepath if using DiskByte storage and user is serverAdmin
+    val jsonMap = file.loader match {
+      case "services.filesystem.DiskByteStorageService" => {
+        if (serverAdmin)
+          Map(
+            "id" -> file.id.toString,
+            "filename" -> file.filename,
+            "filepath" -> file.loader_id,
+            "contentType" -> file.contentType,
+            "date-created" -> file.uploadDate.toString(),
+            "size" -> file.length.toString)
+        else
+          defaultMap
+      }
+      case _ => defaultMap
+    }
+    toJson(jsonMap)
   }
 
   //Update Dataset Information code starts
