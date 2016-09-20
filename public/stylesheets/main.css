@@ -963,9 +963,7 @@ table.borderless tbody tr td, table.borderless tbody tr th {
     padding-top: 100%;
     background: black;
 }
-/*.glyphicon-circle:before{*/
-    /*content:"\25cf";*/
-/*}*/
+
 .green-background{
     background-color: green;
 }
