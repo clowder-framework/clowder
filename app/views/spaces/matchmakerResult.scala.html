@@ -164,7 +164,16 @@
 
                 for(i in response) {
                     var sel = repository == response[i].orgidentifier;
-                    var html  = repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", repositoryName:response[i].repositoryName, orgidentifier: response[i].orgidentifier, per_rule_score: response[i].per_rule_score, selected: repository == response[i].orgidentifier});
+                    var match = true;
+                    for(var j=0; j<response[i].per_rule_score.length; j++) {
+                        if(response[i].per_rule_score[j].score < 0) {
+                            match = false;
+                        }
+
+                    }
+
+                    console.log(match);
+                    var html  = repositoryTemplate({href_metadata: "@routes.CurationObjects.getCurationObject(curationObject.id)", repositoryName:response[i].repositoryName, is_match: match, orgidentifier: response[i].orgidentifier, per_rule_score: response[i].per_rule_score, selected: repository == response[i].orgidentifier});
                     $('#mmresults').append(html);
 
                 }

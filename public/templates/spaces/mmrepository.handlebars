@@ -1,23 +1,27 @@
 {{#if selected}}
-          <h4><input type="radio" name="repository" value="{{orgidentifier}}" checked> {{repositoryName}}</h4>
+          <h3><input type="radio" name="repository" value="{{orgidentifier}}" checked> {{repositoryName}}</h3>
       {{else}}
-          <h4><input type="radio" name="repository" value="{{orgidentifier}}" > {{repositoryName}}</h4>
-
+          <h3><input type="radio" name="repository" value="{{orgidentifier}}" > {{repositoryName}}</h3>
 {{/if}}
-    <ul class="indent_20 list-unstyled">
-     {{#if is_match}}
-          <p> <span class="glyphicon glyphicon-one-fine-green-dot"></span> Match: all requirements are satisfied.</p>
-     {{else}}
-         <p> <span class="glyphicon glyphicon-one-fine-yellow-dot"></span> Possible Match: action advised, see Matchmaker details. </p>
-     {{/if}}
-    </ul>
+ {{#if is_match}}
+    <p><span class="glyphicon-stack">
+        <i class="glyphicon glyphicon-circle green-background"> </i>
+    </span>
+     Match: all requirements are satisfied.
+    </p>
+ {{else}}
+    <p>
+     <span class="glyphicon-stack">
+         <i class="glyphicon glyphicon-circle goldenrod"> </i>
+     </span>
+      Possible Match: action advised, see Matchmaker details.
+     </p>
+ {{/if}}
+
 <div class="indent20" id="{{orgidentifier}}">
   <a role= "button" data-toggle="collapse" href="#rules_{{orgidentifier}}" aria-expanded="false" aria-controls="rules_{{orgidentifier}}" class="matchmaker_link">
   <span class="glyphicon glyphicon-plus" ></span>  Matchmaker Details</a>
-
-
   <div class="collapse" id="rules_{{orgidentifier}}">
-
   <ul class="indent_20 list-unstyled">
 
       {{#each per_rule_score}}
