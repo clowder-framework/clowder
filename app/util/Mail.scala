@@ -73,10 +73,7 @@ object Mail {
 
       // the mailer plugin handles null / empty string gracefully
       mail.send("", text)
-
     }
-
-
   }
 
   private def getAdmins: List[String] = {

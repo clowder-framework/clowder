@@ -60,7 +60,13 @@ class Files @Inject()(
   def get(id: UUID) = PermissionAction(Permission.ViewFile, Some(ResourceRef(ResourceRef.file, id))) { implicit request =>
     Logger.info("GET file with id " + id)
     files.get(id) match {
-      case Some(file) => Ok(jsonFile(file))
+      case Some(file) => {
+        val serveradmin = request.user match {
+          case Some(u) => u.serverAdmin
+          case None => false
+        }
+        Ok(jsonFile(file, serveradmin))
+      }
       case None => {
         Logger.error("Error getting file" + id)
         InternalServerError
@@ -73,7 +79,11 @@ class Files @Inject()(
    */
   @ApiOperation(value = "List all files", notes = "Returns list of files and descriptions.", responseClass = "None", httpMethod = "GET")
   def list = DisabledAction { implicit request =>
-    val list = for (f <- files.listFilesNotIntermediate()) yield jsonFile(f)
+    val serveradmin = request.user match {
+      case Some(u) => u.serverAdmin
+      case None => false
+    }
+    val list = for (f <- files.listFilesNotIntermediate()) yield jsonFile(f, serveradmin)
     Ok(toJson(list))
   }
 
@@ -635,9 +645,37 @@ class Files @Inject()(
         Ok(toJson(Map("status" -> "success")))
   }
 
-  def jsonFile(file: File): JsValue = {
-    toJson(Map("id" -> file.id.toString, "filename" -> file.filename, "filedescription" -> file.description, "content-type" -> file.contentType, "date-created" -> file.uploadDate.toString(), "size" -> file.length.toString,
-    		"authorId" -> file.author.id.stringify, "status" -> file.status))
+  def jsonFile(file: File, serverAdmin: Boolean = false): JsValue = {
+    val defaultMap = Map(
+      "id" -> file.id.toString,
+      "filename" -> file.filename,
+      "filedescription" -> file.description,
+      "content-type" -> file.contentType,
+      "date-created" -> file.uploadDate.toString(),
+      "size" -> file.length.toString,
+      "authorId" -> file.author.id.stringify,
+      "status" -> file.status)
+
+    // Only include filepath if using DiskByte storage and user is serverAdmin
+    val jsonMap = file.loader match {
+      case "services.filesystem.DiskByteStorageService" => {
+        if (serverAdmin)
+          Map(
+            "id" -> file.id.toString,
+            "filename" -> file.filename,
+            "filepath" -> file.loader_id,
+            "filedescription" -> file.description,
+            "content-type" -> file.contentType,
+            "date-created" -> file.uploadDate.toString(),
+            "size" -> file.length.toString,
+            "authorId" -> file.author.id.stringify,
+            "status" -> file.status)
+        else
+          defaultMap
+      }
+      case _ => defaultMap
+    }
+    toJson(jsonMap)
   }
 
   def jsonFileWithThumbnail(file: File): JsValue = {

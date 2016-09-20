@@ -1,4 +1,4 @@
-@(dataset: Dataset, collectionsInside: List[models.Collection])(implicit user: Option[models.User])
+@(dataset: Dataset, collectionsInside: List[models.Collection], canAddDatasetToCollection: Boolean)(implicit user: Option[models.User])
 
 @import api.Permission
 @import play.api.libs.json.Json
@@ -36,7 +36,7 @@
                             @collection.datasetCount datasets
                         }
                         <!-- If the user can edit the collection, the elements are enabled, otherwise they are present but disabled to provide consistent UE. -->
-                        @if(Permission.checkPermission(Permission.EditCollection, ResourceRef(ResourceRef.collection, collection.id))) {
+                        @if(Permission.checkPermission(Permission.RemoveResourceFromCollection, ResourceRef(ResourceRef.collection, collection.id))) {
                             | <button onclick="confirmRemoveResourceFromResourceEvent('collection','collection','@(collection.id)','dataset','@(dataset.id)',event)" class="btn btn-link btn-xs" title="Remove the dataset from the collection.">
                                 <span class="glyphicon glyphicon-remove"></span> Remove</button>
                         } else {
@@ -52,7 +52,7 @@
     </div>
 </div>
 
-@if(Permission.checkOwner(user, ResourceRef(ResourceRef.dataset, dataset.id))) {
+@if(canAddDatasetToCollection) {
     <div class="form-inline bottom-padding">
         <div class="input-group input-group-sm col-md-8">
             <select id="collectionAddSelect" class="form-control add-resource">
