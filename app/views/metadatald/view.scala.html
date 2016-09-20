@@ -25,16 +25,13 @@
                                     <!-- only with context and user (not extractor) generated -->
                                     @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
                                         <!-- ids don't like spaces, you can use regex for removing different characters in metadata names (key) as well -->
-                                        @defining(contextId.get + key.replaceAll("[() ]","") + resourceId.toString()) { mid =>
-                                                @if(user.isDefined) {
-                                                    <a id='@mid' href="javascript:void(0)"
-                                                    onmouseover="getMetadataContext('@mid','@contextId.get','@key');"
-                                                    onmouseout="leaveMetadataContext('@mid');">
-                                                        <strong>@key:</strong></a>
-                                                } else {
-                                                    <strong>@key:</strong>
-                                                }
-                                           @printContent(agent,value,contextId,contextURL,resourceId)
+                                        @defining(contextId.get + "-" + key.replaceAll("[() ]","") + "-" + resourceId.toString()) { mid =>
+                                            @if(user.isDefined) {
+                                                <a class='context-key' id='@{mid}' href="javascript:void(0)">@key</a><span>:</span>
+                                            } else {
+                                                @key:
+                                            }
+                                            @printContent(agent,value,contextId,contextURL,resourceId)
                                         }
                                     } else {
                                         @contextURL match {
@@ -55,15 +52,12 @@
                                         <span class="glyphicon glyphicon-minus"></span>
                                     </a>
                                     @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
-                                        @defining(contextId.get + key.replaceAll("[() ]","") + resourceId.toString()) { mid =>
-                                                @if(user.isDefined) {
-                                                    <a id='@mid' href="javascript:void(0)"
-                                                    onmouseover="getMetadataContext('@mid','@contextId.get','@key');"
-                                                    onmouseout="leaveMetadataContext('@mid');">
-                                                        <strong>@key:</strong></a>
-                                                } else {
-                                                    <strong>@key:</strong>
-                                                }
+                                        @defining(contextId.get + "-" + key.replaceAll("[() ]","") + "-" + resourceId.toString()) { mid =>
+                                            @if(user.isDefined) {
+                                                <a class='context-key' id='@{mid}' href="javascript:void(0)">@key</a><span>:</span>
+                                            } else {
+                                                @key:
+                                            }
                                             @printContent(agent,value,contextId,contextURL,resourceId)
                                         }
                                     } else {
@@ -82,14 +76,11 @@
                             case _ => {
                                 <li class="md-block">
                                 @if(contextId.isDefined && agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
-                                    @defining(contextId.get + key.replaceAll("[() ]","") + resourceId.toString()) { mid =>
+                                    @defining(contextId.get + "-" + key.replaceAll("[() ]","") + "-" + resourceId.toString()) { mid =>
                                             @if(user.isDefined) {
-                                                <a id='@mid' href="javascript:void(0)"
-                                                onmouseover="getMetadataContext('@mid','@contextId.get','@key');"
-                                                onmouseout="leaveMetadataContext('@mid');">
-                                                    <strong>@key:</strong></a>
+                                                <a class='context-key' id='@{mid}' href="javascript:void(0)">@key</a><span>:</span>
                                             } else {
-                                                <strong>@key:</strong>
+                                                @key:
                                             }
                                         @printContent(agent,value,contextId,contextURL,resourceId)
                                     }
@@ -127,22 +118,17 @@
         }
     }
 
-    @printHeader(agent: Agent, date: java.util.Date, resourceId: UUID, mid: UUID) = {
+    @printHeader(agent: Agent, date: java.util.Date) = {
         @agent.operation by
         @if(agent.displayName.length > 0) {
             @if(agent.typeOfAgent.toLowerCase().indexOf("user") >= 0) {
-                @defining(resourceId.toString() + mid.toString()) { aid =>
-                        @if(user.isDefined) {
-                            <a id='@aid' href="@routes.Profile.viewProfileUUID(agent.id)"
-                            onmouseover="getAgentContext('@aid','@agent.id');"
-                            onmouseout="leaveAgentContext('@aid');">@agent.displayName</a>
-                        } else {
-                            @agent.displayName
-                        }
-
+                @if(user.isDefined) {
+                    <a href= "@routes.Profile.viewProfileUUID(agent.id)">@agent.displayName</a>
+                } else {
+                    @agent.displayName
                 }
             } else {
-                @if(!agent.url.isDefined) {
+                @if(agent.url.isDefined) {
                     <a href="@agent.url" target="_blank">@agent.displayName</a>
                 } else {
                     @agent.displayName
@@ -168,7 +154,7 @@
                     <span class="panel-icon glyphicon glyphicon-minus"></span>
                 </a>
                 <span>
-                    @printHeader(m.creator, m.createdAt, m.attachedTo.id, m.id)
+                    @printHeader(m.creator, m.createdAt)
                 </span>
                 @if(toDelete && Permission.checkPermission(Permission.DeleteMetadata, ResourceRef(ResourceRef.metadata, m.id))) {
                         <a id="@m.id" title="Delete this metadata" class="btn btn-link delete-icon">
@@ -200,7 +186,6 @@
                 });
 
             $('.tree li').on('click', function (e) {
-                //console.log("clicked");
                 var children = $(this).find('> ul > li');
                 if (children.is(":visible")) {
                     children.hide('fast');
@@ -222,7 +207,6 @@
                 });
 
                 request.done(function (response, textStatus, jqXHR) {
-                    //console.log("success");
                     delete_icon.closest(".panel").remove();
                 });
 
@@ -235,6 +219,15 @@
                 });
             });
         })
+
+        $(document).on('mouseenter', '.context-key', function(){
+            var contextId = this.id.split("-",1)[0];
+            getMetadataContext(this.id, contextId, this.textContent)
+        });
+
+        $(document).on('mouseleave', '.context-key', function(){
+            leaveMetadataContext(this.id)
+        });
 
         // get metadata definitions
         function getMetadataContext(mid, uuid, key) {
@@ -249,10 +242,8 @@
                 if (fields['@@context']) {
                     context = JSON.stringify(fields['@@context'][key]);
                 }
-                //console.log(context);
                 $("#"+mid).popover({
                     content:context,
-                    trigger:'hover',
                     placement:'top',
                     template: '<div class="popover" role="tooltip" style="max-width:600px;word-break:break-all"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>'
                 });
@@ -269,36 +260,5 @@
         }
         function leaveMetadataContext(mid) {
             $("#"+mid).popover('hide');
-        }
-
-        // get agent author definitions
-        function getAgentContext(aid, uuid) {
-            var request = jsRoutes.api.Users.findById(uuid).ajax({
-                type: 'GET',
-                contentType: "application/json"
-            });
-
-            request.done(function (response, textStatus, jqXHR) {
-                var fields = response;
-                //console.log(fields['fullName']);
-                $("#"+aid).popover({
-                    content:fields['email'],
-                    trigger:'hover',
-                    placement:'top',
-                    template: '<div class="popover" role="tooltip" style="max-width:600px;word-break:break-all"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>'
-                });
-                $("#"+aid).popover('show');
-            });
-
-            request.fail(function (jqXHR, textStatus, errorThrown){
-                console.error("The following error occured: " + textStatus, errorThrown);
-                var errMsg = "You must be logged in to retrieve metadata definitions";
-                if (!checkErrorAndRedirect(jqXHR, errMsg)) {
-                    notify("Agent metadata context was not shown due to : " + errorThrown, "error");
-                }
-            });
-        }
-        function leaveAgentContext(aid) {
-            $("#"+aid).popover('hide');
         }
     </script>
