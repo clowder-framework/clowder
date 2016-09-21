@@ -350,8 +350,10 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
                       events.addRequestEvent(Some(user), requestReceiver, id, s.name, "postrequest_space")
 
                       //sending emails to the space's Admin && Editor
-                      val recipient: String = requestReceiver.email.get.toString
-                      Mail.sendEmail(subject, request.user, recipient, body)
+                      requestReceiver.email match {
+                        case Some(recipient) => Mail.sendEmail(subject, request.user, recipient.toString, body)
+                        case None =>
+                      }
                     }
                   }
                 }
