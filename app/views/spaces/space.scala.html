@@ -35,10 +35,13 @@
                         <span class="glyphicon glyphicon-trash"></span> Delete</button>
                 }
 
-            @if(user.isDefined && Permission.checkPermission(Permission.EditSpace, ResourceRef(ResourceRef.space, space.id))){
+            @if(user.isDefined && Permission.checkPermission(Permission.CreateDataset, ResourceRef(ResourceRef.space, space.id))) {
                 <a id="create_dataset" href="@routes.Datasets.newDataset(Some(space.id.toString()), None)" class="btn btn-link" title="@Messages("create.title", Messages("dataset.title"))">
-                    <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("dataset.title"))</a>
-                <a id="create_collection" href="@routes.Collections.newCollection(Some(space.id.toString()))" class="btn btn-link" title="@Messages("create.title", Messages("collection.title"))">
+                    <span class="glyphicon glyphicon-ok"></span>  @Messages("create.title", Messages("dataset.title"))</a>
+            }
+            @if(user.isDefined && Permission.checkPermission(Permission.CreateCollection, ResourceRef(ResourceRef.space, space.id))){
+                <a id="create_collection" href="@routes.Collections.newCollection(Some(space.id.toString()))" class="btn btn-link" title="@Messages("create.title", Messages("collection.title"))
+                ">
                     <span class="glyphicon glyphicon-ok"></span> @Messages("create.title", Messages("collections.title"))</a>
             }
         </div>

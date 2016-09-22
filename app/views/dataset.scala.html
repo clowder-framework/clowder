@@ -12,7 +12,7 @@
   curationObjects: List[models.CurationObject],
   currentSpace: Option[String],
   limit: Int, showDownload: Boolean, showAccess:  Boolean, access: String,
-  accessOptions: List[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
+  accessOptions: List[String], canAddDatasetToCollection: Boolean)(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 
 @import api.Permission
 @import play.api.Play.current
@@ -241,7 +241,7 @@
 		<!-- right column -->
 		<div class="col-md-4">
             @spaces.spaceAllocation(dataset.id, ResourceRef.dataset,datasetSpaces_canRemove.getOrElse(Map.empty),None)
-            @datasets.collections(dataset, collectionsInside)
+            @datasets.collections(dataset, collectionsInside, canAddDatasetToCollection)
             @datasets.tags(dataset, fileList, filesTags)
             @if(play.api.Play.current.plugin[services.StagingAreaPlugin].isDefined) {
                 @datasets.listCurationObjects(curationObjects)

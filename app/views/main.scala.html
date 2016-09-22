@@ -78,7 +78,7 @@
                                 <li><a href="@routes.Datasets.list(showPublic=false)"><span class="glyphicon glyphicon-briefcase"></span> @Messages("datasets.title")</a></li>
                                 <li><a href="@routes.Collections.list(showPublic=false)"><span class="glyphicon glyphicon-th-large"></span> @Messages("collections.title")</a></li>
                             } else {
-                                <li><a href="@routes.Spaces.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-tent"></span> @Messages("spaces.title")s</a></li>
+                                <li><a href="@routes.Spaces.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-tent"></span> @Messages("spaces.title")</a></li>
                                 <li><a href="@routes.Datasets.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-briefcase"></span> @Messages("datasets.title")</a></li>
                                 <li><a href="@routes.Collections.list(owner=Some(user.get.id.stringify))"><span class="glyphicon glyphicon-th-large"></span> @Messages("collections.title")</a></li>
 

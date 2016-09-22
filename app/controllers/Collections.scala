@@ -490,10 +490,17 @@ class Collections @Inject()(datasets: DatasetService, collections: CollectionSer
             val removeFromSpace = removeFromSpaceAllowed(dCollection.id,collectionSpace.id)
             decodedSpaces_canRemove = decodedSpaces_canRemove + (decodedSpace -> removeFromSpace)
           }
-
+          var canAddToParent = Permission.checkOwner(user, ResourceRef(ResourceRef.collection, collection.id))
+          if(!canAddToParent) {
+            collection.spaces.map(space => {
+              if(Permission.checkPermission(Permission.AddResourceToCollection, ResourceRef(ResourceRef.space, space))) {
+                canAddToParent = true
+              }
+            })
+          }
           Ok(views.html.collectionofdatasets(decodedDatasetsInside.toList, decodedChildCollections.toList,
             Some(decodedParentCollections.toList),dCollection, filteredPreviewers.toList,commentMap,Some(collectionSpaces_canRemove),
-            prevd,nextd, prevcc, nextcc, limit))
+            prevd,nextd, prevcc, nextcc, limit, canAddToParent))
 
         }
         case None => {

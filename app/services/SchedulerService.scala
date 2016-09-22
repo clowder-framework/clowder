@@ -55,6 +55,6 @@ trait SchedulerService {
 	/**
 	* Get Job by the current time
 	*/
-	def getJobByTime(minute: Integer, hour: Integer, day: Integer): List[TimerJob]
+	def getJobByTime(minute: Integer, hour: Integer, day_of_week: Integer): List[TimerJob]
 
 }

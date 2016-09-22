@@ -1,4 +1,5 @@
 @(metadata: List[models.MetadataDefinition], spaceId: Option[UUID], spaceName: Option[String])(implicit user: Option[models.User])
+
 @import play.api.i18n.Messages
 @import _root_.util.Formatters._
 
@@ -227,20 +228,21 @@
                 <div class="panel-body">
                     <form id="addDefinition" class="form-horizontal">
                         <div class="form-group has-feedback">
-                            <div class="col-md-3"><label for="label">Label </label> <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Label" data-content="A label or name that users will see when selecting this as a type of metadata."><span class="glyphicon glyphicon-info-sign"></span></a></div>
+                            <div class="col-md-3"><label for="label">Label </label> <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="Label (required)" data-content="A label or name that users will see when selecting this as a type of metadata."><span class="glyphicon glyphicon-info-sign"></span></a></div>
                             <div class="col-sm-9">
                                 <input type="text" class="form-control" id="label" placeholder="Label" required />
                                 <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
                             </div>
                         </div>
                         <div class="form-group">
-                           <div  class="col-sm-3"> <label for="uri">URI </label> <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="" data-content="A unique URI where this metadata is defined. This is not queried or used to populate metadata values, only for reference." data-original-title="URI"><span class="glyphicon glyphicon-info-sign"></span></a></div>
+                            <div  class="col-sm-3"> <label for="uri">URI </label> <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="URI" data-content="@Messages("metadata.uri", Messages("space.title"))" data-original-title="URI"><span class="glyphicon glyphicon-info-sign"></span></a></div>
                             <div class="col-sm-9">
-                                <input type="url" class="form-control" id="uri" placeholder="http://" required />
+                                <input type="url" class="form-control" id="uri" placeholder="http://" />
                             </div>
+
                         </div>
                         <div class="form-group">
-                            <div class="col-sm-3"><label for="type">Type </label> <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="" data-html="true" data-content="Currently supported types:<br /><ul><li>String: this is free-form, plain-text field.</li><li>List: an array or list of metadata options that can be retrieved from a URL. The list type requires you to define a Definitions URL that will return the available metadata options in JSON format.</li><li>Queryable List: similar to list, except that you can also pass a query parameter to filter the list at the Definitions URL.</li><li>Location: also a queryable list, but it expects the response to contain a latitude and longitude.</li></ul>" data-original-title="Metadata Type"><span class="glyphicon glyphicon-info-sign"></span></a></div>
+                            <div class="col-sm-3"><label for="type">Type </label> <a tabindex="0" role="button" aria-hidden="true" data-toggle="popover" title="" data-html="true" data-content="Currently supported types:<br /><ul><li>String: this is free-form, plain-text field.</li><li>List: an array or list of metadata options that can be retrieved from a URL. The list type requires you to define a Definitions URL that will return the available metadata options in JSON format.</li><li>Queryable List: similar to list, except that you can also pass a query parameter to filter the list at the Definitions URL.</li><li>Location: also a queryable list, but it expects the response to contain a latitude and longitude.</li></ul>" data-original-title="Metadata Type (required)"><span class="glyphicon glyphicon-info-sign"></span></a></div>
                             <div class="col-sm-4">
                                 <select name="type" id="type" class="form-control" required>
                                     <option value="string">String</option>
