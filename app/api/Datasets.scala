@@ -2253,7 +2253,7 @@ class  Datasets @Inject()(
     zip.putNextEntry(new ZipEntry("bagit.txt"))
     val softwareLine = "Bag-Software-Agent: clowder.ncsa.illinois.edu\n"
     val baggingDate = "Bagging-Date: "+(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(Calendar.getInstance.getTime)+"\n"
-    val baggingSize = "Bag-Size: " + _root_.util.FileUtils.humanReadableByteCount(totalbytes) + "\n"
+    val baggingSize = "Bag-Size: " + _root_.util.Formatters.humanReadableByteCount(totalbytes) + "\n"
     val payLoadOxum = "Payload-Oxum: "+ totalbytes + "." + totalFiles +"\n"
     val senderIdentifier="Internal-Sender-Identifier: "+dataset.id+"\n"
     val senderDescription = "Internal-Sender-Description: "+dataset.description+"\n"
