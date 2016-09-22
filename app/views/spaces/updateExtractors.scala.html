@@ -1,15 +1,15 @@
 @(runningExtractors: List[String], selectedExtractors: List[String], space: UUID, spaceName: String)(implicit user: Option[models.User])
-
+@import _root_.util.Formatters._
 @import helper._
 
 @main("Space") {
 	<div>
-		<h4>
-			<span class="glyphicon glyphicon-tent"></span>  <a href="@routes.Spaces.getSpace(space)"> @spaceName</a>
+		<div class="breadcrumb">
+			<span class="glyphicon glyphicon-tent"></span>  <a href="@routes.Spaces.getSpace(space)" title="@spaceName"> @Html(ellipsize(spaceName,18))</a>
 			<span class="glyphicon glyphicon-chevron-right"></span>
 			<span class="glyphicon glyphicon-fullscreen"></span> Extractors
 
-		</h4>
+		</div>
 	</div>
  @if(runningExtractors.size == 0) {
 	<div class="page-header">

@@ -1,6 +1,7 @@
 @(errorString: String, spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, spaceId: Option[String], spaceName: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 @import play.api.i18n.Messages
 @import helper._
+@import _root_.util.Formatters._
 
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
@@ -15,11 +16,11 @@
   </script>
     <script src="@routes.Assets.at("javascripts/chosen.jquery.js")" type="text/javascript"></script>
     <link rel="stylesheet" href="@routes.Assets.at("stylesheets/chosen.css")">
-    <div>
-        <h4>
+    <div class="breadcrumb">
+
         @(spaceId, spaceName) match {
             case (Some(id), Some(name)) => {
-                <span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(UUID(id))"> @Html(name)</a>
+                <span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(UUID(id))" title="@name"> @Html(ellipsize(name, 18))</a>
 
             }
             case (_, _) => {
@@ -31,7 +32,7 @@
         }
             <span class="glyphicon glyphicon-chevron-right"></span>
             <span class="glyphicon glyphicon-th-large"></span> @Messages("create.header", Messages("collection.title"))
-        </h4>
+
     </div>
   <div class="page-header">
     <h1>@Messages("create.header", Messages("collection.title"))</h1>

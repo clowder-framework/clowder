@@ -1,5 +1,7 @@
 @(metadata: List[models.MetadataDefinition], spaceId: Option[UUID], spaceName: Option[String])(implicit user: Option[models.User])
 @import play.api.i18n.Messages
+@import _root_.util.Formatters._
+
 @main("Metadata Definitions") {
     <script src="@routes.Assets.at("javascripts/metadata/manageDefinitions.js")" type="text/javascript"></script>
 	<script>
@@ -139,11 +141,11 @@
 
         @(spaceName, spaceId) match {
             case (Some(space_name), Some(space_id)) => {
-                <h4>
-                    <span class="glyphicon glyphicon-tent"></span><a href="@routes.Spaces.getSpace(space_id)"> @space_name</a>
+                <div class="breadcrumb">
+                    <span class="glyphicon glyphicon-tent"></span><a href="@routes.Spaces.getSpace(space_id)" title="@space_name"> @Html(ellipsize(space_name, 18))</a>
                     <span class="glyphicon glyphicon-chevron-right"></span>
                     <span class="glyphicon glyphicon-list"></span> Metadata Definitions
-                </h4>
+                </div>
                 <h1>Metadata Terms & Definitions</h1>
 
                 <p> The following metadata terms will be available for this @Messages("space.title")'s datasets, files, and curation objects. To add a new term scroll to the bottom of the page.</p>

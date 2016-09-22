@@ -1,26 +1,28 @@
 @(myForm: Form[controllers.spaceFormData], title:String, submitButton: Html, spaceId: Option[UUID], spaceName: Option[String])(implicit flash: play.api.mvc.Flash, user: Option[models.User])
 @import play.api.i18n.Messages
 @import helper._
-@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f)}
 @import play.api.Play.current
 @import models.SpaceStatus
 @import api.Permission
+@import _root_.util.Formatters._
+@implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f)}
+
 
 @main(title) {
   <div class="page-header">
-    <h4>
+    <div class="breadcrumb">
       @(spaceId, spaceName) match {
         case (Some(s), Some(name)) => {
-          <span class="glyphicon glyphicon-tent"></span>  <a href="@routes.Spaces.getSpace(s)"> @name</a>
+          <span class="glyphicon glyphicon-tent"></span>  <a href="@routes.Spaces.getSpace(s)" title="@name"> @Html(ellipsize(name, 18))</a>
           <span class="glyphicon glyphicon-chevron-right"></span>
-          <span class="glyphicon glyphicon-edit"></span> @title
+          <span class="glyphicon glyphicon-edit"></span> @Html(title)
         }
         case (_,_) => {
           @user match {
             case Some(u) => {
-              <span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(u.id)"> @u.fullName </a>
+              <span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(u.id)"> @Html(u.fullName) </a>
               <span class="glyphicon glyphicon-chevron-right"></span>
-              <span class="glyphicon glyphicon-tent"></span> @title
+              <span class="glyphicon glyphicon-tent"></span> @Html(title)
             }
             case None => {}
           }
@@ -29,7 +31,7 @@
 
 
 
-    </h4>
+    </div>
     <h1>@title</h1>
     <p>@Messages("space.create.message", Messages("spaces.title"), Messages("datasets.title"))</p>
   </div>

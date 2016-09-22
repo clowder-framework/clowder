@@ -1,5 +1,6 @@
 @(id: UUID, name:String, desc:String, defaultspace:Option[ProjectSpace], spaceList: List[models.ProjectSpace], isNameRequired: Boolean, isDescriptionRequired: Boolean, isNew:Boolean, authors: List[String])(implicit user: Option[models.User])
 @import play.api.i18n.Messages
+@import _root_.util.Formatters._
 
 @main("Curation Object") {
     <script src="@routes.Assets.at("javascripts/curation-create.js")" language="javascript"></script>
@@ -10,15 +11,15 @@
       var isDescRequired = @isDescriptionRequired;
     </script>
     @if(isNew) {
-        <h4>
+        <div class="breadcrumb">
             @defaultspace match {
                 case Some(sp) => {
-                    <span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(sp.id)">@sp.name</a>
+                    <span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(sp.id)" title="@sp.name"> @Html(ellipsize(sp.name,18))</a>
                 }
                 case None => {
                     @user match {
                         case Some(u) => {
-                            <span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(u.id)"> @u.fullName </a>
+                            <span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(u.id)" title="@u.fullName"> @Html(ellipsize(u.fullName, 18)) </a>
                         }
                         case None => {}
                     }
@@ -26,20 +27,20 @@
             }
             <span class="glyphicon glyphicon-chevron-right"></span>
             <span class="glyphicon glyphicon-globe"></span> Create New Curation Object
-        </h4>
+        </div>
         <div class="page-header">
             <h1>Create New Curation Object</h1>
         </div>
     } else {
-        <h4>
+        <div class="breadcrumb">
             @defaultspace match {
                 case Some(sp) => {
-                    <span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(sp.id)">@sp.name</a>
+                    <span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(sp.id)" title="@sp.name"> @Html(ellipsize(sp.name, 18))</a>
                 }
                 case None => {
                     @user match {
                         case Some(u) => {
-                            <span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(u.id)"> @u.fullName </a>
+                            <span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(u.id)" title="@u.fullName"> @Html(ellipsize(u.fullName, 18)) </a>
                         }
                         case None => {}
                     }
@@ -47,7 +48,7 @@
             }
             <span class="glyphicon glyphicon-chevron-right"></span>
             <span class="glyphicon glyphicon-edit"></span> Edit Curation Object
-        </h4>
+        </div>
         <div class="page-header">
             <h1>Edit Curation Object</h1>
         </div>

@@ -10,6 +10,7 @@
 @import models.ResourceRef
 @import models.UUID
 @import api.Permission
+@import _root_.util.Formatters._
 
 @showPreview(name: String, url: String, collection_id: String) = {
 <script>
@@ -34,16 +35,13 @@
 		<!-- left column -->
 		<div class="col-md-8">
 			<div class="row">
-				<div>
-					<h4>
+				<div class="breadcrumb">
+
 				@collectionSpaces_canRemove match {
 					case Some(spaces_map) => {
 						@if(spaces_map.size == 1) {
 							@spaces_map.map { case (s, v) =>
-
-								<span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(s.id)"> @Html(s.name)</a>
-
-
+								<span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(s.id)" title="@s.name"> @Html(ellipsize(s.name,18))</a>
 							}
 
 						} else  { @if(spaces_map.size > 1) {
@@ -56,7 +54,7 @@
 									</button>
 									<ul class="dropdown-menu" arialanelledby="dropdown_space_list">
 									@spaces_map.map { case (s,v) =>
-									<li><a href="@routes.Spaces.getSpace(s.id)"><span class="glyphicon glyphicon-tent"></span> @Html(s.name)</a></li>
+									<li><a href="@routes.Spaces.getSpace(s.id)" title="@s.name"><span class="glyphicon glyphicon-tent"></span> @Html(ellipsize(s.name, 18))</a></li>
 									}
 									</ul>
 
@@ -72,8 +70,8 @@
 					case None => {}
 				}
 					<span class="glyphicon glyphicon-chevron-right"></span>
-					<span class="glyphicon glyphicon-th-large"></span> @Html(collection.name)
-					</h4>
+					<span class="glyphicon glyphicon-th-large"></span> <span title="@collection.name">@Html(ellipsize(collection.name, 18))</span>
+
 				</div>
 				<div class="col-xs-12 collection-title" id="coll-title">
 					<h1 id ="collectiontitle" class="inline"><span class="glyphicon glyphicon-th-large"></span> @Html(collection.name)</h1>
