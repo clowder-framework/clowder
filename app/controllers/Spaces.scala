@@ -346,14 +346,9 @@ class Spaces @Inject()(spaces: SpaceService, users: UserService, events: EventSe
               for (requestReceiver <- spaces.getUsersInSpace(s.id)) {
                 spaces.getRoleForUserInSpace(s.id, requestReceiver.id) match {
                   case Some(aRole) => {
-                    if (aRole.permissions.contains("EditSpace")) {
+                    if (aRole.permissions.contains(Permission.EditSpace.toString)) {
                       events.addRequestEvent(Some(user), requestReceiver, id, s.name, "postrequest_space")
-
-                      //sending emails to the space's Admin && Editor
-                      requestReceiver.email match {
-                        case Some(recipient) => Mail.sendEmail(subject, request.user, recipient.toString, body)
-                        case None =>
-                      }
+                      Mail.sendEmail(subject, request.user, requestReceiver, body)
                     }
                   }
                 }
