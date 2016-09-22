@@ -10,6 +10,7 @@
 @import play.api.Play.current
 @import api.Permission
 @import _root_.util.FileUtils
+@import _root_.util.Formatters._
 
 @implicitFieldConstructor = @{ FieldConstructor(twitterBootstrapInput.f) }
 
@@ -153,10 +154,10 @@
 	<div class="row">
 		<div class="col-md-8 col-sm-8 col-lg-8">
 			<div class="row">
-				<div><h4>
+				<div class="breadcrumb">
 					@if(spaces.length == 1 ) {
 						@spaces.map { s =>
-							<span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(s.id)"> @Html(s.name)</a>
+							<span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(s.id)" title="@s.name"> @Html(ellipsize(s.name, 18))</a>
 						}
 					} else {
 						@if(spaces.length > 1) {
@@ -167,7 +168,7 @@
 								</button>
 								<ul class="dropdown-menu" arialanelledby="dropdown_space_list">
 									@spaces.map{ s =>
-										<li><a href="@routes.Spaces.getSpace(s.id)"><span class="glyphicon glyphicon-tent"></span> @Html(s.name)</a></li>
+										<li><a href="@routes.Spaces.getSpace(s.id)" title="s.name"><span class="glyphicon glyphicon-tent"></span> @Html(ellipsize(s.name, 18))</a></li>
 									}
 								</ul>
 
@@ -179,16 +180,16 @@
 					<span class="glyphicon glyphicon-chevron-right"></span>
 					@if(allDatasets.length == 1 ) {
 						@allDatasets.map { ds =>
-						  <span class="glyphicon glyphicon-briefcase"></span> <a href="@routes.Datasets.dataset(ds.id)"> @Html(ds.name)</a>
+						  <span class="glyphicon glyphicon-briefcase"></span> <a href="@routes.Datasets.dataset(ds.id)" title="@ds.name"> @Html(ellipsize(ds.name, 18))</a>
 							<span class="glyphicon glyphicon-chevron-right"></span>
 						}
 					}
 					@folderHierarchy.map { fd =>
-						<span class="glyphicon glyphicon-folder-close"></span> <a href="@routes.Datasets.dataset(allDatasets(0).id)#folderId=@fd.id">@fd.displayName</a>
+						<span class="glyphicon glyphicon-folder-close"></span> <a href="@routes.Datasets.dataset(allDatasets(0).id)#folderId=@fd.id" title="@fd.displayName">@Html(ellipsize(fd.displayName, 18))</a>
 						<span class="glyphicon glyphicon-chevron-right"></span>
 					}
-					<span class="glyphicon glyphicon-file"></span> @Html(file.filename)
-				</h4>
+					<span class="glyphicon glyphicon-file"></span> <span title="@file.filename">@Html(ellipsize(file.filename, 18))</span>
+
 				</div>
 				<div id="file-name-div" class="file-title-div col-xs-12">
 					<div id="prf-file-name" class="text-left inline">
@@ -803,7 +804,7 @@
                 </script>
             </div>
             <!-- End License elements -->
-				
+
 			<!-- Move the file to a dataset -->
 			<div class="row ds-section-sm border-top">
 				@if(datasets.length > 0) {
