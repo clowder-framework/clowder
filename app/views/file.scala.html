@@ -1,3 +1,4 @@
+
 @(file: models.File, id: String, comments: List[Comment],
 		previews : Map[models.File, Array[(java.lang.String, String, String, String, java.lang.String, String, Long, String)]],
 		sections: List[models.Section], beingProcessed: Boolean, datasets: List[models.Dataset], folders: List[Folder],
@@ -154,13 +155,14 @@
 	<div class="row">
 		<div class="col-md-8 col-sm-8 col-lg-8">
 			<div class="row">
-				<div class="breadcrumb">
+				<ol class="breadcrumb">
 					@if(spaces.length == 1 ) {
 						@spaces.map { s =>
-							<span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(s.id)" title="@s.name"> @Html(ellipsize(s.name, 18))</a>
+							<li><span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(s.id)" title="@s.name"> @Html(ellipsize(s.name, 18))</a></li>
 						}
 					} else {
 						@if(spaces.length > 1) {
+							<li>
 							<span class="dropdown">
 								<button class="btn-link dropdown-toggle" type="button" id="dropdown_space_list" data-toggle="dropdown"
 								aria-haspopup="true" aria-expanded="true">
@@ -173,24 +175,22 @@
 								</ul>
 
 							</span>
+							</li>
 						} else {
-							<span class="glyphicon glyphicon-user"></span> <a href = "@routes.Profile.viewProfileUUID(file.author.id)"> @file.author.fullName</a>
+							<li><span class="glyphicon glyphicon-user"></span> <a href = "@routes.Profile.viewProfileUUID(file.author.id)"> @file.author.fullName</a></li>
 						}
 					}
-					<span class="glyphicon glyphicon-chevron-right"></span>
 					@if(allDatasets.length == 1 ) {
 						@allDatasets.map { ds =>
-						  <span class="glyphicon glyphicon-briefcase"></span> <a href="@routes.Datasets.dataset(ds.id)" title="@ds.name"> @Html(ellipsize(ds.name, 18))</a>
-							<span class="glyphicon glyphicon-chevron-right"></span>
+						<li> <span class="glyphicon glyphicon-briefcase"></span> <a href="@routes.Datasets.dataset(ds.id)" title="@ds.name"> @Html(ellipsize(ds.name, 18))</a></li>
 						}
 					}
 					@folderHierarchy.map { fd =>
-						<span class="glyphicon glyphicon-folder-close"></span> <a href="@routes.Datasets.dataset(allDatasets(0).id)#folderId=@fd.id" title="@fd.displayName">@Html(ellipsize(fd.displayName, 18))</a>
-						<span class="glyphicon glyphicon-chevron-right"></span>
+						<li><span class="glyphicon glyphicon-folder-close"></span> <a href="@routes.Datasets.dataset(allDatasets(0).id)#folderId=@fd.id" title="@fd.displayName">@Html(ellipsize(fd.displayName, 18))</a></li>
 					}
-					<span class="glyphicon glyphicon-file"></span> <span title="@file.filename">@Html(ellipsize(file.filename, 18))</span>
+					<li><span class="glyphicon glyphicon-file"></span> <span title="@file.filename">@Html(ellipsize(file.filename, 18))</span></li>
 
-				</div>
+				</ol>
 				<div id="file-name-div" class="file-title-div col-xs-12">
 					<div id="prf-file-name" class="text-left inline">
 						<h1 id="file-name-title" class="inline"> <span class="glyphicon glyphicon-file"></span> @Html(file.filename)</h1>

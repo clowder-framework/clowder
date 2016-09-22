@@ -6,13 +6,12 @@
 @main(space.name) {
     <div class="row">
         <div class="col-md-12">
-            <div>
-                <div class="breadcrumb">
-                    <span class="glyphicon glyphicon-tent"></span><a href= "@routes.Spaces.getSpace(space.id)" title="@space.name"> @Html(ellipsize(space.name, 18))</a>
-                    <span class="glyphicon glyphicon-chevron-right"></span>
-                    <span class="glyphicon glyphicon-user"></span> Manage Users
-                </div>
-            </div>
+
+            <ol class="breadcrumb">
+                <li><span class="glyphicon glyphicon-tent"></span><a href= "@routes.Spaces.getSpace(space.id)" title="@space.name"> @Html(ellipsize(space.name, 18))</a></li>
+                <li><span class="glyphicon glyphicon-user"></span> Manage Users</li>
+            </ol>
+
             <div class="row">
                 <div class="col-md-12" id="s-title">
                     <h1 id="space-title" class="inline">Manage Users of @Messages("space.title")

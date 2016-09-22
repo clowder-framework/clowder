@@ -26,18 +26,18 @@
 		<!-- left column -->
 		<div class="col-md-8">
             <div class="row">
-                <div class="breadcrumb">
+                <ol class="breadcrumb">
 
                 @datasetSpaces_canRemove match {
                     case Some(spaces_map) => {
                         @if(spaces_map.size == 1) {
                             @spaces_map.map { case (s, v) =>
-                                    <span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(s.id)" title="@s.name"> @Html(ellipsize(s.name, 18))</a>
+                                   <li> <span class="glyphicon glyphicon-tent"></span> <a href="@routes.Spaces.getSpace(s.id)" title="@s.name"> @Html(ellipsize(s.name, 18))</a></li>
                             }
 
                         } else  {
                             @if(spaces_map.size > 1) {
-
+                                <li>
                                 <span class="dropdown">
                                     <button class="btn-link dropdown-toggle" type="button" id="dropdown_space_list" data-toggle="dropdown"
                                     aria-haspopup="true" aria-expanded="true">
@@ -49,19 +49,19 @@
                                         }
                                     </ul>
                                 </span>
-
+                                </li>
                             } else {
-                                <span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a>
+                                <li><span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(dataset.author.id)"> @dataset.author.fullName </a></li>
                             }
                         }
 
                     }
                     case None => {}
                 }
-                        <span class="glyphicon glyphicon-chevron-right"></span>
-                        <span class="glyphicon glyphicon-briefcase"></span> <span title="@dataset.name"> @Html(ellipsize(dataset.name, 18))</span>
 
-                </div>
+                        <li><span class="glyphicon glyphicon-briefcase"></span> <span title="@dataset.name"> @Html(ellipsize(dataset.name, 18))</span></li>
+
+                </ol>
 
                 <div class="col-md-12 caption break-word dataset-title" id="ds-title">
                     <h1 id="datasettitle" class="inline"> <span class="glyphicon glyphicon-briefcase" ></span> @Html(dataset.name)</h1>

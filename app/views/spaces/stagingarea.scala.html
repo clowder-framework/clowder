@@ -5,12 +5,11 @@
 @main("Staging Area") {
     <div class="row">
         <div class="col-md-12">
-            <div class="breadcrumb">
-                <span class="glyphicon glyphicon-tent"></span>  <a href="@routes.Spaces.getSpace(space.id)" title="@space.name"> @Html(ellipsize(space.name,18))</a>
-                <span class="glyphicon glyphicon-chevron-right"></span>
-                <span class="glyphicon glyphicon-book"></span> Staging Area
+            <ol class="breadcrumb">
+                <li><span class="glyphicon glyphicon-tent"></span>  <a href="@routes.Spaces.getSpace(space.id)" title="@space.name"> @Html(ellipsize(space.name,18))</a></li>
+                <li><span class="glyphicon glyphicon-book"></span> Staging Area</li>
 
-            </div>
+            </ol>
             <h1>Staging Area</h1>
         </div>
     </div>

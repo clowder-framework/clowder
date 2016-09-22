@@ -141,11 +141,10 @@
 
         @(spaceName, spaceId) match {
             case (Some(space_name), Some(space_id)) => {
-                <div class="breadcrumb">
-                    <span class="glyphicon glyphicon-tent"></span><a href="@routes.Spaces.getSpace(space_id)" title="@space_name"> @Html(ellipsize(space_name, 18))</a>
-                    <span class="glyphicon glyphicon-chevron-right"></span>
-                    <span class="glyphicon glyphicon-list"></span> Metadata Definitions
-                </div>
+                <ol class="breadcrumb">
+                    <li><span class="glyphicon glyphicon-tent"></span><a href="@routes.Spaces.getSpace(space_id)" title="@space_name"> @Html(ellipsize(space_name, 18))</a></li>
+                    <li><span class="glyphicon glyphicon-list"></span> Metadata Definitions</li>
+                </ol>
                 <h1>Metadata Terms & Definitions</h1>
 
                 <p> The following metadata terms will be available for this @Messages("space.title")'s datasets, files, and curation objects. To add a new term scroll to the bottom of the page.</p>

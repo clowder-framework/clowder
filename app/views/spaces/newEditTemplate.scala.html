@@ -10,28 +10,23 @@
 
 @main(title) {
   <div class="page-header">
-    <div class="breadcrumb">
+    <ol class="breadcrumb">
       @(spaceId, spaceName) match {
         case (Some(s), Some(name)) => {
-          <span class="glyphicon glyphicon-tent"></span>  <a href="@routes.Spaces.getSpace(s)" title="@name"> @Html(ellipsize(name, 18))</a>
-          <span class="glyphicon glyphicon-chevron-right"></span>
-          <span class="glyphicon glyphicon-edit"></span> @Html(title)
+          <li> <span class="glyphicon glyphicon-tent"></span>  <a href="@routes.Spaces.getSpace(s)" title="@name"> @Html(ellipsize(name, 18))</a></li>
+          <li> <span class="glyphicon glyphicon-edit"></span> @Html(title)</li>
         }
         case (_,_) => {
           @user match {
             case Some(u) => {
-              <span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(u.id)"> @Html(u.fullName) </a>
-              <span class="glyphicon glyphicon-chevron-right"></span>
-              <span class="glyphicon glyphicon-tent"></span> @Html(title)
+              <li><span class="glyphicon glyphicon-user"></span> <a href= "@routes.Profile.viewProfileUUID(u.id)"> @Html(u.fullName) </a> </li>
+              <li><span class="glyphicon glyphicon-tent"></span> @Html(title) </li>
             }
             case None => {}
           }
         }
       }
-
-
-
-    </div>
+    </ol>
     <h1>@title</h1>
     <p>@Messages("space.create.message", Messages("spaces.title"), Messages("datasets.title"))</p>
   </div>
