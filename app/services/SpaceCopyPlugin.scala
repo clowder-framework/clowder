@@ -8,7 +8,7 @@ import play.api.{Application, Logger, Plugin}
 class SpaceCopyPlugin(application: Application) extends Plugin {
 
   override def onStart() {
-    Logger.debug("Space Sharing Plugin started")
+    Logger.info("Space Sharing Plugin started")
   }
 
 

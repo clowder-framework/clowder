@@ -307,7 +307,7 @@ object FileUtils {
       isIntermediate = intermediateUpload, showPreviews = showPreviews,
       licenseData = License.fromAppConfig(), status = FileStatus.CREATED.toString)
     files.save(file)
-    Logger.info(s"created file ${file.id}")
+    Logger.debug(s"created file ${file.id}")
 
     associateMetaData(creator, file, metadata, clowderurl)
     associateDataset(file, dataset, folder, user, multipleFile)
@@ -559,7 +559,7 @@ object FileUtils {
           case Some(f) => {
             val fixedfile = f.copy(filename=nameOfFile, contentType=fileType, loader=loader, loader_id=loader_id, length=length, author=realUser)
             files.save(fixedfile)
-            Logger.info("Uploading Completed")
+            Logger.debug("Uploading Completed")
             Some(fixedfile)
           }
           case None => {
@@ -599,7 +599,7 @@ object FileUtils {
           case Some(f) => {
             val fixedfile = f.copy(contentType=conn.getContentType, loader=loader, loader_id=loader_id, length=length)
             files.save(fixedfile)
-            Logger.info("Uploading Completed")
+            Logger.debug("Uploading Completed")
             Some(fixedfile)
           }
           case None => {

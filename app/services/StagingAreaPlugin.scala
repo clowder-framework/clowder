@@ -7,7 +7,7 @@ import play.api.{Plugin, Logger, Application}
 class StagingAreaPlugin(application: Application) extends Plugin{
 
   override def onStart() {
-    Logger.debug("Staging Area Plugin started")
+    Logger.info("Staging Area Plugin started")
   }
 
   override def onStop() {
