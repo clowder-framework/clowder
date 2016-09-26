@@ -693,7 +693,7 @@ def uploadExtract() =
                             }
                             Ok.chunked(Enumerator.fromStream(inputStream))
                               .withHeaders(CONTENT_TYPE -> contentType)
-                              .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename*=\"UTF-8''" + filenameStar + "\""))
+                              .withHeaders(CONTENT_DISPOSITION -> ("attachment; filename*=UTF-8''" + filenameStar))
 
                           }
                           }
